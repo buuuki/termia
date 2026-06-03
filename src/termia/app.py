@@ -219,10 +219,10 @@ class Group:
 
 @dataclass
 class TerminalSettings:
-    font_family: str = "Monospace"
-    font_size: int = 11
-    foreground: str = "#f2f2f2"
-    background: str = "#101010"
+    font_family: str = "Ubuntu Mono"
+    font_size: int = 13
+    foreground: str = "#839496"
+    background: str = "#002b36"
     ls_colors: str = DEFAULT_LS_COLORS
     ansi_palette: list[str] = field(default_factory=lambda: DEFAULT_ANSI_PALETTE.copy())
 
