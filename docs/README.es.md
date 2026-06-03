@@ -18,7 +18,7 @@ Documentación principal en inglés: [../README.md](../README.md)
 - Configurar confirmaciones para desconectar sesiones y cerrar Termia.
 - Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Super+Shift+P`, con o sin `Enter`.
 - Configurar fuente, tamaño, colores y tema del terminal.
-- Usar la interfaz en castellano, catalán o inglés.
+- Usar la interfaz en castellano, catalán o inglés. El idioma inicial sigue el locale del sistema cuando está soportado.
 - Importar y exportar configuraciones de Termia.
 - Importar conexiones y grupos anidados básicos desde YAML de Asbru.
 

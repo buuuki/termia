@@ -18,7 +18,7 @@ Spanish documentation: [docs/README.es.md](docs/README.es.md)
 - Configure confirmation prompts for disconnecting sessions and closing Termia.
 - Optionally send the saved SSH password to a remote terminal with `Super+Shift+P`, with or without `Enter`.
 - Configure terminal font, size, foreground color, background color, and theme.
-- Use the interface in English, Spanish, or Catalan.
+- Use the interface in English, Spanish, or Catalan. The initial language follows the system locale when supported.
 - Import and export Termia configuration files.
 - Import basic connection and nested group data from Asbru YAML files.
 

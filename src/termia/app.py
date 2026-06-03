@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: MIT
 import json
+import locale
 import os
 import signal
 import subprocess
@@ -40,6 +41,17 @@ TERMINAL_PALETTES = {
 }
 APP_THEMES = {"system": "Sistema", "light": "Claro", "dark": "Oscuro"}
 LANGUAGES = {"es": "Castellano", "ca": "Català", "en": "English"}
+
+
+def detect_system_language() -> str:
+    language = (locale.getlocale()[0] or os.environ.get("LANG") or "").lower()
+    if language.startswith("ca"):
+        return "ca"
+    if language.startswith("es"):
+        return "es"
+    return "en"
+
+
 TRANSLATIONS = {
     "es": {
         "servers": "Servidores", "new_group": "Nuevo grupo", "new_server": "Nuevo servidor",
@@ -230,7 +242,7 @@ class TerminalSettings:
 @dataclass
 class AppSettings:
     theme: str = "system"
-    language: str = "es"
+    language: str = field(default_factory=detect_system_language)
     close_tab_on_disconnect: bool = False
     confirm_disconnect: bool = True
     confirm_close_app: bool = False
@@ -415,7 +427,7 @@ class ConnectionStore:
     ) -> None:
         self.data.app = AppSettings(
             theme=theme if theme in APP_THEMES else "system",
-            language=language if language in LANGUAGES else "es",
+            language=language if language in LANGUAGES else detect_system_language(),
             close_tab_on_disconnect=close_tab_on_disconnect,
             confirm_disconnect=confirm_disconnect,
             confirm_close_app=confirm_close_app,
@@ -2405,7 +2417,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             previous_language = self.store.data.app.language
             self.store.update_app_settings(
                 theme_combo.get_active_id() or "system",
-                language_combo.get_active_id() or "es",
+                language_combo.get_active_id() or detect_system_language(),
                 close_tab_on_disconnect.get_active(),
                 confirm_disconnect.get_active(),
                 confirm_close_app.get_active(),
