@@ -52,7 +52,7 @@ UI, storage, import, and terminal logic without changing the launch command.
 Clone the complete repository instead of downloading individual files:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/buuuki/termia.git
 cd termia
 ```
 

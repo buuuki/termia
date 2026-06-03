@@ -32,7 +32,7 @@ Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
 Clona el repositorio completo:
 
 ```bash
-git clone <url-del-repositorio>
+git clone https://github.com/buuuki/termia.git
 cd termia
 chmod +x scripts/*.sh
 ./scripts/install_dependencies.sh
