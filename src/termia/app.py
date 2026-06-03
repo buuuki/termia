@@ -345,10 +345,18 @@ class ConnectionStore:
         self.save()
 
     def delete_group(self, group_id: str) -> None:
-        self.data.groups = [group for group in self.data.groups if group.id != group_id]
-        for server in self.data.servers:
-            if server.group_id == group_id:
-                server.group_id = None
+        group_ids = {group_id}
+        pending = [group_id]
+        while pending:
+            parent_id = pending.pop()
+            child_ids = [
+                group.id for group in self.data.groups
+                if group.parent_id == parent_id and group.id not in group_ids
+            ]
+            group_ids.update(child_ids)
+            pending.extend(child_ids)
+        self.data.groups = [group for group in self.data.groups if group.id not in group_ids]
+        self.data.servers = [server for server in self.data.servers if server.group_id not in group_ids]
         self.save()
 
     def add_server(
