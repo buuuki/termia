@@ -63,7 +63,7 @@ cd termia
 Termia uses system GTK and VTE packages. Check an existing installation first:
 
 ```bash
-chmod +x scripts/*.sh
+chmod +x scripts/install_dependencies.sh
 ./scripts/install_dependencies.sh --check
 ```
 

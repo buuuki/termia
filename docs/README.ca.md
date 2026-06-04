@@ -35,7 +35,7 @@ Clona el repositori complet:
 ```bash
 git clone https://github.com/buuuki/termia.git
 cd termia
-chmod +x scripts/*.sh
+chmod +x scripts/install_dependencies.sh
 ```
 
 Comprova primer les dependències sense modificar el sistema:
