@@ -1629,10 +1629,15 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.save_statistics_now()
         session.connected = False
         session.disconnect_button.set_sensitive(False)
-        self.open_tabs.pop(session.id, None)
         if session.disconnect_requested:
+            self.open_tabs.pop(session.id, None)
             session.status_label.set_label(f"Desconectada: {session.title}")
             return
+        if self.child_status_successful(_status) and self.store.data.app.close_tab_on_ssh_exit:
+            self.close_tab(session.id, session.page, disconnect=False)
+            self.toast_label.set_label(f"Sesion cerrada: {session.title}")
+            return
+        self.open_tabs.pop(session.id, None)
         session.status_label.set_label(f"Cerrada: {session.title}")
         label = session.tab_label.get_first_child()
         if isinstance(label, Gtk.Label):
