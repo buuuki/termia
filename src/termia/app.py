@@ -1125,7 +1125,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
             for child in sorted(child_groups, key=lambda item: item.name.lower())
             if (widget := self.build_group_widget(child, children_by_parent, servers_by_group, query)) is not None
         ]
-        if query and not servers and not child_widgets:
+        group_matches = self.matches_group_query(group, query)
+        if query and not group_matches and not servers and not child_widgets:
             return None
 
         descendant_servers = len(servers) + sum(
@@ -1445,6 +1446,11 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if not query:
             return True
         return query in " ".join([server.name, server.host, server.user]).lower()
+
+    def matches_group_query(self, group: Group, query: str) -> bool:
+        if not query:
+            return True
+        return query in group.name.lower()
 
     def server_row(self, server: Server, groups_by_id: dict[str, Group]) -> RowObject:
         group_name = groups_by_id.get(server.group_id).name if server.group_id in groups_by_id else "Sin grupo"
