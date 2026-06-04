@@ -1987,6 +1987,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.add_context_menu_item(menu, self.t("disconnect"), lambda: self.disconnect_from_terminal_menu(popover, session))
         self.add_context_menu_item(menu, self.t("copy"), lambda: self.copy_terminal_selection(popover, terminal))
         self.add_context_menu_item(menu, self.t("paste"), lambda: self.paste_terminal_clipboard(popover, terminal))
+        self.add_context_menu_item(menu, self.t("configure_terminal"), lambda: self.configure_terminal_from_menu(popover))
         self.add_context_menu_item(menu, self.t("session_statistics"), lambda: self.show_session_statistics(popover, session))
         popover.set_child(menu)
         popover.popup()
@@ -2002,6 +2003,10 @@ class TermiaWindow(Gtk.ApplicationWindow):
     def paste_terminal_clipboard(self, popover: Gtk.Popover, terminal: Vte.Terminal) -> None:
         popover.popdown()
         terminal.paste_clipboard()
+
+    def configure_terminal_from_menu(self, popover: Gtk.Popover) -> None:
+        popover.popdown()
+        self.on_terminal_settings(None)
 
     def show_session_statistics(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
