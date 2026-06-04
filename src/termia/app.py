@@ -65,6 +65,7 @@ TRANSLATIONS = {
         "ssh_fingerprint_manual": "Host nuevo: responde al fingerprint en esta terminal. Después introduce la contraseña manualmente o con Super+Shift+P.",
         "password_warning": "Aviso: la contraseña se guardará en texto plano en connections.json.",
         "server_required_fields": "Nombre, host y usuario SSH son obligatorios.",
+        "required_field": "* Campo obligatorio",
         "delete_group_confirm": "Eliminar grupo",
         "delete_group_confirm_detail": "¿Quieres eliminar {name}? También se eliminarán todos sus subgrupos y servidores. Esta acción no se puede deshacer.",
         "group_deleted": "Grupo eliminado: {name}",
@@ -118,6 +119,7 @@ TRANSLATIONS = {
         "ssh_fingerprint_manual": "Host nou: respon al fingerprint en aquest terminal. Després introdueix la contrasenya manualment o amb Super+Shift+P.",
         "password_warning": "Avís: la contrasenya es desarà en text pla a connections.json.",
         "server_required_fields": "El nom, el host i l'usuari SSH són obligatoris.",
+        "required_field": "* Camp obligatori",
         "delete_group_confirm": "Eliminar grup",
         "delete_group_confirm_detail": "Vols eliminar {name}? També s'eliminaran tots els subgrups i servidors. Aquesta acció no es pot desfer.",
         "group_deleted": "Grup eliminat: {name}",
@@ -171,6 +173,7 @@ TRANSLATIONS = {
         "ssh_fingerprint_manual": "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Super+Shift+P.",
         "password_warning": "Warning: the password will be stored as plain text in connections.json.",
         "server_required_fields": "Name, host, and SSH user are required.",
+        "required_field": "* Required field",
         "delete_group_confirm": "Delete group",
         "delete_group_confirm_detail": "Delete {name}? All nested subgroups and servers will also be deleted. This action cannot be undone.",
         "group_deleted": "Group deleted: {name}",
@@ -513,6 +516,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.install_tree_styles()
         self.selected: RowObject | None = None
         self.selected_tree_widget: Gtk.Widget | None = None
+        self.group_expanded_state: dict[str, bool] = {}
         self.tree_widgets: dict[tuple[str, str], Gtk.Widget] = {}
         self.active_context_popover: Gtk.Popover | None = None
         self.model = Gio.ListStore(item_type=RowObject)
@@ -1059,6 +1063,19 @@ class TermiaWindow(Gtk.ApplicationWindow):
     def set_all_groups_expanded(self, expanded: bool) -> None:
         for expander in self.group_expanders:
             expander.set_expanded(expanded)
+            group_id = getattr(expander, "group_id", None)
+            if group_id:
+                self.group_expanded_state[group_id] = expanded
+
+    def get_group_expanded(self, group_id: str, query: str) -> bool:
+        if query:
+            return True
+        return self.group_expanded_state.get(group_id, True)
+
+    def on_group_expanded_changed(self, expander: Gtk.Expander, _param: Any) -> None:
+        group_id = getattr(expander, "group_id", None)
+        if group_id:
+            self.group_expanded_state[group_id] = expander.get_expanded()
 
     def refresh_list(self) -> None:
         query = self.search_entry.get_text().lower().strip() if hasattr(self, "search_entry") else ""
@@ -1086,7 +1103,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
         ungrouped = servers_by_group.get(None, [])
         if ungrouped:
-            self.server_list.append(self.build_ungrouped_widget(ungrouped))
+            self.server_list.append(self.build_ungrouped_widget(ungrouped, query))
 
         root_groups = len([group for group in self.store.data.groups if group.parent_id is None])
         subgroups = len(self.store.data.groups) - root_groups
@@ -1118,8 +1135,10 @@ class TermiaWindow(Gtk.ApplicationWindow):
         group_label = self.build_group_label(f"{group.name} ({descendant_servers})")
         expander.set_label_widget(group_label)
         self.group_expanders.append(expander)
+        expander.group_id = group.id
         expander.server_count = descendant_servers
-        expander.set_expanded(True)
+        expander.set_expanded(self.get_group_expanded(group.id, query))
+        expander.connect("notify::expanded", self.on_group_expanded_changed)
         expander.set_margin_top(3)
         expander.set_margin_bottom(3)
         expander.set_margin_start(4)
@@ -1153,11 +1172,13 @@ class TermiaWindow(Gtk.ApplicationWindow):
         label_box.append(label)
         return label_box
 
-    def build_ungrouped_widget(self, servers: list[Server]) -> Gtk.Widget:
+    def build_ungrouped_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
         expander.set_label_widget(self.build_group_label(f"{self.t('no_group')} ({len(servers)})"))
         self.group_expanders.append(expander)
-        expander.set_expanded(True)
+        expander.group_id = "__ungrouped__"
+        expander.set_expanded(self.get_group_expanded("__ungrouped__", query))
+        expander.connect("notify::expanded", self.on_group_expanded_changed)
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         for server in sorted(servers, key=lambda item: item.name.lower()):
             content.append(self.build_server_widget(server))
@@ -2744,6 +2765,24 @@ class TermiaWindow(Gtk.ApplicationWindow):
             self.refresh_list()
         dialog.destroy()
 
+    def build_form_label(self, label_text: str, required: bool = False) -> Gtk.Label:
+        label = Gtk.Label()
+        label.set_xalign(0)
+        if required:
+            escaped = GLib.markup_escape_text(label_text)
+            label.set_markup(f"{escaped} <span foreground='#c01c28'><b>*</b></span>")
+        else:
+            label.set_text(label_text)
+        return label
+
+    def build_required_hint(self) -> Gtk.Label:
+        label = Gtk.Label()
+        label.set_xalign(0)
+        label.set_markup(
+            f"<span size='small' foreground='#c01c28'><i>{GLib.markup_escape_text(self.t('required_field'))}</i></span>"
+        )
+        return label
+
     def show_server_dialog(self, server: Server | None = None) -> None:
         dialog = Gtk.Dialog(title=self.t("edit_server") if server else self.t("new_server"), transient_for=self, modal=True)
         dialog.set_resizable(False)
@@ -2784,25 +2823,28 @@ class TermiaWindow(Gtk.ApplicationWindow):
         else:
             port_spin.set_value(22)
 
-        rows: list[tuple[str, Gtk.Widget]] = [
-            (self.t("name"), name_entry),
-            (self.t("host"), host_entry),
-            (self.t("ssh_user"), user_entry),
-            (self.t("ssh_port"), port_spin),
-            (self.t("group"), group_combo),
-            (self.t("password"), password_entry),
-            (self.t("public_key"), public_key_entry),
+        rows: list[tuple[str, Gtk.Widget, bool]] = [
+            (self.t("name"), name_entry, True),
+            (self.t("host"), host_entry, True),
+            (self.t("ssh_user"), user_entry, True),
+            (self.t("ssh_port"), port_spin, False),
+            (self.t("group"), group_combo, False),
+            (self.t("password"), password_entry, False),
+            (self.t("public_key"), public_key_entry, False),
         ]
-        for index, (label_text, widget) in enumerate(rows):
-            label = Gtk.Label(label=label_text)
-            label.set_xalign(0)
-            grid.attach(label, 0, index, 1, 1)
+        for index, (label_text, widget, required) in enumerate(rows):
+            grid.attach(self.build_form_label(label_text, required), 0, index, 1, 1)
             grid.attach(widget, 1, index, 1, 1)
+        grid.attach(self.build_required_hint(), 1, len(rows), 1, 1)
 
         dialog.get_content_area().append(grid)
-        warning = Gtk.Label(label=self.t("password_warning"))
+        warning = Gtk.Label()
+        warning.set_markup(f"<i>{GLib.markup_escape_text(self.t('password_warning'))}</i>")
         warning.set_wrap(True)
         warning.set_xalign(0)
+        warning.set_margin_start(16)
+        warning.set_margin_end(16)
+        warning.set_margin_bottom(14)
         warning.add_css_class("warning")
         dialog.get_content_area().append(warning)
         dialog.connect(
@@ -2839,6 +2881,10 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.OK:
             if not name or not host or not user:
                 self.toast_label.set_label(self.t("server_required_fields"))
+                for widget in (widgets["name"], widgets["host"], widgets["user"]):
+                    if not widget.get_text().strip():
+                        widget.grab_focus()
+                        break
                 return
             if server:
                 self.store.update_server(server.id, name, host, user, port, group_id, password, public_key)
