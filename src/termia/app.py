@@ -1814,6 +1814,12 @@ class TermiaWindow(Gtk.ApplicationWindow):
             self.run_commands += 1
         self.schedule_statistics_save()
         if state & Gdk.ModifierType.CONTROL_MASK:
+            if keyval in (Gdk.KEY_Page_Up, Gdk.KEY_KP_Page_Up):
+                self.move_terminal_tab_focus(session, -1)
+                return True
+            if keyval in (Gdk.KEY_Page_Down, Gdk.KEY_KP_Page_Down):
+                self.move_terminal_tab_focus(session, 1)
+                return True
             if keyval in (Gdk.KEY_plus, Gdk.KEY_equal, Gdk.KEY_KP_Add):
                 self.change_terminal_font_size(1)
                 return True
@@ -1829,6 +1835,27 @@ class TermiaWindow(Gtk.ApplicationWindow):
             self.send_saved_password(session)
             return True
         return False
+
+    def move_terminal_tab_focus(self, session: TerminalSession, delta: int) -> None:
+        notebook = session.notebook or self.notebook
+        pages = notebook.get_n_pages()
+        if pages <= 1:
+            return
+        current = notebook.get_current_page()
+        if current < 0:
+            current = notebook.page_num(session.page)
+        notebook.set_current_page((current + delta) % pages)
+        self.focus_current_terminal_page(notebook)
+
+    def focus_current_terminal_page(self, notebook: Gtk.Notebook) -> None:
+        page = notebook.get_nth_page(notebook.get_current_page())
+        if page is None:
+            return
+        for session in self.open_tabs.values():
+            if session.page is page:
+                session.terminal.grab_focus()
+                return
+        page.grab_focus()
 
     def change_terminal_font_size(self, delta: int) -> None:
         settings = self.store.data.terminal
