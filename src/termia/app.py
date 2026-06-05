@@ -800,7 +800,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
         preferences = Gtk.Button(label=self.t("preferences"))
         preferences.set_halign(Gtk.Align.FILL)
-        preferences.connect("clicked", lambda _button: self.on_app_preferences(None))
+        preferences.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_app_preferences))
         menu.append(preferences)
 
         connections_file = Gtk.MenuButton(label=self.t("connections_file"))
@@ -809,6 +809,15 @@ class TermiaWindow(Gtk.ApplicationWindow):
         menu.append(connections_file)
         popover.set_child(menu)
         return popover
+
+    def run_after_popover_closed(self, popover: Gtk.Popover, callback: Any) -> None:
+        popover.popdown()
+
+        def run_callback() -> bool:
+            callback(None)
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(run_callback)
 
     def add_dialog_action_button(
         self, dialog: Gtk.Dialog, label: str, response: Gtk.ResponseType, *, last: bool = False
