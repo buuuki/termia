@@ -68,6 +68,7 @@ TRANSLATIONS = {
         "required_field": "* Campo obligatorio",
         "reconnect_prompt": "Pulsa Enter para reconectar.",
         "close_tab_on_ssh_exit": "Cerrar la pestaña al salir de una sesión SSH con exit",
+        "open_local_terminal_on_startup": "Abrir terminal local al iniciar Termia",
         "delete_group_confirm": "Eliminar grupo",
         "delete_group_confirm_detail": "¿Quieres eliminar {name}? También se eliminarán todos sus subgrupos y servidores. Esta acción no se puede deshacer.",
         "group_deleted": "Grupo eliminado: {name}",
@@ -124,6 +125,7 @@ TRANSLATIONS = {
         "required_field": "* Camp obligatori",
         "reconnect_prompt": "Prem Enter per reconnectar.",
         "close_tab_on_ssh_exit": "Tancar la pestanya en sortir d'una sessió SSH amb exit",
+        "open_local_terminal_on_startup": "Obrir un terminal local en iniciar Termia",
         "delete_group_confirm": "Eliminar grup",
         "delete_group_confirm_detail": "Vols eliminar {name}? També s'eliminaran tots els subgrups i servidors. Aquesta acció no es pot desfer.",
         "group_deleted": "Grup eliminat: {name}",
@@ -180,6 +182,7 @@ TRANSLATIONS = {
         "required_field": "* Required field",
         "reconnect_prompt": "Press Enter to reconnect.",
         "close_tab_on_ssh_exit": "Close the tab when leaving an SSH session with exit",
+        "open_local_terminal_on_startup": "Open a local terminal when Termia starts",
         "delete_group_confirm": "Delete group",
         "delete_group_confirm_detail": "Delete {name}? All nested subgroups and servers will also be deleted. This action cannot be undone.",
         "group_deleted": "Group deleted: {name}",
@@ -266,6 +269,7 @@ class AppSettings:
     language: str = field(default_factory=detect_system_language)
     close_tab_on_disconnect: bool = False
     close_tab_on_ssh_exit: bool = False
+    open_local_terminal_on_startup: bool = True
     confirm_disconnect: bool = True
     confirm_close_app: bool = False
     sudo_password_shortcut: bool = False
@@ -468,12 +472,14 @@ class ConnectionStore:
         self, theme: str, language: str, close_tab_on_disconnect: bool,
         confirm_disconnect: bool, confirm_close_app: bool,
         sudo_password_shortcut: bool, sudo_password_enter: bool, close_tab_on_ssh_exit: bool,
+        open_local_terminal_on_startup: bool,
     ) -> None:
         self.data.app = AppSettings(
             theme=theme if theme in APP_THEMES else "system",
             language=language if language in LANGUAGES else detect_system_language(),
             close_tab_on_disconnect=close_tab_on_disconnect,
             close_tab_on_ssh_exit=close_tab_on_ssh_exit,
+            open_local_terminal_on_startup=open_local_terminal_on_startup,
             confirm_disconnect=confirm_disconnect,
             confirm_close_app=confirm_close_app,
             sudo_password_shortcut=sudo_password_shortcut,
@@ -543,6 +549,13 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
         self._build_ui()
         self.refresh_list()
+        if self.store.data.app.open_local_terminal_on_startup:
+            GLib.idle_add(self.open_startup_local_terminal)
+
+    def open_startup_local_terminal(self) -> bool:
+        if not self.open_tabs:
+            self.on_open_local_terminal(None)
+        return GLib.SOURCE_REMOVE
 
     def t(self, key: str) -> str:
         language = self.store.data.app.language
@@ -2538,6 +2551,9 @@ class TermiaWindow(Gtk.ApplicationWindow):
         close_tab_on_ssh_exit = Gtk.CheckButton(label=self.t("close_tab_on_ssh_exit"))
         close_tab_on_ssh_exit.set_active(self.store.data.app.close_tab_on_ssh_exit)
         close_tab_on_ssh_exit.set_halign(Gtk.Align.START)
+        open_local_terminal_on_startup = Gtk.CheckButton(label=self.t("open_local_terminal_on_startup"))
+        open_local_terminal_on_startup.set_active(self.store.data.app.open_local_terminal_on_startup)
+        open_local_terminal_on_startup.set_halign(Gtk.Align.START)
         confirm_disconnect = Gtk.CheckButton(label=self.t("confirm_disconnect"))
         confirm_disconnect.set_active(self.store.data.app.confirm_disconnect)
         confirm_disconnect.set_halign(Gtk.Align.START)
@@ -2560,6 +2576,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             (self.t("terminal"), terminal_button),
             ("", close_tab_on_disconnect),
             ("", close_tab_on_ssh_exit),
+            ("", open_local_terminal_on_startup),
             ("", confirm_disconnect),
             ("", confirm_close_app),
             ("", sudo_password_shortcut),
@@ -2575,7 +2592,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         dialog.get_content_area().append(grid)
         dialog.connect(
             "response", self.on_app_preferences_response, theme_combo, language_combo,
-            close_tab_on_disconnect, close_tab_on_ssh_exit, confirm_disconnect, confirm_close_app,
+            close_tab_on_disconnect, close_tab_on_ssh_exit, open_local_terminal_on_startup,
+            confirm_disconnect, confirm_close_app,
             sudo_password_shortcut, sudo_password_enter
         )
         dialog.present()
@@ -2588,6 +2606,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         language_combo: Gtk.ComboBoxText,
         close_tab_on_disconnect: Gtk.CheckButton,
         close_tab_on_ssh_exit: Gtk.CheckButton,
+        open_local_terminal_on_startup: Gtk.CheckButton,
         confirm_disconnect: Gtk.CheckButton,
         confirm_close_app: Gtk.CheckButton,
         sudo_password_shortcut: Gtk.CheckButton,
@@ -2604,6 +2623,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
                 sudo_password_shortcut.get_active(),
                 sudo_password_enter.get_active(),
                 close_tab_on_ssh_exit.get_active(),
+                open_local_terminal_on_startup.get_active(),
             )
             self.apply_app_theme()
             if previous_language != self.store.data.app.language:
