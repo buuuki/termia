@@ -20,7 +20,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Configurar confirmaciones para desconectar sesiones y cerrar Termia.
 - Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Super+Shift+P`, con o sin `Enter`.
 - Configurar por separado opciones generales, fuente y colores del terminal VTE, y el prompt PS1.
-- Personalizar el color del prompt, usar temas predefinidos, añadir hora o fecha y previsualizar el resultado antes de guardar.
+- Personalizar el prompt local con colores, temas predefinidos y prefijos de hora o fecha sin cambiar ficheros de inicio ni comandos remotos.
 - Usar la interfaz en castellano, catalán o inglés. El idioma inicial sigue el locale del sistema cuando está soportado.
 - Importar y exportar configuraciones de Termia.
 - Importar conexiones y grupos anidados básicos desde YAML de Asbru.
@@ -31,9 +31,9 @@ El menú `Configuración` se divide en `General`, `Terminal` y `Prompt`:
 
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión.
 - `Terminal` controla la fuente, tamaño, colores y paletas del terminal VTE embebido.
-- `Prompt` controla la configuración opcional de PS1, color del prompt, temas predefinidos y prefijo de hora o fecha. La previsualización muestra el resultado antes de guardar.
+- `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. No altera comandos SSH ni modifica ficheros de inicio remotos.
 
-Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. El botón de la cabecera junto al icono de la barra lateral oculta o muestra las barras de estado de todas las sesiones. Si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`.
+Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. El botón de la cabecera junto al icono de la barra lateral oculta o muestra juntas todas las barras de estado y la barra de servidores. Si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`.
 
 ## Entorno probado
 

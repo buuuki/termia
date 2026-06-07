@@ -83,14 +83,14 @@ TRANSLATIONS = {
         "theme": "Tema", "language": "Idioma", "restart_language": "El idioma se aplicará al reiniciar la aplicación.",
         "close_tab": "Cerrar pestaña", "disconnect": "Desconectar", "connecting": "Conectando",
         "close_tab_on_disconnect": "Cerrar la pestaña al desconectar una sesión",
-        "show_session_status_bar": "Mostrar barra de estado de la sesión", "toggle_session_status_bars": "Mostrar u ocultar barras de estado", "hide_status_bar": "Ocultar",
+        "show_session_status_bar": "Mostrar barra de estado de la sesión", "toggle_session_status_bars": "Mostrar u ocultar barras de estado y servidores", "hide_status_bar": "Ocultar",
         "confirm_disconnect": "Confirmar para desconectar", "confirm_close_app": "Confirmar para cerrar Termia",
         "sudo_password_shortcut": "Enviar contraseña con Super+Shift+P",
         "sudo_password_enter": "Enviar contraseña y pulsar Enter",
         "sudo_password_sent": "Contraseña guardada enviada a la terminal",
         "sudo_password_unavailable": "Esta terminal no tiene una contraseña guardada",
         "close_app": "Cerrar Termia", "close_app_confirm": "¿Quieres cerrar Termia?",
-        "font_size": "Fuente y tamaño", "custom_prompt": "Personalizar prompt", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temas de prompt", "prompt_datetime": "Fecha y hora", "prompt_datetime_none": "Sin fecha/hora", "prompt_datetime_time": "Hora", "prompt_datetime_date": "Fecha", "prompt_datetime_both": "Fecha y hora", "prompt_settings_saved": "Configuración de prompt guardada", "terminal_settings_saved": "Preferencias de terminal guardadas", "terminal_font_size_changed": "Tamaño de fuente del terminal: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Paletas",
+        "font_size": "Fuente y tamaño", "custom_prompt": "Personalizar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temas de prompt", "prompt_datetime": "Fecha y hora", "prompt_datetime_none": "Sin fecha/hora", "prompt_datetime_time": "Hora", "prompt_datetime_date": "Fecha", "prompt_datetime_both": "Fecha y hora", "prompt_settings_saved": "Configuración de prompt guardada", "terminal_settings_saved": "Preferencias de terminal guardadas", "terminal_font_size_changed": "Tamaño de fuente del terminal: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Paletas",
         "configuration": "Configuración", "connections_file": "Fichero de conexiones", "export_config": "Exportar configuración", "import_config": "Importar configuración",
         "summary": "{groups} grupos · {subgroups} subgrupos · {servers} servidores",
         "import_asbru": "Importar configuración de Ásbrú", "clear_config": "Eliminar toda la configuración", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local",
@@ -111,7 +111,7 @@ TRANSLATIONS = {
             "- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede ocultarse por sesión o globalmente.\n"
             "- Permite enviar opcionalmente la contraseña guardada con Super+Shift+P.\n"
             "- Configura por separado opciones generales, terminal VTE y prompt PS1.\n"
-            "- El prompt permite color, temas predefinidos, hora, fecha y previsualización.\n"
+            "- El prompt local permite color, temas predefinidos, hora, fecha y previsualización sin modificar sesiones remotas.\n"
             "- Importa y exporta configuraciones, incluida la importación básica desde Ásbrú.\n\n"
             "Uso rápido:\n"
             "Utiliza los iconos del panel lateral para crear grupos o servidores. Haz doble clic "
@@ -143,14 +143,14 @@ TRANSLATIONS = {
         "theme": "Tema", "language": "Idioma", "restart_language": "L'idioma s'aplicarà en reiniciar l'aplicació.",
         "close_tab": "Tancar pestanya", "disconnect": "Desconnectar", "connecting": "Connectant",
         "close_tab_on_disconnect": "Tancar la pestanya en desconnectar una sessió",
-        "show_session_status_bar": "Mostrar barra d'estat de la sessió", "toggle_session_status_bars": "Mostrar o amagar barres d'estat", "hide_status_bar": "Amagar",
+        "show_session_status_bar": "Mostrar barra d'estat de la sessió", "toggle_session_status_bars": "Mostrar o amagar barres d'estat i servidors", "hide_status_bar": "Amagar",
         "confirm_disconnect": "Confirmar per desconnectar", "confirm_close_app": "Confirmar per tancar Termia",
         "sudo_password_shortcut": "Enviar contrasenya amb Super+Shift+P",
         "sudo_password_enter": "Enviar contrasenya i prémer Enter",
         "sudo_password_sent": "Contrasenya desada enviada al terminal",
         "sudo_password_unavailable": "Aquest terminal no té cap contrasenya desada",
         "close_app": "Tancar Termia", "close_app_confirm": "Vols tancar Termia?",
-        "font_size": "Tipus de lletra i mida", "custom_prompt": "Personalitzar prompt", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temes de prompt", "prompt_datetime": "Data i hora", "prompt_datetime_none": "Sense data/hora", "prompt_datetime_time": "Hora", "prompt_datetime_date": "Data", "prompt_datetime_both": "Data i hora", "prompt_settings_saved": "Configuració del prompt desada", "terminal_settings_saved": "Preferències del terminal desades", "terminal_font_size_changed": "Mida de la lletra del terminal: {size}", "foreground": "Primer pla", "background": "Fons", "palettes": "Paletes",
+        "font_size": "Tipus de lletra i mida", "custom_prompt": "Personalitzar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temes de prompt", "prompt_datetime": "Data i hora", "prompt_datetime_none": "Sense data/hora", "prompt_datetime_time": "Hora", "prompt_datetime_date": "Data", "prompt_datetime_both": "Data i hora", "prompt_settings_saved": "Configuració del prompt desada", "terminal_settings_saved": "Preferències del terminal desades", "terminal_font_size_changed": "Mida de la lletra del terminal: {size}", "foreground": "Primer pla", "background": "Fons", "palettes": "Paletes",
         "configuration": "Configuració", "connections_file": "Fitxer de connexions", "export_config": "Exportar configuració", "import_config": "Importar configuració",
         "summary": "{groups} grups · {subgroups} subgrups · {servers} servidors",
         "import_asbru": "Importar configuració d'Ásbrú", "clear_config": "Eliminar tota la configuració", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local",
@@ -171,7 +171,7 @@ TRANSLATIONS = {
             "- La barra d'estat de sessió mostra estat, PID, temps i desconnexió; es pot amagar per sessió o globalment.\n"
             "- Permet enviar opcionalment la contrasenya desada amb Super+Shift+P.\n"
             "- Configura per separat opcions generals, terminal VTE i prompt PS1.\n"
-            "- El prompt permet color, temes predefinits, hora, data i previsualització.\n"
+            "- El prompt local permet color, temes predefinits, hora, data i previsualització sense modificar sessions remotes.\n"
             "- Importa i exporta configuracions, inclosa la importació bàsica des d'Ásbrú.\n\n"
             "Ús ràpid:\n"
             "Utilitza les icones del panell lateral per crear grups o servidors. Fes doble clic "
@@ -203,14 +203,14 @@ TRANSLATIONS = {
         "theme": "Theme", "language": "Language", "restart_language": "The language will apply after restarting the application.",
         "close_tab": "Close tab", "disconnect": "Disconnect", "connecting": "Connecting",
         "close_tab_on_disconnect": "Close the tab when disconnecting a session",
-        "show_session_status_bar": "Show session status bar", "toggle_session_status_bars": "Show or hide status bars", "hide_status_bar": "Hide",
+        "show_session_status_bar": "Show session status bar", "toggle_session_status_bars": "Show or hide status bars and servers", "hide_status_bar": "Hide",
         "confirm_disconnect": "Confirm before disconnecting", "confirm_close_app": "Confirm before closing Termia",
         "sudo_password_shortcut": "Send password with Super+Shift+P",
         "sudo_password_enter": "Send password and press Enter",
         "sudo_password_sent": "Saved password sent to the terminal",
         "sudo_password_unavailable": "This terminal does not have a saved password",
         "close_app": "Close Termia", "close_app_confirm": "Do you want to close Termia?",
-        "font_size": "Font and size", "custom_prompt": "Customize prompt", "prompt_template": "PS1 template", "prompt_color": "Prompt color", "prompt_presets": "Prompt themes", "prompt_datetime": "Date and time", "prompt_datetime_none": "No date/time", "prompt_datetime_time": "Time", "prompt_datetime_date": "Date", "prompt_datetime_both": "Date and time", "prompt_settings_saved": "Prompt settings saved", "terminal_settings_saved": "Terminal preferences saved", "terminal_font_size_changed": "Terminal font size: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Palettes",
+        "font_size": "Font and size", "custom_prompt": "Customize local prompt", "prompt_template": "PS1 template", "prompt_color": "Prompt color", "prompt_presets": "Prompt themes", "prompt_datetime": "Date and time", "prompt_datetime_none": "No date/time", "prompt_datetime_time": "Time", "prompt_datetime_date": "Date", "prompt_datetime_both": "Date and time", "prompt_settings_saved": "Prompt settings saved", "terminal_settings_saved": "Terminal preferences saved", "terminal_font_size_changed": "Terminal font size: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Palettes",
         "configuration": "Configuration", "connections_file": "Connections file", "export_config": "Export configuration", "import_config": "Import configuration",
         "summary": "{groups} groups · {subgroups} subgroups · {servers} servers",
         "import_asbru": "Import Ásbrú configuration", "clear_config": "Delete all configuration", "configure_terminal": "Configure terminal", "local_terminal": "Local terminal",
@@ -231,7 +231,7 @@ TRANSLATIONS = {
             "- The session status bar shows status, PID, duration and disconnect controls; it can be hidden per session or globally.\n"
             "- Optionally send the saved password with Super+Shift+P.\n"
             "- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
-            "- The prompt supports color, presets, time, date and live preview.\n"
+            "- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
             "- Import and export configurations, including basic imports from Ásbrú.\n\n"
             "Quick start:\n"
             "Use the sidebar icons to create groups or servers. Double-click a server to connect. "
@@ -1850,11 +1850,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         command = [ssh_path, "-p", str(server.port)]
         if server.public_key:
             command.extend(["-i", str(Path(server.public_key).expanduser())])
-        if self.store.data.terminal.prompt_enabled:
-            command.append("-t")
         command.append(ssh_target)
-        if self.store.data.terminal.prompt_enabled:
-            command.append(self.build_remote_prompt_shell_command())
         envv = self.build_terminal_environment(server.password)
         use_sshpass = bool(server.password)
         if server.password and not self.has_known_host_key(server.host, server.port):
@@ -2069,6 +2065,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.store.data.app.show_session_status_bar = visible
         self.store.save()
         self.apply_session_status_bar_visibility_to_open_tabs()
+        self.set_sidebar_visible(visible)
         self.update_session_status_bars_button_icon()
 
     def update_session_status_bars_button_icon(self) -> None:
@@ -2076,7 +2073,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.toggle_status_bars_button.set_icon_name(icon_name)
 
     def on_hide_session_status_bar(self, _button: Gtk.Button, session: TerminalSession) -> None:
-        self.set_sidebar_visible(False)
         session.status_bar.set_visible(False)
         session.terminal.grab_focus()
 
@@ -2199,8 +2195,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
     def build_terminal_environment(self, password: str = "") -> list[str]:
         env = dict(os.environ)
         env["LS_COLORS"] = self.store.data.terminal.ls_colors
-        if self.store.data.terminal.prompt_enabled:
-            env["PS1"] = self.build_prompt_ps1()
         if password:
             env["SSHPASS"] = password
         env.setdefault("COLORTERM", "truecolor")
@@ -2222,21 +2216,16 @@ class TermiaWindow(Gtk.ApplicationWindow):
         template = settings.prompt_template if settings.prompt_template.strip() else r"\u@\h:\w\$ "
         return f"\\[\\033[38;2;{red};{green};{blue}m\\]{template}\\[\\033[0m\\]"
 
-    def build_prompt_bash_script(self) -> str:
+    def build_local_prompt_shell_command(self, bash_path: str) -> list[str]:
         quoted_ps1 = shlex.quote(self.build_prompt_ps1())
-        return (
+        script = (
             f"export TERMIA_PS1={quoted_ps1}; "
             "exec bash --rcfile <(printf '%s\\n' "
             "'test -r ~/.bashrc && . ~/.bashrc' "
             "'PS1=\"$TERMIA_PS1\"' "
             "'export PS1') -i"
         )
-
-    def build_local_prompt_shell_command(self, bash_path: str) -> list[str]:
-        return [bash_path, "-lc", self.build_prompt_bash_script()]
-
-    def build_remote_prompt_shell_command(self) -> str:
-        return f"bash -lc {shlex.quote(self.build_prompt_bash_script())}"
+        return [bash_path, "-lc", script]
 
     def apply_terminal_settings(self, terminal: Vte.Terminal) -> None:
         settings = self.store.data.terminal

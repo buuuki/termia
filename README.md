@@ -20,7 +20,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Configure confirmation prompts for disconnecting sessions and closing Termia.
 - Optionally send the saved SSH password to a remote terminal with `Super+Shift+P`, with or without `Enter`.
 - Configure general options, VTE terminal font/colors, and PS1 prompt settings separately.
-- Customize the prompt color, choose presets, add time/date prefixes, and preview the result before saving.
+- Customize local prompt colors, presets, and time/date prefixes without changing remote shell startup files or commands.
 - Use the interface in English, Spanish, or Catalan. The initial language follows the system locale when supported.
 - Import and export Termia configuration files.
 - Import basic connection and nested group data from Asbru YAML files.
@@ -31,9 +31,9 @@ The `Configuration` menu is split into `General`, `Terminal`, and `Prompt`:
 
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar.
 - `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, and color palettes.
-- `Prompt` controls the optional PS1 override, prompt color, presets, and time/date prefix. The preview shows the resulting prompt before saving.
+- `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. It does not alter SSH commands or modify remote shell startup files.
 
-Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. The header button next to the sidebar toggle hides or shows status bars for all sessions. If a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it.
+Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. The header button next to the sidebar toggle hides or shows all session status bars and the server sidebar together. If a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it.
 
 ## Tested environment
 

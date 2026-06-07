@@ -20,7 +20,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Configurar confirmacions per desconnectar sessions i tancar Termia.
 - Enviar opcionalment la contrasenya SSH desada a un terminal remot amb `Super+Shift+P`, amb `Enter` o sense.
 - Configurar per separat opcions generals, tipus de lletra i colors del terminal VTE, i el prompt PS1.
-- Personalitzar el color del prompt, usar temes predefinits, afegir hora o data i previsualitzar el resultat abans de desar.
+- Personalitzar el prompt local amb colors, temes predefinits i prefixos d'hora o data sense canviar fitxers d'inici ni ordres remotes.
 - Usar la interfície en castellà, català o anglès. L'idioma inicial segueix el locale del sistema quan està suportat.
 - Importar i exportar configuracions de Termia.
 - Importar connexions i grups imbricats bàsics des de YAML d'Asbru.
@@ -31,9 +31,9 @@ El menú `Configuració` es divideix en `General`, `Terminal` i `Prompt`:
 
 - `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió.
 - `Terminal` controla el tipus de lletra, mida, colors i paletes del terminal VTE incrustat.
-- `Prompt` controla la configuració opcional de PS1, color del prompt, temes predefinits i prefix d'hora o data. La previsualització mostra el resultat abans de desar.
+- `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. No altera ordres SSH ni modifica fitxers d'inici remots.
 
-Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. El botó de la capçalera al costat de la icona de la barra lateral amaga o mostra les barres d'estat de totes les sessions. Si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`.
+Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. El botó de la capçalera al costat de la icona de la barra lateral amaga o mostra juntes totes les barres d'estat i la barra de servidors. Si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`.
 
 ## Entorn provat
 
