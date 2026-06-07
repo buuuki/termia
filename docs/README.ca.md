@@ -14,8 +14,8 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Filtrar servidors i obrir diverses sessions al mateix host en pestanyes.
 - Usar pestanyes compactes, reordenar-les arrossegant-les i moure una pestanya a una finestra independent.
 - Obrir terminals locals incrustats.
-- Desar estadístiques locals agregades de connexions, ordres, pulsacions i durada.
-- Mostrar estadístiques per sessió i tancar opcionalment la pestanya en desconnectar.
+- Desar estadístiques locals agregades de connexions, ordres, pulsacions, durada i ús per servidor.
+- Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
 - Mostrar o amagar globalment la barra d'estat de sessió, amagar-la per sessió i restaurar-la des del menú contextual del terminal.
 - Configurar confirmacions per desconnectar sessions i tancar Termia.
 - Enviar opcionalment la contrasenya SSH desada a un terminal remot amb `Super+Shift+P`, amb `Enter` o sense.

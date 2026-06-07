@@ -14,8 +14,8 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Filtrar servidores y abrir varias sesiones al mismo host en pestañas.
 - Usar pestañas compactas, reordenarlas arrastrándolas y mover una pestaña a una ventana independiente.
 - Abrir terminales locales embebidas.
-- Guardar estadísticas locales agregadas de conexiones, comandos, pulsaciones y duración.
-- Mostrar estadísticas por sesión y cerrar opcionalmente la pestaña al desconectar.
+- Guardar estadísticas locales agregadas de conexiones, comandos, pulsaciones, duración y uso por servidor.
+- Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
 - Mostrar u ocultar globalmente la barra de estado de sesión, ocultarla por sesión y restaurarla desde el menú contextual del terminal.
 - Configurar confirmaciones para desconectar sesiones y cerrar Termia.
 - Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Super+Shift+P`, con o sin `Enter`.

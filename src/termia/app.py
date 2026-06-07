@@ -30,6 +30,7 @@ DATA_FILE = Path(GLib.get_user_config_dir()) / "termia" / "connections.json"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state")))
 STATISTICS_FILE = STATE_DIR / "termia" / "statistics.json"
 ABOUT_IMAGE = APP_DIR / "assets" / "termia-about-256.png"
+ISSUES_URL = "https://github.com/buuuki/termia/issues"
 
 DEFAULT_LS_COLORS = 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:'
 DEFAULT_ANSI_PALETTE = ['#2e3436', '#cc0000', '#4e9a06', '#c4a000', '#3465a4', '#75507b', '#06989a', '#d3d7cf', '#555753', '#ef2929', '#8ae234', '#fce94f', '#729fcf', '#ad7fa8', '#34e2e2', '#eeeeec']
@@ -62,7 +63,7 @@ def detect_system_language() -> str:
 
 TRANSLATIONS = {
     "es": {
-        "servers": "Servidores", "new_group": "Nuevo grupo", "new_server": "Nuevo servidor",
+        "servers": "Mostrar u ocultar listado de servidores", "new_group": "Nuevo grupo", "new_server": "Nuevo servidor",
         "terminal": "Terminal", "prompt": "Prompt", "general": "General", "preferences": "Preferencias", "filter_servers": "Filtrar servidores",
         "connect": "Conectar", "edit_server": "Editar servidor", "delete_server": "Eliminar servidor", "clone_connection": "Clonar conexión",
         "edit_group": "Editar grupo", "delete_group": "Eliminar grupo", "no_group": "Sin grupo",
@@ -94,12 +95,12 @@ TRANSLATIONS = {
         "configuration": "Configuración", "connections_file": "Fichero de conexiones", "export_config": "Exportar configuración", "import_config": "Importar configuración",
         "summary": "{groups} grupos · {subgroups} subgrupos · {servers} servidores",
         "import_asbru": "Importar configuración de Ásbrú", "clear_config": "Eliminar toda la configuración", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local",
-        "statistics": "Estadísticas", "connections": "Conexiones", "commands": "Comandos", "keystrokes": "Pulsaciones",
+        "statistics": "Estadísticas", "statistics_title": "Estadísticas", "top_servers": "Servidores más usados", "no_statistics": "Sin estadísticas todavía", "sessions": "Sesiones", "duration": "Duración", "connections": "Conexiones", "commands": "Comandos", "keystrokes": "Pulsaciones",
         "global": "Global", "current_run": "Ejecución actual", "shortest_duration": "Duración más corta", "longest_duration": "Duración más larga", "average_duration": "Duración media",
         "copy": "Copiar", "paste": "Pegar", "session_statistics": "Estadísticas de la sesión", "server_connections": "Conexiones globales a este servidor",
         "clear_confirm": "¿Quieres eliminar todos los grupos y servidores? Esta acción no se puede deshacer.", "rename_tab": "Renombrar pestaña", "duplicate_tab": "Duplicar pestaña", "detach_tab": "Mover a nueva ventana",
         "expand_all": "Expandir todos los grupos", "collapse_all": "Contraer todos los grupos",
-        "help": "Ayuda", "about": "Acerca de",
+        "help": "Ayuda", "about": "Acerca de", "report_issue": "Informar de un problema",
         "help_title": "Ayuda de Termia",
         "help_content": (
             "Termia es un gestor de conexiones SSH con terminales embebidas.\n\n"
@@ -107,7 +108,7 @@ TRANSLATIONS = {
             "- Organiza servidores en grupos y subgrupos.\n"
             "- Crea, edita, elimina, clona y filtra conexiones SSH.\n"
             "- Abre conexiones y terminales locales en pestañas compactas, reordenables y desacoplables.\n"
-            "- Muestra estadísticas locales agregadas y estadísticas por sesión.\n"
+            "- Muestra un dashboard de estadísticas con métricas globales, duración y servidores más usados, además de estadísticas por sesión.\n"
             "- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede ocultarse por sesión o globalmente.\n"
             "- Permite enviar opcionalmente la contraseña guardada con Super+Shift+P.\n"
             "- Configura por separado opciones generales, terminal VTE y prompt PS1.\n"
@@ -122,7 +123,7 @@ TRANSLATIONS = {
         "about_content": "Gestor de conexiones SSH con terminales embebidas",
     },
     "ca": {
-        "servers": "Servidors", "new_group": "Nou grup", "new_server": "Nou servidor",
+        "servers": "Mostrar o amagar el llistat de servidors", "new_group": "Nou grup", "new_server": "Nou servidor",
         "terminal": "Terminal", "prompt": "Prompt", "general": "General", "preferences": "Preferències", "filter_servers": "Filtrar servidors",
         "connect": "Connectar", "edit_server": "Editar servidor", "delete_server": "Eliminar servidor", "clone_connection": "Clonar connexió",
         "edit_group": "Editar grup", "delete_group": "Eliminar grup", "no_group": "Sense grup",
@@ -154,12 +155,12 @@ TRANSLATIONS = {
         "configuration": "Configuració", "connections_file": "Fitxer de connexions", "export_config": "Exportar configuració", "import_config": "Importar configuració",
         "summary": "{groups} grups · {subgroups} subgrups · {servers} servidors",
         "import_asbru": "Importar configuració d'Ásbrú", "clear_config": "Eliminar tota la configuració", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local",
-        "statistics": "Estadístiques", "connections": "Connexions", "commands": "Ordres", "keystrokes": "Pulsacions",
+        "statistics": "Estadístiques", "statistics_title": "Estadístiques", "top_servers": "Servidors més usats", "no_statistics": "Encara no hi ha estadístiques", "sessions": "Sessions", "duration": "Durada", "connections": "Connexions", "commands": "Ordres", "keystrokes": "Pulsacions",
         "global": "Global", "current_run": "Execució actual", "shortest_duration": "Durada més curta", "longest_duration": "Durada més llarga", "average_duration": "Durada mitjana",
         "copy": "Copiar", "paste": "Enganxar", "session_statistics": "Estadístiques de la sessió", "server_connections": "Connexions globals a aquest servidor",
         "clear_confirm": "Vols eliminar tots els grups i servidors? Aquesta acció no es pot desfer.", "rename_tab": "Canviar el nom de la pestanya", "duplicate_tab": "Duplicar pestanya", "detach_tab": "Moure a una finestra nova",
         "expand_all": "Expandir tots els grups", "collapse_all": "Contraure tots els grups",
-        "help": "Ajuda", "about": "Quant a",
+        "help": "Ajuda", "about": "Quant a", "report_issue": "Informar d'un problema",
         "help_title": "Ajuda de Termia",
         "help_content": (
             "Termia és un gestor de connexions SSH amb terminals incrustats.\n\n"
@@ -167,7 +168,7 @@ TRANSLATIONS = {
             "- Organitza servidors en grups i subgrups.\n"
             "- Crea, edita, elimina, clona i filtra connexions SSH.\n"
             "- Obre connexions i terminals locals en pestanyes compactes, reordenables i desacoblables.\n"
-            "- Mostra estadístiques locals agregades i estadístiques per sessió.\n"
+            "- Mostra un dashboard d'estadístiques amb mètriques globals, durada i servidors més usats, a més d'estadístiques per sessió.\n"
             "- La barra d'estat de sessió mostra estat, PID, temps i desconnexió; es pot amagar per sessió o globalment.\n"
             "- Permet enviar opcionalment la contrasenya desada amb Super+Shift+P.\n"
             "- Configura per separat opcions generals, terminal VTE i prompt PS1.\n"
@@ -182,7 +183,7 @@ TRANSLATIONS = {
         "about_content": "Gestor de connexions SSH amb terminals incrustats",
     },
     "en": {
-        "servers": "Servers", "new_group": "New group", "new_server": "New server",
+        "servers": "Show or hide server list", "new_group": "New group", "new_server": "New server",
         "terminal": "Terminal", "prompt": "Prompt", "general": "General", "preferences": "Preferences", "filter_servers": "Filter servers",
         "connect": "Connect", "edit_server": "Edit server", "delete_server": "Delete server", "clone_connection": "Clone connection",
         "edit_group": "Edit group", "delete_group": "Delete group", "no_group": "No group",
@@ -214,12 +215,12 @@ TRANSLATIONS = {
         "configuration": "Configuration", "connections_file": "Connections file", "export_config": "Export configuration", "import_config": "Import configuration",
         "summary": "{groups} groups · {subgroups} subgroups · {servers} servers",
         "import_asbru": "Import Ásbrú configuration", "clear_config": "Delete all configuration", "configure_terminal": "Configure terminal", "local_terminal": "Local terminal",
-        "statistics": "Statistics", "connections": "Connections", "commands": "Commands", "keystrokes": "Keystrokes",
+        "statistics": "Statistics", "statistics_title": "Statistics", "top_servers": "Most used servers", "no_statistics": "No statistics yet", "sessions": "Sessions", "duration": "Duration", "connections": "Connections", "commands": "Commands", "keystrokes": "Keystrokes",
         "global": "Global", "current_run": "Current run", "shortest_duration": "Shortest duration", "longest_duration": "Longest duration", "average_duration": "Average duration",
         "copy": "Copy", "paste": "Paste", "session_statistics": "Session statistics", "server_connections": "Global connections to this server",
         "clear_confirm": "Delete all groups and servers? This action cannot be undone.", "rename_tab": "Rename tab", "duplicate_tab": "Duplicate tab", "detach_tab": "Move to new window",
         "expand_all": "Expand all groups", "collapse_all": "Collapse all groups",
-        "help": "Help", "about": "About",
+        "help": "Help", "about": "About", "report_issue": "Report an issue",
         "help_title": "Termia Help",
         "help_content": (
             "Termia is an SSH connection manager with embedded terminals.\n\n"
@@ -227,7 +228,7 @@ TRANSLATIONS = {
             "- Organize servers into groups and subgroups.\n"
             "- Create, edit, delete, clone and filter SSH connections.\n"
             "- Open connections and local terminals in compact, reorderable and detachable tabs.\n"
-            "- View aggregate local statistics and per-session statistics.\n"
+            "- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
             "- The session status bar shows status, PID, duration and disconnect controls; it can be hidden per session or globally.\n"
             "- Optionally send the saved password with Super+Shift+P.\n"
             "- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
@@ -656,6 +657,13 @@ class TermiaWindow(Gtk.ApplicationWindow):
             b".termia-tab-title { font-size: 0.82em; } "
             b".termia-tab-close { padding: 0; min-width: 14px; min-height: 14px; } "
             b".termia-status-hide { padding: 0 6px; min-height: 18px; font-size: 0.85em; } "
+            b".termia-disconnect-button { padding: 0 6px; min-height: 18px; font-size: 0.85em; } "
+            b".stat-card { padding: 10px 12px; border: 1px solid @borders; border-radius: 6px; "
+            b"background: alpha(@theme_bg_color, 0.58); } "
+            b".stat-card-title { font-size: 0.82em; } "
+            b".stat-card-value { font-size: 1.55em; font-weight: 700; } "
+            b".stat-card-subtitle { font-size: 0.82em; } "
+            b".stat-row { padding: 6px 8px; border-bottom: 1px solid alpha(@borders, 0.55); } "
             b".termia-tree-item.selected { "
             b"background-color: @theme_selected_bg_color; "
             b"color: @theme_selected_fg_color; }"
@@ -692,9 +700,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         config_btn.set_popover(self.build_configuration_menu())
         header.pack_start(config_btn)
 
-        stats_btn = Gtk.MenuButton(label=self.t("statistics"))
-        stats_btn.set_popover(self.build_statistics_menu())
-        stats_btn.connect("notify::active", self.on_statistics_menu_active)
+        stats_btn = Gtk.Button(label=self.t("statistics"))
+        stats_btn.connect("clicked", self.on_statistics_dashboard)
         header.pack_start(stats_btn)
 
         help_btn = Gtk.Button(label=self.t("help"))
@@ -800,54 +807,151 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
         self.update_actions()
 
-    def build_statistics_menu(self) -> Gtk.Popover:
-        popover = Gtk.Popover()
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        content.set_margin_top(10)
-        content.set_margin_bottom(10)
-        content.set_margin_start(12)
-        content.set_margin_end(12)
-        self.statistics_labels: dict[str, Gtk.Label] = {}
-        for key in ("connections", "commands", "durations", "keystrokes"):
-            label = Gtk.Label()
-            label.set_xalign(0)
-            label.set_selectable(True)
-            content.append(label)
-            self.statistics_labels[key] = label
-        popover.set_child(content)
-        self.refresh_statistics_menu()
-        return popover
+    def on_statistics_dashboard(self, _button: Gtk.Button) -> None:
+        dialog = Gtk.Dialog(title=self.t("statistics_title"), transient_for=self, modal=True)
+        dialog.set_resizable(True)
+        dialog.set_default_size(620, 520)
+        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
 
-    def on_statistics_menu_active(self, button: Gtk.MenuButton, _param: GObject.ParamSpec) -> None:
-        if button.get_active():
-            self.refresh_statistics_menu()
-            GLib.idle_add(self.clear_statistics_label_selection)
+        content = dialog.get_content_area()
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_spacing(14)
 
-    def clear_statistics_label_selection(self) -> bool:
-        if hasattr(self, "statistics_labels"):
-            for label in self.statistics_labels.values():
-                label.select_region(0, 0)
-        return GLib.SOURCE_REMOVE
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_vexpand(True)
+        dashboard = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        scroller.set_child(dashboard)
+        content.append(scroller)
 
-    def refresh_statistics_menu(self) -> None:
-        if not hasattr(self, "statistics_labels"):
-            return
         stats = self.store.data.statistics
-        self.statistics_labels["connections"].set_label(
-            f"{self.t('connections')}: {self.t('global')} {stats.connections} · {self.t('current_run')} {self.run_connections}"
+        average_duration = stats.duration_total / stats.completed_sessions if stats.completed_sessions else None
+        cards = Gtk.Grid()
+        cards.set_column_spacing(10)
+        cards.set_row_spacing(10)
+        cards.attach(
+            self.build_stat_card(
+                self.t("connections"), str(stats.connections), f"{self.t('current_run')} {self.run_connections}"
+            ),
+            0, 0, 1, 1
         )
-        self.statistics_labels["commands"].set_label(
-            f"{self.t('commands')}: {self.t('global')} {stats.commands} · {self.t('current_run')} {self.run_commands}"
+        cards.attach(
+            self.build_stat_card(self.t("commands"), str(stats.commands), f"{self.t('current_run')} {self.run_commands}"),
+            1, 0, 1, 1
         )
-        self.statistics_labels["durations"].set_label(
-            f"{self.t('shortest_duration')}: {self.format_duration(stats.duration_min)}\n"
-            f"{self.t('longest_duration')}: {self.format_duration(stats.duration_max if stats.completed_sessions else None)}\n"
-            f"{self.t('average_duration')}: {self.format_duration(stats.duration_total / stats.completed_sessions if stats.completed_sessions else None)}"
+        cards.attach(
+            self.build_stat_card(
+                self.t("keystrokes"), str(stats.keystrokes), f"{self.t('current_run')} {self.run_keystrokes}"
+            ),
+            2, 0, 1, 1
         )
-        self.statistics_labels["keystrokes"].set_label(
-            f"{self.t('keystrokes')}: {self.t('global')} {stats.keystrokes} · {self.t('current_run')} {self.run_keystrokes}"
+        cards.attach(
+            self.build_stat_card(self.t("sessions"), str(stats.completed_sessions), self.t("global")),
+            0, 1, 1, 1
         )
-        self.clear_statistics_label_selection()
+        cards.attach(
+            self.build_stat_card(self.t("average_duration"), self.format_duration(average_duration), self.t("duration")),
+            1, 1, 1, 1
+        )
+        cards.attach(
+            self.build_stat_card(
+                self.t("longest_duration"),
+                self.format_duration(stats.duration_max if stats.completed_sessions else None),
+                f"{self.t('shortest_duration')}: {self.format_duration(stats.duration_min)}",
+            ),
+            2, 1, 1, 1
+        )
+        for card in self.iter_grid_children(cards):
+            card.set_hexpand(True)
+        dashboard.append(cards)
+
+        title = Gtk.Label(label=self.t("top_servers"))
+        title.set_xalign(0)
+        title.add_css_class("heading")
+        dashboard.append(title)
+        dashboard.append(self.build_top_servers_list())
+
+        dialog.connect("response", lambda current, _response: current.destroy())
+        dialog.present()
+
+    def build_stat_card(self, title: str, value: str, subtitle: str = "") -> Gtk.Widget:
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        card.add_css_class("stat-card")
+        title_label = Gtk.Label(label=title)
+        title_label.set_xalign(0)
+        title_label.add_css_class("stat-card-title")
+        title_label.add_css_class("dim-label")
+        value_label = Gtk.Label(label=value)
+        value_label.set_xalign(0)
+        value_label.add_css_class("stat-card-value")
+        subtitle_label = Gtk.Label(label=subtitle)
+        subtitle_label.set_xalign(0)
+        subtitle_label.add_css_class("stat-card-subtitle")
+        subtitle_label.add_css_class("dim-label")
+        card.append(title_label)
+        card.append(value_label)
+        card.append(subtitle_label)
+        return card
+
+    def iter_grid_children(self, grid: Gtk.Grid) -> list[Gtk.Widget]:
+        children: list[Gtk.Widget] = []
+        child = grid.get_first_child()
+        while child is not None:
+            children.append(child)
+            child = child.get_next_sibling()
+        return children
+
+    def build_top_servers_list(self) -> Gtk.Widget:
+        stats = self.store.data.statistics
+        list_box = Gtk.ListBox()
+        list_box.set_selection_mode(Gtk.SelectionMode.NONE)
+        if not stats.server_connections:
+            row = Gtk.ListBoxRow()
+            label = Gtk.Label(label=self.t("no_statistics"))
+            label.set_xalign(0)
+            label.set_margin_top(8)
+            label.set_margin_bottom(8)
+            label.set_margin_start(8)
+            label.set_margin_end(8)
+            row.set_child(label)
+            list_box.append(row)
+            return list_box
+
+        servers_by_id = {server.id: server for server in self.store.data.servers}
+        ranked = sorted(stats.server_connections.items(), key=lambda item: item[1], reverse=True)[:10]
+        max_count = max((count for _server_id, count in ranked), default=1)
+        for index, (server_id, count) in enumerate(ranked, start=1):
+            server = servers_by_id.get(server_id)
+            name = server.name if server is not None else server_id
+            subtitle = f"{server.user}@{server.host}:{server.port}" if server is not None else ""
+            row = Gtk.ListBoxRow()
+            row_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            row_box.add_css_class("stat-row")
+            header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            name_label = Gtk.Label(label=f"{index}. {name}")
+            name_label.set_xalign(0)
+            name_label.set_hexpand(True)
+            count_label = Gtk.Label(label=str(count))
+            count_label.set_xalign(1)
+            count_label.add_css_class("heading")
+            header.append(name_label)
+            header.append(count_label)
+            row_box.append(header)
+            if subtitle:
+                subtitle_label = Gtk.Label(label=subtitle)
+                subtitle_label.set_xalign(0)
+                subtitle_label.add_css_class("dim-label")
+                row_box.append(subtitle_label)
+            progress = Gtk.LevelBar.new_for_interval(0, max_count)
+            progress.set_value(count)
+            progress.set_hexpand(True)
+            row_box.append(progress)
+            row.set_child(row_box)
+            list_box.append(row)
+        return list_box
 
     def format_duration(self, seconds: float | None) -> str:
         if seconds is None:
@@ -856,6 +960,9 @@ class TermiaWindow(Gtk.ApplicationWindow):
         hours, remainder = divmod(total, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+    def refresh_statistics_menu(self) -> None:
+        return
 
     def build_configuration_menu(self) -> Gtk.Popover:
         popover = Gtk.Popover()
@@ -941,6 +1048,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         dialog.set_copyright("Copyright © 2026 Jordi Pons")
         dialog.set_license_type(Gtk.License.MIT_X11)
         dialog.set_comments(self.t("about_content"))
+        dialog.set_website(ISSUES_URL)
+        dialog.set_website_label(self.t("report_issue"))
         if ABOUT_IMAGE.exists():
             dialog.set_logo(Gdk.Texture.new_from_filename(str(ABOUT_IMAGE)))
         dialog.present()
@@ -1690,7 +1799,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         focus_button.set_size_request(-1, 18)
         disconnect_button = Gtk.Button(label=self.t("disconnect"))
         disconnect_button.add_css_class("destructive-action")
-        disconnect_button.set_size_request(-1, 22)
+        disconnect_button.add_css_class("termia-disconnect-button")
+        disconnect_button.set_size_request(-1, 18)
         toolbar.set_visible(self.store.data.app.show_session_status_bar)
         toolbar.append(status_label)
         toolbar.append(focus_button)
@@ -1783,7 +1893,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         focus_button.set_size_request(-1, 18)
         disconnect_button = Gtk.Button(label=self.t("disconnect"))
         disconnect_button.add_css_class("destructive-action")
-        disconnect_button.set_size_request(-1, 22)
+        disconnect_button.add_css_class("termia-disconnect-button")
+        disconnect_button.set_size_request(-1, 18)
         toolbar.set_visible(self.store.data.app.show_session_status_bar)
 
         toolbar.append(status_label)

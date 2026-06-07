@@ -14,8 +14,8 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Filter servers and open multiple tabbed sessions to the same host.
 - Use compact, reorderable tabs and move a tab to a separate window.
 - Open embedded local terminal tabs.
-- Track aggregate connection, command, keystroke, and session-duration statistics locally.
-- Show per-session statistics and optionally close tabs after disconnecting.
+- Track aggregate connection, command, keystroke, session-duration, and per-server usage statistics locally.
+- Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
 - Show or hide the session status bar globally, hide it per session, and restore it from the terminal context menu.
 - Configure confirmation prompts for disconnecting sessions and closing Termia.
 - Optionally send the saved SSH password to a remote terminal with `Super+Shift+P`, with or without `Enter`.
