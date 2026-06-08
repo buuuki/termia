@@ -2008,7 +2008,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         session.pending_reconnect = True
         session.disconnect_button.set_sensitive(False)
         self.toast_label.set_label(toast)
-        session.terminal.feed(f"\r\n\x1b[38;5;88m{self.t('reconnect_prompt')}\x1b[0m\r\n".encode())
+        prompt = f"  {self.t('reconnect_prompt')}  "
+        session.terminal.feed(f"\r\n\x1b[1;30;48;2;255;213;79m{prompt}\x1b[0m\r\n".encode())
         label = session.tab_label.get_first_child()
         if isinstance(label, Gtk.Label):
             label.set_label(f"{session.title} (error)")
@@ -2380,8 +2381,9 @@ class TermiaWindow(Gtk.ApplicationWindow):
         label.add_css_class("termia-tab-title")
         label.set_single_line_mode(True)
         label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_width_chars(min(max(len(title), 6), 14))
-        label.set_max_width_chars(14)
+        label.set_width_chars(min(max(len(title), 8), 20))
+        label.set_max_width_chars(20)
+        label.set_tooltip_text(title)
         label.set_margin_start(2)
         label.set_margin_end(1)
         close_button = Gtk.Button(icon_name="window-close-symbolic")
