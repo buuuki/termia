@@ -46,7 +46,7 @@ PROMPT_PRESETS = {
     "Azul": (r"\u@\h:\w\$ ", "#729fcf"),
     "Ambar": (r"\u@\h:\w\$ ", "#fce94f"),
     "Rojo": (r"\u@\h \W \$ ", "#ef2929"),
-    "Blanco": (r"\w \$ ", "#eeeeec"),
+    "Blanco": (r"\u@\h:\w\$ ", "#eeeeec"),
 }
 APP_THEMES = {"system": "Sistema", "light": "Claro", "dark": "Oscuro"}
 LANGUAGES = {"es": "Castellano", "ca": "Català", "en": "English"}
@@ -91,7 +91,7 @@ TRANSLATIONS = {
         "sudo_password_sent": "Contraseña guardada enviada a la terminal",
         "sudo_password_unavailable": "Esta terminal no tiene una contraseña guardada",
         "close_app": "Cerrar Termia", "close_app_confirm": "¿Quieres cerrar Termia?",
-        "font_size": "Fuente y tamaño", "custom_prompt": "Personalizar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temas de prompt", "prompt_datetime": "Fecha y hora", "prompt_datetime_none": "Sin fecha/hora", "prompt_datetime_time": "Hora", "prompt_datetime_date": "Fecha", "prompt_datetime_both": "Fecha y hora", "prompt_settings_saved": "Configuración de prompt guardada", "terminal_settings_saved": "Preferencias de terminal guardadas", "terminal_font_size_changed": "Tamaño de fuente del terminal: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Paletas",
+        "font_size": "Fuente y tamaño", "custom_prompt": "Personalizar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temas de prompt", "prompt_datetime": "Fecha y hora", "prompt_datetime_none": "Sin fecha/hora", "prompt_datetime_time": "Hora", "prompt_datetime_time_seconds": "Hora y segundos", "prompt_datetime_date": "Fecha", "prompt_datetime_both": "Fecha y hora", "prompt_settings_saved": "Configuración de prompt guardada", "terminal_settings_saved": "Preferencias de terminal guardadas", "terminal_font_size_changed": "Tamaño de fuente del terminal: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Paletas",
         "configuration": "Configuración", "connections_file": "Fichero de conexiones", "export_config": "Exportar configuración", "import_config": "Importar configuración",
         "summary": "{groups} grupos · {subgroups} subgrupos · {servers} servidores",
         "import_asbru": "Importar configuración de Ásbrú", "clear_config": "Eliminar toda la configuración", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local",
@@ -151,7 +151,7 @@ TRANSLATIONS = {
         "sudo_password_sent": "Contrasenya desada enviada al terminal",
         "sudo_password_unavailable": "Aquest terminal no té cap contrasenya desada",
         "close_app": "Tancar Termia", "close_app_confirm": "Vols tancar Termia?",
-        "font_size": "Tipus de lletra i mida", "custom_prompt": "Personalitzar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temes de prompt", "prompt_datetime": "Data i hora", "prompt_datetime_none": "Sense data/hora", "prompt_datetime_time": "Hora", "prompt_datetime_date": "Data", "prompt_datetime_both": "Data i hora", "prompt_settings_saved": "Configuració del prompt desada", "terminal_settings_saved": "Preferències del terminal desades", "terminal_font_size_changed": "Mida de la lletra del terminal: {size}", "foreground": "Primer pla", "background": "Fons", "palettes": "Paletes",
+        "font_size": "Tipus de lletra i mida", "custom_prompt": "Personalitzar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temes de prompt", "prompt_datetime": "Data i hora", "prompt_datetime_none": "Sense data/hora", "prompt_datetime_time": "Hora", "prompt_datetime_time_seconds": "Hora i segons", "prompt_datetime_date": "Data", "prompt_datetime_both": "Data i hora", "prompt_settings_saved": "Configuració del prompt desada", "terminal_settings_saved": "Preferències del terminal desades", "terminal_font_size_changed": "Mida de la lletra del terminal: {size}", "foreground": "Primer pla", "background": "Fons", "palettes": "Paletes",
         "configuration": "Configuració", "connections_file": "Fitxer de connexions", "export_config": "Exportar configuració", "import_config": "Importar configuració",
         "summary": "{groups} grups · {subgroups} subgrups · {servers} servidors",
         "import_asbru": "Importar configuració d'Ásbrú", "clear_config": "Eliminar tota la configuració", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local",
@@ -211,7 +211,7 @@ TRANSLATIONS = {
         "sudo_password_sent": "Saved password sent to the terminal",
         "sudo_password_unavailable": "This terminal does not have a saved password",
         "close_app": "Close Termia", "close_app_confirm": "Do you want to close Termia?",
-        "font_size": "Font and size", "custom_prompt": "Customize local prompt", "prompt_template": "PS1 template", "prompt_color": "Prompt color", "prompt_presets": "Prompt themes", "prompt_datetime": "Date and time", "prompt_datetime_none": "No date/time", "prompt_datetime_time": "Time", "prompt_datetime_date": "Date", "prompt_datetime_both": "Date and time", "prompt_settings_saved": "Prompt settings saved", "terminal_settings_saved": "Terminal preferences saved", "terminal_font_size_changed": "Terminal font size: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Palettes",
+        "font_size": "Font and size", "custom_prompt": "Customize local prompt", "prompt_template": "PS1 template", "prompt_color": "Prompt color", "prompt_presets": "Prompt themes", "prompt_datetime": "Date and time", "prompt_datetime_none": "No date/time", "prompt_datetime_time": "Time", "prompt_datetime_time_seconds": "Time with seconds", "prompt_datetime_date": "Date", "prompt_datetime_both": "Date and time", "prompt_settings_saved": "Prompt settings saved", "terminal_settings_saved": "Terminal preferences saved", "terminal_font_size_changed": "Terminal font size: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Palettes",
         "configuration": "Configuration", "connections_file": "Connections file", "export_config": "Export configuration", "import_config": "Import configuration",
         "summary": "{groups} groups · {subgroups} subgroups · {servers} servers",
         "import_asbru": "Import Ásbrú configuration", "clear_config": "Delete all configuration", "configure_terminal": "Configure terminal", "local_terminal": "Local terminal",
@@ -2171,6 +2171,10 @@ class TermiaWindow(Gtk.ApplicationWindow):
                 return
         page.grab_focus()
 
+    def focus_current_terminal_page_later(self, notebook: Gtk.Notebook) -> bool:
+        self.focus_current_terminal_page(notebook)
+        return GLib.SOURCE_REMOVE
+
     def on_toggle_session_status_bars(self, _button: Gtk.Button) -> None:
         visible = not self.store.data.app.show_session_status_bar
         self.store.data.app.show_session_status_bar = visible
@@ -2324,8 +2328,14 @@ class TermiaWindow(Gtk.ApplicationWindow):
         red = max(0, min(round(color.red * 255), 255))
         green = max(0, min(round(color.green * 255), 255))
         blue = max(0, min(round(color.blue * 255), 255))
-        template = settings.prompt_template if settings.prompt_template.strip() else r"\u@\h:\w\$ "
+        template = self.normalized_prompt_template(settings.prompt_template)
         return f"\\[\\033[38;2;{red};{green};{blue}m\\]{template}\\[\\033[0m\\]"
+
+    def normalized_prompt_template(self, template: str) -> str:
+        value = template if template.strip() else r"\u@\h:\w\$ "
+        if value == r"\w \$ ":
+            return r"\u@\h:\w\$ "
+        return value
 
     def build_local_prompt_shell_command(self, bash_path: str) -> list[str]:
         quoted_ps1 = shlex.quote(self.build_prompt_ps1())
@@ -2602,6 +2612,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         page_num = notebook.page_num(page)
         if page_num >= 0:
             notebook.remove_page(page_num)
+            if notebook.get_n_pages() > 0:
+                GLib.idle_add(self.focus_current_terminal_page_later, notebook)
         if session and session.detached_window is not None:
             window = session.detached_window
             session.detached_window = None
@@ -3041,6 +3053,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         prompt_datetime_combo = Gtk.ComboBoxText()
         prompt_datetime_combo.append("none", self.t("prompt_datetime_none"))
         prompt_datetime_combo.append("time", self.t("prompt_datetime_time"))
+        prompt_datetime_combo.append("time_seconds", self.t("prompt_datetime_time_seconds"))
         prompt_datetime_combo.append("date", self.t("prompt_datetime_date"))
         prompt_datetime_combo.append("both", self.t("prompt_datetime_both"))
         prompt_datetime_combo.set_active_id(prompt_datetime_id)
@@ -3248,6 +3261,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         prefixes = [
             ("both", r"[\d \A] "),
             ("date", r"[\d] "),
+            ("time_seconds", r"[\t] "),
             ("time", r"[\A] "),
         ]
         for option_id, prefix in prefixes:
@@ -3256,16 +3270,17 @@ class TermiaWindow(Gtk.ApplicationWindow):
         return "none", template
 
     def prompt_template_with_datetime(self, template: str, option_id: str) -> str:
-        base_template = template if template.strip() else r"\u@\h:\w\$ "
+        base_template = self.normalized_prompt_template(template)
         prefixes = {
             "time": r"[\A] ",
+            "time_seconds": r"[\t] ",
             "date": r"[\d] ",
             "both": r"[\d \A] ",
         }
         return f"{prefixes.get(option_id, '')}{base_template}"
 
     def render_prompt_preview(self, template: str) -> str:
-        text = template if template.strip() else r"\u@\h:\w\$ "
+        text = self.normalized_prompt_template(template)
         replacements = {
             r"\u": "usuario",
             r"\h": "servidor",
