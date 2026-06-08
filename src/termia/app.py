@@ -101,6 +101,7 @@ TRANSLATIONS = {
         "clear_confirm": "¿Quieres eliminar todos los grupos y servidores? Esta acción no se puede deshacer.", "rename_tab": "Renombrar pestaña", "duplicate_tab": "Duplicar pestaña", "detach_tab": "Mover a nueva ventana",
         "expand_all": "Expandir todos los grupos", "collapse_all": "Contraer todos los grupos",
         "help": "Ayuda", "about": "Acerca de", "report_issue": "Informar de un problema",
+        "minimal_mode": "Modo minimalista", "main_menu": "Menú principal",
         "help_title": "Ayuda de Termia",
         "help_content": (
             "Termia es un gestor de conexiones SSH con terminales embebidas.\n\n"
@@ -161,6 +162,7 @@ TRANSLATIONS = {
         "clear_confirm": "Vols eliminar tots els grups i servidors? Aquesta acció no es pot desfer.", "rename_tab": "Canviar el nom de la pestanya", "duplicate_tab": "Duplicar pestanya", "detach_tab": "Moure a una finestra nova",
         "expand_all": "Expandir tots els grups", "collapse_all": "Contraure tots els grups",
         "help": "Ajuda", "about": "Quant a", "report_issue": "Informar d'un problema",
+        "minimal_mode": "Mode minimalista", "main_menu": "Menú principal",
         "help_title": "Ajuda de Termia",
         "help_content": (
             "Termia és un gestor de connexions SSH amb terminals incrustats.\n\n"
@@ -221,6 +223,7 @@ TRANSLATIONS = {
         "clear_confirm": "Delete all groups and servers? This action cannot be undone.", "rename_tab": "Rename tab", "duplicate_tab": "Duplicate tab", "detach_tab": "Move to new window",
         "expand_all": "Expand all groups", "collapse_all": "Collapse all groups",
         "help": "Help", "about": "About", "report_issue": "Report an issue",
+        "minimal_mode": "Minimal mode", "main_menu": "Main menu",
         "help_title": "Termia Help",
         "help_content": (
             "Termia is an SSH connection manager with embedded terminals.\n\n"
@@ -587,6 +590,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.run_keystrokes = 0
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
+        self.compact_mode = False
+        self.compact_sidebar_visible = True
         self.connect("close-request", self.on_main_window_close_request)
 
         self.toast_label = Gtk.Label()
@@ -650,6 +655,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             b".termia-tree-item { border-radius: 4px; } "
             b".termia-server-item { padding-top: 2px; padding-bottom: 2px; } "
             b".prompt-preset-button { padding: 1px 6px; min-height: 24px; } "
+            b"notebook > header { background: @headerbar_bg_color; border-color: @borders; } "
             b"notebook tab { padding: 0; margin: 0; } "
             b".termia-tab-label { padding: 0 1px; margin: 0 -1px 0 0; border-radius: 3px; "
             b"border-left: 1px solid @borders; border-right: 1px solid @borders; "
@@ -685,39 +691,57 @@ class TermiaWindow(Gtk.ApplicationWindow):
         toggle_sidebar.connect("clicked", self.on_toggle_sidebar)
         header.pack_start(toggle_sidebar)
 
-        toggle_status_bars = Gtk.Button(icon_name="view-fullscreen-symbolic")
-        self.toggle_status_bars_button = toggle_status_bars
-        toggle_status_bars.set_tooltip_text(self.t("toggle_session_status_bars"))
-        toggle_status_bars.connect("clicked", self.on_toggle_session_status_bars)
-        header.pack_start(toggle_status_bars)
-        self.update_session_status_bars_button_icon()
+        compact_btn = Gtk.ToggleButton()
+        self.compact_mode_button = compact_btn
+        compact_btn.set_tooltip_text(self.t("minimal_mode"))
+        compact_btn.set_child(Gtk.Image.new_from_icon_name("view-grid-symbolic"))
+        compact_btn.connect("toggled", self.on_toggle_compact_mode)
+        header.pack_start(compact_btn)
+        self.update_compact_mode_button_icon()
 
-        local_terminal_btn = Gtk.Button(label=self.t("local_terminal"))
-        local_terminal_btn.connect("clicked", self.on_open_local_terminal)
-        header.pack_start(local_terminal_btn)
+        normal_local_terminal = Gtk.Button(label=self.t("local_terminal"))
+        normal_local_terminal.connect("clicked", self.on_open_local_terminal)
+        header.pack_start(normal_local_terminal)
 
-        config_btn = Gtk.MenuButton(label=self.t("configuration"))
-        config_btn.set_popover(self.build_configuration_menu())
-        header.pack_start(config_btn)
+        normal_config = Gtk.MenuButton(label=self.t("configuration"))
+        normal_config.set_popover(self.build_configuration_menu())
+        header.pack_start(normal_config)
 
-        stats_btn = Gtk.Button(label=self.t("statistics"))
-        stats_btn.connect("clicked", self.on_statistics_dashboard)
-        header.pack_start(stats_btn)
+        normal_statistics = Gtk.Button(label=self.t("statistics"))
+        normal_statistics.connect("clicked", self.on_statistics_dashboard)
+        header.pack_start(normal_statistics)
 
-        help_btn = Gtk.Button(label=self.t("help"))
-        help_btn.connect("clicked", self.on_help)
-        header.pack_start(help_btn)
+        normal_help = Gtk.Button(label=self.t("help"))
+        normal_help.connect("clicked", self.on_help)
+        header.pack_start(normal_help)
 
-        about_btn = Gtk.Button()
-        about_btn.set_tooltip_text(self.t("about"))
+        normal_about = Gtk.Button()
+        normal_about.set_tooltip_text(self.t("about"))
         if (APP_DIR / "assets" / "termia.svg").exists():
             about_image = Gtk.Image.new_from_file(str(APP_DIR / "assets" / "termia.svg"))
             about_image.set_pixel_size(24)
-            about_btn.set_child(about_image)
+            normal_about.set_child(about_image)
         else:
-            about_btn.set_label(self.t("about"))
-        about_btn.connect("clicked", self.on_about)
-        header.pack_start(about_btn)
+            normal_about.set_label(self.t("about"))
+        normal_about.connect("clicked", self.on_about)
+        header.pack_start(normal_about)
+
+        compact_local_terminal = Gtk.Button(icon_name="list-add-symbolic")
+        compact_local_terminal.set_tooltip_text(self.t("local_terminal"))
+        compact_local_terminal.connect("clicked", self.on_open_local_terminal)
+        header.pack_start(compact_local_terminal)
+
+        compact_menu = Gtk.MenuButton()
+        compact_menu.set_tooltip_text(self.t("main_menu"))
+        compact_menu.set_popover(self.build_main_menu())
+        compact_menu.set_child(Gtk.Image.new_from_icon_name("open-menu-symbolic"))
+        header.pack_start(compact_menu)
+
+        self.normal_header_buttons = [
+            normal_local_terminal, normal_config, normal_statistics, normal_help, normal_about,
+        ]
+        self.compact_header_buttons = [compact_local_terminal, compact_menu]
+        self.update_header_compact_controls()
 
         body = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         body.set_position(280)
@@ -994,11 +1018,102 @@ class TermiaWindow(Gtk.ApplicationWindow):
         popover.set_child(menu)
         return popover
 
+    def build_main_menu(self) -> Gtk.Popover:
+        popover = Gtk.Popover()
+        popover.set_child(self.build_main_menu_content(popover))
+        return popover
+
+    def build_main_menu_content(self, popover: Gtk.Popover) -> Gtk.Widget:
+        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        menu.set_margin_top(6)
+        menu.set_margin_bottom(6)
+        menu.set_margin_start(6)
+        menu.set_margin_end(6)
+
+        general = Gtk.Button(label=self.t("general"))
+        general.set_halign(Gtk.Align.FILL)
+        general.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_app_preferences))
+        menu.append(general)
+
+        terminal = Gtk.Button(label=self.t("terminal"))
+        terminal.set_halign(Gtk.Align.FILL)
+        terminal.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_terminal_settings))
+        menu.append(terminal)
+
+        prompt = Gtk.Button(label=self.t("prompt"))
+        prompt.set_halign(Gtk.Align.FILL)
+        prompt.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_prompt_settings))
+        menu.append(prompt)
+
+        connections_file = Gtk.Button(label=self.t("connections_file"))
+        connections_file.set_halign(Gtk.Align.FILL)
+        connections_file.connect("clicked", lambda _button: popover.set_child(self.build_main_connections_menu(popover)))
+        menu.append(connections_file)
+
+        statistics = Gtk.Button(label=self.t("statistics"))
+        statistics.set_halign(Gtk.Align.FILL)
+        statistics.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_statistics_dashboard))
+        menu.append(statistics)
+
+        help_btn = Gtk.Button(label=self.t("help"))
+        help_btn.set_halign(Gtk.Align.FILL)
+        help_btn.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_help))
+        menu.append(help_btn)
+
+        about_btn = Gtk.Button(label=self.t("about"))
+        about_btn.set_halign(Gtk.Align.FILL)
+        about_btn.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_about))
+        menu.append(about_btn)
+        return menu
+
+    def build_main_connections_menu(self, popover: Gtk.Popover) -> Gtk.Widget:
+        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        menu.set_margin_top(6)
+        menu.set_margin_bottom(6)
+        menu.set_margin_start(6)
+        menu.set_margin_end(6)
+
+        back = Gtk.Button(label=self.t("main_menu"))
+        back.set_halign(Gtk.Align.FILL)
+        back.connect("clicked", lambda _button: popover.set_child(self.build_main_menu_content(popover)))
+        menu.append(back)
+
+        export_config = Gtk.Button(label=self.t("export_config"))
+        export_config.set_halign(Gtk.Align.FILL)
+        export_config.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_export_config))
+        menu.append(export_config)
+
+        import_config = Gtk.Button(label=self.t("import_config"))
+        import_config.set_halign(Gtk.Align.FILL)
+        import_config.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_import_config))
+        menu.append(import_config)
+
+        import_asbru = Gtk.Button(label=self.t("import_asbru"))
+        import_asbru.set_halign(Gtk.Align.FILL)
+        import_asbru.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_import_asbru_config))
+        menu.append(import_asbru)
+
+        clear_config = Gtk.Button(label=self.t("clear_config"))
+        clear_config.set_halign(Gtk.Align.FILL)
+        clear_config.add_css_class("destructive-action")
+        clear_config.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_request_clear_config))
+        menu.append(clear_config)
+        return menu
+
     def run_after_popover_closed(self, popover: Gtk.Popover, callback: Any) -> None:
         popover.popdown()
 
         def run_callback() -> bool:
             callback(None)
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(run_callback)
+
+    def run_action_after_popover_closed(self, popover: Gtk.Popover, callback: Any) -> None:
+        popover.popdown()
+
+        def run_callback() -> bool:
+            callback()
             return GLib.SOURCE_REMOVE
 
         GLib.idle_add(run_callback)
@@ -1801,7 +1916,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         disconnect_button.add_css_class("destructive-action")
         disconnect_button.add_css_class("termia-disconnect-button")
         disconnect_button.set_size_request(-1, 18)
-        toolbar.set_visible(self.store.data.app.show_session_status_bar)
+        toolbar.set_visible(self.should_show_session_status_bar())
         toolbar.append(status_label)
         toolbar.append(focus_button)
         toolbar.append(Gtk.Box(hexpand=True))
@@ -1895,7 +2010,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         disconnect_button.add_css_class("destructive-action")
         disconnect_button.add_css_class("termia-disconnect-button")
         disconnect_button.set_size_request(-1, 18)
-        toolbar.set_visible(self.store.data.app.show_session_status_bar)
+        toolbar.set_visible(self.should_show_session_status_bar())
 
         toolbar.append(status_label)
         toolbar.append(focus_button)
@@ -2176,24 +2291,41 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.focus_current_terminal_page(notebook)
         return GLib.SOURCE_REMOVE
 
-    def on_toggle_session_status_bars(self, _button: Gtk.Button) -> None:
-        visible = not self.store.data.app.show_session_status_bar
-        self.store.data.app.show_session_status_bar = visible
-        self.store.save()
-        self.apply_session_status_bar_visibility_to_open_tabs()
-        self.set_sidebar_visible(visible)
-        self.update_session_status_bars_button_icon()
+    def should_show_session_status_bar(self) -> bool:
+        return self.store.data.app.show_session_status_bar and not self.compact_mode
 
-    def update_session_status_bars_button_icon(self) -> None:
-        icon_name = "view-fullscreen-symbolic" if self.store.data.app.show_session_status_bar else "view-restore-symbolic"
-        self.toggle_status_bars_button.set_icon_name(icon_name)
+    def update_compact_mode_button_icon(self) -> None:
+        child = self.compact_mode_button.get_child()
+        if isinstance(child, Gtk.Image):
+            child.set_from_icon_name("view-grid-symbolic")
+
+    def update_header_compact_controls(self) -> None:
+        self.toggle_sidebar_button.set_visible(True)
+        for button in self.normal_header_buttons:
+            button.set_visible(not self.compact_mode)
+        for button in self.compact_header_buttons:
+            button.set_visible(self.compact_mode)
+
+    def on_toggle_compact_mode(self, button: Gtk.ToggleButton) -> None:
+        self.set_compact_mode(button.get_active())
+
+    def set_compact_mode(self, enabled: bool) -> None:
+        if enabled == self.compact_mode:
+            return
+        if enabled:
+            self.compact_sidebar_visible = self.sidebar_visible
+        self.compact_mode = enabled
+        self.update_compact_mode_button_icon()
+        self.update_header_compact_controls()
+        self.set_sidebar_visible(False if enabled else self.compact_sidebar_visible)
+        self.apply_session_status_bar_visibility_to_open_tabs()
 
     def on_hide_session_status_bar(self, _button: Gtk.Button, session: TerminalSession) -> None:
         session.status_bar.set_visible(False)
         session.terminal.grab_focus()
 
     def apply_session_status_bar_visibility_to_open_tabs(self) -> None:
-        visible = self.store.data.app.show_session_status_bar
+        visible = self.should_show_session_status_bar()
         for session in self.open_tabs.values():
             session.status_bar.set_visible(visible)
 
@@ -2307,6 +2439,12 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
     def configure_notebook_tab(self, notebook: Gtk.Notebook, page: Gtk.Widget) -> None:
         notebook.set_tab_reorderable(page, True)
+        notebook_page = notebook.get_page(page)
+        notebook_page.set_property("tab-expand", True)
+        notebook_page.set_property("tab-fill", True)
+        tab_label = notebook.get_tab_label(page)
+        if tab_label is not None:
+            tab_label.set_hexpand(True)
 
     def build_terminal_environment(self, password: str = "") -> list[str]:
         env = dict(os.environ)
@@ -2375,14 +2513,16 @@ class TermiaWindow(Gtk.ApplicationWindow):
     def build_tab_label(self, title: str, session_id: str, page: Gtk.Widget) -> Gtk.Widget:
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         box.add_css_class("termia-tab-label")
+        box.set_hexpand(True)
         box.set_margin_start(0)
         box.set_margin_end(0)
         label = Gtk.Label(label=title)
         label.add_css_class("termia-tab-title")
+        label.set_hexpand(True)
         label.set_single_line_mode(True)
         label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_width_chars(min(max(len(title), 8), 20))
-        label.set_max_width_chars(20)
+        label.set_width_chars(1)
+        label.set_max_width_chars(32)
         label.set_tooltip_text(title)
         label.set_margin_start(2)
         label.set_margin_end(1)
@@ -2926,7 +3066,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
             )
             self.apply_app_theme()
             self.apply_session_status_bar_visibility_to_open_tabs()
-            self.update_session_status_bars_button_icon()
             if previous_language != self.store.data.app.language:
                 self.toast_label.set_label(self.t("restart_language"))
         dialog.destroy()
