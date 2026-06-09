@@ -12,7 +12,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Desar servidors amb nom, host o IP, usuari, port, contrasenya i ruta de clau
   privada.
 - Filtrar servidors i obrir diverses sessions al mateix host en pestanyes.
-- Usar pestanyes compactes, reordenar-les arrossegant-les i moure una pestanya a una finestra independent.
+- Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
 - Obrir terminals locals incrustats.
 - Desar estadístiques locals agregades de connexions, ordres, pulsacions, durada i ús per servidor.
 - Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
@@ -33,7 +33,7 @@ El menú `Configuració` es divideix en `General`, `Terminal` i `Prompt`:
 - `Terminal` controla el tipus de lletra, mida, colors i paletes del terminal VTE incrustat.
 - `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. No altera ordres SSH ni modifica fitxers d'inici remots.
 
-Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. El botó de la capçalera al costat de la icona de la barra lateral amaga o mostra juntes totes les barres d'estat i la barra de servidors. Si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`.
+Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera.
 
 ## Entorn provat
 
@@ -62,7 +62,7 @@ Si la comprovació indica que falten dependències, instal·la-les amb:
 ./scripts/install_dependencies.sh
 ```
 
-L'instal·lador verifica el resultat després d'instal·lar. També pots repetir la
+L'instal·lador verifica el resultat després d'instal·lar. També intenta instal·lar JetBrains Mono per al tipus de lletra per defecte del terminal; si no està disponible, Termia usa Ubuntu Mono o Monospace com a fallback. Pots repetir la
 comprovació en qualsevol moment:
 
 ```bash

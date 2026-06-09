@@ -12,7 +12,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Store SSH hosts with a display name, host name or IP, user, port, password,
   and private key path.
 - Filter servers and open multiple tabbed sessions to the same host.
-- Use compact, reorderable tabs and move a tab to a separate window.
+- Use embedded, width-sharing tabs and move a tab to a separate window.
 - Open embedded local terminal tabs.
 - Track aggregate connection, command, keystroke, session-duration, and per-server usage statistics locally.
 - Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
@@ -33,7 +33,7 @@ The `Configuration` menu is split into `General`, `Terminal`, and `Prompt`:
 - `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, and color palettes.
 - `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. It does not alter SSH commands or modify remote shell startup files.
 
-Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. The header button next to the sidebar toggle hides or shows all session status bars and the server sidebar together. If a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it.
+Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle.
 
 ## Tested environment
 
@@ -93,7 +93,9 @@ at any time:
 ```
 
 The dependency installer supports Debian, Ubuntu, Linux Mint, Fedora, and Arch Linux
-package managers. Other Linux distributions require equivalent packages.
+package managers. It also tries to install JetBrains Mono for the default terminal
+font; if unavailable, Termia falls back to Ubuntu Mono or Monospace at runtime.
+Other Linux distributions require equivalent packages.
 
 If the check reports a missing `Vte 3.91` namespace, the GTK 4 VTE introspection
 package is missing. On Debian, Ubuntu, or Linux Mint the package is

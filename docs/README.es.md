@@ -12,7 +12,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Guardar servidores con nombre, host o IP, usuario, puerto, contraseña y ruta de
   clave privada.
 - Filtrar servidores y abrir varias sesiones al mismo host en pestañas.
-- Usar pestañas compactas, reordenarlas arrastrándolas y mover una pestaña a una ventana independiente.
+- Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
 - Abrir terminales locales embebidas.
 - Guardar estadísticas locales agregadas de conexiones, comandos, pulsaciones, duración y uso por servidor.
 - Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
@@ -33,7 +33,7 @@ El menú `Configuración` se divide en `General`, `Terminal` y `Prompt`:
 - `Terminal` controla la fuente, tamaño, colores y paletas del terminal VTE embebido.
 - `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. No altera comandos SSH ni modifica ficheros de inicio remotos.
 
-Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. El botón de la cabecera junto al icono de la barra lateral oculta o muestra juntas todas las barras de estado y la barra de servidores. Si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`.
+Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera.
 
 ## Entorno probado
 
@@ -62,7 +62,7 @@ Si la comprobación indica que faltan dependencias, instálalas con:
 ./scripts/install_dependencies.sh
 ```
 
-El instalador verifica el resultado después de instalar. También puedes repetir la
+El instalador verifica el resultado después de instalar. También intenta instalar JetBrains Mono para la fuente por defecto del terminal; si no está disponible, Termia usa Ubuntu Mono o Monospace como fallback. Puedes repetir la
 comprobación en cualquier momento:
 
 ```bash

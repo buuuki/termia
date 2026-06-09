@@ -8,6 +8,7 @@ import signal
 import shlex
 import subprocess
 import time
+from urllib.parse import unquote, urlparse
 
 import yaml
 from dataclasses import asdict, dataclass, field
@@ -29,11 +30,12 @@ APP_DIR = Path(__file__).resolve().parent
 DATA_FILE = Path(GLib.get_user_config_dir()) / "termia" / "connections.json"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state")))
 STATISTICS_FILE = STATE_DIR / "termia" / "statistics.json"
-ABOUT_IMAGE = APP_DIR / "assets" / "termia-about-256.png"
+ABOUT_IMAGE = APP_DIR / "assets" / "termia.svg"
 ISSUES_URL = "https://github.com/buuuki/termia/issues"
 
 DEFAULT_LS_COLORS = 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:'
-DEFAULT_ANSI_PALETTE = ['#2e3436', '#cc0000', '#4e9a06', '#c4a000', '#3465a4', '#75507b', '#06989a', '#d3d7cf', '#555753', '#ef2929', '#8ae234', '#fce94f', '#729fcf', '#ad7fa8', '#34e2e2', '#eeeeec']
+LEGACY_ANSI_PALETTE = ['#2e3436', '#cc0000', '#4e9a06', '#c4a000', '#3465a4', '#75507b', '#06989a', '#d3d7cf', '#555753', '#ef2929', '#8ae234', '#fce94f', '#729fcf', '#ad7fa8', '#34e2e2', '#eeeeec']
+DEFAULT_ANSI_PALETTE = ['#2e3436', '#b45d58', '#6f8f5f', '#aa8750', '#5f7f9f', '#8a6f8f', '#5f9292', '#c9c9c9', '#646b70', '#cf6f68', '#8fbf77', '#d2b45f', '#82a8c9', '#aa8aaa', '#83c4c4', '#eeeeec']
 TERMINAL_PALETTES = {
     "Ubuntu": ("#eeeeec", "#300a24"),
     "Polaris": ("#d8dee9", "#1f2430"),
@@ -83,33 +85,35 @@ TRANSLATIONS = {
         "group_deleted": "Grupo eliminado: {name}",
         "theme": "Tema", "language": "Idioma", "restart_language": "El idioma se aplicará al reiniciar la aplicación.",
         "close_tab": "Cerrar pestaña", "disconnect": "Desconectar", "connecting": "Conectando",
+        "close_session_title": "Cerrar sesión", "close_ssh_session_confirm": "¿Quieres cerrar esta sesión SSH? La conexión se desconectará.", "close_local_session_confirm": "¿Quieres cerrar este terminal local? El proceso en ejecución se finalizará.",
         "close_tab_on_disconnect": "Cerrar la pestaña al desconectar una sesión",
-        "show_session_status_bar": "Mostrar barra de estado de la sesión", "toggle_session_status_bars": "Mostrar u ocultar barras de estado y servidores", "hide_status_bar": "Ocultar",
-        "confirm_disconnect": "Confirmar para desconectar", "confirm_close_app": "Confirmar para cerrar Termia",
+        "show_session_status_bar": "Mostrar barra de estado de la sesión", "hide_status_bar": "Ocultar",
+        "confirm_disconnect": "Confirmar antes de desconectar o cerrar una sesión activa", "confirm_close_app": "Confirmar para cerrar Termia",
         "sudo_password_shortcut": "Enviar contraseña con Super+Shift+P",
         "sudo_password_enter": "Enviar contraseña y pulsar Enter",
         "sudo_password_sent": "Contraseña guardada enviada a la terminal",
         "sudo_password_unavailable": "Esta terminal no tiene una contraseña guardada",
         "close_app": "Cerrar Termia", "close_app_confirm": "¿Quieres cerrar Termia?",
         "font_size": "Fuente y tamaño", "custom_prompt": "Personalizar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temas de prompt", "prompt_datetime": "Fecha y hora", "prompt_datetime_none": "Sin fecha/hora", "prompt_datetime_time": "Hora", "prompt_datetime_time_seconds": "Hora y segundos", "prompt_datetime_date": "Fecha", "prompt_datetime_both": "Fecha y hora", "prompt_settings_saved": "Configuración de prompt guardada", "terminal_settings_saved": "Preferencias de terminal guardadas", "terminal_font_size_changed": "Tamaño de fuente del terminal: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Paletas",
-        "configuration": "Configuración", "connections_file": "Fichero de conexiones", "export_config": "Exportar configuración", "import_config": "Importar configuración",
+        "configuration": "Configuración", "connections_file": "Importar/Exportar", "export_config": "Exportar configuración", "import_config": "Importar configuración",
         "summary": "{groups} grupos · {subgroups} subgrupos · {servers} servidores",
-        "import_asbru": "Importar configuración de Ásbrú", "clear_config": "Eliminar toda la configuración", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local",
+        "import_asbru": "Importar configuración de Ásbrú", "clear_config": "Eliminar toda la configuración", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local", "new_tab": "Nueva pestaña",
         "statistics": "Estadísticas", "statistics_title": "Estadísticas", "top_servers": "Servidores más usados", "no_statistics": "Sin estadísticas todavía", "sessions": "Sesiones", "duration": "Duración", "connections": "Conexiones", "commands": "Comandos", "keystrokes": "Pulsaciones",
         "global": "Global", "current_run": "Ejecución actual", "shortest_duration": "Duración más corta", "longest_duration": "Duración más larga", "average_duration": "Duración media",
         "copy": "Copiar", "paste": "Pegar", "session_statistics": "Estadísticas de la sesión", "server_connections": "Conexiones globales a este servidor",
         "clear_confirm": "¿Quieres eliminar todos los grupos y servidores? Esta acción no se puede deshacer.", "rename_tab": "Renombrar pestaña", "duplicate_tab": "Duplicar pestaña", "detach_tab": "Mover a nueva ventana",
         "expand_all": "Expandir todos los grupos", "collapse_all": "Contraer todos los grupos",
         "help": "Ayuda", "about": "Acerca de", "report_issue": "Informar de un problema",
+        "main_menu": "Menú principal",
         "help_title": "Ayuda de Termia",
         "help_content": (
             "Termia es un gestor de conexiones SSH con terminales embebidas.\n\n"
             "Características principales:\n"
             "- Organiza servidores en grupos y subgrupos.\n"
             "- Crea, edita, elimina, clona y filtra conexiones SSH.\n"
-            "- Abre conexiones y terminales locales en pestañas compactas, reordenables y desacoplables.\n"
+            "- Abre conexiones y terminales locales en pestañas embebidas, compactas y desacoplables.\n"
             "- Muestra un dashboard de estadísticas con métricas globales, duración y servidores más usados, además de estadísticas por sesión.\n"
-            "- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede ocultarse por sesión o globalmente.\n"
+            "- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede mostrarse desde General, ocultarse por sesión y restaurarse desde el menú contextual.\n"
             "- Permite enviar opcionalmente la contraseña guardada con Super+Shift+P.\n"
             "- Configura por separado opciones generales, terminal VTE y prompt PS1.\n"
             "- El prompt local permite color, temas predefinidos, hora, fecha y previsualización sin modificar sesiones remotas.\n"
@@ -143,33 +147,35 @@ TRANSLATIONS = {
         "group_deleted": "Grup eliminat: {name}",
         "theme": "Tema", "language": "Idioma", "restart_language": "L'idioma s'aplicarà en reiniciar l'aplicació.",
         "close_tab": "Tancar pestanya", "disconnect": "Desconnectar", "connecting": "Connectant",
+        "close_session_title": "Tancar sessió", "close_ssh_session_confirm": "Vols tancar aquesta sessió SSH? La connexió es desconnectarà.", "close_local_session_confirm": "Vols tancar aquest terminal local? El procés en execució es finalitzarà.",
         "close_tab_on_disconnect": "Tancar la pestanya en desconnectar una sessió",
-        "show_session_status_bar": "Mostrar barra d'estat de la sessió", "toggle_session_status_bars": "Mostrar o amagar barres d'estat i servidors", "hide_status_bar": "Amagar",
-        "confirm_disconnect": "Confirmar per desconnectar", "confirm_close_app": "Confirmar per tancar Termia",
+        "show_session_status_bar": "Mostrar barra d'estat de la sessió", "hide_status_bar": "Amagar",
+        "confirm_disconnect": "Confirmar abans de desconnectar o tancar una sessió activa", "confirm_close_app": "Confirmar per tancar Termia",
         "sudo_password_shortcut": "Enviar contrasenya amb Super+Shift+P",
         "sudo_password_enter": "Enviar contrasenya i prémer Enter",
         "sudo_password_sent": "Contrasenya desada enviada al terminal",
         "sudo_password_unavailable": "Aquest terminal no té cap contrasenya desada",
         "close_app": "Tancar Termia", "close_app_confirm": "Vols tancar Termia?",
         "font_size": "Tipus de lletra i mida", "custom_prompt": "Personalitzar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temes de prompt", "prompt_datetime": "Data i hora", "prompt_datetime_none": "Sense data/hora", "prompt_datetime_time": "Hora", "prompt_datetime_time_seconds": "Hora i segons", "prompt_datetime_date": "Data", "prompt_datetime_both": "Data i hora", "prompt_settings_saved": "Configuració del prompt desada", "terminal_settings_saved": "Preferències del terminal desades", "terminal_font_size_changed": "Mida de la lletra del terminal: {size}", "foreground": "Primer pla", "background": "Fons", "palettes": "Paletes",
-        "configuration": "Configuració", "connections_file": "Fitxer de connexions", "export_config": "Exportar configuració", "import_config": "Importar configuració",
+        "configuration": "Configuració", "connections_file": "Importar/Exportar", "export_config": "Exportar configuració", "import_config": "Importar configuració",
         "summary": "{groups} grups · {subgroups} subgrups · {servers} servidors",
-        "import_asbru": "Importar configuració d'Ásbrú", "clear_config": "Eliminar tota la configuració", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local",
+        "import_asbru": "Importar configuració d'Ásbrú", "clear_config": "Eliminar tota la configuració", "configure_terminal": "Configurar terminal", "local_terminal": "Terminal local", "new_tab": "Pestanya nova",
         "statistics": "Estadístiques", "statistics_title": "Estadístiques", "top_servers": "Servidors més usats", "no_statistics": "Encara no hi ha estadístiques", "sessions": "Sessions", "duration": "Durada", "connections": "Connexions", "commands": "Ordres", "keystrokes": "Pulsacions",
         "global": "Global", "current_run": "Execució actual", "shortest_duration": "Durada més curta", "longest_duration": "Durada més llarga", "average_duration": "Durada mitjana",
         "copy": "Copiar", "paste": "Enganxar", "session_statistics": "Estadístiques de la sessió", "server_connections": "Connexions globals a aquest servidor",
         "clear_confirm": "Vols eliminar tots els grups i servidors? Aquesta acció no es pot desfer.", "rename_tab": "Canviar el nom de la pestanya", "duplicate_tab": "Duplicar pestanya", "detach_tab": "Moure a una finestra nova",
         "expand_all": "Expandir tots els grups", "collapse_all": "Contraure tots els grups",
         "help": "Ajuda", "about": "Quant a", "report_issue": "Informar d'un problema",
+        "main_menu": "Menú principal",
         "help_title": "Ajuda de Termia",
         "help_content": (
             "Termia és un gestor de connexions SSH amb terminals incrustats.\n\n"
             "Característiques principals:\n"
             "- Organitza servidors en grups i subgrups.\n"
             "- Crea, edita, elimina, clona i filtra connexions SSH.\n"
-            "- Obre connexions i terminals locals en pestanyes compactes, reordenables i desacoblables.\n"
+            "- Obre connexions i terminals locals en pestanyes incrustades, compactes i desacoblables.\n"
             "- Mostra un dashboard d'estadístiques amb mètriques globals, durada i servidors més usats, a més d'estadístiques per sessió.\n"
-            "- La barra d'estat de sessió mostra estat, PID, temps i desconnexió; es pot amagar per sessió o globalment.\n"
+            "- La barra d'estat de sessió mostra estat, PID, temps i desconnexió; es pot mostrar des de General, amagar per sessió i restaurar des del menú contextual.\n"
             "- Permet enviar opcionalment la contrasenya desada amb Super+Shift+P.\n"
             "- Configura per separat opcions generals, terminal VTE i prompt PS1.\n"
             "- El prompt local permet color, temes predefinits, hora, data i previsualització sense modificar sessions remotes.\n"
@@ -203,33 +209,35 @@ TRANSLATIONS = {
         "group_deleted": "Group deleted: {name}",
         "theme": "Theme", "language": "Language", "restart_language": "The language will apply after restarting the application.",
         "close_tab": "Close tab", "disconnect": "Disconnect", "connecting": "Connecting",
+        "close_session_title": "Close session", "close_ssh_session_confirm": "Do you want to close this SSH session? The connection will be disconnected.", "close_local_session_confirm": "Do you want to close this local terminal? The running process will be terminated.",
         "close_tab_on_disconnect": "Close the tab when disconnecting a session",
-        "show_session_status_bar": "Show session status bar", "toggle_session_status_bars": "Show or hide status bars and servers", "hide_status_bar": "Hide",
-        "confirm_disconnect": "Confirm before disconnecting", "confirm_close_app": "Confirm before closing Termia",
+        "show_session_status_bar": "Show session status bar", "hide_status_bar": "Hide",
+        "confirm_disconnect": "Confirm before disconnecting or closing an active session", "confirm_close_app": "Confirm before closing Termia",
         "sudo_password_shortcut": "Send password with Super+Shift+P",
         "sudo_password_enter": "Send password and press Enter",
         "sudo_password_sent": "Saved password sent to the terminal",
         "sudo_password_unavailable": "This terminal does not have a saved password",
         "close_app": "Close Termia", "close_app_confirm": "Do you want to close Termia?",
         "font_size": "Font and size", "custom_prompt": "Customize local prompt", "prompt_template": "PS1 template", "prompt_color": "Prompt color", "prompt_presets": "Prompt themes", "prompt_datetime": "Date and time", "prompt_datetime_none": "No date/time", "prompt_datetime_time": "Time", "prompt_datetime_time_seconds": "Time with seconds", "prompt_datetime_date": "Date", "prompt_datetime_both": "Date and time", "prompt_settings_saved": "Prompt settings saved", "terminal_settings_saved": "Terminal preferences saved", "terminal_font_size_changed": "Terminal font size: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Palettes",
-        "configuration": "Configuration", "connections_file": "Connections file", "export_config": "Export configuration", "import_config": "Import configuration",
+        "configuration": "Configuration", "connections_file": "Import/Export", "export_config": "Export configuration", "import_config": "Import configuration",
         "summary": "{groups} groups · {subgroups} subgroups · {servers} servers",
-        "import_asbru": "Import Ásbrú configuration", "clear_config": "Delete all configuration", "configure_terminal": "Configure terminal", "local_terminal": "Local terminal",
+        "import_asbru": "Import Ásbrú configuration", "clear_config": "Delete all configuration", "configure_terminal": "Configure terminal", "local_terminal": "Local terminal", "new_tab": "New tab",
         "statistics": "Statistics", "statistics_title": "Statistics", "top_servers": "Most used servers", "no_statistics": "No statistics yet", "sessions": "Sessions", "duration": "Duration", "connections": "Connections", "commands": "Commands", "keystrokes": "Keystrokes",
         "global": "Global", "current_run": "Current run", "shortest_duration": "Shortest duration", "longest_duration": "Longest duration", "average_duration": "Average duration",
         "copy": "Copy", "paste": "Paste", "session_statistics": "Session statistics", "server_connections": "Global connections to this server",
         "clear_confirm": "Delete all groups and servers? This action cannot be undone.", "rename_tab": "Rename tab", "duplicate_tab": "Duplicate tab", "detach_tab": "Move to new window",
         "expand_all": "Expand all groups", "collapse_all": "Collapse all groups",
         "help": "Help", "about": "About", "report_issue": "Report an issue",
+        "main_menu": "Main menu",
         "help_title": "Termia Help",
         "help_content": (
             "Termia is an SSH connection manager with embedded terminals.\n\n"
             "Main features:\n"
             "- Organize servers into groups and subgroups.\n"
             "- Create, edit, delete, clone and filter SSH connections.\n"
-            "- Open connections and local terminals in compact, reorderable and detachable tabs.\n"
+            "- Open connections and local terminals in embedded, compact and detachable tabs.\n"
             "- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
-            "- The session status bar shows status, PID, duration and disconnect controls; it can be hidden per session or globally.\n"
+            "- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
             "- Optionally send the saved password with Super+Shift+P.\n"
             "- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
             "- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
@@ -272,10 +280,10 @@ class Group:
 
 @dataclass
 class TerminalSettings:
-    font_family: str = "Ubuntu Mono"
+    font_family: str = "JetBrains Mono"
     font_size: int = 13
-    foreground: str = "#839496"
-    background: str = "#002b36"
+    foreground: str = "#eeeeec"
+    background: str = "#2e3436"
     ls_colors: str = DEFAULT_LS_COLORS
     ansi_palette: list[str] = field(default_factory=lambda: DEFAULT_ANSI_PALETTE.copy())
     prompt_enabled: bool = False
@@ -285,7 +293,7 @@ class TerminalSettings:
 
 @dataclass
 class AppSettings:
-    theme: str = "system"
+    theme: str = "dark"
     language: str = field(default_factory=detect_system_language)
     close_tab_on_disconnect: bool = False
     close_tab_on_ssh_exit: bool = False
@@ -352,14 +360,31 @@ class ConnectionStore:
         if legacy_statistics and not self.statistics_store.path.exists():
             self.statistics_store.data = StatisticsSettings(**legacy_statistics)
             self.statistics_store.save()
+        app_payload = payload.get("app", {})
+        app_fields = AppSettings.__dataclass_fields__
+        terminal = TerminalSettings(**payload.get("terminal", {}))
+        repaired = False
+        if (
+            terminal.font_family == "Ubuntu Mono"
+            and terminal.font_size == 13
+            and terminal.foreground == "#839496"
+            and terminal.background == "#002b36"
+        ):
+            terminal.font_family = "JetBrains Mono"
+            terminal.foreground = "#eeeeec"
+            terminal.background = "#2e3436"
+            repaired = True
+        if terminal.ansi_palette == LEGACY_ANSI_PALETTE:
+            terminal.ansi_palette = DEFAULT_ANSI_PALETTE.copy()
+            repaired = True
         self.data = StoreData(
             groups=[Group(**item) for item in payload.get("groups", [])],
             servers=[Server(**item) for item in payload.get("servers", [])],
-            terminal=TerminalSettings(**payload.get("terminal", {})),
-            app=AppSettings(**payload.get("app", {})),
+            terminal=terminal,
+            app=AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}),
             statistics=self.statistics_store.data,
         )
-        repaired = self.repair_references()
+        repaired = self.repair_references() or repaired
         if "statistics" in payload or repaired:
             self.save()
 
@@ -554,7 +579,8 @@ class TerminalSession:
     disconnect_button: Gtk.Button
     status_bar: Gtk.Widget
     started_at: float
-    notebook: Gtk.Notebook | None = None
+    title_locked: bool = False
+    last_directory_title: str = ""
     detached_window: Gtk.Window | None = None
     timeout_id: int | None = None
     child_pid: int | None = None
@@ -645,17 +671,33 @@ class TermiaWindow(Gtk.ApplicationWindow):
         display = Gdk.Display.get_default()
         if display is None:
             return
+        gtk_settings = Gtk.Settings.get_default()
+        prefer_dark = bool(
+            gtk_settings.get_property("gtk-application-prefer-dark-theme")
+        ) if gtk_settings is not None else False
+        menu_bg = b"#3a3a3a" if self.store.data.app.theme == "dark" or prefer_dark else b"#f6f6f6"
         provider = Gtk.CssProvider()
         provider.load_from_data(
+            b"@define-color termia_menu_bg " + menu_bg + b"; "
             b".termia-tree-item { border-radius: 4px; } "
             b".termia-server-item { padding-top: 2px; padding-bottom: 2px; } "
             b".prompt-preset-button { padding: 1px 6px; min-height: 24px; } "
-            b"notebook tab { padding: 0; margin: 0; } "
-            b".termia-tab-label { padding: 0 1px; margin: 0 -1px 0 0; border-radius: 3px; "
-            b"border-left: 1px solid @borders; border-right: 1px solid @borders; "
-            b"background: transparent; } "
-            b".termia-tab-title { font-size: 0.92em; } "
-            b".termia-tab-close { padding: 0; min-width: 14px; min-height: 14px; } "
+            b"headerbar { background: @headerbar_backdrop_color; border-bottom-width: 0; box-shadow: none; } "
+            b"headerbar:backdrop { background: @headerbar_backdrop_color; } "
+            b".termia-session-tabs { background: @headerbar_backdrop_color; padding: 4px 4px 3px 4px; "
+            b"border: 0; box-shadow: none; } "
+            b".termia-terminal-stack { border: 0; box-shadow: none; } "
+            b"popover.termia-menu-popover > contents { background: @termia_menu_bg; "
+            b"background-color: @termia_menu_bg; background-image: none; opacity: 1; } "
+            b".termia-menu-panel { background: @termia_menu_bg; "
+            b"background-color: @termia_menu_bg; background-image: none; opacity: 1; } "
+            b".termia-menu-panel list { background: transparent; background-color: transparent; } "
+            b".termia-tab-label { padding: 7px 10px; margin: 0 2px; border-radius: 8px; "
+            b"background: transparent; border: 0; box-shadow: none; } "
+            b".termia-tab-label:hover { background: alpha(@theme_fg_color, 0.06); } "
+            b".termia-tab-label.active { background: alpha(@theme_fg_color, 0.13); } "
+            b".termia-tab-title { font-size: 1.05em; } "
+            b".termia-tab-close { padding: 0; min-width: 18px; min-height: 18px; } "
             b".termia-status-hide { padding: 0 6px; min-height: 18px; font-size: 0.85em; } "
             b".termia-disconnect-button { padding: 0 6px; min-height: 18px; font-size: 0.85em; } "
             b".stat-card { padding: 10px 12px; border: 1px solid @borders; border-radius: 6px; "
@@ -685,39 +727,16 @@ class TermiaWindow(Gtk.ApplicationWindow):
         toggle_sidebar.connect("clicked", self.on_toggle_sidebar)
         header.pack_start(toggle_sidebar)
 
-        toggle_status_bars = Gtk.Button(icon_name="view-fullscreen-symbolic")
-        self.toggle_status_bars_button = toggle_status_bars
-        toggle_status_bars.set_tooltip_text(self.t("toggle_session_status_bars"))
-        toggle_status_bars.connect("clicked", self.on_toggle_session_status_bars)
-        header.pack_start(toggle_status_bars)
-        self.update_session_status_bars_button_icon()
+        new_tab_button = Gtk.Button(icon_name="tab-new-symbolic")
+        new_tab_button.set_tooltip_text(self.t("new_tab"))
+        new_tab_button.connect("clicked", self.on_open_local_terminal)
+        header.pack_start(new_tab_button)
 
-        local_terminal_btn = Gtk.Button(label=self.t("local_terminal"))
-        local_terminal_btn.connect("clicked", self.on_open_local_terminal)
-        header.pack_start(local_terminal_btn)
-
-        config_btn = Gtk.MenuButton(label=self.t("configuration"))
-        config_btn.set_popover(self.build_configuration_menu())
-        header.pack_start(config_btn)
-
-        stats_btn = Gtk.Button(label=self.t("statistics"))
-        stats_btn.connect("clicked", self.on_statistics_dashboard)
-        header.pack_start(stats_btn)
-
-        help_btn = Gtk.Button(label=self.t("help"))
-        help_btn.connect("clicked", self.on_help)
-        header.pack_start(help_btn)
-
-        about_btn = Gtk.Button()
-        about_btn.set_tooltip_text(self.t("about"))
-        if (APP_DIR / "assets" / "termia.svg").exists():
-            about_image = Gtk.Image.new_from_file(str(APP_DIR / "assets" / "termia.svg"))
-            about_image.set_pixel_size(24)
-            about_btn.set_child(about_image)
-        else:
-            about_btn.set_label(self.t("about"))
-        about_btn.connect("clicked", self.on_about)
-        header.pack_start(about_btn)
+        menu_button = Gtk.MenuButton()
+        menu_button.set_tooltip_text(self.t("main_menu"))
+        menu_button.set_popover(self.build_main_menu())
+        menu_button.set_child(Gtk.Image.new_from_icon_name("open-menu-symbolic"))
+        header.pack_start(menu_button)
 
         body = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         body.set_position(280)
@@ -798,12 +817,18 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.info_label.set_xalign(0)
         self.info_label.set_wrap(True)
 
-        self.notebook = Gtk.Notebook()
-        self.notebook.set_vexpand(True)
-        self.notebook.set_hexpand(True)
-        self.notebook.set_scrollable(True)
-        self.notebook.set_group_name("termia-terminals")
-        detail.append(self.notebook)
+        self.session_tab_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        self.session_tab_bar.set_homogeneous(True)
+        self.session_tab_bar.add_css_class("termia-session-tabs")
+        self.session_tab_bar.set_hexpand(True)
+        self.session_tab_bar.set_visible(False)
+        detail.append(self.session_tab_bar)
+
+        self.terminal_stack = Gtk.Stack()
+        self.terminal_stack.add_css_class("termia-terminal-stack")
+        self.terminal_stack.set_hexpand(True)
+        self.terminal_stack.set_vexpand(True)
+        detail.append(self.terminal_stack)
 
         self.update_actions()
 
@@ -966,7 +991,10 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
     def build_configuration_menu(self) -> Gtk.Popover:
         popover = Gtk.Popover()
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
         menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        menu.add_css_class("termia-menu-panel")
         menu.set_margin_top(6)
         menu.set_margin_bottom(6)
         menu.set_margin_start(6)
@@ -994,11 +1022,106 @@ class TermiaWindow(Gtk.ApplicationWindow):
         popover.set_child(menu)
         return popover
 
+    def build_main_menu(self) -> Gtk.Popover:
+        popover = Gtk.Popover()
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.set_child(self.build_main_menu_content(popover))
+        return popover
+
+    def build_main_menu_content(self, popover: Gtk.Popover) -> Gtk.Widget:
+        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        menu.add_css_class("termia-menu-panel")
+        menu.set_margin_top(6)
+        menu.set_margin_bottom(6)
+        menu.set_margin_start(6)
+        menu.set_margin_end(6)
+
+        general = Gtk.Button(label=self.t("general"))
+        general.set_halign(Gtk.Align.FILL)
+        general.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_app_preferences))
+        menu.append(general)
+
+        terminal = Gtk.Button(label=self.t("terminal"))
+        terminal.set_halign(Gtk.Align.FILL)
+        terminal.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_terminal_settings))
+        menu.append(terminal)
+
+        prompt = Gtk.Button(label=self.t("prompt"))
+        prompt.set_halign(Gtk.Align.FILL)
+        prompt.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_prompt_settings))
+        menu.append(prompt)
+
+        connections_file = Gtk.Button(label=self.t("connections_file"))
+        connections_file.set_halign(Gtk.Align.FILL)
+        connections_file.connect("clicked", lambda _button: popover.set_child(self.build_main_connections_menu(popover)))
+        menu.append(connections_file)
+
+        statistics = Gtk.Button(label=self.t("statistics"))
+        statistics.set_halign(Gtk.Align.FILL)
+        statistics.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_statistics_dashboard))
+        menu.append(statistics)
+
+        help_btn = Gtk.Button(label=self.t("help"))
+        help_btn.set_halign(Gtk.Align.FILL)
+        help_btn.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_help))
+        menu.append(help_btn)
+
+        about_btn = Gtk.Button(label=self.t("about"))
+        about_btn.set_halign(Gtk.Align.FILL)
+        about_btn.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_about))
+        menu.append(about_btn)
+        return menu
+
+    def build_main_connections_menu(self, popover: Gtk.Popover) -> Gtk.Widget:
+        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        menu.add_css_class("termia-menu-panel")
+        menu.set_margin_top(6)
+        menu.set_margin_bottom(6)
+        menu.set_margin_start(6)
+        menu.set_margin_end(6)
+
+        back = Gtk.Button(label=self.t("main_menu"))
+        back.set_halign(Gtk.Align.FILL)
+        back.connect("clicked", lambda _button: popover.set_child(self.build_main_menu_content(popover)))
+        menu.append(back)
+
+        export_config = Gtk.Button(label=self.t("export_config"))
+        export_config.set_halign(Gtk.Align.FILL)
+        export_config.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_export_config))
+        menu.append(export_config)
+
+        import_config = Gtk.Button(label=self.t("import_config"))
+        import_config.set_halign(Gtk.Align.FILL)
+        import_config.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_import_config))
+        menu.append(import_config)
+
+        import_asbru = Gtk.Button(label=self.t("import_asbru"))
+        import_asbru.set_halign(Gtk.Align.FILL)
+        import_asbru.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_import_asbru_config))
+        menu.append(import_asbru)
+
+        clear_config = Gtk.Button(label=self.t("clear_config"))
+        clear_config.set_halign(Gtk.Align.FILL)
+        clear_config.add_css_class("destructive-action")
+        clear_config.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_request_clear_config))
+        menu.append(clear_config)
+        return menu
+
     def run_after_popover_closed(self, popover: Gtk.Popover, callback: Any) -> None:
         popover.popdown()
 
         def run_callback() -> bool:
             callback(None)
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(run_callback)
+
+    def run_action_after_popover_closed(self, popover: Gtk.Popover, callback: Any) -> None:
+        popover.popdown()
+
+        def run_callback() -> bool:
+            callback()
             return GLib.SOURCE_REMOVE
 
         GLib.idle_add(run_callback)
@@ -1053,10 +1176,23 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if ABOUT_IMAGE.exists():
             dialog.set_logo(Gdk.Texture.new_from_filename(str(ABOUT_IMAGE)))
         dialog.present()
+        GLib.idle_add(self.clear_about_dialog_selection, dialog)
+
+    def clear_about_dialog_selection(self, widget: Gtk.Widget) -> bool:
+        if isinstance(widget, Gtk.Label):
+            widget.set_selectable(False)
+        child = widget.get_first_child()
+        while child is not None:
+            self.clear_about_dialog_selection(child)
+            child = child.get_next_sibling()
+        return GLib.SOURCE_REMOVE
 
     def build_connections_file_menu(self) -> Gtk.Popover:
         popover = Gtk.Popover()
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
         menu = Gtk.ListBox()
+        menu.add_css_class("termia-menu-panel")
         menu.set_selection_mode(Gtk.SelectionMode.NONE)
         menu.set_margin_top(6)
         menu.set_margin_bottom(6)
@@ -1160,8 +1296,11 @@ class TermiaWindow(Gtk.ApplicationWindow):
             self.selection.set_selected(position)
 
         popover = Gtk.Popover()
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
         popover.set_parent(parent)
         menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        menu.add_css_class("termia-menu-panel")
         menu.set_margin_top(6)
         menu.set_margin_bottom(6)
         menu.set_margin_start(6)
@@ -1584,6 +1723,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
             return
 
         popover = Gtk.Popover()
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
         popover.set_parent(parent)
         pointing_rectangle = Gdk.Rectangle()
         pointing_rectangle.x = int(x)
@@ -1595,6 +1736,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         popover.connect("closed", self.on_context_menu_closed)
         self.active_context_popover = popover
         menu = Gtk.ListBox()
+        menu.add_css_class("termia-menu-panel")
         menu.set_selection_mode(Gtk.SelectionMode.NONE)
         menu.set_margin_top(6)
         menu.set_margin_bottom(6)
@@ -1770,7 +1912,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             bash_path = GLib.find_program_in_path("bash")
             if bash_path is not None:
                 command = self.build_local_prompt_shell_command(bash_path)
-        self.open_process_terminal_tab(self.t("local_terminal"), command, None, working_directory=str(Path.home()))
+        self.open_process_terminal_tab(self.local_directory_title(Path.home()), command, None, working_directory=str(Path.home()))
 
     def open_process_terminal_tab(
         self,
@@ -1801,7 +1943,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         disconnect_button.add_css_class("destructive-action")
         disconnect_button.add_css_class("termia-disconnect-button")
         disconnect_button.set_size_request(-1, 18)
-        toolbar.set_visible(self.store.data.app.show_session_status_bar)
+        toolbar.set_visible(self.should_show_session_status_bar())
         toolbar.append(status_label)
         toolbar.append(focus_button)
         toolbar.append(Gtk.Box(hexpand=True))
@@ -1819,19 +1961,18 @@ class TermiaWindow(Gtk.ApplicationWindow):
         page.set_vexpand(True)
 
         tab_label = self.build_tab_label(tab_title, session_id, page)
-        page_num = self.notebook.append_page(page, tab_label)
-        self.configure_notebook_tab(self.notebook, page)
         session = TerminalSession(
             id=session_id, server_id=server_id, title=tab_title, terminal=terminal, page=page,
             tab_label=tab_label, status_label=status_label, timer_label=timer_label,
             disconnect_button=disconnect_button, status_bar=toolbar,
-            started_at=time.monotonic(), notebook=self.notebook,
+            started_at=time.monotonic(),
         )
         focus_button.connect("clicked", self.on_hide_session_status_bar, session)
         disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
         self.configure_terminal_interactions(terminal, session)
         self.open_tabs[session_id] = session
-        self.notebook.set_current_page(page_num)
+        self.add_session_to_main_view(session)
+        self.update_local_session_directory_title(session)
         terminal.grab_focus()
         try:
             _ok, child_pid = terminal.spawn_sync(
@@ -1845,6 +1986,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             disconnect_button.set_sensitive(False)
             return
         session.child_pid = child_pid
+        self.update_local_session_directory_title(session)
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_process_terminal_exited, session)
         status_label.set_label(f"{title} · PID {child_pid}")
@@ -1855,18 +1997,14 @@ class TermiaWindow(Gtk.ApplicationWindow):
         session.connected = False
         session.disconnect_button.set_sensitive(False)
         if session.disconnect_requested:
-            self.open_tabs.pop(session.id, None)
             session.status_label.set_label(f"Desconectada: {session.title}")
             return
         if self.child_status_successful(_status) and self.store.data.app.close_tab_on_ssh_exit:
             self.close_tab(session.id, session.page, disconnect=False)
             self.toast_label.set_label(f"Sesion cerrada: {session.title}")
             return
-        self.open_tabs.pop(session.id, None)
         session.status_label.set_label(f"Cerrada: {session.title}")
-        label = session.tab_label.get_first_child()
-        if isinstance(label, Gtk.Label):
-            label.set_label(f"{session.title} (cerrada)")
+        self.update_session_tab_title(session, f"{session.title} (cerrada)")
 
     def open_terminal_tab(self, server: Server) -> None:
         session_id = str(uuid4())
@@ -1895,7 +2033,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         disconnect_button.add_css_class("destructive-action")
         disconnect_button.add_css_class("termia-disconnect-button")
         disconnect_button.set_size_request(-1, 18)
-        toolbar.set_visible(self.store.data.app.show_session_status_bar)
+        toolbar.set_visible(self.should_show_session_status_bar())
 
         toolbar.append(status_label)
         toolbar.append(focus_button)
@@ -1915,8 +2053,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
         page.set_vexpand(True)
 
         tab_label = self.build_tab_label(tab_title, session_id, page)
-        page_num = self.notebook.append_page(page, tab_label)
-        self.configure_notebook_tab(self.notebook, page)
         session = TerminalSession(
             id=session_id,
             server_id=server.id,
@@ -1929,13 +2065,12 @@ class TermiaWindow(Gtk.ApplicationWindow):
             disconnect_button=disconnect_button,
             status_bar=toolbar,
             started_at=time.monotonic(),
-            notebook=self.notebook,
         )
         focus_button.connect("clicked", self.on_hide_session_status_bar, session)
         disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
         self.configure_terminal_interactions(terminal, session)
         self.open_tabs[session_id] = session
-        self.notebook.set_current_page(page_num)
+        self.add_session_to_main_view(session)
 
         self.start_ssh_session(server, session)
 
@@ -2010,9 +2145,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.toast_label.set_label(toast)
         prompt = f"  {self.t('reconnect_prompt')}  "
         session.terminal.feed(f"\r\n\x1b[1;30;48;2;255;213;79m{prompt}\x1b[0m\r\n".encode())
-        label = session.tab_label.get_first_child()
-        if isinstance(label, Gtk.Label):
-            label.set_label(f"{session.title} (error)")
+        self.update_session_tab_title(session, f"{session.title} (error)")
 
     def reconnect_session(self, session: TerminalSession) -> None:
         if not session.pending_reconnect or session.server_id is None:
@@ -2152,48 +2285,34 @@ class TermiaWindow(Gtk.ApplicationWindow):
         return False
 
     def move_terminal_tab_focus(self, session: TerminalSession, delta: int) -> None:
-        notebook = session.notebook or self.notebook
-        pages = notebook.get_n_pages()
-        if pages <= 1:
+        sessions = [item for item in self.open_tabs.values() if item.detached_window is None]
+        if len(sessions) <= 1:
             return
-        current = notebook.get_current_page()
-        if current < 0:
-            current = notebook.page_num(session.page)
-        notebook.set_current_page((current + delta) % pages)
-        self.focus_current_terminal_page(notebook)
+        visible = self.terminal_stack.get_visible_child()
+        current = 0
+        for index, item in enumerate(sessions):
+            if item.page is visible or item.id == session.id:
+                current = index
+                break
+        self.set_active_session(sessions[(current + delta) % len(sessions)].id)
 
-    def focus_current_terminal_page(self, notebook: Gtk.Notebook) -> None:
-        page = notebook.get_nth_page(notebook.get_current_page())
-        if page is None:
-            return
+    def focus_current_terminal_page_later(self) -> bool:
+        visible = self.terminal_stack.get_visible_child()
         for session in self.open_tabs.values():
-            if session.page is page:
+            if session.page is visible:
                 session.terminal.grab_focus()
-                return
-        page.grab_focus()
-
-    def focus_current_terminal_page_later(self, notebook: Gtk.Notebook) -> bool:
-        self.focus_current_terminal_page(notebook)
+                break
         return GLib.SOURCE_REMOVE
 
-    def on_toggle_session_status_bars(self, _button: Gtk.Button) -> None:
-        visible = not self.store.data.app.show_session_status_bar
-        self.store.data.app.show_session_status_bar = visible
-        self.store.save()
-        self.apply_session_status_bar_visibility_to_open_tabs()
-        self.set_sidebar_visible(visible)
-        self.update_session_status_bars_button_icon()
-
-    def update_session_status_bars_button_icon(self) -> None:
-        icon_name = "view-fullscreen-symbolic" if self.store.data.app.show_session_status_bar else "view-restore-symbolic"
-        self.toggle_status_bars_button.set_icon_name(icon_name)
+    def should_show_session_status_bar(self) -> bool:
+        return self.store.data.app.show_session_status_bar
 
     def on_hide_session_status_bar(self, _button: Gtk.Button, session: TerminalSession) -> None:
         session.status_bar.set_visible(False)
         session.terminal.grab_focus()
 
     def apply_session_status_bar_visibility_to_open_tabs(self) -> None:
-        visible = self.store.data.app.show_session_status_bar
+        visible = self.should_show_session_status_bar()
         for session in self.open_tabs.values():
             session.status_bar.set_visible(visible)
 
@@ -2233,6 +2352,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         terminal: Vte.Terminal,
     ) -> None:
         popover = Gtk.Popover()
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
         popover.set_parent(terminal)
         rect = Gdk.Rectangle()
         rect.x = int(x)
@@ -2241,6 +2362,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         rect.height = 1
         popover.set_pointing_to(rect)
         menu = Gtk.ListBox()
+        menu.add_css_class("termia-menu-panel")
         menu.set_selection_mode(Gtk.SelectionMode.NONE)
         menu.set_margin_top(6)
         menu.set_margin_bottom(6)
@@ -2305,8 +2427,94 @@ class TermiaWindow(Gtk.ApplicationWindow):
         dialog.connect("response", lambda current, _response: current.destroy())
         dialog.present()
 
-    def configure_notebook_tab(self, notebook: Gtk.Notebook, page: Gtk.Widget) -> None:
-        notebook.set_tab_reorderable(page, True)
+    def local_directory_title(self, path: Path) -> str:
+        try:
+            resolved = path.resolve()
+            if resolved == Path.home().resolve():
+                return "~"
+            return str(resolved)
+        except OSError:
+            return str(path)
+
+    def directory_title_from_uri(self, uri: str | None) -> str:
+        if not uri:
+            return ""
+        parsed = urlparse(uri)
+        if parsed.scheme != "file":
+            return ""
+        path = Path(unquote(parsed.path))
+        return self.local_directory_title(path)
+
+    def local_session_cwd_title(self, session: TerminalSession) -> str:
+        if session.child_pid is not None:
+            try:
+                return self.local_directory_title(Path(os.readlink(f"/proc/{session.child_pid}/cwd")))
+            except OSError:
+                pass
+        return self.directory_title_from_uri(session.terminal.get_current_directory_uri())
+
+    def update_local_session_directory_title(self, session: TerminalSession) -> None:
+        if session.server_id is not None or session.title_locked:
+            return
+        title = self.local_session_cwd_title(session)
+        if not title or title == session.last_directory_title:
+            return
+        session.last_directory_title = title
+        session.title = title
+        self.update_session_tab_title(session, title)
+
+    def add_session_to_main_view(self, session: TerminalSession) -> None:
+        self.terminal_stack.add_named(session.page, session.id)
+        self.session_tab_bar.append(session.tab_label)
+        self.update_session_tab_bar_visibility()
+        self.set_active_session(session.id)
+
+    def set_active_session(self, session_id: str) -> None:
+        session = self.open_tabs.get(session_id)
+        if session is None or session.detached_window is not None:
+            return
+        self.terminal_stack.set_visible_child(session.page)
+        self.update_session_tab_states()
+        session.terminal.grab_focus()
+
+    def update_session_tab_states(self) -> None:
+        visible_page = self.terminal_stack.get_visible_child()
+        for session in self.open_tabs.values():
+            session.tab_label.remove_css_class("active")
+            if visible_page is session.page and session.detached_window is None:
+                session.tab_label.add_css_class("active")
+
+    def remove_session_from_main_view(self, session: TerminalSession) -> None:
+        if session.detached_window is None:
+            parent = session.tab_label.get_parent()
+            if parent is self.session_tab_bar:
+                self.session_tab_bar.remove(session.tab_label)
+            try:
+                self.terminal_stack.remove(session.page)
+            except Exception:
+                pass
+        self.update_session_tab_states()
+        self.update_session_tab_bar_visibility()
+
+    def update_session_tab_bar_visibility(self) -> None:
+        visible_sessions = [session for session in self.open_tabs.values() if session.detached_window is None]
+        self.session_tab_bar.set_visible(len(visible_sessions) > 1)
+
+    def focus_available_session_after_close(self, closed_session_id: str) -> None:
+        for session_id, session in self.open_tabs.items():
+            if session_id != closed_session_id and session.detached_window is None:
+                self.set_active_session(session_id)
+                return
+
+    def update_session_tab_title(self, session: TerminalSession, title: str) -> None:
+        child = session.tab_label.get_first_child()
+        if isinstance(child, Gtk.Label):
+            child.set_label(title)
+            return
+        if isinstance(child, Gtk.Box):
+            label = child.get_first_child()
+            if isinstance(label, Gtk.Label):
+                label.set_label(title)
 
     def build_terminal_environment(self, password: str = "") -> list[str]:
         env = dict(os.environ)
@@ -2351,7 +2559,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
     def apply_terminal_settings(self, terminal: Vte.Terminal) -> None:
         settings = self.store.data.terminal
-        font = Pango.FontDescription(f"{settings.font_family} {settings.font_size}")
+        font_family = self.resolved_terminal_font_family(settings.font_family)
+        font = Pango.FontDescription(f"{font_family} {settings.font_size}")
         foreground = parse_color(settings.foreground, "#f2f2f2")
         background = parse_color(settings.background, "#101010")
         palette_values = settings.ansi_palette or DEFAULT_ANSI_PALETTE
@@ -2370,27 +2579,34 @@ class TermiaWindow(Gtk.ApplicationWindow):
         hours, remainder = divmod(elapsed, 3600)
         minutes, seconds = divmod(remainder, 60)
         session.timer_label.set_label(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+        self.update_local_session_directory_title(session)
         return GLib.SOURCE_CONTINUE
 
     def build_tab_label(self, title: str, session_id: str, page: Gtk.Widget) -> Gtk.Widget:
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         box.add_css_class("termia-tab-label")
+        box.set_hexpand(True)
         box.set_margin_start(0)
         box.set_margin_end(0)
         label = Gtk.Label(label=title)
         label.add_css_class("termia-tab-title")
+        label.set_hexpand(True)
         label.set_single_line_mode(True)
         label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_width_chars(min(max(len(title), 8), 20))
-        label.set_max_width_chars(20)
+        label.set_width_chars(1)
+        label.set_max_width_chars(36)
         label.set_tooltip_text(title)
-        label.set_margin_start(2)
-        label.set_margin_end(1)
+        label.set_margin_start(4)
+        label.set_margin_end(4)
         close_button = Gtk.Button(icon_name="window-close-symbolic")
         close_button.add_css_class("termia-tab-close")
         close_button.set_has_frame(False)
         close_button.set_tooltip_text(self.t("close_tab"))
         close_button.connect("clicked", self.on_request_close_tab, session_id, page)
+        left_click = Gtk.GestureClick.new()
+        left_click.set_button(1)
+        left_click.connect("released", lambda *_args: self.set_active_session(session_id))
+        box.add_controller(left_click)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
         right_click.connect("pressed", self.on_tab_right_click, session_id, box)
@@ -2412,8 +2628,11 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if session is None:
             return
         popover = Gtk.Popover()
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
         popover.set_parent(parent)
         menu = Gtk.ListBox()
+        menu.add_css_class("termia-menu-panel")
         menu.set_selection_mode(Gtk.SelectionMode.NONE)
         menu.set_margin_top(6)
         menu.set_margin_bottom(6)
@@ -2434,39 +2653,28 @@ class TermiaWindow(Gtk.ApplicationWindow):
             return
         shell = os.environ.get("SHELL") or GLib.find_program_in_path("bash") or "/bin/sh"
         self.open_process_terminal_tab(
-            self.t("local_terminal"), [shell], None, working_directory=str(Path.home())
+            self.local_directory_title(Path.home()), [shell], None, working_directory=str(Path.home())
         )
 
     def detach_tab(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
-        notebook = session.notebook or self.notebook
-        if notebook is not self.notebook or notebook.page_num(session.page) < 0:
+        if session.detached_window is not None:
             return
-        notebook.remove_page(notebook.page_num(session.page))
+        self.remove_session_from_main_view(session)
+        self.focus_available_session_after_close(session.id)
         window = Gtk.Window(title=session.title, transient_for=self)
         window.set_default_size(860, 520)
-        detached_notebook = Gtk.Notebook()
-        detached_notebook.set_scrollable(True)
-        detached_notebook.set_group_name("termia-terminals")
-        detached_notebook.append_page(session.page, session.tab_label)
-        self.configure_notebook_tab(detached_notebook, session.page)
-        session.notebook = detached_notebook
+        window.set_child(session.page)
         session.detached_window = window
-        window.set_child(detached_notebook)
+        self.update_session_tab_bar_visibility()
         window.connect("close-request", self.on_detached_window_close, session)
         window.present()
 
     def on_detached_window_close(self, window: Gtk.Window, session: TerminalSession) -> bool:
-        notebook = session.notebook
-        if notebook is not None and notebook is not self.notebook:
-            page_num = notebook.page_num(session.page)
-            if page_num >= 0:
-                notebook.remove_page(page_num)
-                page_num = self.notebook.append_page(session.page, session.tab_label)
-                self.configure_notebook_tab(self.notebook, session.page)
-                self.notebook.set_current_page(page_num)
-        session.notebook = self.notebook
+        window.set_child(None)
         session.detached_window = None
+        if session.id in self.open_tabs:
+            self.add_session_to_main_view(session)
         return False
 
     def show_rename_tab_dialog(self, popover: Gtk.Popover, session: TerminalSession) -> None:
@@ -2489,9 +2697,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         title = entry.get_text().strip()
         if response == Gtk.ResponseType.OK and title:
             session.title = title
-            label = session.tab_label.get_first_child()
-            if isinstance(label, Gtk.Label):
-                label.set_label(title)
+            session.title_locked = True
+            self.update_session_tab_title(session, title)
         dialog.destroy()
 
     def on_request_disconnect_session(self, _button: Gtk.Button, session: TerminalSession) -> None:
@@ -2527,9 +2734,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         session.disconnect_button.set_sensitive(False)
         session.status_label.set_label(f"Desconectada: {session.title}")
         session.terminal.feed(b"\r\nSesion desconectada.\r\n")
-        label = session.tab_label.get_first_child()
-        if isinstance(label, Gtk.Label):
-            label.set_label(f"{session.title} (desconectada)")
+        self.update_session_tab_title(session, f"{session.title} (desconectada)")
         self.toast_label.set_label(f"Sesion desconectada: {session.title}")
         if self.store.data.app.close_tab_on_disconnect:
             self.close_tab(session.id, session.page, disconnect=False)
@@ -2574,7 +2779,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
         session.connected = False
         session.disconnect_button.set_sensitive(False)
         if session.disconnect_requested:
-            self.open_tabs.pop(session.id, None)
             session.status_label.set_label(f"Desconectada: {session.title}")
             self.toast_label.set_label(f"Sesion desconectada: {session.title}")
             return
@@ -2583,11 +2787,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
                 self.close_tab(session.id, session.page, disconnect=False)
                 self.toast_label.set_label(f"Sesion cerrada: {server.name}")
                 return
-            self.open_tabs.pop(session.id, None)
             session.status_label.set_label(f"Cerrada: {session.title}")
-            label = session.tab_label.get_first_child()
-            if isinstance(label, Gtk.Label):
-                label.set_label(f"{session.title} (cerrada)")
+            self.update_session_tab_title(session, f"{session.title} (cerrada)")
             self.toast_label.set_label(f"Sesion cerrada: {server.name}")
             return
         session.status_label.set_label(f"Error: {session.title}")
@@ -2596,11 +2797,15 @@ class TermiaWindow(Gtk.ApplicationWindow):
     def on_request_close_tab(self, _button: Gtk.Button, session_id: str, page: Gtk.Widget) -> None:
         session = self.open_tabs.get(session_id)
         if session and session.page == page and session.connected:
+            if not self.store.data.app.confirm_disconnect:
+                self.close_tab(session_id, page, disconnect=True)
+                return
+            detail = self.t("close_ssh_session_confirm") if session.server_id is not None else self.t("close_local_session_confirm")
             self.confirm_session_action(
                 session,
-                "Cerrar pestanya",
-                f"Quieres cerrar {session.title}? La sesion SSH se desconectara.",
-                "Cerrar",
+                self.t("close_session_title"),
+                detail,
+                self.t("close"),
                 lambda: self.close_tab(session_id, page, disconnect=True),
             )
             return
@@ -2610,17 +2815,19 @@ class TermiaWindow(Gtk.ApplicationWindow):
         session = self.open_tabs.get(session_id)
         if disconnect and session and session.page == page and session.connected:
             self.disconnect_session(session)
-        notebook = session.notebook if session and session.notebook is not None else self.notebook
-        page_num = notebook.page_num(page)
-        if page_num >= 0:
-            notebook.remove_page(page_num)
-            if notebook.get_n_pages() > 0:
-                GLib.idle_add(self.focus_current_terminal_page_later, notebook)
-        if session and session.detached_window is not None:
+            session = self.open_tabs.get(session_id)
+        if session is None:
+            return
+        if session.detached_window is not None:
             window = session.detached_window
             session.detached_window = None
+            window.set_child(None)
             window.destroy()
+        else:
+            self.remove_session_from_main_view(session)
         self.open_tabs.pop(session_id, None)
+        self.update_session_tab_bar_visibility()
+        self.focus_available_session_after_close(session_id)
 
     def on_request_clear_config(self) -> None:
         dialog = Gtk.AlertDialog(message=self.t("clear_config"), detail=self.t("clear_confirm"))
@@ -2925,8 +3132,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
                 show_session_status_bar.get_active(),
             )
             self.apply_app_theme()
+            self.install_tree_styles()
             self.apply_session_status_bar_visibility_to_open_tabs()
-            self.update_session_status_bars_button_icon()
             if previous_language != self.store.data.app.language:
                 self.toast_label.set_label(self.t("restart_language"))
         dialog.destroy()
@@ -2951,7 +3158,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         font_families = self.terminal_font_families()
         for font_family in font_families:
             font_combo.append_text(font_family)
-        active_font = settings.font_family if settings.font_family in font_families else "Monospace"
+        active_font = self.resolved_terminal_font_family(settings.font_family)
         font_combo.set_active(font_families.index(active_font) if active_font in font_families else 0)
 
         font_size_spin = Gtk.SpinButton.new_with_range(6, 72, 1)
@@ -3186,6 +3393,15 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if "Monospace" not in names:
             names.insert(0, "Monospace")
         return names or ["Monospace"]
+
+    def resolved_terminal_font_family(self, preferred: str) -> str:
+        font_families = self.terminal_font_families()
+        if preferred in font_families:
+            return preferred
+        for fallback in ("JetBrains Mono", "Ubuntu Mono", "Monospace"):
+            if fallback in font_families:
+                return fallback
+        return font_families[0] if font_families else "Monospace"
 
     def selected_terminal_font_family(self, font_combo: Gtk.ComboBoxText) -> str:
         return font_combo.get_active_text() or "Monospace"

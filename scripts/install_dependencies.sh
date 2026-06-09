@@ -79,11 +79,32 @@ check_command() {
   fi
 }
 
+check_terminal_font() {
+  if ! command -v fc-list >/dev/null 2>&1; then
+    echo "fontconfig is not available; Termia will use the runtime font fallback if JetBrains Mono is missing."
+    return 0
+  fi
+  if fc-list : family | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -Fxq "JetBrains Mono"; then
+    echo "JetBrains Mono font OK"
+  else
+    echo "JetBrains Mono font not found; Termia will fall back to Ubuntu Mono or Monospace."
+  fi
+}
+
 run_checks() {
   check_python_modules
   check_command ssh openssh-client
   check_command sshpass sshpass
   echo "ssh and sshpass clients OK"
+  check_terminal_font
+}
+
+install_optional_font_package() {
+  local package_name="$1"
+  shift
+  if ! "$@"; then
+    echo "Could not install optional font package: ${package_name}. Termia will use the runtime font fallback." >&2
+  fi
 }
 
 install_packages() {
@@ -98,6 +119,7 @@ install_packages() {
       openssh-client \
       sshpass \
       desktop-file-utils
+    install_optional_font_package fonts-jetbrains-mono sudo apt-get install -y fonts-jetbrains-mono
   elif command -v dnf >/dev/null 2>&1; then
     sudo dnf install -y \
       python3 \
@@ -108,6 +130,7 @@ install_packages() {
       openssh-clients \
       sshpass \
       desktop-file-utils
+    install_optional_font_package jetbrains-mono-fonts sudo dnf install -y jetbrains-mono-fonts
   elif command -v pacman >/dev/null 2>&1; then
     sudo pacman -S --needed \
       python \
@@ -118,6 +141,7 @@ install_packages() {
       openssh \
       sshpass \
       desktop-file-utils
+    install_optional_font_package ttf-jetbrains-mono sudo pacman -S --needed ttf-jetbrains-mono
   else
     echo "Could not detect apt-get, dnf, or pacman." >&2
     echo "Install manually: Python 3, PyGObject, GTK 4, VTE GTK 4, openssh-client, sshpass, and desktop-file-utils." >&2
