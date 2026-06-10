@@ -119,7 +119,8 @@ subirse a GitHub.
 
 ```text
 run_termia.py                     Lanzador para ejecutar desde el repositorio
-src/termia/app.py             Implementación de la aplicación
+src/termia/app.py             Composición principal y ventana
+src/termia/                Módulos de almacenamiento, diálogos, pestañas, terminales y utilidades
 src/termia/assets/            Imágenes utilizadas por Termia
 scripts/                      Instalación y desinstalación
 docs/                         Documentación adicional

@@ -44,7 +44,8 @@ Termia has been tested on Ubuntu 24.04.4 LTS with Linux kernel
 
 ```text
 run_termia.py                     Source-checkout launcher
-src/termia/app.py             Application implementation
+src/termia/app.py             Application composition and window setup
+src/termia/                Feature modules for storage, dialogs, tabs, terminal sessions, and UI helpers
 src/termia/__main__.py        Python module entry point
 src/termia/assets/            Desktop and About dialog artwork
 scripts/install_dependencies.sh
@@ -57,9 +58,9 @@ THIRD_PARTY_NOTICES.md         Runtime dependency licenses
 LICENSE                       GPL-3.0-or-later license
 ```
 
-The GTK implementation currently lives in one application module. The package
-layout keeps distribution files organized and allows future refactors to split
-UI, storage, import, and terminal logic without changing the launch command.
+The GTK implementation is split into focused modules for application composition,
+storage, import, dialogs, preferences, sidebar, tabs, terminal sessions, and UI
+helpers without changing the launch command.
 
 ## Download
 
@@ -159,7 +160,7 @@ not vendored in this repository. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICE
 ## Development checks
 
 ```bash
-python3 -m py_compile run_termia.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_config.py src/termia/ui_state.py
+python3 -m py_compile run_termia.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
 bash -n scripts/install_dependencies.sh
 bash -n scripts/install_desktop.sh
 bash -n scripts/uninstall_desktop.sh
