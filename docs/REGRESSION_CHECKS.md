@@ -130,7 +130,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 Run at minimum:
 
 ```bash
-python3 -m py_compile run_termia.py src/termia/app.py src/termia/constants.py src/termia/i18n.py src/termia/models.py src/termia/stores.py
+python3 -m py_compile run_termia.py src/termia/app.py src/termia/constants.py src/termia/i18n.py src/termia/models.py src/termia/stores.py src/termia/ui_state.py
 bash -n scripts/install_dependencies.sh
 bash -n scripts/install_desktop.sh
 bash -n scripts/uninstall_desktop.sh
