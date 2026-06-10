@@ -159,7 +159,7 @@ not vendored in this repository. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICE
 ## Development checks
 
 ```bash
-python3 -m py_compile run_termia.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/main_menu.py src/termia/models.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/terminal_config.py src/termia/ui_state.py
+python3 -m py_compile run_termia.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/main_menu.py src/termia/models.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/terminal_config.py src/termia/ui_state.py
 bash -n scripts/install_dependencies.sh
 bash -n scripts/install_desktop.sh
 bash -n scripts/uninstall_desktop.sh
