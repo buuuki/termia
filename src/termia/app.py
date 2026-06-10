@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: GPL-3.0-or-later
-import json
 import os
 import signal
 import subprocess
@@ -23,6 +22,7 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango, Vte
 
 from .asbru_import import extract_asbru_connections, merge_asbru_connections
+from .config_io import export_connections_file, load_store_data_from_json
 from .connection_utils import (
     find_group,
     find_server,
@@ -44,11 +44,8 @@ from .constants import (
 from .i18n import LANGUAGES, TRANSLATIONS, detect_system_language
 from .models import (
     DEFAULT_ANSI_PALETTE,
-    AppSettings,
     Group,
     Server,
-    StoreData,
-    TerminalSettings,
 )
 from .stores import ConnectionStore
 from .statistics_utils import average_session_duration, format_duration, top_server_statistics
@@ -2356,8 +2353,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             return
         if file and file.get_path():
             self.store.save()
-            Path(file.get_path()).write_text(self.store.path.read_text(encoding="utf-8"), encoding="utf-8")
-            Path(file.get_path()).chmod(0o600)
+            export_connections_file(self.store.path, Path(file.get_path()))
             self.toast_label.set_label("Configuración exportada")
 
     def on_import_config(self) -> None:
@@ -2371,14 +2367,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             return
         if file and file.get_path():
             try:
-                payload = json.loads(Path(file.get_path()).read_text(encoding="utf-8"))
-                imported = StoreData(
-                    groups=[Group(**item) for item in payload.get("groups", [])],
-                    servers=[Server(**item) for item in payload.get("servers", [])],
-                    terminal=TerminalSettings(**payload.get("terminal", {})),
-                    app=AppSettings(**payload.get("app", {})),
-                    statistics=self.store.data.statistics,
-                )
+                imported = load_store_data_from_json(Path(file.get_path()), self.store.data.statistics)
             except (OSError, ValueError, TypeError) as exc:
                 self.toast_label.set_label(f"No se pudo importar JSON: {exc}")
                 return
