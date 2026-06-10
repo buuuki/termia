@@ -159,8 +159,10 @@ not vendored in this repository. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICE
 ## Development checks
 
 ```bash
-python3 -m py_compile run_termia.py src/termia/*.py
-bash -n scripts/*.sh
+python3 -m py_compile run_termia.py src/termia/app.py src/termia/models.py
+bash -n scripts/install_dependencies.sh
+bash -n scripts/install_desktop.sh
+bash -n scripts/uninstall_desktop.sh
 ./scripts/install_dependencies.sh --check
 ```
 

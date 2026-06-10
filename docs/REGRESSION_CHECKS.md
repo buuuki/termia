@@ -15,6 +15,12 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ## Protected Behaviors
 
+### Main Toolbar Icons
+
+- Main toolbar action icons are protected UI decisions and must not be changed without explicit user approval.
+- The local/new terminal tab action icon and sidebar toggle icon must remain stable unless a change is requested directly.
+- If a toolbar icon is changed intentionally, document the previous icon name, new icon name, and reason in the commit message or related issue.
+
 ### Tabs
 
 - Connection and local terminal tabs must remain visibly and reliably reorderable with left-button drag in the custom tab bar.
@@ -118,8 +124,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 Run at minimum:
 
 ```bash
-python3 -m py_compile run_termia.py src/termia/*.py
-bash -n scripts/*.sh
+python3 -m py_compile run_termia.py src/termia/app.py src/termia/models.py
+bash -n scripts/install_dependencies.sh
+bash -n scripts/install_desktop.sh
+bash -n scripts/uninstall_desktop.sh
 ```
 
 When practical, add targeted tests for pure logic such as prompt templates, config migration, import/export, and statistics.
