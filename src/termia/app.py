@@ -23,6 +23,15 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango, Vte
 
 from .asbru_import import extract_asbru_connections, merge_asbru_connections
+from .connection_utils import (
+    find_group,
+    find_server,
+    group_descendant_ids,
+    group_matches_query,
+    group_path_labels,
+    server_matches_query,
+    unique_server_clone_name,
+)
 from .constants import (
     ABOUT_IMAGE,
     APP_ID,
@@ -712,7 +721,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         row = item.get_item()
         if row is None or row.kind != "server":
             return
-        server = self.find_server(row.item_id)
+        server = find_server(self.store.data.servers, row.item_id)
         if server:
             self.open_terminal_tab(server)
 
@@ -772,19 +781,19 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
     def on_server_context_connect(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
-        server = self.find_server(server_id)
+        server = find_server(self.store.data.servers, server_id)
         if server:
             self.open_terminal_tab(server)
 
     def on_server_context_edit(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
-        server = self.find_server(server_id)
+        server = find_server(self.store.data.servers, server_id)
         if server:
             self.show_server_dialog(server)
 
     def on_server_context_delete(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
-        server = self.find_server(server_id)
+        server = find_server(self.store.data.servers, server_id)
         if server:
             self.store.delete_server(server_id)
             self.selected = None
@@ -794,11 +803,11 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
     def on_server_context_clone(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
-        server = self.find_server(server_id)
+        server = find_server(self.store.data.servers, server_id)
         if server is None:
             return
         clone = self.store.add_server(
-            self.unique_server_clone_name(server.name),
+            unique_server_clone_name(self.store.data.servers, server.name),
             server.host,
             server.user,
             server.port,
@@ -811,19 +820,9 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.refresh_list()
         self.render_detail()
 
-    def unique_server_clone_name(self, name: str) -> str:
-        existing_names = {server.name for server in self.store.data.servers}
-        base_name = f"{name}-clone"
-        if base_name not in existing_names:
-            return base_name
-        index = 2
-        while f"{base_name}-{index}" in existing_names:
-            index += 1
-        return f"{base_name}-{index}"
-
     def on_group_context_edit(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
         popover.popdown()
-        group = self.find_group(group_id)
+        group = find_group(self.store.data.groups, group_id)
         if group:
             self.show_group_dialog(group)
 
@@ -832,7 +831,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.request_delete_group(group_id)
 
     def request_delete_group(self, group_id: str) -> None:
-        group = self.find_group(group_id)
+        group = find_group(self.store.data.groups, group_id)
         if group is None:
             return
         dialog = Gtk.AlertDialog(
@@ -893,7 +892,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             children_by_parent.setdefault(group.parent_id, []).append(group)
         servers_by_group: dict[str | None, list[Server]] = {}
         for server in self.store.data.servers:
-            if self.matches_query(server, query):
+            if server_matches_query(server, query):
                 servers_by_group.setdefault(server.group_id, []).append(server)
 
         for group in sorted(children_by_parent.get(None, []), key=lambda item: item.name.lower()):
@@ -925,7 +924,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             for child in sorted(child_groups, key=lambda item: item.name.lower())
             if (widget := self.build_group_widget(child, children_by_parent, servers_by_group, query)) is not None
         ]
-        group_matches = self.matches_group_query(group, query)
+        group_matches = group_matches_query(group, query)
         if query and not group_matches and not servers and not child_widgets:
             return None
 
@@ -1102,7 +1101,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
     ) -> None:
         self.select_tree_row(row, self.tree_widgets[(row.kind, row.item_id)])
         if n_press == 2:
-            server = self.find_server(row.item_id)
+            server = find_server(self.store.data.servers, row.item_id)
             if server:
                 self.open_terminal_tab(server)
 
@@ -1245,16 +1244,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
         row.add_controller(click)
         menu.append(row)
 
-    def matches_query(self, server: Server, query: str) -> bool:
-        if not query:
-            return True
-        return query in " ".join([server.name, server.host, server.user]).lower()
-
-    def matches_group_query(self, group: Group, query: str) -> bool:
-        if not query:
-            return True
-        return query in group.name.lower()
-
     def server_row(self, server: Server, groups_by_id: dict[str, Group]) -> RowObject:
         group_name = groups_by_id.get(server.group_id).name if server.group_id in groups_by_id else "Sin grupo"
         return RowObject("server", server.id, server.name, f"{server.user}@{server.host}:{server.port} · {group_name}")
@@ -1271,7 +1260,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             return
 
         if self.selected.kind == "group":
-            group = self.find_group(self.selected.item_id)
+            group = find_group(self.store.data.groups, self.selected.item_id)
             title = group.name if group else "Sin grupo"
             count = len([server for server in self.store.data.servers if server.group_id == self.selected.item_id])
             self.title_label.set_label(title)
@@ -1281,10 +1270,10 @@ class TermiaWindow(Gtk.ApplicationWindow):
             )
             return
 
-        server = self.find_server(self.selected.item_id)
+        server = find_server(self.store.data.servers, self.selected.item_id)
         if server is None:
             return
-        group = self.find_group(server.group_id) if server.group_id else None
+        group = find_group(self.store.data.groups, server.group_id) if server.group_id else None
         self.title_label.set_label(server.name)
         self.info_label.set_label(
             f"SSH: {server.user}@{server.host}\n"
@@ -1294,12 +1283,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
 
     def update_actions(self) -> None:
         return
-
-    def find_server(self, server_id: str) -> Server | None:
-        return next((server for server in self.store.data.servers if server.id == server_id), None)
-
-    def find_group(self, group_id: str | None) -> Group | None:
-        return next((group for group in self.store.data.groups if group.id == group_id), None)
 
     def on_add_group(self, _button: Gtk.Button) -> None:
         self.show_group_dialog()
@@ -1311,11 +1294,11 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if self.selected is None:
             return
         if self.selected.kind == "group":
-            group = self.find_group(self.selected.item_id)
+            group = find_group(self.store.data.groups, self.selected.item_id)
             if group:
                 self.show_group_dialog(group)
         elif self.selected.kind == "server":
-            server = self.find_server(self.selected.item_id)
+            server = find_server(self.store.data.servers, self.selected.item_id)
             if server:
                 self.show_server_dialog(server)
 
@@ -1326,7 +1309,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             self.request_delete_group(self.selected.item_id)
             return
         elif self.selected.kind == "server":
-            server = self.find_server(self.selected.item_id)
+            server = find_server(self.store.data.servers, self.selected.item_id)
             self.store.delete_server(self.selected.item_id)
             self.toast_label.set_label(
                 f"Servidor eliminado: {server.name}" if server else "Servidor eliminado"
@@ -1338,7 +1321,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
     def on_connect(self, _button: Gtk.Button) -> None:
         if self.selected is None or self.selected.kind != "server":
             return
-        server = self.find_server(self.selected.item_id)
+        server = find_server(self.store.data.servers, self.selected.item_id)
         if server is None:
             return
 
@@ -1589,7 +1572,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
     def reconnect_session(self, session: TerminalSession) -> None:
         if not session.pending_reconnect or session.server_id is None:
             return
-        server = self.find_server(session.server_id)
+        server = find_server(self.store.data.servers, session.server_id)
         if server is None:
             session.pending_reconnect = False
             self.toast_label.set_label("No se encontro el servidor para reconectar")
@@ -1771,7 +1754,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         self.toast_label.set_label(self.t("terminal_font_size_changed").format(size=new_size))
 
     def send_saved_password(self, session: TerminalSession) -> None:
-        server = self.find_server(session.server_id) if session.server_id is not None else None
+        server = find_server(self.store.data.servers, session.server_id) if session.server_id is not None else None
         if not session.connected or server is None or not server.password:
             self.toast_label.set_label(self.t("sudo_password_unavailable"))
             return
@@ -2169,7 +2152,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
     def duplicate_tab(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
         if session.server_id is not None:
-            server = self.find_server(session.server_id)
+            server = find_server(self.store.data.servers, session.server_id)
             if server is not None:
                 self.open_terminal_tab(server)
             return
@@ -2943,35 +2926,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
             self.toast_label.set_label(self.t("terminal_settings_saved"))
         dialog.destroy()
 
-    def group_descendant_ids(self, group_id: str) -> set[str]:
-        descendants: set[str] = set()
-        pending = [group_id]
-        while pending:
-            parent_id = pending.pop()
-            children = [group.id for group in self.store.data.groups if group.parent_id == parent_id]
-            descendants.update(children)
-            pending.extend(children)
-        return descendants
-
-    def group_path_labels(self) -> list[tuple[Group, str]]:
-        groups_by_id = {group.id: group for group in self.store.data.groups}
-
-        def path_label(group: Group) -> str:
-            names = [group.name]
-            visited = {group.id}
-            parent_id = group.parent_id
-            while parent_id and parent_id in groups_by_id and parent_id not in visited:
-                parent = groups_by_id[parent_id]
-                names.append(parent.name)
-                visited.add(parent_id)
-                parent_id = parent.parent_id
-            return " / ".join(reversed(names))
-
-        return sorted(
-            ((group, path_label(group)) for group in self.store.data.groups),
-            key=lambda item: item[1].lower(),
-        )
-
     def show_group_dialog(self, group: Group | None = None) -> None:
         dialog = Gtk.Dialog(title=self.t("edit_group") if group else self.t("new_group"), transient_for=self, modal=True)
         dialog.set_resizable(False)
@@ -2982,8 +2936,8 @@ class TermiaWindow(Gtk.ApplicationWindow):
         entry.set_placeholder_text(self.t("name"))
         parent_combo = Gtk.ComboBoxText()
         parent_combo.append("", self.t("no_parent_group"))
-        excluded_ids = self.group_descendant_ids(group.id) | {group.id} if group else set()
-        for candidate, path_label in self.group_path_labels():
+        excluded_ids = group_descendant_ids(self.store.data.groups, group.id) | {group.id} if group else set()
+        for candidate, path_label in group_path_labels(self.store.data.groups):
             if candidate.id not in excluded_ids:
                 parent_combo.append(candidate.id, path_label)
         parent_combo.set_active_id(group.parent_id if group and group.parent_id not in excluded_ids else "")
@@ -3069,7 +3023,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
             widget.set_size_request(260, -1)
 
         group_combo.append("", self.t("no_group"))
-        for group, path_label in self.group_path_labels():
+        for group, path_label in group_path_labels(self.store.data.groups):
             group_combo.append(group.id, path_label)
         group_combo.set_active_id("")
 
