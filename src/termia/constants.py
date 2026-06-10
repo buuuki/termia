@@ -51,4 +51,3 @@ PROMPT_PRESETS = {
 }
 
 APP_THEMES = {"system": "Sistema", "light": "Claro", "dark": "Oscuro"}
-LANGUAGES = {"es": "Castellano", "ca": "Català", "en": "English"}
