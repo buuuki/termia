@@ -4,7 +4,6 @@
 import json
 import os
 import signal
-import shlex
 import subprocess
 import time
 from urllib.parse import unquote, urlparse
@@ -43,14 +42,16 @@ from .models import (
     TerminalSettings,
 )
 from .stores import ConnectionStore
+from .terminal_config import (
+    build_local_prompt_shell_command,
+    build_terminal_environment,
+    parse_color,
+    prompt_template_with_datetime,
+    render_prompt_preview,
+    rgba_to_hex,
+    split_prompt_datetime_template,
+)
 from .ui_state import RowObject, TerminalSession
-
-
-def parse_color(value: str, fallback: str) -> Gdk.RGBA:
-    color = Gdk.RGBA()
-    if not color.parse(value):
-        color.parse(fallback)
-    return color
 
 
 class TermiaWindow(Gtk.ApplicationWindow):
@@ -1381,7 +1382,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if self.store.data.terminal.prompt_enabled:
             bash_path = GLib.find_program_in_path("bash")
             if bash_path is not None:
-                command = self.build_local_prompt_shell_command(bash_path)
+                command = build_local_prompt_shell_command(self.store.data.terminal, bash_path)
         self.open_process_terminal_tab(self.local_directory_title(Path.home()), command, None, working_directory=str(Path.home()))
 
     def open_process_terminal_tab(
@@ -1446,7 +1447,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         terminal.grab_focus()
         try:
             _ok, child_pid = terminal.spawn_sync(
-                Vte.PtyFlags.DEFAULT, working_directory, command, envv or self.build_terminal_environment(),
+                Vte.PtyFlags.DEFAULT, working_directory, command, envv or build_terminal_environment(self.store.data.terminal.ls_colors),
                 GLib.SpawnFlags.DEFAULT, None, None, None,
             )
         except GLib.Error as exc:
@@ -1567,7 +1568,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if server.public_key:
             command.extend(["-i", str(Path(server.public_key).expanduser())])
         command.append(ssh_target)
-        envv = self.build_terminal_environment(server.password)
+        envv = build_terminal_environment(self.store.data.terminal.ls_colors, server.password)
         use_sshpass = bool(server.password)
         if server.password and not self.has_known_host_key(server.host, server.port):
             use_sshpass = False
@@ -2000,47 +2001,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
             label = child.get_first_child()
             if isinstance(label, Gtk.Label):
                 label.set_label(title)
-
-    def build_terminal_environment(self, password: str = "") -> list[str]:
-        env = dict(os.environ)
-        env["LS_COLORS"] = self.store.data.terminal.ls_colors
-        if password:
-            env["SSHPASS"] = password
-        env.setdefault("COLORTERM", "truecolor")
-        env.setdefault("TERM", "xterm-256color")
-        return [f"{key}={value}" for key, value in env.items()]
-
-    def rgba_to_hex(self, rgba: Gdk.RGBA) -> str:
-        red = max(0, min(round(rgba.red * 255), 255))
-        green = max(0, min(round(rgba.green * 255), 255))
-        blue = max(0, min(round(rgba.blue * 255), 255))
-        return f"#{red:02x}{green:02x}{blue:02x}"
-
-    def build_prompt_ps1(self) -> str:
-        settings = self.store.data.terminal
-        color = parse_color(settings.prompt_color, "#8ae234")
-        red = max(0, min(round(color.red * 255), 255))
-        green = max(0, min(round(color.green * 255), 255))
-        blue = max(0, min(round(color.blue * 255), 255))
-        template = self.normalized_prompt_template(settings.prompt_template)
-        return f"\\[\\033[38;2;{red};{green};{blue}m\\]{template}\\[\\033[0m\\]"
-
-    def normalized_prompt_template(self, template: str) -> str:
-        value = template if template.strip() else r"\u@\h:\w\$ "
-        if value == r"\w \$ ":
-            return r"\u@\h:\w\$ "
-        return value
-
-    def build_local_prompt_shell_command(self, bash_path: str) -> list[str]:
-        quoted_ps1 = shlex.quote(self.build_prompt_ps1())
-        script = (
-            f"export TERMIA_PS1={quoted_ps1}; "
-            "exec bash --rcfile <(printf '%s\\n' "
-            "'test -r ~/.bashrc && . ~/.bashrc' "
-            "'PS1=\"$TERMIA_PS1\"' "
-            "'export PS1') -i"
-        )
-        return [bash_path, "-lc", script]
 
     def apply_terminal_settings(self, terminal: Vte.Terminal) -> None:
         settings = self.store.data.terminal
@@ -2758,7 +2718,7 @@ class TermiaWindow(Gtk.ApplicationWindow):
         prompt_enabled.set_active(settings.prompt_enabled)
         prompt_enabled.set_halign(Gtk.Align.START)
 
-        prompt_datetime_id, prompt_base_template = self.split_prompt_datetime_template(settings.prompt_template)
+        prompt_datetime_id, prompt_base_template = split_prompt_datetime_template(settings.prompt_template)
         prompt_datetime_combo = Gtk.ComboBoxText()
         prompt_datetime_combo.append("none", self.t("prompt_datetime_none"))
         prompt_datetime_combo.append("time", self.t("prompt_datetime_time"))
@@ -2946,13 +2906,13 @@ class TermiaWindow(Gtk.ApplicationWindow):
     ) -> None:
         command_markup = GLib.markup_escape_text("ssh ejemplo\nSalida de terminal")
         if prompt_enabled.get_active():
-            prompt_text = self.render_prompt_preview(
-                self.prompt_template_with_datetime(
+            prompt_text = render_prompt_preview(
+                prompt_template_with_datetime(
                     prompt_template_entry.get_text(), prompt_datetime_combo.get_active_id() or "none"
                 )
             )
             prompt_markup = GLib.markup_escape_text(prompt_text)
-            prompt_color = self.rgba_to_hex(prompt_color_button.get_rgba())
+            prompt_color = rgba_to_hex(prompt_color_button.get_rgba())
             preview.set_markup(f'<span foreground="{prompt_color}">{prompt_markup}</span>{command_markup}')
         else:
             preview.set_markup(GLib.markup_escape_text("usuario@servidor:~$ ssh ejemplo\nSalida de terminal"))
@@ -2975,46 +2935,6 @@ class TermiaWindow(Gtk.ApplicationWindow):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
-    def split_prompt_datetime_template(self, template: str) -> tuple[str, str]:
-        prefixes = [
-            ("both", r"[\d \A] "),
-            ("date", r"[\d] "),
-            ("time_seconds", r"[\t] "),
-            ("time", r"[\A] "),
-        ]
-        for option_id, prefix in prefixes:
-            if template.startswith(prefix):
-                return option_id, template[len(prefix):]
-        return "none", template
-
-    def prompt_template_with_datetime(self, template: str, option_id: str) -> str:
-        base_template = self.normalized_prompt_template(template)
-        prefixes = {
-            "time": r"[\A] ",
-            "time_seconds": r"[\t] ",
-            "date": r"[\d] ",
-            "both": r"[\d \A] ",
-        }
-        return f"{prefixes.get(option_id, '')}{base_template}"
-
-    def render_prompt_preview(self, template: str) -> str:
-        text = self.normalized_prompt_template(template)
-        replacements = {
-            r"\u": "usuario",
-            r"\h": "servidor",
-            r"\H": "servidor.local",
-            r"\w": "~/proyecto",
-            r"\W": "proyecto",
-            r"\$": "$",
-            r"\A": "14:35",
-            r"\t": "14:35:08",
-            r"\d": "dom jun 07",
-            r"\n": "\n",
-        }
-        for marker, value in replacements.items():
-            text = text.replace(marker, value)
-        return text
-
     def on_prompt_settings_response(
         self,
         dialog: Gtk.Dialog,
@@ -3027,10 +2947,10 @@ class TermiaWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.OK:
             self.store.update_prompt_settings(
                 prompt_enabled.get_active(),
-                self.prompt_template_with_datetime(
+                prompt_template_with_datetime(
                     prompt_template_entry.get_text(), prompt_datetime_combo.get_active_id() or "none"
                 ),
-                self.rgba_to_hex(prompt_color_button.get_rgba()),
+                rgba_to_hex(prompt_color_button.get_rgba()),
             )
             self.toast_label.set_label(self.t("prompt_settings_saved"))
         dialog.destroy()
