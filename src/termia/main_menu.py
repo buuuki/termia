@@ -77,6 +77,11 @@ class MainMenuMixin:
         prompt.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_prompt_settings))
         menu.append(prompt)
 
+        security = Gtk.Button(label=self.t("security"))
+        security.set_halign(Gtk.Align.FILL)
+        security.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_security_settings))
+        menu.append(security)
+
         connections_file = Gtk.Button(label=self.t("connections_file"))
         connections_file.set_halign(Gtk.Align.FILL)
         connections_file.connect("clicked", lambda _button: popover.set_child(self.build_main_connections_menu(popover)))

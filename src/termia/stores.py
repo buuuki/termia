@@ -8,6 +8,14 @@ from pathlib import Path
 from uuid import uuid4
 
 from .constants import APP_THEMES, LEGACY_ANSI_PALETTE, SETTINGS_FILE, STATISTICS_FILE
+from .config_io import (
+    CONNECTION_STORAGE_MODES,
+    CONNECTION_STORAGE_PLAIN,
+    connection_storage_mode_from_payload,
+    decoded_connections_payload,
+    read_raw_connections_payload,
+    write_connections_file,
+)
 from .i18n import LANGUAGES, detect_system_language
 from .models import (
     DEFAULT_ANSI_PALETTE,
@@ -104,7 +112,9 @@ class ConnectionStore:
             )
             return
 
-        payload = json.loads(self.path.read_text(encoding="utf-8"))
+        raw_payload = read_raw_connections_payload(self.path)
+        file_storage_mode = connection_storage_mode_from_payload(raw_payload)
+        payload = decoded_connections_payload(raw_payload)
         legacy_statistics = payload.get("statistics")
         if legacy_statistics and not self.statistics_store.path.exists():
             self.statistics_store.data = StatisticsSettings(**legacy_statistics)
@@ -113,11 +123,13 @@ class ConnectionStore:
         app = self.settings_store.app
         terminal = self.settings_store.terminal
         settings_migrated = False
-        if not self.settings_store.path.exists() and ("app" in payload or "terminal" in payload):
-            app_payload = payload.get("app", {})
-            app_fields = AppSettings.__dataclass_fields__
-            app = AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields})
-            terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
+        if not self.settings_store.path.exists():
+            if "app" in payload or "terminal" in payload:
+                app_payload = payload.get("app", {})
+                app_fields = AppSettings.__dataclass_fields__
+                app = AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields})
+                terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
+            app.connection_storage_mode = file_storage_mode
             self.settings_store.app = app
             self.settings_store.terminal = terminal
             self.settings_store.save()
@@ -148,13 +160,12 @@ class ConnectionStore:
         return repaired
 
     def save_connections(self) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            "groups": [asdict(group) for group in self.data.groups],
-            "servers": [asdict(server) for server in self.data.servers],
-        }
-        self.path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        self.path.chmod(0o600)
+        write_connections_file(
+            self.path,
+            self.data.groups,
+            self.data.servers,
+            self.data.app.connection_storage_mode,
+        )
 
     def save_settings(self) -> None:
         self.settings_store.app = self.data.app
@@ -168,6 +179,13 @@ class ConnectionStore:
     def save_statistics(self) -> None:
         self.statistics_store.data = self.data.statistics
         self.statistics_store.save()
+
+    def update_connection_storage_mode(self, storage_mode: str) -> None:
+        self.data.app.connection_storage_mode = (
+            storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
+        )
+        self.save_settings()
+        self.save_connections()
 
     def add_group(self, name: str, parent_id: str | None = None) -> Group:
         group = Group(id=str(uuid4()), name=name.strip(), parent_id=parent_id)

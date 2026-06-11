@@ -76,7 +76,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 ### Configuration and Data
 
 - Existing combined `connections.json` files must remain loadable and migrate app/terminal settings into `settings.json` without losing groups, servers, or preferences.
-- New `connections.json` writes must contain only groups and servers; app and terminal preferences must be written to `settings.json`.
+- New plain `connections.json` writes must contain only groups and servers; app and terminal preferences must be written to `settings.json`.
+- Obfuscated connection storage must decode back to the same groups, servers, passwords, and private key paths, and switching modes must rewrite the file immediately.
 - Import/export configuration must preserve groups, subgroups, servers, SSH user, port, host, password, and private key path where available.
 - Importing Asbru configuration must not add unwanted suffixes such as `- copy`.
 - Clearing configuration must require confirmation.

@@ -7,6 +7,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
+from .config_io import CONNECTION_STORAGE_OBFUSCATED, CONNECTION_STORAGE_PLAIN
 from .constants import APP_THEMES, PROMPT_PRESETS, TERMINAL_PALETTES
 from .i18n import LANGUAGES, detect_system_language
 from .terminal_config import (
@@ -142,6 +143,53 @@ class PreferencesMixin:
             self.refresh_list()
             if previous_language != self.store.data.app.language:
                 self.toast_label.set_label(self.t("restart_language"))
+        dialog.destroy()
+
+
+    def on_security_settings(self, _button: Gtk.Button) -> None:
+        dialog = Gtk.Dialog(title=self.t("security"), transient_for=self, modal=True)
+        dialog.set_resizable(False)
+        dialog.set_default_size(460, -1)
+        self.add_dialog_action_buttons(dialog, self.t("save"))
+
+        content = dialog.get_content_area()
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_spacing(12)
+
+        grid = Gtk.Grid(column_spacing=12, row_spacing=12)
+        storage_combo = Gtk.ComboBoxText()
+        storage_combo.append(CONNECTION_STORAGE_PLAIN, self.t("connection_storage_plain"))
+        storage_combo.append(CONNECTION_STORAGE_OBFUSCATED, self.t("connection_storage_obfuscated"))
+        storage_combo.set_active_id(self.store.data.app.connection_storage_mode)
+        storage_combo.set_hexpand(True)
+
+        label = Gtk.Label(label=self.t("connection_storage_mode"))
+        label.set_xalign(0)
+        grid.attach(label, 0, 0, 1, 1)
+        grid.attach(storage_combo, 1, 0, 1, 1)
+        content.append(grid)
+
+        warning = Gtk.Label(label=self.t("connection_storage_obfuscated_warning"))
+        warning.set_xalign(0)
+        warning.set_wrap(True)
+        warning.add_css_class("dim-label")
+        content.append(warning)
+
+        dialog.connect("response", self.on_security_settings_response, storage_combo)
+        dialog.present()
+
+    def on_security_settings_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        storage_combo: Gtk.ComboBoxText,
+    ) -> None:
+        if response == Gtk.ResponseType.OK:
+            self.store.update_connection_storage_mode(storage_combo.get_active_id() or CONNECTION_STORAGE_PLAIN)
+            self.toast_label.set_label(self.t("security_settings_saved"))
         dialog.destroy()
 
     def on_terminal_settings(self, _button: Gtk.Button) -> None:

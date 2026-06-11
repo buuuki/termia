@@ -101,7 +101,7 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 ~/.local/state/termia/statistics.json
 ```
 
-Les contrasenyes desades s'emmagatzemen en text pla a `connections.json`.
+Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla o ofuscat des de les preferències de Seguretat. L'ofuscació no és xifratge.
 Els fitxers de connexions exportats també poden contenir credencials.
 Els comptadors locals agregats es desen per separat a `statistics.json`.
 

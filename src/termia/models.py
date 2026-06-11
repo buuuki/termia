@@ -56,6 +56,7 @@ class AppSettings:
     confirm_close_app: bool = False
     sudo_password_shortcut: bool = False
     sudo_password_enter: bool = False
+    connection_storage_mode: str = "plain"
 
 
 @dataclass

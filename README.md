@@ -137,7 +137,7 @@ Termia stores connection data, settings, and statistics outside the repository:
 ~/.local/state/termia/statistics.json
 ```
 
-Saved passwords are currently stored as plain text in `connections.json`. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`.
+Saved passwords are stored in `connections.json`; the file can be kept as plain text or obfuscated from Security preferences. Obfuscation is not encryption. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`.
 
 Termia does not store typed text, command contents, or clipboard contents. Statistics
 are flushed at most every 30 seconds while typing, when sessions end, and when Termia
