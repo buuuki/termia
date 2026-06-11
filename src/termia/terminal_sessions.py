@@ -313,10 +313,15 @@ class TerminalSessionsMixin:
         return False
 
     def schedule_statistics_save(self) -> None:
-        if self.stats_save_id is None:
+        if self.store.data.app.statistics_enabled and self.stats_save_id is None:
             self.stats_save_id = GLib.timeout_add_seconds(30, self.flush_statistics)
 
     def save_statistics_before_close(self) -> None:
+        if not self.store.data.app.statistics_enabled:
+            if self.stats_save_id is not None:
+                GLib.source_remove(self.stats_save_id)
+                self.stats_save_id = None
+            return
         for session in tuple(self.open_tabs.values()):
             self.record_session_duration(session)
         if self.stats_save_id is not None:
@@ -326,6 +331,8 @@ class TerminalSessionsMixin:
 
     def flush_statistics(self) -> bool:
         self.stats_save_id = None
+        if not self.store.data.app.statistics_enabled:
+            return GLib.SOURCE_REMOVE
         self.store.save_statistics()
         return GLib.SOURCE_REMOVE
 
@@ -333,9 +340,13 @@ class TerminalSessionsMixin:
         if self.stats_save_id is not None:
             GLib.source_remove(self.stats_save_id)
             self.stats_save_id = None
+        if not self.store.data.app.statistics_enabled:
+            return
         self.store.save_statistics()
 
     def record_connection(self, server_id: str) -> None:
+        if not self.store.data.app.statistics_enabled:
+            return
         stats = self.store.data.statistics
         stats.connections += 1
         stats.server_connections[server_id] = stats.server_connections.get(server_id, 0) + 1
@@ -344,6 +355,8 @@ class TerminalSessionsMixin:
         self.refresh_statistics_menu()
 
     def record_session_duration(self, session: TerminalSession) -> None:
+        if not self.store.data.app.statistics_enabled:
+            return
         if session.duration_recorded or session.child_pid is None:
             return
         session.duration_recorded = True
@@ -373,16 +386,17 @@ class TerminalSessionsMixin:
         state: Gdk.ModifierType,
         session: TerminalSession,
     ) -> bool:
-        stats = self.store.data.statistics
-        session.keystrokes += 1
-        stats.keystrokes += 1
-        self.run_keystrokes += 1
+        if self.store.data.app.statistics_enabled:
+            stats = self.store.data.statistics
+            session.keystrokes += 1
+            stats.keystrokes += 1
+            self.run_keystrokes += 1
         enter_keys = {Gdk.KEY_Return, Gdk.KEY_KP_Enter, getattr(Gdk, "KEY_ISO_Enter", Gdk.KEY_Return)}
         if keyval in enter_keys and session.pending_reconnect:
             self.schedule_statistics_save()
             self.reconnect_session(session)
             return True
-        if keyval in enter_keys:
+        if keyval in enter_keys and self.store.data.app.statistics_enabled:
             session.commands += 1
             stats.commands += 1
             self.run_commands += 1

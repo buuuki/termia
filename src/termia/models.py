@@ -57,6 +57,7 @@ class AppSettings:
     sudo_password_shortcut: bool = False
     sudo_password_enter: bool = False
     connection_storage_mode: str = "plain"
+    statistics_enabled: bool = True
 
 
 @dataclass
