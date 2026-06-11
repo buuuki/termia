@@ -73,6 +73,9 @@ class PreferencesMixin:
         sudo_password_shortcut.connect(
             "toggled", lambda current: sudo_password_enter.set_sensitive(current.get_active())
         )
+        statistics_enabled = Gtk.CheckButton(label=self.t("statistics_enabled"))
+        statistics_enabled.set_active(self.store.data.app.statistics_enabled)
+        statistics_enabled.set_halign(Gtk.Align.START)
         rows: list[tuple[str, Gtk.Widget]] = [
             (self.t("theme"), theme_combo),
             (self.t("language"), language_combo),
@@ -81,6 +84,7 @@ class PreferencesMixin:
             ("", open_local_terminal_on_startup),
             ("", show_sidebar_on_startup),
             ("", show_session_status_bar),
+            ("", statistics_enabled),
             ("", confirm_disconnect),
             ("", confirm_close_app),
             ("", sudo_password_shortcut),
@@ -98,7 +102,7 @@ class PreferencesMixin:
             "response", self.on_app_preferences_response, theme_combo, language_combo,
             close_tab_on_disconnect, close_tab_on_ssh_exit, open_local_terminal_on_startup,
             show_sidebar_on_startup, show_session_status_bar, confirm_disconnect, confirm_close_app,
-            sudo_password_shortcut, sudo_password_enter
+            sudo_password_shortcut, sudo_password_enter, statistics_enabled
         )
         dialog.present()
 
@@ -117,6 +121,7 @@ class PreferencesMixin:
         confirm_close_app: Gtk.CheckButton,
         sudo_password_shortcut: Gtk.CheckButton,
         sudo_password_enter: Gtk.CheckButton,
+        statistics_enabled: Gtk.CheckButton,
     ) -> None:
         if response == Gtk.ResponseType.OK:
             previous_language = self.store.data.app.language
@@ -132,6 +137,7 @@ class PreferencesMixin:
                 open_local_terminal_on_startup.get_active(),
                 show_sidebar_on_startup.get_active(),
                 show_session_status_bar.get_active(),
+                statistics_enabled.get_active(),
             )
             self.apply_app_theme()
             self.install_tree_styles()

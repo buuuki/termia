@@ -312,6 +312,7 @@ class ConnectionStore:
         confirm_disconnect: bool, confirm_close_app: bool,
         sudo_password_shortcut: bool, sudo_password_enter: bool, close_tab_on_ssh_exit: bool,
         open_local_terminal_on_startup: bool, show_sidebar_on_startup: bool, show_session_status_bar: bool,
+        statistics_enabled: bool,
     ) -> None:
         self.data.app = AppSettings(
             theme=theme if theme in APP_THEMES else "system",
@@ -325,5 +326,6 @@ class ConnectionStore:
             confirm_close_app=confirm_close_app,
             sudo_password_shortcut=sudo_password_shortcut,
             sudo_password_enter=sudo_password_enter,
+            statistics_enabled=statistics_enabled,
         )
         self.save_settings()

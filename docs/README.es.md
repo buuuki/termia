@@ -103,11 +103,11 @@ Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 
 Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano u ofuscado desde las preferencias de Seguridad. La ofuscación no es cifrado.
 Los ficheros de conexiones exportados también pueden contener credenciales.
-Los contadores locales agregados se guardan por separado en `statistics.json`.
+Los contadores locales agregados se guardan por separado en `statistics.json` y se pueden desactivar desde las preferencias generales.
 
 Termia no guarda el texto escrito, el contenido de los comandos ni el contenido del
-portapapeles. Las estadísticas se escriben como máximo cada 30 segundos mientras se
-escribe, al finalizar sesiones y al cerrar Termia. Consulta
+portapapeles. Cuando están activadas, las estadísticas se escriben como máximo
+cada 30 segundos mientras se escribe, al finalizar sesiones y al cerrar Termia. Consulta
 [../SECURITY.md](../SECURITY.md).
 
 Python puede crear directorios `__pycache__/` junto a los módulos ejecutados.

@@ -103,11 +103,11 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 
 Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla o ofuscat des de les preferències de Seguretat. L'ofuscació no és xifratge.
 Els fitxers de connexions exportats també poden contenir credencials.
-Els comptadors locals agregats es desen per separat a `statistics.json`.
+Els comptadors locals agregats es desen per separat a `statistics.json` i es poden desactivar des de les preferències generals.
 
 Termia no desa el text escrit, el contingut de les ordres ni el contingut del
-porta-retalls. Les estadístiques s'escriuen com a màxim cada 30 segons mentre
-s'escriu, en finalitzar sessions i en tancar Termia. Consulta
+porta-retalls. Quan estan activades, les estadístiques s'escriuen com a màxim
+cada 30 segons mentre s'escriu, en finalitzar sessions i en tancar Termia. Consulta
 [../SECURITY.md](../SECURITY.md).
 
 Python pot crear directoris `__pycache__/` al costat dels mòduls executats.
