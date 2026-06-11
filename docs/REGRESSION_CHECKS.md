@@ -106,8 +106,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 ### Statistics
 
 - Statistics collection must remain lightweight and should not continuously write to disk on every keypress.
-- Disabling statistics from General preferences must stop new aggregate connection, command, keystroke, and duration counters from being recorded or flushed.
-- Global and current-run counters must remain separate.
+- Statistics must be disabled by default and must not record command or keystroke counters, even when enabled.
+- Disabling statistics from General preferences must stop new aggregate connection and duration counters from being recorded or flushed.
+- Global and current-run connection counters must remain separate.
 - Per-session statistics must correspond to the selected terminal session.
 
 ## Manual Regression Checklist

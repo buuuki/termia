@@ -14,7 +14,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Filtrar servidores y abrir varias sesiones al mismo host en pestañas.
 - Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
 - Abrir terminales locales embebidas.
-- Guardar estadísticas locales agregadas de conexiones, comandos, pulsaciones, duración y uso por servidor.
+- Registrar opcionalmente estadísticas locales agregadas de conexiones, duración y uso por servidor.
 - Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
 - Mostrar u ocultar globalmente la barra de estado de sesión, ocultarla por sesión y restaurarla desde el menú contextual del terminal.
 - Configurar confirmaciones para desconectar sesiones y cerrar Termia.
@@ -103,11 +103,10 @@ Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 
 Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano u ofuscado desde las preferencias de Seguridad. La ofuscación no es cifrado.
 Los ficheros de conexiones exportados también pueden contener credenciales.
-Los contadores locales agregados se guardan por separado en `statistics.json` y se pueden desactivar desde las preferencias generales.
+Los contadores locales agregados se guardan por separado en `statistics.json`, vienen desactivados por defecto y se pueden activar o desactivar desde las preferencias generales.
 
-Termia no guarda el texto escrito, el contenido de los comandos ni el contenido del
-portapapeles. Cuando están activadas, las estadísticas se escriben como máximo
-cada 30 segundos mientras se escribe, al finalizar sesiones y al cerrar Termia. Consulta
+Termia no guarda el texto escrito, el contenido de los comandos, el contenido del
+portapapeles, contadores de comandos ni contadores de pulsaciones. Cuando están activadas, las estadísticas solo registran conexiones agregadas, uso por servidor y duración de sesiones; se escriben como máximo cada 30 segundos, al finalizar sesiones y al cerrar Termia. Consulta
 [../SECURITY.md](../SECURITY.md).
 
 Python puede crear directorios `__pycache__/` junto a los módulos ejecutados.

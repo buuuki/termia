@@ -43,22 +43,12 @@ class StatisticsViewMixin:
             0, 0, 1, 1
         )
         cards.attach(
-            self.build_stat_card(self.t("commands"), str(stats.commands), f"{self.t('current_run')} {self.run_commands}"),
+            self.build_stat_card(self.t("sessions"), str(stats.completed_sessions), self.t("global")),
             1, 0, 1, 1
         )
         cards.attach(
-            self.build_stat_card(
-                self.t("keystrokes"), str(stats.keystrokes), f"{self.t('current_run')} {self.run_keystrokes}"
-            ),
-            2, 0, 1, 1
-        )
-        cards.attach(
-            self.build_stat_card(self.t("sessions"), str(stats.completed_sessions), self.t("global")),
-            0, 1, 1, 1
-        )
-        cards.attach(
             self.build_stat_card(self.t("average_duration"), format_duration(average_duration), self.t("duration")),
-            1, 1, 1, 1
+            2, 0, 1, 1
         )
         cards.attach(
             self.build_stat_card(
@@ -66,7 +56,7 @@ class StatisticsViewMixin:
                 format_duration(stats.duration_max if stats.completed_sessions else None),
                 f"{self.t('shortest_duration')}: {format_duration(stats.duration_min)}",
             ),
-            2, 1, 1, 1
+            0, 1, 1, 1
         )
         for card in self.iter_grid_children(cards):
             card.set_hexpand(True)

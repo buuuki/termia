@@ -386,21 +386,10 @@ class TerminalSessionsMixin:
         state: Gdk.ModifierType,
         session: TerminalSession,
     ) -> bool:
-        if self.store.data.app.statistics_enabled:
-            stats = self.store.data.statistics
-            session.keystrokes += 1
-            stats.keystrokes += 1
-            self.run_keystrokes += 1
         enter_keys = {Gdk.KEY_Return, Gdk.KEY_KP_Enter, getattr(Gdk, "KEY_ISO_Enter", Gdk.KEY_Return)}
         if keyval in enter_keys and session.pending_reconnect:
-            self.schedule_statistics_save()
             self.reconnect_session(session)
             return True
-        if keyval in enter_keys and self.store.data.app.statistics_enabled:
-            session.commands += 1
-            stats.commands += 1
-            self.run_commands += 1
-        self.schedule_statistics_save()
         if state & Gdk.ModifierType.CONTROL_MASK:
             if keyval in (Gdk.KEY_Page_Up, Gdk.KEY_KP_Page_Up):
                 self.move_terminal_tab_focus(session, -1)
@@ -550,13 +539,7 @@ class TerminalSessionsMixin:
         dialog = Gtk.Dialog(title=self.t("session_statistics"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
-        label = Gtk.Label(
-            label=(
-                f"{self.t('keystrokes')}: {session.keystrokes}\n"
-                f"{self.t('commands')}: {session.commands}\n"
-                f"{self.t('server_connections')}: {server_connections}"
-            )
-        )
+        label = Gtk.Label(label=f"{self.t('server_connections')}: {server_connections}")
         label.set_xalign(0)
         label.set_selectable(True)
         label.set_margin_top(12)

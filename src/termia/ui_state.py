@@ -41,6 +41,4 @@ class TerminalSession:
     connected: bool = True
     disconnect_requested: bool = False
     pending_reconnect: bool = False
-    keystrokes: int = 0
-    commands: int = 0
     duration_recorded: bool = False

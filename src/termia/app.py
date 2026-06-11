@@ -53,8 +53,6 @@ class TermiaWindow(
         self.open_tabs: dict[str, TerminalSession] = {}
         self.session_sequence = 0
         self.run_connections = 0
-        self.run_commands = 0
-        self.run_keystrokes = 0
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.connect("close-request", self.on_main_window_close_request)

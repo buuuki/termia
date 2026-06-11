@@ -14,7 +14,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Filtrar servidors i obrir diverses sessions al mateix host en pestanyes.
 - Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
 - Obrir terminals locals incrustats.
-- Desar estadístiques locals agregades de connexions, ordres, pulsacions, durada i ús per servidor.
+- Registrar opcionalment estadístiques locals agregades de connexions, durada i ús per servidor.
 - Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
 - Mostrar o amagar globalment la barra d'estat de sessió, amagar-la per sessió i restaurar-la des del menú contextual del terminal.
 - Configurar confirmacions per desconnectar sessions i tancar Termia.
@@ -103,11 +103,10 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 
 Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla o ofuscat des de les preferències de Seguretat. L'ofuscació no és xifratge.
 Els fitxers de connexions exportats també poden contenir credencials.
-Els comptadors locals agregats es desen per separat a `statistics.json` i es poden desactivar des de les preferències generals.
+Els comptadors locals agregats es desen per separat a `statistics.json`, venen desactivats per defecte i es poden activar o desactivar des de les preferències generals.
 
-Termia no desa el text escrit, el contingut de les ordres ni el contingut del
-porta-retalls. Quan estan activades, les estadístiques s'escriuen com a màxim
-cada 30 segons mentre s'escriu, en finalitzar sessions i en tancar Termia. Consulta
+Termia no desa el text escrit, el contingut de les ordres, el contingut del
+porta-retalls, comptadors d'ordres ni comptadors de pulsacions. Quan estan activades, les estadístiques només registren connexions agregades, ús per servidor i durada de sessions; s'escriuen com a màxim cada 30 segons, en finalitzar sessions i en tancar Termia. Consulta
 [../SECURITY.md](../SECURITY.md).
 
 Python pot crear directoris `__pycache__/` al costat dels mòduls executats.

@@ -37,7 +37,8 @@ class StatisticsStore:
     def load(self) -> None:
         if self.path.exists():
             payload = json.loads(self.path.read_text(encoding="utf-8"))
-            self.data = StatisticsSettings(**payload)
+            fields = StatisticsSettings.__dataclass_fields__
+            self.data = StatisticsSettings(**{key: value for key, value in payload.items() if key in fields})
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

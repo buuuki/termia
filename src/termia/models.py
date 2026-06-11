@@ -57,14 +57,12 @@ class AppSettings:
     sudo_password_shortcut: bool = False
     sudo_password_enter: bool = False
     connection_storage_mode: str = "plain"
-    statistics_enabled: bool = True
+    statistics_enabled: bool = False
 
 
 @dataclass
 class StatisticsSettings:
     connections: int = 0
-    commands: int = 0
-    keystrokes: int = 0
     completed_sessions: int = 0
     duration_total: float = 0.0
     duration_min: float | None = None
