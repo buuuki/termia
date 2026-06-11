@@ -9,7 +9,9 @@ from gi.repository import GLib
 
 APP_ID = "local.termia"
 APP_DIR = Path(__file__).resolve().parent
-DATA_FILE = Path(GLib.get_user_config_dir()) / "termia" / "connections.json"
+CONFIG_DIR = Path(GLib.get_user_config_dir()) / "termia"
+DATA_FILE = CONFIG_DIR / "connections.json"
+SETTINGS_FILE = CONFIG_DIR / "settings.json"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state")))
 STATISTICS_FILE = STATE_DIR / "termia" / "statistics.json"
 ABOUT_IMAGE = APP_DIR / "assets" / "termia.svg"

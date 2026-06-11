@@ -31,7 +31,7 @@ class ConfigActionsMixin:
             return
         self.store.data.groups = []
         self.store.data.servers = []
-        self.store.save()
+        self.store.save_connections()
         self.selected = None
         self.refresh_list()
         self.toast_label.set_label(self.t("clear_config"))
@@ -47,7 +47,7 @@ class ConfigActionsMixin:
         except GLib.Error:
             return
         if file and file.get_path():
-            self.store.save()
+            self.store.save_connections()
             export_connections_file(self.store.path, Path(file.get_path()))
             self.toast_label.set_label("Configuración exportada")
 
@@ -62,12 +62,12 @@ class ConfigActionsMixin:
             return
         if file and file.get_path():
             try:
-                imported = load_store_data_from_json(Path(file.get_path()), self.store.data.statistics)
+                imported = load_store_data_from_json(Path(file.get_path()), self.store.data)
             except (OSError, ValueError, TypeError) as exc:
                 self.toast_label.set_label(f"No se pudo importar JSON: {exc}")
                 return
             self.store.data = imported
-            self.store.save()
+            self.store.save_connections()
             self.apply_app_theme()
             self.refresh_list()
             self.toast_label.set_label("Configuración importada")
@@ -95,6 +95,6 @@ class ConfigActionsMixin:
             payload = payload["__PAC__EXPORTED__PARTIAL_CONF"]
         imported_groups, imported_servers = extract_asbru_connections(payload)
         added_groups, added_servers = merge_asbru_connections(self.store.data, imported_groups, imported_servers)
-        self.store.save()
+        self.store.save_connections()
         self.refresh_list()
         self.toast_label.set_label(f"Ásbrú: {added_groups} grupos y {added_servers} servidores importados")

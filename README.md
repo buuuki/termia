@@ -129,18 +129,15 @@ Remove the launcher without deleting settings or connections:
 
 ## User data and security
 
-Termia stores settings and connections outside the repository:
+Termia stores connection data, settings, and statistics outside the repository:
 
 ```text
-~/.config/termia/connections.json
-```
-
-Saved passwords are currently stored as plain text. Exported configuration files
-can also contain passwords. Aggregate usage counters are stored separately in:
-
-```text
+~/.config/termia/connections.json   # groups and servers
+~/.config/termia/settings.json      # app and terminal settings
 ~/.local/state/termia/statistics.json
 ```
+
+Saved passwords are currently stored as plain text in `connections.json`. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`.
 
 Termia does not store typed text, command contents, or clipboard contents. Statistics
 are flushed at most every 30 seconds while typing, when sessions end, and when Termia

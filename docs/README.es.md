@@ -93,18 +93,17 @@ Elimina únicamente el lanzador de escritorio:
 
 ## Datos del usuario y seguridad
 
-Las conexiones y preferencias se guardan fuera del repositorio:
+Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 
 ```text
-~/.config/termia/connections.json
-```
-
-Las contraseñas guardadas y los ficheros exportados pueden contener credenciales
-en texto plano. Los contadores locales agregados se guardan por separado en:
-
-```text
+~/.config/termia/connections.json   # grupos y servidores
+~/.config/termia/settings.json      # configuración de la app y del terminal
 ~/.local/state/termia/statistics.json
 ```
+
+Las contraseñas guardadas se almacenan en texto plano en `connections.json`.
+Los ficheros de conexiones exportados también pueden contener credenciales.
+Los contadores locales agregados se guardan por separado en `statistics.json`.
 
 Termia no guarda el texto escrito, el contenido de los comandos ni el contenido del
 portapapeles. Las estadísticas se escriben como máximo cada 30 segundos mientras se

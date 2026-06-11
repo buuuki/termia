@@ -7,7 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 from uuid import uuid4
 
-from .constants import APP_THEMES, LEGACY_ANSI_PALETTE, STATISTICS_FILE
+from .constants import APP_THEMES, LEGACY_ANSI_PALETTE, SETTINGS_FILE, STATISTICS_FILE
 from .i18n import LANGUAGES, detect_system_language
 from .models import (
     DEFAULT_ANSI_PALETTE,
@@ -37,16 +37,71 @@ class StatisticsStore:
         self.path.chmod(0o600)
 
 
-class ConnectionStore:
-    def __init__(self, path: Path, statistics_path: Path = STATISTICS_FILE) -> None:
+class SettingsStore:
+    def __init__(self, path: Path) -> None:
         self.path = path
-        self.statistics_store = StatisticsStore(statistics_path)
-        self.data = StoreData(statistics=self.statistics_store.data)
+        self.app = AppSettings()
+        self.terminal = TerminalSettings()
         self.load()
 
     def load(self) -> None:
         if not self.path.exists():
-            self.data = StoreData(statistics=self.statistics_store.data)
+            return
+        payload = json.loads(self.path.read_text(encoding="utf-8"))
+        app_payload = payload.get("app", {})
+        app_fields = AppSettings.__dataclass_fields__
+        self.app = AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields})
+        self.terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
+
+    def save(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "app": asdict(self.app),
+            "terminal": asdict(self.terminal),
+        }
+        self.path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        self.path.chmod(0o600)
+
+
+def normalize_terminal_settings(terminal: TerminalSettings) -> TerminalSettings:
+    if (
+        terminal.font_family == "Ubuntu Mono"
+        and terminal.font_size == 13
+        and terminal.foreground == "#839496"
+        and terminal.background == "#002b36"
+    ):
+        terminal.font_family = "JetBrains Mono"
+        terminal.foreground = "#eeeeec"
+        terminal.background = "#2e3436"
+    if terminal.ansi_palette == LEGACY_ANSI_PALETTE:
+        terminal.ansi_palette = DEFAULT_ANSI_PALETTE.copy()
+    return terminal
+
+
+class ConnectionStore:
+    def __init__(
+        self,
+        path: Path,
+        settings_path: Path = SETTINGS_FILE,
+        statistics_path: Path = STATISTICS_FILE,
+    ) -> None:
+        self.path = path
+        self.settings_store = SettingsStore(settings_path)
+        self.statistics_store = StatisticsStore(statistics_path)
+        self.data = StoreData(
+            terminal=self.settings_store.terminal,
+            app=self.settings_store.app,
+            statistics=self.statistics_store.data,
+        )
+        self.load()
+
+    def load(self) -> None:
+        if not self.path.exists():
+            self.data = StoreData(
+                terminal=self.settings_store.terminal,
+                app=self.settings_store.app,
+                statistics=self.statistics_store.data,
+            )
             return
 
         payload = json.loads(self.path.read_text(encoding="utf-8"))
@@ -54,33 +109,30 @@ class ConnectionStore:
         if legacy_statistics and not self.statistics_store.path.exists():
             self.statistics_store.data = StatisticsSettings(**legacy_statistics)
             self.statistics_store.save()
-        app_payload = payload.get("app", {})
-        app_fields = AppSettings.__dataclass_fields__
-        terminal = TerminalSettings(**payload.get("terminal", {}))
-        repaired = False
-        if (
-            terminal.font_family == "Ubuntu Mono"
-            and terminal.font_size == 13
-            and terminal.foreground == "#839496"
-            and terminal.background == "#002b36"
-        ):
-            terminal.font_family = "JetBrains Mono"
-            terminal.foreground = "#eeeeec"
-            terminal.background = "#2e3436"
-            repaired = True
-        if terminal.ansi_palette == LEGACY_ANSI_PALETTE:
-            terminal.ansi_palette = DEFAULT_ANSI_PALETTE.copy()
-            repaired = True
+
+        app = self.settings_store.app
+        terminal = self.settings_store.terminal
+        settings_migrated = False
+        if not self.settings_store.path.exists() and ("app" in payload or "terminal" in payload):
+            app_payload = payload.get("app", {})
+            app_fields = AppSettings.__dataclass_fields__
+            app = AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields})
+            terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
+            self.settings_store.app = app
+            self.settings_store.terminal = terminal
+            self.settings_store.save()
+            settings_migrated = True
+
         self.data = StoreData(
             groups=[Group(**item) for item in payload.get("groups", [])],
             servers=[Server(**item) for item in payload.get("servers", [])],
             terminal=terminal,
-            app=AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}),
+            app=app,
             statistics=self.statistics_store.data,
         )
-        repaired = self.repair_references() or repaired
-        if "statistics" in payload or repaired:
-            self.save()
+        repaired = self.repair_references()
+        if "statistics" in payload or "app" in payload or "terminal" in payload or repaired or settings_migrated:
+            self.save_connections()
 
     def repair_references(self) -> bool:
         group_ids = {group.id for group in self.data.groups}
@@ -95,16 +147,23 @@ class ConnectionStore:
                 repaired = True
         return repaired
 
-    def save(self) -> None:
+    def save_connections(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "groups": [asdict(group) for group in self.data.groups],
             "servers": [asdict(server) for server in self.data.servers],
-            "terminal": asdict(self.data.terminal),
-            "app": asdict(self.data.app),
         }
         self.path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         self.path.chmod(0o600)
+
+    def save_settings(self) -> None:
+        self.settings_store.app = self.data.app
+        self.settings_store.terminal = self.data.terminal
+        self.settings_store.save()
+
+    def save(self) -> None:
+        self.save_connections()
+        self.save_settings()
 
     def save_statistics(self) -> None:
         self.statistics_store.data = self.data.statistics
@@ -113,7 +172,7 @@ class ConnectionStore:
     def add_group(self, name: str, parent_id: str | None = None) -> Group:
         group = Group(id=str(uuid4()), name=name.strip(), parent_id=parent_id)
         self.data.groups.append(group)
-        self.save()
+        self.save_connections()
         return group
 
     def update_group(self, group_id: str, name: str, parent_id: str | None = None) -> None:
@@ -122,7 +181,7 @@ class ConnectionStore:
                 group.name = name.strip()
                 group.parent_id = parent_id
                 break
-        self.save()
+        self.save_connections()
 
     def delete_group(self, group_id: str) -> None:
         group_ids = {group_id}
@@ -137,7 +196,7 @@ class ConnectionStore:
             pending.extend(child_ids)
         self.data.groups = [group for group in self.data.groups if group.id not in group_ids]
         self.data.servers = [server for server in self.data.servers if server.group_id not in group_ids]
-        self.save()
+        self.save_connections()
 
     def add_server(
         self,
@@ -160,7 +219,7 @@ class ConnectionStore:
             public_key=public_key,
         )
         self.data.servers.append(server)
-        self.save()
+        self.save_connections()
         return server
 
     def update_server(
@@ -184,11 +243,11 @@ class ConnectionStore:
                 server.password = password
                 server.public_key = public_key
                 break
-        self.save()
+        self.save_connections()
 
     def delete_server(self, server_id: str) -> None:
         self.data.servers = [server for server in self.data.servers if server.id != server_id]
-        self.save()
+        self.save_connections()
 
     def update_terminal_settings(
         self,
@@ -213,7 +272,7 @@ class ConnectionStore:
             prompt_template=(prompt_template if prompt_template is not None else current.prompt_template) if (prompt_template if prompt_template is not None else current.prompt_template).strip() else r"\u@\h:\w\$ ",
             prompt_color=(prompt_color if prompt_color is not None else current.prompt_color).strip() or "#8ae234",
         )
-        self.save()
+        self.save_settings()
 
     def update_prompt_settings(self, enabled: bool, template: str, color: str) -> None:
         current = self.data.terminal
@@ -228,7 +287,7 @@ class ConnectionStore:
             prompt_template=template if template.strip() else r"\u@\h:\w\$ ",
             prompt_color=color.strip() or "#8ae234",
         )
-        self.save()
+        self.save_settings()
 
     def update_app_settings(
         self, theme: str, language: str, close_tab_on_disconnect: bool,
@@ -249,4 +308,4 @@ class ConnectionStore:
             sudo_password_shortcut=sudo_password_shortcut,
             sudo_password_enter=sudo_password_enter,
         )
-        self.save()
+        self.save_settings()

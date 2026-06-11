@@ -93,18 +93,17 @@ Elimina únicament el llançador d'escriptori:
 
 ## Dades de l'usuari i seguretat
 
-Les connexions i preferències es desen fora del repositori:
+Les connexions, preferències i estadístiques es desen fora del repositori:
 
 ```text
-~/.config/termia/connections.json
-```
-
-Les contrasenyes desades i els fitxers exportats poden contenir credencials en
-text pla. Els comptadors locals agregats es desen per separat a:
-
-```text
+~/.config/termia/connections.json   # grups i servidors
+~/.config/termia/settings.json      # configuració de l'aplicació i del terminal
 ~/.local/state/termia/statistics.json
 ```
+
+Les contrasenyes desades s'emmagatzemen en text pla a `connections.json`.
+Els fitxers de connexions exportats també poden contenir credencials.
+Els comptadors locals agregats es desen per separat a `statistics.json`.
 
 Termia no desa el text escrit, el contingut de les ordres ni el contingut del
 porta-retalls. Les estadístiques s'escriuen com a màxim cada 30 segons mentre
