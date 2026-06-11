@@ -18,7 +18,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
 - Show or hide the session status bar globally, hide it per session, and restore it from the terminal context menu.
 - Configure confirmation prompts for disconnecting sessions and closing Termia.
-- Optionally send the saved SSH password to a remote terminal with `Super+Shift+P`, with or without `Enter`.
+- Optionally send the saved SSH password to a remote terminal with `Ctrl+P`, with or without `Enter`.
 - Configure general options, VTE terminal font/colors, and PS1 prompt settings separately.
 - Customize local prompt colors, presets, and time/date prefixes without changing remote shell startup files or commands.
 - Use the interface in English, Spanish, or Catalan. The initial language follows the system locale when supported.

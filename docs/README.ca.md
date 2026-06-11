@@ -18,7 +18,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
 - Mostrar o amagar globalment la barra d'estat de sessió, amagar-la per sessió i restaurar-la des del menú contextual del terminal.
 - Configurar confirmacions per desconnectar sessions i tancar Termia.
-- Enviar opcionalment la contrasenya SSH desada a un terminal remot amb `Super+Shift+P`, amb `Enter` o sense.
+- Enviar opcionalment la contrasenya SSH desada a un terminal remot amb `Ctrl+P`, amb `Enter` o sense.
 - Configurar per separat opcions generals, tipus de lletra i colors del terminal VTE, i el prompt PS1.
 - Personalitzar el prompt local amb colors, temes predefinits i prefixos d'hora o data sense canviar fitxers d'inici ni ordres remotes.
 - Usar la interfície en castellà, català o anglès. L'idioma inicial segueix el locale del sistema quan està suportat.

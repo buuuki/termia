@@ -400,7 +400,7 @@ class TerminalSessionsMixin:
             if keyval in (Gdk.KEY_minus, Gdk.KEY_underscore, Gdk.KEY_KP_Subtract):
                 self.change_terminal_font_size(-1)
                 return True
-        required_modifiers = Gdk.ModifierType.SUPER_MASK | Gdk.ModifierType.SHIFT_MASK
+        required_modifiers = Gdk.ModifierType.CONTROL_MASK
         if (
             self.store.data.app.sudo_password_shortcut
             and keyval in (Gdk.KEY_p, Gdk.KEY_P)

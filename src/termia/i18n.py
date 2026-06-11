@@ -27,7 +27,7 @@ TRANSLATIONS = {
         "cancel": "Cancelar", "close": "Cerrar", "save": "Guardar", "name": "Nombre", "host": "IP o host",
         "ssh_user": "Usuario SSH", "ssh_port": "Puerto SSH", "group": "Grupo",
         "password": "Contraseña", "public_key": "Clave SSH privada",
-        "ssh_fingerprint_manual": "Host nuevo: responde al fingerprint en esta terminal. Después introduce la contraseña manualmente o con Super+Shift+P.",
+        "ssh_fingerprint_manual": "Host nuevo: responde al fingerprint en esta terminal. Después introduce la contraseña manualmente o con Ctrl+P.",
         "password_warning": "Aviso: la contraseña se guardará en texto plano en connections.json.",
         "server_required_fields": "Nombre, host y usuario SSH son obligatorios.",
         "required_field": "* Campo obligatorio",
@@ -44,7 +44,7 @@ TRANSLATIONS = {
         "close_tab_on_disconnect": "Cerrar la pestaña al desconectar una sesión",
         "show_session_status_bar": "Mostrar barra de estado de la sesión", "hide_status_bar": "Ocultar",
         "confirm_disconnect": "Confirmar antes de desconectar o cerrar una sesión activa", "confirm_close_app": "Confirmar para cerrar Termia",
-        "sudo_password_shortcut": "Enviar contraseña con Super+Shift+P",
+        "sudo_password_shortcut": "Enviar contraseña con Ctrl+P",
         "sudo_password_enter": "Enviar contraseña y pulsar Enter",
         "sudo_password_sent": "Contraseña guardada enviada a la terminal",
         "sudo_password_unavailable": "Esta terminal no tiene una contraseña guardada",
@@ -69,7 +69,7 @@ TRANSLATIONS = {
             "- Abre conexiones y terminales locales en pestañas embebidas, compactas y desacoplables.\n"
             "- Muestra un dashboard de estadísticas con métricas globales, duración y servidores más usados, además de estadísticas por sesión.\n"
             "- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede mostrarse desde General, ocultarse por sesión y restaurarse desde el menú contextual.\n"
-            "- Permite enviar opcionalmente la contraseña guardada con Super+Shift+P.\n"
+            "- Permite enviar opcionalmente la contraseña guardada con Ctrl+P.\n"
             "- Configura por separado opciones generales, terminal VTE y prompt PS1.\n"
             "- El prompt local permite color, temas predefinidos, hora, fecha y previsualización sin modificar sesiones remotas.\n"
             "- Importa y exporta configuraciones, incluida la importación básica desde Ásbrú.\n\n"
@@ -90,7 +90,7 @@ TRANSLATIONS = {
         "cancel": "Cancel·lar", "close": "Tancar", "save": "Desar", "name": "Nom", "host": "IP o host",
         "ssh_user": "Usuari SSH", "ssh_port": "Port SSH", "group": "Grup",
         "password": "Contrasenya", "public_key": "Clau SSH privada",
-        "ssh_fingerprint_manual": "Host nou: respon al fingerprint en aquest terminal. Després introdueix la contrasenya manualment o amb Super+Shift+P.",
+        "ssh_fingerprint_manual": "Host nou: respon al fingerprint en aquest terminal. Després introdueix la contrasenya manualment o amb Ctrl+P.",
         "password_warning": "Avís: la contrasenya es desarà en text pla a connections.json.",
         "server_required_fields": "El nom, el host i l'usuari SSH són obligatoris.",
         "required_field": "* Camp obligatori",
@@ -107,7 +107,7 @@ TRANSLATIONS = {
         "close_tab_on_disconnect": "Tancar la pestanya en desconnectar una sessió",
         "show_session_status_bar": "Mostrar barra d'estat de la sessió", "hide_status_bar": "Amagar",
         "confirm_disconnect": "Confirmar abans de desconnectar o tancar una sessió activa", "confirm_close_app": "Confirmar per tancar Termia",
-        "sudo_password_shortcut": "Enviar contrasenya amb Super+Shift+P",
+        "sudo_password_shortcut": "Enviar contrasenya amb Ctrl+P",
         "sudo_password_enter": "Enviar contrasenya i prémer Enter",
         "sudo_password_sent": "Contrasenya desada enviada al terminal",
         "sudo_password_unavailable": "Aquest terminal no té cap contrasenya desada",
@@ -132,7 +132,7 @@ TRANSLATIONS = {
             "- Obre connexions i terminals locals en pestanyes incrustades, compactes i desacoblables.\n"
             "- Mostra un dashboard d'estadístiques amb mètriques globals, durada i servidors més usats, a més d'estadístiques per sessió.\n"
             "- La barra d'estat de sessió mostra estat, PID, temps i desconnexió; es pot mostrar des de General, amagar per sessió i restaurar des del menú contextual.\n"
-            "- Permet enviar opcionalment la contrasenya desada amb Super+Shift+P.\n"
+            "- Permet enviar opcionalment la contrasenya desada amb Ctrl+P.\n"
             "- Configura per separat opcions generals, terminal VTE i prompt PS1.\n"
             "- El prompt local permet color, temes predefinits, hora, data i previsualització sense modificar sessions remotes.\n"
             "- Importa i exporta configuracions, inclosa la importació bàsica des d'Ásbrú.\n\n"
@@ -153,7 +153,7 @@ TRANSLATIONS = {
         "cancel": "Cancel", "close": "Close", "save": "Save", "name": "Name", "host": "IP or host",
         "ssh_user": "SSH user", "ssh_port": "SSH port", "group": "Group",
         "password": "Password", "public_key": "Private SSH key",
-        "ssh_fingerprint_manual": "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Super+Shift+P.",
+        "ssh_fingerprint_manual": "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Ctrl+P.",
         "password_warning": "Warning: the password will be stored as plain text in connections.json.",
         "server_required_fields": "Name, host, and SSH user are required.",
         "required_field": "* Required field",
@@ -170,7 +170,7 @@ TRANSLATIONS = {
         "close_tab_on_disconnect": "Close the tab when disconnecting a session",
         "show_session_status_bar": "Show session status bar", "hide_status_bar": "Hide",
         "confirm_disconnect": "Confirm before disconnecting or closing an active session", "confirm_close_app": "Confirm before closing Termia",
-        "sudo_password_shortcut": "Send password with Super+Shift+P",
+        "sudo_password_shortcut": "Send password with Ctrl+P",
         "sudo_password_enter": "Send password and press Enter",
         "sudo_password_sent": "Saved password sent to the terminal",
         "sudo_password_unavailable": "This terminal does not have a saved password",
@@ -195,7 +195,7 @@ TRANSLATIONS = {
             "- Open connections and local terminals in embedded, compact and detachable tabs.\n"
             "- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
             "- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
-            "- Optionally send the saved password with Super+Shift+P.\n"
+            "- Optionally send the saved password with Ctrl+P.\n"
             "- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
             "- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
             "- Import and export configurations, including basic imports from Ásbrú.\n\n"
