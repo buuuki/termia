@@ -40,6 +40,11 @@ class MainMenuMixin:
         prompt.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_prompt_settings))
         menu.append(prompt)
 
+        keybindings = Gtk.Button(label=self.t("keybindings"))
+        keybindings.set_halign(Gtk.Align.FILL)
+        keybindings.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_keybindings_settings))
+        menu.append(keybindings)
+
         connections_file = Gtk.MenuButton(label=self.t("connections_file"))
         connections_file.set_halign(Gtk.Align.FILL)
         connections_file.set_popover(self.build_connections_file_menu())
@@ -76,6 +81,11 @@ class MainMenuMixin:
         prompt.set_halign(Gtk.Align.FILL)
         prompt.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_prompt_settings))
         menu.append(prompt)
+
+        keybindings = Gtk.Button(label=self.t("keybindings"))
+        keybindings.set_halign(Gtk.Align.FILL)
+        keybindings.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_keybindings_settings))
+        menu.append(keybindings)
 
         security = Gtk.Button(label=self.t("security"))
         security.set_halign(Gtk.Align.FILL)

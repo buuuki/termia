@@ -18,6 +18,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
 - Mostrar o amagar globalment la barra d'estat de sessió, amagar-la per sessió i restaurar-la des del menú contextual del terminal.
 - Configurar confirmacions per desconnectar sessions i tancar Termia.
+- Configurar dreceres de terminal, incloent `Ctrl+Shift+C` per copiar i `Ctrl+Shift+V` per enganxar.
 - Enviar opcionalment la contrasenya SSH desada a un terminal remot amb `Ctrl+P`, amb `Enter` o sense.
 - Configurar per separat opcions generals, tipus de lletra i colors del terminal VTE, i el prompt PS1.
 - Personalitzar el prompt local amb colors, temes predefinits i prefixos d'hora o data sense canviar fitxers d'inici ni ordres remotes.
@@ -27,11 +28,13 @@ Documentació en castellà: [README.es.md](README.es.md)
 
 ## Notes d'ús
 
-El menú `Configuració` es divideix en `General`, `Terminal` i `Prompt`:
+El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Dreceres` i `Seguretat`:
 
 - `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió.
 - `Terminal` controla el tipus de lletra, mida, colors i paletes del terminal VTE incrustat.
 - `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. No altera ordres SSH ni modifica fitxers d'inici remots.
+- `Dreceres` mostra les dreceres actives del terminal i permet canviar accions habituals com copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada.
+- `Seguretat` controla el mode d'emmagatzematge de connexions.
 
 Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera.
 

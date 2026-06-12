@@ -18,6 +18,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
 - Show or hide the session status bar globally, hide it per session, and restore it from the terminal context menu.
 - Configure confirmation prompts for disconnecting sessions and closing Termia.
+- Configure terminal keybindings, including `Ctrl+Shift+C` for copy and `Ctrl+Shift+V` for paste.
 - Optionally send the saved SSH password to a remote terminal with `Ctrl+P`, with or without `Enter`.
 - Configure general options, VTE terminal font/colors, and PS1 prompt settings separately.
 - Customize local prompt colors, presets, and time/date prefixes without changing remote shell startup files or commands.
@@ -27,11 +28,13 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 
 ## Usage notes
 
-The `Configuration` menu is split into `General`, `Terminal`, and `Prompt`:
+The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybindings`, and `Security`:
 
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar.
 - `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, and color palettes.
 - `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. It does not alter SSH commands or modify remote shell startup files.
+- `Keybindings` shows the active terminal shortcuts and lets you change common actions such as copy, paste, tab switching, font zoom, and sending the saved password.
+- `Security` controls connection storage mode.
 
 Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle.
 

@@ -10,6 +10,13 @@ from gi.repository import GLib, Gtk
 from .config_io import CONNECTION_STORAGE_OBFUSCATED, CONNECTION_STORAGE_PLAIN
 from .constants import APP_THEMES, PROMPT_PRESETS, TERMINAL_PALETTES
 from .i18n import LANGUAGES, detect_system_language
+from .keybindings import (
+    DEFAULT_KEYBINDINGS,
+    KEYBINDING_ACTIONS,
+    KEYBINDING_CHOICES,
+    keybinding_label,
+    normalize_keybinding,
+)
 from .terminal_config import (
     parse_color,
     prompt_template_with_datetime,
@@ -196,6 +203,62 @@ class PreferencesMixin:
         if response == Gtk.ResponseType.OK:
             self.store.update_connection_storage_mode(storage_combo.get_active_id() or CONNECTION_STORAGE_PLAIN)
             self.toast_label.set_label(self.t("security_settings_saved"))
+        dialog.destroy()
+
+    def on_keybindings_settings(self, _button: Gtk.Button) -> None:
+        dialog = Gtk.Dialog(title=self.t("keybindings"), transient_for=self, modal=True)
+        dialog.set_resizable(False)
+        dialog.set_default_size(520, -1)
+        self.add_dialog_action_buttons(dialog, self.t("save"))
+        self.add_dialog_action_button(dialog, self.t("keybindings_restore_defaults"), Gtk.ResponseType.APPLY)
+
+        content = dialog.get_content_area()
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_spacing(12)
+
+        description = Gtk.Label(label=self.t("keybindings_description"))
+        description.set_xalign(0)
+        description.set_wrap(True)
+        description.add_css_class("dim-label")
+        content.append(description)
+
+        grid = Gtk.Grid(column_spacing=12, row_spacing=10)
+        combos: list[tuple[str, Gtk.ComboBoxText]] = []
+        for index, (action, label_key) in enumerate(KEYBINDING_ACTIONS):
+            label = Gtk.Label(label=self.t(label_key))
+            label.set_xalign(0)
+            combo = Gtk.ComboBoxText()
+            for choice in KEYBINDING_CHOICES:
+                combo.append(choice, keybinding_label(choice, self.t("keybinding_disabled")))
+            current = normalize_keybinding(self.store.data.app.keybindings.get(action, DEFAULT_KEYBINDINGS[action]))
+            if current not in KEYBINDING_CHOICES:
+                combo.append(current, current)
+            combo.set_active_id(current)
+            combo.set_hexpand(True)
+            combos.append((action, combo))
+            grid.attach(label, 0, index, 1, 1)
+            grid.attach(combo, 1, index, 1, 1)
+        content.append(grid)
+
+        dialog.connect("response", self.on_keybindings_settings_response, combos)
+        dialog.present()
+
+    def on_keybindings_settings_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        combos: list[tuple[str, Gtk.ComboBoxText]],
+    ) -> None:
+        if response == Gtk.ResponseType.APPLY:
+            for action, combo in combos:
+                combo.set_active_id(DEFAULT_KEYBINDINGS[action])
+            return
+        if response == Gtk.ResponseType.OK:
+            self.store.update_keybindings({action: combo.get_active_id() or "" for action, combo in combos})
+            self.toast_label.set_label(self.t("keybindings_settings_saved"))
         dialog.destroy()
 
     def on_terminal_settings(self, _button: Gtk.Button) -> None:

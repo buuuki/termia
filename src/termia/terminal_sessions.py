@@ -21,6 +21,7 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
 from .connection_utils import find_server
+from .keybindings import keybinding_matches
 from .models import DEFAULT_ANSI_PALETTE, Server
 from .terminal_config import (
     build_local_prompt_shell_command,
@@ -390,24 +391,27 @@ class TerminalSessionsMixin:
         if keyval in enter_keys and session.pending_reconnect:
             self.reconnect_session(session)
             return True
-        if state & Gdk.ModifierType.CONTROL_MASK:
-            if keyval in (Gdk.KEY_Page_Up, Gdk.KEY_KP_Page_Up):
-                self.move_terminal_tab_focus(session, -1)
-                return True
-            if keyval in (Gdk.KEY_Page_Down, Gdk.KEY_KP_Page_Down):
-                self.move_terminal_tab_focus(session, 1)
-                return True
-            if keyval in (Gdk.KEY_plus, Gdk.KEY_equal, Gdk.KEY_KP_Add):
-                self.change_terminal_font_size(1)
-                return True
-            if keyval in (Gdk.KEY_minus, Gdk.KEY_underscore, Gdk.KEY_KP_Subtract):
-                self.change_terminal_font_size(-1)
-                return True
-        required_modifiers = Gdk.ModifierType.CONTROL_MASK
-        if (
-            self.store.data.app.sudo_password_shortcut
-            and keyval in (Gdk.KEY_p, Gdk.KEY_P)
-            and state & required_modifiers == required_modifiers
+        keybindings = self.store.data.app.keybindings
+        if keybinding_matches(keybindings.get("copy", ""), keyval, state):
+            session.terminal.copy_clipboard_format(Vte.Format.TEXT)
+            return True
+        if keybinding_matches(keybindings.get("paste", ""), keyval, state):
+            session.terminal.paste_clipboard()
+            return True
+        if keybinding_matches(keybindings.get("previous_tab", ""), keyval, state):
+            self.move_terminal_tab_focus(session, -1)
+            return True
+        if keybinding_matches(keybindings.get("next_tab", ""), keyval, state):
+            self.move_terminal_tab_focus(session, 1)
+            return True
+        if keybinding_matches(keybindings.get("font_increase", ""), keyval, state):
+            self.change_terminal_font_size(1)
+            return True
+        if keybinding_matches(keybindings.get("font_decrease", ""), keyval, state):
+            self.change_terminal_font_size(-1)
+            return True
+        if self.store.data.app.sudo_password_shortcut and keybinding_matches(
+            keybindings.get("send_password", ""), keyval, state
         ):
             self.send_saved_password(session)
             return True

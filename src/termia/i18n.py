@@ -20,7 +20,7 @@ def detect_system_language() -> str:
 TRANSLATIONS = {
     "es": {
         "servers": "Mostrar u ocultar listado de servidores", "new_group": "Nuevo grupo", "new_server": "Nuevo servidor",
-        "terminal": "Terminal", "prompt": "Prompt", "security": "Seguridad", "general": "General", "preferences": "Preferencias", "filter_servers": "Filtrar servidores",
+        "terminal": "Terminal", "prompt": "Prompt", "keybindings": "Atajos", "security": "Seguridad", "general": "General", "preferences": "Preferencias", "filter_servers": "Filtrar servidores",
         "connect": "Conectar", "edit_server": "Editar servidor", "delete_server": "Eliminar servidor", "clone_connection": "Clonar conexión",
         "edit_group": "Editar grupo", "delete_group": "Eliminar grupo", "no_group": "Sin grupo",
         "parent_group": "Grupo padre", "no_parent_group": "Sin grupo padre",
@@ -45,10 +45,21 @@ TRANSLATIONS = {
         "show_session_status_bar": "Mostrar barra de estado de la sesión", "hide_status_bar": "Ocultar",
         "statistics_enabled": "Registrar estadísticas locales de conexiones y duración",
         "confirm_disconnect": "Confirmar antes de desconectar o cerrar una sesión activa", "confirm_close_app": "Confirmar para cerrar Termia",
-        "sudo_password_shortcut": "Enviar contraseña con Ctrl+P",
+        "sudo_password_shortcut": "Permitir enviar contraseña con atajo",
         "sudo_password_enter": "Enviar contraseña y pulsar Enter",
         "sudo_password_sent": "Contraseña guardada enviada a la terminal",
         "sudo_password_unavailable": "Esta terminal no tiene una contraseña guardada",
+        "keybindings_description": "Configura atajos activos dentro del terminal. Deja una acción desactivada para que la combinación llegue al shell remoto.",
+        "keybindings_restore_defaults": "Restaurar valores",
+        "keybindings_settings_saved": "Atajos guardados",
+        "keybinding_disabled": "Desactivado",
+        "keybinding_action_copy": "Copiar selección",
+        "keybinding_action_paste": "Pegar portapapeles",
+        "keybinding_action_previous_tab": "Pestaña anterior",
+        "keybinding_action_next_tab": "Pestaña siguiente",
+        "keybinding_action_font_increase": "Aumentar fuente",
+        "keybinding_action_font_decrease": "Reducir fuente",
+        "keybinding_action_send_password": "Enviar contraseña guardada",
         "close_app": "Cerrar Termia", "close_app_confirm": "¿Quieres cerrar Termia?",
         "font_size": "Fuente y tamaño", "custom_prompt": "Personalizar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temas de prompt", "prompt_datetime": "Fecha y hora", "prompt_datetime_none": "Sin fecha/hora", "prompt_datetime_time": "Hora", "prompt_datetime_time_seconds": "Hora y segundos", "prompt_datetime_date": "Fecha", "prompt_datetime_both": "Fecha y hora", "prompt_settings_saved": "Configuración de prompt guardada", "terminal_settings_saved": "Preferencias de terminal guardadas", "security_settings_saved": "Preferencias de seguridad guardadas", "terminal_font_size_changed": "Tamaño de fuente del terminal: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Paletas",
         "connection_storage_mode": "Almacenamiento de conexiones", "connection_storage_plain": "Texto plano", "connection_storage_obfuscated": "Ofuscado", "connection_storage_obfuscated_warning": "La ofuscación evita lecturas accidentales del fichero, pero no cifra ni protege frente a un atacante con acceso al código.", "configuration": "Configuración", "connections_file": "Importar/Exportar", "export_config": "Exportar configuración", "import_config": "Importar configuración",
@@ -70,7 +81,7 @@ TRANSLATIONS = {
             "- Abre conexiones y terminales locales en pestañas embebidas, compactas y desacoplables.\n"
             "- Muestra un dashboard de estadísticas con métricas globales, duración y servidores más usados, además de estadísticas por sesión.\n"
             "- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede mostrarse desde General, ocultarse por sesión y restaurarse desde el menú contextual.\n"
-            "- Permite enviar opcionalmente la contraseña guardada con Ctrl+P.\n"
+            "- Permite configurar atajos de terminal, incluido copiar, pegar y enviar la contraseña guardada.\n"
             "- Configura por separado opciones generales, terminal VTE y prompt PS1.\n"
             "- El prompt local permite color, temas predefinidos, hora, fecha y previsualización sin modificar sesiones remotas.\n"
             "- Importa y exporta configuraciones, incluida la importación básica desde Ásbrú.\n\n"
@@ -84,7 +95,7 @@ TRANSLATIONS = {
     },
     "ca": {
         "servers": "Mostrar o amagar el llistat de servidors", "new_group": "Nou grup", "new_server": "Nou servidor",
-        "terminal": "Terminal", "prompt": "Prompt", "security": "Seguretat", "general": "General", "preferences": "Preferències", "filter_servers": "Filtrar servidors",
+        "terminal": "Terminal", "prompt": "Prompt", "keybindings": "Dreceres", "security": "Seguretat", "general": "General", "preferences": "Preferències", "filter_servers": "Filtrar servidors",
         "connect": "Connectar", "edit_server": "Editar servidor", "delete_server": "Eliminar servidor", "clone_connection": "Clonar connexió",
         "edit_group": "Editar grup", "delete_group": "Eliminar grup", "no_group": "Sense grup",
         "parent_group": "Grup pare", "no_parent_group": "Sense grup pare",
@@ -109,10 +120,21 @@ TRANSLATIONS = {
         "show_session_status_bar": "Mostrar barra d'estat de la sessió", "hide_status_bar": "Amagar",
         "statistics_enabled": "Registrar estadístiques locals de connexions i durada",
         "confirm_disconnect": "Confirmar abans de desconnectar o tancar una sessió activa", "confirm_close_app": "Confirmar per tancar Termia",
-        "sudo_password_shortcut": "Enviar contrasenya amb Ctrl+P",
+        "sudo_password_shortcut": "Permetre enviar contrasenya amb drecera",
         "sudo_password_enter": "Enviar contrasenya i prémer Enter",
         "sudo_password_sent": "Contrasenya desada enviada al terminal",
         "sudo_password_unavailable": "Aquest terminal no té cap contrasenya desada",
+        "keybindings_description": "Configura dreceres actives dins del terminal. Deixa una acció desactivada perquè la combinació arribi al shell remot.",
+        "keybindings_restore_defaults": "Restaurar valors",
+        "keybindings_settings_saved": "Dreceres desades",
+        "keybinding_disabled": "Desactivat",
+        "keybinding_action_copy": "Copiar selecció",
+        "keybinding_action_paste": "Enganxar porta-retalls",
+        "keybinding_action_previous_tab": "Pestanya anterior",
+        "keybinding_action_next_tab": "Pestanya següent",
+        "keybinding_action_font_increase": "Augmentar lletra",
+        "keybinding_action_font_decrease": "Reduir lletra",
+        "keybinding_action_send_password": "Enviar contrasenya desada",
         "close_app": "Tancar Termia", "close_app_confirm": "Vols tancar Termia?",
         "font_size": "Tipus de lletra i mida", "custom_prompt": "Personalitzar prompt local", "prompt_template": "Plantilla PS1", "prompt_color": "Color del prompt", "prompt_presets": "Temes de prompt", "prompt_datetime": "Data i hora", "prompt_datetime_none": "Sense data/hora", "prompt_datetime_time": "Hora", "prompt_datetime_time_seconds": "Hora i segons", "prompt_datetime_date": "Data", "prompt_datetime_both": "Data i hora", "prompt_settings_saved": "Configuració del prompt desada", "terminal_settings_saved": "Preferències del terminal desades", "security_settings_saved": "Preferències de seguretat desades", "terminal_font_size_changed": "Mida de la lletra del terminal: {size}", "foreground": "Primer pla", "background": "Fons", "palettes": "Paletes",
         "connection_storage_mode": "Emmagatzematge de connexions", "connection_storage_plain": "Text pla", "connection_storage_obfuscated": "Ofuscat", "connection_storage_obfuscated_warning": "L'ofuscació evita lectures accidentals del fitxer, però no xifra ni protegeix davant un atacant amb accés al codi.", "configuration": "Configuració", "connections_file": "Importar/Exportar", "export_config": "Exportar configuració", "import_config": "Importar configuració",
@@ -134,7 +156,7 @@ TRANSLATIONS = {
             "- Obre connexions i terminals locals en pestanyes incrustades, compactes i desacoblables.\n"
             "- Mostra un dashboard d'estadístiques amb mètriques globals, durada i servidors més usats, a més d'estadístiques per sessió.\n"
             "- La barra d'estat de sessió mostra estat, PID, temps i desconnexió; es pot mostrar des de General, amagar per sessió i restaurar des del menú contextual.\n"
-            "- Permet enviar opcionalment la contrasenya desada amb Ctrl+P.\n"
+            "- Permet configurar dreceres de terminal, incloent copiar, enganxar i enviar la contrasenya desada.\n"
             "- Configura per separat opcions generals, terminal VTE i prompt PS1.\n"
             "- El prompt local permet color, temes predefinits, hora, data i previsualització sense modificar sessions remotes.\n"
             "- Importa i exporta configuracions, inclosa la importació bàsica des d'Ásbrú.\n\n"
@@ -148,7 +170,7 @@ TRANSLATIONS = {
     },
     "en": {
         "servers": "Show or hide server list", "new_group": "New group", "new_server": "New server",
-        "terminal": "Terminal", "prompt": "Prompt", "security": "Security", "general": "General", "preferences": "Preferences", "filter_servers": "Filter servers",
+        "terminal": "Terminal", "prompt": "Prompt", "keybindings": "Keybindings", "security": "Security", "general": "General", "preferences": "Preferences", "filter_servers": "Filter servers",
         "connect": "Connect", "edit_server": "Edit server", "delete_server": "Delete server", "clone_connection": "Clone connection",
         "edit_group": "Edit group", "delete_group": "Delete group", "no_group": "No group",
         "parent_group": "Parent group", "no_parent_group": "No parent group",
@@ -173,10 +195,21 @@ TRANSLATIONS = {
         "show_session_status_bar": "Show session status bar", "hide_status_bar": "Hide",
         "statistics_enabled": "Record local connection and duration statistics",
         "confirm_disconnect": "Confirm before disconnecting or closing an active session", "confirm_close_app": "Confirm before closing Termia",
-        "sudo_password_shortcut": "Send password with Ctrl+P",
+        "sudo_password_shortcut": "Allow sending password with shortcut",
         "sudo_password_enter": "Send password and press Enter",
         "sudo_password_sent": "Saved password sent to the terminal",
         "sudo_password_unavailable": "This terminal does not have a saved password",
+        "keybindings_description": "Configure shortcuts active inside the terminal. Leave an action disabled to let the combination reach the remote shell.",
+        "keybindings_restore_defaults": "Restore defaults",
+        "keybindings_settings_saved": "Keybindings saved",
+        "keybinding_disabled": "Disabled",
+        "keybinding_action_copy": "Copy selection",
+        "keybinding_action_paste": "Paste clipboard",
+        "keybinding_action_previous_tab": "Previous tab",
+        "keybinding_action_next_tab": "Next tab",
+        "keybinding_action_font_increase": "Increase font",
+        "keybinding_action_font_decrease": "Decrease font",
+        "keybinding_action_send_password": "Send saved password",
         "close_app": "Close Termia", "close_app_confirm": "Do you want to close Termia?",
         "font_size": "Font and size", "custom_prompt": "Customize local prompt", "prompt_template": "PS1 template", "prompt_color": "Prompt color", "prompt_presets": "Prompt themes", "prompt_datetime": "Date and time", "prompt_datetime_none": "No date/time", "prompt_datetime_time": "Time", "prompt_datetime_time_seconds": "Time with seconds", "prompt_datetime_date": "Date", "prompt_datetime_both": "Date and time", "prompt_settings_saved": "Prompt settings saved", "terminal_settings_saved": "Terminal preferences saved", "security_settings_saved": "Security preferences saved", "terminal_font_size_changed": "Terminal font size: {size}", "foreground": "Foreground", "background": "Background", "palettes": "Palettes",
         "connection_storage_mode": "Connection storage", "connection_storage_plain": "Plain text", "connection_storage_obfuscated": "Obfuscated", "connection_storage_obfuscated_warning": "Obfuscation prevents accidental file reads, but it does not encrypt data or protect against an attacker with access to the code.", "configuration": "Configuration", "connections_file": "Import/Export", "export_config": "Export configuration", "import_config": "Import configuration",
@@ -198,7 +231,7 @@ TRANSLATIONS = {
             "- Open connections and local terminals in embedded, compact and detachable tabs.\n"
             "- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
             "- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
-            "- Optionally send the saved password with Ctrl+P.\n"
+            "- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
             "- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
             "- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
             "- Import and export configurations, including basic imports from Ásbrú.\n\n"

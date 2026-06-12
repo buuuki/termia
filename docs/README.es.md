@@ -18,6 +18,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
 - Mostrar u ocultar globalmente la barra de estado de sesión, ocultarla por sesión y restaurarla desde el menú contextual del terminal.
 - Configurar confirmaciones para desconectar sesiones y cerrar Termia.
+- Configurar atajos de terminal, incluido `Ctrl+Shift+C` para copiar y `Ctrl+Shift+V` para pegar.
 - Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Ctrl+P`, con o sin `Enter`.
 - Configurar por separado opciones generales, fuente y colores del terminal VTE, y el prompt PS1.
 - Personalizar el prompt local con colores, temas predefinidos y prefijos de hora o fecha sin cambiar ficheros de inicio ni comandos remotos.
@@ -27,11 +28,13 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 
 ## Notas de uso
 
-El menú `Configuración` se divide en `General`, `Terminal` y `Prompt`:
+El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:
 
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión.
 - `Terminal` controla la fuente, tamaño, colores y paletas del terminal VTE embebido.
 - `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. No altera comandos SSH ni modifica ficheros de inicio remotos.
+- `Atajos` muestra los atajos activos del terminal y permite cambiar acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada.
+- `Seguridad` controla el modo de almacenamiento de conexiones.
 
 Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera.
 

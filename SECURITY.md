@@ -2,18 +2,20 @@
 
 ## Stored credentials
 
-Termia currently stores configured SSH passwords as plain text in:
+Termia stores configured SSH passwords in:
 
 ```text
 ~/.config/termia/connections.json
 ```
 
-The file is written with permissions `0600`, but this is not a replacement for a
-secret store. Do not publish, commit, or share this file. Prefer SSH keys where
-possible.
+The connection file can be kept as plain text or obfuscated from `Security`
+preferences. Obfuscation only reduces accidental readability of the file; it is
+not encryption and is not a replacement for a secret store. The file is written
+with permissions `0600`, but you should still not publish, commit, or share it.
+Prefer SSH keys where possible.
 
-Exported configuration files can also contain plain-text passwords. Treat them
-as sensitive files.
+Exported configuration files can also contain passwords. Treat them as sensitive
+files, even when the local connection file uses obfuscated storage.
 
 The optional `Ctrl+P` shortcut sends the saved SSH password directly to the
 active remote terminal process, with an optional trailing `Enter`. It does not use

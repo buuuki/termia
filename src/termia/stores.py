@@ -17,6 +17,7 @@ from .config_io import (
     write_connections_file,
 )
 from .i18n import LANGUAGES, detect_system_language
+from .keybindings import normalize_keybindings
 from .models import (
     DEFAULT_ANSI_PALETTE,
     AppSettings,
@@ -59,7 +60,7 @@ class SettingsStore:
         payload = json.loads(self.path.read_text(encoding="utf-8"))
         app_payload = payload.get("app", {})
         app_fields = AppSettings.__dataclass_fields__
-        self.app = AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields})
+        self.app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
         self.terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
 
     def save(self) -> None:
@@ -70,6 +71,11 @@ class SettingsStore:
         }
         self.path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         self.path.chmod(0o600)
+
+
+def normalize_app_settings(app: AppSettings) -> AppSettings:
+    app.keybindings = normalize_keybindings(app.keybindings)
+    return app
 
 
 def normalize_terminal_settings(terminal: TerminalSettings) -> TerminalSettings:
@@ -128,7 +134,7 @@ class ConnectionStore:
             if "app" in payload or "terminal" in payload:
                 app_payload = payload.get("app", {})
                 app_fields = AppSettings.__dataclass_fields__
-                app = AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields})
+                app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
                 terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
             app.connection_storage_mode = file_storage_mode
             self.settings_store.app = app
@@ -315,6 +321,7 @@ class ConnectionStore:
         open_local_terminal_on_startup: bool, show_sidebar_on_startup: bool, show_session_status_bar: bool,
         statistics_enabled: bool,
     ) -> None:
+        current = self.data.app
         self.data.app = AppSettings(
             theme=theme if theme in APP_THEMES else "system",
             language=language if language in LANGUAGES else detect_system_language(),
@@ -327,6 +334,12 @@ class ConnectionStore:
             confirm_close_app=confirm_close_app,
             sudo_password_shortcut=sudo_password_shortcut,
             sudo_password_enter=sudo_password_enter,
+            connection_storage_mode=current.connection_storage_mode,
             statistics_enabled=statistics_enabled,
+            keybindings=normalize_keybindings(current.keybindings),
         )
+        self.save_settings()
+
+    def update_keybindings(self, keybindings: dict[str, str]) -> None:
+        self.data.app.keybindings = normalize_keybindings(keybindings)
         self.save_settings()
