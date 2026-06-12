@@ -519,7 +519,7 @@ class TerminalSessionsMixin:
         menu.set_margin_bottom(6)
         menu.set_margin_start(6)
         menu.set_margin_end(6)
-        self.add_context_menu_item(menu, self.t("duplicate_tab"), lambda: self.duplicate_tab(popover, session))
+        self.add_terminal_tab_menu(menu, popover, session)
         self.add_context_menu_item(menu, self.t("disconnect"), lambda: self.disconnect_from_terminal_menu(popover, session))
         if not session.status_bar.get_visible():
             self.add_context_menu_item(
@@ -531,6 +531,73 @@ class TerminalSessionsMixin:
         self.add_context_menu_item(menu, self.t("session_statistics"), lambda: self.show_session_statistics(popover, session))
         popover.set_child(menu)
         popover.popup()
+
+    def add_terminal_tab_menu(
+        self,
+        menu: Gtk.ListBox,
+        parent_popover: Gtk.Popover,
+        session: TerminalSession,
+    ) -> None:
+        row = Gtk.ListBoxRow()
+        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        label_box.set_margin_top(8)
+        label_box.set_margin_bottom(8)
+        label_box.set_margin_start(12)
+        label_box.set_margin_end(12)
+        label = Gtk.Label(label=self.t("tab"))
+        label.set_xalign(0)
+        label.set_hexpand(True)
+        arrow = Gtk.Label(label=">")
+        arrow.add_css_class("dim-label")
+        label_box.append(label)
+        label_box.append(arrow)
+        row.set_child(label_box)
+
+        submenu = Gtk.Popover()
+        submenu.add_css_class("termia-menu-popover")
+        submenu.set_has_arrow(False)
+        submenu.set_position(Gtk.PositionType.RIGHT)
+        submenu.set_parent(row)
+        submenu_box = Gtk.ListBox()
+        submenu_box.add_css_class("termia-menu-panel")
+        submenu_box.set_selection_mode(Gtk.SelectionMode.NONE)
+        submenu_box.set_margin_top(6)
+        submenu_box.set_margin_bottom(6)
+        submenu_box.set_margin_start(6)
+        submenu_box.set_margin_end(6)
+        self.add_context_menu_item(
+            submenu_box,
+            self.t("rename_tab"),
+            lambda: self.show_rename_tab_dialog(parent_popover, session),
+        )
+        self.add_context_menu_item(submenu_box, self.t("duplicate_tab"), lambda: self.duplicate_tab(parent_popover, session))
+        self.add_context_menu_item(submenu_box, self.t("new_tab"), lambda: self.new_tab_from_terminal_menu(parent_popover))
+        self.add_context_menu_item(
+            submenu_box,
+            self.t("close_tab"),
+            lambda: self.close_tab_from_terminal_menu(parent_popover, session),
+            destructive=True,
+        )
+        submenu.set_child(submenu_box)
+
+        motion = Gtk.EventControllerMotion.new()
+        motion.connect("enter", lambda *_args: submenu.popup())
+        row.add_controller(motion)
+
+        click = Gtk.GestureClick.new()
+        click.set_button(1)
+        click.connect("released", lambda *_args: submenu.popup())
+        row.add_controller(click)
+
+        menu.append(row)
+
+    def new_tab_from_terminal_menu(self, popover: Gtk.Popover) -> None:
+        popover.popdown()
+        self.on_open_local_terminal(None)
+
+    def close_tab_from_terminal_menu(self, popover: Gtk.Popover, session: TerminalSession) -> None:
+        popover.popdown()
+        self.on_request_close_tab(None, session.id, session.page)
 
     def show_session_status_bar_from_menu(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()

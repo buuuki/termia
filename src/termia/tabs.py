@@ -21,6 +21,7 @@ class TabsMixin:
         self.session_tab_bar.append(session.tab_label)
         self.update_session_tab_bar_visibility()
         self.set_active_session(session.id)
+        self.sync_window_title_with_visible_session()
 
     def visible_sessions_in_tab_order(self) -> list[TerminalSession]:
         sessions_by_label = {
@@ -67,6 +68,15 @@ class TabsMixin:
     def update_session_tab_bar_visibility(self) -> None:
         visible_sessions = [session for session in self.open_tabs.values() if session.detached_window is None]
         self.session_tab_bar.set_visible(len(visible_sessions) > 1)
+
+    def sync_window_title_with_visible_session(self) -> None:
+        visible_sessions = [session for session in self.open_tabs.values() if session.detached_window is None]
+        if len(visible_sessions) == 1:
+            session = visible_sessions[0]
+            if session.server_id is None and session.title_locked:
+                self.set_title(session.title)
+                return
+        self.set_title("Termia")
 
     def focus_available_session_after_close(self, closed_session_id: str) -> None:
         for session in self.visible_sessions_in_tab_order():
@@ -275,6 +285,7 @@ class TabsMixin:
         window.set_child(session.page)
         session.detached_window = window
         self.update_session_tab_bar_visibility()
+        self.sync_window_title_with_visible_session()
         window.connect("close-request", self.on_detached_window_close, session)
         window.present()
 
@@ -308,6 +319,7 @@ class TabsMixin:
             session.title = title
             session.title_locked = True
             self.update_session_tab_title(session, title)
+            self.sync_window_title_with_visible_session()
         dialog.destroy()
 
     def on_request_close_tab(self, _button: Gtk.Button, session_id: str, page: Gtk.Widget) -> None:
@@ -344,4 +356,5 @@ class TabsMixin:
         self.open_tabs.pop(session_id, None)
         self.update_session_tab_bar_visibility()
         self.focus_available_session_after_close(session_id)
+        self.sync_window_title_with_visible_session()
 
