@@ -346,6 +346,7 @@ class TabsMixin:
             session = self.open_tabs.get(session_id)
         if session is None:
             return
+        self.terminate_split_processes(session)
         if session.detached_window is not None:
             window = session.detached_window
             session.detached_window = None

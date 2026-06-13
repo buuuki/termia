@@ -21,7 +21,7 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
 from .connection_utils import find_server
-from .keybindings import keybinding_matches
+from .keybindings import keybinding_label, keybinding_matches
 from .models import DEFAULT_ANSI_PALETTE, Server
 from .terminal_config import (
     build_local_prompt_shell_command,
@@ -387,7 +387,7 @@ class TerminalSessionsMixin:
 
     def configure_terminal_interactions(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
         keys = Gtk.EventControllerKey.new()
-        keys.connect("key-pressed", self.on_terminal_key_pressed, session)
+        keys.connect("key-pressed", self.on_terminal_key_pressed, session, terminal)
         terminal.add_controller(keys)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
@@ -401,6 +401,7 @@ class TerminalSessionsMixin:
         _keycode: int,
         state: Gdk.ModifierType,
         session: TerminalSession,
+        terminal: Vte.Terminal,
     ) -> bool:
         enter_keys = {Gdk.KEY_Return, Gdk.KEY_KP_Enter, getattr(Gdk, "KEY_ISO_Enter", Gdk.KEY_Return)}
         if keyval in enter_keys and session.pending_reconnect:
@@ -411,10 +412,10 @@ class TerminalSessionsMixin:
             return True
         keybindings = self.store.data.app.keybindings
         if keybinding_matches(keybindings.get("copy", ""), keyval, state):
-            session.terminal.copy_clipboard_format(Vte.Format.TEXT)
+            terminal.copy_clipboard_format(Vte.Format.TEXT)
             return True
         if keybinding_matches(keybindings.get("paste", ""), keyval, state):
-            session.terminal.paste_clipboard()
+            terminal.paste_clipboard()
             return True
         if keybinding_matches(keybindings.get("previous_tab", ""), keyval, state):
             self.move_terminal_tab_focus(session, -1)
@@ -431,7 +432,7 @@ class TerminalSessionsMixin:
         if self.store.data.app.sudo_password_shortcut and keybinding_matches(
             keybindings.get("send_password", ""), keyval, state
         ):
-            self.send_saved_password(session)
+            self.send_saved_password(session, terminal)
             return True
         return False
 
@@ -482,7 +483,7 @@ class TerminalSessionsMixin:
         self.apply_terminal_settings_to_open_tabs()
         self.toast_label.set_label(self.t("terminal_font_size_changed").format(size=new_size))
 
-    def send_saved_password(self, session: TerminalSession) -> None:
+    def send_saved_password(self, session: TerminalSession, terminal: Vte.Terminal | None = None) -> None:
         server = find_server(self.store.data.servers, session.server_id) if session.server_id is not None else None
         if not session.connected or server is None or not server.password:
             self.toast_label.set_label(self.t("sudo_password_unavailable"))
@@ -490,7 +491,7 @@ class TerminalSessionsMixin:
         payload = server.password.encode()
         if self.store.data.app.sudo_password_enter:
             payload += b"\r"
-        session.terminal.feed_child(payload)
+        (terminal or session.terminal).feed_child(payload)
         self.toast_label.set_label(self.t("sudo_password_sent"))
 
     def on_terminal_right_click(
@@ -519,18 +520,118 @@ class TerminalSessionsMixin:
         menu.set_margin_bottom(6)
         menu.set_margin_start(6)
         menu.set_margin_end(6)
-        self.add_terminal_tab_menu(menu, popover, session)
         self.add_context_menu_item(menu, self.t("disconnect"), lambda: self.disconnect_from_terminal_menu(popover, session))
         if not session.status_bar.get_visible():
             self.add_context_menu_item(
                 menu, self.t("show_session_status_bar"), lambda: self.show_session_status_bar_from_menu(popover, session)
             )
-        self.add_context_menu_item(menu, self.t("copy"), lambda: self.copy_terminal_selection(popover, terminal))
-        self.add_context_menu_item(menu, self.t("paste"), lambda: self.paste_terminal_clipboard(popover, terminal))
+        self.add_terminal_shortcut_menu_item(
+            menu,
+            self.t("copy"),
+            self.store.data.app.keybindings.get("copy", ""),
+            lambda: self.copy_terminal_selection(popover, terminal),
+        )
+        self.add_terminal_shortcut_menu_item(
+            menu,
+            self.t("paste"),
+            self.store.data.app.keybindings.get("paste", ""),
+            lambda: self.paste_terminal_clipboard(popover, terminal),
+        )
+        self.add_terminal_split_menu(menu, popover, session, terminal)
         self.add_context_menu_item(menu, self.t("configure_terminal"), lambda: self.configure_terminal_from_menu(popover))
         self.add_context_menu_item(menu, self.t("session_statistics"), lambda: self.show_session_statistics(popover, session))
+        self.add_terminal_tab_menu(menu, popover, session)
         popover.set_child(menu)
         popover.popup()
+
+    def add_terminal_shortcut_menu_item(
+        self,
+        menu: Gtk.ListBox,
+        label_text: str,
+        accelerator: str,
+        callback: Any,
+    ) -> None:
+        row = Gtk.ListBoxRow()
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18)
+        box.set_margin_top(8)
+        box.set_margin_bottom(8)
+        box.set_margin_start(12)
+        box.set_margin_end(12)
+
+        label = Gtk.Label(label=label_text)
+        label.set_xalign(0)
+        label.set_hexpand(True)
+        shortcut = Gtk.Label(label=keybinding_label(accelerator, self.t("keybinding_disabled")))
+        shortcut.add_css_class("dim-label")
+        shortcut.set_xalign(1)
+        box.append(label)
+        box.append(shortcut)
+        row.set_child(box)
+
+        click = Gtk.GestureClick.new()
+        click.set_button(1)
+        click.connect("released", lambda *_args: callback())
+        row.add_controller(click)
+        menu.append(row)
+
+    def add_terminal_split_menu(
+        self,
+        menu: Gtk.ListBox,
+        parent_popover: Gtk.Popover,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+    ) -> None:
+        row = Gtk.ListBoxRow()
+        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        label_box.set_margin_top(8)
+        label_box.set_margin_bottom(8)
+        label_box.set_margin_start(12)
+        label_box.set_margin_end(12)
+        label = Gtk.Label(label=self.t("split"))
+        label.set_xalign(0)
+        label.set_hexpand(True)
+        arrow = Gtk.Label(label=">")
+        arrow.add_css_class("dim-label")
+        label_box.append(label)
+        label_box.append(arrow)
+        row.set_child(label_box)
+
+        submenu = Gtk.Popover()
+        submenu.add_css_class("termia-menu-popover")
+        submenu.set_has_arrow(False)
+        submenu.set_position(Gtk.PositionType.RIGHT)
+        submenu.set_parent(row)
+        submenu_box = Gtk.ListBox()
+        submenu_box.add_css_class("termia-menu-panel")
+        submenu_box.set_selection_mode(Gtk.SelectionMode.NONE)
+        submenu_box.set_margin_top(6)
+        submenu_box.set_margin_bottom(6)
+        submenu_box.set_margin_start(6)
+        submenu_box.set_margin_end(6)
+        for label_key, direction in (
+            ("split_up", "up"),
+            ("split_down", "down"),
+            ("split_right", "right"),
+            ("split_left", "left"),
+        ):
+            self.add_context_menu_item(
+                submenu_box,
+                self.t(label_key),
+                lambda current_direction=direction: self.split_terminal_from_menu(
+                    parent_popover, session, terminal, current_direction
+                ),
+            )
+        submenu.set_child(submenu_box)
+
+        motion = Gtk.EventControllerMotion.new()
+        motion.connect("motion", lambda *_args: submenu.popup())
+        row.add_controller(motion)
+
+        click = Gtk.GestureClick.new()
+        click.set_button(1)
+        click.connect("released", lambda *_args: submenu.popup())
+        row.add_controller(click)
+        menu.append(row)
 
     def add_terminal_tab_menu(
         self,
@@ -576,12 +677,11 @@ class TerminalSessionsMixin:
             submenu_box,
             self.t("close_tab"),
             lambda: self.close_tab_from_terminal_menu(parent_popover, session),
-            destructive=True,
         )
         submenu.set_child(submenu_box)
 
         motion = Gtk.EventControllerMotion.new()
-        motion.connect("enter", lambda *_args: submenu.popup())
+        motion.connect("motion", lambda *_args: submenu.popup())
         row.add_controller(motion)
 
         click = Gtk.GestureClick.new()
@@ -590,6 +690,227 @@ class TerminalSessionsMixin:
         row.add_controller(click)
 
         menu.append(row)
+
+    def split_terminal_from_menu(
+        self,
+        popover: Gtk.Popover,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        direction: str,
+    ) -> None:
+        popover.popdown()
+        target = terminal.get_parent()
+        if not isinstance(target, Gtk.Widget):
+            return
+
+        new_terminal = self.create_split_terminal(session)
+        new_scroller = self.wrap_terminal_in_scroller(new_terminal)
+        orientation = Gtk.Orientation.HORIZONTAL if direction in {"left", "right"} else Gtk.Orientation.VERTICAL
+        paned = Gtk.Paned(orientation=orientation)
+        paned.add_css_class("termia-split-pane")
+        paned.set_wide_handle(False)
+        paned.set_hexpand(True)
+        paned.set_vexpand(True)
+        paned.set_resize_start_child(True)
+        paned.set_resize_end_child(True)
+        paned.set_shrink_start_child(False)
+        paned.set_shrink_end_child(False)
+
+        if not self.replace_terminal_pane(target, paned):
+            session.split_terminals.remove(new_terminal)
+            return
+
+        if direction in {"left", "up"}:
+            paned.set_start_child(new_scroller)
+            paned.set_end_child(target)
+        else:
+            paned.set_start_child(target)
+            paned.set_end_child(new_scroller)
+
+        def center_split() -> bool:
+            size = paned.get_width() if orientation == Gtk.Orientation.HORIZONTAL else paned.get_height()
+            if size > 0:
+                paned.set_position(size // 2)
+            new_terminal.grab_focus()
+            return GLib.SOURCE_REMOVE
+
+        GLib.timeout_add(80, center_split)
+        if session.server_id is None:
+            self.start_local_split_terminal(session, new_terminal, terminal)
+            return
+        server = find_server(self.store.data.servers, session.server_id)
+        if server is not None:
+            self.start_ssh_split_terminal(session, new_terminal, server)
+
+    def create_split_terminal(self, session: TerminalSession) -> Vte.Terminal:
+        terminal = Vte.Terminal()
+        terminal.set_hexpand(True)
+        terminal.set_vexpand(True)
+        terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.ON)
+        terminal.set_scrollback_lines(10000)
+        self.apply_terminal_settings(terminal)
+        self.configure_terminal_interactions(terminal, session)
+        session.split_terminals.append(terminal)
+        return terminal
+
+    def wrap_terminal_in_scroller(self, terminal: Vte.Terminal) -> Gtk.ScrolledWindow:
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_child(terminal)
+        scroller.set_hexpand(True)
+        scroller.set_vexpand(True)
+        return scroller
+
+    def replace_terminal_pane(self, old_child: Gtk.Widget, replacement: Gtk.Widget) -> bool:
+        parent = old_child.get_parent()
+        if isinstance(parent, Gtk.Paned):
+            if parent.get_start_child() is old_child:
+                parent.set_start_child(None)
+                parent.set_start_child(replacement)
+                return True
+            if parent.get_end_child() is old_child:
+                parent.set_end_child(None)
+                parent.set_end_child(replacement)
+                return True
+            return False
+        if isinstance(parent, Gtk.Box):
+            parent.remove(old_child)
+            parent.append(replacement)
+            return True
+        return False
+
+    def start_local_split_terminal(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        source_terminal: Vte.Terminal,
+    ) -> None:
+        shell = os.environ.get("SHELL") or GLib.find_program_in_path("bash") or "/bin/sh"
+        command = [shell]
+        if self.store.data.terminal.prompt_enabled:
+            bash_path = GLib.find_program_in_path("bash")
+            if bash_path is not None:
+                command = build_local_prompt_shell_command(self.store.data.terminal, bash_path)
+        working_directory = self.local_terminal_working_directory(source_terminal)
+        try:
+            _ok, child_pid = terminal.spawn_sync(
+                Vte.PtyFlags.DEFAULT,
+                working_directory,
+                command,
+                build_terminal_environment(self.store.data.terminal.ls_colors),
+                GLib.SpawnFlags.DEFAULT,
+                None,
+                None,
+                None,
+            )
+        except GLib.Error as exc:
+            message = self.t("local_terminal_start_failed").format(error=exc.message)
+            terminal.feed(f"{message}\r\n".encode())
+            self.toast_label.set_label(message)
+            return
+        session.split_child_pids[id(terminal)] = child_pid
+        terminal.connect("child-exited", self.on_split_terminal_exited, session)
+
+    def start_ssh_split_terminal(self, session: TerminalSession, terminal: Vte.Terminal, server: Server) -> None:
+        ssh_path = GLib.find_program_in_path("ssh")
+        if ssh_path is None:
+            message = self.t("ssh_missing")
+            terminal.feed(f"{message}\r\n".encode())
+            self.toast_label.set_label(message)
+            return
+
+        ssh_target = f"{server.user}@{server.host}"
+        command = [ssh_path, "-p", str(server.port)]
+        if server.public_key:
+            command.extend(["-i", str(Path(server.public_key).expanduser())])
+        command.append(ssh_target)
+        envv = build_terminal_environment(self.store.data.terminal.ls_colors, server.password)
+        use_sshpass = bool(server.password)
+        if server.password and not self.has_known_host_key(server.host, server.port):
+            use_sshpass = False
+            message = self.t("ssh_fingerprint_manual")
+            terminal.feed(f"{message}\r\n\r\n".encode())
+            self.toast_label.set_label(message)
+        if use_sshpass:
+            sshpass_path = GLib.find_program_in_path("sshpass")
+            if sshpass_path is None:
+                message = self.t("sshpass_missing")
+                terminal.feed(f"{message}\r\n".encode())
+                self.toast_label.set_label(message)
+                return
+            command = [sshpass_path, "-e", *command]
+        terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
+        try:
+            _ok, child_pid = terminal.spawn_sync(
+                Vte.PtyFlags.DEFAULT,
+                None,
+                command,
+                envv,
+                GLib.SpawnFlags.DEFAULT,
+                None,
+                None,
+                None,
+            )
+        except GLib.Error as exc:
+            message = self.t("ssh_start_failed").format(error=exc.message)
+            terminal.feed(f"{message}\r\n".encode())
+            self.toast_label.set_label(self.t("ssh_start_failed_toast").format(name=server.name))
+            return
+        session.split_child_pids[id(terminal)] = child_pid
+        terminal.connect("child-exited", self.on_split_terminal_exited, session)
+        self.record_connection(server.id)
+        self.toast_label.set_label(self.t("session_opened").format(title=server.name))
+
+    def local_terminal_working_directory(self, terminal: Vte.Terminal) -> str:
+        uri = terminal.get_current_directory_uri()
+        if uri:
+            parsed = urlparse(uri)
+            if parsed.scheme == "file":
+                return unquote(parsed.path)
+        return str(Path.home())
+
+    def on_split_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
+        session.split_child_pids.pop(id(terminal), None)
+        if terminal in session.split_terminals:
+            session.split_terminals.remove(terminal)
+        GLib.idle_add(self.remove_split_terminal_pane, terminal, session)
+
+    def remove_split_terminal_pane(self, terminal: Vte.Terminal, session: TerminalSession) -> bool:
+        scroller = terminal.get_parent()
+        if not isinstance(scroller, Gtk.ScrolledWindow):
+            return GLib.SOURCE_REMOVE
+        parent = scroller.get_parent()
+        if not isinstance(parent, Gtk.Paned):
+            return GLib.SOURCE_REMOVE
+
+        sibling = parent.get_end_child() if parent.get_start_child() is scroller else parent.get_start_child()
+        if sibling is None:
+            return GLib.SOURCE_REMOVE
+        self.replace_split_container(parent, sibling)
+        if session.split_terminals:
+            session.split_terminals[-1].grab_focus()
+        else:
+            session.terminal.grab_focus()
+        return GLib.SOURCE_REMOVE
+
+    def replace_split_container(self, paned: Gtk.Paned, replacement: Gtk.Widget) -> bool:
+        parent = paned.get_parent()
+        paned.set_start_child(None)
+        paned.set_end_child(None)
+        if isinstance(parent, Gtk.Paned):
+            if parent.get_start_child() is paned:
+                parent.set_start_child(None)
+                parent.set_start_child(replacement)
+                return True
+            if parent.get_end_child() is paned:
+                parent.set_end_child(None)
+                parent.set_end_child(replacement)
+                return True
+            return False
+        if isinstance(parent, Gtk.Box):
+            parent.remove(paned)
+            parent.append(replacement)
+            return True
+        return False
 
     def new_tab_from_terminal_menu(self, popover: Gtk.Popover) -> None:
         popover.popdown()
@@ -689,6 +1010,8 @@ class TerminalSessionsMixin:
     def apply_terminal_settings_to_open_tabs(self) -> None:
         for session in self.open_tabs.values():
             self.apply_terminal_settings(session.terminal)
+            for terminal in session.split_terminals:
+                self.apply_terminal_settings(terminal)
 
     def update_session_timer(self, session: TerminalSession) -> bool:
         if not session.connected:
@@ -699,6 +1022,16 @@ class TerminalSessionsMixin:
         session.timer_label.set_label(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
         self.update_local_session_directory_title(session)
         return GLib.SOURCE_CONTINUE
+
+    def terminate_split_processes(self, session: TerminalSession) -> None:
+        for child_pid in tuple(session.split_child_pids.values()):
+            try:
+                os.kill(child_pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            except PermissionError:
+                pass
+        session.split_child_pids.clear()
 
     def on_request_disconnect_session(self, _button: Gtk.Button, session: TerminalSession) -> None:
         if not session.connected:
@@ -728,6 +1061,7 @@ class TerminalSessionsMixin:
                 session.terminal.feed(f"{message}\r\n".encode())
                 self.toast_label.set_label(message)
                 return
+        self.terminate_split_processes(session)
         self.record_session_duration(session)
         self.save_statistics_now()
         session.connected = False
