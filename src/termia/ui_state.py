@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import gi
 
@@ -42,3 +42,5 @@ class TerminalSession:
     disconnect_requested: bool = False
     pending_reconnect: bool = False
     duration_recorded: bool = False
+    split_terminals: list[Vte.Terminal] = field(default_factory=list)
+    split_child_pids: dict[int, int] = field(default_factory=dict)

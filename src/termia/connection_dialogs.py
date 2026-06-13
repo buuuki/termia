@@ -73,7 +73,7 @@ class ConnectionDialogsMixin:
         label.set_xalign(0)
         if required:
             escaped = GLib.markup_escape_text(label_text)
-            label.set_markup(f"{escaped} <span foreground='#c01c28'><b>*</b></span>")
+            label.set_markup(f"{escaped} <span foreground='#ff5f57' size='large'><b>*</b></span>")
         else:
             label.set_text(label_text)
         return label
@@ -82,7 +82,7 @@ class ConnectionDialogsMixin:
         label = Gtk.Label()
         label.set_xalign(0)
         label.set_markup(
-            f"<span size='small' foreground='#c01c28'><i>{GLib.markup_escape_text(self.t('required_field'))}</i></span>"
+            f"<span size='medium' foreground='#ff5f57'><b>{GLib.markup_escape_text(self.t('required_field'))}</b></span>"
         )
         return label
 
