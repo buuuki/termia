@@ -614,6 +614,15 @@ class SidebarMixin:
         row.add_controller(click)
         menu.append(row)
 
+    def add_context_menu_separator(self, menu: Gtk.ListBox) -> None:
+        row = Gtk.ListBoxRow()
+        row.set_activatable(False)
+        row.set_selectable(False)
+        separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        separator.add_css_class("termia-menu-separator")
+        row.set_child(separator)
+        menu.append(row)
+
     def server_row(self, server: Server, groups_by_id: dict[str, Group]) -> RowObject:
         group_name = groups_by_id.get(server.group_id).name if server.group_id in groups_by_id else "Sin grupo"
         return RowObject("server", server.id, server.name, f"{server.user}@{server.host}:{server.port} · {group_name}")

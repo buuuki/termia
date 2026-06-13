@@ -11,6 +11,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, GLib, Gtk
 
 from .constants import ABOUT_IMAGE, ISSUES_URL
+from . import __version__
 
 
 class MainMenuMixin:
@@ -207,7 +208,7 @@ class MainMenuMixin:
     def on_about(self, _button: Gtk.Button) -> None:
         dialog = Gtk.AboutDialog(transient_for=self, modal=True)
         dialog.set_program_name("Termia")
-        dialog.set_version("0.1.0")
+        dialog.set_version(__version__)
         dialog.set_copyright("Copyright © 2026 Jordi Pons")
         dialog.set_license_type(Gtk.License.GPL_3_0)
         dialog.set_comments(self.t("about_content"))

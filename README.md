@@ -14,6 +14,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Filter servers and open multiple tabbed sessions to the same host.
 - Use embedded, width-sharing tabs and move a tab to a separate window.
 - Open embedded local terminal tabs.
+- Split a terminal tab into multiple panes from the terminal context menu.
 - Optionally track aggregate connection, session-duration, and per-server usage statistics locally.
 - Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
 - Show or hide the session status bar globally, hide it per session, and restore it from the terminal context menu.
@@ -36,7 +37,7 @@ The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybind
 - `Keybindings` shows the active terminal shortcuts and lets you change common actions such as copy, paste, tab switching, font zoom, and sending the saved password.
 - `Security` controls connection storage mode.
 
-Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle.
+Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle. Right-click inside a terminal to access translated `Split` and `Tab` submenus; split panes can be created up, down, left, or right, and a pane disappears automatically when its shell exits.
 
 ## Tested environment
 

@@ -50,6 +50,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Pressing Enter on a failed SSH tab must reconnect to the same server.
 - Exiting an SSH session with `exit` must only close the tab when the relevant preference is enabled.
 - Exiting a local shell must follow the configured local terminal close behavior.
+- Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
 
 ### Focus and Keyboard
 
@@ -64,6 +65,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Opening dialogs from popovers must close or defer the popover first to avoid GTK grabbing-popup hangs.
 - Context menus must not cause sidebar scroll jumps or horizontal scroll movement.
 - Context menu actions must operate on the selected/right-clicked item, not a stale selection.
+- Terminal context menus must keep the translated `Split` submenu above the `Tab` submenu, with a visual separator before the split actions.
+- Terminal context-menu submenus must share the same hover behavior: open on pointer movement over the submenu row, stay usable while moving into the submenu panel, close when leaving the row and panel, and never close the whole terminal menu unexpectedly.
+- Future terminal context-menu submenus must use the shared nested-menu helper instead of building independent popovers with custom hover behavior.
 
 ### Server Tree
 
@@ -91,6 +95,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Context menus and popovers must use readable foreground/background colors and must not inherit terminal colors.
 - Sidebar group/server selection colors must remain readable and must preserve the distinction between folders/groups and server entries.
 - New CSS rules must be scoped to Termia classes where practical and must not unintentionally override GTK/VTE internals.
+- Split pane separators must remain visible, narrow, and readable on both light and dark themes.
 
 ### Terminal Appearance
 
@@ -121,6 +126,9 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Open two SSH sessions and duplicate one of them.
 - Close a tab and confirm focus moves to the next terminal.
 - Right-click a terminal and open the context menu.
+- From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
+- Create split panes in all four directions and confirm each new pane opens a working shell.
+- Run `exit` inside a split pane and confirm only that pane disappears while the sibling pane keeps focus and remains usable.
 - Right-click a server/group in the tree and open the context menu.
 - Edit a server and confirm collapsed groups stay collapsed.
 - Search for a group, subgroup, and server in the sidebar filter.

@@ -13,7 +13,7 @@ def build_application_css(menu_background: str) -> bytes:
         "headerbar:backdrop { background: @headerbar_backdrop_color; } "
         ".termia-session-tabs { background: @headerbar_backdrop_color; padding: 4px 4px 3px 4px; "
         "border: 0; box-shadow: none; } "
-        ".termia-terminal-stack { border: 0; box-shadow: none; } .termia-split-pane separator { background: #c8c8c8; background-color: #c8c8c8; min-width: 1px; min-height: 1px; } .termia-split-pane separator:hover { background: #d4d4d4; background-color: #d4d4d4; } "
+        ".termia-terminal-stack { border: 0; box-shadow: none; } .termia-menu-separator { min-height: 0; border-top: 1px solid rgba(128, 128, 128, 0.35); margin: 4px 12px; } "
         "popover.termia-menu-popover > contents { background: @termia_menu_bg; "
         "background-color: @termia_menu_bg; background-image: none; opacity: 1; } "
         ".termia-menu-panel { background: @termia_menu_bg; "

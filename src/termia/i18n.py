@@ -39,7 +39,7 @@ TRANSLATIONS = {
         "delete_group_confirm_detail": "¿Quieres eliminar {name}? También se eliminarán todos sus subgrupos y servidores. Esta acción no se puede deshacer.",
         "group_deleted": "Grupo eliminado: {name}",
         "theme": "Tema", "language": "Idioma", "restart_language": "El idioma se aplicará al reiniciar la aplicación.",
-        "split": "Split", "split_up": "Split up", "split_down": "Split down", "split_right": "Split right", "split_left": "Split left", "tab": "Pestaña", "close_tab": "Cerrar pestaña", "disconnect": "Desconectar", "connecting": "Conectando",
+        "split": "Dividir", "split_up": "Dividir arriba", "split_down": "Dividir abajo", "split_right": "Dividir a la derecha", "split_left": "Dividir a la izquierda", "tab": "Pestaña", "close_tab": "Cerrar pestaña", "disconnect": "Desconectar", "connecting": "Conectando",
         "close_session_title": "Cerrar sesión", "close_ssh_session_confirm": "¿Quieres cerrar esta sesión SSH? La conexión se desconectará.", "close_local_session_confirm": "¿Quieres cerrar este terminal local? El proceso en ejecución se finalizará.",
         "close_tab_on_disconnect": "Cerrar la pestaña al desconectar una sesión",
         "show_session_status_bar": "Mostrar barra de estado de la sesión", "hide_status_bar": "Ocultar",
@@ -120,9 +120,7 @@ TRANSLATIONS = {
             "- Importa y exporta configuraciones, incluida la importación básica desde Ásbrú.\n\n"
             "Uso rápido:\n"
             "Utiliza los iconos del panel lateral para crear grupos o servidores. Haz doble clic "
-            "sobre un servidor para conectar. Usa el botón derecho en servidores, pestañas o terminales "
-            "para ver acciones contextuales como duplicar, desconectar, copiar, pegar, mostrar la barra "
-            "de estado o ver estadísticas."
+            "sobre un servidor para conectar. Usa el botón derecho en servidores, pestañas o terminales para ver acciones contextuales como duplicar, dividir paneles, desconectar, copiar, pegar, mostrar la barra de estado o ver estadísticas."
         ),
         "about_content": "Gestor de conexiones SSH con terminales embebidas",
     },
@@ -147,7 +145,7 @@ TRANSLATIONS = {
         "delete_group_confirm_detail": "Vols eliminar {name}? També s'eliminaran tots els subgrups i servidors. Aquesta acció no es pot desfer.",
         "group_deleted": "Grup eliminat: {name}",
         "theme": "Tema", "language": "Idioma", "restart_language": "L'idioma s'aplicarà en reiniciar l'aplicació.",
-        "split": "Split", "split_up": "Split up", "split_down": "Split down", "split_right": "Split right", "split_left": "Split left", "tab": "Pestanya", "close_tab": "Tancar pestanya", "disconnect": "Desconnectar", "connecting": "Connectant",
+        "split": "Dividir", "split_up": "Dividir amunt", "split_down": "Dividir avall", "split_right": "Dividir a la dreta", "split_left": "Dividir a l'esquerra", "tab": "Pestanya", "close_tab": "Tancar pestanya", "disconnect": "Desconnectar", "connecting": "Connectant",
         "close_session_title": "Tancar sessió", "close_ssh_session_confirm": "Vols tancar aquesta sessió SSH? La connexió es desconnectarà.", "close_local_session_confirm": "Vols tancar aquest terminal local? El procés en execució es finalitzarà.",
         "close_tab_on_disconnect": "Tancar la pestanya en desconnectar una sessió",
         "show_session_status_bar": "Mostrar barra d'estat de la sessió", "hide_status_bar": "Amagar",
@@ -228,9 +226,7 @@ TRANSLATIONS = {
             "- Importa i exporta configuracions, inclosa la importació bàsica des d'Ásbrú.\n\n"
             "Ús ràpid:\n"
             "Utilitza les icones del panell lateral per crear grups o servidors. Fes doble clic "
-            "sobre un servidor per connectar. Utilitza el botó dret en servidors, pestanyes o terminals "
-            "per veure accions contextuals com duplicar, desconnectar, copiar, enganxar, mostrar la barra "
-            "d'estat o veure estadístiques."
+            "sobre un servidor per connectar. Utilitza el botó dret en servidors, pestanyes o terminals per veure accions contextuals com duplicar, dividir panells, desconnectar, copiar, enganxar, mostrar la barra d'estat o veure estadístiques."
         ),
         "about_content": "Gestor de connexions SSH amb terminals incrustats",
     },
@@ -336,8 +332,7 @@ TRANSLATIONS = {
             "- Import and export configurations, including basic imports from Ásbrú.\n\n"
             "Quick start:\n"
             "Use the sidebar icons to create groups or servers. Double-click a server to connect. "
-            "Right-click servers, tabs or terminals to access contextual actions such as duplicate, "
-            "disconnect, copy, paste, show the status bar or view statistics."
+            "Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
         ),
         "about_content": "SSH connection manager with embedded terminals",
     },

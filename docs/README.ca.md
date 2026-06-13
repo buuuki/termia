@@ -14,6 +14,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Filtrar servidors i obrir diverses sessions al mateix host en pestanyes.
 - Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
 - Obrir terminals locals incrustats.
+- Dividir una pestanya de terminal en diversos panells des del menú contextual del terminal.
 - Registrar opcionalment estadístiques locals agregades de connexions, durada i ús per servidor.
 - Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
 - Mostrar o amagar globalment la barra d'estat de sessió, amagar-la per sessió i restaurar-la des del menú contextual del terminal.
@@ -36,7 +37,7 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Drecer
 - `Dreceres` mostra les dreceres actives del terminal i permet canviar accions habituals com copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 
-Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera.
+Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera. Amb el botó dret dins del terminal pots obrir els submenús traduïts de `Dividir` i `Pestanya`; els panells es poden crear amunt, avall, a l'esquerra o a la dreta, i desapareixen automàticament quan la seva shell acaba.
 
 ## Entorn provat
 

@@ -14,6 +14,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Filtrar servidores y abrir varias sesiones al mismo host en pestañas.
 - Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
 - Abrir terminales locales embebidas.
+- Dividir una pestaña de terminal en varios paneles desde el menú contextual del terminal.
 - Registrar opcionalmente estadísticas locales agregadas de conexiones, duración y uso por servidor.
 - Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
 - Mostrar u ocultar globalmente la barra de estado de sesión, ocultarla por sesión y restaurarla desde el menú contextual del terminal.
@@ -36,7 +37,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 - `Atajos` muestra los atajos activos del terminal y permite cambiar acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 
-Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera.
+Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera. Con botón derecho dentro del terminal puedes abrir los submenús traducidos de `Dividir` y `Pestaña`; los paneles se pueden crear arriba, abajo, a la izquierda o a la derecha, y desaparecen automáticamente cuando su shell termina.
 
 ## Entorno probado
 
