@@ -2,13 +2,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import fcntl
 import json
+import os
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from .constants import APP_THEMES, LEGACY_ANSI_PALETTE, SETTINGS_FILE, STATISTICS_FILE
+from .constants import APP_THEMES, INSTANCE_LOCK_FILE, LEGACY_ANSI_PALETTE, SETTINGS_FILE, STATISTICS_FILE
 from .config_io import (
     CONNECTION_STORAGE_MODES,
     CONNECTION_STORAGE_PLAIN,
@@ -30,9 +32,51 @@ from .models import (
 )
 
 
-class StatisticsStore:
+class ReadOnlyStoreError(RuntimeError):
+    pass
+
+
+class InstanceWriteLock:
     def __init__(self, path: Path) -> None:
         self.path = path
+        self.handle = None
+        self.read_only = False
+        self.acquire()
+
+    def acquire(self) -> None:
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            handle = self.path.open("a+", encoding="utf-8")
+        except OSError:
+            self.read_only = True
+            return
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            handle.close()
+            self.read_only = True
+            return
+        handle.seek(0)
+        handle.truncate(0)
+        handle.write(f"{os.getpid()}\n")
+        handle.flush()
+        self.handle = handle
+
+    def close(self) -> None:
+        if self.handle is None:
+            return
+        try:
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        except OSError:
+            pass
+        self.handle.close()
+        self.handle = None
+
+
+class StatisticsStore:
+    def __init__(self, path: Path, *, read_only: bool = False) -> None:
+        self.path = path
+        self.read_only = read_only
         self.data = StatisticsSettings()
         self.recovery_messages: list[str] = []
         self.load()
@@ -47,18 +91,21 @@ class StatisticsStore:
             fields = StatisticsSettings.__dataclass_fields__
             self.data = StatisticsSettings(**{key: value for key, value in payload.items() if key in fields})
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
-            backup = backup_invalid_file(self.path)
+            backup = backup_invalid_file(self.path, self.read_only)
             self.recovery_messages.append(str(backup or self.path))
 
     def save(self) -> None:
+        if self.read_only:
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(asdict(self.data), indent=2), encoding="utf-8")
         self.path.chmod(0o600)
 
 
 class SettingsStore:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, read_only: bool = False) -> None:
         self.path = path
+        self.read_only = read_only
         self.app = AppSettings()
         self.terminal = TerminalSettings()
         self.recovery_messages: list[str] = []
@@ -76,10 +123,12 @@ class SettingsStore:
             self.app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
             self.terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
-            backup = backup_invalid_file(self.path)
+            backup = backup_invalid_file(self.path, self.read_only)
             self.recovery_messages.append(str(backup or self.path))
 
     def save(self) -> None:
+        if self.read_only:
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "app": asdict(self.app),
@@ -89,8 +138,8 @@ class SettingsStore:
         self.path.chmod(0o600)
 
 
-def backup_invalid_file(path: Path) -> Path | None:
-    if not path.exists():
+def backup_invalid_file(path: Path, read_only: bool = False) -> Path | None:
+    if not path.exists() or read_only:
         return None
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     backup = path.with_name(f"{path.name}.invalid-{timestamp}")
@@ -131,10 +180,13 @@ class ConnectionStore:
         path: Path,
         settings_path: Path = SETTINGS_FILE,
         statistics_path: Path = STATISTICS_FILE,
+        lock_path: Path = INSTANCE_LOCK_FILE,
     ) -> None:
         self.path = path
-        self.settings_store = SettingsStore(settings_path)
-        self.statistics_store = StatisticsStore(statistics_path)
+        self.instance_lock = InstanceWriteLock(lock_path)
+        self.read_only = self.instance_lock.read_only
+        self.settings_store = SettingsStore(settings_path, read_only=self.read_only)
+        self.statistics_store = StatisticsStore(statistics_path, read_only=self.read_only)
         self.recovery_messages: list[str] = [
             *self.settings_store.recovery_messages,
             *self.statistics_store.recovery_messages,
@@ -160,7 +212,7 @@ class ConnectionStore:
             file_storage_mode = connection_storage_mode_from_payload(raw_payload)
             payload = decoded_connections_payload(raw_payload)
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
-            backup = backup_invalid_file(self.path)
+            backup = backup_invalid_file(self.path, self.read_only)
             self.recovery_messages.append(str(backup or self.path))
             self.data = StoreData(
                 terminal=self.settings_store.terminal,
@@ -199,6 +251,13 @@ class ConnectionStore:
         if "statistics" in payload or "app" in payload or "terminal" in payload or repaired or settings_migrated:
             self.save_connections()
 
+    def close(self) -> None:
+        self.instance_lock.close()
+
+    def ensure_writable(self) -> None:
+        if self.read_only:
+            raise ReadOnlyStoreError("This Termia instance is read-only.")
+
     def repair_references(self) -> bool:
         group_ids = {group.id for group in self.data.groups}
         repaired = False
@@ -213,6 +272,8 @@ class ConnectionStore:
         return repaired
 
     def save_connections(self) -> None:
+        if self.read_only:
+            return
         write_connections_file(
             self.path,
             self.data.groups,
@@ -221,19 +282,26 @@ class ConnectionStore:
         )
 
     def save_settings(self) -> None:
+        if self.read_only:
+            return
         self.settings_store.app = self.data.app
         self.settings_store.terminal = self.data.terminal
         self.settings_store.save()
 
     def save(self) -> None:
+        if self.read_only:
+            return
         self.save_connections()
         self.save_settings()
 
     def save_statistics(self) -> None:
+        if self.read_only:
+            return
         self.statistics_store.data = self.data.statistics
         self.statistics_store.save()
 
     def update_connection_storage_mode(self, storage_mode: str) -> None:
+        self.ensure_writable()
         self.data.app.connection_storage_mode = (
             storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
         )
@@ -241,12 +309,14 @@ class ConnectionStore:
         self.save_connections()
 
     def add_group(self, name: str, parent_id: str | None = None) -> Group:
+        self.ensure_writable()
         group = Group(id=str(uuid4()), name=name.strip(), parent_id=parent_id)
         self.data.groups.append(group)
         self.save_connections()
         return group
 
     def update_group(self, group_id: str, name: str, parent_id: str | None = None) -> None:
+        self.ensure_writable()
         for group in self.data.groups:
             if group.id == group_id:
                 group.name = name.strip()
@@ -255,6 +325,7 @@ class ConnectionStore:
         self.save_connections()
 
     def delete_group(self, group_id: str) -> None:
+        self.ensure_writable()
         group_ids = {group_id}
         pending = [group_id]
         while pending:
@@ -279,6 +350,7 @@ class ConnectionStore:
         password: str = "",
         public_key: str = "",
     ) -> Server:
+        self.ensure_writable()
         server = Server(
             id=str(uuid4()),
             name=name.strip(),
@@ -304,6 +376,7 @@ class ConnectionStore:
         password: str = "",
         public_key: str = "",
     ) -> None:
+        self.ensure_writable()
         for server in self.data.servers:
             if server.id == server_id:
                 server.name = name.strip()
@@ -317,6 +390,7 @@ class ConnectionStore:
         self.save_connections()
 
     def delete_server(self, server_id: str) -> None:
+        self.ensure_writable()
         self.data.servers = [server for server in self.data.servers if server.id != server_id]
         self.save_connections()
 
@@ -331,6 +405,7 @@ class ConnectionStore:
         prompt_template: str | None = None,
         prompt_color: str | None = None,
     ) -> None:
+        self.ensure_writable()
         current = self.data.terminal
         self.data.terminal = TerminalSettings(
             font_family=font_family.strip() or "Monospace",
@@ -346,6 +421,7 @@ class ConnectionStore:
         self.save_settings()
 
     def update_prompt_settings(self, enabled: bool, template: str, color: str) -> None:
+        self.ensure_writable()
         current = self.data.terminal
         self.data.terminal = TerminalSettings(
             font_family=current.font_family,
@@ -367,6 +443,7 @@ class ConnectionStore:
         open_local_terminal_on_startup: bool, show_sidebar_on_startup: bool, show_session_status_bar: bool,
         statistics_enabled: bool,
     ) -> None:
+        self.ensure_writable()
         current = self.data.app
         self.data.app = AppSettings(
             theme=theme if theme in APP_THEMES else "system",
@@ -387,5 +464,6 @@ class ConnectionStore:
         self.save_settings()
 
     def update_keybindings(self, keybindings: dict[str, str]) -> None:
+        self.ensure_writable()
         self.data.app.keybindings = normalize_keybindings(keybindings)
         self.save_settings()

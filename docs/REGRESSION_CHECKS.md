@@ -84,6 +84,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Obfuscated connection storage must decode back to the same groups, servers, passwords, and private key paths, and switching modes must rewrite the file immediately.
 - Import/export configuration must preserve groups, subgroups, servers, SSH user, port, host, password, and private key path where available.
 - Importing Asbru configuration must not add unwanted suffixes such as `- copy`.
+- Launching a second Termia process must open a separate window and leave the new instance in read-only mode instead of writing shared config files concurrently.
+- A read-only instance must keep connect and export flows available while preventing edits, imports, clears, preference saves, and statistics writes.
 - Clearing configuration must require confirmation.
 - Passwords are currently stored in the JSON file by explicit project decision; warnings and documentation must remain accurate until storage changes.
 
@@ -133,6 +135,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Edit a server and confirm collapsed groups stay collapsed.
 - Search for a group, subgroup, and server in the sidebar filter.
 - Open Preferences from Configuration and confirm the app does not hang.
+- Start a second Termia process and confirm it opens as a separate window with the read-only badge visible.
+- In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
 - Change terminal foreground/background/palette and confirm only VTE terminal colors change, not the app chrome.
 - Confirm terminal ANSI colors, prompt colors, and the reconnect prompt are readable on both light and dark terminal backgrounds.

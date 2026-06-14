@@ -15,6 +15,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Use embedded, width-sharing tabs and move a tab to a separate window.
 - Open embedded local terminal tabs.
 - Split a terminal tab into multiple panes from the terminal context menu.
+- Run multiple Termia instances; the first keeps write access and later instances fall back to read-only mode.
 - Optionally track aggregate connection, session-duration, and per-server usage statistics locally.
 - Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
 - Show or hide the session status bar globally, hide it per session, and restore it from the terminal context menu.
@@ -36,6 +37,7 @@ The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybind
 - `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. It does not alter SSH commands or modify remote shell startup files.
 - `Keybindings` shows the active terminal shortcuts and lets you change common actions such as copy, paste, tab switching, font zoom, and sending the saved password.
 - `Security` controls connection storage mode.
+- When another Termia instance is already running with the write lock, a new window opens in read-only mode, shows a header badge, disables write-capable actions, and still allows browsing, connecting, and exporting configuration.
 
 Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle. Right-click inside a terminal to access translated `Split` and `Tab` submenus; split panes can be created up, down, left, or right, and a pane disappears automatically when its shell exits.
 
@@ -138,10 +140,11 @@ Termia stores connection data, settings, and statistics outside the repository:
 ```text
 ~/.config/termia/connections.json   # groups and servers
 ~/.config/termia/settings.json      # app and terminal settings
+~/.config/termia/instance.lock      # single writer lock for multi-instance mode
 ~/.local/state/termia/statistics.json
 ```
 
-Saved passwords are stored in `connections.json`; the file can be kept as plain text or obfuscated from Security preferences. Obfuscation is not encryption. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`.
+Saved passwords are stored in `connections.json`; the file can be kept as plain text or obfuscated from Security preferences. Obfuscation is not encryption. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, or statistics; later instances stay read-only to avoid corrupting these files.
 
 Termia does not store typed text, command contents, clipboard contents, command counters, or keystroke counters. Statistics are disabled by default and can be enabled from General preferences. When enabled, they track only aggregate connections, per-server usage, and session durations; they are flushed at most every 30 seconds, when sessions end, and when Termia closes. See [SECURITY.md](SECURITY.md).
 

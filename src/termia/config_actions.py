@@ -11,7 +11,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, Gtk
 
 from .asbru_import import extract_asbru_connections, merge_asbru_connections
-from .config_io import export_connections_file, load_store_data_from_json
+from .config_io import export_connections_file, load_store_data_from_json, write_connections_file
 
 
 class ConfigActionsMixin:
@@ -28,6 +28,8 @@ class ConfigActionsMixin:
         except GLib.Error:
             return
         if response != 1:
+            return
+        if not self.ensure_writable():
             return
         self.store.data.groups = []
         self.store.data.servers = []
@@ -47,8 +49,17 @@ class ConfigActionsMixin:
         except GLib.Error:
             return
         if file and file.get_path():
-            self.store.save_connections()
-            export_connections_file(self.store.path, Path(file.get_path()))
+            destination = Path(file.get_path())
+            if self.store.read_only or not self.store.path.exists():
+                write_connections_file(
+                    destination,
+                    self.store.data.groups,
+                    self.store.data.servers,
+                    self.store.data.app.connection_storage_mode,
+                )
+            else:
+                self.store.save_connections()
+                export_connections_file(self.store.path, destination)
             self.toast_label.set_label(self.t("export_config_success"))
 
     def on_import_config(self) -> None:
@@ -61,6 +72,8 @@ class ConfigActionsMixin:
         except GLib.Error:
             return
         if file and file.get_path():
+            if not self.ensure_writable():
+                return
             try:
                 imported = load_store_data_from_json(Path(file.get_path()), self.store.data)
             except (OSError, ValueError, TypeError) as exc:
@@ -93,6 +106,8 @@ class ConfigActionsMixin:
             return
         if "__PAC__EXPORTED__PARTIAL_CONF" in payload:
             payload = payload["__PAC__EXPORTED__PARTIAL_CONF"]
+        if not self.ensure_writable():
+            return
         imported_groups, imported_servers = extract_asbru_connections(payload)
         added_groups, added_servers = merge_asbru_connections(self.store.data, imported_groups, imported_servers)
         self.store.save_connections()

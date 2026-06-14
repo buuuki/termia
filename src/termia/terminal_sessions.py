@@ -469,6 +469,8 @@ class TerminalSessionsMixin:
             session.status_bar.set_visible(visible)
 
     def change_terminal_font_size(self, delta: int) -> None:
+        if not self.ensure_writable():
+            return
         settings = self.store.data.terminal
         new_size = max(6, min(settings.font_size + delta, 72))
         if new_size == settings.font_size:

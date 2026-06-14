@@ -11,10 +11,13 @@ from gi.repository import GLib, Gtk
 
 from .connection_utils import group_descendant_ids, group_path_labels
 from .models import Group, Server
+from .stores import ReadOnlyStoreError
 
 
 class ConnectionDialogsMixin:
     def show_group_dialog(self, group: Group | None = None) -> None:
+        if not self.ensure_writable():
+            return
         dialog = Gtk.Dialog(title=self.t("edit_group") if group else self.t("new_group"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(360, -1)
@@ -61,10 +64,15 @@ class ConnectionDialogsMixin:
         name = entry.get_text().strip()
         parent_id = parent_combo.get_active_id() or None
         if response == Gtk.ResponseType.OK and name:
-            if group:
-                self.store.update_group(group.id, name, parent_id)
-            else:
-                self.store.add_group(name, parent_id)
+            try:
+                if group:
+                    self.store.update_group(group.id, name, parent_id)
+                else:
+                    self.store.add_group(name, parent_id)
+            except ReadOnlyStoreError:
+                self.toast_label.set_label(self.t("read_only_mode_enabled"))
+                dialog.destroy()
+                return
             self.refresh_list()
         dialog.destroy()
 
@@ -87,6 +95,8 @@ class ConnectionDialogsMixin:
         return label
 
     def show_server_dialog(self, server: Server | None = None) -> None:
+        if not self.ensure_writable():
+            return
         dialog = Gtk.Dialog(title=self.t("edit_server") if server else self.t("new_server"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
@@ -189,9 +199,14 @@ class ConnectionDialogsMixin:
                         widget.grab_focus()
                         break
                 return
-            if server:
-                self.store.update_server(server.id, name, host, user, port, group_id, password, public_key)
-            else:
-                self.store.add_server(name, host, user, port, group_id, password, public_key)
+            try:
+                if server:
+                    self.store.update_server(server.id, name, host, user, port, group_id, password, public_key)
+                else:
+                    self.store.add_server(name, host, user, port, group_id, password, public_key)
+            except ReadOnlyStoreError:
+                self.toast_label.set_label(self.t("read_only_mode_enabled"))
+                dialog.destroy()
+                return
             self.refresh_list()
         dialog.destroy()

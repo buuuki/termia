@@ -130,17 +130,21 @@ class SidebarMixin:
             connect_button.connect("clicked", self.on_server_context_connect, popover, row.item_id)
             edit_button = Gtk.Button(label="Editar servidor")
             edit_button.connect("clicked", self.on_server_context_edit, popover, row.item_id)
+            self.configure_write_action(edit_button)
             delete_button = Gtk.Button(label="Eliminar servidor")
             delete_button.add_css_class("destructive-action")
             delete_button.connect("clicked", self.on_server_context_delete, popover, row.item_id)
+            self.configure_write_action(delete_button)
             for button in (connect_button, edit_button, delete_button):
                 menu.append(button)
         elif row.kind == "group" and row.item_id:
             edit_button = Gtk.Button(label="Editar grupo")
             edit_button.connect("clicked", self.on_group_context_edit, popover, row.item_id)
+            self.configure_write_action(edit_button)
             delete_button = Gtk.Button(label="Eliminar grupo")
             delete_button.add_css_class("destructive-action")
             delete_button.connect("clicked", self.on_group_context_delete, popover, row.item_id)
+            self.configure_write_action(delete_button)
             menu.append(edit_button)
             menu.append(delete_button)
         else:
@@ -157,12 +161,16 @@ class SidebarMixin:
 
     def on_server_context_edit(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
+        if not self.ensure_writable():
+            return
         server = find_server(self.store.data.servers, server_id)
         if server:
             self.show_server_dialog(server)
 
     def on_server_context_delete(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
+        if not self.ensure_writable():
+            return
         server = find_server(self.store.data.servers, server_id)
         if server:
             self.store.delete_server(server_id)
@@ -173,6 +181,8 @@ class SidebarMixin:
 
     def on_server_context_clone(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
+        if not self.ensure_writable():
+            return
         server = find_server(self.store.data.servers, server_id)
         if server is None:
             return
@@ -192,15 +202,21 @@ class SidebarMixin:
 
     def on_group_context_edit(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
         popover.popdown()
+        if not self.ensure_writable():
+            return
         group = find_group(self.store.data.groups, group_id)
         if group:
             self.show_group_dialog(group)
 
     def on_group_context_delete(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
         popover.popdown()
+        if not self.ensure_writable():
+            return
         self.request_delete_group(group_id)
 
     def request_delete_group(self, group_id: str) -> None:
+        if not self.ensure_writable():
+            return
         group = find_group(self.store.data.groups, group_id)
         if group is None:
             return
@@ -222,6 +238,8 @@ class SidebarMixin:
         except GLib.Error:
             return
         if response != 1:
+            return
+        if not self.ensure_writable():
             return
         self.store.delete_group(group_id)
         self.selected = None
@@ -561,29 +579,34 @@ class SidebarMixin:
                 menu,
                 self.t("edit_server"),
                 lambda: self.on_server_context_edit(None, popover, row.item_id),
+                enabled=not self.store.read_only,
             )
             self.add_context_menu_item(
                 menu,
                 self.t("clone_connection"),
                 lambda: self.on_server_context_clone(None, popover, row.item_id),
+                enabled=not self.store.read_only,
             )
             self.add_context_menu_item(
                 menu,
                 self.t("delete_server"),
                 lambda: self.on_server_context_delete(None, popover, row.item_id),
                 destructive=True,
+                enabled=not self.store.read_only,
             )
         elif row.kind == "group":
             self.add_context_menu_item(
                 menu,
                 self.t("edit_group"),
                 lambda: self.on_group_context_edit(None, popover, row.item_id),
+                enabled=not self.store.read_only,
             )
             self.add_context_menu_item(
                 menu,
                 self.t("delete_group"),
                 lambda: self.on_group_context_delete(None, popover, row.item_id),
                 destructive=True,
+                enabled=not self.store.read_only,
             )
 
         popover.set_child(menu)
@@ -596,6 +619,7 @@ class SidebarMixin:
         label_text: str,
         callback: Any,
         destructive: bool = False,
+        enabled: bool = True,
     ) -> None:
         row = Gtk.ListBoxRow()
         label = Gtk.Label(label=label_text)
@@ -607,11 +631,13 @@ class SidebarMixin:
         if destructive:
             label.add_css_class("error")
         row.set_child(label)
+        row.set_sensitive(enabled)
 
-        click = Gtk.GestureClick.new()
-        click.set_button(1)
-        click.connect("released", lambda *_args: callback())
-        row.add_controller(click)
+        if enabled:
+            click = Gtk.GestureClick.new()
+            click.set_button(1)
+            click.connect("released", lambda *_args: callback())
+            row.add_controller(click)
         menu.append(row)
 
     def add_context_menu_separator(self, menu: Gtk.ListBox) -> None:
@@ -664,13 +690,19 @@ class SidebarMixin:
         return
 
     def on_add_group(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
         self.show_group_dialog()
 
     def on_add_server(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
         self.show_server_dialog()
 
     def on_edit(self, _button: Gtk.Button) -> None:
         if self.selected is None:
+            return
+        if not self.ensure_writable():
             return
         if self.selected.kind == "group":
             group = find_group(self.store.data.groups, self.selected.item_id)
@@ -683,6 +715,8 @@ class SidebarMixin:
 
     def on_delete(self, _button: Gtk.Button) -> None:
         if self.selected is None:
+            return
+        if not self.ensure_writable():
             return
         if self.selected.kind == "group" and self.selected.item_id:
             self.request_delete_group(self.selected.item_id)

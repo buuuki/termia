@@ -15,6 +15,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
 - Obrir terminals locals incrustats.
 - Dividir una pestanya de terminal en diversos panells des del menú contextual del terminal.
+- Executar diverses instàncies de Termia; la primera conserva accés d'escriptura i les següents passen automàticament a mode només lectura.
 - Registrar opcionalment estadístiques locals agregades de connexions, durada i ús per servidor.
 - Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
 - Mostrar o amagar globalment la barra d'estat de sessió, amagar-la per sessió i restaurar-la des del menú contextual del terminal.
@@ -36,6 +37,7 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Drecer
 - `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. No altera ordres SSH ni modifica fitxers d'inici remots.
 - `Dreceres` mostra les dreceres actives del terminal i permet canviar accions habituals com copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
+- Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
 
 Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera. Amb el botó dret dins del terminal pots obrir els submenús traduïts de `Dividir` i `Pestanya`; els panells es poden crear amunt, avall, a l'esquerra o a la dreta, i desapareixen automàticament quan la seva shell acaba.
 
@@ -102,12 +104,13 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 ```text
 ~/.config/termia/connections.json   # grups i servidors
 ~/.config/termia/settings.json      # configuració de l'aplicació i del terminal
+~/.config/termia/instance.lock      # bloqueig d'escriptor únic per al mode multiinstància
 ~/.local/state/termia/statistics.json
 ```
 
 Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla o ofuscat des de les preferències de Seguretat. L'ofuscació no és xifratge.
 Els fitxers de connexions exportats també poden contenir credencials.
-Els comptadors locals agregats es desen per separat a `statistics.json`, venen desactivats per defecte i es poden activar o desactivar des de les preferències generals.
+Els comptadors locals agregats es desen per separat a `statistics.json`, venen desactivats per defecte i es poden activar o desactivar des de les preferències generals. Quan hi ha diversos processos de Termia oberts al mateix temps, només la instància que manté `instance.lock` escriu connexions, ajustos o estadístiques; les següents romanen en només lectura per evitar corrompre aquests fitxers.
 
 Termia no desa el text escrit, el contingut de les ordres, el contingut del
 porta-retalls, comptadors d'ordres ni comptadors de pulsacions. Quan estan activades, les estadístiques només registren connexions agregades, ús per servidor i durada de sessions; s'escriuen com a màxim cada 30 segons, en finalitzar sessions i en tancar Termia. Consulta

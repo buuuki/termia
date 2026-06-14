@@ -41,6 +41,8 @@ class TermiaWindow(
         self.set_default_size(1000, 620)
 
         self.store = ConnectionStore(DATA_FILE)
+        if self.store.read_only:
+            self.set_title(f"Termia ({self.t('read_only_badge')})")
         self.apply_app_theme()
         self.install_tree_styles()
         self.selected: RowObject | None = None
@@ -56,6 +58,7 @@ class TermiaWindow(
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.connect("close-request", self.on_main_window_close_request)
+        self.connect("destroy", lambda *_args: self.store.close())
 
         self.toast_label = Gtk.Label()
         self.toast_label.add_css_class("dim-label")
@@ -65,6 +68,8 @@ class TermiaWindow(
             self.toast_label.set_label(
                 self.t("config_file_recovered").format(path=self.store.recovery_messages[0])
             )
+        elif self.store.read_only:
+            self.toast_label.set_label(self.t("read_only_mode_enabled"))
         self.set_sidebar_visible(self.store.data.app.show_sidebar_on_startup)
         self.refresh_list()
         if self.store.data.app.open_local_terminal_on_startup:
@@ -78,6 +83,18 @@ class TermiaWindow(
     def t(self, key: str) -> str:
         language = self.store.data.app.language
         return TRANSLATIONS.get(language, TRANSLATIONS["es"]).get(key, key)
+
+    def ensure_writable(self) -> bool:
+        if not self.store.read_only:
+            return True
+        self.toast_label.set_label(self.t("read_only_mode_enabled"))
+        return False
+
+    def configure_write_action(self, widget: Gtk.Widget) -> Gtk.Widget:
+        if self.store.read_only:
+            widget.set_sensitive(False)
+            widget.set_tooltip_text(self.t("read_only_mode_tooltip"))
+        return widget
 
     def on_main_window_close_request(self, _window: Gtk.Window) -> bool:
         if not self.store.data.app.confirm_close_app:
@@ -153,6 +170,12 @@ class TermiaWindow(
         menu_button.set_child(Gtk.Image.new_from_icon_name("open-menu-symbolic"))
         header.pack_start(menu_button)
 
+        self.read_only_badge = Gtk.Label(label=self.t("read_only_badge"))
+        self.read_only_badge.add_css_class("dim-label")
+        self.read_only_badge.add_css_class("termia-read-only-badge")
+        self.read_only_badge.set_visible(self.store.read_only)
+        header.pack_end(self.read_only_badge)
+
         body = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         body.set_position(280)
         body.set_wide_handle(True)
@@ -178,9 +201,11 @@ class TermiaWindow(
         add_group = Gtk.Button(icon_name="folder-new-symbolic")
         add_group.set_tooltip_text(self.t("new_group"))
         add_group.connect("clicked", self.on_add_group)
+        self.configure_write_action(add_group)
         add_server = Gtk.Button(icon_name="list-add-symbolic")
         add_server.set_tooltip_text(self.t("new_server"))
         add_server.connect("clicked", self.on_add_server)
+        self.configure_write_action(add_server)
         expand_all = Gtk.Button(icon_name="pan-down-symbolic")
         expand_all.set_tooltip_text(self.t("expand_all"))
         expand_all.connect("clicked", lambda _button: self.set_all_groups_expanded(True))
@@ -256,7 +281,7 @@ class TermiaWindow(
 
 class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
-        super().__init__(application_id=APP_ID)
+        super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
 
     def do_activate(self) -> None:
         window = self.props.active_window

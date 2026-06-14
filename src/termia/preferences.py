@@ -17,6 +17,7 @@ from .keybindings import (
     keybinding_label,
     normalize_keybinding,
 )
+from .stores import ReadOnlyStoreError
 from .terminal_config import (
     parse_color,
     prompt_template_with_datetime,
@@ -28,6 +29,8 @@ from .terminal_config import (
 
 class PreferencesMixin:
     def on_app_preferences(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
         dialog = Gtk.Dialog(title=self.t("general"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(380, -1)
@@ -132,7 +135,8 @@ class PreferencesMixin:
     ) -> None:
         if response == Gtk.ResponseType.OK:
             previous_language = self.store.data.app.language
-            self.store.update_app_settings(
+            try:
+                self.store.update_app_settings(
                 theme_combo.get_active_id() or "system",
                 language_combo.get_active_id() or detect_system_language(),
                 close_tab_on_disconnect.get_active(),
@@ -145,7 +149,11 @@ class PreferencesMixin:
                 show_sidebar_on_startup.get_active(),
                 show_session_status_bar.get_active(),
                 statistics_enabled.get_active(),
-            )
+                )
+            except ReadOnlyStoreError:
+                self.toast_label.set_label(self.t("read_only_mode_enabled"))
+                dialog.destroy()
+                return
             self.apply_app_theme()
             self.install_tree_styles()
             self.apply_session_status_bar_visibility_to_open_tabs()
@@ -160,6 +168,8 @@ class PreferencesMixin:
 
 
     def on_security_settings(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
         dialog = Gtk.Dialog(title=self.t("security"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
@@ -201,11 +211,18 @@ class PreferencesMixin:
         storage_combo: Gtk.ComboBoxText,
     ) -> None:
         if response == Gtk.ResponseType.OK:
-            self.store.update_connection_storage_mode(storage_combo.get_active_id() or CONNECTION_STORAGE_PLAIN)
+            try:
+                self.store.update_connection_storage_mode(storage_combo.get_active_id() or CONNECTION_STORAGE_PLAIN)
+            except ReadOnlyStoreError:
+                self.toast_label.set_label(self.t("read_only_mode_enabled"))
+                dialog.destroy()
+                return
             self.toast_label.set_label(self.t("security_settings_saved"))
         dialog.destroy()
 
     def on_keybindings_settings(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
         dialog = Gtk.Dialog(title=self.t("keybindings"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(520, -1)
@@ -262,7 +279,12 @@ class PreferencesMixin:
             if conflict:
                 self.toast_label.set_label(self.t("keybindings_conflict").format(shortcut=conflict))
                 return
-            self.store.update_keybindings(keybindings)
+            try:
+                self.store.update_keybindings(keybindings)
+            except ReadOnlyStoreError:
+                self.toast_label.set_label(self.t("read_only_mode_enabled"))
+                dialog.destroy()
+                return
             self.toast_label.set_label(self.t("keybindings_settings_saved"))
         dialog.destroy()
 
@@ -278,6 +300,8 @@ class PreferencesMixin:
         return ""
 
     def on_terminal_settings(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
         dialog = Gtk.Dialog(title=self.t("terminal"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(540, -1)
@@ -378,6 +402,8 @@ class PreferencesMixin:
         dialog.present()
 
     def on_prompt_settings(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
         dialog = Gtk.Dialog(title=self.t("prompt"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(540, -1)
@@ -624,13 +650,18 @@ class PreferencesMixin:
         prompt_color_button: Gtk.ColorButton,
     ) -> None:
         if response == Gtk.ResponseType.OK:
-            self.store.update_prompt_settings(
+            try:
+                self.store.update_prompt_settings(
                 prompt_enabled.get_active(),
                 prompt_template_with_datetime(
                     prompt_template_entry.get_text(), prompt_datetime_combo.get_active_id() or "none"
                 ),
                 rgba_to_hex(prompt_color_button.get_rgba()),
-            )
+                )
+            except ReadOnlyStoreError:
+                self.toast_label.set_label(self.t("read_only_mode_enabled"))
+                dialog.destroy()
+                return
             self.toast_label.set_label(self.t("prompt_settings_saved"))
         dialog.destroy()
 
@@ -644,12 +675,17 @@ class PreferencesMixin:
         background_button: Gtk.ColorButton,
     ) -> None:
         if response == Gtk.ResponseType.OK:
-            self.store.update_terminal_settings(
+            try:
+                self.store.update_terminal_settings(
                 self.selected_terminal_font_family(font_combo),
                 int(font_size_spin.get_value()),
                 foreground_button.get_rgba().to_string(),
                 background_button.get_rgba().to_string(),
-            )
+                )
+            except ReadOnlyStoreError:
+                self.toast_label.set_label(self.t("read_only_mode_enabled"))
+                dialog.destroy()
+                return
             self.apply_terminal_settings_to_open_tabs()
             self.toast_label.set_label(self.t("terminal_settings_saved"))
         dialog.destroy()
