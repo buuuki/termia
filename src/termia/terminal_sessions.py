@@ -123,7 +123,7 @@ class TerminalSessionsMixin:
         terminal.connect("child-exited", self.on_process_terminal_exited, session)
         status_label.set_label(f"{title} · PID {child_pid}")
 
-    def on_process_terminal_exited(self, _terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
+    def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         self.record_session_duration(session)
         self.save_statistics_now()
         session.connected = False
@@ -131,12 +131,14 @@ class TerminalSessionsMixin:
         if session.disconnect_requested:
             session.status_label.set_label(self.t("session_disconnected_status").format(title=session.title))
             return
-        if self.child_status_successful(_status) and self.store.data.app.close_tab_on_ssh_exit:
-            self.close_tab(session.id, session.page, disconnect=False)
-            self.toast_label.set_label(self.t("local_terminal_closed").format(title=session.title))
-            return
-        session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
-        self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
+        if self.child_status_successful(_status):
+            if self.store.data.app.close_tab_on_ssh_exit and not session.split_terminals:
+                self.close_tab(session.id, session.page, disconnect=False)
+                self.toast_label.set_label(self.t("local_terminal_closed").format(title=session.title))
+                return
+            self.remove_terminal_pane_if_split(terminal, session)
+            session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
+            self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
 
     def open_terminal_tab(self, server: Server) -> None:
         session_id = str(uuid4())
@@ -953,11 +955,23 @@ class TerminalSessionsMixin:
         if sibling is None:
             return GLib.SOURCE_REMOVE
         self.replace_split_container(parent, sibling)
+        if not session.connected and not session.split_terminals and self.store.data.app.close_tab_on_ssh_exit:
+            self.close_tab(session.id, session.page, disconnect=False)
+            return GLib.SOURCE_REMOVE
         if session.split_terminals:
             session.split_terminals[-1].grab_focus()
         else:
             session.terminal.grab_focus()
         return GLib.SOURCE_REMOVE
+
+    def remove_terminal_pane_if_split(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
+        scroller = terminal.get_parent()
+        if not isinstance(scroller, Gtk.ScrolledWindow):
+            return
+        parent = scroller.get_parent()
+        if not isinstance(parent, Gtk.Paned):
+            return
+        GLib.idle_add(self.remove_split_terminal_pane, terminal, session)
 
     def replace_split_container(self, paned: Gtk.Paned, replacement: Gtk.Widget) -> bool:
         parent = paned.get_parent()
@@ -1170,7 +1184,7 @@ class TerminalSessionsMixin:
 
     def on_terminal_exited(
         self,
-        _terminal: Vte.Terminal,
+        terminal: Vte.Terminal,
         _status: int,
         server: Server,
         session: TerminalSession,
@@ -1184,10 +1198,11 @@ class TerminalSessionsMixin:
             self.toast_label.set_label(self.t("session_disconnected_toast").format(title=session.title))
             return
         if self.child_status_successful(_status):
-            if self.store.data.app.close_tab_on_ssh_exit:
+            if self.store.data.app.close_tab_on_ssh_exit and not session.split_terminals:
                 self.close_tab(session.id, session.page, disconnect=False)
                 self.toast_label.set_label(self.t("session_closed_toast").format(title=server.name))
                 return
+            self.remove_terminal_pane_if_split(terminal, session)
             session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
             self.toast_label.set_label(self.t("session_closed_toast").format(title=server.name))
