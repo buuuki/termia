@@ -558,15 +558,6 @@ class SidebarMixin:
         row.set_child(separator)
         menu.append(row)
 
-    def server_row(self, server: Server, groups_by_id: dict[str, Group]) -> RowObject:
-        group_name = groups_by_id.get(server.group_id).name if server.group_id in groups_by_id else "Sin grupo"
-        return RowObject("server", server.id, server.name, f"{server.user}@{server.host}:{server.port} · {group_name}")
-
-    def on_selection_changed(self, selection: Gtk.SingleSelection, _position: int, _n_items: int) -> None:
-        self.selected = selection.get_selected_item()
-        self.render_detail()
-        self.update_actions()
-
     def render_detail(self) -> None:
         if self.selected is None:
             self.title_label.set_label("Selecciona un servidor")
@@ -607,44 +598,3 @@ class SidebarMixin:
         if not self.ensure_writable():
             return
         self.show_server_dialog()
-
-    def on_edit(self, _button: Gtk.Button) -> None:
-        if self.selected is None:
-            return
-        if not self.ensure_writable():
-            return
-        if self.selected.kind == "group":
-            group = find_group(self.store.data.groups, self.selected.item_id)
-            if group:
-                self.show_group_dialog(group)
-        elif self.selected.kind == "server":
-            server = find_server(self.store.data.servers, self.selected.item_id)
-            if server:
-                self.show_server_dialog(server)
-
-    def on_delete(self, _button: Gtk.Button) -> None:
-        if self.selected is None:
-            return
-        if not self.ensure_writable():
-            return
-        if self.selected.kind == "group" and self.selected.item_id:
-            self.request_delete_group(self.selected.item_id)
-            return
-        elif self.selected.kind == "server":
-            server = find_server(self.store.data.servers, self.selected.item_id)
-            self.store.delete_server(self.selected.item_id)
-            self.toast_label.set_label(
-                f"Servidor eliminado: {server.name}" if server else "Servidor eliminado"
-            )
-            self.selected = None
-        self.refresh_list()
-        self.render_detail()
-
-    def on_connect(self, _button: Gtk.Button) -> None:
-        if self.selected is None or self.selected.kind != "server":
-            return
-        server = find_server(self.store.data.servers, self.selected.item_id)
-        if server is None:
-            return
-
-        self.open_terminal_tab(server)
