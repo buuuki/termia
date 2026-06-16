@@ -14,6 +14,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 from .connection_utils import (
     find_group,
     find_server,
+    group_descendant_ids,
     group_matches_query,
     server_matches_query,
     unique_server_clone_name,
@@ -40,118 +41,6 @@ class SidebarMixin:
             self.body.set_position(0)
             self.sidebar_visible = False
             self.toggle_sidebar_button.set_icon_name("sidebar-show-symbolic")
-
-    def setup_row(self, _factory: Gtk.SignalListItemFactory, item: Gtk.ListItem) -> None:
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        box.set_margin_top(8)
-        box.set_margin_bottom(8)
-        box.set_margin_start(8)
-        box.set_margin_end(8)
-
-        title = Gtk.Label()
-        title.set_xalign(0)
-        title.add_css_class("heading")
-        box.append(title)
-
-        subtitle = Gtk.Label()
-        subtitle.set_xalign(0)
-        subtitle.add_css_class("dim-label")
-        box.append(subtitle)
-
-        right_click = Gtk.GestureClick.new()
-        right_click.set_button(3)
-        right_click.connect("pressed", self.on_row_right_click, item, box)
-        box.add_controller(right_click)
-
-        left_click = Gtk.GestureClick.new()
-        left_click.set_button(1)
-        left_click.connect("pressed", self.on_row_left_click, item)
-        box.add_controller(left_click)
-
-        item.set_child(box)
-
-    def bind_row(self, _factory: Gtk.SignalListItemFactory, item: Gtk.ListItem) -> None:
-        obj = item.get_item()
-        box = item.get_child()
-        title = box.get_first_child()
-        subtitle = title.get_next_sibling()
-        title.set_label(obj.title)
-        subtitle.set_label(obj.subtitle)
-
-    def on_row_left_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        n_press: int,
-        _x: float,
-        _y: float,
-        item: Gtk.ListItem,
-    ) -> None:
-        if n_press != 2:
-            return
-        row = item.get_item()
-        if row is None or row.kind != "server":
-            return
-        server = find_server(self.store.data.servers, row.item_id)
-        if server:
-            self.open_terminal_tab(server)
-
-    def on_row_right_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        _n_press: int,
-        _x: float,
-        _y: float,
-        item: Gtk.ListItem,
-        parent: Gtk.Widget,
-    ) -> None:
-        row = item.get_item()
-        if row is None:
-            return
-
-        self.selected = row
-        position = item.get_position()
-        if position != Gtk.INVALID_LIST_POSITION:
-            self.selection.set_selected(position)
-
-        popover = Gtk.Popover()
-        popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
-        popover.set_parent(parent)
-        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        menu.add_css_class("termia-menu-panel")
-        menu.set_margin_top(6)
-        menu.set_margin_bottom(6)
-        menu.set_margin_start(6)
-        menu.set_margin_end(6)
-
-        if row.kind == "server":
-            connect_button = Gtk.Button(label="Conectar")
-            connect_button.add_css_class("suggested-action")
-            connect_button.connect("clicked", self.on_server_context_connect, popover, row.item_id)
-            edit_button = Gtk.Button(label="Editar servidor")
-            edit_button.connect("clicked", self.on_server_context_edit, popover, row.item_id)
-            self.configure_write_action(edit_button)
-            delete_button = Gtk.Button(label="Eliminar servidor")
-            delete_button.add_css_class("destructive-action")
-            delete_button.connect("clicked", self.on_server_context_delete, popover, row.item_id)
-            self.configure_write_action(delete_button)
-            for button in (connect_button, edit_button, delete_button):
-                menu.append(button)
-        elif row.kind == "group" and row.item_id:
-            edit_button = Gtk.Button(label="Editar grupo")
-            edit_button.connect("clicked", self.on_group_context_edit, popover, row.item_id)
-            self.configure_write_action(edit_button)
-            delete_button = Gtk.Button(label="Eliminar grupo")
-            delete_button.add_css_class("destructive-action")
-            delete_button.connect("clicked", self.on_group_context_delete, popover, row.item_id)
-            self.configure_write_action(delete_button)
-            menu.append(edit_button)
-            menu.append(delete_button)
-        else:
-            return
-
-        popover.set_child(menu)
-        popover.popup()
 
     def on_server_context_connect(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
@@ -213,6 +102,21 @@ class SidebarMixin:
         if not self.ensure_writable():
             return
         self.request_delete_group(group_id)
+
+    def group_servers(self, group_id: str) -> list[Server]:
+        group_ids = group_descendant_ids(self.store.data.groups, group_id) | {group_id}
+        return sorted(
+            [server for server in self.store.data.servers if server.group_id in group_ids],
+            key=lambda item: (item.name.lower(), item.host.lower(), item.user.lower(), item.port),
+        )
+
+    def on_group_context_start(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
+        popover.popdown()
+        group = find_group(self.store.data.groups, group_id)
+        if group is None:
+            return
+        for server in self.group_servers(group.id):
+            self.open_terminal_tab(server)
 
     def request_delete_group(self, group_id: str) -> None:
         if not self.ensure_writable():
@@ -595,6 +499,11 @@ class SidebarMixin:
                 enabled=not self.store.read_only,
             )
         elif row.kind == "group":
+            self.add_context_menu_item(
+                menu,
+                self.t("start_group"),
+                lambda: self.on_group_context_start(None, popover, row.item_id),
+            )
             self.add_context_menu_item(
                 menu,
                 self.t("edit_group"),

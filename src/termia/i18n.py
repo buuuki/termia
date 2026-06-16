@@ -21,7 +21,7 @@ TRANSLATIONS = {
     "es": {
         "servers": "Mostrar u ocultar listado de servidores", "new_group": "Nuevo grupo", "new_server": "Nuevo servidor",
         "terminal": "Terminal", "prompt": "Prompt", "keybindings": "Atajos", "security": "Seguridad", "general": "General", "preferences": "Preferencias", "filter_servers": "Filtrar servidores",
-        "connect": "Conectar", "edit_server": "Editar servidor", "delete_server": "Eliminar servidor", "clone_connection": "Clonar conexión",
+        "connect": "Conectar", "start_group": "Conectar a todos los servidores", "edit_server": "Editar servidor", "delete_server": "Eliminar servidor", "clone_connection": "Clonar conexión",
         "edit_group": "Editar grupo", "delete_group": "Eliminar grupo", "no_group": "Sin grupo",
         "parent_group": "Grupo padre", "no_parent_group": "Sin grupo padre",
         "cancel": "Cancelar", "close": "Cerrar", "save": "Guardar", "name": "Nombre", "host": "IP o host",
@@ -115,6 +115,7 @@ TRANSLATIONS = {
             "- Organiza servidores en grupos y subgrupos.\n"
             "- Crea, edita, elimina, clona y filtra conexiones SSH.\n"
             "- Abre conexiones y terminales locales en pestañas embebidas, compactas y desacoplables.\n"
+            "- Usa las acciones contextuales de grupo para iniciar todos los servidores de un grupo o subgrupo.\n"
             "- Muestra un dashboard de estadísticas con métricas globales, duración y servidores más usados, además de estadísticas por sesión.\n"
             "- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede mostrarse desde General, ocultarse por sesión y restaurarse desde el menú contextual.\n"
             "- Permite configurar atajos de terminal, incluido copiar, pegar y enviar la contraseña guardada.\n"
@@ -130,7 +131,7 @@ TRANSLATIONS = {
     "ca": {
         "servers": "Mostrar o amagar el llistat de servidors", "new_group": "Nou grup", "new_server": "Nou servidor",
         "terminal": "Terminal", "prompt": "Prompt", "keybindings": "Dreceres", "security": "Seguretat", "general": "General", "preferences": "Preferències", "filter_servers": "Filtrar servidors",
-        "connect": "Connectar", "edit_server": "Editar servidor", "delete_server": "Eliminar servidor", "clone_connection": "Clonar connexió",
+        "connect": "Connectar", "start_group": "Connectar a tots els servidors", "edit_server": "Editar servidor", "delete_server": "Eliminar servidor", "clone_connection": "Clonar connexió",
         "edit_group": "Editar grup", "delete_group": "Eliminar grup", "no_group": "Sense grup",
         "parent_group": "Grup pare", "no_parent_group": "Sense grup pare",
         "cancel": "Cancel·lar", "close": "Tancar", "save": "Desar", "name": "Nom", "host": "IP o host",
@@ -224,6 +225,7 @@ TRANSLATIONS = {
             "- Organitza servidors en grups i subgrups.\n"
             "- Crea, edita, elimina, clona i filtra connexions SSH.\n"
             "- Obre connexions i terminals locals en pestanyes incrustades, compactes i desacoblables.\n"
+            "- Utilitza les accions contextuals de grup per iniciar tots els servidors d'un grup o subgrup.\n"
             "- Mostra un dashboard d'estadístiques amb mètriques globals, durada i servidors més usats, a més d'estadístiques per sessió.\n"
             "- La barra d'estat de sessió mostra estat, PID, temps i desconnexió; es pot mostrar des de General, amagar per sessió i restaurar des del menú contextual.\n"
             "- Permet configurar dreceres de terminal, incloent copiar, enganxar i enviar la contrasenya desada.\n"
@@ -239,7 +241,7 @@ TRANSLATIONS = {
     "en": {
         "servers": "Show or hide server list", "new_group": "New group", "new_server": "New server",
         "terminal": "Terminal", "prompt": "Prompt", "keybindings": "Keybindings", "security": "Security", "general": "General", "preferences": "Preferences", "filter_servers": "Filter servers",
-        "connect": "Connect", "edit_server": "Edit server", "delete_server": "Delete server", "clone_connection": "Clone connection",
+        "connect": "Connect", "start_group": "Start group", "edit_server": "Edit server", "delete_server": "Delete server", "clone_connection": "Clone connection",
         "edit_group": "Edit group", "delete_group": "Delete group", "no_group": "No group",
         "parent_group": "Parent group", "no_parent_group": "No parent group",
         "cancel": "Cancel", "close": "Close", "save": "Save", "name": "Name", "host": "IP or host",
