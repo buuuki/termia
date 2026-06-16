@@ -450,14 +450,6 @@ class TerminalSessionsMixin:
                 break
         self.set_active_session(sessions[(current + delta) % len(sessions)].id)
 
-    def focus_current_terminal_page_later(self) -> bool:
-        visible = self.terminal_stack.get_visible_child()
-        for session in self.open_tabs.values():
-            if session.page is visible:
-                session.terminal.grab_focus()
-                break
-        return GLib.SOURCE_REMOVE
-
     def should_show_session_status_bar(self) -> bool:
         return self.store.data.app.show_session_status_bar
 

@@ -15,48 +15,6 @@ from . import __version__
 
 
 class MainMenuMixin:
-    def build_configuration_menu(self) -> Gtk.Popover:
-        popover = Gtk.Popover()
-        popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
-        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        menu.add_css_class("termia-menu-panel")
-        menu.set_margin_top(6)
-        menu.set_margin_bottom(6)
-        menu.set_margin_start(6)
-        menu.set_margin_end(6)
-
-        general = Gtk.Button(label=self.t("general"))
-        general.set_halign(Gtk.Align.FILL)
-        general.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_app_preferences))
-        self.configure_write_action(general)
-        menu.append(general)
-
-        terminal = Gtk.Button(label=self.t("terminal"))
-        terminal.set_halign(Gtk.Align.FILL)
-        terminal.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_terminal_settings))
-        self.configure_write_action(terminal)
-        menu.append(terminal)
-
-        prompt = Gtk.Button(label=self.t("prompt"))
-        prompt.set_halign(Gtk.Align.FILL)
-        prompt.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_prompt_settings))
-        self.configure_write_action(prompt)
-        menu.append(prompt)
-
-        keybindings = Gtk.Button(label=self.t("keybindings"))
-        keybindings.set_halign(Gtk.Align.FILL)
-        keybindings.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_keybindings_settings))
-        self.configure_write_action(keybindings)
-        menu.append(keybindings)
-
-        connections_file = Gtk.MenuButton(label=self.t("connections_file"))
-        connections_file.set_halign(Gtk.Align.FILL)
-        connections_file.set_popover(self.build_connections_file_menu())
-        menu.append(connections_file)
-        popover.set_child(menu)
-        return popover
-
     def build_main_menu(self) -> Gtk.Popover:
         popover = Gtk.Popover()
         popover.add_css_class("termia-menu-popover")
@@ -240,20 +198,3 @@ class MainMenuMixin:
             child = child.get_next_sibling()
         return GLib.SOURCE_REMOVE
 
-    def build_connections_file_menu(self) -> Gtk.Popover:
-        popover = Gtk.Popover()
-        popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
-        menu = Gtk.ListBox()
-        menu.add_css_class("termia-menu-panel")
-        menu.set_selection_mode(Gtk.SelectionMode.NONE)
-        menu.set_margin_top(6)
-        menu.set_margin_bottom(6)
-        menu.set_margin_start(6)
-        menu.set_margin_end(6)
-        self.add_context_menu_item(menu, self.t("export_config"), self.on_export_config)
-        self.add_context_menu_item(menu, self.t("import_config"), self.on_import_config, enabled=not self.store.read_only)
-        self.add_context_menu_item(menu, self.t("import_asbru"), self.on_import_asbru_config, enabled=not self.store.read_only)
-        self.add_context_menu_item(menu, self.t("clear_config"), self.on_request_clear_config, destructive=True, enabled=not self.store.read_only)
-        popover.set_child(menu)
-        return popover
