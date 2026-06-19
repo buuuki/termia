@@ -51,9 +51,7 @@ class TermiaWindow(
         self.collapse_groups_on_startup = True
         self.tree_widgets: dict[tuple[str, str], Gtk.Widget] = {}
         self.active_context_popover: Gtk.Popover | None = None
-        self.model = Gio.ListStore(item_type=RowObject)
         self.open_tabs: dict[str, TerminalSession] = {}
-        self.session_sequence = 0
         self.run_connections = 0
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
@@ -275,8 +273,6 @@ class TermiaWindow(
         self.terminal_stack.set_hexpand(True)
         self.terminal_stack.set_vexpand(True)
         detail.append(self.terminal_stack)
-
-        self.update_actions()
 
 
 class TermiaApp(Gtk.Application):

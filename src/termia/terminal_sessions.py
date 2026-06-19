@@ -42,24 +42,27 @@ class TerminalSessionsMixin:
                 command = build_local_prompt_shell_command(self.store.data.terminal, bash_path)
         self.open_process_terminal_tab(self.local_directory_title(Path.home()), command, None, working_directory=str(Path.home()))
 
-    def open_process_terminal_tab(
-        self,
-        title: str,
-        command: list[str],
-        server_id: str | None,
-        envv: list[str] | None = None,
-        working_directory: str | None = None,
-    ) -> None:
-        session_id = str(uuid4())
-        tab_title = title
+    def create_configured_terminal(self) -> Vte.Terminal:
         terminal = Vte.Terminal()
         terminal.set_hexpand(True)
         terminal.set_vexpand(True)
         terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.ON)
         terminal.set_scrollback_lines(10000)
         self.apply_terminal_settings(terminal)
+        return terminal
 
+    def build_session_status_bar(
+        self,
+        *,
+        include_margins: bool = False,
+    ) -> tuple[Gtk.Box, Gtk.Label, Gtk.Label, Gtk.Button, Gtk.Button]:
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        if include_margins:
+            toolbar.set_margin_top(0)
+            toolbar.set_margin_bottom(0)
+            toolbar.set_margin_start(4)
+            toolbar.set_margin_end(4)
+
         status_label = Gtk.Label(label=self.t("connecting"))
         status_label.set_xalign(0)
         status_label.add_css_class("dim-label")
@@ -77,28 +80,59 @@ class TerminalSessionsMixin:
         toolbar.append(Gtk.Box(hexpand=True))
         toolbar.append(timer_label)
         toolbar.append(disconnect_button)
+        return toolbar, status_label, timer_label, focus_button, disconnect_button
 
-        scroller = Gtk.ScrolledWindow()
-        scroller.set_child(terminal)
-        scroller.set_hexpand(True)
-        scroller.set_vexpand(True)
+    def build_terminal_page(self, toolbar: Gtk.Widget, terminal: Vte.Terminal) -> Gtk.Box:
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         page.append(toolbar)
-        page.append(scroller)
+        page.append(self.wrap_terminal_in_scroller(terminal))
         page.set_hexpand(True)
         page.set_vexpand(True)
+        return page
 
-        tab_label = self.build_tab_label(tab_title, session_id, page)
+    def create_terminal_session(
+        self,
+        title: str,
+        server_id: str | None,
+        *,
+        toolbar_margins: bool = False,
+    ) -> tuple[TerminalSession, Gtk.Button]:
+        session_id = str(uuid4())
+        terminal = self.create_configured_terminal()
+        toolbar, status_label, timer_label, focus_button, disconnect_button = self.build_session_status_bar(
+            include_margins=toolbar_margins
+        )
+        page = self.build_terminal_page(toolbar, terminal)
+        tab_label = self.build_tab_label(title, session_id, page)
         session = TerminalSession(
-            id=session_id, server_id=server_id, title=tab_title, terminal=terminal, page=page,
-            tab_label=tab_label, status_label=status_label, timer_label=timer_label,
-            disconnect_button=disconnect_button, status_bar=toolbar,
+            id=session_id,
+            server_id=server_id,
+            title=title,
+            terminal=terminal,
+            page=page,
+            tab_label=tab_label,
+            status_label=status_label,
+            timer_label=timer_label,
+            disconnect_button=disconnect_button,
+            status_bar=toolbar,
             started_at=time.monotonic(),
         )
+        return session, focus_button
+
+    def open_process_terminal_tab(
+        self,
+        title: str,
+        command: list[str],
+        server_id: str | None,
+        envv: list[str] | None = None,
+        working_directory: str | None = None,
+    ) -> None:
+        session, focus_button = self.create_terminal_session(title, server_id)
+        terminal = session.terminal
         focus_button.connect("clicked", self.on_hide_session_status_bar, session)
-        disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
+        session.disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
         self.configure_terminal_interactions(terminal, session)
-        self.open_tabs[session_id] = session
+        self.open_tabs[session.id] = session
         self.add_session_to_main_view(session)
         self.update_local_session_directory_title(session)
         terminal.grab_focus()
@@ -111,10 +145,10 @@ class TerminalSessionsMixin:
             message = self.t("local_terminal_start_failed").format(error=exc.message)
             retry_prompt = self.t("local_terminal_retry_prompt")
             terminal.feed(f"{message}\r\n{retry_prompt}\r\n".encode())
-            status_label.set_label("Error")
+            session.status_label.set_label("Error")
             session.connected = False
             session.pending_reconnect = True
-            disconnect_button.set_sensitive(False)
+            session.disconnect_button.set_sensitive(False)
             self.update_session_tab_title(session, self.t("tab_error_title").format(title=session.title))
             self.toast_label.set_label(message)
             return
@@ -122,7 +156,7 @@ class TerminalSessionsMixin:
         self.update_local_session_directory_title(session)
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_process_terminal_exited, session)
-        status_label.set_label(f"{title} · PID {child_pid}")
+        session.status_label.set_label(f"{title} · PID {child_pid}")
 
     def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         self.record_session_duration(session)
@@ -142,69 +176,11 @@ class TerminalSessionsMixin:
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
 
     def open_terminal_tab(self, server: Server) -> None:
-        session_id = str(uuid4())
-        tab_title = server.name
-        terminal = Vte.Terminal()
-        terminal.set_hexpand(True)
-        terminal.set_vexpand(True)
-        terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.ON)
-        terminal.set_scrollback_lines(10000)
-        self.apply_terminal_settings(terminal)
-
-        toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        toolbar.set_margin_top(0)
-        toolbar.set_margin_bottom(0)
-        toolbar.set_margin_start(4)
-        toolbar.set_margin_end(4)
-
-        status_label = Gtk.Label(label=self.t("connecting"))
-        status_label.set_xalign(0)
-        status_label.add_css_class("dim-label")
-        timer_label = Gtk.Label(label="00:00:00")
-        focus_button = Gtk.Button(label=self.t("hide_status_bar"))
-        focus_button.add_css_class("termia-status-hide")
-        focus_button.set_size_request(-1, 18)
-        disconnect_button = Gtk.Button(label=self.t("disconnect"))
-        disconnect_button.add_css_class("destructive-action")
-        disconnect_button.add_css_class("termia-disconnect-button")
-        disconnect_button.set_size_request(-1, 18)
-        toolbar.set_visible(self.should_show_session_status_bar())
-
-        toolbar.append(status_label)
-        toolbar.append(focus_button)
-        toolbar.append(Gtk.Box(hexpand=True))
-        toolbar.append(timer_label)
-        toolbar.append(disconnect_button)
-
-        scroller = Gtk.ScrolledWindow()
-        scroller.set_child(terminal)
-        scroller.set_hexpand(True)
-        scroller.set_vexpand(True)
-
-        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        page.append(toolbar)
-        page.append(scroller)
-        page.set_hexpand(True)
-        page.set_vexpand(True)
-
-        tab_label = self.build_tab_label(tab_title, session_id, page)
-        session = TerminalSession(
-            id=session_id,
-            server_id=server.id,
-            title=tab_title,
-            terminal=terminal,
-            page=page,
-            tab_label=tab_label,
-            status_label=status_label,
-            timer_label=timer_label,
-            disconnect_button=disconnect_button,
-            status_bar=toolbar,
-            started_at=time.monotonic(),
-        )
+        session, focus_button = self.create_terminal_session(server.name, server.id, toolbar_margins=True)
         focus_button.connect("clicked", self.on_hide_session_status_bar, session)
-        disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
-        self.configure_terminal_interactions(terminal, session)
-        self.open_tabs[session_id] = session
+        session.disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
+        self.configure_terminal_interactions(session.terminal, session)
+        self.open_tabs[session.id] = session
         self.add_session_to_main_view(session)
 
         self.start_ssh_session(server, session)
@@ -371,7 +347,6 @@ class TerminalSessionsMixin:
         stats.server_connections[server_id] = stats.server_connections.get(server_id, 0) + 1
         self.run_connections += 1
         self.schedule_statistics_save()
-        self.refresh_statistics_menu()
 
     def record_session_duration(self, session: TerminalSession) -> None:
         if not self.store.data.app.statistics_enabled:
@@ -386,7 +361,6 @@ class TerminalSessionsMixin:
         stats.duration_min = duration if stats.duration_min is None else min(stats.duration_min, duration)
         stats.duration_max = max(stats.duration_max, duration)
         self.schedule_statistics_save()
-        self.refresh_statistics_menu()
 
     def configure_terminal_interactions(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
         keys = Gtk.EventControllerKey.new()
@@ -805,12 +779,7 @@ class TerminalSessionsMixin:
             self.start_ssh_split_terminal(session, new_terminal, server)
 
     def create_split_terminal(self, session: TerminalSession) -> Vte.Terminal:
-        terminal = Vte.Terminal()
-        terminal.set_hexpand(True)
-        terminal.set_vexpand(True)
-        terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.ON)
-        terminal.set_scrollback_lines(10000)
-        self.apply_terminal_settings(terminal)
+        terminal = self.create_configured_terminal()
         self.configure_terminal_interactions(terminal, session)
         session.split_terminals.append(terminal)
         return terminal
@@ -1202,4 +1171,3 @@ class TerminalSessionsMixin:
             return
         session.status_label.set_label(f"Error: {session.title}")
         self.mark_session_for_reconnect(session, server, self.t("connection_failed_toast").format(title=server.name))
-

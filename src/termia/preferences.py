@@ -24,6 +24,7 @@ from .keybindings import (
     keybinding_label,
     normalize_keybinding,
 )
+from .models import AppSettings
 from .stores import ReadOnlyStoreError
 from .terminal_config import (
     parse_color,
@@ -144,18 +145,22 @@ class PreferencesMixin:
             previous_language = self.store.data.app.language
             try:
                 self.store.update_app_settings(
-                theme_combo.get_active_id() or "system",
-                language_combo.get_active_id() or detect_system_language(),
-                close_tab_on_disconnect.get_active(),
-                confirm_disconnect.get_active(),
-                confirm_close_app.get_active(),
-                sudo_password_shortcut.get_active(),
-                sudo_password_enter.get_active(),
-                close_tab_on_ssh_exit.get_active(),
-                open_local_terminal_on_startup.get_active(),
-                show_sidebar_on_startup.get_active(),
-                show_session_status_bar.get_active(),
-                statistics_enabled.get_active(),
+                    AppSettings(
+                        theme=theme_combo.get_active_id() or "system",
+                        language=language_combo.get_active_id() or detect_system_language(),
+                        close_tab_on_disconnect=close_tab_on_disconnect.get_active(),
+                        close_tab_on_ssh_exit=close_tab_on_ssh_exit.get_active(),
+                        open_local_terminal_on_startup=open_local_terminal_on_startup.get_active(),
+                        show_sidebar_on_startup=show_sidebar_on_startup.get_active(),
+                        show_session_status_bar=show_session_status_bar.get_active(),
+                        confirm_disconnect=confirm_disconnect.get_active(),
+                        confirm_close_app=confirm_close_app.get_active(),
+                        sudo_password_shortcut=sudo_password_shortcut.get_active(),
+                        sudo_password_enter=sudo_password_enter.get_active(),
+                        connection_storage_mode=self.store.data.app.connection_storage_mode,
+                        statistics_enabled=statistics_enabled.get_active(),
+                        keybindings=self.store.data.app.keybindings,
+                    )
                 )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
