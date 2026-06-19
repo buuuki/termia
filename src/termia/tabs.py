@@ -5,11 +5,10 @@ from __future__ import annotations
 import gi
 
 gi.require_version("Gdk", "4.0")
-gi.require_version("Gio", "2.0")
 gi.require_version("Graphene", "1.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
-from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango
+from gi.repository import Gdk, Graphene, Gtk, Pango
 
 from .connection_utils import find_server
 from .ui_state import TerminalSession
@@ -358,4 +357,3 @@ class TabsMixin:
         self.update_session_tab_bar_visibility()
         self.focus_available_session_after_close(session_id)
         self.sync_window_title_with_visible_session()
-

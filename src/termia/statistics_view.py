@@ -142,6 +142,3 @@ class StatisticsViewMixin:
             row.set_child(row_box)
             list_box.append(row)
         return list_box
-
-    def refresh_statistics_menu(self) -> None:
-        return

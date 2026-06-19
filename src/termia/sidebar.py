@@ -325,7 +325,6 @@ class SidebarMixin:
         self.selected_tree_widget = widget
         widget.add_css_class("selected")
         self.render_detail()
-        self.update_actions()
 
     def get_sidebar_scroll_values(self) -> tuple[float, float]:
         return (
@@ -585,9 +584,6 @@ class SidebarMixin:
             f"Puerto: {server.port}\n"
             f"Grupo: {group.name if group else 'Sin grupo'}"
         )
-
-    def update_actions(self) -> None:
-        return
 
     def on_add_group(self, _button: Gtk.Button) -> None:
         if not self.ensure_writable():

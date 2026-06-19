@@ -446,29 +446,23 @@ class ConnectionStore:
         )
         self.save_settings()
 
-    def update_app_settings(
-        self, theme: str, language: str, close_tab_on_disconnect: bool,
-        confirm_disconnect: bool, confirm_close_app: bool,
-        sudo_password_shortcut: bool, sudo_password_enter: bool, close_tab_on_ssh_exit: bool,
-        open_local_terminal_on_startup: bool, show_sidebar_on_startup: bool, show_session_status_bar: bool,
-        statistics_enabled: bool,
-    ) -> None:
+    def update_app_settings(self, app: AppSettings) -> None:
         self.ensure_writable()
         current = self.data.app
         self.data.app = AppSettings(
-            theme=theme if theme in APP_THEMES else "system",
-            language=language if language in LANGUAGES else detect_system_language(),
-            close_tab_on_disconnect=close_tab_on_disconnect,
-            close_tab_on_ssh_exit=close_tab_on_ssh_exit,
-            open_local_terminal_on_startup=open_local_terminal_on_startup,
-            show_sidebar_on_startup=show_sidebar_on_startup,
-            show_session_status_bar=show_session_status_bar,
-            confirm_disconnect=confirm_disconnect,
-            confirm_close_app=confirm_close_app,
-            sudo_password_shortcut=sudo_password_shortcut,
-            sudo_password_enter=sudo_password_enter,
+            theme=app.theme if app.theme in APP_THEMES else "system",
+            language=app.language if app.language in LANGUAGES else detect_system_language(),
+            close_tab_on_disconnect=app.close_tab_on_disconnect,
+            close_tab_on_ssh_exit=app.close_tab_on_ssh_exit,
+            open_local_terminal_on_startup=app.open_local_terminal_on_startup,
+            show_sidebar_on_startup=app.show_sidebar_on_startup,
+            show_session_status_bar=app.show_session_status_bar,
+            confirm_disconnect=app.confirm_disconnect,
+            confirm_close_app=app.confirm_close_app,
+            sudo_password_shortcut=app.sudo_password_shortcut,
+            sudo_password_enter=app.sudo_password_enter,
             connection_storage_mode=current.connection_storage_mode,
-            statistics_enabled=statistics_enabled,
+            statistics_enabled=app.statistics_enabled,
             keybindings=normalize_keybindings(current.keybindings),
         )
         self.save_settings()
