@@ -20,6 +20,7 @@ gi.require_version("Pango", "1.0")
 gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
+from .constants import DEFAULT_TERMINAL_BACKGROUND, DEFAULT_TERMINAL_FOREGROUND
 from .connection_utils import find_server
 from .keybindings import keybinding_label, keybinding_matches
 from .models import DEFAULT_ANSI_PALETTE, Server
@@ -1073,8 +1074,8 @@ class TerminalSessionsMixin:
         settings = self.store.data.terminal
         font_family = self.resolved_terminal_font_family(settings.font_family)
         font = Pango.FontDescription(f"{font_family} {settings.font_size}")
-        foreground = parse_color(settings.foreground, "#f2f2f2")
-        background = parse_color(settings.background, "#101010")
+        foreground = parse_color(settings.foreground, DEFAULT_TERMINAL_FOREGROUND)
+        background = parse_color(settings.background, DEFAULT_TERMINAL_BACKGROUND)
         palette_values = settings.ansi_palette or DEFAULT_ANSI_PALETTE
         palette = [parse_color(color, fallback) for color, fallback in zip(palette_values, DEFAULT_ANSI_PALETTE)]
         terminal.set_font(font)

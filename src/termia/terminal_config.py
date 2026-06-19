@@ -10,6 +10,7 @@ import gi
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk
 
+from .constants import DEFAULT_PROMPT_COLOR
 from .models import TerminalSettings
 
 
@@ -45,7 +46,7 @@ def normalized_prompt_template(template: str) -> str:
 
 
 def build_prompt_ps1(settings: TerminalSettings) -> str:
-    color = parse_color(settings.prompt_color, "#8ae234")
+    color = parse_color(settings.prompt_color, DEFAULT_PROMPT_COLOR)
     red = max(0, min(round(color.red * 255), 255))
     green = max(0, min(round(color.green * 255), 255))
     blue = max(0, min(round(color.blue * 255), 255))

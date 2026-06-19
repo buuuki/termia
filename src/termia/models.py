@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .constants import (
+    DEFAULT_PROMPT_COLOR,
+    DEFAULT_TERMINAL_BACKGROUND,
+    DEFAULT_TERMINAL_FONT_FAMILY,
+    DEFAULT_TERMINAL_FOREGROUND,
+)
 from .i18n import detect_system_language
 from .keybindings import DEFAULT_KEYBINDINGS
 
@@ -33,15 +39,15 @@ class Group:
 
 @dataclass
 class TerminalSettings:
-    font_family: str = "JetBrains Mono"
+    font_family: str = DEFAULT_TERMINAL_FONT_FAMILY
     font_size: int = 13
-    foreground: str = "#eeeeec"
-    background: str = "#2e3436"
+    foreground: str = DEFAULT_TERMINAL_FOREGROUND
+    background: str = DEFAULT_TERMINAL_BACKGROUND
     ls_colors: str = DEFAULT_LS_COLORS
     ansi_palette: list[str] = field(default_factory=lambda: DEFAULT_ANSI_PALETTE.copy())
     prompt_enabled: bool = False
     prompt_template: str = r"\u@\h:\w\$ "
-    prompt_color: str = "#8ae234"
+    prompt_color: str = DEFAULT_PROMPT_COLOR
 
 
 @dataclass
@@ -52,7 +58,7 @@ class AppSettings:
     close_tab_on_ssh_exit: bool = False
     open_local_terminal_on_startup: bool = True
     show_sidebar_on_startup: bool = True
-    show_session_status_bar: bool = True
+    show_session_status_bar: bool = False
     confirm_disconnect: bool = True
     confirm_close_app: bool = False
     sudo_password_shortcut: bool = False

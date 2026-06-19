@@ -8,7 +8,14 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
 from .config_io import CONNECTION_STORAGE_OBFUSCATED, CONNECTION_STORAGE_PLAIN
-from .constants import APP_THEMES, PROMPT_PRESETS, TERMINAL_PALETTES
+from .constants import (
+    APP_THEMES,
+    DEFAULT_PROMPT_COLOR,
+    DEFAULT_TERMINAL_BACKGROUND,
+    DEFAULT_TERMINAL_FOREGROUND,
+    PROMPT_PRESETS,
+    TERMINAL_PALETTES,
+)
 from .i18n import LANGUAGES, detect_system_language
 from .keybindings import (
     DEFAULT_KEYBINDINGS,
@@ -328,11 +335,11 @@ class PreferencesMixin:
         font_size_spin.set_value(settings.font_size)
 
         foreground_button = Gtk.ColorButton()
-        foreground_button.set_rgba(parse_color(settings.foreground, "#f2f2f2"))
+        foreground_button.set_rgba(parse_color(settings.foreground, DEFAULT_TERMINAL_FOREGROUND))
         foreground_button.set_title("Foreground")
 
         background_button = Gtk.ColorButton()
-        background_button.set_rgba(parse_color(settings.background, "#101010"))
+        background_button.set_rgba(parse_color(settings.background, DEFAULT_TERMINAL_BACKGROUND))
         background_button.set_title("Background")
 
         preview = Gtk.Label()
@@ -437,7 +444,7 @@ class PreferencesMixin:
         prompt_template_entry.set_placeholder_text(r"\u@\h:\w\$ ")
 
         prompt_color_button = Gtk.ColorButton()
-        prompt_color_button.set_rgba(parse_color(settings.prompt_color, "#8ae234"))
+        prompt_color_button.set_rgba(parse_color(settings.prompt_color, DEFAULT_PROMPT_COLOR))
         prompt_color_button.set_title(self.t("prompt_color"))
 
         prompt_preset_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
@@ -534,8 +541,8 @@ class PreferencesMixin:
         foreground: str,
         background: str,
     ) -> None:
-        foreground_button.set_rgba(parse_color(foreground, "#f2f2f2"))
-        background_button.set_rgba(parse_color(background, "#101010"))
+        foreground_button.set_rgba(parse_color(foreground, DEFAULT_TERMINAL_FOREGROUND))
+        background_button.set_rgba(parse_color(background, DEFAULT_TERMINAL_BACKGROUND))
 
     def on_prompt_preset_clicked(
         self,
@@ -546,7 +553,7 @@ class PreferencesMixin:
         color: str,
     ) -> None:
         prompt_template_entry.set_text(template)
-        prompt_color_button.set_rgba(parse_color(color, "#8ae234"))
+        prompt_color_button.set_rgba(parse_color(color, DEFAULT_PROMPT_COLOR))
 
     def terminal_font_families(self) -> list[str]:
         families = [

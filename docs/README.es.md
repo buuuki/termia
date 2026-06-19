@@ -32,9 +32,9 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 
 El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:
 
-- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión.
-- `Terminal` controla la fuente, tamaño, colores y paletas del terminal VTE embebido.
-- `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. No altera comandos SSH ni modifica ficheros de inicio remotos.
+- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
+- `Terminal` controla la fuente, tamaño, colores y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
+- `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
 - `Atajos` muestra los atajos activos del terminal y permite cambiar acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
@@ -68,7 +68,7 @@ Si la comprobación indica que faltan dependencias, instálalas con:
 ./scripts/install_dependencies.sh
 ```
 
-El instalador verifica el resultado después de instalar. También intenta instalar JetBrains Mono para la fuente por defecto del terminal; si no está disponible, Termia usa Ubuntu Mono o Monospace como fallback. Puedes repetir la
+El instalador verifica el resultado después de instalar. También intenta instalar JetBrains Mono para la fuente por defecto del terminal; las instalaciones nuevas usan la paleta Polaris y el color blanco del prompt por defecto, y si no está disponible, Termia usa Ubuntu Mono o Monospace como fallback. Puedes repetir la
 comprobación en cualquier momento:
 
 ```bash

@@ -17,6 +17,10 @@ STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "
 STATISTICS_FILE = STATE_DIR / "termia" / "statistics.json"
 ABOUT_IMAGE = APP_DIR / "assets" / "termia.svg"
 ISSUES_URL = "https://github.com/buuuki/termia/issues"
+DEFAULT_TERMINAL_FONT_FAMILY = "JetBrains Mono"
+DEFAULT_TERMINAL_FOREGROUND = "#d8dee9"
+DEFAULT_TERMINAL_BACKGROUND = "#1f2430"
+DEFAULT_PROMPT_COLOR = "#eeeeec"
 
 LEGACY_ANSI_PALETTE = [
     "#2e3436",

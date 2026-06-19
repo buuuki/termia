@@ -32,9 +32,9 @@ Documentació en castellà: [README.es.md](README.es.md)
 
 El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Dreceres` i `Seguretat`:
 
-- `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió.
-- `Terminal` controla el tipus de lletra, mida, colors i paletes del terminal VTE incrustat.
-- `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. No altera ordres SSH ni modifica fitxers d'inici remots.
+- `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió, que comença amagada per defecte.
+- `Terminal` controla el tipus de lletra, mida, colors i paletes del terminal VTE incrustat. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
+- `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. El color predeterminat del prompt és blanc. No altera ordres SSH ni modifica fitxers d'inici remots.
 - `Dreceres` mostra les dreceres actives del terminal i permet canviar accions habituals com copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
@@ -68,7 +68,7 @@ Si la comprovació indica que falten dependències, instal·la-les amb:
 ./scripts/install_dependencies.sh
 ```
 
-L'instal·lador verifica el resultat després d'instal·lar. També intenta instal·lar JetBrains Mono per al tipus de lletra per defecte del terminal; si no està disponible, Termia usa Ubuntu Mono o Monospace com a fallback. Pots repetir la
+L'instal·lador verifica el resultat després d'instal·lar. També intenta instal·lar JetBrains Mono per al tipus de lletra per defecte del terminal; les instal·lacions noves fan servir la paleta Polaris i el color blanc del prompt per defecte, i si no està disponible, Termia usa Ubuntu Mono o Monospace com a fallback. Pots repetir la
 comprovació en qualsevol moment:
 
 ```bash

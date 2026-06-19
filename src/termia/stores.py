@@ -10,7 +10,17 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from .constants import APP_THEMES, INSTANCE_LOCK_FILE, LEGACY_ANSI_PALETTE, SETTINGS_FILE, STATISTICS_FILE
+from .constants import (
+    APP_THEMES,
+    DEFAULT_PROMPT_COLOR,
+    DEFAULT_TERMINAL_BACKGROUND,
+    DEFAULT_TERMINAL_FONT_FAMILY,
+    DEFAULT_TERMINAL_FOREGROUND,
+    INSTANCE_LOCK_FILE,
+    LEGACY_ANSI_PALETTE,
+    SETTINGS_FILE,
+    STATISTICS_FILE,
+)
 from .config_io import (
     CONNECTION_STORAGE_MODES,
     CONNECTION_STORAGE_PLAIN,
@@ -166,9 +176,9 @@ def normalize_terminal_settings(terminal: TerminalSettings) -> TerminalSettings:
         and terminal.foreground == "#839496"
         and terminal.background == "#002b36"
     ):
-        terminal.font_family = "JetBrains Mono"
-        terminal.foreground = "#eeeeec"
-        terminal.background = "#2e3436"
+        terminal.font_family = DEFAULT_TERMINAL_FONT_FAMILY
+        terminal.foreground = DEFAULT_TERMINAL_FOREGROUND
+        terminal.background = DEFAULT_TERMINAL_BACKGROUND
     if terminal.ansi_palette == LEGACY_ANSI_PALETTE:
         terminal.ansi_palette = DEFAULT_ANSI_PALETTE.copy()
     return terminal
@@ -408,15 +418,15 @@ class ConnectionStore:
         self.ensure_writable()
         current = self.data.terminal
         self.data.terminal = TerminalSettings(
-            font_family=font_family.strip() or "Monospace",
+            font_family=font_family.strip() or DEFAULT_TERMINAL_FONT_FAMILY,
             font_size=max(6, min(font_size, 72)),
-            foreground=foreground.strip() or "#f2f2f2",
-            background=background.strip() or "#101010",
+            foreground=foreground.strip() or DEFAULT_TERMINAL_FOREGROUND,
+            background=background.strip() or DEFAULT_TERMINAL_BACKGROUND,
             ls_colors=ls_colors if ls_colors is not None else current.ls_colors,
             ansi_palette=current.ansi_palette or DEFAULT_ANSI_PALETTE.copy(),
             prompt_enabled=current.prompt_enabled if prompt_enabled is None else prompt_enabled,
             prompt_template=(prompt_template if prompt_template is not None else current.prompt_template) if (prompt_template if prompt_template is not None else current.prompt_template).strip() else r"\u@\h:\w\$ ",
-            prompt_color=(prompt_color if prompt_color is not None else current.prompt_color).strip() or "#8ae234",
+            prompt_color=(prompt_color if prompt_color is not None else current.prompt_color).strip() or DEFAULT_PROMPT_COLOR,
         )
         self.save_settings()
 
@@ -432,7 +442,7 @@ class ConnectionStore:
             ansi_palette=current.ansi_palette or DEFAULT_ANSI_PALETTE.copy(),
             prompt_enabled=enabled,
             prompt_template=template if template.strip() else r"\u@\h:\w\$ ",
-            prompt_color=color.strip() or "#8ae234",
+            prompt_color=color.strip() or DEFAULT_PROMPT_COLOR,
         )
         self.save_settings()
 
