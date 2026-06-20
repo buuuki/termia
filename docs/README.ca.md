@@ -15,6 +15,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
 - Obrir terminals locals incrustats.
 - Dividir una pestanya de terminal en diversos panells des del menú contextual del terminal.
+- Enviar fitxers locals a un servidor des del menú contextual del terminal o del servidor.
 - Executar diverses instàncies de Termia; la primera conserva accés d'escriptura i les següents passen automàticament a mode només lectura.
 - Registrar opcionalment estadístiques locals agregades de connexions, durada i ús per servidor.
 - Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
@@ -38,6 +39,7 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Drecer
 - `Dreceres` mostra les dreceres actives del terminal i permet gravar qualsevol combinació per a accions habituals com copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
+- Fes clic dret en un terminal o en un servidor per pujar fitxers a `/tmp/.termia/` a l'host destí.
 
 Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera. Amb el botó dret dins del terminal pots obrir els submenús traduïts de `Dividir` i `Pestanya`; els panells es poden crear amunt, avall, a l'esquerra o a la dreta, i desapareixen automàticament quan la seva shell acaba. Una pestanya només es tanca amb `exit` quan ha sortit l'últim terminal i ja no queden panells dividits.
 

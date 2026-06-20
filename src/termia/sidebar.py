@@ -89,6 +89,12 @@ class SidebarMixin:
         self.refresh_list()
         self.render_detail()
 
+    def on_server_context_send_files(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
+        popover.popdown()
+        server = find_server(self.store.data.servers, server_id)
+        if server is not None:
+            self.on_send_files_to_server(popover, server)
+
     def on_group_context_edit(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
         popover.popdown()
         if not self.ensure_writable():
@@ -489,6 +495,11 @@ class SidebarMixin:
                 self.t("clone_connection"),
                 lambda: self.on_server_context_clone(None, popover, row.item_id),
                 enabled=not self.store.read_only,
+            )
+            self.add_context_menu_item(
+                menu,
+                self.t("send_files_to_server"),
+                lambda: self.on_server_context_send_files(None, popover, row.item_id),
             )
             self.add_context_menu_item(
                 menu,
