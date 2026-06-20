@@ -22,22 +22,6 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
     ("send_password", "keybinding_action_send_password"),
 )
 
-KEYBINDING_CHOICES: tuple[str, ...] = (
-    "",
-    "Ctrl+Shift+C",
-    "Ctrl+Shift+V",
-    "Ctrl+PageUp",
-    "Ctrl+PageDown",
-    "Ctrl++",
-    "Ctrl+-",
-    "Ctrl+P",
-    "Ctrl+Shift+P",
-    "Alt+Left",
-    "Alt+Right",
-    "Alt+C",
-    "Alt+V",
-)
-
 _MODIFIER_ORDER = ("Ctrl", "Shift", "Alt", "Super")
 _MODIFIER_ALIASES = {
     "ctrl": "Ctrl",
@@ -97,6 +81,56 @@ def normalize_keybinding(accelerator: str) -> str:
         return ""
     ordered = [modifier for modifier in _MODIFIER_ORDER if modifier in modifiers]
     return "+".join([*ordered, key])
+
+
+def keybinding_from_event(keyval: int, state: object) -> str:
+    from gi.repository import Gdk
+
+    key_name = (Gdk.keyval_name(keyval) or "").strip()
+    if not key_name:
+        return ""
+
+    normalized_name = key_name.lower()
+    if normalized_name in {
+        "shift_l",
+        "shift_r",
+        "control_l",
+        "control_r",
+        "alt_l",
+        "alt_r",
+        "super_l",
+        "super_r",
+        "meta_l",
+        "meta_r",
+        "hyper_l",
+        "hyper_r",
+    }:
+        return ""
+
+    modifier_masks = {
+        "Ctrl": Gdk.ModifierType.CONTROL_MASK,
+        "Shift": Gdk.ModifierType.SHIFT_MASK,
+        "Alt": Gdk.ModifierType.ALT_MASK,
+        "Super": Gdk.ModifierType.SUPER_MASK,
+    }
+    relevant_mask = (
+        Gdk.ModifierType.CONTROL_MASK
+        | Gdk.ModifierType.SHIFT_MASK
+        | Gdk.ModifierType.ALT_MASK
+        | Gdk.ModifierType.SUPER_MASK
+    )
+    modifiers: list[str] = []
+    pressed_mask = state & relevant_mask
+    for modifier, mask in modifier_masks.items():
+        if pressed_mask & mask:
+            modifiers.append(modifier)
+
+    key = _KEY_ALIASES.get(normalized_name, key_name.upper() if len(key_name) == 1 else key_name)
+    if key in {"+", "-"}:
+        modifiers = [modifier for modifier in modifiers if modifier != "Shift"]
+
+    ordered = [modifier for modifier in _MODIFIER_ORDER if modifier in modifiers]
+    return normalize_keybinding("+".join([*ordered, key]))
 
 
 def normalize_keybindings(keybindings: dict[str, str] | None) -> dict[str, str]:
