@@ -15,6 +15,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
 - Abrir terminales locales embebidas.
 - Dividir una pestaña de terminal en varios paneles desde el menú contextual del terminal.
+- Enviar ficheros locales a un servidor desde el menú contextual del terminal o del servidor.
 - Ejecutar varias instancias de Termia; la primera conserva acceso de escritura y las siguientes pasan automáticamente a modo solo lectura.
 - Registrar opcionalmente estadísticas locales agregadas de conexiones, duración y uso por servidor.
 - Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
@@ -38,6 +39,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 - `Atajos` muestra los atajos activos del terminal y permite grabar cualquier combinación para acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
+- Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
 
 Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera. Con botón derecho dentro del terminal puedes abrir los submenús traducidos de `Dividir` y `Pestaña`; los paneles se pueden crear arriba, abajo, a la izquierda o a la derecha, y desaparecen automáticamente cuando su shell termina. Una pestaña solo se cierra con `exit` cuando ha salido el último terminal y ya no quedan paneles divididos.
 

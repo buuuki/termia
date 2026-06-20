@@ -15,6 +15,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Use embedded, width-sharing tabs and move a tab to a separate window.
 - Open embedded local terminal tabs.
 - Split a terminal tab into multiple panes from the terminal context menu.
+- Send local files to a server from the terminal or server context menus.
 - Run multiple Termia instances; the first keeps write access and later instances fall back to read-only mode.
 - Optionally track aggregate connection, session-duration, and per-server usage statistics locally.
 - Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
@@ -38,6 +39,7 @@ The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybind
 - `Keybindings` shows the active terminal shortcuts and lets you record any shortcut combination for common actions such as copy, paste, tab switching, font zoom, and sending the saved password.
 - `Security` controls connection storage mode.
 - When another Termia instance is already running with the write lock, a new window opens in read-only mode, shows a header badge, disables write-capable actions, and still allows browsing, connecting, and exporting configuration.
+- Right-click a terminal or a server to upload files to `/tmp/.termia/` on the target host.
 
 Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle. Right-click inside a terminal to access translated `Split` and `Tab` submenus; split panes can be created up, down, left, or right, and a pane disappears automatically when its shell exits. A tab only closes on `exit` once the last terminal has exited and no split panes remain.
 
