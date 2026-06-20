@@ -20,7 +20,7 @@ from .i18n import LANGUAGES, detect_system_language
 from .keybindings import (
     DEFAULT_KEYBINDINGS,
     KEYBINDING_ACTIONS,
-    KEYBINDING_CHOICES,
+    keybinding_from_event,
     keybinding_label,
     normalize_keybinding,
 )
@@ -33,6 +33,83 @@ from .terminal_config import (
     rgba_to_hex,
     split_prompt_datetime_template,
 )
+
+
+class KeybindingCaptureRow(Gtk.Box):
+    def __init__(self, accelerator: str, disabled_label: str, capture_prompt: str, clear_label: str) -> None:
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.set_hexpand(True)
+
+        self._disabled_label = disabled_label
+        self._capture_prompt = capture_prompt
+        self._clear_label = clear_label
+        self._accelerator = normalize_keybinding(accelerator)
+        self._capturing = False
+
+        self._capture_button = Gtk.Button()
+        self._capture_button.set_hexpand(True)
+        self._capture_button.set_halign(Gtk.Align.FILL)
+        self._capture_button.connect("clicked", self.on_capture_clicked)
+        key_controller = Gtk.EventControllerKey.new()
+        key_controller.connect("key-pressed", self.on_key_pressed)
+        self._capture_button.add_controller(key_controller)
+        focus_controller = Gtk.EventControllerFocus.new()
+        focus_controller.connect("leave", self.on_focus_leave)
+        self._capture_button.add_controller(focus_controller)
+
+        self._clear_button = Gtk.Button(label=self._clear_label)
+        self._clear_button.connect("clicked", self.on_clear_clicked)
+
+        self.append(self._capture_button)
+        self.append(self._clear_button)
+        self.update_label()
+
+    def get_accelerator(self) -> str:
+        return self._accelerator
+
+    def set_accelerator(self, accelerator: str) -> None:
+        self._accelerator = normalize_keybinding(accelerator)
+        self._capturing = False
+        self.update_label()
+
+    def update_label(self) -> None:
+        if self._capturing:
+            self._capture_button.set_label(self._capture_prompt)
+            self._capture_button.add_css_class("suggested-action")
+        else:
+            self._capture_button.set_label(keybinding_label(self._accelerator, self._disabled_label))
+            self._capture_button.remove_css_class("suggested-action")
+
+    def on_capture_clicked(self, _button: Gtk.Button) -> None:
+        self._capturing = True
+        self.update_label()
+        self._capture_button.grab_focus()
+
+    def on_clear_clicked(self, _button: Gtk.Button) -> None:
+        self.set_accelerator("")
+
+    def on_focus_leave(self, _controller: Gtk.EventControllerFocus) -> None:
+        if not self._capturing:
+            return
+        self._capturing = False
+        self.update_label()
+
+    def on_key_pressed(
+        self,
+        _controller: Gtk.EventControllerKey,
+        keyval: int,
+        _keycode: int,
+        state: object,
+    ) -> bool:
+        if not self._capturing:
+            return False
+        accelerator = keybinding_from_event(keyval, state)
+        if not accelerator:
+            return True
+        self._accelerator = accelerator
+        self._capturing = False
+        self.update_label()
+        return True
 
 
 class PreferencesMixin:
@@ -255,38 +332,36 @@ class PreferencesMixin:
         content.append(description)
 
         grid = Gtk.Grid(column_spacing=12, row_spacing=10)
-        combos: list[tuple[str, Gtk.ComboBoxText]] = []
+        rows: list[tuple[str, KeybindingCaptureRow]] = []
         for index, (action, label_key) in enumerate(KEYBINDING_ACTIONS):
             label = Gtk.Label(label=self.t(label_key))
             label.set_xalign(0)
-            combo = Gtk.ComboBoxText()
-            for choice in KEYBINDING_CHOICES:
-                combo.append(choice, keybinding_label(choice, self.t("keybinding_disabled")))
-            current = normalize_keybinding(self.store.data.app.keybindings.get(action, DEFAULT_KEYBINDINGS[action]))
-            if current not in KEYBINDING_CHOICES:
-                combo.append(current, current)
-            combo.set_active_id(current)
-            combo.set_hexpand(True)
-            combos.append((action, combo))
+            row = KeybindingCaptureRow(
+                self.store.data.app.keybindings.get(action, DEFAULT_KEYBINDINGS[action]),
+                self.t("keybinding_disabled"),
+                self.t("keybinding_capture_prompt"),
+                self.t("keybinding_clear"),
+            )
+            rows.append((action, row))
             grid.attach(label, 0, index, 1, 1)
-            grid.attach(combo, 1, index, 1, 1)
+            grid.attach(row, 1, index, 1, 1)
         content.append(grid)
 
-        dialog.connect("response", self.on_keybindings_settings_response, combos)
+        dialog.connect("response", self.on_keybindings_settings_response, rows)
         dialog.present()
 
     def on_keybindings_settings_response(
         self,
         dialog: Gtk.Dialog,
         response: Gtk.ResponseType,
-        combos: list[tuple[str, Gtk.ComboBoxText]],
+        rows: list[tuple[str, KeybindingCaptureRow]],
     ) -> None:
         if response == Gtk.ResponseType.APPLY:
-            for action, combo in combos:
-                combo.set_active_id(DEFAULT_KEYBINDINGS[action])
+            for action, row in rows:
+                row.set_accelerator(DEFAULT_KEYBINDINGS[action])
             return
         if response == Gtk.ResponseType.OK:
-            keybindings = {action: combo.get_active_id() or "" for action, combo in combos}
+            keybindings = {action: row.get_accelerator() for action, row in rows}
             conflict = self.duplicate_keybinding(keybindings)
             if conflict:
                 self.toast_label.set_label(self.t("keybindings_conflict").format(shortcut=conflict))
