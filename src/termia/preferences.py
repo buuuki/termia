@@ -252,7 +252,8 @@ class PreferencesMixin:
             self.group_expanded_state["__ungrouped__"] = False
             self.refresh_list()
             if previous_language != self.store.data.app.language:
-                self.toast_label.set_label(self.t("restart_language"))
+                self.refresh_translated_chrome()
+                self.toast_label.set_label(self.t("language_settings_saved"))
         dialog.destroy()
 
 

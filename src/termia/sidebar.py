@@ -570,18 +570,17 @@ class SidebarMixin:
 
     def render_detail(self) -> None:
         if self.selected is None:
-            self.title_label.set_label("Selecciona un servidor")
-            self.info_label.set_label("Crea grupos y servidores desde la barra superior.")
+            self.title_label.set_label(self.t("select_server"))
+            self.info_label.set_label(self.t("empty_detail_hint"))
             return
 
         if self.selected.kind == "group":
             group = find_group(self.store.data.groups, self.selected.item_id)
-            title = group.name if group else "Sin grupo"
+            title = group.name if group else self.t("no_group")
             count = len([server for server in self.store.data.servers if server.group_id == self.selected.item_id])
             self.title_label.set_label(title)
             self.info_label.set_label(
-                f"{count} servidor(es) en este grupo. "
-                "Usa Editar grupo o Eliminar grupo para gestionarlo."
+                self.t("group_detail_info").format(count=count)
             )
             return
 
@@ -591,9 +590,12 @@ class SidebarMixin:
         group = find_group(self.store.data.groups, server.group_id) if server.group_id else None
         self.title_label.set_label(server.name)
         self.info_label.set_label(
-            f"SSH: {server.user}@{server.host}\n"
-            f"Puerto: {server.port}\n"
-            f"Grupo: {group.name if group else 'Sin grupo'}"
+            self.t("server_detail_info").format(
+                user=server.user,
+                host=server.host,
+                port=server.port,
+                group=group.name if group else self.t("no_group"),
+            )
         )
 
     def on_add_group(self, _button: Gtk.Button) -> None:

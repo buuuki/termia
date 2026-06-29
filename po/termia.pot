@@ -1,0 +1,814 @@
+# Termia translation template
+# Copyright (C) 2026 Jordi Pons
+# This file is distributed under the same license as the Termia package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: termia\n"
+"POT-Creation-Date: 2026-06-29 10:28+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
+
+#: src/termia/i18n.py:servers
+msgid "Show or hide server list"
+msgstr ""
+
+#: src/termia/i18n.py:new_group
+msgid "New group"
+msgstr ""
+
+#: src/termia/i18n.py:new_server
+msgid "New server"
+msgstr ""
+
+#: src/termia/i18n.py:terminal
+msgid "Terminal"
+msgstr ""
+
+#: src/termia/i18n.py:prompt
+msgid "Prompt"
+msgstr ""
+
+#: src/termia/i18n.py:keybindings
+msgid "Keybindings"
+msgstr ""
+
+#: src/termia/i18n.py:security
+msgid "Security"
+msgstr ""
+
+#: src/termia/i18n.py:general
+msgid "General"
+msgstr ""
+
+#: src/termia/i18n.py:preferences
+msgid "Preferences"
+msgstr ""
+
+#: src/termia/i18n.py:filter_servers
+msgid "Filter servers"
+msgstr ""
+
+#: src/termia/i18n.py:connect
+msgid "Connect"
+msgstr ""
+
+#: src/termia/i18n.py:start_group
+msgid "Start group"
+msgstr ""
+
+#: src/termia/i18n.py:edit_server
+msgid "Edit server"
+msgstr ""
+
+#: src/termia/i18n.py:delete_server
+msgid "Delete server"
+msgstr ""
+
+#: src/termia/i18n.py:clone_connection
+msgid "Clone connection"
+msgstr ""
+
+#: src/termia/i18n.py:edit_group
+msgid "Edit group"
+msgstr ""
+
+#: src/termia/i18n.py:delete_group
+msgid "Delete group"
+msgstr ""
+
+#: src/termia/i18n.py:no_group
+msgid "No group"
+msgstr ""
+
+#: src/termia/i18n.py:parent_group
+msgid "Parent group"
+msgstr ""
+
+#: src/termia/i18n.py:no_parent_group
+msgid "No parent group"
+msgstr ""
+
+#: src/termia/i18n.py:cancel
+msgid "Cancel"
+msgstr ""
+
+#: src/termia/i18n.py:close
+msgid "Close"
+msgstr ""
+
+#: src/termia/i18n.py:save
+msgid "Save"
+msgstr ""
+
+#: src/termia/i18n.py:name
+msgid "Name"
+msgstr ""
+
+#: src/termia/i18n.py:host
+msgid "IP or host"
+msgstr ""
+
+#: src/termia/i18n.py:ssh_user
+msgid "SSH user"
+msgstr ""
+
+#: src/termia/i18n.py:ssh_port
+msgid "SSH port"
+msgstr ""
+
+#: src/termia/i18n.py:group
+msgid "Group"
+msgstr ""
+
+#: src/termia/i18n.py:password
+msgid "Password"
+msgstr ""
+
+#: src/termia/i18n.py:public_key
+msgid "Private SSH key"
+msgstr ""
+
+#: src/termia/i18n.py:ssh_fingerprint_manual
+msgid "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Ctrl+P."
+msgstr ""
+
+#: src/termia/i18n.py:password_warning
+msgid "Warning: the password will be stored in connections.json. You can switch between plain text and obfuscated storage from Security."
+msgstr ""
+
+#: src/termia/i18n.py:server_required_fields
+msgid "Name, host, and SSH user are required."
+msgstr ""
+
+#: src/termia/i18n.py:required_field
+msgid "* Required field"
+msgstr ""
+
+#: src/termia/i18n.py:reconnect_prompt
+msgid "Press Enter to reconnect."
+msgstr ""
+
+#: src/termia/i18n.py:close_tab_on_ssh_exit
+msgid "Close the tab when leaving an SSH session with exit"
+msgstr ""
+
+#: src/termia/i18n.py:open_local_terminal_on_startup
+msgid "Open a local terminal when Termia starts"
+msgstr ""
+
+#: src/termia/i18n.py:show_sidebar_on_startup
+msgid "Show the server list when Termia starts"
+msgstr ""
+
+#: src/termia/i18n.py:delete_group_confirm
+msgid "Delete group"
+msgstr ""
+
+#: src/termia/i18n.py:delete_group_confirm_detail
+msgid "Delete {name}? All nested subgroups and servers will also be deleted. This action cannot be undone."
+msgstr ""
+
+#: src/termia/i18n.py:group_deleted
+msgid "Group deleted: {name}"
+msgstr ""
+
+#: src/termia/i18n.py:theme
+msgid "Theme"
+msgstr ""
+
+#: src/termia/i18n.py:language
+msgid "Language"
+msgstr ""
+
+#: src/termia/i18n.py:restart_language
+msgid "The language will apply after restarting the application."
+msgstr ""
+
+#: src/termia/i18n.py:language_settings_saved
+msgid "Language saved"
+msgstr ""
+
+#: src/termia/i18n.py:select_server
+msgid "Select a server"
+msgstr ""
+
+#: src/termia/i18n.py:empty_detail_hint
+msgid "Create groups and servers from the header bar."
+msgstr ""
+
+#: src/termia/i18n.py:group_detail_info
+msgid "{count} server(s) in this group. Use Edit group or Delete group to manage it."
+msgstr ""
+
+#: src/termia/i18n.py:server_detail_info
+msgid ""
+"SSH: {user}@{host}\n"
+"Port: {port}\n"
+"Group: {group}"
+msgstr ""
+
+#: src/termia/i18n.py:split
+msgid "Split"
+msgstr ""
+
+#: src/termia/i18n.py:split_up
+msgid "Split up"
+msgstr ""
+
+#: src/termia/i18n.py:split_down
+msgid "Split down"
+msgstr ""
+
+#: src/termia/i18n.py:split_right
+msgid "Split right"
+msgstr ""
+
+#: src/termia/i18n.py:split_left
+msgid "Split left"
+msgstr ""
+
+#: src/termia/i18n.py:tab
+msgid "Tab"
+msgstr ""
+
+#: src/termia/i18n.py:close_tab
+msgid "Close tab"
+msgstr ""
+
+#: src/termia/i18n.py:disconnect
+msgid "Disconnect"
+msgstr ""
+
+#: src/termia/i18n.py:connecting
+msgid "Connecting"
+msgstr ""
+
+#: src/termia/i18n.py:close_session_title
+msgid "Close session"
+msgstr ""
+
+#: src/termia/i18n.py:close_ssh_session_confirm
+msgid "Do you want to close this SSH session? The connection will be disconnected."
+msgstr ""
+
+#: src/termia/i18n.py:close_local_session_confirm
+msgid "Do you want to close this local terminal? The running process will be terminated."
+msgstr ""
+
+#: src/termia/i18n.py:close_tab_on_disconnect
+msgid "Close the tab when disconnecting a session"
+msgstr ""
+
+#: src/termia/i18n.py:show_session_status_bar
+msgid "Show session status bar"
+msgstr ""
+
+#: src/termia/i18n.py:hide_status_bar
+msgid "Hide"
+msgstr ""
+
+#: src/termia/i18n.py:statistics_enabled
+msgid "Record local connection and duration statistics"
+msgstr ""
+
+#: src/termia/i18n.py:read_only_badge
+msgid "Read-only"
+msgstr ""
+
+#: src/termia/i18n.py:read_only_mode_enabled
+msgid "This Termia instance is running in read-only mode because another instance already owns the write lock."
+msgstr ""
+
+#: src/termia/i18n.py:read_only_mode_tooltip
+msgid "Disabled while another Termia instance holds the write lock."
+msgstr ""
+
+#: src/termia/i18n.py:confirm_disconnect
+msgid "Confirm before disconnecting or closing an active session"
+msgstr ""
+
+#: src/termia/i18n.py:confirm_close_app
+msgid "Confirm before closing Termia"
+msgstr ""
+
+#: src/termia/i18n.py:sudo_password_shortcut
+msgid "Allow sending password with shortcut"
+msgstr ""
+
+#: src/termia/i18n.py:sudo_password_enter
+msgid "Send password and press Enter"
+msgstr ""
+
+#: src/termia/i18n.py:sudo_password_sent
+msgid "Saved password sent to the terminal"
+msgstr ""
+
+#: src/termia/i18n.py:sudo_password_unavailable
+msgid "This terminal does not have a saved password"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server
+msgid "Send files to server"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_title
+msgid "Uploading to {name}"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_started
+msgid "Transfer started to {name}"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_running
+msgid "Uploading to {name} in {destination}"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_prepare_remote
+msgid "Preparing remote directory..."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_copying
+msgid "Copying files..."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_finished
+msgid "Files sent to {name}"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_failed_generic
+msgid "Could not complete the transfer."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_failed_detail
+msgid "Could not complete the transfer: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_cancelled
+msgid "Transfer cancelled."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_start_failed
+msgid "Could not start file transfer: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_missing
+msgid "scp or ssh was not found in PATH."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint
+msgid "Confirm the host fingerprint in the terminal if prompted, then enter the password if needed."
+msgstr ""
+
+#: src/termia/i18n.py:keybindings_description
+msgid "Click a shortcut and press the combination you want. Use Clear to leave it disabled so the combination reaches the remote shell."
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_capture_prompt
+msgid "Press the combination"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_clear
+msgid "Clear"
+msgstr ""
+
+#: src/termia/i18n.py:keybindings_restore_defaults
+msgid "Restore defaults"
+msgstr ""
+
+#: src/termia/i18n.py:keybindings_settings_saved
+msgid "Keybindings saved"
+msgstr ""
+
+#: src/termia/i18n.py:keybindings_conflict
+msgid "Shortcut {shortcut} is already assigned to another action"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_disabled
+msgid "Disabled"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_copy
+msgid "Copy selection"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_paste
+msgid "Paste clipboard"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_previous_tab
+msgid "Previous tab"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_next_tab
+msgid "Next tab"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_font_increase
+msgid "Increase font"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_font_decrease
+msgid "Decrease font"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_send_password
+msgid "Send saved password"
+msgstr ""
+
+#: src/termia/i18n.py:close_app
+msgid "Close Termia"
+msgstr ""
+
+#: src/termia/i18n.py:close_app_confirm
+msgid "Do you want to close Termia?"
+msgstr ""
+
+#: src/termia/i18n.py:font_size
+msgid "Font and size"
+msgstr ""
+
+#: src/termia/i18n.py:custom_prompt
+msgid "Customize local prompt"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_template
+msgid "PS1 template"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_color
+msgid "Prompt color"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_presets
+msgid "Prompt themes"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_datetime
+msgid "Date and time"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_datetime_none
+msgid "No date/time"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_datetime_time
+msgid "Time"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_datetime_time_seconds
+msgid "Time with seconds"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_datetime_date
+msgid "Date"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_datetime_both
+msgid "Date and time"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_settings_saved
+msgid "Prompt settings saved"
+msgstr ""
+
+#: src/termia/i18n.py:terminal_settings_saved
+msgid "Terminal preferences saved"
+msgstr ""
+
+#: src/termia/i18n.py:security_settings_saved
+msgid "Security preferences saved"
+msgstr ""
+
+#: src/termia/i18n.py:terminal_font_size_changed
+msgid "Terminal font size: {size}"
+msgstr ""
+
+#: src/termia/i18n.py:foreground
+msgid "Foreground"
+msgstr ""
+
+#: src/termia/i18n.py:background
+msgid "Background"
+msgstr ""
+
+#: src/termia/i18n.py:palettes
+msgid "Palettes"
+msgstr ""
+
+#: src/termia/i18n.py:connection_storage_mode
+msgid "Connection storage"
+msgstr ""
+
+#: src/termia/i18n.py:connection_storage_plain
+msgid "Plain text"
+msgstr ""
+
+#: src/termia/i18n.py:connection_storage_obfuscated
+msgid "Obfuscated"
+msgstr ""
+
+#: src/termia/i18n.py:connection_storage_obfuscated_warning
+msgid "Obfuscation prevents accidental file reads, but it does not encrypt data or protect against an attacker with access to the code."
+msgstr ""
+
+#: src/termia/i18n.py:configuration
+msgid "Configuration"
+msgstr ""
+
+#: src/termia/i18n.py:connections_file
+msgid "Import/Export"
+msgstr ""
+
+#: src/termia/i18n.py:export_config
+msgid "Export configuration"
+msgstr ""
+
+#: src/termia/i18n.py:import_config
+msgid "Import configuration"
+msgstr ""
+
+#: src/termia/i18n.py:summary
+msgid "{groups} groups · {subgroups} subgroups · {servers} servers"
+msgstr ""
+
+#: src/termia/i18n.py:import_asbru
+msgid "Import Ásbrú configuration"
+msgstr ""
+
+#: src/termia/i18n.py:clear_config
+msgid "Delete all configuration"
+msgstr ""
+
+#: src/termia/i18n.py:configure_terminal
+msgid "Configure terminal"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal
+msgid "Local terminal"
+msgstr ""
+
+#: src/termia/i18n.py:new_tab
+msgid "New tab"
+msgstr ""
+
+#: src/termia/i18n.py:statistics
+msgid "Statistics"
+msgstr ""
+
+#: src/termia/i18n.py:statistics_title
+msgid "Statistics"
+msgstr ""
+
+#: src/termia/i18n.py:top_servers
+msgid "Most used servers"
+msgstr ""
+
+#: src/termia/i18n.py:no_statistics
+msgid "No statistics yet"
+msgstr ""
+
+#: src/termia/i18n.py:sessions
+msgid "Sessions"
+msgstr ""
+
+#: src/termia/i18n.py:duration
+msgid "Duration"
+msgstr ""
+
+#: src/termia/i18n.py:connections
+msgid "Connections"
+msgstr ""
+
+#: src/termia/i18n.py:global
+msgid "Global"
+msgstr ""
+
+#: src/termia/i18n.py:current_run
+msgid "Current run"
+msgstr ""
+
+#: src/termia/i18n.py:shortest_duration
+msgid "Shortest duration"
+msgstr ""
+
+#: src/termia/i18n.py:longest_duration
+msgid "Longest duration"
+msgstr ""
+
+#: src/termia/i18n.py:average_duration
+msgid "Average duration"
+msgstr ""
+
+#: src/termia/i18n.py:copy
+msgid "Copy"
+msgstr ""
+
+#: src/termia/i18n.py:paste
+msgid "Paste"
+msgstr ""
+
+#: src/termia/i18n.py:session_statistics
+msgid "Session statistics"
+msgstr ""
+
+#: src/termia/i18n.py:server_connections
+msgid "Global connections to this server"
+msgstr ""
+
+#: src/termia/i18n.py:config_file_recovered
+msgid "Recovered corrupt configuration. Backup created: {path}"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_start_failed
+msgid "Could not start local terminal: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_retry_prompt
+msgid "Press Enter to open a new local terminal."
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_closed
+msgid "Local terminal closed: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:ssh_missing
+msgid "The ssh client was not found in PATH."
+msgstr ""
+
+#: src/termia/i18n.py:ssh_missing_status
+msgid "No ssh"
+msgstr ""
+
+#: src/termia/i18n.py:sshpass_missing
+msgid "sshpass was not found. Install sshpass or leave the password empty."
+msgstr ""
+
+#: src/termia/i18n.py:sshpass_missing_status
+msgid "No sshpass"
+msgstr ""
+
+#: src/termia/i18n.py:ssh_start_failed
+msgid "Could not start ssh: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:ssh_start_failed_toast
+msgid "Could not start ssh for {name}"
+msgstr ""
+
+#: src/termia/i18n.py:ssh_connecting_command
+msgid "Connecting: {command}"
+msgstr ""
+
+#: src/termia/i18n.py:session_opened
+msgid "Session opened: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:server_reconnect_missing
+msgid "Could not find the server to reconnect"
+msgstr ""
+
+#: src/termia/i18n.py:disconnect_session_title
+msgid "Disconnect session"
+msgstr ""
+
+#: src/termia/i18n.py:disconnect_session_detail
+msgid "Do you want to disconnect {title}?"
+msgstr ""
+
+#: src/termia/i18n.py:disconnect_session_confirm
+msgid "Disconnect"
+msgstr ""
+
+#: src/termia/i18n.py:sigterm_failed
+msgid "Could not send SIGTERM to the ssh process."
+msgstr ""
+
+#: src/termia/i18n.py:session_disconnected_terminal
+msgid "Session disconnected."
+msgstr ""
+
+#: src/termia/i18n.py:session_disconnected_status
+msgid "Disconnected: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:session_disconnected_toast
+msgid "Session disconnected: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:session_closed_status
+msgid "Closed: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:session_closed_toast
+msgid "Session closed: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:tab_closed_title
+msgid "{title} (closed)"
+msgstr ""
+
+#: src/termia/i18n.py:tab_disconnected_title
+msgid "{title} (disconnected)"
+msgstr ""
+
+#: src/termia/i18n.py:tab_error_title
+msgid "{title} (error)"
+msgstr ""
+
+#: src/termia/i18n.py:connection_failed_toast
+msgid "Connection failed: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:export_config_success
+msgid "Configuration exported"
+msgstr ""
+
+#: src/termia/i18n.py:import_config_failed
+msgid "Could not import JSON: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:import_config_success
+msgid "Configuration imported"
+msgstr ""
+
+#: src/termia/i18n.py:import_asbru_failed
+msgid "Could not import Ásbrú YAML: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:import_asbru_invalid
+msgid "The Ásbrú YAML does not have a compatible format"
+msgstr ""
+
+#: src/termia/i18n.py:import_asbru_success
+msgid "Ásbrú: imported {groups} groups and {servers} servers"
+msgstr ""
+
+#: src/termia/i18n.py:clear_confirm
+msgid "Delete all groups and servers? This action cannot be undone."
+msgstr ""
+
+#: src/termia/i18n.py:rename_tab
+msgid "Rename tab"
+msgstr ""
+
+#: src/termia/i18n.py:duplicate_tab
+msgid "Duplicate tab"
+msgstr ""
+
+#: src/termia/i18n.py:detach_tab
+msgid "Move to new window"
+msgstr ""
+
+#: src/termia/i18n.py:expand_all
+msgid "Expand all groups"
+msgstr ""
+
+#: src/termia/i18n.py:collapse_all
+msgid "Collapse all groups"
+msgstr ""
+
+#: src/termia/i18n.py:help
+msgid "Help"
+msgstr ""
+
+#: src/termia/i18n.py:about
+msgid "About"
+msgstr ""
+
+#: src/termia/i18n.py:report_issue
+msgid "Report an issue"
+msgstr ""
+
+#: src/termia/i18n.py:main_menu
+msgid "Main menu"
+msgstr ""
+
+#: src/termia/i18n.py:help_title
+msgid "Termia Help"
+msgstr ""
+
+#: src/termia/i18n.py:help_content
+msgid ""
+"Termia is an SSH connection manager with embedded terminals.\n"
+"\n"
+"Main features:\n"
+"- Organize servers into groups and subgroups.\n"
+"- Create, edit, delete, clone and filter SSH connections.\n"
+"- Open connections and local terminals in embedded, compact and detachable tabs.\n"
+"- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
+"- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
+"- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
+"- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
+"- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
+"- Import and export configurations, including basic imports from Ásbrú.\n"
+"\n"
+"Quick start:\n"
+"Use the sidebar icons to create groups or servers. Double-click a server to connect. Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
+msgstr ""
+
+#: src/termia/i18n.py:about_content
+msgid "SSH connection manager with embedded terminals"
+msgstr ""
