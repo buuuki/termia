@@ -13,7 +13,7 @@ from .constants import (
     APP_ID,
     DATA_FILE,
 )
-from .i18n import TRANSLATIONS
+from .i18n import translate_key
 from .main_menu import MainMenuMixin
 from .preferences import PreferencesMixin
 from .stores import ConnectionStore
@@ -79,8 +79,7 @@ class TermiaWindow(
         return GLib.SOURCE_REMOVE
 
     def t(self, key: str) -> str:
-        language = self.store.data.app.language
-        return TRANSLATIONS.get(language, TRANSLATIONS["es"]).get(key, key)
+        return translate_key(key, self.store.data.app.language)
 
     def ensure_writable(self) -> bool:
         if not self.store.read_only:
@@ -158,11 +157,13 @@ class TermiaWindow(
         header.pack_start(toggle_sidebar)
 
         new_tab_button = Gtk.Button(icon_name="tab-new-symbolic")
+        self.new_tab_button = new_tab_button
         new_tab_button.set_tooltip_text(self.t("new_tab"))
         new_tab_button.connect("clicked", self.on_open_local_terminal)
         header.pack_start(new_tab_button)
 
         menu_button = Gtk.MenuButton()
+        self.main_menu_button = menu_button
         menu_button.set_tooltip_text(self.t("main_menu"))
         menu_button.set_popover(self.build_main_menu())
         menu_button.set_child(Gtk.Image.new_from_icon_name("open-menu-symbolic"))
@@ -197,17 +198,21 @@ class TermiaWindow(
 
         sidebar_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         add_group = Gtk.Button(icon_name="folder-new-symbolic")
+        self.add_group_button = add_group
         add_group.set_tooltip_text(self.t("new_group"))
         add_group.connect("clicked", self.on_add_group)
         self.configure_write_action(add_group)
         add_server = Gtk.Button(icon_name="list-add-symbolic")
+        self.add_server_button = add_server
         add_server.set_tooltip_text(self.t("new_server"))
         add_server.connect("clicked", self.on_add_server)
         self.configure_write_action(add_server)
         expand_all = Gtk.Button(icon_name="pan-down-symbolic")
+        self.expand_all_button = expand_all
         expand_all.set_tooltip_text(self.t("expand_all"))
         expand_all.connect("clicked", lambda _button: self.set_all_groups_expanded(True))
         collapse_all = Gtk.Button(icon_name="pan-up-symbolic")
+        self.collapse_all_button = collapse_all
         collapse_all.set_tooltip_text(self.t("collapse_all"))
         collapse_all.connect("clicked", lambda _button: self.set_all_groups_expanded(False))
         sidebar_actions.append(add_group)
@@ -247,11 +252,11 @@ class TermiaWindow(
         detail.set_vexpand(True)
         body.set_end_child(detail)
 
-        self.title_label = Gtk.Label(label="Selecciona un servidor")
+        self.title_label = Gtk.Label(label=self.t("select_server"))
         self.title_label.set_xalign(0)
         self.title_label.add_css_class("title-2")
 
-        self.info_label = Gtk.Label(label="Crea grupos y servidores desde la barra superior.")
+        self.info_label = Gtk.Label(label=self.t("empty_detail_hint"))
         self.info_label.set_xalign(0)
         self.info_label.set_wrap(True)
 
@@ -273,6 +278,25 @@ class TermiaWindow(
         self.terminal_stack.set_hexpand(True)
         self.terminal_stack.set_vexpand(True)
         detail.append(self.terminal_stack)
+
+    def refresh_translated_chrome(self) -> None:
+        self.toggle_sidebar_button.set_tooltip_text(self.t("servers"))
+        self.new_tab_button.set_tooltip_text(self.t("new_tab"))
+        self.main_menu_button.set_tooltip_text(self.t("main_menu"))
+        self.main_menu_button.set_popover(self.build_main_menu())
+        self.read_only_badge.set_label(self.t("read_only_badge"))
+        if self.store.read_only:
+            self.set_title(f"Termia ({self.t('read_only_badge')})")
+        else:
+            self.set_title("Termia")
+        self.add_group_button.set_tooltip_text(self.t("new_group"))
+        self.configure_write_action(self.add_group_button)
+        self.add_server_button.set_tooltip_text(self.t("new_server"))
+        self.configure_write_action(self.add_server_button)
+        self.expand_all_button.set_tooltip_text(self.t("expand_all"))
+        self.collapse_all_button.set_tooltip_text(self.t("collapse_all"))
+        self.search_entry.set_placeholder_text(self.t("filter_servers"))
+        self.render_detail()
 
 
 class TermiaApp(Gtk.Application):

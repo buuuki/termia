@@ -26,4 +26,4 @@ package-dir = { "" = "src" }
 version = { attr = "termia.__version__" }
 
 [tool.setuptools.package-data]
-termia = ["assets/*"]
+termia = ["assets/*", "locale/*/LC_MESSAGES/*.mo"]

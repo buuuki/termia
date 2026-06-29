@@ -25,7 +25,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Ctrl+P`, con o sin `Enter`.
 - Configurar por separado opciones generales, fuente y colores del terminal VTE, y el prompt PS1.
 - Personalizar el prompt local con colores, temas predefinidos y prefijos de hora o fecha sin cambiar ficheros de inicio ni comandos remotos.
-- Usar la interfaz en castellano, catalán o inglés. El idioma inicial sigue el locale del sistema cuando está soportado.
+- Usar la interfaz en español, catalán o inglés. El idioma inicial sigue el locale del sistema cuando está soportado.
 - Importar y exportar configuraciones de Termia.
 - Importar conexiones y grupos anidados básicos desde YAML de Asbru.
 

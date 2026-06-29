@@ -56,6 +56,9 @@ src/termia/app.py             Application composition and window setup
 src/termia/                Feature modules for storage, dialogs, tabs, terminal sessions, and UI helpers
 src/termia/__main__.py        Python module entry point
 src/termia/assets/            Desktop and About dialog artwork
+src/termia/locale/            Compiled gettext catalogs bundled with Termia
+po/                           Editable gettext translation catalogs
+scripts/compile_translations.py
 scripts/install_dependencies.sh
 scripts/install_desktop.sh
 scripts/uninstall_desktop.sh
@@ -165,8 +168,15 @@ not vendored in this repository. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICE
 
 ## Development checks
 
+After editing `po/es.po` or `po/ca.po`, compile the gettext catalogs before
+running Termia:
+
 ```bash
-python3 -m py_compile run_termia.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
+scripts/compile_translations.py
+```
+
+```bash
+python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
 bash -n scripts/install_dependencies.sh
 bash -n scripts/install_desktop.sh
 bash -n scripts/uninstall_desktop.sh
