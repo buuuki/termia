@@ -10,7 +10,7 @@ from pathlib import Path
 
 DOMAIN = "termia"
 LOCALE_DIR = Path(__file__).resolve().parent / "locale"
-LANGUAGES = {"es": "Castellano", "ca": "Català", "en": "English"}
+LANGUAGES = {"es": "Español", "ca": "Català", "en": "English"}
 
 
 def detect_system_language() -> str:
