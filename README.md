@@ -21,7 +21,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
 - Show or hide the session status bar globally, hide it per session, and restore it from the terminal context menu.
 - Configure confirmation prompts for disconnecting sessions and closing Termia.
-- Configure terminal keybindings by clicking a control and pressing the combination you want, including `Ctrl+Shift+C` for copy and `Ctrl+Shift+V` for paste.
+- Configure terminal keybindings by clicking a control and pressing the combination you want, including `Ctrl+Shift+C` for copy and `Ctrl+Shift+V` for paste. Unmodified `F1`-`F12` keys are reserved for terminal applications.
 - Optionally send the saved SSH password to a remote terminal with `Ctrl+P`, with or without `Enter`.
 - Configure general options, VTE terminal font/colors, and PS1 prompt settings separately.
 - Customize local prompt colors, presets, and time/date prefixes without changing remote shell startup files or commands.
@@ -36,7 +36,7 @@ The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybind
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
 - `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, and color palettes. New installations start with JetBrains Mono and the Polaris palette.
 - `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. The default prompt color is white. It does not alter SSH commands or modify remote shell startup files.
-- `Keybindings` shows the active terminal shortcuts and lets you record any shortcut combination for common actions such as copy, paste, tab switching, font zoom, and sending the saved password.
+- `Keybindings` shows the active terminal shortcuts and lets you record shortcut combinations for common actions such as copy, paste, tab switching, font zoom, and sending the saved password. Unmodified `F1`-`F12` keys pass through to terminal applications.
 - `Security` controls connection storage mode.
 - When another Termia instance is already running with the write lock, a new window opens in read-only mode, shows a header badge, disables write-capable actions, and still allows browsing, connecting, and exporting configuration.
 - Right-click a terminal or a server to upload files to `/tmp/.termia/` on the target host.

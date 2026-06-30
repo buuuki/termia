@@ -39,6 +39,8 @@ class TermiaWindow(
     def __init__(self, app: Gtk.Application) -> None:
         super().__init__(application=app, title="Termia")
         self.set_default_size(1000, 620)
+        if hasattr(self, "set_handle_menubar_accel"):
+            self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
         if self.store.read_only:

@@ -22,7 +22,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
 from .constants import DEFAULT_TERMINAL_BACKGROUND, DEFAULT_TERMINAL_FOREGROUND
 from .connection_utils import find_server
-from .keybindings import keybinding_label, keybinding_matches
+from .keybindings import is_unmodified_function_key, keybinding_label, keybinding_matches
 from .models import DEFAULT_ANSI_PALETTE, Server
 from .terminal_config import (
     build_local_prompt_shell_command,
@@ -388,6 +388,8 @@ class TerminalSessionsMixin:
             else:
                 self.reconnect_session(session)
             return True
+        if is_unmodified_function_key(keyval, state):
+            return False
         keybindings = self.store.data.app.keybindings
         if keybinding_matches(keybindings.get("copy", ""), keyval, state):
             terminal.copy_clipboard_format(Vte.Format.TEXT)

@@ -280,6 +280,8 @@ class TabsMixin:
         self.remove_session_from_main_view(session)
         self.focus_available_session_after_close(session.id)
         window = Gtk.Window(title=session.title, transient_for=self)
+        if hasattr(window, "set_handle_menubar_accel"):
+            window.set_handle_menubar_accel(False)
         window.set_default_size(860, 520)
         window.set_child(session.page)
         session.detached_window = window

@@ -21,7 +21,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
 - Mostrar u ocultar globalmente la barra de estado de sesión, ocultarla por sesión y restaurarla desde el menú contextual del terminal.
 - Configurar confirmaciones para desconectar sesiones y cerrar Termia.
-- Configurar atajos de terminal haciendo clic en un control y pulsando la combinación que quieras, incluido `Ctrl+Shift+C` para copiar y `Ctrl+Shift+V` para pegar.
+- Configurar atajos de terminal haciendo clic en un control y pulsando la combinación que quieras, incluido `Ctrl+Shift+C` para copiar y `Ctrl+Shift+V` para pegar. Las teclas `F1`-`F12` sin modificadores se reservan para las aplicaciones del terminal.
 - Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Ctrl+P`, con o sin `Enter`.
 - Configurar por separado opciones generales, fuente y colores del terminal VTE, y el prompt PS1.
 - Personalizar el prompt local con colores, temas predefinidos y prefijos de hora o fecha sin cambiar ficheros de inicio ni comandos remotos.
@@ -36,7 +36,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
 - `Terminal` controla la fuente, tamaño, colores y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
 - `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
-- `Atajos` muestra los atajos activos del terminal y permite grabar cualquier combinación para acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada.
+- `Atajos` muestra los atajos activos del terminal y permite grabar combinaciones para acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada. Las teclas `F1`-`F12` sin modificadores se envían a las aplicaciones del terminal.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
 - Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.

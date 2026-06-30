@@ -148,6 +148,18 @@ def keybinding_label(accelerator: str, disabled_label: str) -> str:
     return normalized or disabled_label
 
 
+def is_unmodified_function_key(keyval: int, state: object) -> bool:
+    from gi.repository import Gdk
+
+    relevant_mask = (
+        Gdk.ModifierType.CONTROL_MASK
+        | Gdk.ModifierType.SHIFT_MASK
+        | Gdk.ModifierType.ALT_MASK
+        | Gdk.ModifierType.SUPER_MASK
+    )
+    return Gdk.KEY_F1 <= keyval <= Gdk.KEY_F12 and not (state & relevant_mask)
+
+
 def keybinding_matches(accelerator: str, keyval: int, state: object) -> bool:
     normalized = normalize_keybinding(accelerator)
     if not normalized:
