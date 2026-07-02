@@ -399,6 +399,14 @@ class ConnectionStore:
                 break
         self.save_connections()
 
+    def update_server_favorite(self, server_id: str, favorite: bool) -> None:
+        self.ensure_writable()
+        for server in self.data.servers:
+            if server.id == server_id:
+                server.favorite = favorite
+                break
+        self.save_connections()
+
     def delete_server(self, server_id: str) -> None:
         self.ensure_writable()
         self.data.servers = [server for server in self.data.servers if server.id != server_id]

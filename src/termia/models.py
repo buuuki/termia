@@ -26,6 +26,7 @@ class Server:
     user: str
     port: int = 22
     group_id: str | None = None
+    favorite: bool = False
     password: str = ""
     public_key: str = ""
 
@@ -85,4 +86,3 @@ class StoreData:
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     app: AppSettings = field(default_factory=AppSettings)
     statistics: StatisticsSettings = field(default_factory=StatisticsSettings)
-

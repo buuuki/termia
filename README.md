@@ -12,6 +12,7 @@ Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 - Store SSH hosts with a display name, host name or IP, user, port, password,
   and private key path.
 - Filter servers and open multiple tabbed sessions to the same host.
+- Mark servers as favorites and jump to them from a dedicated section in the sidebar.
 - Use embedded, width-sharing tabs and move a tab to a separate window.
 - Open embedded local terminal tabs.
 - Split a terminal tab into multiple panes from the terminal context menu.
