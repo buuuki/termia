@@ -81,11 +81,29 @@ class SidebarMixin:
             server.user,
             server.port,
             server.group_id,
+            server.favorite,
             server.password,
             server.public_key,
         )
         self.selected = RowObject("server", clone.id, clone.name)
         self.toast_label.set_label(f"Conexión clonada: {clone.name}")
+        self.refresh_list()
+        self.render_detail()
+
+    def on_server_context_toggle_favorite(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        server = find_server(self.store.data.servers, server_id)
+        if server is None:
+            return
+        new_favorite_state = not server.favorite
+        self.store.update_server_favorite(server_id, new_favorite_state)
+        self.selected = RowObject("server", server.id, server.name, self.get_server_connection_text(server))
+        if new_favorite_state:
+            self.toast_label.set_label(f"Favorito añadido: {server.name}")
+        else:
+            self.toast_label.set_label(f"Favorito eliminado: {server.name}")
         self.refresh_list()
         self.render_detail()
 
@@ -167,6 +185,8 @@ class SidebarMixin:
     def get_group_expanded(self, group_id: str, query: str) -> bool:
         if query:
             return True
+        if group_id == "__favorites__":
+            return self.group_expanded_state.get(group_id, True)
         return self.group_expanded_state.get(group_id, not self.collapse_groups_on_startup)
 
     def on_group_expanded_changed(self, expander: Gtk.Expander, _param: Any) -> None:
@@ -193,6 +213,10 @@ class SidebarMixin:
             if server_matches_query(server, query):
                 servers_by_group.setdefault(server.group_id, []).append(server)
 
+        self.visible_tree_rows = self.build_visible_tree_rows(children_by_parent, servers_by_group, query)
+        favorite_servers = self.favorite_servers(query)
+        if favorite_servers:
+            self.server_list.append(self.build_favorites_widget(favorite_servers, query))
         for group in sorted(children_by_parent.get(None, []), key=lambda item: item.name.lower()):
             widget = self.build_group_widget(group, children_by_parent, servers_by_group, query)
             if widget is not None:
@@ -207,6 +231,76 @@ class SidebarMixin:
         self.summary_label.set_label(
             self.t("summary").format(groups=root_groups, subgroups=subgroups, servers=len(self.store.data.servers))
         )
+
+    def favorite_servers(self, query: str) -> list[Server]:
+        return sorted(
+            [server for server in self.store.data.servers if server.favorite and server_matches_query(server, query)],
+            key=lambda item: (item.name.lower(), item.host.lower(), item.user.lower(), item.port),
+        )
+
+    def build_visible_tree_rows(
+        self,
+        children_by_parent: dict[str | None, list[Group]],
+        servers_by_group: dict[str | None, list[Server]],
+        query: str,
+    ) -> list[RowObject]:
+        rows: list[RowObject] = []
+        if query or self.get_group_expanded("__favorites__", query):
+            for server in self.favorite_servers(query):
+                rows.append(self.build_server_row_object(server, "favorite"))
+        for group in sorted(children_by_parent.get(None, []), key=lambda item: item.name.lower()):
+            rows.extend(self.collect_visible_group_rows(group, children_by_parent, servers_by_group, query))
+        for server in sorted(servers_by_group.get(None, []), key=lambda item: item.name.lower()):
+            rows.append(self.build_server_row_object(server))
+        return rows
+
+    def collect_visible_group_rows(
+        self,
+        group: Group,
+        children_by_parent: dict[str | None, list[Group]],
+        servers_by_group: dict[str | None, list[Server]],
+        query: str,
+    ) -> list[RowObject]:
+        child_rows: list[RowObject] = []
+        if query or self.get_group_expanded(group.id, query):
+            for child in sorted(children_by_parent.get(group.id, []), key=lambda item: item.name.lower()):
+                child_rows.extend(self.collect_visible_group_rows(child, children_by_parent, servers_by_group, query))
+            for server in sorted(servers_by_group.get(group.id, []), key=lambda item: item.name.lower()):
+                child_rows.append(self.build_server_row_object(server))
+
+        group_matches = group_matches_query(group, query)
+        if query and not group_matches and not child_rows:
+            return []
+
+        descendant_servers = sum(1 for row in child_rows if row.kind == "server")
+        return [RowObject("group", group.id, group.name, f"{descendant_servers} servidor(es)"), *child_rows]
+
+    def build_server_row_object(self, server: Server, row_kind: str = "server") -> RowObject:
+        return RowObject(row_kind, server.id, server.name, self.get_server_connection_text(server))
+
+    def get_server_connection_text(self, server: Server) -> str:
+        return f"{server.user}@{server.host}:{server.port}" if server.user else f"{server.host}:{server.port}"
+
+    def build_favorites_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
+        expander = Gtk.Expander()
+        expander.set_label_widget(self.build_favorites_label(f"{self.t('favorites')} ({len(servers)})"))
+        self.group_expanders.append(expander)
+        expander.group_id = "__favorites__"
+        expander.set_expanded(self.get_group_expanded("__favorites__", query))
+        expander.connect("notify::expanded", self.on_group_expanded_changed)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        for server in servers:
+            content.append(self.build_server_widget(server, row_kind="favorite", icon_name="starred-symbolic"))
+        expander.set_child(content)
+        return expander
+
+    def build_favorites_label(self, text: str) -> Gtk.Widget:
+        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        label_box.append(Gtk.Image.new_from_icon_name("starred-symbolic"))
+        label = Gtk.Label(label=text)
+        label.add_css_class("heading")
+        label_box.append(label)
+        return label_box
 
     def build_group_widget(
         self,
@@ -283,7 +377,12 @@ class SidebarMixin:
         expander.set_child(content)
         return expander
 
-    def build_server_widget(self, server: Server) -> Gtk.Widget:
+    def build_server_widget(
+        self,
+        server: Server,
+        row_kind: str = "server",
+        icon_name: str = "network-server-symbolic",
+    ) -> Gtk.Widget:
         row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         row.set_focusable(False)
         row.set_margin_top(0)
@@ -292,15 +391,15 @@ class SidebarMixin:
         row.set_margin_end(6)
 
         title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        title_box.append(Gtk.Image.new_from_icon_name("network-server-symbolic"))
+        title_box.append(Gtk.Image.new_from_icon_name(icon_name))
         title = Gtk.Label(label=server.name)
         title.set_xalign(0)
         title_box.append(title)
         row.append(title_box)
 
-        connection = f"{server.user}@{server.host}:{server.port}" if server.user else f"{server.host}:{server.port}"
+        connection = self.get_server_connection_text(server)
         row.set_tooltip_text(connection)
-        row_obj = RowObject("server", server.id, server.name, connection)
+        row_obj = self.build_server_row_object(server, row_kind)
         self.register_tree_widget(row_obj, row)
         left_click = Gtk.GestureClick.new()
         left_click.set_button(1)
@@ -315,7 +414,7 @@ class SidebarMixin:
 
     def register_tree_widget(self, row: RowObject, widget: Gtk.Widget) -> None:
         widget.add_css_class("termia-tree-item")
-        if row.kind == "server":
+        if row.kind in {"server", "favorite"}:
             widget.add_css_class("termia-server-item")
         widget.set_focusable(False)
         self.tree_widgets[(row.kind, row.item_id)] = widget
@@ -376,6 +475,88 @@ class SidebarMixin:
     def set_sidebar_scroll_value(self, adjustment: Gtk.Adjustment, value: float) -> None:
         maximum = max(adjustment.get_lower(), adjustment.get_upper() - adjustment.get_page_size())
         adjustment.set_value(min(max(value, adjustment.get_lower()), maximum))
+
+    def get_group_expander(self, group_id: str) -> Gtk.Expander | None:
+        for expander in getattr(self, "group_expanders", []):
+            if getattr(expander, "group_id", None) == group_id:
+                return expander
+        return None
+
+    def get_visible_tree_row_index(self, row: RowObject) -> int | None:
+        for index, visible_row in enumerate(getattr(self, "visible_tree_rows", [])):
+            if visible_row.kind == row.kind and visible_row.item_id == row.item_id:
+                return index
+        return None
+
+    def select_visible_tree_row(self, index: int) -> bool:
+        rows = getattr(self, "visible_tree_rows", [])
+        if not rows:
+            return False
+        index = max(0, min(index, len(rows) - 1))
+        row = rows[index]
+        widget = self.tree_widgets.get((row.kind, row.item_id))
+        if widget is None:
+            return False
+        self.select_tree_row(row, widget)
+        return True
+
+    def move_visible_tree_selection(self, delta: int) -> bool:
+        rows = getattr(self, "visible_tree_rows", [])
+        if not rows:
+            return False
+        current_index = self.get_visible_tree_row_index(self.selected) if self.selected is not None else None
+        if current_index is None:
+            target_index = 0 if delta >= 0 else len(rows) - 1
+        else:
+            target_index = max(0, min(current_index + delta, len(rows) - 1))
+        return self.select_visible_tree_row(target_index)
+
+    def activate_selected_tree_row(self) -> bool:
+        if self.selected is None:
+            return False
+        if self.selected.kind in {"server", "favorite"}:
+            server = find_server(self.store.data.servers, self.selected.item_id)
+            if server is None:
+                return False
+            self.open_terminal_tab(server)
+            return True
+        if self.selected.kind == "group":
+            expander = self.get_group_expander(self.selected.item_id)
+            if expander is None:
+                return False
+            expander.set_expanded(not expander.get_expanded())
+            self.refresh_list()
+            return True
+        return False
+
+    def on_sidebar_search_key_pressed(
+        self,
+        _controller: Gtk.EventControllerKey,
+        keyval: int,
+        _keycode: int,
+        state: Gdk.ModifierType,
+    ) -> bool:
+        relevant_mask = (
+            Gdk.ModifierType.CONTROL_MASK
+            | Gdk.ModifierType.ALT_MASK
+            | Gdk.ModifierType.META_MASK
+            | Gdk.ModifierType.SUPER_MASK
+        )
+        if state & relevant_mask:
+            return False
+
+        enter_keys = {Gdk.KEY_Return, Gdk.KEY_KP_Enter, getattr(Gdk, "KEY_ISO_Enter", Gdk.KEY_Return)}
+        if keyval == Gdk.KEY_Up:
+            return self.move_visible_tree_selection(-1)
+        if keyval == Gdk.KEY_Down:
+            return self.move_visible_tree_selection(1)
+        if keyval == Gdk.KEY_Home:
+            return self.select_visible_tree_row(0)
+        if keyval == Gdk.KEY_End:
+            return self.select_visible_tree_row(len(getattr(self, "visible_tree_rows", [])) - 1)
+        if keyval in enter_keys:
+            return self.activate_selected_tree_row()
+        return False
 
     def on_group_widget_left_click(
         self,
@@ -478,7 +659,15 @@ class SidebarMixin:
         menu.set_margin_start(6)
         menu.set_margin_end(6)
 
-        if row.kind == "server":
+        if row.kind in {"server", "favorite"}:
+            server = find_server(self.store.data.servers, row.item_id)
+            if server is not None:
+                self.add_context_menu_item(
+                    menu,
+                    self.t("remove_favorite") if server.favorite else self.t("add_favorite"),
+                    lambda: self.on_server_context_toggle_favorite(None, popover, row.item_id),
+                    enabled=not self.store.read_only,
+                )
             self.add_context_menu_item(
                 menu,
                 self.t("connect"),
@@ -584,6 +773,8 @@ class SidebarMixin:
             )
             return
 
+        if self.selected.kind not in {"server", "favorite"}:
+            return
         server = find_server(self.store.data.servers, self.selected.item_id)
         if server is None:
             return

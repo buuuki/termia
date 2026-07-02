@@ -226,6 +226,10 @@ class TermiaWindow(
         self.search_entry = Gtk.SearchEntry()
         self.search_entry.set_placeholder_text(self.t("filter_servers"))
         self.search_entry.connect("search-changed", lambda _entry: self.refresh_list())
+        search_key = Gtk.EventControllerKey.new()
+        search_key.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        search_key.connect("key-pressed", self.on_sidebar_search_key_pressed)
+        self.search_entry.add_controller(search_key)
         sidebar.append(self.search_entry)
 
         self.server_list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)

@@ -357,6 +357,7 @@ class ConnectionStore:
         user: str,
         port: int,
         group_id: str | None,
+        favorite: bool = False,
         password: str = "",
         public_key: str = "",
     ) -> Server:
@@ -368,6 +369,7 @@ class ConnectionStore:
             user=user.strip(),
             port=port,
             group_id=group_id,
+            favorite=favorite,
             password=password,
             public_key=public_key,
         )
@@ -383,6 +385,7 @@ class ConnectionStore:
         user: str,
         port: int,
         group_id: str | None,
+        favorite: bool,
         password: str = "",
         public_key: str = "",
     ) -> None:
@@ -394,8 +397,17 @@ class ConnectionStore:
                 server.user = user.strip()
                 server.port = port
                 server.group_id = group_id
+                server.favorite = favorite
                 server.password = password
                 server.public_key = public_key
+                break
+        self.save_connections()
+
+    def update_server_favorite(self, server_id: str, favorite: bool) -> None:
+        self.ensure_writable()
+        for server in self.data.servers:
+            if server.id == server_id:
+                server.favorite = favorite
                 break
         self.save_connections()
 

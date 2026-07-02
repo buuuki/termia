@@ -56,6 +56,10 @@ MESSAGES = {'servers': 'Show or hide server list',
  'edit_server': 'Edit server',
  'delete_server': 'Delete server',
  'clone_connection': 'Clone connection',
+ 'favorite_server': 'Favorite',
+ 'add_favorite': 'Add to favorites',
+ 'remove_favorite': 'Remove from favorites',
+ 'favorites': 'Favorites',
  'edit_group': 'Edit group',
  'delete_group': 'Delete group',
  'no_group': 'No group',
@@ -250,6 +254,7 @@ MESSAGES = {'servers': 'Show or hide server list',
                  'Main features:\n'
                  '- Organize servers into groups and subgroups.\n'
                  '- Create, edit, delete, clone and filter SSH connections.\n'
+                 '- Mark servers as favorites for quick access from a dedicated section.\n'
                  '- Open connections and local terminals in embedded, compact and detachable '
                  'tabs.\n'
                  '- View a statistics dashboard with global metrics, durations and most used '
