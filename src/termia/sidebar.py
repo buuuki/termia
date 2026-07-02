@@ -193,6 +193,7 @@ class SidebarMixin:
             if server_matches_query(server, query):
                 servers_by_group.setdefault(server.group_id, []).append(server)
 
+        self.visible_tree_rows = self.build_visible_tree_rows(children_by_parent, servers_by_group, query)
         for group in sorted(children_by_parent.get(None, []), key=lambda item: item.name.lower()):
             widget = self.build_group_widget(group, children_by_parent, servers_by_group, query)
             if widget is not None:
@@ -207,6 +208,46 @@ class SidebarMixin:
         self.summary_label.set_label(
             self.t("summary").format(groups=root_groups, subgroups=subgroups, servers=len(self.store.data.servers))
         )
+
+    def build_visible_tree_rows(
+        self,
+        children_by_parent: dict[str | None, list[Group]],
+        servers_by_group: dict[str | None, list[Server]],
+        query: str,
+    ) -> list[RowObject]:
+        rows: list[RowObject] = []
+        for group in sorted(children_by_parent.get(None, []), key=lambda item: item.name.lower()):
+            rows.extend(self.collect_visible_group_rows(group, children_by_parent, servers_by_group, query))
+        for server in sorted(servers_by_group.get(None, []), key=lambda item: item.name.lower()):
+            rows.append(self.build_server_row_object(server))
+        return rows
+
+    def collect_visible_group_rows(
+        self,
+        group: Group,
+        children_by_parent: dict[str | None, list[Group]],
+        servers_by_group: dict[str | None, list[Server]],
+        query: str,
+    ) -> list[RowObject]:
+        child_rows: list[RowObject] = []
+        if query or self.get_group_expanded(group.id, query):
+            for child in sorted(children_by_parent.get(group.id, []), key=lambda item: item.name.lower()):
+                child_rows.extend(self.collect_visible_group_rows(child, children_by_parent, servers_by_group, query))
+            for server in sorted(servers_by_group.get(group.id, []), key=lambda item: item.name.lower()):
+                child_rows.append(self.build_server_row_object(server))
+
+        group_matches = group_matches_query(group, query)
+        if query and not group_matches and not child_rows:
+            return []
+
+        descendant_servers = sum(1 for row in child_rows if row.kind == "server")
+        return [RowObject("group", group.id, group.name, f"{descendant_servers} servidor(es)"), *child_rows]
+
+    def build_server_row_object(self, server: Server) -> RowObject:
+        return RowObject("server", server.id, server.name, self.get_server_connection_text(server))
+
+    def get_server_connection_text(self, server: Server) -> str:
+        return f"{server.user}@{server.host}:{server.port}" if server.user else f"{server.host}:{server.port}"
 
     def build_group_widget(
         self,
@@ -298,9 +339,9 @@ class SidebarMixin:
         title_box.append(title)
         row.append(title_box)
 
-        connection = f"{server.user}@{server.host}:{server.port}" if server.user else f"{server.host}:{server.port}"
+        connection = self.get_server_connection_text(server)
         row.set_tooltip_text(connection)
-        row_obj = RowObject("server", server.id, server.name, connection)
+        row_obj = self.build_server_row_object(server)
         self.register_tree_widget(row_obj, row)
         left_click = Gtk.GestureClick.new()
         left_click.set_button(1)
@@ -376,6 +417,88 @@ class SidebarMixin:
     def set_sidebar_scroll_value(self, adjustment: Gtk.Adjustment, value: float) -> None:
         maximum = max(adjustment.get_lower(), adjustment.get_upper() - adjustment.get_page_size())
         adjustment.set_value(min(max(value, adjustment.get_lower()), maximum))
+
+    def get_group_expander(self, group_id: str) -> Gtk.Expander | None:
+        for expander in getattr(self, "group_expanders", []):
+            if getattr(expander, "group_id", None) == group_id:
+                return expander
+        return None
+
+    def get_visible_tree_row_index(self, row: RowObject) -> int | None:
+        for index, visible_row in enumerate(getattr(self, "visible_tree_rows", [])):
+            if visible_row.kind == row.kind and visible_row.item_id == row.item_id:
+                return index
+        return None
+
+    def select_visible_tree_row(self, index: int) -> bool:
+        rows = getattr(self, "visible_tree_rows", [])
+        if not rows:
+            return False
+        index = max(0, min(index, len(rows) - 1))
+        row = rows[index]
+        widget = self.tree_widgets.get((row.kind, row.item_id))
+        if widget is None:
+            return False
+        self.select_tree_row(row, widget)
+        return True
+
+    def move_visible_tree_selection(self, delta: int) -> bool:
+        rows = getattr(self, "visible_tree_rows", [])
+        if not rows:
+            return False
+        current_index = self.get_visible_tree_row_index(self.selected) if self.selected is not None else None
+        if current_index is None:
+            target_index = 0 if delta >= 0 else len(rows) - 1
+        else:
+            target_index = max(0, min(current_index + delta, len(rows) - 1))
+        return self.select_visible_tree_row(target_index)
+
+    def activate_selected_tree_row(self) -> bool:
+        if self.selected is None:
+            return False
+        if self.selected.kind == "server":
+            server = find_server(self.store.data.servers, self.selected.item_id)
+            if server is None:
+                return False
+            self.open_terminal_tab(server)
+            return True
+        if self.selected.kind == "group":
+            expander = self.get_group_expander(self.selected.item_id)
+            if expander is None:
+                return False
+            expander.set_expanded(not expander.get_expanded())
+            self.refresh_list()
+            return True
+        return False
+
+    def on_sidebar_search_key_pressed(
+        self,
+        _controller: Gtk.EventControllerKey,
+        keyval: int,
+        _keycode: int,
+        state: Gdk.ModifierType,
+    ) -> bool:
+        relevant_mask = (
+            Gdk.ModifierType.CONTROL_MASK
+            | Gdk.ModifierType.ALT_MASK
+            | Gdk.ModifierType.META_MASK
+            | Gdk.ModifierType.SUPER_MASK
+        )
+        if state & relevant_mask:
+            return False
+
+        enter_keys = {Gdk.KEY_Return, Gdk.KEY_KP_Enter, getattr(Gdk, "KEY_ISO_Enter", Gdk.KEY_Return)}
+        if keyval == Gdk.KEY_Up:
+            return self.move_visible_tree_selection(-1)
+        if keyval == Gdk.KEY_Down:
+            return self.move_visible_tree_selection(1)
+        if keyval == Gdk.KEY_Home:
+            return self.select_visible_tree_row(0)
+        if keyval == Gdk.KEY_End:
+            return self.select_visible_tree_row(len(getattr(self, "visible_tree_rows", [])) - 1)
+        if keyval in enter_keys:
+            return self.activate_selected_tree_row()
+        return False
 
     def on_group_widget_left_click(
         self,
