@@ -116,9 +116,11 @@ class ConnectionDialogsMixin:
         password_entry = Gtk.PasswordEntry()
         password_entry.set_show_peek_icon(True)
         public_key_entry = Gtk.Entry()
+        favorite_check = Gtk.CheckButton(label=self.t("favorite_server"))
         for widget in (name_entry, host_entry, user_entry, port_spin, group_combo, password_entry, public_key_entry):
             widget.set_hexpand(True)
             widget.set_size_request(260, -1)
+        favorite_check.set_halign(Gtk.Align.START)
 
         group_combo.append("", self.t("no_group"))
         for group, path_label in group_path_labels(self.store.data.groups):
@@ -133,6 +135,7 @@ class ConnectionDialogsMixin:
             group_combo.set_active_id(server.group_id or "")
             password_entry.set_text(server.password)
             public_key_entry.set_text(server.public_key)
+            favorite_check.set_active(server.favorite)
         else:
             port_spin.set_value(22)
 
@@ -144,9 +147,11 @@ class ConnectionDialogsMixin:
             (self.t("group"), group_combo, False),
             (self.t("password"), password_entry, False),
             (self.t("public_key"), public_key_entry, False),
+            ("", favorite_check, False),
         ]
         for index, (label_text, widget, required) in enumerate(rows):
-            grid.attach(self.build_form_label(label_text, required), 0, index, 1, 1)
+            if label_text:
+                grid.attach(self.build_form_label(label_text, required), 0, index, 1, 1)
             grid.attach(widget, 1, index, 1, 1)
         grid.attach(self.build_required_hint(), 1, len(rows), 1, 1)
 
@@ -171,6 +176,7 @@ class ConnectionDialogsMixin:
                 "group": group_combo,
                 "password": password_entry,
                 "public_key": public_key_entry,
+                "favorite": favorite_check,
             },
             server,
         )
@@ -190,6 +196,7 @@ class ConnectionDialogsMixin:
         group_id = widgets["group"].get_active_id() or None
         password = widgets["password"].get_text()
         public_key = widgets["public_key"].get_text().strip()
+        favorite = widgets["favorite"].get_active()
 
         if response == Gtk.ResponseType.OK:
             if not name or not host or not user:
@@ -201,9 +208,9 @@ class ConnectionDialogsMixin:
                 return
             try:
                 if server:
-                    self.store.update_server(server.id, name, host, user, port, group_id, password, public_key)
+                    self.store.update_server(server.id, name, host, user, port, group_id, favorite, password, public_key)
                 else:
-                    self.store.add_server(name, host, user, port, group_id, password, public_key)
+                    self.store.add_server(name, host, user, port, group_id, favorite, password, public_key)
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
                 dialog.destroy()

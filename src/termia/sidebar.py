@@ -81,6 +81,7 @@ class SidebarMixin:
             server.user,
             server.port,
             server.group_id,
+            server.favorite,
             server.password,
             server.public_key,
         )
