@@ -51,6 +51,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Exiting an SSH session with `exit` must only close the tab when the relevant preference is enabled, and only after the last terminal in the tab has exited with no split panes remaining.
 - Exiting a local shell must follow the configured local terminal close behavior.
 - Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
+- When close-on-exit is enabled, a split tab must close after the last pane exits regardless of whether the original terminal or a split exits last.
 
 ### Focus and Keyboard
 

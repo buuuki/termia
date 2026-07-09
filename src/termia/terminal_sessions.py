@@ -117,6 +117,7 @@ class TerminalSessionsMixin:
             status_bar=toolbar,
             started_at=time.monotonic(),
         )
+        session.active_terminal_ids.add(id(terminal))
         return session, focus_button
 
     def open_process_terminal_tab(
@@ -162,13 +163,14 @@ class TerminalSessionsMixin:
     def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         self.record_session_duration(session)
         self.save_statistics_now()
+        self.mark_terminal_inactive(terminal, session)
         session.connected = False
         session.disconnect_button.set_sensitive(False)
         if session.disconnect_requested:
             session.status_label.set_label(self.t("session_disconnected_status").format(title=session.title))
             return
         if self.child_status_successful(_status):
-            if self.store.data.app.close_tab_on_ssh_exit and not session.split_terminals:
+            if self.should_close_tab_after_terminal_exit(session):
                 self.close_tab(session.id, session.page, disconnect=False)
                 self.toast_label.set_label(self.t("local_terminal_closed").format(title=session.title))
                 return
@@ -793,6 +795,7 @@ class TerminalSessionsMixin:
         terminal = self.create_configured_terminal()
         self.configure_terminal_interactions(terminal, session)
         session.split_terminals.append(terminal)
+        session.active_terminal_ids.add(id(terminal))
         return terminal
 
     def wrap_terminal_in_scroller(self, terminal: Vte.Terminal) -> Gtk.ScrolledWindow:
@@ -912,6 +915,7 @@ class TerminalSessionsMixin:
 
     def on_split_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         session.split_child_pids.pop(id(terminal), None)
+        self.mark_terminal_inactive(terminal, session)
         if terminal in session.split_terminals:
             session.split_terminals.remove(terminal)
         GLib.idle_add(self.remove_split_terminal_pane, terminal, session)
@@ -928,7 +932,7 @@ class TerminalSessionsMixin:
         if sibling is None:
             return GLib.SOURCE_REMOVE
         self.replace_split_container(parent, sibling)
-        if not session.connected and not session.split_terminals and self.store.data.app.close_tab_on_ssh_exit:
+        if self.should_close_tab_after_terminal_exit(session):
             self.close_tab(session.id, session.page, disconnect=False)
             return GLib.SOURCE_REMOVE
         if session.split_terminals:
@@ -945,6 +949,12 @@ class TerminalSessionsMixin:
         if not isinstance(parent, Gtk.Paned):
             return
         GLib.idle_add(self.remove_split_terminal_pane, terminal, session)
+
+    def mark_terminal_inactive(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
+        session.active_terminal_ids.discard(id(terminal))
+
+    def should_close_tab_after_terminal_exit(self, session: TerminalSession) -> bool:
+        return self.store.data.app.close_tab_on_ssh_exit and not session.active_terminal_ids
 
     def replace_split_container(self, paned: Gtk.Paned, replacement: Gtk.Widget) -> bool:
         parent = paned.get_parent()
@@ -1411,6 +1421,7 @@ class TerminalSessionsMixin:
     ) -> None:
         self.record_session_duration(session)
         self.save_statistics_now()
+        self.mark_terminal_inactive(terminal, session)
         session.connected = False
         session.disconnect_button.set_sensitive(False)
         if session.disconnect_requested:
@@ -1418,7 +1429,7 @@ class TerminalSessionsMixin:
             self.toast_label.set_label(self.t("session_disconnected_toast").format(title=session.title))
             return
         if self.child_status_successful(_status):
-            if self.store.data.app.close_tab_on_ssh_exit and not session.split_terminals:
+            if self.should_close_tab_after_terminal_exit(session):
                 self.close_tab(session.id, session.page, disconnect=False)
                 self.toast_label.set_label(self.t("session_closed_toast").format(title=server.name))
                 return
