@@ -918,6 +918,9 @@ class TerminalSessionsMixin:
         self.mark_terminal_inactive(terminal, session)
         if terminal in session.split_terminals:
             session.split_terminals.remove(terminal)
+        if self.should_close_tab_after_terminal_exit(session):
+            self.close_tab(session.id, session.page, disconnect=False)
+            return
         GLib.idle_add(self.remove_split_terminal_pane, terminal, session)
 
     def remove_split_terminal_pane(self, terminal: Vte.Terminal, session: TerminalSession) -> bool:
