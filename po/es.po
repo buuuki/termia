@@ -179,6 +179,18 @@ msgstr "Grupo eliminado: {name}"
 msgid "Theme"
 msgstr "Tema"
 
+#: src/termia/i18n.py:theme_system
+msgid "System"
+msgstr "Sistema"
+
+#: src/termia/i18n.py:theme_light
+msgid "Light"
+msgstr "Claro"
+
+#: src/termia/i18n.py:theme_dark
+msgid "Dark"
+msgstr "Oscuro"
+
 #: src/termia/i18n.py:language
 msgid "Language"
 msgstr "Idioma"

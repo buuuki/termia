@@ -57,4 +57,4 @@ PROMPT_PRESETS = {
     "Blanco": (r"\u@\h:\w\$ ", "#eeeeec"),
 }
 
-APP_THEMES = {"system": "Sistema", "light": "Claro", "dark": "Oscuro"}
+APP_THEMES = ("system", "light", "dark")
