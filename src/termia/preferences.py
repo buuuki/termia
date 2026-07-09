@@ -128,8 +128,8 @@ class PreferencesMixin:
         grid.set_margin_end(16)
 
         theme_combo = Gtk.ComboBoxText()
-        for theme_id, label in APP_THEMES.items():
-            theme_combo.append(theme_id, label)
+        for theme_id in APP_THEMES:
+            theme_combo.append(theme_id, self.t(f"theme_{theme_id}"))
         theme_combo.set_active_id(self.store.data.app.theme)
 
         language_combo = Gtk.ComboBoxText()

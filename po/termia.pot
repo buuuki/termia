@@ -179,6 +179,18 @@ msgstr ""
 msgid "Theme"
 msgstr ""
 
+#: src/termia/i18n.py:theme_system
+msgid "System"
+msgstr ""
+
+#: src/termia/i18n.py:theme_light
+msgid "Light"
+msgstr ""
+
+#: src/termia/i18n.py:theme_dark
+msgid "Dark"
+msgstr ""
+
 #: src/termia/i18n.py:language
 msgid "Language"
 msgstr ""
