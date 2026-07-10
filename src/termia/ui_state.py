@@ -44,3 +44,4 @@ class TerminalSession:
     duration_recorded: bool = False
     split_terminals: list[Vte.Terminal] = field(default_factory=list)
     split_child_pids: dict[int, int] = field(default_factory=dict)
+    active_terminal_ids: set[int] = field(default_factory=set)
