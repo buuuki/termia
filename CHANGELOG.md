@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Translate app theme choices.
+- Close split tabs when the final pane exits.
+- Add favorite servers section and favorite toggle in the server editor.
+- Add keyboard navigation for filtered sidebar servers.
+- Fix terminal function key handling.
+- Fix terminal menu separator color in split panes.
+- Rename the Spanish language label.
+- Add gettext-backed translations and bump the project version to `0.4.0-alpha`.
+
+### Added
+
+- Add server file upload via SCP.
+- Add manual terminal keybinding capture.
+
 ## 0.3.0-alpha.1 - 2026-06-19
 
 ### Changed

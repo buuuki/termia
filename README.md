@@ -5,6 +5,7 @@ Linux desktops.
 
 Spanish documentation: [docs/README.es.md](docs/README.es.md)
 Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
+Roadmap: [ROADMAP.md](ROADMAP.md)
 
 ## Features
 
