@@ -557,6 +557,62 @@ msgstr "Importar configuración de Ásbrú"
 msgid "Delete all configuration"
 msgstr "Eliminar toda la configuración"
 
+#: src/termia/i18n.py:connection_history
+msgid "Connection history"
+msgstr "Historial de conexiones"
+
+#: src/termia/i18n.py:connection_history_title
+msgid "Connection History"
+msgstr "Historial de conexiones"
+
+#: src/termia/i18n.py:no_connection_history
+msgid "No connection history yet"
+msgstr "Todavía no hay historial de conexiones"
+
+#: src/termia/i18n.py:no_matching_history
+msgid "No matching history entries"
+msgstr "No hay entradas que coincidan"
+
+#: src/termia/i18n.py:clear_history
+msgid "Clear history"
+msgstr "Borrar historial"
+
+#: src/termia/i18n.py:clear_history_confirm
+msgid "Delete all connection history? This action cannot be undone."
+msgstr "¿Borrar todo el historial de conexiones? Esta acción no se puede deshacer."
+
+#: src/termia/i18n.py:history_cleared
+msgid "Connection history cleared"
+msgstr "Historial de conexiones borrado"
+
+#: src/termia/i18n.py:search_history
+msgid "Search history"
+msgstr "Buscar historial"
+
+#: src/termia/i18n.py:history_kind_ssh
+msgid "SSH"
+msgstr "SSH"
+
+#: src/termia/i18n.py:history_kind_local
+msgid "Local terminal"
+msgstr "Terminal local"
+
+#: src/termia/i18n.py:history_result_closed
+msgid "Closed"
+msgstr "Cerrada"
+
+#: src/termia/i18n.py:history_result_disconnected
+msgid "Disconnected"
+msgstr "Desconectada"
+
+#: src/termia/i18n.py:history_result_failed
+msgid "Failed"
+msgstr "Fallida"
+
+#: src/termia/i18n.py:history_result_running
+msgid "In progress"
+msgstr "En curso"
+
 #: src/termia/i18n.py:configure_terminal
 msgid "Configure terminal"
 msgstr "Configurar terminal"
@@ -818,6 +874,7 @@ msgid ""
 "- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
 "- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
 "- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
+"- View a local connection history with timestamps, outcomes and durations.\n"
 "- Import and export configurations, including basic imports from Ásbrú.\n"
 "\n"
 "Quick start:\n"
@@ -835,6 +892,7 @@ msgstr ""
 "- Permite configurar atajos de terminal, incluido copiar, pegar y enviar la contraseña guardada.\n"
 "- Configura por separado opciones generales, terminal VTE y prompt PS1.\n"
 "- El prompt local permite color, temas predefinidos, hora, fecha y previsualización sin modificar sesiones remotas.\n"
+"- Muestra un historial local de conexiones con marcas de tiempo, resultados y duraciones.\n"
 "- Importa y exporta configuraciones, incluida la importación básica desde Ásbrú.\n"
 "\n"
 "Uso rápido:\n"

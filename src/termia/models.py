@@ -80,6 +80,44 @@ class StatisticsSettings:
 
 
 @dataclass
+class ConnectionHistoryEvent:
+    schema_version: int = 1
+    event_id: str = ""
+    session_id: str = ""
+    kind: str = ""
+    event: str = ""
+    timestamp: str = ""
+    started_at: str = ""
+    ended_at: str = ""
+    result: str = ""
+    duration_seconds: float | None = None
+    title: str = ""
+    server_id: str = ""
+    server_name: str = ""
+    host: str = ""
+    port: int = 0
+    user: str = ""
+    detail: str = ""
+
+
+@dataclass
+class ConnectionHistoryEntry:
+    session_id: str
+    kind: str = ""
+    title: str = ""
+    started_at: str = ""
+    ended_at: str = ""
+    result: str = ""
+    duration_seconds: float | None = None
+    server_id: str = ""
+    server_name: str = ""
+    host: str = ""
+    port: int = 0
+    user: str = ""
+    detail: str = ""
+
+
+@dataclass
 class StoreData:
     groups: list[Group] = field(default_factory=list)
     servers: list[Server] = field(default_factory=list)

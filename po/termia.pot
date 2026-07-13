@@ -554,6 +554,62 @@ msgstr ""
 msgid "Delete all configuration"
 msgstr ""
 
+#: src/termia/i18n.py:connection_history
+msgid "Connection history"
+msgstr ""
+
+#: src/termia/i18n.py:connection_history_title
+msgid "Connection History"
+msgstr ""
+
+#: src/termia/i18n.py:no_connection_history
+msgid "No connection history yet"
+msgstr ""
+
+#: src/termia/i18n.py:no_matching_history
+msgid "No matching history entries"
+msgstr ""
+
+#: src/termia/i18n.py:clear_history
+msgid "Clear history"
+msgstr ""
+
+#: src/termia/i18n.py:clear_history_confirm
+msgid "Delete all connection history? This action cannot be undone."
+msgstr ""
+
+#: src/termia/i18n.py:history_cleared
+msgid "Connection history cleared"
+msgstr ""
+
+#: src/termia/i18n.py:search_history
+msgid "Search history"
+msgstr ""
+
+#: src/termia/i18n.py:history_kind_ssh
+msgid "SSH"
+msgstr ""
+
+#: src/termia/i18n.py:history_kind_local
+msgid "Local terminal"
+msgstr ""
+
+#: src/termia/i18n.py:history_result_closed
+msgid "Closed"
+msgstr ""
+
+#: src/termia/i18n.py:history_result_disconnected
+msgid "Disconnected"
+msgstr ""
+
+#: src/termia/i18n.py:history_result_failed
+msgid "Failed"
+msgstr ""
+
+#: src/termia/i18n.py:history_result_running
+msgid "In progress"
+msgstr ""
+
 #: src/termia/i18n.py:configure_terminal
 msgid "Configure terminal"
 msgstr ""
@@ -815,6 +871,7 @@ msgid ""
 "- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
 "- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
 "- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
+"- View a local connection history with timestamps, outcomes and durations.\n"
 "- Import and export configurations, including basic imports from Ásbrú.\n"
 "\n"
 "Quick start:\n"

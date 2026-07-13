@@ -70,6 +70,11 @@ class MainMenuMixin:
         statistics.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_statistics_dashboard))
         menu.append(statistics)
 
+        history = Gtk.Button(label=self.t("connection_history"))
+        history.set_halign(Gtk.Align.FILL)
+        history.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_connection_history))
+        menu.append(history)
+
         help_btn = Gtk.Button(label=self.t("help"))
         help_btn.set_halign(Gtk.Align.FILL)
         help_btn.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_help))
@@ -197,4 +202,3 @@ class MainMenuMixin:
             self.clear_about_dialog_selection(child)
             child = child.get_next_sibling()
         return GLib.SOURCE_REMOVE
-

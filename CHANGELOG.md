@@ -17,6 +17,7 @@
 
 - Add server file upload via SCP.
 - Add manual terminal keybinding capture.
+- Add a JSONL connection history view and local history log.
 
 ## 0.3.0-alpha.1 - 2026-06-19
 
