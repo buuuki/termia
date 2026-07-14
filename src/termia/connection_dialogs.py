@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import shlex
 from pathlib import Path
 from typing import Any
 
@@ -323,6 +324,13 @@ class ConnectionDialogsMixin:
                     if not widget.get_text().strip():
                         widget.grab_focus()
                         break
+                return
+            try:
+                if arguments:
+                    shlex.split(arguments)
+            except ValueError as exc:
+                self.toast_label.set_label(self.t("local_terminal_invalid_arguments").format(error=exc))
+                widgets["arguments"].grab_focus()
                 return
             try:
                 if profile:

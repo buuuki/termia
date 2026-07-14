@@ -666,6 +666,7 @@ class ConnectionStore:
         tab_title: str,
     ) -> None:
         self.ensure_writable()
+        updated = False
         for profile in self.data.local_terminals:
             if profile.id == profile_id:
                 profile.name = name.strip()
@@ -674,13 +675,17 @@ class ConnectionStore:
                 profile.arguments = arguments.strip()
                 profile.command_on_start = command_on_start.strip()
                 profile.tab_title = tab_title.strip()
+                updated = True
                 break
-        self.save_connections()
+        if updated:
+            self.save_connections()
 
     def delete_local_terminal(self, profile_id: str) -> None:
         self.ensure_writable()
+        original_count = len(self.data.local_terminals)
         self.data.local_terminals = [profile for profile in self.data.local_terminals if profile.id != profile_id]
-        self.save_connections()
+        if len(self.data.local_terminals) != original_count:
+            self.save_connections()
 
     def update_terminal_settings(
         self,

@@ -310,8 +310,7 @@ class SidebarMixin:
 
     def build_local_terminal_row_object(self, profile: LocalTerminalProfile) -> RowObject:
         title = profile.name or self.t("local_terminal")
-        subtitle = profile.tab_title or profile.working_directory or profile.shell
-        return RowObject("local_terminal", profile.id, title, subtitle)
+        return RowObject("local_terminal", profile.id, title)
 
     def collect_visible_group_rows(
         self,

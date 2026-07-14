@@ -33,13 +33,20 @@ from .terminal_config import (
 from .ui_state import TerminalSession
 
 
+INITIAL_LOCAL_COMMAND_DELAY_MS = 300
+
+
 class TerminalSessionsMixin:
     def on_open_local_terminal(self, _button: Gtk.Button) -> None:
         self.open_local_terminal_profile(None)
 
     def open_local_terminal_profile(self, profile: LocalTerminalProfile | None) -> None:
         title = self.local_terminal_session_title(profile)
-        command = self.build_local_terminal_command(profile)
+        try:
+            command = self.build_local_terminal_command(profile)
+        except ValueError as exc:
+            self.toast_label.set_label(self.t("local_terminal_invalid_arguments").format(error=exc))
+            return
         working_directory = self.local_terminal_profile_working_directory(profile)
         self.open_process_terminal_tab(
             title,
@@ -220,7 +227,7 @@ class TerminalSessionsMixin:
         terminal.connect("child-exited", self.on_process_terminal_exited, session)
         session.status_label.set_label(f"{title} · PID {child_pid}")
         if initial_command.strip():
-            GLib.timeout_add(100, self.feed_initial_local_command, terminal, initial_command.strip())
+            GLib.timeout_add(INITIAL_LOCAL_COMMAND_DELAY_MS, self.feed_initial_local_command, terminal, initial_command.strip())
 
     def feed_initial_local_command(self, terminal: Vte.Terminal, command: str) -> bool:
         terminal.feed_child(f"{command}\n".encode())
