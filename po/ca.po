@@ -589,6 +589,14 @@ msgstr "Historial de connexions esborrat"
 msgid "Search history"
 msgstr "Cerca historial"
 
+#: src/termia/i18n.py:hide_local_terminals
+msgid "Hide local terminals"
+msgstr "Amaga terminals locals"
+
+#: src/termia/i18n.py:show_local_terminals
+msgid "Show local terminals"
+msgstr "Mostra terminals locals"
+
 #: src/termia/i18n.py:history_kind_ssh
 msgid "SSH"
 msgstr "SSH"

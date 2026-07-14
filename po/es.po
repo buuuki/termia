@@ -589,6 +589,14 @@ msgstr "Historial de conexiones borrado"
 msgid "Search history"
 msgstr "Buscar historial"
 
+#: src/termia/i18n.py:hide_local_terminals
+msgid "Hide local terminals"
+msgstr "Ocultar terminales locales"
+
+#: src/termia/i18n.py:show_local_terminals
+msgid "Show local terminals"
+msgstr "Mostrar terminales locales"
+
 #: src/termia/i18n.py:history_kind_ssh
 msgid "SSH"
 msgstr "SSH"
