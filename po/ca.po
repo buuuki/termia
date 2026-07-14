@@ -561,6 +561,70 @@ msgstr "Importar configuració d'Ásbrú"
 msgid "Delete all configuration"
 msgstr "Eliminar tota la configuració"
 
+#: src/termia/i18n.py:connection_history
+msgid "Connection history"
+msgstr "Historial de connexions"
+
+#: src/termia/i18n.py:connection_history_title
+msgid "Connection History"
+msgstr "Historial de connexions"
+
+#: src/termia/i18n.py:no_connection_history
+msgid "No connection history yet"
+msgstr "Encara no hi ha historial de connexions"
+
+#: src/termia/i18n.py:no_matching_history
+msgid "No matching history entries"
+msgstr "No hi ha entrades que coincideixin"
+
+#: src/termia/i18n.py:clear_history
+msgid "Clear history"
+msgstr "Esborra l'historial"
+
+#: src/termia/i18n.py:clear_history_confirm
+msgid "Delete all connection history? This action cannot be undone."
+msgstr "Voleu esborrar tot l'historial de connexions? Aquesta acció no es pot desfer."
+
+#: src/termia/i18n.py:history_cleared
+msgid "Connection history cleared"
+msgstr "Historial de connexions esborrat"
+
+#: src/termia/i18n.py:search_history
+msgid "Search history"
+msgstr "Cerca historial"
+
+#: src/termia/i18n.py:hide_local_terminals
+msgid "Hide local terminals"
+msgstr "Amaga terminals locals"
+
+#: src/termia/i18n.py:show_local_terminals
+msgid "Show local terminals"
+msgstr "Mostra terminals locals"
+
+#: src/termia/i18n.py:history_kind_ssh
+msgid "SSH"
+msgstr "SSH"
+
+#: src/termia/i18n.py:history_kind_local
+msgid "Local terminal"
+msgstr "Terminal local"
+
+#: src/termia/i18n.py:history_result_closed
+msgid "Closed"
+msgstr "Tancada"
+
+#: src/termia/i18n.py:history_result_disconnected
+msgid "Disconnected"
+msgstr "Desconnectada"
+
+#: src/termia/i18n.py:history_result_failed
+msgid "Failed"
+msgstr "Fallida"
+
+#: src/termia/i18n.py:history_result_running
+msgid "In progress"
+msgstr "En curs"
+
 #: src/termia/i18n.py:configure_terminal
 msgid "Configure terminal"
 msgstr "Configurar terminal"
@@ -839,6 +903,7 @@ msgstr ""
 "- Permet configurar dreceres de terminal, incloent copiar, enganxar i enviar la contrasenya desada.\n"
 "- Configura per separat opcions generals, terminal VTE i prompt PS1.\n"
 "- El prompt local permet color, temes predefinits, hora, data i previsualització sense modificar sessions remotes.\n"
+"- Mostra un historial local de connexions amb marques de temps, resultats i durades.\n"
 "- Importa i exporta configuracions, inclosa la importació bàsica des d'Ásbrú.\n"
 "\n"
 "Ús ràpid:\n"

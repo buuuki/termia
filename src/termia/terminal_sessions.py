@@ -137,6 +137,7 @@ class TerminalSessionsMixin:
         self.add_session_to_main_view(session)
         self.update_local_session_directory_title(session)
         terminal.grab_focus()
+        self.store.record_history_start(session, "local")
         try:
             _ok, child_pid = terminal.spawn_sync(
                 Vte.PtyFlags.DEFAULT, working_directory, command, envv or build_terminal_environment(self.store.data.terminal.ls_colors),
@@ -151,6 +152,7 @@ class TerminalSessionsMixin:
             session.connected = False
             session.pending_reconnect = True
             session.disconnect_button.set_sensitive(False)
+            self.store.record_history_end(session, "failed", detail=exc.message)
             self.update_session_tab_title(session, self.t("tab_error_title").format(title=session.title))
             self.toast_label.set_label(message)
             return
@@ -163,6 +165,8 @@ class TerminalSessionsMixin:
     def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         self.record_session_duration(session)
         self.save_statistics_now()
+        result = "disconnected" if session.disconnect_requested else ("closed" if self.child_status_successful(_status) else "failed")
+        self.store.record_history_end(session, result)
         self.mark_terminal_inactive(terminal, session)
         session.connected = False
         session.disconnect_button.set_sensitive(False)
@@ -198,12 +202,14 @@ class TerminalSessionsMixin:
         session.connected = True
         session.disconnect_button.set_sensitive(True)
         session.status_label.set_label(self.t("connecting"))
+        self.store.record_history_start(session, "ssh", server)
 
         ssh_path = GLib.find_program_in_path("ssh")
         if ssh_path is None:
             message = self.t("ssh_missing")
             terminal.feed(f"{message}\r\n".encode())
             session.status_label.set_label(self.t("ssh_missing_status"))
+            self.store.record_history_end(session, "failed", detail=message)
             self.mark_session_for_reconnect(session, server, message)
             return
 
@@ -225,6 +231,7 @@ class TerminalSessionsMixin:
                 message = self.t("sshpass_missing")
                 terminal.feed(f"{message}\r\n".encode())
                 session.status_label.set_label(self.t("sshpass_missing_status"))
+                self.store.record_history_end(session, "failed", detail=message)
                 self.mark_session_for_reconnect(session, server, message)
                 return
             command = [sshpass_path, "-e", *command]
@@ -245,6 +252,7 @@ class TerminalSessionsMixin:
             message = self.t("ssh_start_failed").format(error=exc.message)
             terminal.feed(f"{message}\r\n".encode())
             session.status_label.set_label("Error")
+            self.store.record_history_end(session, "failed", detail=exc.message)
             self.mark_session_for_reconnect(session, server, self.t("ssh_start_failed_toast").format(name=server.name))
             return
 
@@ -252,7 +260,6 @@ class TerminalSessionsMixin:
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_terminal_exited, server, session)
         self.record_connection(server.id)
-        self.store.record_recent_connection(server.id)
         session.status_label.set_label(f"{server.name} · PID {child_pid}")
         self.toast_label.set_label(self.t("session_opened").format(title=session.title))
 
@@ -365,6 +372,12 @@ class TerminalSessionsMixin:
         stats.duration_min = duration if stats.duration_min is None else min(stats.duration_min, duration)
         stats.duration_max = max(stats.duration_max, duration)
         self.schedule_statistics_save()
+
+    def save_history_before_close(self) -> None:
+        for session in tuple(self.open_tabs.values()):
+            if session.history_start_recorded and not session.history_end_recorded:
+                result = "disconnected" if session.disconnect_requested else "closed"
+                self.store.record_history_end(session, result)
 
     def configure_terminal_interactions(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
         keys = Gtk.EventControllerKey.new()
@@ -904,7 +917,6 @@ class TerminalSessionsMixin:
         session.split_child_pids[id(terminal)] = child_pid
         terminal.connect("child-exited", self.on_split_terminal_exited, session)
         self.record_connection(server.id)
-        self.store.record_recent_connection(server.id)
         self.toast_label.set_label(self.t("session_opened").format(title=server.name))
 
     def local_terminal_working_directory(self, terminal: Vte.Terminal) -> str:
@@ -1426,6 +1438,8 @@ class TerminalSessionsMixin:
     ) -> None:
         self.record_session_duration(session)
         self.save_statistics_now()
+        result = "disconnected" if session.disconnect_requested else ("closed" if self.child_status_successful(_status) else "failed")
+        self.store.record_history_end(session, result)
         self.mark_terminal_inactive(terminal, session)
         session.connected = False
         session.disconnect_button.set_sensitive(False)

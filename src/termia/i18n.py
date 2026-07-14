@@ -191,6 +191,22 @@ MESSAGES = {'servers': 'Show or hide server list',
  'summary': '{groups} groups · {subgroups} subgroups · {servers} servers',
  'import_asbru': 'Import Ásbrú configuration',
  'clear_config': 'Delete all configuration',
+ 'connection_history': 'Connection history',
+ 'connection_history_title': 'Connection History',
+ 'no_connection_history': 'No connection history yet',
+ 'no_matching_history': 'No matching history entries',
+ 'clear_history': 'Clear history',
+ 'clear_history_confirm': 'Delete all connection history? This action cannot be undone.',
+ 'history_cleared': 'Connection history cleared',
+ 'search_history': 'Search history',
+ 'hide_local_terminals': 'Hide local terminals',
+ 'show_local_terminals': 'Show local terminals',
+ 'history_kind_ssh': 'SSH',
+ 'history_kind_local': 'Local terminal',
+ 'history_result_closed': 'Closed',
+ 'history_result_disconnected': 'Disconnected',
+ 'history_result_failed': 'Failed',
+ 'history_result_running': 'In progress',
  'configure_terminal': 'Configure terminal',
  'local_terminal': 'Local terminal',
  'new_tab': 'New tab',
@@ -271,6 +287,7 @@ MESSAGES = {'servers': 'Show or hide server list',
                  '- Configure general options, the VTE terminal and the PS1 prompt separately.\n'
                  '- The local prompt supports color, presets, time, date and live preview without '
                  'modifying remote sessions.\n'
+                 '- View a local connection history with timestamps, outcomes and durations.\n'
                  '- Import and export configurations, including basic imports from Ásbrú.\n'
                  '\n'
                  'Quick start:\n'
