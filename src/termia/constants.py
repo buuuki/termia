@@ -14,6 +14,7 @@ DATA_FILE = CONFIG_DIR / "connections.json"
 SETTINGS_FILE = CONFIG_DIR / "settings.json"
 INSTANCE_LOCK_FILE = CONFIG_DIR / "instance.lock"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state")))
+RECENT_CONNECTIONS_FILE = STATE_DIR / "termia" / "recent_connections.jsonl"
 STATISTICS_FILE = STATE_DIR / "termia" / "statistics.json"
 ABOUT_IMAGE = APP_DIR / "assets" / "termia.svg"
 ISSUES_URL = "https://github.com/buuuki/termia/issues"

@@ -185,7 +185,7 @@ class SidebarMixin:
     def get_group_expanded(self, group_id: str, query: str) -> bool:
         if query:
             return True
-        if group_id == "__favorites__":
+        if group_id in {"__recent__", "__favorites__"}:
             return self.group_expanded_state.get(group_id, True)
         return self.group_expanded_state.get(group_id, not self.collapse_groups_on_startup)
 
@@ -214,6 +214,9 @@ class SidebarMixin:
                 servers_by_group.setdefault(server.group_id, []).append(server)
 
         self.visible_tree_rows = self.build_visible_tree_rows(children_by_parent, servers_by_group, query)
+        recent_servers = self.recent_servers(query)
+        if recent_servers:
+            self.server_list.append(self.build_recent_widget(recent_servers, query))
         favorite_servers = self.favorite_servers(query)
         if favorite_servers:
             self.server_list.append(self.build_favorites_widget(favorite_servers, query))
@@ -238,6 +241,24 @@ class SidebarMixin:
             key=lambda item: (item.name.lower(), item.host.lower(), item.user.lower(), item.port),
         )
 
+    def recent_servers(self, query: str) -> list[Server]:
+        servers_by_id = {
+            server.id: server
+            for server in self.store.data.servers
+            if server_matches_query(server, query)
+        }
+        recent_servers: list[Server] = []
+        seen: set[str] = set()
+        for server_id in self.store.recent_server_ids():
+            if server_id in seen:
+                continue
+            server = servers_by_id.get(server_id)
+            if server is None:
+                continue
+            seen.add(server_id)
+            recent_servers.append(server)
+        return recent_servers
+
     def build_visible_tree_rows(
         self,
         children_by_parent: dict[str | None, list[Group]],
@@ -245,6 +266,9 @@ class SidebarMixin:
         query: str,
     ) -> list[RowObject]:
         rows: list[RowObject] = []
+        if query or self.get_group_expanded("__recent__", query):
+            for server in self.recent_servers(query):
+                rows.append(self.build_server_row_object(server, "recent"))
         if query or self.get_group_expanded("__favorites__", query):
             for server in self.favorite_servers(query):
                 rows.append(self.build_server_row_object(server, "favorite"))
@@ -294,9 +318,30 @@ class SidebarMixin:
         expander.set_child(content)
         return expander
 
+    def build_recent_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
+        expander = Gtk.Expander()
+        expander.set_label_widget(self.build_recent_label(f"{self.t('recent')} ({len(servers)})"))
+        self.group_expanders.append(expander)
+        expander.group_id = "__recent__"
+        expander.set_expanded(self.get_group_expanded("__recent__", query))
+        expander.connect("notify::expanded", self.on_group_expanded_changed)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        for server in servers:
+            content.append(self.build_server_widget(server, row_kind="recent", icon_name="document-open-recent-symbolic"))
+        expander.set_child(content)
+        return expander
+
     def build_favorites_label(self, text: str) -> Gtk.Widget:
         label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         label_box.append(Gtk.Image.new_from_icon_name("starred-symbolic"))
+        label = Gtk.Label(label=text)
+        label.add_css_class("heading")
+        label_box.append(label)
+        return label_box
+
+    def build_recent_label(self, text: str) -> Gtk.Widget:
+        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        label_box.append(Gtk.Image.new_from_icon_name("document-open-recent-symbolic"))
         label = Gtk.Label(label=text)
         label.add_css_class("heading")
         label_box.append(label)
@@ -414,7 +459,7 @@ class SidebarMixin:
 
     def register_tree_widget(self, row: RowObject, widget: Gtk.Widget) -> None:
         widget.add_css_class("termia-tree-item")
-        if row.kind in {"server", "favorite"}:
+        if row.kind in {"server", "favorite", "recent"}:
             widget.add_css_class("termia-server-item")
         widget.set_focusable(False)
         self.tree_widgets[(row.kind, row.item_id)] = widget
@@ -514,7 +559,7 @@ class SidebarMixin:
     def activate_selected_tree_row(self) -> bool:
         if self.selected is None:
             return False
-        if self.selected.kind in {"server", "favorite"}:
+        if self.selected.kind in {"server", "favorite", "recent"}:
             server = find_server(self.store.data.servers, self.selected.item_id)
             if server is None:
                 return False
@@ -659,7 +704,7 @@ class SidebarMixin:
         menu.set_margin_start(6)
         menu.set_margin_end(6)
 
-        if row.kind in {"server", "favorite"}:
+        if row.kind in {"server", "favorite", "recent"}:
             server = find_server(self.store.data.servers, row.item_id)
             if server is not None:
                 self.add_context_menu_item(
@@ -773,7 +818,7 @@ class SidebarMixin:
             )
             return
 
-        if self.selected.kind not in {"server", "favorite"}:
+        if self.selected.kind not in {"server", "favorite", "recent"}:
             return
         server = find_server(self.store.data.servers, self.selected.item_id)
         if server is None:

@@ -71,6 +71,10 @@ msgstr "Eliminar servidor"
 msgid "Clone connection"
 msgstr "Clonar connexió"
 
+#: src/termia/i18n.py:recent
+msgid "Recent"
+msgstr "Recents"
+
 #: src/termia/i18n.py:edit_group
 msgid "Edit group"
 msgstr "Editar grup"

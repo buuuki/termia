@@ -71,6 +71,10 @@ msgstr ""
 msgid "Clone connection"
 msgstr ""
 
+#: src/termia/i18n.py:recent
+msgid "Recent"
+msgstr ""
+
 #: src/termia/i18n.py:edit_group
 msgid "Edit group"
 msgstr ""

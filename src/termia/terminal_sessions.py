@@ -252,6 +252,7 @@ class TerminalSessionsMixin:
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_terminal_exited, server, session)
         self.record_connection(server.id)
+        self.store.record_recent_connection(server.id)
         session.status_label.set_label(f"{server.name} · PID {child_pid}")
         self.toast_label.set_label(self.t("session_opened").format(title=session.title))
 
@@ -903,6 +904,7 @@ class TerminalSessionsMixin:
         session.split_child_pids[id(terminal)] = child_pid
         terminal.connect("child-exited", self.on_split_terminal_exited, session)
         self.record_connection(server.id)
+        self.store.record_recent_connection(server.id)
         self.toast_label.set_label(self.t("session_opened").format(title=server.name))
 
     def local_terminal_working_directory(self, terminal: Vte.Terminal) -> str:

@@ -80,6 +80,12 @@ class StatisticsSettings:
 
 
 @dataclass
+class RecentConnectionEntry:
+    server_id: str
+    connected_at: str
+
+
+@dataclass
 class StoreData:
     groups: list[Group] = field(default_factory=list)
     servers: list[Server] = field(default_factory=list)

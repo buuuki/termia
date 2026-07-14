@@ -18,6 +18,7 @@ from .constants import (
     DEFAULT_TERMINAL_FOREGROUND,
     INSTANCE_LOCK_FILE,
     LEGACY_ANSI_PALETTE,
+    RECENT_CONNECTIONS_FILE,
     SETTINGS_FILE,
     STATISTICS_FILE,
 )
@@ -35,6 +36,7 @@ from .models import (
     DEFAULT_ANSI_PALETTE,
     AppSettings,
     Group,
+    RecentConnectionEntry,
     Server,
     StatisticsSettings,
     StoreData,
@@ -110,6 +112,58 @@ class StatisticsStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(asdict(self.data), indent=2), encoding="utf-8")
         self.path.chmod(0o600)
+
+
+class RecentConnectionStore:
+    def __init__(self, path: Path, *, read_only: bool = False) -> None:
+        self.path = path
+        self.read_only = read_only
+        self.entries: list[RecentConnectionEntry] = []
+        self.load()
+
+    def load(self) -> None:
+        self.entries = []
+        if not self.path.exists():
+            return
+        try:
+            raw_text = self.path.read_text(encoding="utf-8")
+        except OSError:
+            return
+        for raw_line in raw_text.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except (json.JSONDecodeError, TypeError, ValueError):
+                continue
+            if not isinstance(payload, dict):
+                continue
+            server_id = str(payload.get("server_id", "")).strip()
+            connected_at = str(payload.get("connected_at", "")).strip()
+            if server_id and connected_at:
+                self.entries.append(RecentConnectionEntry(server_id=server_id, connected_at=connected_at))
+
+    def save_entry(self, server_id: str) -> None:
+        if self.read_only:
+            return
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        entry = RecentConnectionEntry(server_id=server_id, connected_at=datetime.now().isoformat(timespec="seconds"))
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(asdict(entry), ensure_ascii=False) + "\n")
+        self.entries.append(entry)
+
+    def recent_server_ids(self, limit: int = 10) -> list[str]:
+        ids: list[str] = []
+        seen: set[str] = set()
+        for entry in reversed(self.entries):
+            if entry.server_id in seen:
+                continue
+            seen.add(entry.server_id)
+            ids.append(entry.server_id)
+            if len(ids) >= limit:
+                break
+        return ids
 
 
 class SettingsStore:
@@ -197,6 +251,7 @@ class ConnectionStore:
         self.read_only = self.instance_lock.read_only
         self.settings_store = SettingsStore(settings_path, read_only=self.read_only)
         self.statistics_store = StatisticsStore(statistics_path, read_only=self.read_only)
+        self.recent_connections_store = RecentConnectionStore(RECENT_CONNECTIONS_FILE, read_only=self.read_only)
         self.recovery_messages: list[str] = [
             *self.settings_store.recovery_messages,
             *self.statistics_store.recovery_messages,
@@ -309,6 +364,12 @@ class ConnectionStore:
             return
         self.statistics_store.data = self.data.statistics
         self.statistics_store.save()
+
+    def record_recent_connection(self, server_id: str) -> None:
+        self.recent_connections_store.save_entry(server_id)
+
+    def recent_server_ids(self, limit: int = 10) -> list[str]:
+        return self.recent_connections_store.recent_server_ids(limit)
 
     def update_connection_storage_mode(self, storage_mode: str) -> None:
         self.ensure_writable()

@@ -17,6 +17,7 @@
 
 - Add server file upload via SCP.
 - Add manual terminal keybinding capture.
+- Add a Recent sidebar section with the 10 most recently connected servers, deduplicated and ordered from connection history.
 
 ## 0.3.0-alpha.1 - 2026-06-19
 
