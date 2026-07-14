@@ -8,6 +8,7 @@ gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Gtk
 
 from .config_actions import ConfigActionsMixin
+from .connection_history_view import ConnectionHistoryViewMixin
 from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
     APP_ID,
@@ -31,6 +32,7 @@ class TermiaWindow(
     MainMenuMixin,
     PreferencesMixin,
     SidebarMixin,
+    ConnectionHistoryViewMixin,
     StatisticsViewMixin,
     TerminalSessionsMixin,
     TabsMixin,
@@ -97,6 +99,7 @@ class TermiaWindow(
 
     def on_main_window_close_request(self, _window: Gtk.Window) -> bool:
         if not self.store.data.app.confirm_close_app:
+            self.save_history_before_close()
             self.save_statistics_before_close()
             return False
         if self.close_confirmation_pending:
@@ -118,6 +121,7 @@ class TermiaWindow(
         except GLib.Error:
             return
         if response == 1:
+            self.save_history_before_close()
             self.save_statistics_before_close()
             application = self.get_application()
             if application is not None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import time
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
@@ -16,6 +17,7 @@ from .constants import (
     DEFAULT_TERMINAL_BACKGROUND,
     DEFAULT_TERMINAL_FONT_FAMILY,
     DEFAULT_TERMINAL_FOREGROUND,
+    HISTORY_FILE,
     INSTANCE_LOCK_FILE,
     LEGACY_ANSI_PALETTE,
     SETTINGS_FILE,
@@ -34,12 +36,15 @@ from .keybindings import normalize_keybindings
 from .models import (
     DEFAULT_ANSI_PALETTE,
     AppSettings,
+    ConnectionHistoryEntry,
+    ConnectionHistoryEvent,
     Group,
     Server,
     StatisticsSettings,
     StoreData,
     TerminalSettings,
 )
+from .ui_state import TerminalSession
 
 
 class ReadOnlyStoreError(RuntimeError):
@@ -110,6 +115,181 @@ class StatisticsStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(asdict(self.data), indent=2), encoding="utf-8")
         self.path.chmod(0o600)
+
+
+class ConnectionHistoryStore:
+    def __init__(self, path: Path, *, read_only: bool = False) -> None:
+        self.path = path
+        self.read_only = read_only
+        self.events: list[ConnectionHistoryEvent] = []
+        self.entries: list[ConnectionHistoryEntry] = []
+        self.recovery_messages: list[str] = []
+        self.load()
+
+    def load(self) -> None:
+        if not self.path.exists():
+            return
+        try:
+            for raw_line in self.path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line:
+                    continue
+                try:
+                    payload = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                fields = ConnectionHistoryEvent.__dataclass_fields__
+                event = ConnectionHistoryEvent(**{key: value for key, value in payload.items() if key in fields})
+                if not event.event_id:
+                    event.event_id = str(uuid4())
+                self.events.append(event)
+        except OSError:
+            self.recovery_messages.append(str(self.path))
+            return
+        self.rebuild_entries()
+
+    def rebuild_entries(self) -> None:
+        grouped: dict[str, ConnectionHistoryEntry] = {}
+        for event in self.events:
+            entry = grouped.get(event.session_id)
+            if entry is None:
+                entry = ConnectionHistoryEntry(session_id=event.session_id)
+                grouped[event.session_id] = entry
+            if event.kind:
+                entry.kind = event.kind
+            if event.title:
+                entry.title = event.title
+            if event.server_id:
+                entry.server_id = event.server_id
+            if event.server_name:
+                entry.server_name = event.server_name
+            if event.host:
+                entry.host = event.host
+            if event.port:
+                entry.port = event.port
+            if event.user:
+                entry.user = event.user
+            if event.event == "started":
+                if event.timestamp:
+                    entry.started_at = event.timestamp
+                elif event.started_at:
+                    entry.started_at = event.started_at
+            elif event.event == "ended":
+                if event.started_at:
+                    entry.started_at = event.started_at
+                elif event.timestamp and not entry.started_at:
+                    entry.started_at = event.timestamp
+                if event.ended_at:
+                    entry.ended_at = event.ended_at
+                elif event.timestamp:
+                    entry.ended_at = event.timestamp
+                if event.result:
+                    entry.result = event.result
+                if event.duration_seconds is not None:
+                    entry.duration_seconds = event.duration_seconds
+                if event.detail:
+                    entry.detail = event.detail
+        self.entries = sorted(
+            grouped.values(),
+            key=self.sort_key,
+            reverse=True,
+        )
+
+    def sort_key(self, entry: ConnectionHistoryEntry) -> tuple[str, str]:
+        return (entry.ended_at or entry.started_at, entry.session_id)
+
+    def append_event(self, event: ConnectionHistoryEvent) -> bool:
+        if self.read_only:
+            return False
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with self.path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(asdict(event), ensure_ascii=False, separators=(",", ":")))
+                handle.write("\n")
+            self.path.chmod(0o600)
+        except OSError:
+            self.recovery_messages.append(str(self.path))
+            return False
+        self.events.append(event)
+        self.rebuild_entries()
+        return True
+
+    def clear(self) -> None:
+        if self.read_only:
+            return
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text("", encoding="utf-8")
+            self.path.chmod(0o600)
+        except OSError:
+            self.recovery_messages.append(str(self.path))
+            return
+        self.events.clear()
+        self.entries.clear()
+
+    def _event_payload(
+        self,
+        session: TerminalSession,
+        kind: str,
+        event: str,
+        timestamp: str,
+        *,
+        result: str = "",
+        duration_seconds: float | None = None,
+        detail: str = "",
+    ) -> ConnectionHistoryEvent:
+        return ConnectionHistoryEvent(
+            event_id=str(uuid4()),
+            session_id=session.id,
+            kind=kind,
+            event=event,
+            timestamp=timestamp,
+            started_at=session.history_started_at or timestamp,
+            ended_at=timestamp if event == "ended" else "",
+            result=result,
+            duration_seconds=duration_seconds,
+            title=session.history_title or session.title,
+            server_id=session.server_id or "",
+            server_name=session.history_server_name,
+            host=session.history_host,
+            port=session.history_port,
+            user=session.history_user,
+            detail=detail,
+        )
+
+    def record_start(self, session: TerminalSession, kind: str, *, server: Server | None = None) -> None:
+        if self.read_only or session.history_start_recorded:
+            return
+        timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+        if self.append_event(self._event_payload(session, kind, "started", timestamp)):
+            session.history_start_recorded = True
+            session.history_kind = kind
+            session.history_started_at = timestamp
+            session.history_title = session.title
+            session.history_server_name = server.name if server is not None else session.title
+            session.history_host = server.host if server is not None else ""
+            session.history_user = server.user if server is not None else ""
+            session.history_port = server.port if server is not None else 0
+
+    def record_end(self, session: TerminalSession, result: str, *, detail: str = "") -> None:
+        if self.read_only or session.history_end_recorded or not session.history_start_recorded:
+            return
+        timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+        duration = max(0.0, time.monotonic() - session.started_at)
+        if self.append_event(
+            self._event_payload(
+                session,
+                session.history_kind,
+                "ended",
+                timestamp,
+                result=result,
+                duration_seconds=duration,
+                detail=detail,
+            )
+        ):
+            session.history_end_recorded = True
 
 
 class SettingsStore:
@@ -197,6 +377,7 @@ class ConnectionStore:
         self.read_only = self.instance_lock.read_only
         self.settings_store = SettingsStore(settings_path, read_only=self.read_only)
         self.statistics_store = StatisticsStore(statistics_path, read_only=self.read_only)
+        self.history_store = ConnectionHistoryStore(HISTORY_FILE, read_only=self.read_only)
         self.recovery_messages: list[str] = [
             *self.settings_store.recovery_messages,
             *self.statistics_store.recovery_messages,
@@ -309,6 +490,21 @@ class ConnectionStore:
             return
         self.statistics_store.data = self.data.statistics
         self.statistics_store.save()
+
+    def save_history(self) -> None:
+        if self.read_only:
+            return
+        self.history_store.rebuild_entries()
+
+    def clear_history(self) -> None:
+        self.ensure_writable()
+        self.history_store.clear()
+
+    def record_history_start(self, session: TerminalSession, kind: str, server: Server | None = None) -> None:
+        self.history_store.record_start(session, kind, server=server)
+
+    def record_history_end(self, session: TerminalSession, result: str, *, detail: str = "") -> None:
+        self.history_store.record_end(session, result, detail=detail)
 
     def update_connection_storage_mode(self, storage_mode: str) -> None:
         self.ensure_writable()

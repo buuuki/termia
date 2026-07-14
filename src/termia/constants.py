@@ -15,6 +15,7 @@ SETTINGS_FILE = CONFIG_DIR / "settings.json"
 INSTANCE_LOCK_FILE = CONFIG_DIR / "instance.lock"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state")))
 STATISTICS_FILE = STATE_DIR / "termia" / "statistics.json"
+HISTORY_FILE = STATE_DIR / "termia" / "connections-history.jsonl"
 ABOUT_IMAGE = APP_DIR / "assets" / "termia.svg"
 ISSUES_URL = "https://github.com/buuuki/termia/issues"
 DEFAULT_TERMINAL_FONT_FAMILY = "JetBrains Mono"

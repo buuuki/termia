@@ -42,6 +42,15 @@ class TerminalSession:
     disconnect_requested: bool = False
     pending_reconnect: bool = False
     duration_recorded: bool = False
+    history_start_recorded: bool = False
+    history_end_recorded: bool = False
+    history_kind: str = ""
+    history_started_at: str = ""
+    history_title: str = ""
+    history_server_name: str = ""
+    history_host: str = ""
+    history_user: str = ""
+    history_port: int = 0
     split_terminals: list[Vte.Terminal] = field(default_factory=list)
     split_child_pids: dict[int, int] = field(default_factory=dict)
     active_terminal_ids: set[int] = field(default_factory=set)
