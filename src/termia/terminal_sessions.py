@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+import shlex
 import time
 from pathlib import Path
 from typing import Any
@@ -21,9 +22,9 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
 from .constants import DEFAULT_TERMINAL_BACKGROUND, DEFAULT_TERMINAL_FOREGROUND
-from .connection_utils import find_server
+from .connection_utils import find_local_terminal_profile, find_server
 from .keybindings import is_unmodified_function_key, keybinding_label, keybinding_matches
-from .models import DEFAULT_ANSI_PALETTE, Server
+from .models import DEFAULT_ANSI_PALETTE, LocalTerminalProfile, Server
 from .terminal_config import (
     build_local_prompt_shell_command,
     build_terminal_environment,
@@ -34,13 +35,58 @@ from .ui_state import TerminalSession
 
 class TerminalSessionsMixin:
     def on_open_local_terminal(self, _button: Gtk.Button) -> None:
-        shell = os.environ.get("SHELL") or GLib.find_program_in_path("bash") or "/bin/sh"
-        command = [shell]
-        if self.store.data.terminal.prompt_enabled:
-            bash_path = GLib.find_program_in_path("bash")
-            if bash_path is not None:
-                command = build_local_prompt_shell_command(self.store.data.terminal, bash_path)
-        self.open_process_terminal_tab(self.local_directory_title(Path.home()), command, None, working_directory=str(Path.home()))
+        self.open_local_terminal_profile(None)
+
+    def open_local_terminal_profile(self, profile: LocalTerminalProfile | None) -> None:
+        title = self.local_terminal_session_title(profile)
+        command = self.build_local_terminal_command(profile)
+        working_directory = self.local_terminal_profile_working_directory(profile)
+        self.open_process_terminal_tab(
+            title,
+            command,
+            None,
+            working_directory=working_directory,
+            local_profile_id=profile.id if profile is not None else None,
+            title_locked=profile is not None,
+            initial_command=profile.command_on_start if profile is not None else "",
+        )
+
+    def local_terminal_session_title(self, profile: LocalTerminalProfile | None) -> str:
+        if profile is None:
+            return self.local_directory_title(Path.home())
+        return profile.tab_title.strip() or profile.name.strip() or self.t("local_terminal")
+
+    def local_terminal_profile_working_directory(self, profile: LocalTerminalProfile | None) -> str:
+        if profile is None or not profile.working_directory.strip():
+            return str(Path.home())
+        return str(Path(profile.working_directory).expanduser())
+
+    def default_local_terminal_shell(self) -> str:
+        return os.environ.get("SHELL") or GLib.find_program_in_path("bash") or "/bin/sh"
+
+    def build_local_terminal_command(self, profile: LocalTerminalProfile | None) -> list[str]:
+        if profile is None:
+            shell = self.default_local_terminal_shell()
+            command: list[str] = [shell]
+            if self.store.data.terminal.prompt_enabled:
+                bash_path = GLib.find_program_in_path("bash")
+                if bash_path is not None:
+                    return build_local_prompt_shell_command(self.store.data.terminal, bash_path)
+            return command
+
+        shell = profile.shell.strip() or self.default_local_terminal_shell()
+        shell_arguments = shlex.split(profile.arguments) if profile.arguments.strip() else []
+        if self.store.data.terminal.prompt_enabled and self.local_terminal_shell_supports_prompt(shell):
+            return build_local_prompt_shell_command(
+                self.store.data.terminal,
+                shell,
+                shell_arguments,
+            )
+        command = [shell, *shell_arguments]
+        return command
+
+    def local_terminal_shell_supports_prompt(self, shell: str) -> bool:
+        return Path(shell).name == "bash"
 
     def create_configured_terminal(self) -> Vte.Terminal:
         terminal = Vte.Terminal()
@@ -96,6 +142,8 @@ class TerminalSessionsMixin:
         server_id: str | None,
         *,
         toolbar_margins: bool = False,
+        local_profile_id: str | None = None,
+        title_locked: bool = False,
     ) -> tuple[TerminalSession, Gtk.Button]:
         session_id = str(uuid4())
         terminal = self.create_configured_terminal()
@@ -116,6 +164,8 @@ class TerminalSessionsMixin:
             disconnect_button=disconnect_button,
             status_bar=toolbar,
             started_at=time.monotonic(),
+            local_profile_id=local_profile_id,
+            title_locked=title_locked,
         )
         session.active_terminal_ids.add(id(terminal))
         return session, focus_button
@@ -127,8 +177,16 @@ class TerminalSessionsMixin:
         server_id: str | None,
         envv: list[str] | None = None,
         working_directory: str | None = None,
+        local_profile_id: str | None = None,
+        title_locked: bool = False,
+        initial_command: str = "",
     ) -> None:
-        session, focus_button = self.create_terminal_session(title, server_id)
+        session, focus_button = self.create_terminal_session(
+            title,
+            server_id,
+            local_profile_id=local_profile_id,
+            title_locked=title_locked,
+        )
         terminal = session.terminal
         focus_button.connect("clicked", self.on_hide_session_status_bar, session)
         session.disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
@@ -161,6 +219,12 @@ class TerminalSessionsMixin:
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_process_terminal_exited, session)
         session.status_label.set_label(f"{title} · PID {child_pid}")
+        if initial_command.strip():
+            GLib.timeout_add(100, self.feed_initial_local_command, terminal, initial_command.strip())
+
+    def feed_initial_local_command(self, terminal: Vte.Terminal, command: str) -> bool:
+        terminal.feed_child(f"{command}\n".encode())
+        return GLib.SOURCE_REMOVE
 
     def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         self.record_session_duration(session)
@@ -289,7 +353,14 @@ class TerminalSessionsMixin:
             return
         session.pending_reconnect = False
         self.close_tab(session.id, session.page, disconnect=False)
-        self.on_open_local_terminal(None)
+        if session.local_profile_id is None:
+            self.on_open_local_terminal(None)
+            return
+        profile = find_local_terminal_profile(self.store.data.local_terminals, session.local_profile_id)
+        if profile is None:
+            self.on_open_local_terminal(None)
+            return
+        self.open_local_terminal_profile(profile)
 
     def child_status_successful(self, status: int) -> bool:
         if status == 0:

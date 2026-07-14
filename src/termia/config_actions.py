@@ -33,6 +33,7 @@ class ConfigActionsMixin:
             return
         self.store.data.groups = []
         self.store.data.servers = []
+        self.store.data.local_terminals = []
         self.store.save_connections()
         self.selected = None
         self.refresh_list()
@@ -55,6 +56,7 @@ class ConfigActionsMixin:
                     destination,
                     self.store.data.groups,
                     self.store.data.servers,
+                    self.store.data.local_terminals,
                     self.store.data.app.connection_storage_mode,
                 )
             else:

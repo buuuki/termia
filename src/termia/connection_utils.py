@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
-from .models import Group, Server
+from .models import Group, LocalTerminalProfile, Server
 
 
 def find_server(servers: list[Server], server_id: str) -> Server | None:
@@ -11,6 +11,12 @@ def find_server(servers: list[Server], server_id: str) -> Server | None:
 
 def find_group(groups: list[Group], group_id: str | None) -> Group | None:
     return next((group for group in groups if group.id == group_id), None)
+
+
+def find_local_terminal_profile(
+    profiles: list[LocalTerminalProfile], profile_id: str
+) -> LocalTerminalProfile | None:
+    return next((profile for profile in profiles if profile.id == profile_id), None)
 
 
 def unique_server_clone_name(servers: list[Server], name: str) -> str:

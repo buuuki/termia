@@ -14,7 +14,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Filtrar servidores y abrir varias sesiones al mismo host en pestañas.
 - Reabrir los 10 servidores conectados más recientemente desde una sección Recent encima de Favorites, sin duplicados.
 - Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
-- Abrir terminales locales embebidas.
+- Crear y abrir perfiles configurables de terminal local desde la barra lateral.
 - Dividir una pestaña de terminal en varios paneles desde el menú contextual del terminal.
 - Enviar ficheros locales a un servidor desde el menú contextual del terminal o del servidor.
 - Ejecutar varias instancias de Termia; la primera conserva acceso de escritura y las siguientes pasan automáticamente a modo solo lectura.
@@ -40,6 +40,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 - `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
 - `Atajos` muestra los atajos activos del terminal y permite grabar combinaciones para acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada. Las teclas `F1`-`F12` sin modificadores se envían a las aplicaciones del terminal.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
+- Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
 - Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
 - El menú principal incluye una vista de historial de conexiones con una acción para borrar el registro JSONL local.

@@ -44,6 +44,7 @@ def translate_key(key: str, language: str | None) -> str:
 MESSAGES = {'servers': 'Show or hide server list',
  'new_group': 'New group',
  'new_server': 'New server',
+ 'new_local_terminal': 'New local terminal',
  'terminal': 'Terminal',
  'prompt': 'Prompt',
  'keybindings': 'Keybindings',
@@ -54,7 +55,9 @@ MESSAGES = {'servers': 'Show or hide server list',
  'connect': 'Connect',
  'start_group': 'Start group',
  'edit_server': 'Edit server',
+ 'edit_local_terminal': 'Edit local terminal',
  'delete_server': 'Delete server',
+ 'delete_local_terminal': 'Delete local terminal',
  'clone_connection': 'Clone connection',
  'favorite_server': 'Favorite',
  'add_favorite': 'Add to favorites',
@@ -191,6 +194,7 @@ MESSAGES = {'servers': 'Show or hide server list',
  'summary': '{groups} groups · {subgroups} subgroups · {servers} servers',
  'import_asbru': 'Import Ásbrú configuration',
  'clear_config': 'Delete all configuration',
+ 'local_terminals': 'Local terminals',
  'connection_history': 'Connection history',
  'connection_history_title': 'Connection History',
  'no_connection_history': 'No connection history yet',
@@ -207,6 +211,14 @@ MESSAGES = {'servers': 'Show or hide server list',
  'history_result_disconnected': 'Disconnected',
  'history_result_failed': 'Failed',
  'history_result_running': 'In progress',
+ 'working_directory': 'Working directory',
+ 'shell': 'Shell',
+ 'arguments': 'Arguments',
+ 'run_command_on_start': 'Run command on start',
+ 'title_shown_in_tab': 'Title shown in tab',
+ 'local_terminal_required_fields': 'Name and shell are required.',
+ 'local_terminal_settings_saved': 'Local terminal saved',
+ 'local_terminal_detail_info': 'Working directory: {working_directory}\nShell: {shell}\nArguments: {arguments}\nRun command on start: {command_on_start}\nTab title: {tab_title}',
  'configure_terminal': 'Configure terminal',
  'local_terminal': 'Local terminal',
  'new_tab': 'New tab',
@@ -275,8 +287,8 @@ MESSAGES = {'servers': 'Show or hide server list',
                  '- Organize servers into groups and subgroups.\n'
                  '- Create, edit, delete, clone and filter SSH connections.\n'
                  '- Mark servers as favorites for quick access from a dedicated section.\n'
-                 '- Open connections and local terminals in embedded, compact and detachable '
-                 'tabs.\n'
+                 '- Open connections and local terminals from the sidebar in embedded, compact '
+                 'and detachable tabs.\n'
                  '- View a statistics dashboard with global metrics, durations and most used '
                  'servers, plus per-session statistics.\n'
                  '- The session status bar shows status, PID, duration and disconnect controls; it '
@@ -291,8 +303,8 @@ MESSAGES = {'servers': 'Show or hide server list',
                  '- Import and export configurations, including basic imports from Ásbrú.\n'
                  '\n'
                  'Quick start:\n'
-                 'Use the sidebar icons to create groups or servers. Double-click a server to '
-                 'connect. Right-click servers, tabs or terminals to access contextual actions '
-                 'such as duplicate, split panes, disconnect, copy, paste, show the status bar or '
-                 'view statistics.',
+                 'Use the sidebar icons to create groups, servers or local terminal profiles. '
+                 'Double-click a server or local terminal profile to connect. Right-click '
+                 'servers, tabs or terminals to access contextual actions such as duplicate, '
+                 'split panes, disconnect, copy, paste, show the status bar or view statistics.',
  'about_content': 'SSH connection manager with embedded terminals'}

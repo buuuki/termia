@@ -8,7 +8,7 @@ import zlib
 from dataclasses import asdict
 from pathlib import Path
 
-from .models import Group, Server, StoreData
+from .models import Group, LocalTerminalProfile, Server, StoreData
 
 CONNECTION_STORAGE_PLAIN = "plain"
 CONNECTION_STORAGE_OBFUSCATED = "obfuscated"
@@ -16,10 +16,16 @@ CONNECTION_STORAGE_MODES = {CONNECTION_STORAGE_PLAIN, CONNECTION_STORAGE_OBFUSCA
 OBFUSCATED_CONNECTIONS_FORMAT = "termia-connections-obfuscated-v1"
 
 
-def connections_payload(groups: list[Group], servers: list[Server], storage_mode: str) -> dict[str, object]:
+def connections_payload(
+    groups: list[Group],
+    servers: list[Server],
+    local_terminals: list[LocalTerminalProfile],
+    storage_mode: str,
+) -> dict[str, object]:
     payload = {
         "groups": [asdict(group) for group in groups],
         "servers": [asdict(server) for server in servers],
+        "local_terminals": [asdict(profile) for profile in local_terminals],
     }
     if storage_mode == CONNECTION_STORAGE_OBFUSCATED:
         raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
@@ -65,10 +71,16 @@ def read_connections_payload(path: Path) -> dict[str, object]:
     return decoded_connections_payload(read_raw_connections_payload(path))
 
 
-def write_connections_file(path: Path, groups: list[Group], servers: list[Server], storage_mode: str) -> None:
+def write_connections_file(
+    path: Path,
+    groups: list[Group],
+    servers: list[Server],
+    local_terminals: list[LocalTerminalProfile],
+    storage_mode: str,
+) -> None:
     mode = storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = connections_payload(groups, servers, mode)
+    payload = connections_payload(groups, servers, local_terminals, mode)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     path.chmod(0o600)
 
@@ -83,6 +95,7 @@ def load_store_data_from_json(path: Path, current: StoreData) -> StoreData:
     return StoreData(
         groups=[Group(**item) for item in payload.get("groups", [])],
         servers=[Server(**item) for item in payload.get("servers", [])],
+        local_terminals=[LocalTerminalProfile(**item) for item in payload.get("local_terminals", [])],
         terminal=current.terminal,
         app=current.app,
         statistics=current.statistics,

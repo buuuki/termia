@@ -39,6 +39,7 @@ from .models import (
     ConnectionHistoryEntry,
     ConnectionHistoryEvent,
     Group,
+    LocalTerminalProfile,
     Server,
     StatisticsSettings,
     StoreData,
@@ -394,6 +395,7 @@ class ConnectionStore:
             *self.statistics_store.recovery_messages,
         ]
         self.data = StoreData(
+            local_terminals=[],
             terminal=self.settings_store.terminal,
             app=self.settings_store.app,
             statistics=self.statistics_store.data,
@@ -403,6 +405,7 @@ class ConnectionStore:
     def load(self) -> None:
         if not self.path.exists():
             self.data = StoreData(
+                local_terminals=[],
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
@@ -417,6 +420,7 @@ class ConnectionStore:
             backup = backup_invalid_file(self.path, self.read_only)
             self.recovery_messages.append(str(backup or self.path))
             self.data = StoreData(
+                local_terminals=[],
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
@@ -445,6 +449,7 @@ class ConnectionStore:
         self.data = StoreData(
             groups=[Group(**item) for item in payload.get("groups", [])],
             servers=[Server(**item) for item in payload.get("servers", [])],
+            local_terminals=[LocalTerminalProfile(**item) for item in payload.get("local_terminals", [])],
             terminal=terminal,
             app=app,
             statistics=self.statistics_store.data,
@@ -480,6 +485,7 @@ class ConnectionStore:
             self.path,
             self.data.groups,
             self.data.servers,
+            self.data.local_terminals,
             self.data.app.connection_storage_mode,
         )
 
@@ -624,6 +630,56 @@ class ConnectionStore:
     def delete_server(self, server_id: str) -> None:
         self.ensure_writable()
         self.data.servers = [server for server in self.data.servers if server.id != server_id]
+        self.save_connections()
+
+    def add_local_terminal(
+        self,
+        name: str,
+        working_directory: str,
+        shell: str,
+        arguments: str,
+        command_on_start: str,
+        tab_title: str,
+    ) -> LocalTerminalProfile:
+        self.ensure_writable()
+        profile = LocalTerminalProfile(
+            id=str(uuid4()),
+            name=name.strip(),
+            working_directory=working_directory.strip(),
+            shell=shell.strip(),
+            arguments=arguments.strip(),
+            command_on_start=command_on_start.strip(),
+            tab_title=tab_title.strip(),
+        )
+        self.data.local_terminals.append(profile)
+        self.save_connections()
+        return profile
+
+    def update_local_terminal(
+        self,
+        profile_id: str,
+        name: str,
+        working_directory: str,
+        shell: str,
+        arguments: str,
+        command_on_start: str,
+        tab_title: str,
+    ) -> None:
+        self.ensure_writable()
+        for profile in self.data.local_terminals:
+            if profile.id == profile_id:
+                profile.name = name.strip()
+                profile.working_directory = working_directory.strip()
+                profile.shell = shell.strip()
+                profile.arguments = arguments.strip()
+                profile.command_on_start = command_on_start.strip()
+                profile.tab_title = tab_title.strip()
+                break
+        self.save_connections()
+
+    def delete_local_terminal(self, profile_id: str) -> None:
+        self.ensure_writable()
+        self.data.local_terminals = [profile for profile in self.data.local_terminals if profile.id != profile_id]
         self.save_connections()
 
     def update_terminal_settings(

@@ -213,6 +213,11 @@ class TermiaWindow(
         add_server.set_tooltip_text(self.t("new_server"))
         add_server.connect("clicked", self.on_add_server)
         self.configure_write_action(add_server)
+        add_local_terminal = Gtk.Button(icon_name="utilities-terminal-symbolic")
+        self.add_local_terminal_button = add_local_terminal
+        add_local_terminal.set_tooltip_text(self.t("new_local_terminal"))
+        add_local_terminal.connect("clicked", self.on_add_local_terminal)
+        self.configure_write_action(add_local_terminal)
         expand_all = Gtk.Button(icon_name="pan-down-symbolic")
         self.expand_all_button = expand_all
         expand_all.set_tooltip_text(self.t("expand_all"))
@@ -223,6 +228,7 @@ class TermiaWindow(
         collapse_all.connect("clicked", lambda _button: self.set_all_groups_expanded(False))
         sidebar_actions.append(add_group)
         sidebar_actions.append(add_server)
+        sidebar_actions.append(add_local_terminal)
         sidebar_actions.append(expand_all)
         sidebar_actions.append(collapse_all)
         sidebar.append(sidebar_actions)
@@ -303,6 +309,8 @@ class TermiaWindow(
         self.configure_write_action(self.add_group_button)
         self.add_server_button.set_tooltip_text(self.t("new_server"))
         self.configure_write_action(self.add_server_button)
+        self.add_local_terminal_button.set_tooltip_text(self.t("new_local_terminal"))
+        self.configure_write_action(self.add_local_terminal_button)
         self.expand_all_button.set_tooltip_text(self.t("expand_all"))
         self.collapse_all_button.set_tooltip_text(self.t("collapse_all"))
         self.search_entry.set_placeholder_text(self.t("filter_servers"))
