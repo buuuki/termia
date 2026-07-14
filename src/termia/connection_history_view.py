@@ -8,7 +8,8 @@ from typing import Any
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gio, Gtk
+gi.require_version("Pango", "1.0")
+from gi.repository import Gio, Gtk, Pango
 
 from .statistics_utils import format_duration
 
@@ -42,6 +43,8 @@ class ConnectionHistoryViewMixin:
         scroller.set_vexpand(True)
         list_box = Gtk.ListBox()
         list_box.set_selection_mode(Gtk.SelectionMode.NONE)
+        if hasattr(list_box, "set_show_separators"):
+            list_box.set_show_separators(False)
         scroller.set_child(list_box)
         search_entry.connect(
             "search-changed",
@@ -177,26 +180,25 @@ class ConnectionHistoryViewMixin:
 
     def build_history_row(self, entry: Any) -> Gtk.ListBoxRow:
         row = Gtk.ListBoxRow()
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        box.set_margin_top(10)
-        box.set_margin_bottom(10)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        box.set_margin_top(0)
+        box.set_margin_bottom(0)
         box.set_margin_start(12)
         box.set_margin_end(12)
 
-        top_line = Gtk.Label(label=self.build_history_heading(entry))
-        top_line.set_xalign(0)
-        top_line.set_wrap(True)
-        top_line.add_css_class("heading")
-
-        subtitle = Gtk.Label(label=self.build_history_subtitle(entry))
-        subtitle.set_xalign(0)
-        subtitle.set_wrap(True)
-        subtitle.add_css_class("dim-label")
-
-        box.append(top_line)
-        box.append(subtitle)
+        label = Gtk.Label(label=self.build_history_line(entry))
+        label.set_xalign(0)
+        label.set_wrap(False)
+        label.set_ellipsize(Pango.EllipsizeMode.END)
+        box.append(label)
         row.set_child(box)
         return row
+
+    def build_history_line(self, entry: Any) -> str:
+        heading = self.build_history_heading(entry)
+        subtitle = self.build_history_subtitle(entry)
+        parts = [part for part in (heading, subtitle) if part]
+        return " · ".join(parts)
 
     def build_history_heading(self, entry) -> str:
         timestamp = self.format_history_timestamp(entry.ended_at or entry.started_at)

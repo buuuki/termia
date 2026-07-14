@@ -39,6 +39,17 @@ class Group:
 
 
 @dataclass
+class LocalTerminalProfile:
+    id: str
+    name: str
+    working_directory: str = ""
+    shell: str = ""
+    arguments: str = ""
+    command_on_start: str = ""
+    tab_title: str = ""
+
+
+@dataclass
 class TerminalSettings:
     font_family: str = DEFAULT_TERMINAL_FONT_FAMILY
     font_size: int = 13
@@ -121,6 +132,7 @@ class ConnectionHistoryEntry:
 class StoreData:
     groups: list[Group] = field(default_factory=list)
     servers: list[Server] = field(default_factory=list)
+    local_terminals: list[LocalTerminalProfile] = field(default_factory=list)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     app: AppSettings = field(default_factory=AppSettings)
     statistics: StatisticsSettings = field(default_factory=StatisticsSettings)

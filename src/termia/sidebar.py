@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import gi
@@ -13,13 +14,14 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 
 from .connection_utils import (
     find_group,
+    find_local_terminal_profile,
     find_server,
     group_descendant_ids,
     group_matches_query,
     server_matches_query,
     unique_server_clone_name,
 )
-from .models import Group, Server
+from .models import Group, LocalTerminalProfile, Server
 from .ui_state import RowObject
 
 
@@ -185,7 +187,7 @@ class SidebarMixin:
     def get_group_expanded(self, group_id: str, query: str) -> bool:
         if query:
             return True
-        if group_id in {"__recent__", "__favorites__"}:
+        if group_id in {"__recent__", "__favorites__", "__local_terminals__"}:
             return self.group_expanded_state.get(group_id, True)
         return self.group_expanded_state.get(group_id, not self.collapse_groups_on_startup)
 
@@ -214,6 +216,9 @@ class SidebarMixin:
                 servers_by_group.setdefault(server.group_id, []).append(server)
 
         self.visible_tree_rows = self.build_visible_tree_rows(children_by_parent, servers_by_group, query)
+        local_terminal_profiles = self.local_terminal_profiles(query)
+        if local_terminal_profiles:
+            self.server_list.append(self.build_local_terminals_widget(local_terminal_profiles, query))
         recent_servers = self.recent_servers(query)
         if recent_servers:
             self.server_list.append(self.build_recent_widget(recent_servers, query))
@@ -266,6 +271,7 @@ class SidebarMixin:
         query: str,
     ) -> list[RowObject]:
         rows: list[RowObject] = []
+        rows.extend(self.build_local_terminal_row_objects(query))
         if query or self.get_group_expanded("__recent__", query):
             for server in self.recent_servers(query):
                 rows.append(self.build_server_row_object(server, "recent"))
@@ -277,6 +283,34 @@ class SidebarMixin:
         for server in sorted(servers_by_group.get(None, []), key=lambda item: item.name.lower()):
             rows.append(self.build_server_row_object(server))
         return rows
+
+    def local_terminal_profiles(self, query: str) -> list[LocalTerminalProfile]:
+        profiles = sorted(self.store.data.local_terminals, key=lambda item: item.name.lower())
+        if not query:
+            return profiles
+        return [profile for profile in profiles if self.local_terminal_profile_matches_query(profile, query)]
+
+    def local_terminal_profile_matches_query(self, profile: LocalTerminalProfile, query: str) -> bool:
+        haystack = " ".join(
+            str(value)
+            for value in (
+                profile.name,
+                profile.working_directory,
+                profile.shell,
+                profile.arguments,
+                profile.command_on_start,
+                profile.tab_title,
+            )
+            if value
+        ).casefold()
+        return query in haystack
+
+    def build_local_terminal_row_objects(self, query: str) -> list[RowObject]:
+        return [self.build_local_terminal_row_object(profile) for profile in self.local_terminal_profiles(query)]
+
+    def build_local_terminal_row_object(self, profile: LocalTerminalProfile) -> RowObject:
+        title = profile.name or self.t("local_terminal")
+        return RowObject("local_terminal", profile.id, title)
 
     def collect_visible_group_rows(
         self,
@@ -301,6 +335,55 @@ class SidebarMixin:
 
     def build_server_row_object(self, server: Server, row_kind: str = "server") -> RowObject:
         return RowObject(row_kind, server.id, server.name, self.get_server_connection_text(server))
+
+    def build_local_terminals_widget(self, profiles: list[LocalTerminalProfile], query: str) -> Gtk.Widget:
+        expander = Gtk.Expander()
+        expander.set_label_widget(self.build_local_terminals_label(f"{self.t('local_terminals')} ({len(profiles)})"))
+        self.group_expanders.append(expander)
+        expander.group_id = "__local_terminals__"
+        expander.set_expanded(self.get_group_expanded("__local_terminals__", query))
+        expander.connect("notify::expanded", self.on_group_expanded_changed)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        for profile in profiles:
+            content.append(self.build_local_terminal_profile_widget(profile))
+        expander.set_child(content)
+        return expander
+
+    def build_local_terminals_label(self, text: str) -> Gtk.Widget:
+        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        label_box.append(Gtk.Image.new_from_icon_name("utilities-terminal-symbolic"))
+        label = Gtk.Label(label=text)
+        label.add_css_class("heading")
+        label_box.append(label)
+        return label_box
+
+    def build_local_terminal_profile_widget(self, profile: LocalTerminalProfile) -> Gtk.Widget:
+        row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        row.set_focusable(False)
+        row.set_margin_top(0)
+        row.set_margin_bottom(0)
+        row.set_margin_start(18)
+        row.set_margin_end(6)
+
+        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        title_box.append(Gtk.Image.new_from_icon_name("utilities-terminal-symbolic"))
+        title = Gtk.Label(label=profile.name or self.t("local_terminal"))
+        title.set_xalign(0)
+        title_box.append(title)
+        row.append(title_box)
+
+        row_obj = self.build_local_terminal_row_object(profile)
+        self.register_tree_widget(row_obj, row)
+        left_click = Gtk.GestureClick.new()
+        left_click.set_button(1)
+        left_click.connect("pressed", self.on_local_terminal_widget_left_click, row_obj)
+        row.add_controller(left_click)
+
+        right_click = Gtk.GestureClick.new()
+        right_click.set_button(3)
+        right_click.connect("pressed", self.on_local_terminal_widget_right_click, row_obj, row)
+        row.add_controller(right_click)
+        return row
 
     def get_server_connection_text(self, server: Server) -> str:
         return f"{server.user}@{server.host}:{server.port}" if server.user else f"{server.host}:{server.port}"
@@ -459,7 +542,7 @@ class SidebarMixin:
 
     def register_tree_widget(self, row: RowObject, widget: Gtk.Widget) -> None:
         widget.add_css_class("termia-tree-item")
-        if row.kind in {"server", "favorite", "recent"}:
+        if row.kind in {"server", "favorite", "recent", "local_terminal"}:
             widget.add_css_class("termia-server-item")
         widget.set_focusable(False)
         self.tree_widgets[(row.kind, row.item_id)] = widget
@@ -559,6 +642,12 @@ class SidebarMixin:
     def activate_selected_tree_row(self) -> bool:
         if self.selected is None:
             return False
+        if self.selected.kind == "local_terminal":
+            profile = find_local_terminal_profile(self.store.data.local_terminals, self.selected.item_id)
+            if profile is None:
+                return False
+            self.open_local_terminal_profile(profile)
+            return True
         if self.selected.kind in {"server", "favorite", "recent"}:
             server = find_server(self.store.data.servers, self.selected.item_id)
             if server is None:
@@ -629,6 +718,35 @@ class SidebarMixin:
                 self.open_terminal_tab(server)
 
     def on_server_widget_right_click(
+        self,
+        _gesture: Gtk.GestureClick,
+        _n_press: int,
+        _x: float,
+        _y: float,
+        row: RowObject,
+        parent: Gtk.Widget,
+    ) -> None:
+        scroll_values = self.get_sidebar_scroll_values()
+        self.close_active_context_menu()
+        self.select_tree_row(row, parent)
+        self.show_row_context_menu(row, parent, _x, _y)
+        self.preserve_sidebar_scroll(*scroll_values)
+
+    def on_local_terminal_widget_left_click(
+        self,
+        _gesture: Gtk.GestureClick,
+        n_press: int,
+        _x: float,
+        _y: float,
+        row: RowObject,
+    ) -> None:
+        self.select_tree_row(row, self.tree_widgets[(row.kind, row.item_id)])
+        if n_press == 2:
+            profile = find_local_terminal_profile(self.store.data.local_terminals, row.item_id)
+            if profile is not None:
+                self.open_local_terminal_profile(profile)
+
+    def on_local_terminal_widget_right_click(
         self,
         _gesture: Gtk.GestureClick,
         _n_press: int,
@@ -742,6 +860,25 @@ class SidebarMixin:
                 destructive=True,
                 enabled=not self.store.read_only,
             )
+        elif row.kind == "local_terminal":
+            self.add_context_menu_item(
+                menu,
+                self.t("new_tab"),
+                lambda: self.on_local_terminal_context_open(popover, row.item_id),
+            )
+            self.add_context_menu_item(
+                menu,
+                self.t("edit_local_terminal"),
+                lambda: self.on_local_terminal_context_edit(popover, row.item_id),
+                enabled=not self.store.read_only,
+            )
+            self.add_context_menu_item(
+                menu,
+                self.t("delete_local_terminal"),
+                lambda: self.on_local_terminal_context_delete(popover, row.item_id),
+                destructive=True,
+                enabled=not self.store.read_only,
+            )
         elif row.kind == "group":
             self.add_context_menu_item(
                 menu,
@@ -793,6 +930,34 @@ class SidebarMixin:
             row.add_controller(click)
         menu.append(row)
 
+    def on_local_terminal_context_open(self, popover: Gtk.Popover, profile_id: str) -> None:
+        popover.popdown()
+        profile = find_local_terminal_profile(self.store.data.local_terminals, profile_id)
+        if profile is not None:
+            self.open_local_terminal_profile(profile)
+
+    def on_local_terminal_context_edit(self, popover: Gtk.Popover, profile_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        profile = find_local_terminal_profile(self.store.data.local_terminals, profile_id)
+        if profile is not None:
+            self.show_local_terminal_dialog(profile)
+
+    def on_local_terminal_context_delete(self, popover: Gtk.Popover, profile_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        profile = find_local_terminal_profile(self.store.data.local_terminals, profile_id)
+        if profile is None:
+            return
+        self.store.delete_local_terminal(profile_id)
+        if self.selected and self.selected.kind == "local_terminal" and self.selected.item_id == profile_id:
+            self.selected = None
+        self.toast_label.set_label(f"{self.t('delete_local_terminal')}: {profile.name}")
+        self.refresh_list()
+        self.render_detail()
+
     def add_context_menu_separator(self, menu: Gtk.ListBox) -> None:
         row = Gtk.ListBoxRow()
         row.set_activatable(False)
@@ -815,6 +980,22 @@ class SidebarMixin:
             self.title_label.set_label(title)
             self.info_label.set_label(
                 self.t("group_detail_info").format(count=count)
+            )
+            return
+
+        if self.selected.kind == "local_terminal":
+            profile = find_local_terminal_profile(self.store.data.local_terminals, self.selected.item_id)
+            if profile is None:
+                return
+            self.title_label.set_label(profile.name or self.t("local_terminal"))
+            self.info_label.set_label(
+                self.t("local_terminal_detail_info").format(
+                    working_directory=profile.working_directory or str(Path.home()),
+                    shell=profile.shell or self.default_local_terminal_shell(),
+                    arguments=profile.arguments or "-",
+                    command_on_start=profile.command_on_start or "-",
+                    tab_title=profile.tab_title or profile.name or self.t("local_terminal"),
+                )
             )
             return
 
@@ -843,3 +1024,8 @@ class SidebarMixin:
         if not self.ensure_writable():
             return
         self.show_server_dialog()
+
+    def on_add_local_terminal(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
+        self.show_local_terminal_dialog()

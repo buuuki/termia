@@ -16,7 +16,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Reopen the 10 most recently connected servers from a Recent section above Favorites, without duplicates.
 - Mark servers as favorites and jump to them from a dedicated section in the sidebar.
 - Use embedded, width-sharing tabs and move a tab to a separate window.
-- Open embedded local terminal tabs.
+- Create and open configurable local terminal profiles from the sidebar.
 - Split a terminal tab into multiple panes from the terminal context menu.
 - Send local files to a server from the terminal or server context menus.
 - Run multiple Termia instances; the first keeps write access and later instances fall back to read-only mode.
@@ -42,6 +42,7 @@ The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybind
 - `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. The default prompt color is white. It does not alter SSH commands or modify remote shell startup files.
 - `Keybindings` shows the active terminal shortcuts and lets you record shortcut combinations for common actions such as copy, paste, tab switching, font zoom, and sending the saved password. Unmodified `F1`-`F12` keys pass through to terminal applications.
 - `Security` controls connection storage mode.
+- Use the terminal-shaped button in the sidebar to create a new local terminal profile; it appears in the sidebar list like a connection and opens an embedded terminal when activated.
 - When another Termia instance is already running with the write lock, a new window opens in read-only mode, shows a header badge, disables write-capable actions, and still allows browsing, connecting, and exporting configuration.
 - Right-click a terminal or a server to upload files to `/tmp/.termia/` on the target host.
 - The main menu includes a connection history view with a clear action for the local JSONL log.

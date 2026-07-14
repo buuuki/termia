@@ -14,7 +14,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Filtrar servidors i obrir diverses sessions al mateix host en pestanyes.
 - Reobrir els 10 servidors connectats més recentment des d'una secció Recent a sobre de Favorites, sense duplicats.
 - Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
-- Obrir terminals locals incrustats.
+- Crear i obrir perfils configurables de terminal local des de la barra lateral.
 - Dividir una pestanya de terminal en diversos panells des del menú contextual del terminal.
 - Enviar fitxers locals a un servidor des del menú contextual del terminal o del servidor.
 - Executar diverses instàncies de Termia; la primera conserva accés d'escriptura i les següents passen automàticament a mode només lectura.
@@ -40,6 +40,7 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Drecer
 - `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. El color predeterminat del prompt és blanc. No altera ordres SSH ni modifica fitxers d'inici remots.
 - `Dreceres` mostra les dreceres actives del terminal i permet gravar combinacions per a accions habituals com copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada. Les tecles `F1`-`F12` sense modificadors s'envien a les aplicacions del terminal.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
+- Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
 - Fes clic dret en un terminal o en un servidor per pujar fitxers a `/tmp/.termia/` a l'host destí.
 - El menú principal inclou una vista d'historial de connexions amb una acció per esborrar el registre JSONL local.

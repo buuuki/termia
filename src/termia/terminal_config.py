@@ -54,15 +54,32 @@ def build_prompt_ps1(settings: TerminalSettings) -> str:
     return f"\\[\\033[38;2;{red};{green};{blue}m\\]{template}\\[\\033[0m\\]"
 
 
-def build_local_prompt_shell_command(settings: TerminalSettings, bash_path: str) -> list[str]:
+def build_bash_rcfile_shell_command(
+    bash_path: str,
+    shell_arguments: list[str] | None = None,
+    rcfile_lines: list[str] | None = None,
+) -> list[str]:
+    quoted_shell = shlex.quote(bash_path)
+    quoted_arguments = " ".join(shlex.quote(argument) for argument in (shell_arguments or []))
+    argument_text = f" {quoted_arguments}" if quoted_arguments else ""
+    quoted_rcfile_lines = " ".join(shlex.quote(line) for line in (rcfile_lines or []))
+    script = f"exec {quoted_shell}{argument_text} --rcfile <(printf '%s\\n' {quoted_rcfile_lines}) -i"
+    return [bash_path, "-lc", script]
+
+
+def build_local_prompt_shell_command(
+    settings: TerminalSettings,
+    bash_path: str,
+    shell_arguments: list[str] | None = None,
+) -> list[str]:
     quoted_ps1 = shlex.quote(build_prompt_ps1(settings))
-    script = (
-        f"export TERMIA_PS1={quoted_ps1}; "
-        "exec bash --rcfile <(printf '%s\\n' "
-        "'test -r ~/.bashrc && . ~/.bashrc' "
-        "'PS1=\"$TERMIA_PS1\"' "
-        "'export PS1') -i"
-    )
+    rcfile_lines = [
+        "test -r ~/.bashrc && . ~/.bashrc",
+        'PS1="$TERMIA_PS1"',
+        "export PS1",
+    ]
+    command = build_bash_rcfile_shell_command(bash_path, shell_arguments, rcfile_lines)
+    script = f"export TERMIA_PS1={quoted_ps1}; {command[-1]}"
     return [bash_path, "-lc", script]
 
 

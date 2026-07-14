@@ -913,3 +913,65 @@ msgstr ""
 #: src/termia/i18n.py:about_content
 msgid "SSH connection manager with embedded terminals"
 msgstr "Gestor de conexiones SSH con terminales embebidas"
+
+#: src/termia/i18n.py:new_local_terminal
+msgid "New local terminal"
+msgstr "Nuevo terminal local"
+
+#: src/termia/i18n.py:edit_local_terminal
+msgid "Edit local terminal"
+msgstr "Editar terminal local"
+
+#: src/termia/i18n.py:delete_local_terminal
+msgid "Delete local terminal"
+msgstr "Eliminar terminal local"
+
+#: src/termia/i18n.py:local_terminals
+msgid "Local terminals"
+msgstr "Terminales locales"
+
+#: src/termia/i18n.py:working_directory
+msgid "Working directory"
+msgstr "Directorio de trabajo"
+
+#: src/termia/i18n.py:shell
+msgid "Shell"
+msgstr "Shell"
+
+#: src/termia/i18n.py:arguments
+msgid "Arguments"
+msgstr "Argumentos"
+
+#: src/termia/i18n.py:run_command_on_start
+msgid "Run command on start"
+msgstr "Ejecutar comando al iniciar"
+
+#: src/termia/i18n.py:title_shown_in_tab
+msgid "Title shown in tab"
+msgstr "Título mostrado en la pestaña"
+
+#: src/termia/i18n.py:local_terminal_required_fields
+msgid "Name and shell are required."
+msgstr "El nombre y la shell son obligatorios."
+
+#: src/termia/i18n.py:local_terminal_invalid_arguments
+msgid "Could not parse arguments: {error}"
+msgstr "No se pudieron interpretar los argumentos: {error}"
+
+#: src/termia/i18n.py:local_terminal_settings_saved
+msgid "Local terminal saved"
+msgstr "Terminal local guardado"
+
+#: src/termia/i18n.py:local_terminal_detail_info
+msgid ""
+"Working directory: {working_directory}\n"
+"Shell: {shell}\n"
+"Arguments: {arguments}\n"
+"Run command on start: {command_on_start}\n"
+"Tab title: {tab_title}"
+msgstr ""
+"Directorio de trabajo: {working_directory}\n"
+"Shell: {shell}\n"
+"Argumentos: {arguments}\n"
+"Ejecutar comando al iniciar: {command_on_start}\n"
+"Título de pestaña: {tab_title}"

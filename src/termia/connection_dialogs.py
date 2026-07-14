@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import shlex
+from pathlib import Path
 from typing import Any
 
 import gi
@@ -10,7 +12,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
 from .connection_utils import group_descendant_ids, group_path_labels
-from .models import Group, Server
+from .models import Group, LocalTerminalProfile, Server
 from .stores import ReadOnlyStoreError
 
 
@@ -216,4 +218,144 @@ class ConnectionDialogsMixin:
                 dialog.destroy()
                 return
             self.refresh_list()
+        dialog.destroy()
+
+    def show_local_terminal_dialog(self, profile: LocalTerminalProfile | None = None) -> None:
+        if not self.ensure_writable():
+            return
+        dialog = Gtk.Dialog(
+            title=self.t("edit_local_terminal") if profile else self.t("new_local_terminal"),
+            transient_for=self,
+            modal=True,
+        )
+        dialog.set_resizable(False)
+        dialog.set_default_size(520, -1)
+        self.add_dialog_action_buttons(dialog, self.t("save"))
+
+        grid = Gtk.Grid(column_spacing=12, row_spacing=12)
+        grid.set_margin_top(16)
+        grid.set_margin_bottom(16)
+        grid.set_margin_start(16)
+        grid.set_margin_end(16)
+
+        name_entry = Gtk.Entry()
+        working_directory_entry = Gtk.Entry()
+        shell_entry = Gtk.Entry()
+        arguments_entry = Gtk.Entry()
+        run_command_entry = Gtk.Entry()
+        tab_title_entry = Gtk.Entry()
+
+        name_entry.set_placeholder_text(self.t("name"))
+        working_directory_entry.set_placeholder_text(str(Path.home()))
+        shell_entry.set_placeholder_text(self.default_local_terminal_shell())
+        arguments_entry.set_placeholder_text("-l")
+        run_command_entry.set_placeholder_text("top")
+        tab_title_entry.set_placeholder_text(self.t("title_shown_in_tab"))
+
+        if profile is not None:
+            name_entry.set_text(profile.name)
+            working_directory_entry.set_text(profile.working_directory)
+            shell_entry.set_text(profile.shell)
+            arguments_entry.set_text(profile.arguments)
+            run_command_entry.set_text(profile.command_on_start)
+            tab_title_entry.set_text(profile.tab_title)
+        else:
+            working_directory_entry.set_text(str(Path.home()))
+            shell_entry.set_text(self.default_local_terminal_shell())
+
+        for widget in (
+            name_entry,
+            working_directory_entry,
+            shell_entry,
+            arguments_entry,
+            run_command_entry,
+            tab_title_entry,
+        ):
+            widget.set_hexpand(True)
+            widget.set_size_request(280, -1)
+
+        rows: list[tuple[str, Gtk.Widget, bool]] = [
+            (self.t("name"), name_entry, True),
+            (self.t("working_directory"), working_directory_entry, False),
+            (self.t("shell"), shell_entry, True),
+            (self.t("arguments"), arguments_entry, False),
+            (self.t("run_command_on_start"), run_command_entry, False),
+            (self.t("title_shown_in_tab"), tab_title_entry, False),
+        ]
+        for index, (label_text, widget, required) in enumerate(rows):
+            grid.attach(self.build_form_label(label_text, required), 0, index, 1, 1)
+            grid.attach(widget, 1, index, 1, 1)
+        grid.attach(self.build_required_hint(), 1, len(rows), 1, 1)
+
+        dialog.get_content_area().append(grid)
+        dialog.connect(
+            "response",
+            self.on_local_terminal_dialog_response,
+            {
+                "name": name_entry,
+                "working_directory": working_directory_entry,
+                "shell": shell_entry,
+                "arguments": arguments_entry,
+                "command_on_start": run_command_entry,
+                "tab_title": tab_title_entry,
+            },
+            profile,
+        )
+        dialog.present()
+
+    def on_local_terminal_dialog_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        widgets: dict[str, Any],
+        profile: LocalTerminalProfile | None,
+    ) -> None:
+        name = widgets["name"].get_text().strip()
+        working_directory = widgets["working_directory"].get_text().strip()
+        shell = widgets["shell"].get_text().strip()
+        arguments = widgets["arguments"].get_text().strip()
+        command_on_start = widgets["command_on_start"].get_text().strip()
+        tab_title = widgets["tab_title"].get_text().strip()
+
+        if response == Gtk.ResponseType.OK:
+            if not name or not shell:
+                self.toast_label.set_label(self.t("local_terminal_required_fields"))
+                for widget in (widgets["name"], widgets["shell"]):
+                    if not widget.get_text().strip():
+                        widget.grab_focus()
+                        break
+                return
+            try:
+                if arguments:
+                    shlex.split(arguments)
+            except ValueError as exc:
+                self.toast_label.set_label(self.t("local_terminal_invalid_arguments").format(error=exc))
+                widgets["arguments"].grab_focus()
+                return
+            try:
+                if profile:
+                    self.store.update_local_terminal(
+                        profile.id,
+                        name,
+                        working_directory,
+                        shell,
+                        arguments,
+                        command_on_start,
+                        tab_title,
+                    )
+                else:
+                    self.store.add_local_terminal(
+                        name,
+                        working_directory,
+                        shell,
+                        arguments,
+                        command_on_start,
+                        tab_title,
+                    )
+            except ReadOnlyStoreError:
+                self.toast_label.set_label(self.t("read_only_mode_enabled"))
+                dialog.destroy()
+                return
+            self.refresh_list()
+            self.toast_label.set_label(self.t("local_terminal_settings_saved"))
         dialog.destroy()
