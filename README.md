@@ -13,6 +13,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Store SSH hosts with a display name, host name or IP, user, port, password,
   and private key path.
 - Filter servers and open multiple tabbed sessions to the same host.
+- Reopen the 10 most recently connected servers from a Recent section above Favorites, without duplicates.
 - Mark servers as favorites and jump to them from a dedicated section in the sidebar.
 - Use embedded, width-sharing tabs and move a tab to a separate window.
 - Open embedded local terminal tabs.
@@ -152,10 +153,12 @@ Termia stores connection data, settings, and statistics outside the repository:
 ~/.config/termia/connections.json   # groups and servers
 ~/.config/termia/settings.json      # app and terminal settings
 ~/.config/termia/instance.lock      # single writer lock for multi-instance mode
+~/.local/state/termia/recent_connections.jsonl
 ~/.local/state/termia/statistics.json
 ```
 
 Saved passwords are stored in `connections.json`; the file can be kept as plain text or obfuscated from Security preferences. Obfuscation is not encryption. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, or statistics; later instances stay read-only to avoid corrupting these files.
+Recent connections are stored separately in `recent_connections.jsonl` so the sidebar can keep a small, deduplicated Recent section based on the latest successful SSH connections.
 
 Termia does not store typed text, command contents, clipboard contents, command counters, or keystroke counters. Statistics are disabled by default and can be enabled from General preferences. When enabled, they track only aggregate connections, per-server usage, and session durations; they are flushed at most every 30 seconds, when sessions end, and when Termia closes. See [SECURITY.md](SECURITY.md).
 

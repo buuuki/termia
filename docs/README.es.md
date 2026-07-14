@@ -12,6 +12,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Guardar servidores con nombre, host o IP, usuario, puerto, contraseña y ruta de
   clave privada.
 - Filtrar servidores y abrir varias sesiones al mismo host en pestañas.
+- Reabrir los 10 servidores conectados más recientemente desde una sección Recent encima de Favorites, sin duplicados.
 - Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
 - Abrir terminales locales embebidas.
 - Dividir una pestaña de terminal en varios paneles desde el menú contextual del terminal.
@@ -109,12 +110,14 @@ Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 ~/.config/termia/connections.json   # grupos y servidores
 ~/.config/termia/settings.json      # configuración de la app y del terminal
 ~/.config/termia/instance.lock      # bloqueo de escritor único para el modo multiinstancia
+~/.local/state/termia/recent_connections.jsonl
 ~/.local/state/termia/statistics.json
 ```
 
 Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano u ofuscado desde las preferencias de Seguridad. La ofuscación no es cifrado.
 Los ficheros de conexiones exportados también pueden contener credenciales.
 Los contadores locales agregados se guardan por separado en `statistics.json`, vienen desactivados por defecto y se pueden activar o desactivar desde las preferencias generales. Cuando hay varios procesos de Termia abiertos al mismo tiempo, solo la instancia que mantiene `instance.lock` escribe conexiones, ajustes o estadísticas; las siguientes permanecen en solo lectura para evitar corromper esos ficheros.
+Las conexiones recientes se guardan aparte en `recent_connections.jsonl` para que la barra lateral pueda mostrar una sección Recent pequeña y sin duplicados basada en las últimas conexiones SSH correctas.
 
 Termia no guarda el texto escrito, el contenido de los comandos, el contenido del
 portapapeles, contadores de comandos ni contadores de pulsaciones. Cuando están activadas, las estadísticas solo registran conexiones agregadas, uso por servidor y duración de sesiones; se escriben como máximo cada 30 segundos, al finalizar sesiones y al cerrar Termia. Consulta

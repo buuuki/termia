@@ -12,6 +12,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Desar servidors amb nom, host o IP, usuari, port, contrasenya i ruta de clau
   privada.
 - Filtrar servidors i obrir diverses sessions al mateix host en pestanyes.
+- Reobrir els 10 servidors connectats més recentment des d'una secció Recent a sobre de Favorites, sense duplicats.
 - Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
 - Obrir terminals locals incrustats.
 - Dividir una pestanya de terminal en diversos panells des del menú contextual del terminal.
@@ -109,12 +110,14 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 ~/.config/termia/connections.json   # grups i servidors
 ~/.config/termia/settings.json      # configuració de l'aplicació i del terminal
 ~/.config/termia/instance.lock      # bloqueig d'escriptor únic per al mode multiinstància
+~/.local/state/termia/recent_connections.jsonl
 ~/.local/state/termia/statistics.json
 ```
 
 Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla o ofuscat des de les preferències de Seguretat. L'ofuscació no és xifratge.
 Els fitxers de connexions exportats també poden contenir credencials.
 Els comptadors locals agregats es desen per separat a `statistics.json`, venen desactivats per defecte i es poden activar o desactivar des de les preferències generals. Quan hi ha diversos processos de Termia oberts al mateix temps, només la instància que manté `instance.lock` escriu connexions, ajustos o estadístiques; les següents romanen en només lectura per evitar corrompre aquests fitxers.
+Les connexions recents es desen a part a `recent_connections.jsonl` perquè la barra lateral pugui mostrar una secció Recent petita i sense duplicats basada en les últimes connexions SSH correctes.
 
 Termia no desa el text escrit, el contingut de les ordres, el contingut del
 porta-retalls, comptadors d'ordres ni comptadors de pulsacions. Quan estan activades, les estadístiques només registren connexions agregades, ús per servidor i durada de sessions; s'escriuen com a màxim cada 30 segons, en finalitzar sessions i en tancar Termia. Consulta

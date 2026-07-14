@@ -291,6 +291,17 @@ class ConnectionHistoryStore:
         ):
             session.history_end_recorded = True
 
+    def recent_server_ids(self, limit: int = 10) -> list[str]:
+        ids: list[str] = []
+        seen: set[str] = set()
+        for entry in self.entries:
+            if entry.server_id and entry.server_id not in seen:
+                seen.add(entry.server_id)
+                ids.append(entry.server_id)
+            if len(ids) >= limit:
+                break
+        return ids
+
 
 class SettingsStore:
     def __init__(self, path: Path, *, read_only: bool = False) -> None:
@@ -505,6 +516,9 @@ class ConnectionStore:
 
     def record_history_end(self, session: TerminalSession, result: str, *, detail: str = "") -> None:
         self.history_store.record_end(session, result, detail=detail)
+
+    def recent_server_ids(self, limit: int = 10) -> list[str]:
+        return self.history_store.recent_server_ids(limit)
 
     def update_connection_storage_mode(self, storage_mode: str) -> None:
         self.ensure_writable()
