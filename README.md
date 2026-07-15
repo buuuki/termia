@@ -18,6 +18,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Use embedded, width-sharing tabs and move a tab to a separate window.
 - Create and open configurable local terminal profiles from the sidebar.
 - Split a terminal tab into multiple panes from the terminal context menu.
+- Configure basic split layouts per SSH server or local terminal profile.
 - Send local files to a server from the terminal or server context menus.
 - Run multiple Termia instances; the first keeps write access and later instances fall back to read-only mode.
 - Optionally track aggregate connection, session-duration, and per-server usage statistics locally.

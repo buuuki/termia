@@ -249,6 +249,38 @@ msgstr "Dividir a la derecha"
 msgid "Split left"
 msgstr "Dividir a la izquierda"
 
+#: src/termia/i18n.py:split_layout_none
+msgid "No splits"
+msgstr "Sin divisiones"
+
+#: src/termia/i18n.py:split_layout_columns
+msgid "2 columns"
+msgstr "2 columnas"
+
+#: src/termia/i18n.py:split_layout_rows
+msgid "2 rows"
+msgstr "2 filas"
+
+#: src/termia/i18n.py:split_layout_left_rows
+msgid "Left column split"
+msgstr "Dividir la columna izquierda"
+
+#: src/termia/i18n.py:split_layout_right_rows
+msgid "Right column split"
+msgstr "Dividir la columna derecha"
+
+#: src/termia/i18n.py:split_layout_top_columns
+msgid "Top row split"
+msgstr "Dividir la fila superior"
+
+#: src/termia/i18n.py:split_layout_bottom_columns
+msgid "Bottom row split"
+msgstr "Dividir la fila inferior"
+
+#: src/termia/i18n.py:split_layout_grid
+msgid "2x2 grid"
+msgstr "Cuadrícula 2x2"
+
 #: src/termia/i18n.py:tab
 msgid "Tab"
 msgstr "Pestaña"

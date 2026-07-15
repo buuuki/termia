@@ -16,6 +16,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
 - Crear y abrir perfiles configurables de terminal local desde la barra lateral.
 - Dividir una pestaña de terminal en varios paneles desde el menú contextual del terminal.
+- Configurar diseños básicos de división por cada servidor SSH o perfil de terminal local.
 - Enviar ficheros locales a un servidor desde el menú contextual del terminal o del servidor.
 - Ejecutar varias instancias de Termia; la primera conserva acceso de escritura y las siguientes pasan automáticamente a modo solo lectura.
 - Registrar opcionalmente estadísticas locales agregadas de conexiones, duración y uso por servidor.

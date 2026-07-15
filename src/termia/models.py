@@ -29,6 +29,7 @@ class Server:
     favorite: bool = False
     password: str = ""
     public_key: str = ""
+    split_layout: str = "none"
 
 
 @dataclass
@@ -47,6 +48,7 @@ class LocalTerminalProfile:
     arguments: str = ""
     command_on_start: str = ""
     tab_title: str = ""
+    split_layout: str = "none"
 
 
 @dataclass

@@ -29,6 +29,7 @@ from .terminal_config import (
     build_local_prompt_shell_command,
     build_terminal_environment,
     parse_color,
+    split_layout_plan,
 )
 from .ui_state import TerminalSession
 
@@ -56,6 +57,7 @@ class TerminalSessionsMixin:
             local_profile_id=profile.id if profile is not None else None,
             title_locked=profile is not None,
             initial_command=profile.command_on_start if profile is not None else "",
+            split_layout=profile.split_layout if profile is not None else "none",
         )
 
     def local_terminal_session_title(self, profile: LocalTerminalProfile | None) -> str:
@@ -187,6 +189,7 @@ class TerminalSessionsMixin:
         local_profile_id: str | None = None,
         title_locked: bool = False,
         initial_command: str = "",
+        split_layout: str = "none",
     ) -> None:
         session, focus_button = self.create_terminal_session(
             title,
@@ -226,6 +229,7 @@ class TerminalSessionsMixin:
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_process_terminal_exited, session)
         session.status_label.set_label(f"{title} · PID {child_pid}")
+        self.apply_split_layout(session, split_layout, fallback_working_directory=working_directory)
         if initial_command.strip():
             GLib.timeout_add(INITIAL_LOCAL_COMMAND_DELAY_MS, self.feed_initial_local_command, terminal, initial_command.strip())
 
@@ -261,9 +265,9 @@ class TerminalSessionsMixin:
         self.open_tabs[session.id] = session
         self.add_session_to_main_view(session)
 
-        self.start_ssh_session(server, session)
+        self.start_ssh_session(server, session, split_layout=server.split_layout)
 
-    def start_ssh_session(self, server: Server, session: TerminalSession) -> None:
+    def start_ssh_session(self, server: Server, session: TerminalSession, *, split_layout: str = "none") -> None:
         terminal = session.terminal
         session.started_at = time.monotonic()
         session.duration_recorded = False
@@ -332,6 +336,7 @@ class TerminalSessionsMixin:
         terminal.connect("child-exited", self.on_terminal_exited, server, session)
         self.record_connection(server.id)
         session.status_label.set_label(f"{server.name} · PID {child_pid}")
+        self.apply_split_layout(session, split_layout, server=server)
         self.toast_label.set_label(self.t("session_opened").format(title=session.title))
 
     def mark_session_for_reconnect(self, session: TerminalSession, server: Server, toast: str) -> None:
@@ -832,17 +837,15 @@ class TerminalSessionsMixin:
         active_submenu["panel_hover"] = False
         return GLib.SOURCE_REMOVE
 
-    def split_terminal_from_menu(
+    def split_terminal_pane(
         self,
-        popover: Gtk.Popover,
         session: TerminalSession,
         terminal: Vte.Terminal,
         direction: str,
-    ) -> None:
-        popover.popdown()
+    ) -> Vte.Terminal | None:
         target = terminal.get_parent()
         if not isinstance(target, Gtk.Widget):
-            return
+            return None
 
         new_terminal = self.create_split_terminal(session)
         new_scroller = self.wrap_terminal_in_scroller(new_terminal)
@@ -859,7 +862,8 @@ class TerminalSessionsMixin:
 
         if not self.replace_terminal_pane(target, paned):
             session.split_terminals.remove(new_terminal)
-            return
+            session.active_terminal_ids.discard(id(new_terminal))
+            return None
 
         if direction in {"left", "up"}:
             paned.set_start_child(new_scroller)
@@ -876,12 +880,66 @@ class TerminalSessionsMixin:
             return GLib.SOURCE_REMOVE
 
         GLib.timeout_add(80, center_split)
+        return new_terminal
+
+    def start_split_child_terminal(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        source_terminal: Vte.Terminal,
+        server: Server | None,
+        *,
+        announce: bool,
+        fallback_working_directory: str | None = None,
+    ) -> None:
         if session.server_id is None:
-            self.start_local_split_terminal(session, new_terminal, terminal)
+            self.start_local_split_terminal(session, terminal, source_terminal, fallback_working_directory)
             return
-        server = find_server(self.store.data.servers, session.server_id)
         if server is not None:
-            self.start_ssh_split_terminal(session, new_terminal, server)
+            self.start_ssh_split_terminal(session, terminal, server, announce=announce)
+
+    def apply_split_layout(
+        self,
+        session: TerminalSession,
+        layout: str,
+        *,
+        server: Server | None = None,
+        fallback_working_directory: str | None = None,
+    ) -> None:
+        plan = split_layout_plan(layout)
+        if not plan:
+            return
+        terminals: dict[str, Vte.Terminal] = {"root": session.terminal}
+        for target_id, direction, new_id in plan:
+            target = terminals.get(target_id)
+            if target is None:
+                return
+            new_terminal = self.split_terminal_pane(session, target, direction)
+            if new_terminal is None:
+                return
+            terminals[new_id] = new_terminal
+            self.start_split_child_terminal(
+                session,
+                new_terminal,
+                target,
+                server,
+                announce=False,
+                fallback_working_directory=fallback_working_directory,
+            )
+
+    def split_terminal_from_menu(
+        self,
+        popover: Gtk.Popover,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        direction: str,
+    ) -> None:
+        popover.popdown()
+        new_terminal = self.split_terminal_pane(session, terminal, direction)
+        if new_terminal is None:
+            return
+        server = find_server(self.store.data.servers, session.server_id) if session.server_id is not None else None
+        self.start_split_child_terminal(session, new_terminal, terminal, server, announce=True)
 
     def create_split_terminal(self, session: TerminalSession) -> Vte.Terminal:
         terminal = self.create_configured_terminal()
@@ -920,6 +978,7 @@ class TerminalSessionsMixin:
         session: TerminalSession,
         terminal: Vte.Terminal,
         source_terminal: Vte.Terminal,
+        fallback_working_directory: str | None = None,
     ) -> None:
         shell = os.environ.get("SHELL") or GLib.find_program_in_path("bash") or "/bin/sh"
         command = [shell]
@@ -927,7 +986,7 @@ class TerminalSessionsMixin:
             bash_path = GLib.find_program_in_path("bash")
             if bash_path is not None:
                 command = build_local_prompt_shell_command(self.store.data.terminal, bash_path)
-        working_directory = self.local_terminal_working_directory(source_terminal)
+        working_directory = self.local_terminal_working_directory(source_terminal, fallback_working_directory)
         try:
             _ok, child_pid = terminal.spawn_sync(
                 Vte.PtyFlags.DEFAULT,
@@ -947,7 +1006,14 @@ class TerminalSessionsMixin:
         session.split_child_pids[id(terminal)] = child_pid
         terminal.connect("child-exited", self.on_split_terminal_exited, session)
 
-    def start_ssh_split_terminal(self, session: TerminalSession, terminal: Vte.Terminal, server: Server) -> None:
+    def start_ssh_split_terminal(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        server: Server,
+        *,
+        announce: bool = True,
+    ) -> None:
         ssh_path = GLib.find_program_in_path("ssh")
         if ssh_path is None:
             message = self.t("ssh_missing")
@@ -995,14 +1061,21 @@ class TerminalSessionsMixin:
         session.split_child_pids[id(terminal)] = child_pid
         terminal.connect("child-exited", self.on_split_terminal_exited, session)
         self.record_connection(server.id)
-        self.toast_label.set_label(self.t("session_opened").format(title=server.name))
+        if announce:
+            self.toast_label.set_label(self.t("session_opened").format(title=server.name))
 
-    def local_terminal_working_directory(self, terminal: Vte.Terminal) -> str:
+    def local_terminal_working_directory(
+        self,
+        terminal: Vte.Terminal,
+        fallback_working_directory: str | None = None,
+    ) -> str:
         uri = terminal.get_current_directory_uri()
         if uri:
             parsed = urlparse(uri)
             if parsed.scheme == "file":
                 return unquote(parsed.path)
+        if fallback_working_directory:
+            return fallback_working_directory
         return str(Path.home())
 
     def on_split_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
