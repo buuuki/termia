@@ -45,6 +45,7 @@ from .models import (
     StoreData,
     TerminalSettings,
 )
+from .terminal_config import normalize_split_layout
 from .ui_state import TerminalSession
 
 
@@ -454,8 +455,16 @@ class ConnectionStore:
             app=app,
             statistics=self.statistics_store.data,
         )
+        split_layouts_normalized = self.normalize_split_layouts()
         repaired = self.repair_references()
-        if "statistics" in payload or "app" in payload or "terminal" in payload or repaired or settings_migrated:
+        if (
+            "statistics" in payload
+            or "app" in payload
+            or "terminal" in payload
+            or repaired
+            or settings_migrated
+            or split_layouts_normalized
+        ):
             self.save_connections()
 
     def close(self) -> None:
@@ -477,6 +486,20 @@ class ConnectionStore:
                 server.group_id = None
                 repaired = True
         return repaired
+
+    def normalize_split_layouts(self) -> bool:
+        changed = False
+        for server in self.data.servers:
+            normalized = normalize_split_layout(server.split_layout)
+            if normalized != server.split_layout:
+                server.split_layout = normalized
+                changed = True
+        for profile in self.data.local_terminals:
+            normalized = normalize_split_layout(profile.split_layout)
+            if normalized != profile.split_layout:
+                profile.split_layout = normalized
+                changed = True
+        return changed
 
     def save_connections(self) -> None:
         if self.read_only:
@@ -576,6 +599,7 @@ class ConnectionStore:
         favorite: bool = False,
         password: str = "",
         public_key: str = "",
+        split_layout: str = "none",
     ) -> Server:
         self.ensure_writable()
         server = Server(
@@ -588,6 +612,7 @@ class ConnectionStore:
             favorite=favorite,
             password=password,
             public_key=public_key,
+            split_layout=normalize_split_layout(split_layout),
         )
         self.data.servers.append(server)
         self.save_connections()
@@ -604,6 +629,7 @@ class ConnectionStore:
         favorite: bool,
         password: str = "",
         public_key: str = "",
+        split_layout: str = "none",
     ) -> None:
         self.ensure_writable()
         for server in self.data.servers:
@@ -616,6 +642,7 @@ class ConnectionStore:
                 server.favorite = favorite
                 server.password = password
                 server.public_key = public_key
+                server.split_layout = normalize_split_layout(split_layout)
                 break
         self.save_connections()
 
@@ -640,6 +667,7 @@ class ConnectionStore:
         arguments: str,
         command_on_start: str,
         tab_title: str,
+        split_layout: str = "none",
     ) -> LocalTerminalProfile:
         self.ensure_writable()
         profile = LocalTerminalProfile(
@@ -650,6 +678,7 @@ class ConnectionStore:
             arguments=arguments.strip(),
             command_on_start=command_on_start.strip(),
             tab_title=tab_title.strip(),
+            split_layout=normalize_split_layout(split_layout),
         )
         self.data.local_terminals.append(profile)
         self.save_connections()
@@ -664,6 +693,7 @@ class ConnectionStore:
         arguments: str,
         command_on_start: str,
         tab_title: str,
+        split_layout: str = "none",
     ) -> None:
         self.ensure_writable()
         updated = False
@@ -675,6 +705,7 @@ class ConnectionStore:
                 profile.arguments = arguments.strip()
                 profile.command_on_start = command_on_start.strip()
                 profile.tab_title = tab_title.strip()
+                profile.split_layout = normalize_split_layout(split_layout)
                 updated = True
                 break
         if updated:

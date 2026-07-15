@@ -16,6 +16,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
 - Crear i obrir perfils configurables de terminal local des de la barra lateral.
 - Dividir una pestanya de terminal en diversos panells des del menú contextual del terminal.
+- Configurar dissenys bàsics de divisió per a cada servidor SSH o perfil de terminal local.
 - Enviar fitxers locals a un servidor des del menú contextual del terminal o del servidor.
 - Executar diverses instàncies de Termia; la primera conserva accés d'escriptura i les següents passen automàticament a mode només lectura.
 - Registrar opcionalment estadístiques locals agregades de connexions, durada i ús per servidor.

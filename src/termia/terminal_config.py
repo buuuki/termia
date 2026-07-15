@@ -13,6 +13,41 @@ from gi.repository import Gdk
 from .constants import DEFAULT_PROMPT_COLOR
 from .models import TerminalSettings
 
+SPLIT_LAYOUT_NONE = "none"
+SPLIT_LAYOUT_COLUMNS = "columns"
+SPLIT_LAYOUT_ROWS = "rows"
+SPLIT_LAYOUT_LEFT_ROWS = "left_rows"
+SPLIT_LAYOUT_RIGHT_ROWS = "right_rows"
+SPLIT_LAYOUT_TOP_COLUMNS = "top_columns"
+SPLIT_LAYOUT_BOTTOM_COLUMNS = "bottom_columns"
+SPLIT_LAYOUT_GRID = "grid"
+
+SPLIT_LAYOUT_CHOICES: list[tuple[str, str]] = [
+    (SPLIT_LAYOUT_NONE, "split_layout_none"),
+    (SPLIT_LAYOUT_COLUMNS, "split_layout_columns"),
+    (SPLIT_LAYOUT_ROWS, "split_layout_rows"),
+    (SPLIT_LAYOUT_LEFT_ROWS, "split_layout_left_rows"),
+    (SPLIT_LAYOUT_RIGHT_ROWS, "split_layout_right_rows"),
+    (SPLIT_LAYOUT_TOP_COLUMNS, "split_layout_top_columns"),
+    (SPLIT_LAYOUT_BOTTOM_COLUMNS, "split_layout_bottom_columns"),
+    (SPLIT_LAYOUT_GRID, "split_layout_grid"),
+]
+
+SPLIT_LAYOUT_PLANS: dict[str, list[tuple[str, str, str]]] = {
+    SPLIT_LAYOUT_NONE: [],
+    SPLIT_LAYOUT_COLUMNS: [("root", "right", "right")],
+    SPLIT_LAYOUT_ROWS: [("root", "down", "bottom")],
+    SPLIT_LAYOUT_LEFT_ROWS: [("root", "right", "right"), ("root", "down", "left_bottom")],
+    SPLIT_LAYOUT_RIGHT_ROWS: [("root", "right", "right"), ("right", "down", "right_bottom")],
+    SPLIT_LAYOUT_TOP_COLUMNS: [("root", "down", "bottom"), ("root", "right", "top_right")],
+    SPLIT_LAYOUT_BOTTOM_COLUMNS: [("root", "down", "bottom"), ("bottom", "right", "bottom_right")],
+    SPLIT_LAYOUT_GRID: [
+        ("root", "right", "right"),
+        ("root", "down", "left_bottom"),
+        ("right", "down", "right_bottom"),
+    ],
+}
+
 
 def parse_color(value: str, fallback: str) -> Gdk.RGBA:
     color = Gdk.RGBA()
@@ -124,3 +159,13 @@ def render_prompt_preview(template: str) -> str:
     for marker, value in replacements.items():
         text = text.replace(marker, value)
     return text
+
+
+def normalize_split_layout(layout: str) -> str:
+    if layout in SPLIT_LAYOUT_PLANS:
+        return layout
+    return SPLIT_LAYOUT_NONE
+
+
+def split_layout_plan(layout: str) -> list[tuple[str, str, str]]:
+    return SPLIT_LAYOUT_PLANS[normalize_split_layout(layout)]
