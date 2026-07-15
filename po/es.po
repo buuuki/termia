@@ -994,6 +994,10 @@ msgstr "No se pudieron interpretar los argumentos: {error}"
 msgid "Local terminal saved"
 msgstr "Terminal local guardado"
 
+#: src/termia/i18n.py:local_terminal_cloned
+msgid "Local terminal cloned"
+msgstr "Terminal local clonada"
+
 #: src/termia/i18n.py:local_terminal_detail_info
 msgid ""
 "Working directory: {working_directory}\n"

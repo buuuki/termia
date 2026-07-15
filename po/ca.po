@@ -993,6 +993,10 @@ msgstr "No s'han pogut interpretar els arguments: {error}"
 msgid "Local terminal saved"
 msgstr "Terminal local desat"
 
+#: src/termia/i18n.py:local_terminal_cloned
+msgid "Local terminal cloned"
+msgstr "Terminal local clonat"
+
 #: src/termia/i18n.py:local_terminal_detail_info
 msgid ""
 "Working directory: {working_directory}\n"

@@ -30,6 +30,17 @@ def unique_server_clone_name(servers: list[Server], name: str) -> str:
     return f"{base_name}-{index}"
 
 
+def unique_local_terminal_clone_name(profiles: list[LocalTerminalProfile], name: str) -> str:
+    existing_names = {profile.name for profile in profiles}
+    base_name = f"{name}-clone"
+    if base_name not in existing_names:
+        return base_name
+    index = 2
+    while f"{base_name}-{index}" in existing_names:
+        index += 1
+    return f"{base_name}-{index}"
+
+
 def server_matches_query(server: Server, query: str) -> bool:
     if not query:
         return True
