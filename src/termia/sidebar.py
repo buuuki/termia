@@ -19,6 +19,7 @@ from .connection_utils import (
     group_descendant_ids,
     group_matches_query,
     server_matches_query,
+    unique_local_terminal_clone_name,
     unique_server_clone_name,
 )
 from .models import Group, LocalTerminalProfile, Server
@@ -874,6 +875,12 @@ class SidebarMixin:
             )
             self.add_context_menu_item(
                 menu,
+                self.t("clone_connection"),
+                lambda: self.on_local_terminal_context_clone(popover, row.item_id),
+                enabled=not self.store.read_only,
+            )
+            self.add_context_menu_item(
+                menu,
                 self.t("delete_local_terminal"),
                 lambda: self.on_local_terminal_context_delete(popover, row.item_id),
                 destructive=True,
@@ -943,6 +950,27 @@ class SidebarMixin:
         profile = find_local_terminal_profile(self.store.data.local_terminals, profile_id)
         if profile is not None:
             self.show_local_terminal_dialog(profile)
+
+    def on_local_terminal_context_clone(self, popover: Gtk.Popover, profile_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        profile = find_local_terminal_profile(self.store.data.local_terminals, profile_id)
+        if profile is None:
+            return
+        clone = self.store.add_local_terminal(
+            unique_local_terminal_clone_name(self.store.data.local_terminals, profile.name),
+            profile.working_directory,
+            profile.shell,
+            profile.arguments,
+            profile.command_on_start,
+            profile.tab_title,
+            profile.split_layout,
+        )
+        self.selected = RowObject("local_terminal", clone.id, clone.name)
+        self.toast_label.set_label(f"{self.t('local_terminal_cloned')}: {clone.name}")
+        self.refresh_list()
+        self.render_detail()
 
     def on_local_terminal_context_delete(self, popover: Gtk.Popover, profile_id: str) -> None:
         popover.popdown()
