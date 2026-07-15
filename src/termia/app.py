@@ -22,6 +22,7 @@ from .sidebar import SidebarMixin
 from .statistics_view import StatisticsViewMixin
 from .styles import build_application_css
 from .tabs import TabsMixin
+from .terminal_menus import TerminalMenusMixin
 from .terminal_sessions import TerminalSessionsMixin
 from .ui_state import RowObject, TerminalSession
 
@@ -34,6 +35,7 @@ class TermiaWindow(
     SidebarMixin,
     ConnectionHistoryViewMixin,
     StatisticsViewMixin,
+    TerminalMenusMixin,
     TerminalSessionsMixin,
     TabsMixin,
     Gtk.ApplicationWindow,
