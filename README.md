@@ -32,7 +32,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Customize local prompt colors, presets, and time/date prefixes without changing remote shell startup files or commands.
 - Use the interface in English, Spanish, or Catalan. The initial language follows the system locale when supported.
 - Import and export Termia configuration files.
-- Import basic connection and nested group data from Asbru YAML files.
+- Import basic connection, nested group, and saved password data from Asbru YAML files when available.
 
 ## Usage notes
 
@@ -159,7 +159,7 @@ Termia stores connection data, settings, and statistics outside the repository:
 ~/.local/state/termia/statistics.json
 ```
 
-Saved passwords are stored in `connections.json`; the file can be kept as plain text or obfuscated from Security preferences. Obfuscation is not encryption. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, or statistics; later instances stay read-only to avoid corrupting these files.
+Saved passwords are stored in `connections.json`; the file can be kept as plain text or obfuscated from Security preferences. Obfuscation is not encryption. Imported Ásbrú passwords are stored the same way when the source YAML exposes them in a `pass` field. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, or statistics; later instances stay read-only to avoid corrupting these files.
 Recent connections are stored separately in `recent_connections.jsonl` so the sidebar can keep a small, deduplicated Recent section based on the latest successful SSH connections.
 
 Termia does not store typed text, command contents, clipboard contents, command counters, or keystroke counters. Statistics are disabled by default and can be enabled from General preferences. When enabled, they track only aggregate connections, per-server usage, and session durations; they are flushed at most every 30 seconds, when sessions end, and when Termia closes. See [SECURITY.md](SECURITY.md).

@@ -18,13 +18,13 @@ def normalize_asbru_name(value: str) -> str:
 
 def extract_asbru_connections(
     payload: Any,
-) -> tuple[list[tuple[str, str, str | None]], list[tuple[str, str, str, int, str | None, str]]]:
+) -> tuple[list[tuple[str, str, str | None]], list[tuple[str, str, str, int, str | None, str, str]]]:
     environments = payload.get("environments", payload) if isinstance(payload, dict) else {}
     if not isinstance(environments, dict):
         return [], []
 
     groups: list[tuple[str, str, str | None]] = []
-    servers: list[tuple[str, str, str, int, str | None, str]] = []
+    servers: list[tuple[str, str, str, int, str | None, str, str]] = []
     group_uuids = {
         str(uuid)
         for uuid, node in environments.items()
@@ -53,14 +53,16 @@ def extract_asbru_connections(
         except (TypeError, ValueError):
             port = 22
         public_key = str(node.get("public key") or "").strip()
-        servers.append((name, host, user, port, parent_uuid, public_key))
+        password_value = node.get("pass")
+        password = "" if password_value is None else str(password_value)
+        servers.append((name, host, user, port, parent_uuid, public_key, password))
     return groups, servers
 
 
 def merge_asbru_connections(
     data: StoreData,
     groups: list[tuple[str, str, str | None]],
-    servers: list[tuple[str, str, str, int, str | None, str]],
+    servers: list[tuple[str, str, str, int, str | None, str, str]],
 ) -> tuple[int, int]:
     groups_by_path: dict[tuple[str | None, str], Group] = {
         (group.parent_id, group.name): group for group in data.groups
@@ -95,24 +97,31 @@ def merge_asbru_connections(
                 added_groups += 1
             imported_ids[source_id] = group.id
 
-    existing = {(server.host, server.user, server.port, server.group_id) for server in data.servers}
+    existing = {
+        (server.host, server.user, server.port, server.group_id): server for server in data.servers
+    }
     added_servers = 0
-    for name, host, user, port, source_group_id, public_key in servers:
+    for name, host, user, port, source_group_id, public_key, password in servers:
         group_id = imported_ids.get(source_group_id)
         key = (host, user, port, group_id)
-        if key in existing:
+        existing_server = existing.get(key)
+        if existing_server is not None:
+            if public_key and not existing_server.public_key:
+                existing_server.public_key = public_key
+            if password and not existing_server.password:
+                existing_server.password = password
             continue
-        data.servers.append(
-            Server(
-                id=str(uuid4()),
-                name=normalize_asbru_name(name),
-                host=host,
-                user=user,
-                port=port,
-                group_id=group_id,
-                public_key=public_key,
-            )
+        server = Server(
+            id=str(uuid4()),
+            name=normalize_asbru_name(name),
+            host=host,
+            user=user,
+            port=port,
+            group_id=group_id,
+            public_key=public_key,
+            password=password,
         )
-        existing.add(key)
+        data.servers.append(server)
+        existing[key] = server
         added_servers += 1
     return added_groups, added_servers
