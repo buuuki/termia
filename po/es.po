@@ -541,6 +541,14 @@ msgstr "Tamaño de fuente del terminal: {size}"
 msgid "Foreground"
 msgstr "Foreground"
 
+#: src/termia/i18n.py:split_separator_color
+msgid "Split separator color"
+msgstr "Color del separador de división"
+
+#: src/termia/i18n.py:split_separator_thickness
+msgid "Split separator thickness"
+msgstr "Grosor del separador de división"
+
 #: src/termia/i18n.py:background
 msgid "Background"
 msgstr "Background"
@@ -916,7 +924,7 @@ msgid ""
 "- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
 "- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
 "- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
-"- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
+"- Configure general options, the VTE terminal, split separators and the PS1 prompt separately.\n"
 "- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
 "- View a local connection history with timestamps, outcomes and durations.\n"
 "- Import and export configurations, including basic imports from Ásbrú.\n"

@@ -13,6 +13,8 @@ from .constants import (
     DEFAULT_PROMPT_COLOR,
     DEFAULT_TERMINAL_BACKGROUND,
     DEFAULT_TERMINAL_FOREGROUND,
+    DEFAULT_SPLIT_SEPARATOR_COLOR,
+    DEFAULT_SPLIT_SEPARATOR_THICKNESS,
     PROMPT_PRESETS,
     TERMINAL_PALETTES,
 )
@@ -417,11 +419,20 @@ class PreferencesMixin:
 
         foreground_button = Gtk.ColorButton()
         foreground_button.set_rgba(parse_color(settings.foreground, DEFAULT_TERMINAL_FOREGROUND))
-        foreground_button.set_title("Foreground")
+        foreground_button.set_title(self.t("foreground"))
 
         background_button = Gtk.ColorButton()
         background_button.set_rgba(parse_color(settings.background, DEFAULT_TERMINAL_BACKGROUND))
-        background_button.set_title("Background")
+        background_button.set_title(self.t("background"))
+
+        split_separator_color_button = Gtk.ColorButton()
+        split_separator_color_button.set_rgba(
+            parse_color(settings.split_separator_color, DEFAULT_SPLIT_SEPARATOR_COLOR)
+        )
+        split_separator_color_button.set_title(self.t("split_separator_color"))
+
+        split_separator_thickness_spin = Gtk.SpinButton.new_with_range(1, 12, 1)
+        split_separator_thickness_spin.set_value(settings.split_separator_thickness or DEFAULT_SPLIT_SEPARATOR_THICKNESS)
 
         preview = Gtk.Label()
         preview.set_use_markup(True)
@@ -450,6 +461,8 @@ class PreferencesMixin:
             ("", font_size_spin),
             (self.t("foreground"), foreground_button),
             (self.t("background"), background_button),
+            (self.t("split_separator_color"), split_separator_color_button),
+            (self.t("split_separator_thickness"), split_separator_thickness_spin),
             (self.t("palettes"), palette_box),
         ]
         for index, (label_text, widget) in enumerate(rows):
@@ -486,6 +499,8 @@ class PreferencesMixin:
             font_size_spin,
             foreground_button,
             background_button,
+            split_separator_color_button,
+            split_separator_thickness_spin,
         )
         dialog.present()
 
@@ -740,11 +755,11 @@ class PreferencesMixin:
         if response == Gtk.ResponseType.OK:
             try:
                 self.store.update_prompt_settings(
-                prompt_enabled.get_active(),
-                prompt_template_with_datetime(
-                    prompt_template_entry.get_text(), prompt_datetime_combo.get_active_id() or "none"
-                ),
-                rgba_to_hex(prompt_color_button.get_rgba()),
+                    prompt_enabled.get_active(),
+                    prompt_template_with_datetime(
+                        prompt_template_entry.get_text(), prompt_datetime_combo.get_active_id() or "none"
+                    ),
+                    rgba_to_hex(prompt_color_button.get_rgba()),
                 )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
@@ -761,19 +776,24 @@ class PreferencesMixin:
         font_size_spin: Gtk.SpinButton,
         foreground_button: Gtk.ColorButton,
         background_button: Gtk.ColorButton,
+        split_separator_color_button: Gtk.ColorButton,
+        split_separator_thickness_spin: Gtk.SpinButton,
     ) -> None:
         if response == Gtk.ResponseType.OK:
             try:
                 self.store.update_terminal_settings(
-                self.selected_terminal_font_family(font_combo),
-                int(font_size_spin.get_value()),
-                foreground_button.get_rgba().to_string(),
-                background_button.get_rgba().to_string(),
+                    self.selected_terminal_font_family(font_combo),
+                    int(font_size_spin.get_value()),
+                    foreground_button.get_rgba().to_string(),
+                    background_button.get_rgba().to_string(),
+                    split_separator_color_button.get_rgba().to_string(),
+                    int(split_separator_thickness_spin.get_value()),
                 )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
                 dialog.destroy()
                 return
             self.apply_terminal_settings_to_open_tabs()
+            self.install_tree_styles()
             self.toast_label.set_label(self.t("terminal_settings_saved"))
         dialog.destroy()

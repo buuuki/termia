@@ -9,6 +9,8 @@ from .constants import (
     DEFAULT_TERMINAL_BACKGROUND,
     DEFAULT_TERMINAL_FONT_FAMILY,
     DEFAULT_TERMINAL_FOREGROUND,
+    DEFAULT_SPLIT_SEPARATOR_COLOR,
+    DEFAULT_SPLIT_SEPARATOR_THICKNESS,
 )
 from .i18n import detect_system_language
 from .keybindings import DEFAULT_KEYBINDINGS
@@ -57,6 +59,8 @@ class TerminalSettings:
     font_size: int = 13
     foreground: str = DEFAULT_TERMINAL_FOREGROUND
     background: str = DEFAULT_TERMINAL_BACKGROUND
+    split_separator_color: str = DEFAULT_SPLIT_SEPARATOR_COLOR
+    split_separator_thickness: int = DEFAULT_SPLIT_SEPARATOR_THICKNESS
     ls_colors: str = DEFAULT_LS_COLORS
     ansi_palette: list[str] = field(default_factory=lambda: DEFAULT_ANSI_PALETTE.copy())
     prompt_enabled: bool = False

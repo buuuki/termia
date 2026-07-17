@@ -145,8 +145,15 @@ class TermiaWindow(
             gtk_settings.get_property("gtk-application-prefer-dark-theme")
         ) if gtk_settings is not None else False
         menu_bg = "#3a3a3a" if self.store.data.app.theme == "dark" or prefer_dark else "#f6f6f6"
+        terminal_settings = self.store.data.terminal
         provider = Gtk.CssProvider()
-        provider.load_from_data(build_application_css(menu_bg))
+        provider.load_from_data(
+            build_application_css(
+                menu_bg,
+                terminal_settings.split_separator_color,
+                terminal_settings.split_separator_thickness,
+            )
+        )
         Gtk.StyleContext.add_provider_for_display(
             display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )

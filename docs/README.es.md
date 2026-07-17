@@ -37,7 +37,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:
 
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
-- `Terminal` controla la fuente, tamaño, colores y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
+- `Terminal` controla la fuente, tamaño, colores, grosor y color del separador de división, y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
 - `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
 - `Atajos` muestra los atajos activos del terminal y permite grabar combinaciones para acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada. Las teclas `F1`-`F12` sin modificadores se envían a las aplicaciones del terminal.
 - `Seguridad` controla el modo de almacenamiento de conexiones.

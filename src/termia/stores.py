@@ -17,6 +17,8 @@ from .constants import (
     DEFAULT_TERMINAL_BACKGROUND,
     DEFAULT_TERMINAL_FONT_FAMILY,
     DEFAULT_TERMINAL_FOREGROUND,
+    DEFAULT_SPLIT_SEPARATOR_COLOR,
+    DEFAULT_SPLIT_SEPARATOR_THICKNESS,
     HISTORY_FILE,
     INSTANCE_LOCK_FILE,
     LEGACY_ANSI_PALETTE,
@@ -374,6 +376,8 @@ def normalize_terminal_settings(terminal: TerminalSettings) -> TerminalSettings:
         terminal.background = DEFAULT_TERMINAL_BACKGROUND
     if terminal.ansi_palette == LEGACY_ANSI_PALETTE:
         terminal.ansi_palette = DEFAULT_ANSI_PALETTE.copy()
+    terminal.split_separator_thickness = max(1, terminal.split_separator_thickness or DEFAULT_SPLIT_SEPARATOR_THICKNESS)
+    terminal.split_separator_color = terminal.split_separator_color.strip() or DEFAULT_SPLIT_SEPARATOR_COLOR
     return terminal
 
 
@@ -724,6 +728,8 @@ class ConnectionStore:
         font_size: int,
         foreground: str,
         background: str,
+        split_separator_color: str | None = None,
+        split_separator_thickness: int | None = None,
         ls_colors: str | None = None,
         prompt_enabled: bool | None = None,
         prompt_template: str | None = None,
@@ -736,6 +742,16 @@ class ConnectionStore:
             font_size=max(6, min(font_size, 72)),
             foreground=foreground.strip() or DEFAULT_TERMINAL_FOREGROUND,
             background=background.strip() or DEFAULT_TERMINAL_BACKGROUND,
+            split_separator_color=(
+                split_separator_color if split_separator_color is not None else current.split_separator_color
+            ).strip() or DEFAULT_SPLIT_SEPARATOR_COLOR,
+            split_separator_thickness=max(
+                1,
+                min(
+                    split_separator_thickness if split_separator_thickness is not None else current.split_separator_thickness,
+                    12,
+                ),
+            ),
             ls_colors=ls_colors if ls_colors is not None else current.ls_colors,
             ansi_palette=current.ansi_palette or DEFAULT_ANSI_PALETTE.copy(),
             prompt_enabled=current.prompt_enabled if prompt_enabled is None else prompt_enabled,
@@ -752,6 +768,8 @@ class ConnectionStore:
             font_size=current.font_size,
             foreground=current.foreground,
             background=current.background,
+            split_separator_color=current.split_separator_color,
+            split_separator_thickness=current.split_separator_thickness,
             ls_colors=current.ls_colors,
             ansi_palette=current.ansi_palette or DEFAULT_ANSI_PALETTE.copy(),
             prompt_enabled=enabled,

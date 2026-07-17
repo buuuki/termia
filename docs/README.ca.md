@@ -37,7 +37,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Dreceres` i `Seguretat`:
 
 - `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió, que comença amagada per defecte.
-- `Terminal` controla el tipus de lletra, mida, colors i paletes del terminal VTE incrustat. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
+- `Terminal` controla el tipus de lletra, mida, colors, gruix i color del separador de divisió, i paletes del terminal VTE incrustat. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
 - `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. El color predeterminat del prompt és blanc. No altera ordres SSH ni modifica fitxers d'inici remots.
 - `Dreceres` mostra les dreceres actives del terminal i permet gravar combinacions per a accions habituals com copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada. Les tecles `F1`-`F12` sense modificadors s'envien a les aplicacions del terminal.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
