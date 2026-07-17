@@ -189,6 +189,8 @@ MESSAGES = {'servers': 'Show or hide server list',
  'terminal_font_size_changed': 'Terminal font size: {size}',
  'foreground': 'Foreground',
  'background': 'Background',
+ 'split_separator_color': 'Split separator color',
+ 'split_separator_thickness': 'Split separator thickness',
  'palettes': 'Palettes',
  'connection_storage_mode': 'Connection storage',
  'connection_storage_plain': 'Plain text',
@@ -306,7 +308,8 @@ MESSAGES = {'servers': 'Show or hide server list',
                  'menu.\n'
                  '- Configure terminal keybindings, including copy, paste and sending the saved '
                  'password.\n'
-                 '- Configure general options, the VTE terminal and the PS1 prompt separately.\n'
+                 '- Configure general options, the VTE terminal, split separators and the PS1 '
+                 'prompt separately.\n'
                  '- The local prompt supports color, presets, time, date and live preview without '
                  'modifying remote sessions.\n'
                  '- View a local connection history with timestamps, outcomes and durations.\n'

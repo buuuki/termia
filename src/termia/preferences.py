@@ -13,6 +13,9 @@ from .constants import (
     DEFAULT_PROMPT_COLOR,
     DEFAULT_TERMINAL_BACKGROUND,
     DEFAULT_TERMINAL_FOREGROUND,
+    DEFAULT_SPLIT_SEPARATOR_COLOR,
+    DEFAULT_SPLIT_SEPARATOR_THICKNESS,
+    MAX_SPLIT_SEPARATOR_THICKNESS,
     PROMPT_PRESETS,
     TERMINAL_PALETTES,
 )
@@ -417,11 +420,22 @@ class PreferencesMixin:
 
         foreground_button = Gtk.ColorButton()
         foreground_button.set_rgba(parse_color(settings.foreground, DEFAULT_TERMINAL_FOREGROUND))
-        foreground_button.set_title("Foreground")
+        foreground_button.set_title(self.t("foreground"))
 
         background_button = Gtk.ColorButton()
         background_button.set_rgba(parse_color(settings.background, DEFAULT_TERMINAL_BACKGROUND))
-        background_button.set_title("Background")
+        background_button.set_title(self.t("background"))
+
+        split_separator_color_button = Gtk.ColorButton()
+        split_separator_color_button.set_rgba(
+            parse_color(settings.split_separator_color, DEFAULT_SPLIT_SEPARATOR_COLOR)
+        )
+        split_separator_color_button.set_title(self.t("split_separator_color"))
+
+        split_separator_thickness_spin = Gtk.SpinButton.new_with_range(1, MAX_SPLIT_SEPARATOR_THICKNESS, 1)
+        split_separator_thickness_spin.set_value(
+            settings.split_separator_thickness or DEFAULT_SPLIT_SEPARATOR_THICKNESS
+        )
 
         preview = Gtk.Label()
         preview.set_use_markup(True)
@@ -431,6 +445,38 @@ class PreferencesMixin:
         preview.set_margin_start(12)
         preview.set_margin_end(12)
         preview.set_css_classes(["terminal-preview"])
+
+        preview_overlay = Gtk.Overlay()
+        preview_overlay.set_hexpand(True)
+        preview_overlay.set_child(preview)
+
+        split_preview_line = Gtk.Box()
+        split_preview_line.add_css_class("termia-split-preview-line")
+        split_preview_line.set_halign(Gtk.Align.END)
+        split_preview_line.set_valign(Gtk.Align.FILL)
+        split_preview_line.set_margin_top(10)
+        split_preview_line.set_margin_bottom(10)
+        split_preview_line.set_margin_end(12)
+        preview_overlay.add_overlay(split_preview_line)
+
+        preview_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            preview.get_display(),
+            preview_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+        split_preview_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            split_preview_line.get_display(),
+            split_preview_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+
+        display = preview.get_display()
+
+        def cleanup_preview_providers(*_args: object) -> None:
+            Gtk.StyleContext.remove_provider_for_display(display, preview_provider)
+            Gtk.StyleContext.remove_provider_for_display(display, split_preview_provider)
 
         palette_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         for palette_name, (foreground, background) in TERMINAL_PALETTES.items():
@@ -450,6 +496,8 @@ class PreferencesMixin:
             ("", font_size_spin),
             (self.t("foreground"), foreground_button),
             (self.t("background"), background_button),
+            (self.t("split_separator_color"), split_separator_color_button),
+            (self.t("split_separator_thickness"), split_separator_thickness_spin),
             (self.t("palettes"), palette_box),
         ]
         for index, (label_text, widget) in enumerate(rows):
@@ -459,24 +507,63 @@ class PreferencesMixin:
             grid.attach(widget, 1, index, 1, 1)
 
         content.append(grid)
-        content.append(preview)
+        content.append(preview_overlay)
 
-        self.update_terminal_preview(preview, font_combo, font_size_spin, foreground_button, background_button)
+        self.update_terminal_preview(
+            preview,
+            font_combo,
+            font_size_spin,
+            foreground_button,
+            background_button,
+            preview_provider,
+        )
+        self.update_terminal_split_preview(
+            split_preview_line,
+            split_separator_color_button,
+            split_separator_thickness_spin,
+            split_preview_provider,
+        )
         font_combo.connect(
             "changed",
-            lambda *_args: self.update_terminal_preview(preview, font_combo, font_size_spin, foreground_button, background_button),
+            lambda *_args: self.update_terminal_preview(
+                preview, font_combo, font_size_spin, foreground_button, background_button, preview_provider
+            ),
         )
         font_size_spin.connect(
             "value-changed",
-            lambda *_args: self.update_terminal_preview(preview, font_combo, font_size_spin, foreground_button, background_button),
+            lambda *_args: self.update_terminal_preview(
+                preview, font_combo, font_size_spin, foreground_button, background_button, preview_provider
+            ),
         )
         foreground_button.connect(
             "notify::rgba",
-            lambda *_args: self.update_terminal_preview(preview, font_combo, font_size_spin, foreground_button, background_button),
+            lambda *_args: self.update_terminal_preview(
+                preview, font_combo, font_size_spin, foreground_button, background_button, preview_provider
+            ),
         )
         background_button.connect(
             "notify::rgba",
-            lambda *_args: self.update_terminal_preview(preview, font_combo, font_size_spin, foreground_button, background_button),
+            lambda *_args: self.update_terminal_preview(
+                preview, font_combo, font_size_spin, foreground_button, background_button, preview_provider
+            ),
+        )
+        split_separator_color_button.connect(
+            "notify::rgba",
+            lambda *_args: self.update_terminal_split_preview(
+                split_preview_line,
+                split_separator_color_button,
+                split_separator_thickness_spin,
+                split_preview_provider,
+            ),
+        )
+        split_separator_thickness_spin.connect(
+            "value-changed",
+            lambda *_args: self.update_terminal_split_preview(
+                split_preview_line,
+                split_separator_color_button,
+                split_separator_thickness_spin,
+                split_preview_provider,
+            ),
         )
 
         dialog.connect(
@@ -486,7 +573,10 @@ class PreferencesMixin:
             font_size_spin,
             foreground_button,
             background_button,
+            split_separator_color_button,
+            split_separator_thickness_spin,
         )
+        dialog.connect("destroy", cleanup_preview_providers)
         dialog.present()
 
     def on_prompt_settings(self, _button: Gtk.Button) -> None:
@@ -573,34 +663,70 @@ class PreferencesMixin:
         preview.set_margin_end(12)
         preview.set_css_classes(["terminal-preview"])
 
+        preview_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            preview.get_display(),
+            preview_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+        display = preview.get_display()
+
+        def cleanup_preview_provider(*_args: object) -> None:
+            Gtk.StyleContext.remove_provider_for_display(display, preview_provider)
+
         content.append(grid)
         content.append(preview)
 
         self.update_prompt_preview(
-            preview, prompt_enabled, prompt_datetime_combo, prompt_template_entry, prompt_color_button
+            preview,
+            prompt_enabled,
+            prompt_datetime_combo,
+            prompt_template_entry,
+            prompt_color_button,
+            preview_provider,
         )
         prompt_enabled.connect(
             "toggled",
             lambda *_args: self.update_prompt_preview(
-                preview, prompt_enabled, prompt_datetime_combo, prompt_template_entry, prompt_color_button
+                preview,
+                prompt_enabled,
+                prompt_datetime_combo,
+                prompt_template_entry,
+                prompt_color_button,
+                preview_provider,
             ),
         )
         prompt_datetime_combo.connect(
             "changed",
             lambda *_args: self.update_prompt_preview(
-                preview, prompt_enabled, prompt_datetime_combo, prompt_template_entry, prompt_color_button
+                preview,
+                prompt_enabled,
+                prompt_datetime_combo,
+                prompt_template_entry,
+                prompt_color_button,
+                preview_provider,
             ),
         )
         prompt_template_entry.connect(
             "changed",
             lambda *_args: self.update_prompt_preview(
-                preview, prompt_enabled, prompt_datetime_combo, prompt_template_entry, prompt_color_button
+                preview,
+                prompt_enabled,
+                prompt_datetime_combo,
+                prompt_template_entry,
+                prompt_color_button,
+                preview_provider,
             ),
         )
         prompt_color_button.connect(
             "notify::rgba",
             lambda *_args: self.update_prompt_preview(
-                preview, prompt_enabled, prompt_datetime_combo, prompt_template_entry, prompt_color_button
+                preview,
+                prompt_enabled,
+                prompt_datetime_combo,
+                prompt_template_entry,
+                prompt_color_button,
+                preview_provider,
             ),
         )
 
@@ -612,6 +738,7 @@ class PreferencesMixin:
             prompt_template_entry,
             prompt_color_button,
         )
+        dialog.connect("destroy", cleanup_preview_provider)
         dialog.present()
 
     def on_terminal_palette_clicked(
@@ -666,6 +793,7 @@ class PreferencesMixin:
         font_size_spin: Gtk.SpinButton,
         foreground_button: Gtk.ColorButton,
         background_button: Gtk.ColorButton,
+        provider: Gtk.CssProvider,
     ) -> None:
         font_family = self.selected_terminal_font_family(font_combo)
         font_size = int(font_size_spin.get_value())
@@ -681,13 +809,7 @@ class PreferencesMixin:
             "border-radius: 6px;"
             "}"
         )
-        provider = Gtk.CssProvider()
         provider.load_from_data(css.encode())
-        Gtk.StyleContext.add_provider_for_display(
-            preview.get_display(),
-            provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
-        )
 
     def update_prompt_preview(
         self,
@@ -696,6 +818,7 @@ class PreferencesMixin:
         prompt_datetime_combo: Gtk.ComboBoxText,
         prompt_template_entry: Gtk.Entry,
         prompt_color_button: Gtk.ColorButton,
+        provider: Gtk.CssProvider,
     ) -> None:
         command_markup = GLib.markup_escape_text("ssh ejemplo\nSalida de terminal")
         if prompt_enabled.get_active():
@@ -720,13 +843,29 @@ class PreferencesMixin:
             "border-radius: 6px;"
             "}"
         )
-        provider = Gtk.CssProvider()
         provider.load_from_data(css.encode())
-        Gtk.StyleContext.add_provider_for_display(
-            preview.get_display(),
-            provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+
+    def update_terminal_split_preview(
+        self,
+        preview_line: Gtk.Widget,
+        split_separator_color_button: Gtk.ColorButton,
+        split_separator_thickness_spin: Gtk.SpinButton,
+        provider: Gtk.CssProvider,
+    ) -> None:
+        split_separator_color = rgba_to_hex(split_separator_color_button.get_rgba())
+        split_separator_thickness = max(
+            1,
+            min(int(split_separator_thickness_spin.get_value()), MAX_SPLIT_SEPARATOR_THICKNESS),
         )
+        preview_line.set_size_request(split_separator_thickness, -1)
+        css = (
+            ".termia-split-preview-line {"
+            f"background: {split_separator_color};"
+            f"background-color: {split_separator_color};"
+            "border-radius: 999px;"
+            "}"
+        )
+        provider.load_from_data(css.encode())
 
     def on_prompt_settings_response(
         self,
@@ -740,11 +879,11 @@ class PreferencesMixin:
         if response == Gtk.ResponseType.OK:
             try:
                 self.store.update_prompt_settings(
-                prompt_enabled.get_active(),
-                prompt_template_with_datetime(
-                    prompt_template_entry.get_text(), prompt_datetime_combo.get_active_id() or "none"
-                ),
-                rgba_to_hex(prompt_color_button.get_rgba()),
+                    prompt_enabled.get_active(),
+                    prompt_template_with_datetime(
+                        prompt_template_entry.get_text(), prompt_datetime_combo.get_active_id() or "none"
+                    ),
+                    rgba_to_hex(prompt_color_button.get_rgba()),
                 )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
@@ -761,19 +900,24 @@ class PreferencesMixin:
         font_size_spin: Gtk.SpinButton,
         foreground_button: Gtk.ColorButton,
         background_button: Gtk.ColorButton,
+        split_separator_color_button: Gtk.ColorButton,
+        split_separator_thickness_spin: Gtk.SpinButton,
     ) -> None:
         if response == Gtk.ResponseType.OK:
             try:
                 self.store.update_terminal_settings(
-                self.selected_terminal_font_family(font_combo),
-                int(font_size_spin.get_value()),
-                foreground_button.get_rgba().to_string(),
-                background_button.get_rgba().to_string(),
+                    self.selected_terminal_font_family(font_combo),
+                    int(font_size_spin.get_value()),
+                    foreground_button.get_rgba().to_string(),
+                    background_button.get_rgba().to_string(),
+                    split_separator_color_button.get_rgba().to_string(),
+                    int(split_separator_thickness_spin.get_value()),
                 )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
                 dialog.destroy()
                 return
             self.apply_terminal_settings_to_open_tabs()
+            self.install_tree_styles()
             self.toast_label.set_label(self.t("terminal_settings_saved"))
         dialog.destroy()

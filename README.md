@@ -39,7 +39,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybindings`, and `Security`:
 
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
-- `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, and color palettes. New installations start with JetBrains Mono and the Polaris palette.
+- `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, split separator color/thickness, and color palettes. New installations start with JetBrains Mono and the Polaris palette.
 - `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. The default prompt color is white. It does not alter SSH commands or modify remote shell startup files.
 - `Keybindings` shows the active terminal shortcuts and lets you record shortcut combinations for common actions such as copy, paste, tab switching, font zoom, and sending the saved password. Unmodified `F1`-`F12` keys pass through to terminal applications.
 - `Security` controls connection storage mode.
