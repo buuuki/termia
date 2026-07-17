@@ -77,9 +77,23 @@ class TabsMixin:
                 return
         self.set_title("Termia")
 
-    def focus_available_session_after_close(self, closed_session_id: str) -> None:
-        for session in self.visible_sessions_in_tab_order():
-            if session.id != closed_session_id:
+    def focus_available_session_after_close(
+        self,
+        closed_session_id: str,
+        previous_order: list[TerminalSession],
+    ) -> None:
+        closed_index = next(
+            (index for index, session in enumerate(previous_order) if session.id == closed_session_id),
+            -1,
+        )
+        if closed_index < 0:
+            return
+        focus_candidates = [
+            *reversed(previous_order[:closed_index]),
+            *previous_order[closed_index + 1 :],
+        ]
+        for session in focus_candidates:
+            if session.id in self.open_tabs and session.detached_window is None:
                 self.set_active_session(session.id)
                 return
 
@@ -347,6 +361,7 @@ class TabsMixin:
             session = self.open_tabs.get(session_id)
         if session is None:
             return
+        previous_order = self.visible_sessions_in_tab_order()
         self.terminate_split_processes(session)
         if session.detached_window is not None:
             window = session.detached_window
@@ -357,5 +372,5 @@ class TabsMixin:
             self.remove_session_from_main_view(session)
         self.open_tabs.pop(session_id, None)
         self.update_session_tab_bar_visibility()
-        self.focus_available_session_after_close(session_id)
+        self.focus_available_session_after_close(session_id, previous_order)
         self.sync_window_title_with_visible_session()
