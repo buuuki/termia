@@ -238,11 +238,14 @@ class TerminalSessionsMixin:
         return GLib.SOURCE_REMOVE
 
     def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
+        self.mark_terminal_inactive(terminal, session)
+        if not session.disconnect_requested and self.child_status_successful(_status) and session.active_terminal_ids:
+            self.remove_terminal_pane_if_split(terminal, session)
+            return
         self.record_session_duration(session)
         self.save_statistics_now()
         result = "disconnected" if session.disconnect_requested else ("closed" if self.child_status_successful(_status) else "failed")
         self.store.record_history_end(session, result)
-        self.mark_terminal_inactive(terminal, session)
         session.connected = False
         session.disconnect_button.set_sensitive(False)
         if session.disconnect_requested:
@@ -816,6 +819,15 @@ class TerminalSessionsMixin:
         if self.should_close_tab_after_terminal_exit(session):
             self.close_tab(session.id, session.page, disconnect=False)
             return
+        if not session.disconnect_requested and not session.active_terminal_ids:
+            self.record_session_duration(session)
+            self.save_statistics_now()
+            result = "closed" if self.child_status_successful(_status) else "failed"
+            self.store.record_history_end(session, result)
+            session.connected = False
+            session.disconnect_button.set_sensitive(False)
+            session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
+            self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
         GLib.idle_add(self.remove_split_terminal_pane, terminal, session)
 
     def remove_split_terminal_pane(self, terminal: Vte.Terminal, session: TerminalSession) -> bool:
@@ -1317,11 +1329,14 @@ class TerminalSessionsMixin:
         server: Server,
         session: TerminalSession,
     ) -> None:
+        self.mark_terminal_inactive(terminal, session)
+        if not session.disconnect_requested and self.child_status_successful(_status) and session.active_terminal_ids:
+            self.remove_terminal_pane_if_split(terminal, session)
+            return
         self.record_session_duration(session)
         self.save_statistics_now()
         result = "disconnected" if session.disconnect_requested else ("closed" if self.child_status_successful(_status) else "failed")
         self.store.record_history_end(session, result)
-        self.mark_terminal_inactive(terminal, session)
         session.connected = False
         session.disconnect_button.set_sensitive(False)
         if session.disconnect_requested:
