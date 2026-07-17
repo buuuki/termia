@@ -465,10 +465,6 @@ class PreferencesMixin:
             preview_provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
-        display = preview.get_display()
-
-        def cleanup_preview_provider(*_args: object) -> None:
-            Gtk.StyleContext.remove_provider_for_display(display, preview_provider)
         split_preview_provider = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_display(
             split_preview_line.get_display(),
@@ -673,6 +669,10 @@ class PreferencesMixin:
             preview_provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
+        display = preview.get_display()
+
+        def cleanup_preview_provider(*_args: object) -> None:
+            Gtk.StyleContext.remove_provider_for_display(display, preview_provider)
 
         content.append(grid)
         content.append(preview)
