@@ -15,6 +15,8 @@ from . import __version__
 
 
 class MainMenuMixin:
+    POPOVER_CALLBACK_DELAY_MS = 100
+
     def build_main_menu(self) -> Gtk.Popover:
         popover = Gtk.Popover()
         popover.add_css_class("termia-menu-popover")
@@ -131,7 +133,7 @@ class MainMenuMixin:
             callback(None)
             return GLib.SOURCE_REMOVE
 
-        GLib.idle_add(run_callback)
+        GLib.timeout_add(self.POPOVER_CALLBACK_DELAY_MS, run_callback)
 
     def run_action_after_popover_closed(self, popover: Gtk.Popover, callback: Any) -> None:
         popover.popdown()
@@ -140,7 +142,7 @@ class MainMenuMixin:
             callback()
             return GLib.SOURCE_REMOVE
 
-        GLib.idle_add(run_callback)
+        GLib.timeout_add(self.POPOVER_CALLBACK_DELAY_MS, run_callback)
 
     def add_dialog_action_button(
         self, dialog: Gtk.Dialog, label: str, response: Gtk.ResponseType, *, last: bool = False
