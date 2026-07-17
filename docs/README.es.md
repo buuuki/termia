@@ -30,7 +30,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Personalizar el prompt local con colores, temas predefinidos y prefijos de hora o fecha sin cambiar ficheros de inicio ni comandos remotos.
 - Usar la interfaz en español, catalán o inglés. El idioma inicial sigue el locale del sistema cuando está soportado.
 - Importar y exportar configuraciones de Termia.
-- Importar conexiones y grupos anidados básicos desde YAML de Asbru.
+- Importar conexiones, grupos anidados y contraseñas guardadas desde YAML de Asbru cuando estén disponibles.
 
 ## Notas de uso
 
@@ -116,7 +116,7 @@ Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 ~/.local/state/termia/statistics.json
 ```
 
-Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano u ofuscado desde las preferencias de Seguridad. La ofuscación no es cifrado.
+Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano u ofuscado desde las preferencias de Seguridad. La ofuscación no es cifrado. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
 Los ficheros de conexiones exportados también pueden contener credenciales.
 Los contadores locales agregados se guardan por separado en `statistics.json`, vienen desactivados por defecto y se pueden activar o desactivar desde las preferencias generales. Cuando hay varios procesos de Termia abiertos al mismo tiempo, solo la instancia que mantiene `instance.lock` escribe conexiones, ajustes o estadísticas; las siguientes permanecen en solo lectura para evitar corromper esos ficheros.
 Las conexiones recientes se guardan aparte en `recent_connections.jsonl` para que la barra lateral pueda mostrar una sección Recent pequeña y sin duplicados basada en las últimas conexiones SSH correctas.
