@@ -14,8 +14,15 @@ echo "Starting Termia test instance"
 echo "Profile: ${PROFILE_NAME}"
 echo "Config:  ${DATA_ROOT}/config/termia"
 echo "State:   ${DATA_ROOT}/state/termia"
+echo "Debug:   PYTHONFAULTHANDLER=1 PYTHONUNBUFFERED=1 G_ENABLE_DIAGNOSTIC=1 G_MESSAGES_DEBUG=all"
+echo "PID:     $$"
 
 cd "${REPO_ROOT}"
-XDG_CONFIG_HOME="${DATA_ROOT}/config" \
-XDG_STATE_HOME="${DATA_ROOT}/state" \
-python3 run_termia.py
+exec env \
+    XDG_CONFIG_HOME="${DATA_ROOT}/config" \
+    XDG_STATE_HOME="${DATA_ROOT}/state" \
+    PYTHONFAULTHANDLER="${PYTHONFAULTHANDLER:-1}" \
+    PYTHONUNBUFFERED="${PYTHONUNBUFFERED:-1}" \
+    G_ENABLE_DIAGNOSTIC="${G_ENABLE_DIAGNOSTIC:-1}" \
+    G_MESSAGES_DEBUG="${G_MESSAGES_DEBUG:-all}" \
+    python3 run_termia.py
