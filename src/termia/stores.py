@@ -19,6 +19,7 @@ from .constants import (
     DEFAULT_TERMINAL_FOREGROUND,
     DEFAULT_SPLIT_SEPARATOR_COLOR,
     DEFAULT_SPLIT_SEPARATOR_THICKNESS,
+    MAX_SPLIT_SEPARATOR_THICKNESS,
     HISTORY_FILE,
     INSTANCE_LOCK_FILE,
     LEGACY_ANSI_PALETTE,
@@ -376,7 +377,13 @@ def normalize_terminal_settings(terminal: TerminalSettings) -> TerminalSettings:
         terminal.background = DEFAULT_TERMINAL_BACKGROUND
     if terminal.ansi_palette == LEGACY_ANSI_PALETTE:
         terminal.ansi_palette = DEFAULT_ANSI_PALETTE.copy()
-    terminal.split_separator_thickness = max(1, terminal.split_separator_thickness or DEFAULT_SPLIT_SEPARATOR_THICKNESS)
+    terminal.split_separator_thickness = max(
+        1,
+        min(
+            terminal.split_separator_thickness or DEFAULT_SPLIT_SEPARATOR_THICKNESS,
+            MAX_SPLIT_SEPARATOR_THICKNESS,
+        ),
+    )
     terminal.split_separator_color = terminal.split_separator_color.strip() or DEFAULT_SPLIT_SEPARATOR_COLOR
     return terminal
 
@@ -749,7 +756,7 @@ class ConnectionStore:
                 1,
                 min(
                     split_separator_thickness if split_separator_thickness is not None else current.split_separator_thickness,
-                    12,
+                    MAX_SPLIT_SEPARATOR_THICKNESS,
                 ),
             ),
             ls_colors=ls_colors if ls_colors is not None else current.ls_colors,
