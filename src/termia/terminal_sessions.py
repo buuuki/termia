@@ -550,11 +550,11 @@ class TerminalSessionsMixin:
         if new_size == settings.font_size:
             return
         self.store.update_terminal_settings(
-            settings.font_family,
-            new_size,
-            settings.foreground,
-            settings.background,
-            settings.ls_colors,
+            font_family=settings.font_family,
+            font_size=new_size,
+            foreground=settings.foreground,
+            background=settings.background,
+            ls_colors=settings.ls_colors,
         )
         self.apply_terminal_settings_to_open_tabs()
         self.toast_label.set_label(self.t("terminal_font_size_changed").format(size=new_size))

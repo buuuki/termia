@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import re
 import time
 from dataclasses import asdict
 from datetime import datetime
@@ -387,8 +388,20 @@ def normalize_terminal_settings(terminal: TerminalSettings) -> TerminalSettings:
             MAX_SPLIT_SEPARATOR_THICKNESS,
         ),
     )
-    terminal.split_separator_color = terminal.split_separator_color.strip() or DEFAULT_SPLIT_SEPARATOR_COLOR
+    terminal.split_separator_color = normalize_css_color(
+        terminal.split_separator_color,
+        DEFAULT_SPLIT_SEPARATOR_COLOR,
+    )
     return terminal
+
+
+def normalize_css_color(value: str, default: str) -> str:
+    color = value.strip()
+    if re.fullmatch(r"#[0-9a-fA-F]{3,8}", color):
+        return color
+    if re.fullmatch(r"rgba?\([0-9., %]+\)", color):
+        return color
+    return default
 
 
 class ConnectionStore:
