@@ -3,15 +3,15 @@
 This document tracks planned work and longer-term ideas for Termia.
 It is not a release log or a regression checklist.
 
-## Alpha Exit
+## Beta Exit
 
-Goals for moving Termia from a changing alpha state to a more stable release
-line.
+Goals for moving Termia from a beta release line to a stable release line.
 
 - [ ] Keep the current layout, menu structure, and keyboard behavior stable
-      across releases.
-- [ ] Convert the behaviors in `docs/REGRESSION_CHECKS.md` into automated
-      tests where practical, starting with pure logic and high-risk flows.
+      across beta releases.
+- [ ] Expand automated coverage for the behaviors in
+      `docs/REGRESSION_CHECKS.md` where practical, starting with pure logic and
+      high-risk flows.
 - [ ] Reduce duplicate configuration paths so terminal, prompt, keybinding, and
       security settings have a single source of truth.
 - [ ] Tighten documentation so README, localized docs, and in-app labels all
