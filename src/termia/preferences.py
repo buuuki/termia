@@ -906,12 +906,12 @@ class PreferencesMixin:
         if response == Gtk.ResponseType.OK:
             try:
                 self.store.update_terminal_settings(
-                    self.selected_terminal_font_family(font_combo),
-                    int(font_size_spin.get_value()),
-                    foreground_button.get_rgba().to_string(),
-                    background_button.get_rgba().to_string(),
-                    split_separator_color_button.get_rgba().to_string(),
-                    int(split_separator_thickness_spin.get_value()),
+                    font_family=self.selected_terminal_font_family(font_combo),
+                    font_size=int(font_size_spin.get_value()),
+                    foreground=foreground_button.get_rgba().to_string(),
+                    background=background_button.get_rgba().to_string(),
+                    split_separator_color=split_separator_color_button.get_rgba().to_string(),
+                    split_separator_thickness=int(split_separator_thickness_spin.get_value()),
                 )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
