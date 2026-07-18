@@ -99,6 +99,14 @@ msgstr "Sin grupo padre"
 msgid "Cancel"
 msgstr "Cancelar"
 
+#: src/termia/i18n.py:continue
+msgid "Continue"
+msgstr "Continuar"
+
+#: src/termia/i18n.py:unlock
+msgid "Unlock"
+msgstr "Desbloquear"
+
 #: src/termia/i18n.py:close
 msgid "Close"
 msgstr "Cerrar"
@@ -569,9 +577,87 @@ msgstr "Texto plano"
 msgid "Obfuscated"
 msgstr "Ofuscado"
 
+#: src/termia/i18n.py:connection_storage_encrypted
+msgid "Encrypted"
+msgstr "Cifrado"
+
 #: src/termia/i18n.py:connection_storage_obfuscated_warning
 msgid "Obfuscation prevents accidental file reads, but it does not encrypt data or protect against an attacker with access to the code."
 msgstr "La ofuscación evita lecturas accidentales del fichero, pero no cifra ni protege frente a un atacante con acceso al código."
+
+#: src/termia/i18n.py:enable_connection_encryption_title
+msgid "Enable connection file encryption"
+msgstr "Activar cifrado del archivo de conexiones"
+
+#: src/termia/i18n.py:enable_connection_encryption_detail
+msgid ""
+"Termia will encrypt the file that stores your servers, users, private key paths, and saved passwords.\n"
+"\n"
+"From now on, Termia will ask for the master password every time it starts.\n"
+"\n"
+"If you forget the master password, Termia cannot recover these data. You will need to restore them from a backup or configure them again manually.\n"
+"\n"
+"After reading this information, do you want to continue enabling encryption?"
+msgstr ""
+"Termia cifrará el archivo donde guarda tus servidores, usuarios, rutas de claves privadas y contraseñas guardadas.\n"
+"\n"
+"A partir de ahora, Termia pedirá la contraseña maestra cada vez que arranque.\n"
+"\n"
+"Si olvidas la contraseña maestra, Termia no podrá recuperar estos datos. Tendrás que restaurarlos desde una copia o volver a configurarlos manualmente.\n"
+"\n"
+"Después de leer esta información, ¿quieres continuar con la activación del cifrado?"
+
+#: src/termia/i18n.py:master_password_title
+msgid "Set master password"
+msgstr "Definir contraseña maestra"
+
+#: src/termia/i18n.py:master_password_detail
+msgid "Choose the master password that will unlock your Termia connections."
+msgstr "Elige la contraseña maestra que desbloqueará tus conexiones de Termia."
+
+#: src/termia/i18n.py:master_password
+msgid "Master password"
+msgstr "Contraseña maestra"
+
+#: src/termia/i18n.py:confirm_master_password
+msgid "Confirm master password"
+msgstr "Confirmar contraseña maestra"
+
+#: src/termia/i18n.py:enable_encryption
+msgid "Enable encryption"
+msgstr "Activar cifrado"
+
+#: src/termia/i18n.py:master_password_too_short
+msgid "Use at least 8 characters."
+msgstr "Usa al menos 8 caracteres."
+
+#: src/termia/i18n.py:master_password_mismatch
+msgid "The master passwords do not match."
+msgstr "Las contraseñas maestras no coinciden."
+
+#: src/termia/i18n.py:unlock_connections_title
+msgid "Unlock connections"
+msgstr "Desbloquear conexiones"
+
+#: src/termia/i18n.py:unlock_connections_detail
+msgid "Enter the master password to unlock your Termia connections."
+msgstr "Introduce la contraseña maestra para desbloquear tus conexiones de Termia."
+
+#: src/termia/i18n.py:unlock_connections_failed
+msgid "Could not unlock connections with this master password."
+msgstr "No se pudieron desbloquear las conexiones con esta contraseña maestra."
+
+#: src/termia/i18n.py:connections_locked
+msgid "Connections are locked until the master password is entered."
+msgstr "Las conexiones están bloqueadas hasta introducir la contraseña maestra."
+
+#: src/termia/i18n.py:connections_locked_tooltip
+msgid "Unlock encrypted connections before changing configuration."
+msgstr "Desbloquea las conexiones cifradas antes de cambiar la configuración."
+
+#: src/termia/i18n.py:connections_unlocked
+msgid "Connections unlocked"
+msgstr "Conexiones desbloqueadas"
 
 #: src/termia/i18n.py:configuration
 msgid "Configuration"

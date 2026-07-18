@@ -34,7 +34,8 @@ def fail(message):
     print("Run ./scripts/install_dependencies.sh to install Termia dependencies.", file=sys.stderr)
     print(
         "Debian/Ubuntu/Linux Mint package hint: sudo apt install python3-gi "
-        "gir1.2-gtk-4.0 gir1.2-vte-3.91 python3-yaml openssh-client sshpass",
+        "gir1.2-gtk-4.0 gir1.2-vte-3.91 python3-yaml python3-cryptography "
+        "openssh-client sshpass",
         file=sys.stderr,
     )
     print("Termia requires GTK 4 VTE (Vte 3.91); Vte 2.91 is not enough.", file=sys.stderr)
@@ -65,6 +66,11 @@ try:
     from gi.repository import Gtk, Gdk, Pango, Vte
 except (ImportError, ValueError) as exc:
     fail(f"Could not load GTK/VTE bindings: {exc}")
+
+try:
+    import cryptography
+except ImportError:
+    fail("Missing Python cryptography package: python3-cryptography is not installed.")
 
 print("Python/GTK dependencies OK")
 PY_CHECK
@@ -114,6 +120,7 @@ install_packages() {
       python3 \
       python3-gi \
       python3-yaml \
+      python3-cryptography \
       gir1.2-gtk-4.0 \
       gir1.2-vte-3.91 \
       openssh-client \
@@ -125,6 +132,7 @@ install_packages() {
       python3 \
       python3-gobject \
       python3-pyyaml \
+      python3-cryptography \
       gtk4 \
       vte291-gtk4 \
       openssh-clients \
@@ -136,6 +144,7 @@ install_packages() {
       python \
       python-gobject \
       python-yaml \
+      python-cryptography \
       gtk4 \
       vte4 \
       openssh \

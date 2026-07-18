@@ -9,7 +9,7 @@ description = "GTK SSH connection manager with embedded terminals"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
-dependencies = ["PyYAML>=6.0"]
+dependencies = ["cryptography>=41.0", "PyYAML>=6.0"]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
   "Operating System :: POSIX :: Linux",

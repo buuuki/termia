@@ -50,6 +50,9 @@ class ConfigActionsMixin:
         except GLib.Error:
             return
         if file and file.get_path():
+            if self.store.encryption_locked:
+                self.toast_label.set_label(self.t("connections_locked"))
+                return
             destination = Path(file.get_path())
             if self.store.read_only or not self.store.path.exists():
                 write_connections_file(
@@ -58,6 +61,7 @@ class ConfigActionsMixin:
                     self.store.data.servers,
                     self.store.data.local_terminals,
                     self.store.data.app.connection_storage_mode,
+                    self.store.master_password,
                 )
             else:
                 self.store.save_connections()

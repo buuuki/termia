@@ -8,11 +8,12 @@ Termia stores configured SSH passwords in:
 ~/.config/termia/connections.json
 ```
 
-The connection file can be kept as plain text or obfuscated from `Security`
-preferences. Obfuscation only reduces accidental readability of the file; it is
-not encryption and is not a replacement for a secret store. The file is written
-with permissions `0600`, but you should still not publish, commit, or share it.
-Prefer SSH keys where possible.
+The connection file can be kept as plain text, obfuscated, or encrypted from
+`Security` preferences. Obfuscation only reduces accidental readability of the
+file; encrypted storage uses a master password and asks for it each time Termia
+starts. If the master password is lost, Termia cannot recover the encrypted
+connection data. The file is written with permissions `0600`, but you should
+still not publish, commit, or share it. Prefer SSH keys where possible.
 
 Exported configuration files can also contain passwords. Treat them as sensitive
 files, even when the local connection file uses obfuscated storage.

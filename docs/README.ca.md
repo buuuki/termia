@@ -116,7 +116,7 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 ~/.local/state/termia/statistics.json
 ```
 
-Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla o ofuscat des de les preferències de Seguretat. L'ofuscació no és xifratge. Les contrasenyes importades des d'Ásbrú es desaran igual quan el YAML d'origen les exposi al camp `pass`.
+Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla, ofuscat o xifrat amb una contrasenya mestra des de les preferències de Seguretat. Quan el xifratge està activat, Termia demana la contrasenya mestra en arrencar i no pot recuperar les dades de connexió si aquesta contrasenya es perd. Les contrasenyes importades des d'Ásbrú es desaran igual quan el YAML d'origen les exposi al camp `pass`.
 Els fitxers de connexions exportats també poden contenir credencials.
 Els comptadors locals agregats es desen per separat a `statistics.json`, venen desactivats per defecte i es poden activar o desactivar des de les preferències generals. Quan hi ha diversos processos de Termia oberts al mateix temps, només la instància que manté `instance.lock` escriu connexions, ajustos o estadístiques; les següents romanen en només lectura per evitar corrompre aquests fitxers.
 Les connexions recents es desen a part a `recent_connections.jsonl` perquè la barra lateral pugui mostrar una secció Recent petita i sense duplicats basada en les últimes connexions SSH correctes.

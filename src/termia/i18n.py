@@ -70,6 +70,8 @@ MESSAGES = {'servers': 'Show or hide server list',
  'parent_group': 'Parent group',
  'no_parent_group': 'No parent group',
  'cancel': 'Cancel',
+ 'continue': 'Continue',
+ 'unlock': 'Unlock',
  'close': 'Close',
  'save': 'Save',
  'name': 'Name',
@@ -195,9 +197,33 @@ MESSAGES = {'servers': 'Show or hide server list',
  'connection_storage_mode': 'Connection storage',
  'connection_storage_plain': 'Plain text',
  'connection_storage_obfuscated': 'Obfuscated',
+ 'connection_storage_encrypted': 'Encrypted',
  'connection_storage_obfuscated_warning': 'Obfuscation prevents accidental file reads, but it does '
                                           'not encrypt data or protect against an attacker with '
                                           'access to the code.',
+ 'enable_connection_encryption_title': 'Enable connection file encryption',
+ 'enable_connection_encryption_detail': 'Termia will encrypt the file that stores your servers, '
+                                        'users, private key paths, and saved passwords.\n\n'
+                                        'From now on, Termia will ask for the master password every '
+                                        'time it starts.\n\n'
+                                        'If you forget the master password, Termia cannot recover '
+                                        'these data. You will need to restore them from a backup or '
+                                        'configure them again manually.\n\n'
+                                        'After reading this information, do you want to continue '
+                                        'enabling encryption?',
+ 'master_password_title': 'Set master password',
+ 'master_password_detail': 'Choose the master password that will unlock your Termia connections.',
+ 'master_password': 'Master password',
+ 'confirm_master_password': 'Confirm master password',
+ 'enable_encryption': 'Enable encryption',
+ 'master_password_too_short': 'Use at least 8 characters.',
+ 'master_password_mismatch': 'The master passwords do not match.',
+ 'unlock_connections_title': 'Unlock connections',
+ 'unlock_connections_detail': 'Enter the master password to unlock your Termia connections.',
+ 'unlock_connections_failed': 'Could not unlock connections with this master password.',
+ 'connections_locked': 'Connections are locked until the master password is entered.',
+ 'connections_locked_tooltip': 'Unlock encrypted connections before changing configuration.',
+ 'connections_unlocked': 'Connections unlocked',
  'configuration': 'Configuration',
  'connections_file': 'Import/Export',
  'export_config': 'Export configuration',
