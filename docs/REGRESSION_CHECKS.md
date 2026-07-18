@@ -83,12 +83,14 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Existing combined `connections.json` files must remain loadable and migrate app/terminal settings into `settings.json` without losing groups, servers, or preferences.
 - New plain `connections.json` writes must contain only groups and servers; app and terminal preferences must be written to `settings.json`.
 - Obfuscated connection storage must decode back to the same groups, servers, passwords, and private key paths, and switching modes must rewrite the file immediately.
+- Encrypted connection storage must require a master password on startup, preserve groups, servers, passwords, and private key paths after unlock, allow canceling activation before setting a password, and never silently recover data if the master password is lost.
 - Import/export configuration must preserve groups, subgroups, servers, SSH user, port, host, password, and private key path where available.
 - Importing Asbru configuration must not add unwanted suffixes such as `- copy`.
 - Launching a second Termia process must open a separate window and leave the new instance in read-only mode instead of writing shared config files concurrently.
 - A read-only instance must keep connect and export flows available while preventing edits, imports, clears, preference saves, and statistics writes.
 - Clearing configuration must require confirmation.
 - Passwords are currently stored in the JSON file by explicit project decision; warnings and documentation must remain accurate until storage changes.
+- Security preferences must clearly warn before enabling encryption that Termia will ask for the master password on every startup and that lost master passwords cannot be recovered.
 
 ### Application Appearance and Themes
 

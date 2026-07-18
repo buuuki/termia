@@ -27,8 +27,11 @@ from .constants import (
     STATISTICS_FILE,
 )
 from .config_io import (
+    CONNECTION_STORAGE_ENCRYPTED,
     CONNECTION_STORAGE_MODES,
     CONNECTION_STORAGE_PLAIN,
+    InvalidMasterPasswordError,
+    MissingMasterPasswordError,
     connection_storage_mode_from_payload,
     decoded_connections_payload,
     read_raw_connections_payload,
@@ -406,6 +409,9 @@ class ConnectionStore:
             *self.settings_store.recovery_messages,
             *self.statistics_store.recovery_messages,
         ]
+        self.encryption_locked = False
+        self.encryption_error = ""
+        self.master_password: str | None = None
         self.data = StoreData(
             local_terminals=[],
             terminal=self.settings_store.terminal,
@@ -427,7 +433,29 @@ class ConnectionStore:
         try:
             raw_payload = read_raw_connections_payload(self.path)
             file_storage_mode = connection_storage_mode_from_payload(raw_payload)
-            payload = decoded_connections_payload(raw_payload)
+            payload = decoded_connections_payload(raw_payload, self.master_password)
+        except MissingMasterPasswordError:
+            self.encryption_locked = True
+            self.encryption_error = ""
+            self.data = StoreData(
+                local_terminals=[],
+                terminal=self.settings_store.terminal,
+                app=self.settings_store.app,
+                statistics=self.statistics_store.data,
+            )
+            self.data.app.connection_storage_mode = CONNECTION_STORAGE_ENCRYPTED
+            return
+        except InvalidMasterPasswordError as exc:
+            self.encryption_locked = True
+            self.encryption_error = str(exc)
+            self.data = StoreData(
+                local_terminals=[],
+                terminal=self.settings_store.terminal,
+                app=self.settings_store.app,
+                statistics=self.statistics_store.data,
+            )
+            self.data.app.connection_storage_mode = CONNECTION_STORAGE_ENCRYPTED
+            return
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
             backup = backup_invalid_file(self.path, self.read_only)
             self.recovery_messages.append(str(backup or self.path))
@@ -438,6 +466,8 @@ class ConnectionStore:
                 statistics=self.statistics_store.data,
             )
             return
+        self.encryption_locked = False
+        self.encryption_error = ""
         legacy_statistics = payload.get("statistics")
         if legacy_statistics and not self.statistics_store.path.exists():
             self.statistics_store.data = StatisticsSettings(**legacy_statistics)
@@ -484,6 +514,17 @@ class ConnectionStore:
     def ensure_writable(self) -> None:
         if self.read_only:
             raise ReadOnlyStoreError("This Termia instance is read-only.")
+        if self.encryption_locked:
+            raise ReadOnlyStoreError("Encrypted connections are locked.")
+
+    def unlock_connections(self, master_password: str) -> bool:
+        self.master_password = master_password
+        self.load()
+        if self.encryption_locked:
+            self.master_password = None
+            return False
+        self.save_settings()
+        return True
 
     def repair_references(self) -> bool:
         group_ids = {group.id for group in self.data.groups}
@@ -513,7 +554,7 @@ class ConnectionStore:
         return changed
 
     def save_connections(self) -> None:
-        if self.read_only:
+        if self.read_only or self.encryption_locked:
             return
         write_connections_file(
             self.path,
@@ -521,6 +562,7 @@ class ConnectionStore:
             self.data.servers,
             self.data.local_terminals,
             self.data.app.connection_storage_mode,
+            self.master_password,
         )
 
     def save_settings(self) -> None:
@@ -560,11 +602,17 @@ class ConnectionStore:
     def recent_server_ids(self, limit: int = 10) -> list[str]:
         return self.history_store.recent_server_ids(limit)
 
-    def update_connection_storage_mode(self, storage_mode: str) -> None:
+    def update_connection_storage_mode(self, storage_mode: str, master_password: str | None = None) -> None:
         self.ensure_writable()
-        self.data.app.connection_storage_mode = (
-            storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
-        )
+        requested = storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
+        if requested == CONNECTION_STORAGE_ENCRYPTED:
+            if master_password:
+                self.master_password = master_password
+            if not self.master_password:
+                raise MissingMasterPasswordError("Encrypted connections require a master password.")
+        else:
+            self.master_password = None
+        self.data.app.connection_storage_mode = requested
         self.save_settings()
         self.save_connections()
 

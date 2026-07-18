@@ -76,7 +76,10 @@ class TermiaWindow(
             self.toast_label.set_label(self.t("read_only_mode_enabled"))
         self.set_sidebar_visible(self.store.data.app.show_sidebar_on_startup)
         self.refresh_list()
-        if self.store.data.app.open_local_terminal_on_startup:
+        if self.store.encryption_locked:
+            self.toast_label.set_label(self.t("connections_locked"))
+            GLib.idle_add(self.request_unlock_connections)
+        elif self.store.data.app.open_local_terminal_on_startup:
             GLib.idle_add(self.open_startup_local_terminal)
 
     def open_startup_local_terminal(self) -> bool:
@@ -88,16 +91,83 @@ class TermiaWindow(
         return translate_key(key, self.store.data.app.language)
 
     def ensure_writable(self) -> bool:
+        if self.store.encryption_locked:
+            self.toast_label.set_label(self.t("connections_locked"))
+            self.request_unlock_connections()
+            return False
         if not self.store.read_only:
             return True
         self.toast_label.set_label(self.t("read_only_mode_enabled"))
         return False
 
     def configure_write_action(self, widget: Gtk.Widget) -> Gtk.Widget:
-        if self.store.read_only:
+        if self.store.read_only or self.store.encryption_locked:
             widget.set_sensitive(False)
-            widget.set_tooltip_text(self.t("read_only_mode_tooltip"))
+            widget.set_tooltip_text(
+                self.t("connections_locked_tooltip")
+                if self.store.encryption_locked
+                else self.t("read_only_mode_tooltip")
+            )
         return widget
+
+    def request_unlock_connections(self) -> bool:
+        dialog = Gtk.Dialog(title=self.t("unlock_connections_title"), transient_for=self, modal=True)
+        dialog.set_resizable(False)
+        dialog.set_default_size(420, -1)
+        dialog.add_button(self.t("cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(self.t("unlock"), Gtk.ResponseType.OK)
+        dialog.set_default_response(Gtk.ResponseType.OK)
+
+        content = dialog.get_content_area()
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_spacing(12)
+
+        detail = Gtk.Label(label=self.t("unlock_connections_detail"))
+        detail.set_xalign(0)
+        detail.set_wrap(True)
+        content.append(detail)
+
+        password_entry = Gtk.PasswordEntry()
+        password_entry.set_show_peek_icon(True)
+        password_entry.connect("activate", lambda _entry: dialog.response(Gtk.ResponseType.OK))
+        content.append(password_entry)
+
+        error = Gtk.Label(label=self.store.encryption_error)
+        error.set_xalign(0)
+        error.set_wrap(True)
+        error.add_css_class("error")
+        content.append(error)
+
+        dialog.connect("response", self.on_unlock_connections_response, password_entry, error)
+        dialog.present()
+        password_entry.grab_focus()
+        return GLib.SOURCE_REMOVE
+
+    def on_unlock_connections_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        password_entry: Gtk.PasswordEntry,
+        error: Gtk.Label,
+    ) -> None:
+        if response != Gtk.ResponseType.OK:
+            dialog.destroy()
+            self.toast_label.set_label(self.t("connections_locked"))
+            return
+        if self.store.unlock_connections(password_entry.get_text()):
+            dialog.destroy()
+            self.apply_app_theme()
+            self.refresh_list()
+            self.toast_label.set_label(self.t("connections_unlocked"))
+            if self.store.data.app.open_local_terminal_on_startup:
+                GLib.idle_add(self.open_startup_local_terminal)
+            return
+        error.set_label(self.t("unlock_connections_failed"))
+        password_entry.set_text("")
+        password_entry.grab_focus()
 
     def on_main_window_close_request(self, _window: Gtk.Window) -> bool:
         if not self.store.data.app.confirm_close_app:
