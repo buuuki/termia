@@ -11,7 +11,7 @@
 - Fix terminal function key handling.
 - Fix terminal menu separator color in split panes.
 - Rename the Spanish language label.
-- Add gettext-backed translations and bump the project version to `0.4.0-alpha`.
+- Add gettext-backed translations and bump the project version to `0.5.0-beta`.
 
 ### Added
 
