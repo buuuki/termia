@@ -44,7 +44,7 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Drecer
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
 - Fes clic dret en un terminal o en un servidor per pujar fitxers a `/tmp/.termia/` a l'host destí.
-- El menú principal inclou una vista d'historial de connexions amb una acció per esborrar el registre JSONL local.
+- El menú principal inclou historial de connexions, ubicacions de fitxers de dades i accions d'importació/exportació.
 
 Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera. Amb el botó dret dins del terminal pots obrir els submenús traduïts de `Dividir` i `Pestanya`; els panells es poden crear amunt, avall, a l'esquerra o a la dreta, i desapareixen automàticament quan la seva shell acaba. Una pestanya només es tanca amb `exit` quan ha sortit l'últim terminal i ja no queden panells dividits.
 

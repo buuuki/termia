@@ -12,9 +12,79 @@ from gi.repository import Gio, GLib, Gtk
 
 from .asbru_import import extract_asbru_connections, merge_asbru_connections
 from .config_io import export_connections_file, load_store_data_from_json, write_connections_file
+from .constants import (
+    CONFIG_DIR,
+    DATA_FILE,
+    HISTORY_FILE,
+    INSTANCE_LOCK_FILE,
+    SETTINGS_FILE,
+    STATE_DIR,
+    STATISTICS_FILE,
+)
 
 
 class ConfigActionsMixin:
+    def on_data_locations(self) -> None:
+        dialog = Gtk.Dialog(title=self.t("data_locations_title"), transient_for=self, modal=True)
+        dialog.set_default_size(680, 360)
+        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
+        dialog.connect("response", lambda source, _response: source.destroy())
+
+        content = dialog.get_content_area()
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_spacing(12)
+
+        intro = Gtk.Label(label=self.t("data_locations_detail"))
+        intro.set_xalign(0)
+        intro.set_wrap(True)
+        content.append(intro)
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_vexpand(True)
+
+        grid = Gtk.Grid(column_spacing=16, row_spacing=10)
+        grid.set_margin_top(6)
+        grid.set_margin_bottom(6)
+        grid.set_margin_start(6)
+        grid.set_margin_end(6)
+
+        for row, (label_key, path) in enumerate(self.data_location_paths()):
+            label = Gtk.Label(label=self.t(label_key))
+            label.set_xalign(0)
+            label.add_css_class("dim-label")
+            grid.attach(label, 0, row, 1, 1)
+
+            path_label = Gtk.Label(label=str(path))
+            path_label.set_xalign(0)
+            path_label.set_selectable(True)
+            path_label.set_wrap(True)
+            path_label.set_hexpand(True)
+            grid.attach(path_label, 1, row, 1, 1)
+
+            state = Gtk.Label(label=self.t("path_exists") if path.exists() else self.t("path_missing"))
+            state.set_xalign(0)
+            state.add_css_class("dim-label")
+            grid.attach(state, 2, row, 1, 1)
+
+        scroller.set_child(grid)
+        content.append(scroller)
+        dialog.present()
+
+    def data_location_paths(self) -> list[tuple[str, Path]]:
+        return [
+            ("config_directory", CONFIG_DIR),
+            ("connections_file_path", DATA_FILE),
+            ("settings_file_path", SETTINGS_FILE),
+            ("instance_lock_file_path", INSTANCE_LOCK_FILE),
+            ("state_directory", STATE_DIR / "termia"),
+            ("statistics_file_path", STATISTICS_FILE),
+            ("connection_history_file_path", HISTORY_FILE),
+        ]
+
     def on_request_clear_config(self) -> None:
         dialog = Gtk.AlertDialog(message=self.t("clear_config"), detail=self.t("clear_confirm"))
         dialog.set_buttons([self.t("cancel"), self.t("clear_config")])
