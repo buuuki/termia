@@ -663,6 +663,54 @@ msgstr "Connexions desbloquejades"
 msgid "Configuration"
 msgstr "Configuració"
 
+#: src/termia/i18n.py:data_locations
+msgid "Data locations"
+msgstr "Ubicacions de dades"
+
+#: src/termia/i18n.py:data_locations_title
+msgid "Data Locations"
+msgstr "Ubicacions de dades"
+
+#: src/termia/i18n.py:data_locations_detail
+msgid "Termia uses these local paths for configuration, connection data, history, statistics, and the write lock."
+msgstr "Termia usa aquestes rutes locals per a configuració, dades de connexió, historial, estadístiques i bloqueig d'escriptura."
+
+#: src/termia/i18n.py:config_directory
+msgid "Config directory"
+msgstr "Directori de configuració"
+
+#: src/termia/i18n.py:connections_file_path
+msgid "Connections file"
+msgstr "Fitxer de connexions"
+
+#: src/termia/i18n.py:settings_file_path
+msgid "Settings file"
+msgstr "Fitxer d'ajustos"
+
+#: src/termia/i18n.py:instance_lock_file_path
+msgid "Instance lock"
+msgstr "Bloqueig d'instància"
+
+#: src/termia/i18n.py:state_directory
+msgid "State directory"
+msgstr "Directori d'estat"
+
+#: src/termia/i18n.py:statistics_file_path
+msgid "Statistics file"
+msgstr "Fitxer d'estadístiques"
+
+#: src/termia/i18n.py:connection_history_file_path
+msgid "Connection history file"
+msgstr "Fitxer d'historial de connexions"
+
+#: src/termia/i18n.py:path_exists
+msgid "Exists"
+msgstr "Existeix"
+
+#: src/termia/i18n.py:path_missing
+msgid "Not created yet"
+msgstr "Encara no creat"
+
 #: src/termia/i18n.py:connections_file
 msgid "Import/Export"
 msgstr "Importar/Exportar"

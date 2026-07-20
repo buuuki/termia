@@ -62,11 +62,6 @@ class MainMenuMixin:
         self.configure_write_action(security)
         menu.append(security)
 
-        connections_file = Gtk.Button(label=self.t("connections_file"))
-        connections_file.set_halign(Gtk.Align.FILL)
-        connections_file.connect("clicked", lambda _button: popover.set_child(self.build_main_connections_menu(popover)))
-        menu.append(connections_file)
-
         statistics = Gtk.Button(label=self.t("statistics"))
         statistics.set_halign(Gtk.Align.FILL)
         statistics.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_statistics_dashboard))
@@ -76,6 +71,16 @@ class MainMenuMixin:
         history.set_halign(Gtk.Align.FILL)
         history.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_connection_history))
         menu.append(history)
+
+        data_locations = Gtk.Button(label=self.t("data_locations"))
+        data_locations.set_halign(Gtk.Align.FILL)
+        data_locations.connect("clicked", lambda _button: self.run_action_after_popover_closed(popover, self.on_data_locations))
+        menu.append(data_locations)
+
+        connections_file = Gtk.Button(label=self.t("connections_file"))
+        connections_file.set_halign(Gtk.Align.FILL)
+        connections_file.connect("clicked", lambda _button: popover.set_child(self.build_main_connections_menu(popover)))
+        menu.append(connections_file)
 
         help_btn = Gtk.Button(label=self.t("help"))
         help_btn.set_halign(Gtk.Align.FILL)

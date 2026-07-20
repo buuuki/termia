@@ -44,7 +44,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
 - Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
-- El menú principal incluye una vista de historial de conexiones con una acción para borrar el registro JSONL local.
+- El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
 
 Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera. Con botón derecho dentro del terminal puedes abrir los submenús traducidos de `Dividir` y `Pestaña`; los paneles se pueden crear arriba, abajo, a la izquierda o a la derecha, y desaparecen automáticamente cuando su shell termina. Una pestaña solo se cierra con `exit` cuando ha salido el último terminal y ya no quedan paneles divididos.
 
