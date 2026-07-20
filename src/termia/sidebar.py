@@ -25,6 +25,8 @@ from .connection_utils import (
 from .models import Group, LocalTerminalProfile, Server
 from .ui_state import RowObject
 
+GROUP_START_CONFIRMATION_THRESHOLD = 10
+
 
 class SidebarMixin:
     def on_toggle_sidebar(self, _button: Gtk.Button) -> None:
@@ -142,8 +144,41 @@ class SidebarMixin:
         group = find_group(self.store.data.groups, group_id)
         if group is None:
             return
-        for server in self.group_servers(group.id):
+        servers = self.group_servers(group.id)
+        if len(servers) > GROUP_START_CONFIRMATION_THRESHOLD:
+            self.request_start_group_confirmation(group, servers)
+            return
+        self.start_group_servers(servers)
+
+    def start_group_servers(self, servers: list[Server]) -> None:
+        for server in servers:
             self.open_terminal_tab(server)
+
+    def request_start_group_confirmation(self, group: Group, servers: list[Server]) -> None:
+        dialog = Gtk.AlertDialog(
+            message=self.t("start_group_confirm"),
+            detail=self.t("start_group_confirm_detail").format(
+                group=group.name,
+                count=len(servers),
+                threshold=GROUP_START_CONFIRMATION_THRESHOLD,
+            ),
+        )
+        dialog.set_buttons([self.t("cancel"), self.t("start_group")])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(0)
+        dialog.choose(self, None, self.on_start_group_confirmed, (dialog, servers))
+
+    def on_start_group_confirmed(
+        self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, data: tuple[Gtk.AlertDialog, list[Server]]
+    ) -> None:
+        _dialog, servers = data
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        if response != 1:
+            return
+        self.start_group_servers(servers)
 
     def request_delete_group(self, group_id: str) -> None:
         if not self.ensure_writable():

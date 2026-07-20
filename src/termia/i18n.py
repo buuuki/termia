@@ -54,6 +54,10 @@ MESSAGES = {'servers': 'Show or hide server list',
  'filter_servers': 'Filter servers',
  'connect': 'Connect',
  'start_group': 'Start group',
+ 'start_group_confirm': 'Start group?',
+ 'start_group_confirm_detail': 'This will open {count} SSH sessions from "{group}". Opening more '
+                               'than {threshold} sessions at once can overload your machine or '
+                               'remote systems. Do you want to continue?',
  'edit_server': 'Edit server',
  'edit_local_terminal': 'Edit local terminal',
  'delete_server': 'Delete server',
