@@ -19,6 +19,10 @@ msgstr ""
 msgid "New group"
 msgstr ""
 
+#: src/termia/i18n.py:new_subgroup
+msgid "New subgroup"
+msgstr ""
+
 #: src/termia/i18n.py:new_server
 msgid "New server"
 msgstr ""
