@@ -59,6 +59,20 @@ msgstr "Connectar"
 msgid "Start group"
 msgstr "Connectar a tots els servidors"
 
+#: src/termia/i18n.py:start_group_confirm
+msgid "Start group?"
+msgstr "Connectar al grup?"
+
+#: src/termia/i18n.py:start_group_confirm_detail
+msgid ""
+"This will open {count} SSH sessions from \"{group}\". Opening more than "
+"{threshold} sessions at once can overload your machine or remote systems. Do "
+"you want to continue?"
+msgstr ""
+"Això obrirà {count} sessions SSH de \"{group}\". Obrir més de {threshold} "
+"sessions alhora pot sobrecarregar el teu equip o els sistemes remots. Vols "
+"continuar?"
+
 #: src/termia/i18n.py:edit_server
 msgid "Edit server"
 msgstr "Editar servidor"

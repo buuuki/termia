@@ -59,6 +59,17 @@ msgstr ""
 msgid "Start group"
 msgstr ""
 
+#: src/termia/i18n.py:start_group_confirm
+msgid "Start group?"
+msgstr ""
+
+#: src/termia/i18n.py:start_group_confirm_detail
+msgid ""
+"This will open {count} SSH sessions from \"{group}\". Opening more than "
+"{threshold} sessions at once can overload your machine or remote systems. Do "
+"you want to continue?"
+msgstr ""
+
 #: src/termia/i18n.py:edit_server
 msgid "Edit server"
 msgstr ""
