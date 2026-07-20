@@ -126,6 +126,14 @@ class SidebarMixin:
         if group:
             self.show_group_dialog(group)
 
+    def on_group_context_add_subgroup(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        group = find_group(self.store.data.groups, group_id)
+        if group:
+            self.show_group_dialog(parent_group_id=group.id)
+
     def on_group_context_delete(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
         popover.popdown()
         if not self.ensure_writable():
@@ -926,6 +934,12 @@ class SidebarMixin:
                 menu,
                 self.t("start_group"),
                 lambda: self.on_group_context_start(None, popover, row.item_id),
+            )
+            self.add_context_menu_item(
+                menu,
+                self.t("new_subgroup"),
+                lambda: self.on_group_context_add_subgroup(None, popover, row.item_id),
+                enabled=not self.store.read_only,
             )
             self.add_context_menu_item(
                 menu,

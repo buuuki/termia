@@ -43,6 +43,7 @@ def translate_key(key: str, language: str | None) -> str:
 
 MESSAGES = {'servers': 'Show or hide server list',
  'new_group': 'New group',
+ 'new_subgroup': 'New subgroup',
  'new_server': 'New server',
  'new_local_terminal': 'New local terminal',
  'terminal': 'Terminal',

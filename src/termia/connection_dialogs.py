@@ -18,7 +18,7 @@ from .terminal_config import SPLIT_LAYOUT_CHOICES, normalize_split_layout
 
 
 class ConnectionDialogsMixin:
-    def show_group_dialog(self, group: Group | None = None) -> None:
+    def show_group_dialog(self, group: Group | None = None, parent_group_id: str | None = None) -> None:
         if not self.ensure_writable():
             return
         dialog = Gtk.Dialog(title=self.t("edit_group") if group else self.t("new_group"), transient_for=self, modal=True)
@@ -34,7 +34,8 @@ class ConnectionDialogsMixin:
         for candidate, path_label in group_path_labels(self.store.data.groups):
             if candidate.id not in excluded_ids:
                 parent_combo.append(candidate.id, path_label)
-        parent_combo.set_active_id(group.parent_id if group and group.parent_id not in excluded_ids else "")
+        selected_parent_id = group.parent_id if group and group.parent_id not in excluded_ids else parent_group_id or ""
+        parent_combo.set_active_id(selected_parent_id)
         if group:
             entry.set_text(group.name)
 

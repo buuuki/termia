@@ -19,6 +19,10 @@ msgstr "Mostrar u ocultar listado de servidores"
 msgid "New group"
 msgstr "Nuevo grupo"
 
+#: src/termia/i18n.py:new_subgroup
+msgid "New subgroup"
+msgstr "Nuevo subgrupo"
+
 #: src/termia/i18n.py:new_server
 msgid "New server"
 msgstr "Nuevo servidor"
