@@ -11,6 +11,11 @@ DEFAULT_KEYBINDINGS: dict[str, str] = {
     "font_decrease": "Ctrl+-",
     "send_password": "Ctrl+P",
     "filter_servers": "Ctrl+F",
+    "toggle_sidebar": "Ctrl+Shift+B",
+    "toggle_main_menu": "F10",
+    "new_local_terminal": "Ctrl+Shift+T",
+    "focus_next_region": "Ctrl+F6",
+    "focus_previous_region": "Ctrl+Shift+F6",
 }
 
 KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
@@ -22,6 +27,11 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
     ("font_decrease", "keybinding_action_font_decrease"),
     ("send_password", "keybinding_action_send_password"),
     ("filter_servers", "keybinding_action_filter_servers"),
+    ("toggle_sidebar", "keybinding_action_toggle_sidebar"),
+    ("toggle_main_menu", "keybinding_action_toggle_main_menu"),
+    ("new_local_terminal", "keybinding_action_new_local_terminal"),
+    ("focus_next_region", "keybinding_action_focus_next_region"),
+    ("focus_previous_region", "keybinding_action_focus_previous_region"),
 )
 
 _MODIFIER_ORDER = ("Ctrl", "Shift", "Alt", "Super")

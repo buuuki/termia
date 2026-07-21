@@ -24,7 +24,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Ver un historial local de conexiones con marcas de tiempo, resultados y duraciones.
 - Mostrar u ocultar globalmente la barra de estado de sesión, ocultarla por sesión y restaurarla desde el menú contextual del terminal.
 - Configurar confirmaciones para desconectar sesiones y cerrar Termia.
-- Configurar atajos de terminal haciendo clic en un control y pulsando la combinación que quieras, incluido `Ctrl+Shift+C` para copiar y `Ctrl+Shift+V` para pegar. Las teclas `F1`-`F12` sin modificadores se reservan para las aplicaciones del terminal.
+- Configurar atajos de terminal haciendo clic en un control y pulsando la combinación que quieras, incluido `Ctrl+Shift+C` para copiar y `Ctrl+Shift+V` para pegar. Las teclas de función sin modificadores se reservan para las aplicaciones del terminal, excepto `F10`, configurable y asignada de forma predeterminada al menú principal.
 - Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Ctrl+P`, con o sin `Enter`.
 - Configurar por separado opciones generales, fuente y colores del terminal VTE, y el prompt PS1.
 - Personalizar el prompt local con colores, temas predefinidos y prefijos de hora o fecha sin cambiar ficheros de inicio ni comandos remotos.
@@ -39,7 +39,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
 - `Terminal` controla la fuente, tamaño, colores, grosor y color del separador de división, y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
 - `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
-- `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones habituales como filtrar servidores, copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro de servidores, incluso desde un terminal embebido. Las teclas `F1`-`F12` sin modificadores se envían a las aplicaciones del terminal.
+- `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.

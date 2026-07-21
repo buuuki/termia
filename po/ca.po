@@ -495,6 +495,26 @@ msgstr "Reduir lletra"
 msgid "Send saved password"
 msgstr "Enviar contrasenya desada"
 
+#: src/termia/i18n.py:keybinding_action_toggle_sidebar
+msgid "Show or hide server list"
+msgstr "Mostrar o amagar la llista de servidors"
+
+#: src/termia/i18n.py:keybinding_action_toggle_main_menu
+msgid "Open or close main menu"
+msgstr "Obrir o tancar el menú principal"
+
+#: src/termia/i18n.py:keybinding_action_new_local_terminal
+msgid "Open new local terminal"
+msgstr "Obrir un terminal local nou"
+
+#: src/termia/i18n.py:keybinding_action_focus_next_region
+msgid "Focus next interface region"
+msgstr "Enfocar la regió següent de la interfície"
+
+#: src/termia/i18n.py:keybinding_action_focus_previous_region
+msgid "Focus previous interface region"
+msgstr "Enfocar la regió anterior de la interfície"
+
 #: src/termia/i18n.py:close_app
 msgid "Close Termia"
 msgstr "Tancar Termia"
