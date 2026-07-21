@@ -66,9 +66,7 @@ src/termia/assets/            Desktop and About dialog artwork
 src/termia/locale/            Compiled gettext catalogs bundled with Termia
 po/                           Editable gettext translation catalogs
 scripts/compile_translations.py
-scripts/install_dependencies.sh
-scripts/install_desktop.sh
-scripts/uninstall_desktop.sh
+scripts/termia-setup.sh
 docs/README.es.md             Spanish documentation
 docs/README.ca.md             Catalan documentation
 SECURITY.md                    Credential storage warning
@@ -89,27 +87,21 @@ git clone https://github.com/buuuki/termia.git
 cd termia
 ```
 
-## Install dependencies
+## Install
 
-Termia uses system GTK and VTE packages. Check an existing installation first:
-
-```bash
-chmod +x scripts/install_dependencies.sh
-./scripts/install_dependencies.sh --check
-```
-
-If the check reports missing dependencies, install them with:
+Termia uses system GTK and VTE packages. Install missing dependencies, verify the
+result, and add a user-local desktop launcher with:
 
 ```bash
-./scripts/install_dependencies.sh
+chmod +x scripts/termia-setup.sh
+./scripts/termia-setup.sh install
 ```
 
-The installer verifies the result after installing. You can also run the check again
-at any time:
-
-```bash
-./scripts/install_dependencies.sh --check
-```
+Before changing the system, the setup script lists the planned actions and waits
+10 seconds so you can cancel. On Debian, Ubuntu, and Linux Mint, if `apt-get update`
+fails because a configured repository is unavailable, it asks before using the
+existing APT cache to install the required packages. If all runtime dependencies
+are already available, it does not run the system package manager.
 
 The dependency installer supports Debian, Ubuntu, Linux Mint, Fedora, and Arch Linux
 package managers. It also tries to install JetBrains Mono for the default terminal
@@ -128,23 +120,18 @@ package is missing. On Debian, Ubuntu, or Linux Mint the package is
 python3 run_termia.py
 ```
 
-## Install the desktop launcher
-
-```bash
-./scripts/install_desktop.sh
-```
-
-This installs a user-local launcher at
+The launcher is installed at
 `~/.local/share/applications/local.termia.desktop` and its icon under
 `~/.local/share/icons/hicolor/scalable/apps/`.
 
 Run the installer again after moving the cloned directory because the desktop
 entry stores an absolute path to the source-checkout launcher.
 
-Remove the launcher without deleting settings or connections:
+Remove the launcher without deleting settings, connections, statistics, or system
+packages:
 
 ```bash
-./scripts/uninstall_desktop.sh
+./scripts/termia-setup.sh uninstall
 ```
 
 ## User data and security
@@ -186,10 +173,7 @@ scripts/compile_translations.py
 
 ```bash
 python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
-bash -n scripts/install_dependencies.sh
-bash -n scripts/install_desktop.sh
-bash -n scripts/uninstall_desktop.sh
-./scripts/install_dependencies.sh --check
+bash -n scripts/termia-setup.sh
 ```
 
 Review the files included in the first commit:
