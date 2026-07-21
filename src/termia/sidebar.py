@@ -600,8 +600,11 @@ class SidebarMixin:
             widget.add_css_class("selected")
             self.selected_tree_widget = widget
 
-    def select_tree_row(self, row: RowObject, widget: Gtk.Widget) -> None:
-        self.preserve_sidebar_scroll()
+    def select_tree_row(
+        self, row: RowObject, widget: Gtk.Widget, preserve_scroll: bool = True
+    ) -> None:
+        if preserve_scroll:
+            self.preserve_sidebar_scroll()
         if self.selected_tree_widget is not None and self.selected_tree_widget is not widget:
             self.selected_tree_widget.remove_css_class("selected")
         self.selected = row
@@ -630,6 +633,11 @@ class SidebarMixin:
             self.restore_sidebar_scroll, vertical, vertical_value, horizontal, horizontal_value
         )
 
+    def cancel_sidebar_scroll_restore(self) -> None:
+        if self.scroll_restore_id is not None:
+            GLib.source_remove(self.scroll_restore_id)
+            self.scroll_restore_id = None
+
     def restore_sidebar_scroll(
         self, vertical: Gtk.Adjustment, vertical_value: float,
         horizontal: Gtk.Adjustment, horizontal_value: float,
@@ -654,6 +662,26 @@ class SidebarMixin:
         maximum = max(adjustment.get_lower(), adjustment.get_upper() - adjustment.get_page_size())
         adjustment.set_value(min(max(value, adjustment.get_lower()), maximum))
 
+    def scroll_tree_widget_into_view(self, widget: Gtk.Widget) -> None:
+        translated, _x, top = widget.translate_coordinates(self.server_list, 0, 0)
+        if not translated:
+            return
+        vertical = self.server_scroller.get_vadjustment()
+        bottom = top + widget.get_height()
+        visible_top = vertical.get_value()
+        visible_bottom = visible_top + vertical.get_page_size()
+        if top < visible_top:
+            self.set_sidebar_scroll_value(vertical, top)
+        elif bottom > visible_bottom:
+            self.set_sidebar_scroll_value(vertical, bottom - vertical.get_page_size())
+
+    def scroll_selected_tree_row_into_view(self) -> bool:
+        if self.selected is not None:
+            widget = self.tree_widgets.get((self.selected.kind, self.selected.item_id))
+            if widget is not None:
+                self.scroll_tree_widget_into_view(widget)
+        return GLib.SOURCE_REMOVE
+
     def get_group_expander(self, group_id: str) -> Gtk.Expander | None:
         for expander in getattr(self, "group_expanders", []):
             if getattr(expander, "group_id", None) == group_id:
@@ -675,7 +703,9 @@ class SidebarMixin:
         widget = self.tree_widgets.get((row.kind, row.item_id))
         if widget is None:
             return False
-        self.select_tree_row(row, widget)
+        self.cancel_sidebar_scroll_restore()
+        self.select_tree_row(row, widget, preserve_scroll=False)
+        self.scroll_tree_widget_into_view(widget)
         return True
 
     def move_visible_tree_selection(self, delta: int) -> bool:
@@ -708,8 +738,10 @@ class SidebarMixin:
             expander = self.get_group_expander(self.selected.item_id)
             if expander is None:
                 return False
+            self.cancel_sidebar_scroll_restore()
             expander.set_expanded(not expander.get_expanded())
             self.refresh_list()
+            GLib.idle_add(self.scroll_selected_tree_row_into_view)
             return True
         return False
 
