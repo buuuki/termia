@@ -383,11 +383,75 @@ class TermiaWindow(
         _keycode: int,
         state: Gdk.ModifierType,
     ) -> bool:
-        if keybinding_matches(self.store.data.app.keybindings.get("filter_servers", ""), keyval, state):
+        keybindings = self.store.data.app.keybindings
+        if keybinding_matches(keybindings.get("filter_servers", ""), keyval, state):
             return self.focus_server_filter()
+        if keybinding_matches(keybindings.get("toggle_sidebar", ""), keyval, state):
+            self.on_toggle_sidebar(None)
+            return True
+        if keybinding_matches(keybindings.get("toggle_main_menu", ""), keyval, state):
+            return self.toggle_main_menu()
+        if keybinding_matches(keybindings.get("new_local_terminal", ""), keyval, state):
+            self.on_open_local_terminal(None)
+            return True
+        if keybinding_matches(keybindings.get("focus_next_region", ""), keyval, state):
+            return self.cycle_main_focus(1)
+        if keybinding_matches(keybindings.get("focus_previous_region", ""), keyval, state):
+            return self.cycle_main_focus(-1)
         if self.sidebar_navigation_has_focus():
             return self.on_sidebar_navigation_key_pressed(_controller, keyval, _keycode, state)
         return False
+
+    def toggle_main_menu(self) -> bool:
+        popover = self.main_menu_button.get_popover()
+        if popover is None:
+            return False
+        if popover.get_visible():
+            popover.popdown()
+        else:
+            popover.popup()
+        return True
+
+    def cycle_main_focus(self, delta: int) -> bool:
+        focused = self.get_focus()
+        regions: list[tuple[Gtk.Widget, Gtk.Widget]] = []
+        if self.sidebar_visible:
+            regions.append((self.sidebar, self.search_entry))
+
+        visible_page = self.terminal_stack.get_visible_child()
+        active_session = next(
+            (
+                session
+                for session in self.visible_sessions_in_tab_order()
+                if session.page is visible_page
+            ),
+            None,
+        )
+        if active_session is not None:
+            if self.session_tab_bar.get_visible():
+                active_session.tab_label.set_focusable(True)
+                regions.append((self.session_tab_bar, active_session.tab_label))
+            terminal = (
+                active_session.split_terminals[-1]
+                if active_session.split_terminals
+                else active_session.terminal
+            )
+            regions.append((self.terminal_stack, terminal))
+
+        if not regions:
+            return False
+
+        current_index = next(
+            (
+                index
+                for index, (region, _target) in enumerate(regions)
+                if focused is region or (focused is not None and focused.is_ancestor(region))
+            ),
+            -1 if delta > 0 else 0,
+        )
+        target_index = (current_index + delta) % len(regions)
+        regions[target_index][1].grab_focus()
+        return True
 
     def refresh_translated_chrome(self) -> None:
         self.toggle_sidebar_button.set_tooltip_text(self.t("servers"))
