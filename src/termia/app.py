@@ -54,6 +54,7 @@ class TermiaWindow(
         self.install_tree_styles()
         self.selected: RowObject | None = None
         self.selected_tree_widget: Gtk.Widget | None = None
+        self.sidebar_keyboard_navigation_active = False
         self.group_expanded_state: dict[str, bool] = {}
         self.collapse_groups_on_startup = True
         self.tree_widgets: dict[tuple[str, str], Gtk.Widget] = {}

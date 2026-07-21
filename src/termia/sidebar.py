@@ -49,6 +49,7 @@ class SidebarMixin:
 
     def focus_server_filter(self) -> bool:
         self.set_sidebar_visible(True)
+        self.sidebar_keyboard_navigation_active = True
         self.search_entry.grab_focus()
         self.search_entry.select_region(0, -1)
         return True
@@ -56,13 +57,22 @@ class SidebarMixin:
     def sidebar_navigation_has_focus(self) -> bool:
         focused = self.get_focus()
         if focused is None:
+            self.sidebar_keyboard_navigation_active = False
             return False
-        return (
+        navigation_widget_focused = (
             focused is self.search_entry
             or focused is self.server_list
             or focused.is_ancestor(self.search_entry)
             or focused.is_ancestor(self.server_list)
         )
+        if navigation_widget_focused:
+            self.sidebar_keyboard_navigation_active = True
+            return True
+        focus_inside_sidebar = focused is self.sidebar or focused.is_ancestor(self.sidebar)
+        if self.sidebar_keyboard_navigation_active and focus_inside_sidebar:
+            return True
+        self.sidebar_keyboard_navigation_active = False
+        return False
 
     def on_server_context_connect(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
@@ -785,21 +795,25 @@ class SidebarMixin:
         if keyval == Gdk.KEY_Up:
             handled = self.move_visible_tree_selection(-1)
             if handled:
+                self.sidebar_keyboard_navigation_active = True
                 self.server_list.grab_focus()
             return handled
         if keyval == Gdk.KEY_Down:
             handled = self.move_visible_tree_selection(1)
             if handled:
+                self.sidebar_keyboard_navigation_active = True
                 self.server_list.grab_focus()
             return handled
         if keyval == Gdk.KEY_Home:
             handled = self.select_visible_tree_row(0)
             if handled:
+                self.sidebar_keyboard_navigation_active = True
                 self.server_list.grab_focus()
             return handled
         if keyval == Gdk.KEY_End:
             handled = self.select_visible_tree_row(len(getattr(self, "visible_tree_rows", [])) - 1)
             if handled:
+                self.sidebar_keyboard_navigation_active = True
                 self.server_list.grab_focus()
             return handled
         if keyval in enter_keys:
@@ -816,6 +830,7 @@ class SidebarMixin:
         widget: Gtk.Widget,
     ) -> None:
         self.select_tree_row(row, widget)
+        self.sidebar_keyboard_navigation_active = True
         self.server_list.grab_focus()
 
     def on_server_widget_left_click(
@@ -827,6 +842,7 @@ class SidebarMixin:
         row: RowObject,
     ) -> None:
         self.select_tree_row(row, self.tree_widgets[(row.kind, row.item_id)])
+        self.sidebar_keyboard_navigation_active = True
         self.server_list.grab_focus()
         if n_press == 2:
             server = find_server(self.store.data.servers, row.item_id)
@@ -857,6 +873,7 @@ class SidebarMixin:
         row: RowObject,
     ) -> None:
         self.select_tree_row(row, self.tree_widgets[(row.kind, row.item_id)])
+        self.sidebar_keyboard_navigation_active = True
         self.server_list.grab_focus()
         if n_press == 2:
             profile = find_local_terminal_profile(self.store.data.local_terminals, row.item_id)
