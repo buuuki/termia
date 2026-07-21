@@ -388,6 +388,7 @@ class SidebarMixin:
 
     def build_local_terminals_widget(self, profiles: list[LocalTerminalProfile], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         expander.set_label_widget(self.build_local_terminals_label(f"{self.t('local_terminals')} ({len(profiles)})"))
         self.group_expanders.append(expander)
         expander.group_id = "__local_terminals__"
@@ -440,6 +441,7 @@ class SidebarMixin:
 
     def build_favorites_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         expander.set_label_widget(self.build_favorites_label(f"{self.t('favorites')} ({len(servers)})"))
         self.group_expanders.append(expander)
         expander.group_id = "__favorites__"
@@ -453,6 +455,7 @@ class SidebarMixin:
 
     def build_recent_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         expander.set_label_widget(self.build_recent_label(f"{self.t('recent')} ({len(servers)})"))
         self.group_expanders.append(expander)
         expander.group_id = "__recent__"
@@ -502,6 +505,7 @@ class SidebarMixin:
             int(getattr(widget, "server_count", 0)) for widget in child_widgets
         )
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         group_label = self.build_group_label(f"{group.name} ({descendant_servers})")
         expander.set_label_widget(group_label)
         self.group_expanders.append(expander)
@@ -546,6 +550,7 @@ class SidebarMixin:
 
     def build_ungrouped_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         expander.set_label_widget(self.build_group_label(f"{self.t('no_group')} ({len(servers)})"))
         self.group_expanders.append(expander)
         expander.group_id = "__ungrouped__"
@@ -767,13 +772,25 @@ class SidebarMixin:
 
         enter_keys = {Gdk.KEY_Return, Gdk.KEY_KP_Enter, getattr(Gdk, "KEY_ISO_Enter", Gdk.KEY_Return)}
         if keyval == Gdk.KEY_Up:
-            return self.move_visible_tree_selection(-1)
+            handled = self.move_visible_tree_selection(-1)
+            if handled:
+                self.server_list.grab_focus()
+            return handled
         if keyval == Gdk.KEY_Down:
-            return self.move_visible_tree_selection(1)
+            handled = self.move_visible_tree_selection(1)
+            if handled:
+                self.server_list.grab_focus()
+            return handled
         if keyval == Gdk.KEY_Home:
-            return self.select_visible_tree_row(0)
+            handled = self.select_visible_tree_row(0)
+            if handled:
+                self.server_list.grab_focus()
+            return handled
         if keyval == Gdk.KEY_End:
-            return self.select_visible_tree_row(len(getattr(self, "visible_tree_rows", [])) - 1)
+            handled = self.select_visible_tree_row(len(getattr(self, "visible_tree_rows", [])) - 1)
+            if handled:
+                self.server_list.grab_focus()
+            return handled
         if keyval in enter_keys:
             return self.activate_selected_tree_row()
         return False
