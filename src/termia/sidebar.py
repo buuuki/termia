@@ -47,6 +47,12 @@ class SidebarMixin:
             self.sidebar_visible = False
             self.toggle_sidebar_button.set_icon_name("sidebar-show-symbolic")
 
+    def focus_server_filter(self) -> bool:
+        self.set_sidebar_visible(True)
+        self.search_entry.grab_focus()
+        self.search_entry.select_region(0, -1)
+        return True
+
     def on_server_context_connect(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
         server = find_server(self.store.data.servers, server_id)

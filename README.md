@@ -12,7 +12,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Create, edit, move, and delete server groups and nested subgroups.
 - Store SSH hosts with a display name, host name or IP, user, port, password,
   and private key path.
-- Filter servers and open multiple tabbed sessions to the same host.
+- Filter servers with `Ctrl+F` and open multiple tabbed sessions to the same host.
 - Reopen the 10 most recently connected servers from a Recent section above Favorites, without duplicates.
 - Mark servers as favorites and jump to them from a dedicated section in the sidebar.
 - Use embedded, width-sharing tabs and move a tab to a separate window.
@@ -41,7 +41,7 @@ The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybind
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
 - `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, split separator color/thickness, and color palettes. New installations start with JetBrains Mono and the Polaris palette.
 - `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. The default prompt color is white. It does not alter SSH commands or modify remote shell startup files.
-- `Keybindings` shows the active terminal shortcuts and lets you record shortcut combinations for common actions such as copy, paste, tab switching, font zoom, and sending the saved password. Unmodified `F1`-`F12` keys pass through to terminal applications.
+- `Keybindings` shows the active shortcuts and lets you record shortcut combinations for common actions such as server filtering, copy, paste, tab switching, font zoom, and sending the saved password. `Ctrl+F` focuses the server filter, even from an embedded terminal. Unmodified `F1`-`F12` keys pass through to terminal applications.
 - `Security` controls connection storage mode.
 - Use the terminal-shaped button in the sidebar to create a new local terminal profile; it appears in the sidebar list like a connection and opens an embedded terminal when activated.
 - When another Termia instance is already running with the write lock, a new window opens in read-only mode, shows a header badge, disables write-capable actions, and still allows browsing, connecting, and exporting configuration.

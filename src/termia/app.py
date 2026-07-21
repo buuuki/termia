@@ -15,6 +15,7 @@ from .constants import (
     DATA_FILE,
 )
 from .i18n import translate_key
+from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
 from .preferences import PreferencesMixin
 from .stores import ConnectionStore
@@ -232,6 +233,11 @@ class TermiaWindow(
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.set_child(root)
 
+        window_keys = Gtk.EventControllerKey.new()
+        window_keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        window_keys.connect("key-pressed", self.on_window_key_pressed)
+        self.add_controller(window_keys)
+
         header = Gtk.HeaderBar()
         self.set_titlebar(header)
 
@@ -373,6 +379,17 @@ class TermiaWindow(
         self.terminal_stack.set_hexpand(True)
         self.terminal_stack.set_vexpand(True)
         detail.append(self.terminal_stack)
+
+    def on_window_key_pressed(
+        self,
+        _controller: Gtk.EventControllerKey,
+        keyval: int,
+        _keycode: int,
+        state: Gdk.ModifierType,
+    ) -> bool:
+        if keybinding_matches(self.store.data.app.keybindings.get("filter_servers", ""), keyval, state):
+            return self.focus_server_filter()
+        return False
 
     def refresh_translated_chrome(self) -> None:
         self.toggle_sidebar_button.set_tooltip_text(self.t("servers"))

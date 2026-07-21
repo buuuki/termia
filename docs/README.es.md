@@ -11,7 +11,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Crear, editar, mover y eliminar grupos y subgrupos de servidores.
 - Guardar servidores con nombre, host o IP, usuario, puerto, contraseña y ruta de
   clave privada.
-- Filtrar servidores y abrir varias sesiones al mismo host en pestañas.
+- Filtrar servidores con `Ctrl+F` y abrir varias sesiones al mismo host en pestañas.
 - Reabrir los 10 servidores conectados más recientemente desde una sección Recent encima de Favorites, sin duplicados.
 - Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
 - Crear y abrir perfiles configurables de terminal local desde la barra lateral.
@@ -39,7 +39,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
 - `Terminal` controla la fuente, tamaño, colores, grosor y color del separador de división, y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
 - `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
-- `Atajos` muestra los atajos activos del terminal y permite grabar combinaciones para acciones habituales como copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada. Las teclas `F1`-`F12` sin modificadores se envían a las aplicaciones del terminal.
+- `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones habituales como filtrar servidores, copiar, pegar, cambiar de pestaña, zoom de fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro de servidores, incluso desde un terminal embebido. Las teclas `F1`-`F12` sin modificadores se envían a las aplicaciones del terminal.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
