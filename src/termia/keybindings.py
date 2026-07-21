@@ -10,6 +10,7 @@ DEFAULT_KEYBINDINGS: dict[str, str] = {
     "font_increase": "Ctrl++",
     "font_decrease": "Ctrl+-",
     "send_password": "Ctrl+P",
+    "filter_servers": "Ctrl+F",
 }
 
 KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
@@ -20,6 +21,7 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
     ("font_increase", "keybinding_action_font_increase"),
     ("font_decrease", "keybinding_action_font_decrease"),
     ("send_password", "keybinding_action_send_password"),
+    ("filter_servers", "keybinding_action_filter_servers"),
 )
 
 _MODIFIER_ORDER = ("Ctrl", "Shift", "Alt", "Super")

@@ -11,7 +11,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Crear, editar, moure i eliminar grups i subgrups de servidors.
 - Desar servidors amb nom, host o IP, usuari, port, contrasenya i ruta de clau
   privada.
-- Filtrar servidors i obrir diverses sessions al mateix host en pestanyes.
+- Filtrar servidors amb `Ctrl+F` i obrir diverses sessions al mateix host en pestanyes.
 - Reobrir els 10 servidors connectats més recentment des d'una secció Recent a sobre de Favorites, sense duplicats.
 - Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
 - Crear i obrir perfils configurables de terminal local des de la barra lateral.
@@ -39,7 +39,7 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Drecer
 - `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió, que comença amagada per defecte.
 - `Terminal` controla el tipus de lletra, mida, colors, gruix i color del separador de divisió, i paletes del terminal VTE incrustat. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
 - `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. El color predeterminat del prompt és blanc. No altera ordres SSH ni modifica fitxers d'inici remots.
-- `Dreceres` mostra les dreceres actives del terminal i permet gravar combinacions per a accions habituals com copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada. Les tecles `F1`-`F12` sense modificadors s'envien a les aplicacions del terminal.
+- `Dreceres` mostra les dreceres actives i permet gravar combinacions per a accions habituals com filtrar servidors, copiar, enganxar, canviar de pestanya, zoom de lletra i enviar la contrasenya desada. `Ctrl+F` enfoca el filtre de servidors, fins i tot des d'un terminal incrustat. Les tecles `F1`-`F12` sense modificadors s'envien a les aplicacions del terminal.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.

@@ -59,6 +59,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - After keyboard tab switching, focus must return to the terminal, not the tab label.
 - After closing a session, focus must move to the active terminal automatically.
 - Terminal shortcuts such as font size increase/decrease must not break normal terminal input unexpectedly.
+- `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
 
 ### Context Menus and Popovers
 
