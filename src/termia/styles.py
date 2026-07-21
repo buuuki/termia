@@ -48,5 +48,6 @@ def build_application_css(
         ".stat-row { padding: 6px 8px; border-bottom: 1px solid alpha(@borders, 0.55); } "
         ".termia-tree-item.selected { "
         "background-color: @theme_selected_bg_color; "
-        "color: @theme_selected_fg_color; }"
+        "color: @theme_selected_fg_color; } "
+        ".termia-tree-item:focus { outline: none; box-shadow: none; }"
     ).encode()

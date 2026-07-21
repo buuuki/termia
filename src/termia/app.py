@@ -54,7 +54,6 @@ class TermiaWindow(
         self.install_tree_styles()
         self.selected: RowObject | None = None
         self.selected_tree_widget: Gtk.Widget | None = None
-        self.sidebar_keyboard_navigation_active = False
         self.group_expanded_state: dict[str, bool] = {}
         self.collapse_groups_on_startup = True
         self.tree_widgets: dict[tuple[str, str], Gtk.Widget] = {}
@@ -325,7 +324,7 @@ class TermiaWindow(
         sidebar.append(self.search_entry)
 
         self.server_list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.server_list.set_focusable(True)
+        self.server_list.set_focusable(False)
 
         scroller = Gtk.ScrolledWindow()
         self.server_scroller = scroller
