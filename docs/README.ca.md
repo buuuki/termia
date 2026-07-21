@@ -60,37 +60,28 @@ Clona el repositori complet:
 ```bash
 git clone https://github.com/buuuki/termia.git
 cd termia
-chmod +x scripts/install_dependencies.sh
+chmod +x scripts/termia-setup.sh
 ```
 
-Comprova primer les dependències sense modificar el sistema:
+Instal·la les dependències que faltin, comprova el resultat i afegeix el llançador
+local de Termia amb:
 
 ```bash
-./scripts/install_dependencies.sh --check
+./scripts/termia-setup.sh install
 ```
 
-Si la comprovació indica que falten dependències, instal·la-les amb:
+Abans de modificar el sistema, l'script mostra les accions previstes i espera
+10 segons per poder-lo cancel·lar. A Debian, Ubuntu i Linux Mint, si `apt-get
+update` falla perquè algun repositori configurat no està disponible, pregunta
+abans d'utilitzar la memòria cau APT disponible per instal·lar els paquets necessaris.
+Si totes les dependències d'execució ja estan disponibles, no executa el gestor de
+paquets del sistema.
 
-```bash
-./scripts/install_dependencies.sh
-```
-
-L'instal·lador verifica el resultat després d'instal·lar. També intenta instal·lar JetBrains Mono per al tipus de lletra per defecte del terminal; les instal·lacions noves fan servir la paleta Polaris i el color blanc del prompt per defecte, i si no està disponible, Termia usa Ubuntu Mono o Monospace com a fallback. Pots repetir la
-comprovació en qualsevol moment:
-
-```bash
-./scripts/install_dependencies.sh --check
-```
+L'instal·lador verifica el resultat després d'instal·lar. També intenta instal·lar JetBrains Mono per al tipus de lletra per defecte del terminal; les instal·lacions noves fan servir la paleta Polaris i el color blanc del prompt per defecte, i si no està disponible, Termia usa Ubuntu Mono o Monospace com a fallback.
 
 Si la comprovació indica que falta el namespace `Vte 3.91`, falta el paquet
 d'introspecció GTK 4 VTE. En Debian, Ubuntu o Linux Mint el paquet necessari és
 `gir1.2-vte-3.91`.
-
-Instal·la el llançador d'escriptori amb:
-
-```bash
-./scripts/install_desktop.sh
-```
 
 També pots executar Termia directament des del repositori:
 
@@ -98,10 +89,11 @@ També pots executar Termia directament des del repositori:
 python3 run_termia.py
 ```
 
-Elimina únicament el llançador d'escriptori:
+Elimina únicament el llançador d'escriptori, sense esborrar ajustos, connexions,
+estadístiques ni paquets del sistema:
 
 ```bash
-./scripts/uninstall_desktop.sh
+./scripts/termia-setup.sh uninstall
 ```
 
 ## Dades de l'usuari i seguretat

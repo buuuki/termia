@@ -3,20 +3,29 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 set -euo pipefail
 
+APP_ID="local.termia"
+APP_NAME="Termia"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APP_SCRIPT="${PROJECT_DIR}/run_termia.py"
+APP_ICON_SOURCE="${PROJECT_DIR}/src/termia/assets/termia.svg"
+DATA_HOME="${XDG_DATA_HOME:-"${HOME}/.local/share"}"
+DESKTOP_DIR="${DATA_HOME}/applications"
+ICON_DIR="${DATA_HOME}/icons/hicolor/scalable/apps"
+DESKTOP_FILE="${DESKTOP_DIR}/${APP_ID}.desktop"
+ICON_FILE="${ICON_DIR}/${APP_ID}.svg"
+
 usage() {
   cat <<'EOF'
-Usage: ./scripts/install_dependencies.sh [--check|--help]
+Usage: ./scripts/termia-setup.sh <install|uninstall>
 
-Without arguments, install Termia runtime dependencies for the detected Linux
-package manager and verify the result.
-
-Options:
-  --check   Verify dependencies without installing anything.
-  --help    Show this help message.
+Commands:
+  install    Install missing runtime dependencies, verify them, and add the
+             user-local Termia launcher.
+  uninstall  Remove only the user-local launcher and icon. Settings,
+             connections, statistics, and system packages are preserved.
 EOF
 }
 
-# Verify the Python introspection bindings required by the GTK application.
 check_python_modules() {
   python3 - <<'PY_CHECK'
 import sys
@@ -31,7 +40,7 @@ PACKAGE_HINTS = {
 
 def fail(message):
     print(message, file=sys.stderr)
-    print("Run ./scripts/install_dependencies.sh to install Termia dependencies.", file=sys.stderr)
+    print("Run ./scripts/termia-setup.sh install to install Termia dependencies.", file=sys.stderr)
     print(
         "Debian/Ubuntu/Linux Mint package hint: sudo apt install python3-gi "
         "gir1.2-gtk-4.0 gir1.2-vte-3.91 python3-yaml python3-cryptography "
@@ -113,9 +122,29 @@ install_optional_font_package() {
   fi
 }
 
+confirm_apt_cache_use() {
+  local answer
+  if [[ ! -t 0 ]]; then
+    echo "apt-get update failed and this session cannot ask whether to use the existing APT cache." >&2
+    return 1
+  fi
+
+  read -r -p "Continue using the existing APT cache to install dependencies? [y/N] " answer
+  case "${answer}" in
+    y|Y|yes|YES|Yes) return 0 ;;
+    *)
+      echo "Installation cancelled because the APT package index could not be updated."
+      return 1
+      ;;
+  esac
+}
+
 install_packages() {
   if command -v apt-get >/dev/null 2>&1; then
-    sudo apt-get update
+    if ! sudo apt-get update; then
+      echo "Warning: apt-get update failed. This can happen when a configured repository times out." >&2
+      confirm_apt_cache_use
+    fi
     sudo apt-get install -y \
       python3 \
       python3-gi \
@@ -158,20 +187,105 @@ install_packages() {
   fi
 }
 
+ensure_dependencies() {
+  if run_checks; then
+    echo "Termia runtime dependencies are already available."
+    return 0
+  fi
+
+  echo "Some Termia runtime dependencies are missing. Installing the required packages."
+  install_packages
+  run_checks
+}
+
+install_desktop_launcher() {
+  if [[ ! -f "${APP_SCRIPT}" || ! -f "${APP_ICON_SOURCE}" ]]; then
+    echo "Could not find the Termia launcher or icon in ${PROJECT_DIR}." >&2
+    return 1
+  fi
+
+  mkdir -p "${DESKTOP_DIR}" "${ICON_DIR}"
+  cp "${APP_ICON_SOURCE}" "${ICON_FILE}"
+  chmod 0644 "${ICON_FILE}"
+  printf '%s\n' \
+    '[Desktop Entry]' \
+    'Type=Application' \
+    'Version=1.0' \
+    "Name=${APP_NAME}" \
+    'Comment=SSH connection manager with embedded terminals' \
+    "Exec=python3 \"${APP_SCRIPT}\"" \
+    "Path=${PROJECT_DIR}" \
+    "Icon=${APP_ID}" \
+    'Terminal=false' \
+    'Categories=Network;RemoteAccess;GTK;' \
+    'StartupNotify=true' \
+    "StartupWMClass=${APP_ID}" > "${DESKTOP_FILE}"
+  chmod 0644 "${DESKTOP_FILE}"
+  refresh_desktop_caches
+  echo "Installed launcher: ${DESKTOP_FILE}"
+}
+
+refresh_desktop_caches() {
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "${DESKTOP_DIR}" >/dev/null 2>&1 || true
+  fi
+  if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t "${DATA_HOME}/icons/hicolor" >/dev/null 2>&1 || true
+  fi
+}
+
+confirm_install() {
+  local answer
+  cat <<'EOF'
+Termia setup will:
+  - install missing runtime packages with the detected system package manager;
+  - request sudo privileges when package installation requires them;
+  - verify Python, GTK 4, VTE, ssh, and sshpass;
+  - install a user-local application launcher and icon.
+
+No settings, connections, statistics, or existing system packages are removed.
+Type "no" or press Ctrl-C to cancel. Press Enter to start now, or wait 10 seconds.
+EOF
+  if [[ ! -t 0 ]]; then
+    echo "Starting non-interactive installation."
+    return 0
+  fi
+  if read -r -t 10 -p "> " answer; then
+    case "${answer}" in
+      no|NO|No|n|N)
+        echo "Installation cancelled."
+        return 1
+        ;;
+    esac
+  else
+    echo
+  fi
+}
+
+install() {
+  confirm_install
+  ensure_dependencies
+  install_desktop_launcher
+  echo "Termia installation completed successfully."
+}
+
+uninstall() {
+  rm -f "${DESKTOP_FILE}" "${ICON_FILE}"
+  refresh_desktop_caches
+  echo "Removed launcher: ${DESKTOP_FILE}"
+}
+
 case "${1:-}" in
-  "")
-    install_packages
-    run_checks
-    echo "Dependencies installed successfully"
+  install)
+    install
     ;;
-  --check)
-    run_checks
+  uninstall)
+    uninstall
     ;;
-  --help|-h)
+  --help|-h|help)
     usage
     ;;
   *)
-    echo "Unknown option: $1" >&2
     usage >&2
     exit 2
     ;;
