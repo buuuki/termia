@@ -61,6 +61,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Terminal shortcuts such as font size increase/decrease must not break normal terminal input unexpectedly.
 - `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
 - After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. Keyboard navigation must scroll just enough to keep the selected item visible. These keys must still reach the VTE while a terminal has focus.
+- The selected group, subgroup, or server must use a single consistent sidebar selection highlight; selecting a new item must clear the previous highlight.
 
 ### Context Menus and Popovers
 

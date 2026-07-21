@@ -536,6 +536,8 @@ class SidebarMixin:
 
     def build_group_label(self, text: str) -> Gtk.Widget:
         label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        label_box.set_hexpand(True)
+        label_box.set_halign(Gtk.Align.FILL)
         label_box.append(Gtk.Image.new_from_icon_name("folder-symbolic"))
         label = Gtk.Label(label=text)
         label.add_css_class("heading")
@@ -592,6 +594,8 @@ class SidebarMixin:
 
     def register_tree_widget(self, row: RowObject, widget: Gtk.Widget) -> None:
         widget.add_css_class("termia-tree-item")
+        if row.kind == "group":
+            widget.add_css_class("termia-group-item")
         if row.kind in {"server", "favorite", "recent", "local_terminal"}:
             widget.add_css_class("termia-server-item")
         widget.set_focusable(False)

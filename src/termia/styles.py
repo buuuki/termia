@@ -12,7 +12,7 @@ def build_application_css(
     return (
         f"@define-color termia_menu_bg {menu_background}; "
         ".termia-tree-item { border-radius: 4px; } "
-        ".termia-server-item { padding-top: 2px; padding-bottom: 2px; } "
+        ".termia-server-item, .termia-group-item { padding-top: 2px; padding-bottom: 2px; } "
         ".prompt-preset-button { padding: 1px 6px; min-height: 24px; } "
         "headerbar { background: @headerbar_backdrop_color; border-bottom-width: 0; box-shadow: none; } "
         "headerbar:backdrop { background: @headerbar_backdrop_color; } "
