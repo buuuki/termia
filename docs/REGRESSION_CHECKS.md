@@ -60,6 +60,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - After closing a session, focus must move to the active terminal automatically.
 - Terminal shortcuts such as font size increase/decrease must not break normal terminal input unexpectedly.
 - `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
+- After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. These keys must still reach the VTE while a terminal has focus.
 
 ### Context Menus and Popovers
 

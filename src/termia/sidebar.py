@@ -713,7 +713,7 @@ class SidebarMixin:
             return True
         return False
 
-    def on_sidebar_search_key_pressed(
+    def on_sidebar_navigation_key_pressed(
         self,
         _controller: Gtk.EventControllerKey,
         keyval: int,
@@ -752,6 +752,7 @@ class SidebarMixin:
         widget: Gtk.Widget,
     ) -> None:
         self.select_tree_row(row, widget)
+        self.server_list.grab_focus()
 
     def on_server_widget_left_click(
         self,
@@ -762,6 +763,7 @@ class SidebarMixin:
         row: RowObject,
     ) -> None:
         self.select_tree_row(row, self.tree_widgets[(row.kind, row.item_id)])
+        self.server_list.grab_focus()
         if n_press == 2:
             server = find_server(self.store.data.servers, row.item_id)
             if server:
@@ -791,6 +793,7 @@ class SidebarMixin:
         row: RowObject,
     ) -> None:
         self.select_tree_row(row, self.tree_widgets[(row.kind, row.item_id)])
+        self.server_list.grab_focus()
         if n_press == 2:
             profile = find_local_terminal_profile(self.store.data.local_terminals, row.item_id)
             if profile is not None:
