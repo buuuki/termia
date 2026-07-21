@@ -53,6 +53,17 @@ class SidebarMixin:
         self.search_entry.select_region(0, -1)
         return True
 
+    def sidebar_navigation_has_focus(self) -> bool:
+        focused = self.get_focus()
+        if focused is None:
+            return False
+        return (
+            focused is self.search_entry
+            or focused is self.server_list
+            or focused.is_ancestor(self.search_entry)
+            or focused.is_ancestor(self.server_list)
+        )
+
     def on_server_context_connect(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
         server = find_server(self.store.data.servers, server_id)
