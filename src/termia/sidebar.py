@@ -53,6 +53,16 @@ class SidebarMixin:
         self.search_entry.select_region(0, -1)
         return True
 
+    def sidebar_navigation_has_focus(self) -> bool:
+        focused = self.get_focus()
+        if focused is None:
+            return False
+        return (
+            focused is self.search_entry
+            or focused.is_ancestor(self.search_entry)
+            or focused.is_ancestor(self.server_list)
+        )
+
     def on_server_context_connect(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
         popover.popdown()
         server = find_server(self.store.data.servers, server_id)
@@ -388,6 +398,7 @@ class SidebarMixin:
 
     def build_local_terminals_widget(self, profiles: list[LocalTerminalProfile], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         expander.set_label_widget(self.build_local_terminals_label(f"{self.t('local_terminals')} ({len(profiles)})"))
         self.group_expanders.append(expander)
         expander.group_id = "__local_terminals__"
@@ -440,6 +451,7 @@ class SidebarMixin:
 
     def build_favorites_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         expander.set_label_widget(self.build_favorites_label(f"{self.t('favorites')} ({len(servers)})"))
         self.group_expanders.append(expander)
         expander.group_id = "__favorites__"
@@ -453,6 +465,7 @@ class SidebarMixin:
 
     def build_recent_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         expander.set_label_widget(self.build_recent_label(f"{self.t('recent')} ({len(servers)})"))
         self.group_expanders.append(expander)
         expander.group_id = "__recent__"
@@ -502,6 +515,7 @@ class SidebarMixin:
             int(getattr(widget, "server_count", 0)) for widget in child_widgets
         )
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         group_label = self.build_group_label(f"{group.name} ({descendant_servers})")
         expander.set_label_widget(group_label)
         self.group_expanders.append(expander)
@@ -536,6 +550,8 @@ class SidebarMixin:
 
     def build_group_label(self, text: str) -> Gtk.Widget:
         label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        label_box.set_hexpand(True)
+        label_box.set_halign(Gtk.Align.FILL)
         label_box.append(Gtk.Image.new_from_icon_name("folder-symbolic"))
         label = Gtk.Label(label=text)
         label.add_css_class("heading")
@@ -544,6 +560,7 @@ class SidebarMixin:
 
     def build_ungrouped_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
+        expander.set_focusable(False)
         expander.set_label_widget(self.build_group_label(f"{self.t('no_group')} ({len(servers)})"))
         self.group_expanders.append(expander)
         expander.group_id = "__ungrouped__"
@@ -592,16 +609,21 @@ class SidebarMixin:
 
     def register_tree_widget(self, row: RowObject, widget: Gtk.Widget) -> None:
         widget.add_css_class("termia-tree-item")
+        if row.kind == "group":
+            widget.add_css_class("termia-group-item")
         if row.kind in {"server", "favorite", "recent", "local_terminal"}:
             widget.add_css_class("termia-server-item")
-        widget.set_focusable(False)
+        widget.set_focusable(True)
         self.tree_widgets[(row.kind, row.item_id)] = widget
         if self.selected and self.selected.kind == row.kind and self.selected.item_id == row.item_id:
             widget.add_css_class("selected")
             self.selected_tree_widget = widget
 
-    def select_tree_row(self, row: RowObject, widget: Gtk.Widget) -> None:
-        self.preserve_sidebar_scroll()
+    def select_tree_row(
+        self, row: RowObject, widget: Gtk.Widget, preserve_scroll: bool = True
+    ) -> None:
+        if preserve_scroll:
+            self.preserve_sidebar_scroll()
         if self.selected_tree_widget is not None and self.selected_tree_widget is not widget:
             self.selected_tree_widget.remove_css_class("selected")
         self.selected = row
@@ -630,6 +652,11 @@ class SidebarMixin:
             self.restore_sidebar_scroll, vertical, vertical_value, horizontal, horizontal_value
         )
 
+    def cancel_sidebar_scroll_restore(self) -> None:
+        if self.scroll_restore_id is not None:
+            GLib.source_remove(self.scroll_restore_id)
+            self.scroll_restore_id = None
+
     def restore_sidebar_scroll(
         self, vertical: Gtk.Adjustment, vertical_value: float,
         horizontal: Gtk.Adjustment, horizontal_value: float,
@@ -654,6 +681,13 @@ class SidebarMixin:
         maximum = max(adjustment.get_lower(), adjustment.get_upper() - adjustment.get_page_size())
         adjustment.set_value(min(max(value, adjustment.get_lower()), maximum))
 
+    def focus_selected_tree_row(self) -> bool:
+        if self.selected is not None:
+            widget = self.tree_widgets.get((self.selected.kind, self.selected.item_id))
+            if widget is not None:
+                widget.grab_focus()
+        return GLib.SOURCE_REMOVE
+
     def get_group_expander(self, group_id: str) -> Gtk.Expander | None:
         for expander in getattr(self, "group_expanders", []):
             if getattr(expander, "group_id", None) == group_id:
@@ -675,7 +709,9 @@ class SidebarMixin:
         widget = self.tree_widgets.get((row.kind, row.item_id))
         if widget is None:
             return False
-        self.select_tree_row(row, widget)
+        self.cancel_sidebar_scroll_restore()
+        self.select_tree_row(row, widget, preserve_scroll=False)
+        widget.grab_focus()
         return True
 
     def move_visible_tree_selection(self, delta: int) -> bool:
@@ -708,12 +744,14 @@ class SidebarMixin:
             expander = self.get_group_expander(self.selected.item_id)
             if expander is None:
                 return False
+            self.cancel_sidebar_scroll_restore()
             expander.set_expanded(not expander.get_expanded())
             self.refresh_list()
+            GLib.idle_add(self.focus_selected_tree_row)
             return True
         return False
 
-    def on_sidebar_search_key_pressed(
+    def on_sidebar_navigation_key_pressed(
         self,
         _controller: Gtk.EventControllerKey,
         keyval: int,
@@ -752,6 +790,7 @@ class SidebarMixin:
         widget: Gtk.Widget,
     ) -> None:
         self.select_tree_row(row, widget)
+        widget.grab_focus()
 
     def on_server_widget_left_click(
         self,
@@ -761,7 +800,9 @@ class SidebarMixin:
         _y: float,
         row: RowObject,
     ) -> None:
-        self.select_tree_row(row, self.tree_widgets[(row.kind, row.item_id)])
+        widget = self.tree_widgets[(row.kind, row.item_id)]
+        self.select_tree_row(row, widget)
+        widget.grab_focus()
         if n_press == 2:
             server = find_server(self.store.data.servers, row.item_id)
             if server:
@@ -790,7 +831,9 @@ class SidebarMixin:
         _y: float,
         row: RowObject,
     ) -> None:
-        self.select_tree_row(row, self.tree_widgets[(row.kind, row.item_id)])
+        widget = self.tree_widgets[(row.kind, row.item_id)]
+        self.select_tree_row(row, widget)
+        widget.grab_focus()
         if n_press == 2:
             profile = find_local_terminal_profile(self.store.data.local_terminals, row.item_id)
             if profile is not None:

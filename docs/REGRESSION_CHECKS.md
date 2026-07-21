@@ -60,6 +60,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - After closing a session, focus must move to the active terminal automatically.
 - Terminal shortcuts such as font size increase/decrease must not break normal terminal input unexpectedly.
 - `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
+- After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. Keyboard navigation must scroll just enough to keep the selected item visible. These keys must still reach the VTE while a terminal has focus.
+- The selected group, subgroup, or server must use a single consistent sidebar selection highlight; selecting a new item must clear the previous highlight. Starting navigation from the server filter must focus the selected row, GTK expander focus must not create a second selector, and `Up` must never leave the list for the sidebar action buttons while an earlier visible row exists. GTK must automatically scroll the focused row into view, while terminal focus must keep sidebar navigation disabled.
 
 ### Context Menus and Popovers
 
