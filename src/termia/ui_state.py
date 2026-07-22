@@ -10,13 +10,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Vte", "3.91")
 from gi.repository import Gtk, Vte
 
-
-@dataclass
-class RowObject:
-    kind: str
-    item_id: str
-    title: str
-    subtitle: str = ""
+from .sidebar_projection import SidebarRow as RowObject
 
 
 @dataclass
