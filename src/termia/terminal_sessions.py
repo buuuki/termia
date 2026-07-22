@@ -26,12 +26,14 @@ from .connection_utils import find_local_terminal_profile, find_server
 from .file_transfer import FileTransferController
 from .keybindings import is_unmodified_function_key, keybinding_matches
 from .models import DEFAULT_ANSI_PALETTE, LocalTerminalProfile, Server
+from .session_commands import build_ssh_command
 from .terminal_config import (
     build_local_prompt_shell_command,
     build_terminal_environment,
     parse_color,
     split_layout_plan,
 )
+from .terminal_processes import spawn_terminal_process
 from .ui_state import TerminalSession
 
 
@@ -208,9 +210,11 @@ class TerminalSessionsMixin:
         terminal.grab_focus()
         self.store.record_history_start(session, "local")
         try:
-            _ok, child_pid = terminal.spawn_sync(
-                Vte.PtyFlags.DEFAULT, working_directory, command, envv or build_terminal_environment(self.store.data.terminal.ls_colors),
-                GLib.SpawnFlags.DEFAULT, None, None, None,
+            child_pid = spawn_terminal_process(
+                terminal,
+                working_directory,
+                command,
+                envv or build_terminal_environment(self.store.data.terminal.ls_colors),
             )
         except GLib.Error as exc:
             message = self.t("local_terminal_start_failed").format(error=exc.message)
@@ -292,11 +296,6 @@ class TerminalSessionsMixin:
             self.mark_session_for_reconnect(session, server, message)
             return
 
-        ssh_target = f"{server.user}@{server.host}"
-        command = [ssh_path, "-p", str(server.port)]
-        if server.public_key:
-            command.extend(["-i", str(Path(server.public_key).expanduser())])
-        command.append(ssh_target)
         envv = build_terminal_environment(self.store.data.terminal.ls_colors, server.password)
         use_sshpass = bool(server.password)
         if server.password and not self.has_known_host_key(server.host, server.port):
@@ -313,20 +312,13 @@ class TerminalSessionsMixin:
                 self.store.record_history_end(session, "failed", detail=message)
                 self.mark_session_for_reconnect(session, server, message)
                 return
-            command = [sshpass_path, "-e", *command]
+            command = build_ssh_command(server, ssh_path, sshpass_path=sshpass_path)
+        else:
+            command = build_ssh_command(server, ssh_path)
         terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
         terminal.grab_focus()
         try:
-            _ok, child_pid = terminal.spawn_sync(
-                Vte.PtyFlags.DEFAULT,
-                None,
-                command,
-                envv,
-                GLib.SpawnFlags.DEFAULT,
-                None,
-                None,
-                None,
-            )
+            child_pid = spawn_terminal_process(terminal, None, command, envv)
         except GLib.Error as exc:
             message = self.t("ssh_start_failed").format(error=exc.message)
             terminal.feed(f"{message}\r\n".encode())
@@ -722,15 +714,11 @@ class TerminalSessionsMixin:
                 command = build_local_prompt_shell_command(self.store.data.terminal, bash_path)
         working_directory = self.local_terminal_working_directory(source_terminal, fallback_working_directory)
         try:
-            _ok, child_pid = terminal.spawn_sync(
-                Vte.PtyFlags.DEFAULT,
+            child_pid = spawn_terminal_process(
+                terminal,
                 working_directory,
                 command,
                 build_terminal_environment(self.store.data.terminal.ls_colors),
-                GLib.SpawnFlags.DEFAULT,
-                None,
-                None,
-                None,
             )
         except GLib.Error as exc:
             message = self.t("local_terminal_start_failed").format(error=exc.message)
@@ -755,11 +743,6 @@ class TerminalSessionsMixin:
             self.toast_label.set_label(message)
             return
 
-        ssh_target = f"{server.user}@{server.host}"
-        command = [ssh_path, "-p", str(server.port)]
-        if server.public_key:
-            command.extend(["-i", str(Path(server.public_key).expanduser())])
-        command.append(ssh_target)
         envv = build_terminal_environment(self.store.data.terminal.ls_colors, server.password)
         use_sshpass = bool(server.password)
         if server.password and not self.has_known_host_key(server.host, server.port):
@@ -774,19 +757,12 @@ class TerminalSessionsMixin:
                 terminal.feed(f"{message}\r\n".encode())
                 self.toast_label.set_label(message)
                 return
-            command = [sshpass_path, "-e", *command]
+            command = build_ssh_command(server, ssh_path, sshpass_path=sshpass_path)
+        else:
+            command = build_ssh_command(server, ssh_path)
         terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
         try:
-            _ok, child_pid = terminal.spawn_sync(
-                Vte.PtyFlags.DEFAULT,
-                None,
-                command,
-                envv,
-                GLib.SpawnFlags.DEFAULT,
-                None,
-                None,
-                None,
-            )
+            child_pid = spawn_terminal_process(terminal, None, command, envv)
         except GLib.Error as exc:
             message = self.t("ssh_start_failed").format(error=exc.message)
             terminal.feed(f"{message}\r\n".encode())
