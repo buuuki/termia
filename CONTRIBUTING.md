@@ -47,6 +47,7 @@ python3 run_termia.py
 At minimum, run syntax checks for touched Python and shell files. For a broad validation pass, run:
 
 ```bash
+PYTHONPATH=src python3 -m unittest discover -s tests -v
 python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
 bash -n scripts/termia-setup.sh
 scripts/compile_translations.py --check
@@ -60,6 +61,9 @@ validation.
 For UI, keyboard shortcut, SSH, settings, import/export, or terminal color changes, also review the relevant manual checks in `docs/REGRESSION_CHECKS.md`.
 
 If a check cannot be run, mention that in the pull request with the reason.
+
+GitHub Actions runs the unittest suite, translation validation, and Python
+syntax checks automatically for every pull request and every push to `main`.
 
 ## Pull Requests
 
