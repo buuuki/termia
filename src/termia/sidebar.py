@@ -18,12 +18,11 @@ from .connection_utils import (
     find_server,
     group_descendant_ids,
     group_matches_query,
-    server_matches_query,
     unique_local_terminal_clone_name,
     unique_server_clone_name,
 )
 from .models import Group, LocalTerminalProfile, Server
-from .ui_state import RowObject
+from .sidebar_projection import SidebarRow as RowObject, build_sidebar_projection
 
 GROUP_START_CONFIRMATION_THRESHOLD = 10
 
@@ -267,32 +266,30 @@ class SidebarMixin:
         self.tree_widgets = {}
         self.selected_tree_widget = None
 
-        children_by_parent: dict[str | None, list[Group]] = {}
-        for group in self.store.data.groups:
-            children_by_parent.setdefault(group.parent_id, []).append(group)
-        servers_by_group: dict[str | None, list[Server]] = {}
-        for server in self.store.data.servers:
-            if server_matches_query(server, query):
-                servers_by_group.setdefault(server.group_id, []).append(server)
-
-        self.visible_tree_rows = self.build_visible_tree_rows(children_by_parent, servers_by_group, query)
-        local_terminal_profiles = self.local_terminal_profiles(query)
-        if local_terminal_profiles:
-            self.server_list.append(self.build_local_terminals_widget(local_terminal_profiles, query))
-        recent_servers = self.recent_servers(query)
-        if recent_servers:
-            self.server_list.append(self.build_recent_widget(recent_servers, query))
-        favorite_servers = self.favorite_servers(query)
-        if favorite_servers:
-            self.server_list.append(self.build_favorites_widget(favorite_servers, query))
-        for group in sorted(children_by_parent.get(None, []), key=lambda item: item.name.lower()):
-            widget = self.build_group_widget(group, children_by_parent, servers_by_group, query)
+        projection = build_sidebar_projection(
+            self.store.data.groups,
+            self.store.data.servers,
+            self.store.data.local_terminals,
+            self.store.recent_server_ids(),
+            query,
+            self.group_expanded_state,
+            self.collapse_groups_on_startup,
+        )
+        self.sidebar_projection = projection
+        self.visible_tree_rows = projection.rows
+        if projection.local_terminal_profiles:
+            self.server_list.append(self.build_local_terminals_widget(projection.local_terminal_profiles, query))
+        if projection.recent_servers:
+            self.server_list.append(self.build_recent_widget(projection.recent_servers, query))
+        if projection.favorite_servers:
+            self.server_list.append(self.build_favorites_widget(projection.favorite_servers, query))
+        for group in projection.root_groups:
+            widget = self.build_group_widget(group, projection.children_by_parent, projection.servers_by_group, query)
             if widget is not None:
                 self.server_list.append(widget)
 
-        ungrouped = servers_by_group.get(None, [])
-        if ungrouped:
-            self.server_list.append(self.build_ungrouped_widget(ungrouped, query))
+        if projection.ungrouped_servers:
+            self.server_list.append(self.build_ungrouped_widget(projection.ungrouped_servers, query))
 
         root_groups = len([group for group in self.store.data.groups if group.parent_id is None])
         subgroups = len(self.store.data.groups) - root_groups
@@ -300,98 +297,9 @@ class SidebarMixin:
             self.t("summary").format(groups=root_groups, subgroups=subgroups, servers=len(self.store.data.servers))
         )
 
-    def favorite_servers(self, query: str) -> list[Server]:
-        return sorted(
-            [server for server in self.store.data.servers if server.favorite and server_matches_query(server, query)],
-            key=lambda item: (item.name.lower(), item.host.lower(), item.user.lower(), item.port),
-        )
-
-    def recent_servers(self, query: str) -> list[Server]:
-        servers_by_id = {
-            server.id: server
-            for server in self.store.data.servers
-            if server_matches_query(server, query)
-        }
-        recent_servers: list[Server] = []
-        seen: set[str] = set()
-        for server_id in self.store.recent_server_ids():
-            if server_id in seen:
-                continue
-            server = servers_by_id.get(server_id)
-            if server is None:
-                continue
-            seen.add(server_id)
-            recent_servers.append(server)
-        return recent_servers
-
-    def build_visible_tree_rows(
-        self,
-        children_by_parent: dict[str | None, list[Group]],
-        servers_by_group: dict[str | None, list[Server]],
-        query: str,
-    ) -> list[RowObject]:
-        rows: list[RowObject] = []
-        rows.extend(self.build_local_terminal_row_objects(query))
-        if query or self.get_group_expanded("__recent__", query):
-            for server in self.recent_servers(query):
-                rows.append(self.build_server_row_object(server, "recent"))
-        if query or self.get_group_expanded("__favorites__", query):
-            for server in self.favorite_servers(query):
-                rows.append(self.build_server_row_object(server, "favorite"))
-        for group in sorted(children_by_parent.get(None, []), key=lambda item: item.name.lower()):
-            rows.extend(self.collect_visible_group_rows(group, children_by_parent, servers_by_group, query))
-        for server in sorted(servers_by_group.get(None, []), key=lambda item: item.name.lower()):
-            rows.append(self.build_server_row_object(server))
-        return rows
-
-    def local_terminal_profiles(self, query: str) -> list[LocalTerminalProfile]:
-        profiles = sorted(self.store.data.local_terminals, key=lambda item: item.name.lower())
-        if not query:
-            return profiles
-        return [profile for profile in profiles if self.local_terminal_profile_matches_query(profile, query)]
-
-    def local_terminal_profile_matches_query(self, profile: LocalTerminalProfile, query: str) -> bool:
-        haystack = " ".join(
-            str(value)
-            for value in (
-                profile.name,
-                profile.working_directory,
-                profile.shell,
-                profile.arguments,
-                profile.command_on_start,
-                profile.tab_title,
-            )
-            if value
-        ).casefold()
-        return query in haystack
-
-    def build_local_terminal_row_objects(self, query: str) -> list[RowObject]:
-        return [self.build_local_terminal_row_object(profile) for profile in self.local_terminal_profiles(query)]
-
     def build_local_terminal_row_object(self, profile: LocalTerminalProfile) -> RowObject:
         title = profile.name or self.t("local_terminal")
         return RowObject("local_terminal", profile.id, title)
-
-    def collect_visible_group_rows(
-        self,
-        group: Group,
-        children_by_parent: dict[str | None, list[Group]],
-        servers_by_group: dict[str | None, list[Server]],
-        query: str,
-    ) -> list[RowObject]:
-        child_rows: list[RowObject] = []
-        if query or self.get_group_expanded(group.id, query):
-            for child in sorted(children_by_parent.get(group.id, []), key=lambda item: item.name.lower()):
-                child_rows.extend(self.collect_visible_group_rows(child, children_by_parent, servers_by_group, query))
-            for server in sorted(servers_by_group.get(group.id, []), key=lambda item: item.name.lower()):
-                child_rows.append(self.build_server_row_object(server))
-
-        group_matches = group_matches_query(group, query)
-        if query and not group_matches and not child_rows:
-            return []
-
-        descendant_servers = sum(1 for row in child_rows if row.kind == "server")
-        return [RowObject("group", group.id, group.name, f"{descendant_servers} servidor(es)"), *child_rows]
 
     def build_server_row_object(self, server: Server, row_kind: str = "server") -> RowObject:
         return RowObject(row_kind, server.id, server.name, self.get_server_connection_text(server))
