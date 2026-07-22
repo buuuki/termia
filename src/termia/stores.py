@@ -597,11 +597,6 @@ class ConnectionStore:
         self.statistics_store.data = self.data.statistics
         self.statistics_store.save()
 
-    def save_history(self) -> None:
-        if self.read_only:
-            return
-        self.history_store.rebuild_entries()
-
     def clear_history(self) -> None:
         self.ensure_writable()
         self.history_store.clear()
