@@ -165,3 +165,6 @@ scripts/compile_translations.py --check
 ```
 
 When practical, add targeted tests for pure logic such as prompt templates, config migration, import/export, and statistics.
+
+The automated equivalent runs in GitHub Actions for every pull request and
+every push to `main`.

@@ -1,0 +1,46 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unittest:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install GTK/VTE and Python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            python3 \
+            python3-gi \
+            python3-cryptography \
+            python3-yaml \
+            gir1.2-gtk-4.0 \
+            gir1.2-vte-3.91
+
+      - name: Run unit and GTK smoke tests
+        run: PYTHONPATH=src python3 -m unittest discover -s tests -v
+
+      - name: Validate translation catalogs
+        run: scripts/compile_translations.py --check
+
+      - name: Compile Python sources
+        run: |
+          python3 -m py_compile \
+            run_termia.py \
+            scripts/compile_translations.py \
+            src/termia/*.py \
+            tests/*.py

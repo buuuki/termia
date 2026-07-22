@@ -62,6 +62,9 @@ For UI, keyboard shortcut, SSH, settings, import/export, or terminal color chang
 
 If a check cannot be run, mention that in the pull request with the reason.
 
+GitHub Actions runs the unittest suite, translation validation, and Python
+syntax checks automatically for every pull request and every push to `main`.
+
 ## Pull Requests
 
 A good pull request includes:

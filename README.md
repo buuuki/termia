@@ -180,6 +180,10 @@ python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/a
 bash -n scripts/termia-setup.sh
 ```
 
+The same unit tests, translation checks, and Python syntax checks run
+automatically in GitHub Actions for every pull request and every push to
+`main`.
+
 Review the files included in the first commit:
 
 ```bash
