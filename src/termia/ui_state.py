@@ -8,16 +8,15 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Vte", "3.91")
-from gi.repository import GObject, Gtk, Vte
+from gi.repository import Gtk, Vte
 
 
-class RowObject(GObject.Object):
-    def __init__(self, kind: str, item_id: str, title: str, subtitle: str = "") -> None:
-        super().__init__()
-        self.kind = kind
-        self.item_id = item_id
-        self.title = title
-        self.subtitle = subtitle
+@dataclass
+class RowObject:
+    kind: str
+    item_id: str
+    title: str
+    subtitle: str = ""
 
 
 @dataclass
