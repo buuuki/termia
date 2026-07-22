@@ -17,23 +17,22 @@ import gi
 gi.require_version("Gdk", "4.0")
 gi.require_version("Gio", "2.0")
 gi.require_version("Gtk", "4.0")
-gi.require_version("Pango", "1.0")
 gi.require_version("Vte", "3.91")
-from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
+from gi.repository import Gdk, Gio, GLib, Gtk, Vte
 
-from .constants import DEFAULT_TERMINAL_BACKGROUND, DEFAULT_TERMINAL_FOREGROUND
 from .connection_utils import find_local_terminal_profile, find_server
 from .file_transfer import FileTransferController
 from .keybindings import is_unmodified_function_key, keybinding_matches
-from .models import DEFAULT_ANSI_PALETTE, LocalTerminalProfile, Server
+from .models import LocalTerminalProfile, Server
 from .session_commands import build_ssh_command
+from .split_panes import SplitPaneController
 from .terminal_config import (
     build_local_prompt_shell_command,
     build_terminal_environment,
-    parse_color,
     split_layout_plan,
 )
 from .terminal_processes import spawn_terminal_process
+from .terminal_view import TerminalViewFactory
 from .ui_state import TerminalSession
 
 
@@ -101,13 +100,7 @@ class TerminalSessionsMixin:
         return Path(shell).name == "bash"
 
     def create_configured_terminal(self) -> Vte.Terminal:
-        terminal = Vte.Terminal()
-        terminal.set_hexpand(True)
-        terminal.set_vexpand(True)
-        terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.ON)
-        terminal.set_scrollback_lines(10000)
-        self.apply_terminal_settings(terminal)
-        return terminal
+        return TerminalViewFactory(self.resolved_terminal_font_family).create(self.store.data.terminal)
 
     def build_session_status_bar(
         self,
@@ -569,44 +562,11 @@ class TerminalSessionsMixin:
         terminal: Vte.Terminal,
         direction: str,
     ) -> Vte.Terminal | None:
-        target = terminal.get_parent()
-        if not isinstance(target, Gtk.Widget):
-            return None
-
-        new_terminal = self.create_split_terminal(session)
-        new_scroller = self.wrap_terminal_in_scroller(new_terminal)
-        orientation = Gtk.Orientation.HORIZONTAL if direction in {"left", "right"} else Gtk.Orientation.VERTICAL
-        paned = Gtk.Paned(orientation=orientation)
-        paned.add_css_class("termia-split-pane")
-        paned.set_wide_handle(False)
-        paned.set_hexpand(True)
-        paned.set_vexpand(True)
-        paned.set_resize_start_child(True)
-        paned.set_resize_end_child(True)
-        paned.set_shrink_start_child(False)
-        paned.set_shrink_end_child(False)
-
-        if not self.replace_terminal_pane(target, paned):
-            session.split_terminals.remove(new_terminal)
-            session.active_terminal_ids.discard(id(new_terminal))
-            return None
-
-        if direction in {"left", "up"}:
-            paned.set_start_child(new_scroller)
-            paned.set_end_child(target)
-        else:
-            paned.set_start_child(target)
-            paned.set_end_child(new_scroller)
-
-        def center_split() -> bool:
-            size = paned.get_width() if orientation == Gtk.Orientation.HORIZONTAL else paned.get_height()
-            if size > 0:
-                paned.set_position(size // 2)
-            new_terminal.grab_focus()
-            return GLib.SOURCE_REMOVE
-
-        GLib.timeout_add(80, center_split)
-        return new_terminal
+        return SplitPaneController(
+            self.create_split_terminal,
+            self.wrap_terminal_in_scroller,
+            self.replace_terminal_pane,
+        ).split_terminal(session, terminal, direction)
 
     def start_split_child_terminal(
         self,
@@ -958,15 +918,7 @@ class TerminalSessionsMixin:
         self.update_session_tab_title(session, title)
 
     def apply_terminal_settings(self, terminal: Vte.Terminal) -> None:
-        settings = self.store.data.terminal
-        font_family = self.resolved_terminal_font_family(settings.font_family)
-        font = Pango.FontDescription(f"{font_family} {settings.font_size}")
-        foreground = parse_color(settings.foreground, DEFAULT_TERMINAL_FOREGROUND)
-        background = parse_color(settings.background, DEFAULT_TERMINAL_BACKGROUND)
-        palette_values = settings.ansi_palette or DEFAULT_ANSI_PALETTE
-        palette = [parse_color(color, fallback) for color, fallback in zip(palette_values, DEFAULT_ANSI_PALETTE)]
-        terminal.set_font(font)
-        terminal.set_colors(foreground, background, palette)
+        TerminalViewFactory(self.resolved_terminal_font_family).apply_settings(terminal, self.store.data.terminal)
 
     def apply_terminal_settings_to_open_tabs(self) -> None:
         for session in self.open_tabs.values():
