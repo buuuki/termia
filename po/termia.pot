@@ -5,13 +5,14 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: termia\n"
-"POT-Creation-Date: 2026-06-29 10:28+0000\n"
+"POT-Creation-Date: 2026-07-22 00:00+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: \n"
 
 #: src/termia/i18n.py:servers
+#: src/termia/i18n.py:keybinding_action_toggle_sidebar
 msgid "Show or hide server list"
 msgstr ""
 
@@ -25,6 +26,10 @@ msgstr ""
 
 #: src/termia/i18n.py:new_server
 msgid "New server"
+msgstr ""
+
+#: src/termia/i18n.py:new_local_terminal
+msgid "New local terminal"
 msgstr ""
 
 #: src/termia/i18n.py:terminal
@@ -52,6 +57,7 @@ msgid "Preferences"
 msgstr ""
 
 #: src/termia/i18n.py:filter_servers
+#: src/termia/i18n.py:keybinding_action_filter_servers
 msgid "Filter servers"
 msgstr ""
 
@@ -68,26 +74,47 @@ msgid "Start group?"
 msgstr ""
 
 #: src/termia/i18n.py:start_group_confirm_detail
-msgid ""
-"This will open {count} SSH sessions from \"{group}\". Opening more than "
-"{threshold} sessions at once can overload your machine or remote systems. Do "
-"you want to continue?"
+msgid "This will open {count} SSH sessions from \"{group}\". Opening more than {threshold} sessions at once can overload your machine or remote systems. Do you want to continue?"
 msgstr ""
 
 #: src/termia/i18n.py:edit_server
 msgid "Edit server"
 msgstr ""
 
+#: src/termia/i18n.py:edit_local_terminal
+msgid "Edit local terminal"
+msgstr ""
+
 #: src/termia/i18n.py:delete_server
 msgid "Delete server"
+msgstr ""
+
+#: src/termia/i18n.py:delete_local_terminal
+msgid "Delete local terminal"
 msgstr ""
 
 #: src/termia/i18n.py:clone_connection
 msgid "Clone connection"
 msgstr ""
 
+#: src/termia/i18n.py:favorite_server
+msgid "Favorite"
+msgstr ""
+
+#: src/termia/i18n.py:add_favorite
+msgid "Add to favorites"
+msgstr ""
+
+#: src/termia/i18n.py:remove_favorite
+msgid "Remove from favorites"
+msgstr ""
+
 #: src/termia/i18n.py:recent
 msgid "Recent"
+msgstr ""
+
+#: src/termia/i18n.py:favorites
+msgid "Favorites"
 msgstr ""
 
 #: src/termia/i18n.py:edit_group
@@ -95,6 +122,7 @@ msgid "Edit group"
 msgstr ""
 
 #: src/termia/i18n.py:delete_group
+#: src/termia/i18n.py:delete_group_confirm
 msgid "Delete group"
 msgstr ""
 
@@ -112,6 +140,14 @@ msgstr ""
 
 #: src/termia/i18n.py:cancel
 msgid "Cancel"
+msgstr ""
+
+#: src/termia/i18n.py:continue
+msgid "Continue"
+msgstr ""
+
+#: src/termia/i18n.py:unlock
+msgid "Unlock"
 msgstr ""
 
 #: src/termia/i18n.py:close
@@ -180,10 +216,6 @@ msgstr ""
 
 #: src/termia/i18n.py:show_sidebar_on_startup
 msgid "Show the server list when Termia starts"
-msgstr ""
-
-#: src/termia/i18n.py:delete_group_confirm
-msgid "Delete group"
 msgstr ""
 
 #: src/termia/i18n.py:delete_group_confirm_detail
@@ -261,6 +293,38 @@ msgstr ""
 msgid "Split left"
 msgstr ""
 
+#: src/termia/i18n.py:split_layout_none
+msgid "No splits"
+msgstr ""
+
+#: src/termia/i18n.py:split_layout_columns
+msgid "2 columns"
+msgstr ""
+
+#: src/termia/i18n.py:split_layout_rows
+msgid "2 rows"
+msgstr ""
+
+#: src/termia/i18n.py:split_layout_left_rows
+msgid "Left column split"
+msgstr ""
+
+#: src/termia/i18n.py:split_layout_right_rows
+msgid "Right column split"
+msgstr ""
+
+#: src/termia/i18n.py:split_layout_top_columns
+msgid "Top row split"
+msgstr ""
+
+#: src/termia/i18n.py:split_layout_bottom_columns
+msgid "Bottom row split"
+msgstr ""
+
+#: src/termia/i18n.py:split_layout_grid
+msgid "2x2 grid"
+msgstr ""
+
 #: src/termia/i18n.py:tab
 msgid "Tab"
 msgstr ""
@@ -270,6 +334,7 @@ msgid "Close tab"
 msgstr ""
 
 #: src/termia/i18n.py:disconnect
+#: src/termia/i18n.py:disconnect_session_confirm
 msgid "Disconnect"
 msgstr ""
 
@@ -449,10 +514,6 @@ msgstr ""
 msgid "Send saved password"
 msgstr ""
 
-#: src/termia/i18n.py:keybinding_action_toggle_sidebar
-msgid "Show or hide server list"
-msgstr ""
-
 #: src/termia/i18n.py:keybinding_action_toggle_main_menu
 msgid "Open or close main menu"
 msgstr ""
@@ -498,6 +559,7 @@ msgid "Prompt themes"
 msgstr ""
 
 #: src/termia/i18n.py:prompt_datetime
+#: src/termia/i18n.py:prompt_datetime_both
 msgid "Date and time"
 msgstr ""
 
@@ -517,10 +579,6 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
-#: src/termia/i18n.py:prompt_datetime_both
-msgid "Date and time"
-msgstr ""
-
 #: src/termia/i18n.py:prompt_settings_saved
 msgid "Prompt settings saved"
 msgstr ""
@@ -533,6 +591,10 @@ msgstr ""
 msgid "Security preferences saved"
 msgstr ""
 
+#: src/termia/i18n.py:local_terminal_cloned
+msgid "Local terminal cloned"
+msgstr ""
+
 #: src/termia/i18n.py:terminal_font_size_changed
 msgid "Terminal font size: {size}"
 msgstr ""
@@ -543,6 +605,14 @@ msgstr ""
 
 #: src/termia/i18n.py:background
 msgid "Background"
+msgstr ""
+
+#: src/termia/i18n.py:split_separator_color
+msgid "Split separator color"
+msgstr ""
+
+#: src/termia/i18n.py:split_separator_thickness
+msgid "Split separator thickness"
 msgstr ""
 
 #: src/termia/i18n.py:palettes
@@ -561,12 +631,131 @@ msgstr ""
 msgid "Obfuscated"
 msgstr ""
 
+#: src/termia/i18n.py:connection_storage_encrypted
+msgid "Encrypted"
+msgstr ""
+
 #: src/termia/i18n.py:connection_storage_obfuscated_warning
 msgid "Obfuscation prevents accidental file reads, but it does not encrypt data or protect against an attacker with access to the code."
 msgstr ""
 
+#: src/termia/i18n.py:enable_connection_encryption_title
+msgid "Enable connection file encryption"
+msgstr ""
+
+#: src/termia/i18n.py:enable_connection_encryption_detail
+msgid ""
+"Termia will encrypt the file that stores your servers, users, private key paths, and saved passwords.\n"
+"\n"
+"From now on, Termia will ask for the master password every time it starts.\n"
+"\n"
+"If you forget the master password, Termia cannot recover these data. You will need to restore them from a backup or configure them again manually.\n"
+"\n"
+"After reading this information, do you want to continue enabling encryption?"
+msgstr ""
+
+#: src/termia/i18n.py:master_password_title
+msgid "Set master password"
+msgstr ""
+
+#: src/termia/i18n.py:master_password_detail
+msgid "Choose the master password that will unlock your Termia connections."
+msgstr ""
+
+#: src/termia/i18n.py:master_password
+msgid "Master password"
+msgstr ""
+
+#: src/termia/i18n.py:confirm_master_password
+msgid "Confirm master password"
+msgstr ""
+
+#: src/termia/i18n.py:enable_encryption
+msgid "Enable encryption"
+msgstr ""
+
+#: src/termia/i18n.py:master_password_too_short
+msgid "Use at least 8 characters."
+msgstr ""
+
+#: src/termia/i18n.py:master_password_mismatch
+msgid "The master passwords do not match."
+msgstr ""
+
+#: src/termia/i18n.py:unlock_connections_title
+msgid "Unlock connections"
+msgstr ""
+
+#: src/termia/i18n.py:unlock_connections_detail
+msgid "Enter the master password to unlock your Termia connections."
+msgstr ""
+
+#: src/termia/i18n.py:unlock_connections_failed
+msgid "Could not unlock connections with this master password."
+msgstr ""
+
+#: src/termia/i18n.py:connections_locked
+msgid "Connections are locked until the master password is entered."
+msgstr ""
+
+#: src/termia/i18n.py:connections_locked_tooltip
+msgid "Unlock encrypted connections before changing configuration."
+msgstr ""
+
+#: src/termia/i18n.py:connections_unlocked
+msgid "Connections unlocked"
+msgstr ""
+
 #: src/termia/i18n.py:configuration
 msgid "Configuration"
+msgstr ""
+
+#: src/termia/i18n.py:data_locations
+msgid "Data locations"
+msgstr ""
+
+#: src/termia/i18n.py:data_locations_title
+msgid "Data Locations"
+msgstr ""
+
+#: src/termia/i18n.py:data_locations_detail
+msgid "Termia uses these local paths for configuration, connection data, history, statistics, and the write lock."
+msgstr ""
+
+#: src/termia/i18n.py:config_directory
+msgid "Config directory"
+msgstr ""
+
+#: src/termia/i18n.py:connections_file_path
+msgid "Connections file"
+msgstr ""
+
+#: src/termia/i18n.py:settings_file_path
+msgid "Settings file"
+msgstr ""
+
+#: src/termia/i18n.py:instance_lock_file_path
+msgid "Instance lock"
+msgstr ""
+
+#: src/termia/i18n.py:state_directory
+msgid "State directory"
+msgstr ""
+
+#: src/termia/i18n.py:statistics_file_path
+msgid "Statistics file"
+msgstr ""
+
+#: src/termia/i18n.py:connection_history_file_path
+msgid "Connection history file"
+msgstr ""
+
+#: src/termia/i18n.py:path_exists
+msgid "Exists"
+msgstr ""
+
+#: src/termia/i18n.py:path_missing
+msgid "Not created yet"
 msgstr ""
 
 #: src/termia/i18n.py:connections_file
@@ -591,6 +780,10 @@ msgstr ""
 
 #: src/termia/i18n.py:clear_config
 msgid "Delete all configuration"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminals
+msgid "Local terminals"
 msgstr ""
 
 #: src/termia/i18n.py:connection_history
@@ -638,6 +831,7 @@ msgid "SSH"
 msgstr ""
 
 #: src/termia/i18n.py:history_kind_local
+#: src/termia/i18n.py:local_terminal
 msgid "Local terminal"
 msgstr ""
 
@@ -657,12 +851,49 @@ msgstr ""
 msgid "In progress"
 msgstr ""
 
-#: src/termia/i18n.py:configure_terminal
-msgid "Configure terminal"
+#: src/termia/i18n.py:working_directory
+msgid "Working directory"
 msgstr ""
 
-#: src/termia/i18n.py:local_terminal
-msgid "Local terminal"
+#: src/termia/i18n.py:shell
+msgid "Shell"
+msgstr ""
+
+#: src/termia/i18n.py:arguments
+msgid "Arguments"
+msgstr ""
+
+#: src/termia/i18n.py:run_command_on_start
+msgid "Run command on start"
+msgstr ""
+
+#: src/termia/i18n.py:title_shown_in_tab
+msgid "Title shown in tab"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_required_fields
+msgid "Name and shell are required."
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_invalid_arguments
+msgid "Could not parse arguments: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_settings_saved
+msgid "Local terminal saved"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_detail_info
+msgid ""
+"Working directory: {working_directory}\n"
+"Shell: {shell}\n"
+"Arguments: {arguments}\n"
+"Run command on start: {command_on_start}\n"
+"Tab title: {tab_title}"
+msgstr ""
+
+#: src/termia/i18n.py:configure_terminal
+msgid "Configure terminal"
 msgstr ""
 
 #: src/termia/i18n.py:new_tab
@@ -670,9 +901,6 @@ msgid "New tab"
 msgstr ""
 
 #: src/termia/i18n.py:statistics
-msgid "Statistics"
-msgstr ""
-
 #: src/termia/i18n.py:statistics_title
 msgid "Statistics"
 msgstr ""
@@ -793,10 +1021,6 @@ msgstr ""
 msgid "Do you want to disconnect {title}?"
 msgstr ""
 
-#: src/termia/i18n.py:disconnect_session_confirm
-msgid "Disconnect"
-msgstr ""
-
 #: src/termia/i18n.py:sigterm_failed
 msgid "Could not send SIGTERM to the ssh process."
 msgstr ""
@@ -912,76 +1136,20 @@ msgid ""
 "Main features:\n"
 "- Organize servers into groups and subgroups.\n"
 "- Create, edit, delete, clone and filter SSH connections.\n"
-"- Open connections and local terminals in embedded, compact and detachable tabs.\n"
+"- Mark servers as favorites for quick access from a dedicated section.\n"
+"- Open connections and local terminals from the sidebar in embedded, compact and detachable tabs.\n"
 "- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
 "- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
 "- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
-"- Configure general options, the VTE terminal and the PS1 prompt separately.\n"
+"- Configure general options, the VTE terminal, split separators and the PS1 prompt separately.\n"
 "- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
 "- View a local connection history with timestamps, outcomes and durations.\n"
 "- Import and export configurations, including basic imports from Ásbrú.\n"
 "\n"
 "Quick start:\n"
-"Use the sidebar icons to create groups or servers. Double-click a server to connect. Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
+"Use the sidebar icons to create groups, servers or local terminal profiles. Double-click a server or local terminal profile to connect. Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
 msgstr ""
 
 #: src/termia/i18n.py:about_content
 msgid "SSH connection manager with embedded terminals"
-msgstr ""
-
-#: src/termia/i18n.py:new_local_terminal
-msgid "New local terminal"
-msgstr ""
-
-#: src/termia/i18n.py:edit_local_terminal
-msgid "Edit local terminal"
-msgstr ""
-
-#: src/termia/i18n.py:delete_local_terminal
-msgid "Delete local terminal"
-msgstr ""
-
-#: src/termia/i18n.py:local_terminals
-msgid "Local terminals"
-msgstr ""
-
-#: src/termia/i18n.py:working_directory
-msgid "Working directory"
-msgstr ""
-
-#: src/termia/i18n.py:shell
-msgid "Shell"
-msgstr ""
-
-#: src/termia/i18n.py:arguments
-msgid "Arguments"
-msgstr ""
-
-#: src/termia/i18n.py:run_command_on_start
-msgid "Run command on start"
-msgstr ""
-
-#: src/termia/i18n.py:title_shown_in_tab
-msgid "Title shown in tab"
-msgstr ""
-
-#: src/termia/i18n.py:local_terminal_required_fields
-msgid "Name and shell are required."
-msgstr ""
-
-#: src/termia/i18n.py:local_terminal_invalid_arguments
-msgid "Could not parse arguments: {error}"
-msgstr ""
-
-#: src/termia/i18n.py:local_terminal_settings_saved
-msgid "Local terminal saved"
-msgstr ""
-
-#: src/termia/i18n.py:local_terminal_detail_info
-msgid ""
-"Working directory: {working_directory}\n"
-"Shell: {shell}\n"
-"Arguments: {arguments}\n"
-"Run command on start: {command_on_start}\n"
-"Tab title: {tab_title}"
 msgstr ""

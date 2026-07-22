@@ -14,15 +14,11 @@ Thanks for considering a contribution to Termia. This project is a Python GTK 4 
 Install or verify system dependencies from a clone:
 
 ```bash
-chmod +x scripts/install_dependencies.sh
-./scripts/install_dependencies.sh --check
+./scripts/termia-setup.sh install
 ```
 
-If dependencies are missing, install them with:
-
-```bash
-./scripts/install_dependencies.sh
-```
+The setup command verifies the GTK/VTE runtime dependencies and installs the
+user-local launcher. It does not modify repository files.
 
 Run Termia from the checkout with:
 
@@ -51,12 +47,15 @@ python3 run_termia.py
 At minimum, run syntax checks for touched Python and shell files. For a broad validation pass, run:
 
 ```bash
-python3 -m py_compile run_termia.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
-bash -n scripts/install_dependencies.sh
-bash -n scripts/install_desktop.sh
-bash -n scripts/uninstall_desktop.sh
-./scripts/install_dependencies.sh --check
+python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
+bash -n scripts/termia-setup.sh
+scripts/compile_translations.py --check
 ```
+
+When changing English UI text, regenerate `po/termia.pot` with
+`scripts/compile_translations.py --extract`, update both `.po` catalogs, then
+compile them with `scripts/compile_translations.py` and run the `--check`
+validation.
 
 For UI, keyboard shortcut, SSH, settings, import/export, or terminal color changes, also review the relevant manual checks in `docs/REGRESSION_CHECKS.md`.
 

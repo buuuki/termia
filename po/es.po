@@ -89,6 +89,22 @@ msgstr "Eliminar servidor"
 msgid "Clone connection"
 msgstr "Clonar conexión"
 
+#: src/termia/i18n.py:favorite_server
+msgid "Favorite"
+msgstr "Favorito"
+
+#: src/termia/i18n.py:add_favorite
+msgid "Add to favorites"
+msgstr "Añadir a favoritos"
+
+#: src/termia/i18n.py:remove_favorite
+msgid "Remove from favorites"
+msgstr "Quitar de favoritos"
+
+#: src/termia/i18n.py:favorites
+msgid "Favorites"
+msgstr "Favoritos"
+
 #: src/termia/i18n.py:recent
 msgid "Recent"
 msgstr "Recientes"
@@ -1092,7 +1108,8 @@ msgid ""
 "Main features:\n"
 "- Organize servers into groups and subgroups.\n"
 "- Create, edit, delete, clone and filter SSH connections.\n"
-"- Open connections and local terminals in embedded, compact and detachable tabs.\n"
+"- Mark servers as favorites for quick access from a dedicated section.\n"
+"- Open connections and local terminals from the sidebar in embedded, compact and detachable tabs.\n"
 "- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
 "- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
 "- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
@@ -1102,25 +1119,26 @@ msgid ""
 "- Import and export configurations, including basic imports from Ásbrú.\n"
 "\n"
 "Quick start:\n"
-"Use the sidebar icons to create groups or servers. Double-click a server to connect. Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
+"Use the sidebar icons to create groups, servers or local terminal profiles. Double-click a server or local terminal profile to connect. Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
 msgstr ""
 "Termia es un gestor de conexiones SSH con terminales embebidas.\n"
 "\n"
 "Características principales:\n"
 "- Organiza servidores en grupos y subgrupos.\n"
 "- Crea, edita, elimina, clona y filtra conexiones SSH.\n"
-"- Abre conexiones y terminales locales en pestañas embebidas, compactas y desacoplables.\n"
+"- Marca servidores como favoritos para acceder rápidamente desde una sección dedicada.\n"
+"- Abre conexiones y terminales locales desde el panel lateral en pestañas embebidas, compactas y desacoplables.\n"
 "- Usa las acciones contextuales de grupo para iniciar todos los servidores de un grupo o subgrupo.\n"
 "- Muestra un dashboard de estadísticas con métricas globales, duración y servidores más usados, además de estadísticas por sesión.\n"
 "- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede mostrarse desde General, ocultarse por sesión y restaurarse desde el menú contextual.\n"
 "- Permite configurar atajos de terminal, incluido copiar, pegar y enviar la contraseña guardada.\n"
-"- Configura por separado opciones generales, terminal VTE y prompt PS1.\n"
+"- Configura por separado opciones generales, terminal VTE, separadores de paneles y prompt PS1.\n"
 "- El prompt local permite color, temas predefinidos, hora, fecha y previsualización sin modificar sesiones remotas.\n"
 "- Muestra un historial local de conexiones con marcas de tiempo, resultados y duraciones.\n"
 "- Importa y exporta configuraciones, incluida la importación básica desde Ásbrú.\n"
 "\n"
 "Uso rápido:\n"
-"Utiliza los iconos del panel lateral para crear grupos o servidores. Haz doble clic sobre un servidor para conectar. Usa el botón derecho en servidores, pestañas o terminales para ver acciones contextuales como duplicar, dividir paneles, desconectar, copiar, pegar, mostrar la barra de estado o ver estadísticas."
+"Utiliza los iconos del panel lateral para crear grupos, servidores o perfiles de terminal local. Haz doble clic sobre un servidor o perfil de terminal local para conectar. Usa el botón derecho en servidores, pestañas o terminales para ver acciones contextuales como duplicar, dividir paneles, desconectar, copiar, pegar, mostrar la barra de estado o ver estadísticas."
 
 #: src/termia/i18n.py:about_content
 msgid "SSH connection manager with embedded terminals"
