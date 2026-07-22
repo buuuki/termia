@@ -411,16 +411,18 @@ class ConnectionStore:
         settings_path: Path = SETTINGS_FILE,
         statistics_path: Path = STATISTICS_FILE,
         lock_path: Path = INSTANCE_LOCK_FILE,
+        history_path: Path = HISTORY_FILE,
     ) -> None:
         self.path = path
         self.instance_lock = InstanceWriteLock(lock_path)
         self.read_only = self.instance_lock.read_only
         self.settings_store = SettingsStore(settings_path, read_only=self.read_only)
         self.statistics_store = StatisticsStore(statistics_path, read_only=self.read_only)
-        self.history_store = ConnectionHistoryStore(HISTORY_FILE, read_only=self.read_only)
+        self.history_store = ConnectionHistoryStore(history_path, read_only=self.read_only)
         self.recovery_messages: list[str] = [
             *self.settings_store.recovery_messages,
             *self.statistics_store.recovery_messages,
+            *self.history_store.recovery_messages,
         ]
         self.encryption_locked = False
         self.encryption_error = ""
