@@ -124,11 +124,13 @@ security, and keybinding dialogs have comparatively small contracts.
 
 ### `StatisticsViewMixin`
 
-- Reads: `store`, `run_connections`.
+- Reads: the explicitly composed `statistics_presenter`.
 - Window services: translation and dialog buttons.
 - Cross-mixin dependencies: none beyond those common services.
-- Architectural note: this is the smallest direct `TermiaWindow` mixin
-  contract.
+- Extracted component: `StatisticsPresenter` owns card metrics, duration
+  formatting, current-run values, and server ranking. It receives statistics,
+  servers, current-run, and translation providers; the mixin retains GTK
+  widget construction.
 
 ### `TerminalMenusMixin`
 
@@ -178,8 +180,8 @@ The principal cycles are:
 
 1. Define a small host interface for translation, feedback, writability, and
    dialog parenting.
-2. Continue the pattern established by the extracted history presenter with
-   statistics presentation, which has a similarly narrow contract.
+2. Use the history and statistics presenters as the pattern for subsequent
+   extractions with explicit providers and callbacks.
 3. Pass explicit action callbacks into main and terminal menu builders.
 4. Introduce a session registry that owns `open_tabs` and session lookup.
 5. Separate tab placement from session lifecycle using the registry and

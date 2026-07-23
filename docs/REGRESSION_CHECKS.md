@@ -153,6 +153,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Search for a group, subgroup, and server in the sidebar filter.
 - Confirm the Recent section appears above Favorites, shows the 10 most recently connected servers without duplicates, and updates after new SSH connections.
 - Open connection history, search for an SSH server, toggle local-terminal entries, and confirm row contents remain unchanged.
+- Open statistics and confirm the four metric cards, current-run count, duration values, ranked servers, counts, and progress bars remain correct.
 - Open Preferences from Configuration and confirm the app does not hang.
 - Start a second Termia process and confirm it opens as a separate window with the read-only badge visible.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.

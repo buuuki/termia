@@ -7,7 +7,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
-from .statistics_utils import average_session_duration, format_duration, top_server_statistics
+from .statistics_presenter import StatisticCard, StatisticsDashboard
 
 
 class StatisticsViewMixin:
@@ -31,33 +31,18 @@ class StatisticsViewMixin:
         scroller.set_child(dashboard)
         content.append(scroller)
 
-        stats = self.store.data.statistics
-        average_duration = average_session_duration(stats)
+        presentation = self.statistics_presenter.dashboard()
         cards = Gtk.Grid()
         cards.set_column_spacing(10)
         cards.set_row_spacing(10)
-        cards.attach(
-            self.build_stat_card(
-                self.t("connections"), str(stats.connections), f"{self.t('current_run')} {self.run_connections}"
-            ),
-            0, 0, 1, 1
-        )
-        cards.attach(
-            self.build_stat_card(self.t("sessions"), str(stats.completed_sessions), self.t("global")),
-            1, 0, 1, 1
-        )
-        cards.attach(
-            self.build_stat_card(self.t("average_duration"), format_duration(average_duration), self.t("duration")),
-            2, 0, 1, 1
-        )
-        cards.attach(
-            self.build_stat_card(
-                self.t("longest_duration"),
-                format_duration(stats.duration_max if stats.completed_sessions else None),
-                f"{self.t('shortest_duration')}: {format_duration(stats.duration_min)}",
-            ),
-            0, 1, 1, 1
-        )
+        for index, card in enumerate(presentation.cards):
+            cards.attach(
+                self.build_stat_card(card),
+                index % 3,
+                index // 3,
+                1,
+                1,
+            )
         for card in self.iter_grid_children(cards):
             card.set_hexpand(True)
         dashboard.append(cards)
@@ -66,22 +51,22 @@ class StatisticsViewMixin:
         title.set_xalign(0)
         title.add_css_class("heading")
         dashboard.append(title)
-        dashboard.append(self.build_top_servers_list())
+        dashboard.append(self.build_top_servers_list(presentation))
 
         dialog.connect("response", lambda current, _response: current.destroy())
         dialog.present()
 
-    def build_stat_card(self, title: str, value: str, subtitle: str = "") -> Gtk.Widget:
+    def build_stat_card(self, presentation: StatisticCard) -> Gtk.Widget:
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         card.add_css_class("stat-card")
-        title_label = Gtk.Label(label=title)
+        title_label = Gtk.Label(label=presentation.title)
         title_label.set_xalign(0)
         title_label.add_css_class("stat-card-title")
         title_label.add_css_class("dim-label")
-        value_label = Gtk.Label(label=value)
+        value_label = Gtk.Label(label=presentation.value)
         value_label.set_xalign(0)
         value_label.add_css_class("stat-card-value")
-        subtitle_label = Gtk.Label(label=subtitle)
+        subtitle_label = Gtk.Label(label=presentation.subtitle)
         subtitle_label.set_xalign(0)
         subtitle_label.add_css_class("stat-card-subtitle")
         subtitle_label.add_css_class("dim-label")
@@ -98,11 +83,10 @@ class StatisticsViewMixin:
             child = child.get_next_sibling()
         return children
 
-    def build_top_servers_list(self) -> Gtk.Widget:
-        stats = self.store.data.statistics
+    def build_top_servers_list(self, presentation: StatisticsDashboard) -> Gtk.Widget:
         list_box = Gtk.ListBox()
         list_box.set_selection_mode(Gtk.SelectionMode.NONE)
-        if not stats.server_connections:
+        if not presentation.top_servers:
             row = Gtk.ListBoxRow()
             label = Gtk.Label(label=self.t("no_statistics"))
             label.set_xalign(0)
@@ -114,9 +98,7 @@ class StatisticsViewMixin:
             list_box.append(row)
             return list_box
 
-        ranked = top_server_statistics(stats, self.store.data.servers)
-        max_count = max((item.count for item in ranked), default=1)
-        for item in ranked:
+        for item in presentation.top_servers:
             row = Gtk.ListBoxRow()
             row_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             row_box.add_css_class("stat-row")
@@ -135,7 +117,7 @@ class StatisticsViewMixin:
                 subtitle_label.set_xalign(0)
                 subtitle_label.add_css_class("dim-label")
                 row_box.append(subtitle_label)
-            progress = Gtk.LevelBar.new_for_interval(0, max_count)
+            progress = Gtk.LevelBar.new_for_interval(0, presentation.max_server_count)
             progress.set_value(item.count)
             progress.set_hexpand(True)
             row_box.append(progress)

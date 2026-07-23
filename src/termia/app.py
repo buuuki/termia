@@ -30,6 +30,7 @@ from .main_menu import MainMenuMixin
 from .preferences import PreferencesMixin
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
+from .statistics_presenter import StatisticsPresenter
 from .statistics_view import StatisticsViewMixin
 from .styles import build_application_css
 from .tabs import TabsMixin
@@ -84,6 +85,12 @@ class TermiaWindow(
         self.active_context_popover: Gtk.Popover | None = None
         self.open_tabs: dict[str, TerminalSession] = {}
         self.run_connections = 0
+        self.statistics_presenter = StatisticsPresenter(
+            lambda: self.store.data.statistics,
+            lambda: self.store.data.servers,
+            lambda: self.run_connections,
+            self.t,
+        )
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.connect("close-request", self.on_main_window_close_request)
