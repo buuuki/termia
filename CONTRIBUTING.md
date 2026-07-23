@@ -36,6 +36,8 @@ python3 run_termia.py
 ## Code Guidelines
 
 - Follow the existing module boundaries and GTK/VTE patterns.
+- Review [the current `TermiaWindow` mixin contracts](docs/WINDOW_MIXIN_CONTRACTS.md)
+  before moving behavior between window mixins or extracting a controller.
 - Keep terminal lifecycle and keyboard behavior close to `src/termia/terminal_sessions.py` unless a change clearly belongs elsewhere.
 - Keep preferences UI and persistence changes aligned between `src/termia/preferences.py`, `src/termia/stores.py`, and `src/termia/models.py`.
 - Keep user-facing strings in `src/termia/i18n.py` and update English, Spanish, and Catalan together.
