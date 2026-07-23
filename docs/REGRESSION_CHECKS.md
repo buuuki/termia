@@ -120,6 +120,13 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - LS color customization must continue to reduce overly bright directory/file colors.
 - Tab labels should show short and medium names without unnecessary truncation, and provide a tooltip with the full title.
 
+### Connection History
+
+- Searching connection history must remain case-insensitive and match server names, hosts, users, results, details, timestamps, and formatted durations.
+- Hiding local terminals must preserve SSH entries and the current search filter.
+- History rows must keep translated connection kinds and results, server or local-terminal names, endpoints, details, and durations.
+- Clearing history must refresh the open dialog without retaining stale entries.
+
 ### Statistics
 
 - Statistics collection must remain lightweight and should not continuously write to disk on every keypress.
@@ -145,6 +152,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Edit a server and confirm collapsed groups stay collapsed.
 - Search for a group, subgroup, and server in the sidebar filter.
 - Confirm the Recent section appears above Favorites, shows the 10 most recently connected servers without duplicates, and updates after new SSH connections.
+- Open connection history, search for an SSH server, toggle local-terminal entries, and confirm row contents remain unchanged.
 - Open Preferences from Configuration and confirm the app does not hang.
 - Start a second Termia process and confirm it opens as a separate window with the read-only badge visible.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
