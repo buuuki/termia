@@ -33,6 +33,12 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 - If a task changes user-facing behavior, update the README and localized docs when the behavior is documented there.
 - If a task changes UI text, update all three translation dictionaries in `src/termia/i18n.py` unless the string is intentionally language-specific.
 
+## Changelog
+
+- Every code change must update `CHANGELOG.md` under `Unreleased`, including internal refactors, tests, build changes, and maintenance work.
+- Use a concise entry under `Added`, `Changed`, `Fixed`, `Removed`, or `Refactored`.
+- Do not skip the changelog entry because the change is not user-visible.
+
 ## Validation
 
 Run the narrowest useful checks for the change. At minimum, syntax-check touched Python files. For broader changes, use the project checks from `docs/REGRESSION_CHECKS.md`:
@@ -74,4 +80,5 @@ Before opening or merging a PR, confirm:
 - The diff contains only files related to the task.
 - User-facing docs and translations are updated when needed.
 - Validation commands were run, or any skipped checks are explicitly noted.
+- `CHANGELOG.md` was updated under `Unreleased`.
 - The PR description includes a concise summary, test notes, and `Closes #<issue>` when applicable.
