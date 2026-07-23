@@ -91,7 +91,7 @@ python3 run_termia.py
 
 Para obtener información de diagnóstico sobre GTK, VTE, los bloqueos de
 almacenamiento, el cifrado y el arranque en modo solo lectura, activa `Modo
-debug` en el menú principal. También puedes activarlo para una ejecución con:
+debug` en las preferencias Generales. También puedes activarlo para una ejecución con:
 
 ```bash
 python3 run_termia.py --debug
