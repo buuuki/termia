@@ -113,12 +113,14 @@ security, and keybinding dialogs have comparatively small contracts.
 
 ### `ConnectionHistoryViewMixin`
 
-- Reads: `store`, `toast_label`.
+- Reads: `store`, `toast_label`, and the explicitly composed
+  `history_presenter`.
 - Window services: translation, dialog buttons, and writable-action
   configuration.
 - Cross-mixin dependencies: none beyond those common services.
-- Architectural note: filtering and display formatting can be extracted
-  independently from GTK dialog construction.
+- Extracted component: `ConnectionHistoryPresenter` owns filtering and display
+  formatting. It receives only an entries provider and translation callback;
+  the mixin retains GTK dialog and row construction.
 
 ### `StatisticsViewMixin`
 
@@ -176,8 +178,8 @@ The principal cycles are:
 
 1. Define a small host interface for translation, feedback, writability, and
    dialog parenting.
-2. Extract history filtering/formatting or statistics presentation first; both
-   have narrow contracts and focused tests can cover them.
+2. Continue the pattern established by the extracted history presenter with
+   statistics presentation, which has a similarly narrow contract.
 3. Pass explicit action callbacks into main and terminal menu builders.
 4. Introduce a session registry that owns `open_tabs` and session lookup.
 5. Separate tab placement from session lifecycle using the registry and

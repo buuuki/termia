@@ -11,6 +11,7 @@ gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Gtk
 
 from .config_actions import ConfigActionsMixin
+from .connection_history_presenter import ConnectionHistoryPresenter
 from .connection_history_view import ConnectionHistoryViewMixin
 from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
@@ -57,6 +58,10 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
+        self.history_presenter = ConnectionHistoryPresenter(
+            lambda: self.store.history_store.entries,
+            self.t,
+        )
         if self.store.data.app.debug_enabled:
             configure_debug_logging(True)
         log_startup_context(

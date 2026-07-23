@@ -27,6 +27,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Refactored
 
+- Extract connection-history filtering and display formatting into an explicitly injected, GTK-independent presenter.
 - Document the state, services, cross-mixin calls, and dependency hotspots that make up the current `TermiaWindow` mixin contracts.
 - Introduce explicit schema versioning and named migrations for connections, settings, statistics, and history files.
 - Establish an automated unit-test and GTK smoke-test baseline (`#104`).

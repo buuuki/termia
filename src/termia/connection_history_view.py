@@ -2,16 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
-
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
 from gi.repository import Gio, Gtk, Pango
 
-from .statistics_utils import format_duration
+from .models import ConnectionHistoryEntry
 
 
 class ConnectionHistoryViewMixin:
@@ -132,12 +129,16 @@ class ConnectionHistoryViewMixin:
             list_box.remove(child)
             child = next_child
 
-        query = search_entry.get_text().strip().casefold()
+        query = search_entry.get_text()
         show_local_terminals = state.get("show_local_terminals", True)
-        entries = self.filter_connection_history_entries(query, show_local_terminals)
+        entries = self.history_presenter.filter_entries(query, show_local_terminals)
         if not entries:
             row = Gtk.ListBoxRow()
-            label_key = "no_matching_history" if query or not show_local_terminals else "no_connection_history"
+            label_key = (
+                "no_matching_history"
+                if query.strip() or not show_local_terminals
+                else "no_connection_history"
+            )
             label = Gtk.Label(label=self.t(label_key))
             label.set_xalign(0)
             label.set_margin_top(8)
@@ -151,34 +152,7 @@ class ConnectionHistoryViewMixin:
         for entry in entries:
             list_box.append(self.build_history_row(entry))
 
-    def filter_connection_history_entries(self, query: str, show_local_terminals: bool = True) -> list[Any]:
-        entries = self.store.history_store.entries
-        if not show_local_terminals:
-            entries = [entry for entry in entries if entry.kind != "local"]
-        if not query:
-            return entries
-        return [entry for entry in entries if self.connection_history_entry_matches(entry, query)]
-
-    def connection_history_entry_matches(self, entry: Any, query: str) -> bool:
-        haystack = " ".join(
-            str(value)
-            for value in (
-                entry.kind,
-                entry.title,
-                entry.server_name,
-                entry.host,
-                entry.user,
-                entry.result,
-                entry.detail,
-                entry.started_at,
-                entry.ended_at,
-                format_duration(entry.duration_seconds),
-            )
-            if value
-        ).casefold()
-        return query in haystack
-
-    def build_history_row(self, entry: Any) -> Gtk.ListBoxRow:
+    def build_history_row(self, entry: ConnectionHistoryEntry) -> Gtk.ListBoxRow:
         row = Gtk.ListBoxRow()
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         box.set_margin_top(0)
@@ -186,69 +160,10 @@ class ConnectionHistoryViewMixin:
         box.set_margin_start(12)
         box.set_margin_end(12)
 
-        label = Gtk.Label(label=self.build_history_line(entry))
+        label = Gtk.Label(label=self.history_presenter.build_line(entry))
         label.set_xalign(0)
         label.set_wrap(False)
         label.set_ellipsize(Pango.EllipsizeMode.END)
         box.append(label)
         row.set_child(box)
         return row
-
-    def build_history_line(self, entry: Any) -> str:
-        heading = self.build_history_heading(entry)
-        subtitle = self.build_history_subtitle(entry)
-        parts = [part for part in (heading, subtitle) if part]
-        return " · ".join(parts)
-
-    def build_history_heading(self, entry) -> str:
-        timestamp = self.format_history_timestamp(entry.ended_at or entry.started_at)
-        result = self.format_history_result(entry.result, entry.ended_at)
-        duration = format_duration(entry.duration_seconds)
-        parts = [part for part in (timestamp, result, duration) if part]
-        return " · ".join(parts)
-
-    def build_history_subtitle(self, entry) -> str:
-        kind = self.format_history_kind(entry.kind)
-        target = entry.server_name or entry.title or self.t("local_terminal")
-        details = [part for part in (kind, target) if part]
-        endpoint = self.format_history_endpoint(entry.user, entry.host, entry.port)
-        if endpoint:
-            details.append(endpoint)
-        if entry.detail:
-            details.append(entry.detail)
-        return " · ".join(details)
-
-    def format_history_timestamp(self, value: str) -> str:
-        if not value:
-            return ""
-        try:
-            dt = datetime.fromisoformat(value)
-        except ValueError:
-            return value
-        return dt.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-
-    def format_history_result(self, result: str, ended_at: str) -> str:
-        if not ended_at:
-            return self.t("history_result_running")
-        if result == "failed":
-            return self.t("history_result_failed")
-        if result == "disconnected":
-            return self.t("history_result_disconnected")
-        return self.t("history_result_closed")
-
-    def format_history_kind(self, kind: str) -> str:
-        if kind == "ssh":
-            return self.t("history_kind_ssh")
-        if kind == "local":
-            return self.t("history_kind_local")
-        return kind
-
-    def format_history_endpoint(self, user: str, host: str, port: int) -> str:
-        if not host:
-            return ""
-        endpoint = host
-        if port:
-            endpoint = f"{endpoint}:{port}"
-        if user:
-            endpoint = f"{user}@{endpoint}"
-        return endpoint
