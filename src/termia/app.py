@@ -180,6 +180,7 @@ class TermiaWindow(
         if self.store.unlock_connections(password_entry.get_text()):
             dialog.destroy()
             self.apply_app_theme()
+            self.refresh_translated_chrome()
             self.refresh_list()
             self.toast_label.set_label(self.t("connections_unlocked"))
             if self.store.data.app.open_local_terminal_on_startup:

@@ -12,6 +12,10 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 - Add a safety confirmation before starting large server groups (`#90`).
 - Allow creating subgroups from the group context menu (`#92`).
 
+### Fixed
+
+- Refresh write actions after encrypted connections are unlocked so preferences and configuration actions are not left disabled.
+
 ### Changed
 
 - Unify the setup commands and dependency checks (`#94`).
