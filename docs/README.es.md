@@ -53,6 +53,15 @@ Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurr
 Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
 6.8.0-117-generic, GNOME 46.0 y Wayland.
 
+## Base de ejecución compatible
+
+Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0 y el espacio de
+introspección de VTE para GTK 4, `Vte 3.91`. El entorno actual de validación
+proporciona GTK 4.14.5 y VTE 0.76.0. Las comprobaciones de compatibilidad para
+métodos GTK opcionales como `set_handle_menubar_accel` y
+`set_show_separators` son intencionadas, porque las distribuciones pueden
+exponer distintos niveles de API de GTK.
+
 ## Descargar e instalar
 
 Clona el repositorio completo:

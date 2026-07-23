@@ -19,6 +19,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Changed
 
+- Document the supported Python, GTK, GDK, and VTE runtime baseline and retained compatibility guards.
 - Rename the saved-password shortcut settings to avoid implying that Termia executes `sudo`.
 - Unify the setup commands and dependency checks (`#94`).
 - Synchronize translation catalogs and add automated catalog consistency validation (`#102`).
