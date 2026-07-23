@@ -55,6 +55,14 @@ Each session can show a status bar with its state, PID, elapsed time, a compact 
 Termia has been tested on Ubuntu 24.04.4 LTS with Linux kernel
 6.8.0-117-generic, GNOME 46.0, and Wayland.
 
+## Supported runtime baseline
+
+Termia requires Python 3.10 or newer, GTK 4.0/GDK 4.0, and the GTK 4 VTE
+introspection namespace `Vte 3.91`. The current validation environment provides
+GTK 4.14.5 and VTE 0.76.0. Compatibility guards for optional GTK methods such as
+`set_handle_menubar_accel` and `set_show_separators` remain intentional so the
+same source can run across distributions that expose different GTK API levels.
+
 ## Project layout
 
 ```text
