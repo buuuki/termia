@@ -52,7 +52,7 @@ class GeneralPreferencesMixin:
         for button, (_, active) in zip(check_buttons, checks):
             button.set_active(active)
             button.set_halign(Gtk.Align.START)
-        sudo_password_shortcut, sudo_password_enter = check_buttons[-2:]
+        sudo_password_shortcut, sudo_password_enter = check_buttons[8:10]
         sudo_password_enter.set_sensitive(sudo_password_shortcut.get_active())
         sudo_password_shortcut.connect("toggled", lambda current: sudo_password_enter.set_sensitive(current.get_active()))
 
