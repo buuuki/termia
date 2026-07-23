@@ -399,19 +399,19 @@ msgstr "Confirmar antes de desconectar o cerrar una sesión activa"
 msgid "Confirm before closing Termia"
 msgstr "Confirmar para cerrar Termia"
 
-#: src/termia/i18n.py:sudo_password_shortcut
-msgid "Allow sending password with shortcut"
-msgstr "Permitir enviar contraseña con atajo"
+#: src/termia/i18n.py:send_password_shortcut
+msgid "Allow sending saved password with shortcut"
+msgstr "Permitir enviar la contraseña guardada con un atajo"
 
-#: src/termia/i18n.py:sudo_password_enter
-msgid "Send password and press Enter"
+#: src/termia/i18n.py:send_password_enter
+msgid "Send saved password and press Enter"
 msgstr "Enviar contraseña y pulsar Enter"
 
-#: src/termia/i18n.py:sudo_password_sent
+#: src/termia/i18n.py:send_password_sent
 msgid "Saved password sent to the terminal"
 msgstr "Contraseña guardada enviada a la terminal"
 
-#: src/termia/i18n.py:sudo_password_unavailable
+#: src/termia/i18n.py:send_password_unavailable
 msgid "This terminal does not have a saved password"
 msgstr "Esta terminal no tiene una contraseña guardada"
 

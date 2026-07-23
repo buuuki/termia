@@ -497,7 +497,7 @@ class TerminalSessionsMixin:
         if keybinding_matches(keybindings.get("font_decrease", ""), keyval, state):
             self.change_terminal_font_size(-1)
             return True
-        if self.store.data.app.sudo_password_shortcut and keybinding_matches(
+        if self.store.data.app.send_password_shortcut and keybinding_matches(
             keybindings.get("send_password", ""), keyval, state
         ):
             self.send_saved_password(session, terminal)
@@ -548,13 +548,13 @@ class TerminalSessionsMixin:
     def send_saved_password(self, session: TerminalSession, terminal: Vte.Terminal | None = None) -> None:
         server = find_server(self.store.data.servers, session.server_id) if session.server_id is not None else None
         if not session.connected or server is None or not server.password:
-            self.toast_label.set_label(self.t("sudo_password_unavailable"))
+            self.toast_label.set_label(self.t("send_password_unavailable"))
             return
         payload = server.password.encode()
-        if self.store.data.app.sudo_password_enter:
+        if self.store.data.app.send_password_enter:
             payload += b"\r"
         (terminal or session.terminal).feed_child(payload)
-        self.toast_label.set_label(self.t("sudo_password_sent"))
+        self.toast_label.set_label(self.t("send_password_sent"))
 
     def split_terminal_pane(
         self,

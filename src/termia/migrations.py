@@ -35,6 +35,22 @@ def migrate_settings_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], b
     return _add_schema_version(payload, "Settings")
 
 
+def migrate_app_settings_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    """Rename the old sudo-labelled password shortcut settings."""
+    migrated = dict(payload)
+    changed = False
+    aliases = {
+        "sudo_password_shortcut": "send_password_shortcut",
+        "sudo_password_enter": "send_password_enter",
+    }
+    for old_key, new_key in aliases.items():
+        if old_key in migrated:
+            migrated.setdefault(new_key, migrated[old_key])
+            del migrated[old_key]
+            changed = True
+    return migrated, changed
+
+
 def migrate_statistics_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     return _add_schema_version(payload, "Statistics")
 

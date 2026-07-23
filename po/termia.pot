@@ -402,19 +402,19 @@ msgstr ""
 msgid "Confirm before closing Termia"
 msgstr ""
 
-#: src/termia/i18n.py:sudo_password_shortcut
-msgid "Allow sending password with shortcut"
+#: src/termia/i18n.py:send_password_shortcut
+msgid "Allow sending saved password with shortcut"
 msgstr ""
 
-#: src/termia/i18n.py:sudo_password_enter
-msgid "Send password and press Enter"
+#: src/termia/i18n.py:send_password_enter
+msgid "Send saved password and press Enter"
 msgstr ""
 
-#: src/termia/i18n.py:sudo_password_sent
+#: src/termia/i18n.py:send_password_sent
 msgid "Saved password sent to the terminal"
 msgstr ""
 
-#: src/termia/i18n.py:sudo_password_unavailable
+#: src/termia/i18n.py:send_password_unavailable
 msgid "This terminal does not have a saved password"
 msgstr ""
 

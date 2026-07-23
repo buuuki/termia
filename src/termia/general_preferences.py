@@ -44,17 +44,17 @@ class GeneralPreferencesMixin:
             ("statistics_enabled", self.store.data.app.statistics_enabled),
             ("confirm_disconnect", self.store.data.app.confirm_disconnect),
             ("confirm_close_app", self.store.data.app.confirm_close_app),
-            ("sudo_password_shortcut", self.store.data.app.sudo_password_shortcut),
-            ("sudo_password_enter", self.store.data.app.sudo_password_enter),
+            ("send_password_shortcut", self.store.data.app.send_password_shortcut),
+            ("send_password_enter", self.store.data.app.send_password_enter),
             ("debug_mode", self.store.data.app.debug_enabled),
         ]
         check_buttons = [Gtk.CheckButton(label=self.t(key)) for key, _ in checks]
         for button, (_, active) in zip(check_buttons, checks):
             button.set_active(active)
             button.set_halign(Gtk.Align.START)
-        sudo_password_shortcut, sudo_password_enter = check_buttons[8:10]
-        sudo_password_enter.set_sensitive(sudo_password_shortcut.get_active())
-        sudo_password_shortcut.connect("toggled", lambda current: sudo_password_enter.set_sensitive(current.get_active()))
+        send_password_shortcut, send_password_enter = check_buttons[8:10]
+        send_password_enter.set_sensitive(send_password_shortcut.get_active())
+        send_password_shortcut.connect("toggled", lambda current: send_password_enter.set_sensitive(current.get_active()))
 
         rows: list[tuple[str, Gtk.Widget]] = [(self.t("theme"), theme_combo), (self.t("language"), language_combo)]
         rows.extend(("", button) for button in check_buttons)
@@ -81,7 +81,7 @@ class GeneralPreferencesMixin:
                     open_local_terminal_on_startup=values[2], show_sidebar_on_startup=values[3],
                     show_session_status_bar=values[4], statistics_enabled=values[5],
                     confirm_disconnect=values[6], confirm_close_app=values[7],
-                    sudo_password_shortcut=values[8], sudo_password_enter=values[9],
+                    send_password_shortcut=values[8], send_password_enter=values[9],
                     connection_storage_mode=self.store.data.app.connection_storage_mode,
                     debug_enabled=values[10],
                     keybindings=self.store.data.app.keybindings,
