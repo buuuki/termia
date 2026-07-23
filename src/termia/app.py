@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: GPL-3.0-or-later
+import argparse
+import logging
+
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -13,7 +16,13 @@ from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
     APP_ID,
     DATA_FILE,
+    DEBUG_LOG_FILE,
+    HISTORY_FILE,
+    INSTANCE_LOCK_FILE,
+    SETTINGS_FILE,
+    STATE_DIR,
 )
+from .debug import configure_debug_logging, log_startup_context, log_store_state
 from .i18n import translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
@@ -48,6 +57,14 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
+        log_startup_context(
+            lock_path=INSTANCE_LOCK_FILE,
+            data_path=DATA_FILE,
+            settings_path=SETTINGS_FILE,
+            state_dir=STATE_DIR,
+        )
+        log_store_state(self.store)
+        logging.getLogger("termia").debug("debug_log_file=%s history_path=%s", DEBUG_LOG_FILE, HISTORY_FILE)
         if self.store.read_only:
             self.set_title(f"Termia ({self.t('read_only_badge')})")
         self.apply_app_theme()
@@ -486,9 +503,13 @@ class TermiaApp(Gtk.Application):
         window.present()
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Run Termia")
+    parser.add_argument("--debug", action="store_true", help="enable diagnostic logging")
+    args = parser.parse_args(argv)
+    configure_debug_logging(args.debug)
     app = TermiaApp()
-    return app.run()
+    return app.run([])
 
 
 if __name__ == "__main__":

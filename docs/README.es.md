@@ -89,6 +89,16 @@ También puedes ejecutar Termia directamente desde el repositorio:
 python3 run_termia.py
 ```
 
+Para obtener información de diagnóstico sobre GTK, VTE, los bloqueos de
+almacenamiento, el cifrado y el arranque en modo solo lectura:
+
+```bash
+python3 run_termia.py --debug
+```
+
+La información se guarda en `~/.local/state/termia/debug.log` y se muestra
+también por stderr. No registra contraseñas ni el contenido de las conexiones.
+
 Elimina únicamente el lanzador de escritorio, sin borrar ajustes, conexiones,
 estadísticas ni paquetes del sistema:
 

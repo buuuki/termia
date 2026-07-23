@@ -37,6 +37,7 @@ from .config_io import (
     read_raw_connections_payload,
     write_connections_file,
 )
+from .debug import log_lock_failure, log_startup_context, log_store_state
 from .i18n import LANGUAGES, detect_system_language
 from .migrations import (
     CURRENT_SCHEMA_VERSION,
@@ -82,12 +83,18 @@ class InstanceWriteLock:
             handle = self.path.open("a+", encoding="utf-8")
         except OSError:
             self.read_only = True
+            log_lock_failure(self.path, "open-failed")
             return
         try:
             fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             handle.close()
             self.read_only = True
+            try:
+                holder = self.path.read_text(encoding="utf-8").strip() or "unknown"
+            except OSError:
+                holder = "unknown"
+            log_lock_failure(self.path, f"already-locked holder_pid={holder}")
             return
         handle.seek(0)
         handle.truncate(0)
@@ -439,7 +446,14 @@ class ConnectionStore:
             app=self.settings_store.app,
             statistics=self.statistics_store.data,
         )
+        log_startup_context(
+            lock_path=lock_path,
+            data_path=path,
+            settings_path=settings_path,
+            state_dir=history_path.parent,
+        )
         self.load()
+        log_store_state(self)
 
     def load(self) -> None:
         if not self.path.exists():

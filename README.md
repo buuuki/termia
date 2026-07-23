@@ -120,6 +120,16 @@ package is missing. On Debian, Ubuntu, or Linux Mint the package is
 python3 run_termia.py
 ```
 
+For diagnostic information about GTK rendering, VTE sessions, storage locks,
+encryption, and read-only startup, run:
+
+```bash
+python3 run_termia.py --debug
+```
+
+Debug output is written to `~/.local/state/termia/debug.log` and stderr. It
+does not log passwords or connection contents.
+
 The launcher is installed at
 `~/.local/share/applications/local.termia.desktop` and its icon under
 `~/.local/share/icons/hicolor/scalable/apps/`.
