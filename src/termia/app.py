@@ -57,6 +57,8 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
+        if self.store.data.app.debug_enabled:
+            configure_debug_logging(True)
         log_startup_context(
             lock_path=INSTANCE_LOCK_FILE,
             data_path=DATA_FILE,

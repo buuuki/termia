@@ -14,6 +14,13 @@ LOGGER = logging.getLogger("termia")
 
 def configure_debug_logging(enabled: bool) -> None:
     if not enabled:
+        LOGGER.disabled = True
+        for handler in LOGGER.handlers[:]:
+            LOGGER.removeHandler(handler)
+            handler.close()
+        return
+    LOGGER.disabled = False
+    if LOGGER.handlers:
         return
     os.environ.setdefault("G_MESSAGES_DEBUG", "all")
     os.environ.setdefault("GSK_DEBUG", "renderer")

@@ -55,6 +55,7 @@ class MigrationTests(unittest.TestCase):
             lock_path = root / "instance.lock"
             store = ConnectionStore(connections_path, settings_path, statistics_path, lock_path)
             try:
+                store.data.app.debug_enabled = True
                 store.save()
                 store.save_statistics()
             finally:
@@ -63,6 +64,7 @@ class MigrationTests(unittest.TestCase):
             self.assertEqual(json.loads(connections_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertEqual(json.loads(settings_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertEqual(json.loads(statistics_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
+            self.assertTrue(SettingsStore(settings_path).app.debug_enabled)
 
     def test_connection_store_migrates_embedded_settings(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

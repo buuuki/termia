@@ -11,6 +11,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, GLib, Gtk
 
 from .constants import ABOUT_IMAGE, ISSUES_URL
+from .debug import configure_debug_logging
 from . import __version__
 
 
@@ -37,6 +38,12 @@ class MainMenuMixin:
         general.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_app_preferences))
         self.configure_write_action(general)
         menu.append(general)
+
+        debug_mode = Gtk.CheckButton(label=self.t("debug_mode"))
+        debug_mode.set_active(self.store.data.app.debug_enabled)
+        debug_mode.connect("toggled", self.on_debug_mode_toggled)
+        self.configure_write_action(debug_mode)
+        menu.append(debug_mode)
 
         terminal = Gtk.Button(label=self.t("terminal"))
         terminal.set_halign(Gtk.Align.FILL)
@@ -92,6 +99,18 @@ class MainMenuMixin:
         about_btn.connect("clicked", lambda _button: self.run_after_popover_closed(popover, self.on_about))
         menu.append(about_btn)
         return menu
+
+    def on_debug_mode_toggled(self, button: Gtk.CheckButton) -> None:
+        enabled = button.get_active()
+        if enabled == self.store.data.app.debug_enabled:
+            return
+        if not self.ensure_writable():
+            button.set_active(self.store.data.app.debug_enabled)
+            return
+        self.store.data.app.debug_enabled = enabled
+        self.store.update_app_settings(self.store.data.app)
+        configure_debug_logging(enabled)
+        self.toast_label.set_label(self.t("debug_mode_enabled" if enabled else "debug_mode_disabled"))
 
     def build_main_connections_menu(self, popover: Gtk.Popover) -> Gtk.Widget:
         menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)

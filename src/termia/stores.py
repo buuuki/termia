@@ -888,6 +888,7 @@ class ConnectionStore:
             sudo_password_enter=app.sudo_password_enter,
             connection_storage_mode=current.connection_storage_mode,
             statistics_enabled=app.statistics_enabled,
+            debug_enabled=app.debug_enabled,
             keybindings=normalize_keybindings(current.keybindings),
         )
         self.save_settings()

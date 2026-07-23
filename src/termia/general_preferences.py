@@ -81,6 +81,7 @@ class GeneralPreferencesMixin:
                     confirm_disconnect=values[6], confirm_close_app=values[7],
                     sudo_password_shortcut=values[8], sudo_password_enter=values[9],
                     connection_storage_mode=self.store.data.app.connection_storage_mode,
+                    debug_enabled=self.store.data.app.debug_enabled,
                     keybindings=self.store.data.app.keybindings,
                 ))
             except ReadOnlyStoreError:

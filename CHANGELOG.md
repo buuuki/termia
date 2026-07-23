@@ -6,7 +6,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Added
 
-- Add an opt-in `--debug` mode for GTK/VTE rendering, storage-lock, encryption, and read-only diagnostics.
+- Add an opt-in Debug mode in the main menu and `--debug` launcher option for GTK/VTE rendering, storage-lock, encryption, and read-only diagnostics.
 - Add a keyboard shortcut to focus the server filter (`#96`).
 - Add keyboard navigation shortcuts for the sidebar and tabs (`#98`, `#100`).
 - Add a safety confirmation before starting large server groups (`#90`).

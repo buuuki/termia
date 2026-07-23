@@ -121,7 +121,8 @@ python3 run_termia.py
 ```
 
 For diagnostic information about GTK rendering, VTE sessions, storage locks,
-encryption, and read-only startup, run:
+encryption, and read-only startup, enable `Debug mode` in the main menu. It
+can also be enabled for one run with:
 
 ```bash
 python3 run_termia.py --debug

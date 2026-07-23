@@ -52,6 +52,18 @@ msgstr ""
 msgid "General"
 msgstr ""
 
+#: src/termia/i18n.py:debug_mode
+msgid "Debug mode"
+msgstr ""
+
+#: src/termia/i18n.py:debug_mode_enabled
+msgid "Debug mode enabled"
+msgstr ""
+
+#: src/termia/i18n.py:debug_mode_disabled
+msgid "Debug mode disabled"
+msgstr ""
+
 #: src/termia/i18n.py:preferences
 msgid "Preferences"
 msgstr ""

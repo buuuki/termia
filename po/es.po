@@ -47,6 +47,18 @@ msgstr "Seguridad"
 msgid "General"
 msgstr "General"
 
+#: src/termia/i18n.py:debug_mode
+msgid "Debug mode"
+msgstr "Modo debug"
+
+#: src/termia/i18n.py:debug_mode_enabled
+msgid "Debug mode enabled"
+msgstr "Modo debug activado"
+
+#: src/termia/i18n.py:debug_mode_disabled
+msgid "Debug mode disabled"
+msgstr "Modo debug desactivado"
+
 #: src/termia/i18n.py:preferences
 msgid "Preferences"
 msgstr "Preferencias"

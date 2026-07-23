@@ -90,7 +90,8 @@ python3 run_termia.py
 ```
 
 Per obtenir informació de diagnòstic sobre GTK, VTE, els bloquejos
-d'emmagatzematge, el xifratge i l'inici en mode només lectura:
+d'emmagatzematge, el xifratge i l'inici en mode només lectura, activa `Mode
+debug` al menú principal. També pots activar-lo per a una execució amb:
 
 ```bash
 python3 run_termia.py --debug
