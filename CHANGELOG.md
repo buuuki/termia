@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Refactored
+
+- Split preferences into focused general, terminal, prompt, security, and keybinding components.
+
 ### Changed
 
 - Translate app theme choices.
