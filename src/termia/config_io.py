@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from .models import Group, LocalTerminalProfile, Server, StoreData
+from .migrations import CURRENT_SCHEMA_VERSION, migrate_connections_payload
 
 CONNECTION_STORAGE_PLAIN = "plain"
 CONNECTION_STORAGE_OBFUSCATED = "obfuscated"
@@ -43,6 +44,7 @@ def connections_payload(
     master_password: str | None = None,
 ) -> dict[str, object]:
     payload = {
+        "schema_version": CURRENT_SCHEMA_VERSION,
         "groups": [asdict(group) for group in groups],
         "servers": [asdict(server) for server in servers],
         "local_terminals": [asdict(profile) for profile in local_terminals],
@@ -170,7 +172,7 @@ def export_connections_file(source: Path, destination: Path) -> None:
 
 
 def load_store_data_from_json(path: Path, current: StoreData, master_password: str | None = None) -> StoreData:
-    payload = read_connections_payload(path, master_password)
+    payload, _ = migrate_connections_payload(read_connections_payload(path, master_password))
     return StoreData(
         groups=[Group(**item) for item in payload.get("groups", [])],
         servers=[Server(**item) for item in payload.get("servers", [])],

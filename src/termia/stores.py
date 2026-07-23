@@ -23,7 +23,6 @@ from .constants import (
     MAX_SPLIT_SEPARATOR_THICKNESS,
     HISTORY_FILE,
     INSTANCE_LOCK_FILE,
-    LEGACY_ANSI_PALETTE,
     SETTINGS_FILE,
     STATISTICS_FILE,
 )
@@ -39,6 +38,16 @@ from .config_io import (
     write_connections_file,
 )
 from .i18n import LANGUAGES, detect_system_language
+from .migrations import (
+    CURRENT_SCHEMA_VERSION,
+    migrate_connections_payload,
+    migrate_embedded_settings_payload,
+    migrate_embedded_statistics_payload,
+    migrate_history_event_payload,
+    migrate_legacy_terminal_settings,
+    migrate_settings_payload,
+    migrate_statistics_payload,
+)
 from .keybindings import normalize_keybindings
 from .models import (
     DEFAULT_ANSI_PALETTE,
@@ -112,6 +121,7 @@ class StatisticsStore:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
             if not isinstance(payload, dict):
                 raise ValueError("Statistics file must contain a JSON object.")
+            payload, _ = migrate_statistics_payload(payload)
             fields = StatisticsSettings.__dataclass_fields__
             self.data = StatisticsSettings(**{key: value for key, value in payload.items() if key in fields})
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
@@ -122,7 +132,10 @@ class StatisticsStore:
         if self.read_only:
             return
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(asdict(self.data), indent=2), encoding="utf-8")
+        self.path.write_text(
+            json.dumps({"schema_version": CURRENT_SCHEMA_VERSION, **asdict(self.data)}, indent=2),
+            encoding="utf-8",
+        )
         self.path.chmod(0o600)
 
 
@@ -149,6 +162,7 @@ class ConnectionHistoryStore:
                     continue
                 if not isinstance(payload, dict):
                     continue
+                payload, _ = migrate_history_event_payload(payload)
                 fields = ConnectionHistoryEvent.__dataclass_fields__
                 event = ConnectionHistoryEvent(**{key: value for key, value in payload.items() if key in fields})
                 if not event.event_id:
@@ -328,6 +342,7 @@ class SettingsStore:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
             if not isinstance(payload, dict):
                 raise ValueError("Settings file must contain a JSON object.")
+            payload, _ = migrate_settings_payload(payload)
             app_payload = payload.get("app", {})
             app_fields = AppSettings.__dataclass_fields__
             self.app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
@@ -341,6 +356,7 @@ class SettingsStore:
             return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
+            "schema_version": CURRENT_SCHEMA_VERSION,
             "app": asdict(self.app),
             "terminal": asdict(self.terminal),
         }
@@ -370,17 +386,7 @@ def normalize_app_settings(app: AppSettings) -> AppSettings:
 
 
 def normalize_terminal_settings(terminal: TerminalSettings) -> TerminalSettings:
-    if (
-        terminal.font_family == "Ubuntu Mono"
-        and terminal.font_size == 13
-        and terminal.foreground == "#839496"
-        and terminal.background == "#002b36"
-    ):
-        terminal.font_family = DEFAULT_TERMINAL_FONT_FAMILY
-        terminal.foreground = DEFAULT_TERMINAL_FOREGROUND
-        terminal.background = DEFAULT_TERMINAL_BACKGROUND
-    if terminal.ansi_palette == LEGACY_ANSI_PALETTE:
-        terminal.ansi_palette = DEFAULT_ANSI_PALETTE.copy()
+    terminal, _ = migrate_legacy_terminal_settings(terminal)
     terminal.split_separator_thickness = max(
         1,
         min(
@@ -449,6 +455,7 @@ class ConnectionStore:
             raw_payload = read_raw_connections_payload(self.path)
             file_storage_mode = connection_storage_mode_from_payload(raw_payload)
             payload = decoded_connections_payload(raw_payload, self.master_password)
+            payload, connections_migrated = migrate_connections_payload(payload)
         except MissingMasterPasswordError:
             self.encryption_locked = True
             self.encryption_error = ""
@@ -483,9 +490,12 @@ class ConnectionStore:
             return
         self.encryption_locked = False
         self.encryption_error = ""
-        legacy_statistics = payload.get("statistics")
+        legacy_statistics, embedded_statistics_migrated = migrate_embedded_statistics_payload(payload)
         if legacy_statistics and not self.statistics_store.path.exists():
-            self.statistics_store.data = StatisticsSettings(**legacy_statistics)
+            fields = StatisticsSettings.__dataclass_fields__
+            self.statistics_store.data = StatisticsSettings(
+                **{key: value for key, value in legacy_statistics.items() if key in fields}
+            )
             self.statistics_store.save()
 
         app = self.settings_store.app
@@ -493,10 +503,12 @@ class ConnectionStore:
         settings_migrated = False
         if not self.settings_store.path.exists():
             if "app" in payload or "terminal" in payload:
-                app_payload = payload.get("app", {})
+                embedded_settings, embedded_settings_migrated = migrate_embedded_settings_payload(payload)
+                app_payload = embedded_settings.get("app", {})
                 app_fields = AppSettings.__dataclass_fields__
                 app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
-                terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
+                terminal = normalize_terminal_settings(TerminalSettings(**embedded_settings.get("terminal", {})))
+                settings_migrated = embedded_settings_migrated
             app.connection_storage_mode = file_storage_mode
             self.settings_store.app = app
             self.settings_store.terminal = terminal
@@ -514,7 +526,9 @@ class ConnectionStore:
         split_layouts_normalized = self.normalize_split_layouts()
         repaired = self.repair_references()
         if (
-            "statistics" in payload
+            connections_migrated
+            or embedded_statistics_migrated
+            or "statistics" in payload
             or "app" in payload
             or "terminal" in payload
             or repaired

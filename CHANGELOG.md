@@ -18,6 +18,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Refactored
 
+- Introduce explicit schema versioning and named migrations for connections, settings, statistics, and history files.
 - Establish an automated unit-test and GTK smoke-test baseline (`#104`).
 - Simplify sidebar row state and introduce a normalized sidebar projection (`#106`, `#116`).
 - Make history persistence injectable and expose history recovery messages (`#108`).

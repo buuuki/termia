@@ -5,10 +5,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 from termia.constants import DEFAULT_TERMINAL_BACKGROUND, DEFAULT_TERMINAL_FOREGROUND
+from termia.migrations import CURRENT_SCHEMA_VERSION, migrate_settings_payload
 from termia.stores import ConnectionStore, SettingsStore
 
 
 class MigrationTests(unittest.TestCase):
+    def test_future_schema_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            migrate_settings_payload({"schema_version": CURRENT_SCHEMA_VERSION + 1})
+
     def test_settings_migrate_legacy_terminal_palette_and_colors(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"
@@ -36,6 +41,28 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(store.terminal.background, DEFAULT_TERMINAL_BACKGROUND)
         self.assertEqual(store.terminal.split_separator_thickness, 32)
         self.assertEqual(store.terminal.split_separator_color, "#008712")
+
+        store.save()
+        saved = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(saved["schema_version"], CURRENT_SCHEMA_VERSION)
+
+    def test_statistics_and_connections_get_schema_versions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            connections_path = root / "connections.json"
+            settings_path = root / "settings.json"
+            statistics_path = root / "statistics.json"
+            lock_path = root / "instance.lock"
+            store = ConnectionStore(connections_path, settings_path, statistics_path, lock_path)
+            try:
+                store.save()
+                store.save_statistics()
+            finally:
+                store.close()
+
+            self.assertEqual(json.loads(connections_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
+            self.assertEqual(json.loads(settings_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
+            self.assertEqual(json.loads(statistics_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
 
     def test_connection_store_migrates_embedded_settings(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
