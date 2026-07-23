@@ -37,10 +37,12 @@ from .config_io import (
     read_raw_connections_payload,
     write_connections_file,
 )
+from .debug import log_lock_failure, log_startup_context, log_store_state
 from .i18n import LANGUAGES, detect_system_language
 from .migrations import (
     CURRENT_SCHEMA_VERSION,
     migrate_connections_payload,
+    migrate_app_settings_payload,
     migrate_embedded_settings_payload,
     migrate_embedded_statistics_payload,
     migrate_history_event_payload,
@@ -82,12 +84,18 @@ class InstanceWriteLock:
             handle = self.path.open("a+", encoding="utf-8")
         except OSError:
             self.read_only = True
+            log_lock_failure(self.path, "open-failed")
             return
         try:
             fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             handle.close()
             self.read_only = True
+            try:
+                holder = self.path.read_text(encoding="utf-8").strip() or "unknown"
+            except OSError:
+                holder = "unknown"
+            log_lock_failure(self.path, f"already-locked holder_pid={holder}")
             return
         handle.seek(0)
         handle.truncate(0)
@@ -344,6 +352,7 @@ class SettingsStore:
                 raise ValueError("Settings file must contain a JSON object.")
             payload, _ = migrate_settings_payload(payload)
             app_payload = payload.get("app", {})
+            app_payload, _ = migrate_app_settings_payload(app_payload)
             app_fields = AppSettings.__dataclass_fields__
             self.app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
             self.terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
@@ -439,7 +448,14 @@ class ConnectionStore:
             app=self.settings_store.app,
             statistics=self.statistics_store.data,
         )
+        log_startup_context(
+            lock_path=lock_path,
+            data_path=path,
+            settings_path=settings_path,
+            state_dir=history_path.parent,
+        )
         self.load()
+        log_store_state(self)
 
     def load(self) -> None:
         if not self.path.exists():
@@ -505,6 +521,7 @@ class ConnectionStore:
             if "app" in payload or "terminal" in payload:
                 embedded_settings, embedded_settings_migrated = migrate_embedded_settings_payload(payload)
                 app_payload = embedded_settings.get("app", {})
+                app_payload, _ = migrate_app_settings_payload(app_payload)
                 app_fields = AppSettings.__dataclass_fields__
                 app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
                 terminal = normalize_terminal_settings(TerminalSettings(**embedded_settings.get("terminal", {})))
@@ -870,10 +887,11 @@ class ConnectionStore:
             show_session_status_bar=app.show_session_status_bar,
             confirm_disconnect=app.confirm_disconnect,
             confirm_close_app=app.confirm_close_app,
-            sudo_password_shortcut=app.sudo_password_shortcut,
-            sudo_password_enter=app.sudo_password_enter,
+            send_password_shortcut=app.send_password_shortcut,
+            send_password_enter=app.send_password_enter,
             connection_storage_mode=current.connection_storage_mode,
             statistics_enabled=app.statistics_enabled,
+            debug_enabled=app.debug_enabled,
             keybindings=normalize_keybindings(current.keybindings),
         )
         self.save_settings()

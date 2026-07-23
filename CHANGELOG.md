@@ -6,13 +6,20 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Added
 
+- Add an opt-in Debug mode in General preferences and a `--debug` launcher option for GTK/VTE rendering, storage-lock, encryption, and read-only diagnostics.
 - Add a keyboard shortcut to focus the server filter (`#96`).
 - Add keyboard navigation shortcuts for the sidebar and tabs (`#98`, `#100`).
 - Add a safety confirmation before starting large server groups (`#90`).
 - Allow creating subgroups from the group context menu (`#92`).
 
+### Fixed
+
+- Keep the Debug mode checkbox enabled in General preferences when password shortcut options are present.
+- Refresh write actions after encrypted connections are unlocked so preferences and configuration actions are not left disabled.
+
 ### Changed
 
+- Rename the saved-password shortcut settings to avoid implying that Termia executes `sudo`.
 - Unify the setup commands and dependency checks (`#94`).
 - Synchronize translation catalogs and add automated catalog consistency validation (`#102`).
 

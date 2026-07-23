@@ -47,6 +47,18 @@ msgstr "Seguretat"
 msgid "General"
 msgstr "General"
 
+#: src/termia/i18n.py:debug_mode
+msgid "Debug mode"
+msgstr "Mode debug"
+
+#: src/termia/i18n.py:debug_mode_enabled
+msgid "Debug mode enabled"
+msgstr "Mode debug activat"
+
+#: src/termia/i18n.py:debug_mode_disabled
+msgid "Debug mode disabled"
+msgstr "Mode debug desactivat"
+
 #: src/termia/i18n.py:preferences
 msgid "Preferences"
 msgstr "Preferències"
@@ -387,19 +399,19 @@ msgstr "Confirmar abans de desconnectar o tancar una sessió activa"
 msgid "Confirm before closing Termia"
 msgstr "Confirmar per tancar Termia"
 
-#: src/termia/i18n.py:sudo_password_shortcut
-msgid "Allow sending password with shortcut"
-msgstr "Permetre enviar contrasenya amb drecera"
+#: src/termia/i18n.py:send_password_shortcut
+msgid "Allow sending saved password with shortcut"
+msgstr "Permetre enviar la contrasenya desada amb una drecera"
 
-#: src/termia/i18n.py:sudo_password_enter
-msgid "Send password and press Enter"
+#: src/termia/i18n.py:send_password_enter
+msgid "Send saved password and press Enter"
 msgstr "Enviar contrasenya i prémer Enter"
 
-#: src/termia/i18n.py:sudo_password_sent
+#: src/termia/i18n.py:send_password_sent
 msgid "Saved password sent to the terminal"
 msgstr "Contrasenya desada enviada al terminal"
 
-#: src/termia/i18n.py:sudo_password_unavailable
+#: src/termia/i18n.py:send_password_unavailable
 msgid "This terminal does not have a saved password"
 msgstr "Aquest terminal no té cap contrasenya desada"
 

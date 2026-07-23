@@ -10,6 +10,24 @@ from termia.stores import ConnectionStore, SettingsStore
 
 
 class MigrationTests(unittest.TestCase):
+    def test_legacy_password_shortcut_names_are_migrated(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            path.write_text(
+                json.dumps({"app": {"sudo_password_shortcut": True, "sudo_password_enter": True}}),
+                encoding="utf-8",
+            )
+
+            store = SettingsStore(path)
+
+        self.assertTrue(store.app.send_password_shortcut)
+        self.assertTrue(store.app.send_password_enter)
+        store.save()
+        saved_app = json.loads(path.read_text(encoding="utf-8"))["app"]
+        self.assertNotIn("sudo_password_shortcut", saved_app)
+        self.assertNotIn("sudo_password_enter", saved_app)
+        self.assertTrue(saved_app["send_password_shortcut"])
+
     def test_future_schema_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             migrate_settings_payload({"schema_version": CURRENT_SCHEMA_VERSION + 1})
@@ -55,6 +73,7 @@ class MigrationTests(unittest.TestCase):
             lock_path = root / "instance.lock"
             store = ConnectionStore(connections_path, settings_path, statistics_path, lock_path)
             try:
+                store.data.app.debug_enabled = True
                 store.save()
                 store.save_statistics()
             finally:
@@ -63,6 +82,7 @@ class MigrationTests(unittest.TestCase):
             self.assertEqual(json.loads(connections_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertEqual(json.loads(settings_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertEqual(json.loads(statistics_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
+            self.assertTrue(SettingsStore(settings_path).app.debug_enabled)
 
     def test_connection_store_migrates_embedded_settings(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
