@@ -121,13 +121,17 @@ class TermiaWindow(
         return False
 
     def configure_write_action(self, widget: Gtk.Widget) -> Gtk.Widget:
-        if self.store.read_only or self.store.encryption_locked:
-            widget.set_sensitive(False)
-            widget.set_tooltip_text(
+        write_blocked = self.store.read_only or self.store.encryption_locked
+        widget.set_sensitive(not write_blocked)
+        widget.set_tooltip_text(
+            (
                 self.t("connections_locked_tooltip")
                 if self.store.encryption_locked
                 else self.t("read_only_mode_tooltip")
             )
+            if write_blocked
+            else None
+        )
         return widget
 
     def request_unlock_connections(self) -> bool:
