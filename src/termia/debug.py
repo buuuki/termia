@@ -34,6 +34,8 @@ def _write_glib_log(
     _n_fields: int,
     _user_data: object,
 ) -> GLib.LogWriterOutput:
+    if LOGGER.disabled:
+        return GLib.LogWriterOutput.UNHANDLED
     message = _glib_field(fields, "MESSAGE")
     if not message:
         return GLib.LogWriterOutput.UNHANDLED
