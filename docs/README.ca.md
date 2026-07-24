@@ -13,7 +13,7 @@ Documentació en castellà: [README.es.md](README.es.md)
   privada.
 - Filtrar servidors amb `Ctrl+F` i obrir diverses sessions al mateix host en pestanyes.
 - Reobrir els 10 servidors connectats més recentment des d'una secció Recent a sobre de Favorites, sense duplicats.
-- Usar pestanyes incrustades que reparteixen l'amplada disponible i moure una pestanya a una finestra independent.
+- Usar pestanyes incrustades que reparteixen l'amplada disponible, tancar-les amb el clic central i moure una pestanya a una finestra independent.
 - Crear i obrir perfils configurables de terminal local des de la barra lateral.
 - Dividir una pestanya de terminal en diversos panells des del menú contextual del terminal.
 - Configurar dissenys bàsics de divisió per a cada servidor SSH o perfil de terminal local.

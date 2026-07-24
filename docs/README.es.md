@@ -13,7 +13,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
   clave privada.
 - Filtrar servidores con `Ctrl+F` y abrir varias sesiones al mismo host en pestañas.
 - Reabrir los 10 servidores conectados más recientemente desde una sección Recent encima de Favorites, sin duplicados.
-- Usar pestañas embebidas que reparten el ancho disponible y mover una pestaña a una ventana independiente.
+- Usar pestañas embebidas que reparten el ancho disponible, cerrarlas con clic central y mover una pestaña a una ventana independiente.
 - Crear y abrir perfiles configurables de terminal local desde la barra lateral.
 - Dividir una pestaña de terminal en varios paneles desde el menú contextual del terminal.
 - Configurar diseños básicos de división por cada servidor SSH o perfil de terminal local.

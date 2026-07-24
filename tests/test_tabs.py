@@ -79,3 +79,20 @@ class DetachTabTests(unittest.TestCase):
         self.assertEqual(host.focused, (session.id, [previous_session, session]))
         self.assertIsInstance(session.detached_window, FakeWindow)
         self.assertTrue(session.detached_window.presented)
+
+
+class MiddleClickTabTests(unittest.TestCase):
+    def test_middle_click_requests_tab_close(self) -> None:
+        page = object()
+
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.closed = None
+
+            def request_close_tab(self, session_id, clicked_page) -> None:
+                self.closed = (session_id, clicked_page)
+
+        host = Host()
+        host.on_tab_middle_press(None, 1, 0.0, 0.0, "session", page)
+
+        self.assertEqual(host.closed, ("session", page))

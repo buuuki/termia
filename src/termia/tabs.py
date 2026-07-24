@@ -134,6 +134,10 @@ class TabsMixin:
         left_click.set_button(1)
         left_click.connect("pressed", self.on_tab_left_press, session_id)
         box.add_controller(left_click)
+        middle_click = Gtk.GestureClick.new()
+        middle_click.set_button(2)
+        middle_click.connect("pressed", self.on_tab_middle_press, session_id, page)
+        box.add_controller(middle_click)
         drag_source = Gtk.DragSource.new()
         drag_source.set_actions(Gdk.DragAction.MOVE)
         drag_source.connect("prepare", self.on_tab_drag_prepare, session_id, box)
@@ -157,6 +161,17 @@ class TabsMixin:
         session_id: str,
     ) -> None:
         self.set_active_session(session_id)
+
+    def on_tab_middle_press(
+        self,
+        _gesture: Gtk.GestureClick,
+        _n_press: int,
+        _x: float,
+        _y: float,
+        session_id: str,
+        page: Gtk.Widget,
+    ) -> None:
+        self.request_close_tab(session_id, page)
 
     def on_tab_drag_prepare(
         self,
@@ -339,6 +354,9 @@ class TabsMixin:
         dialog.destroy()
 
     def on_request_close_tab(self, _button: Gtk.Button, session_id: str, page: Gtk.Widget) -> None:
+        self.request_close_tab(session_id, page)
+
+    def request_close_tab(self, session_id: str, page: Gtk.Widget) -> None:
         session = self.open_tabs.get(session_id)
         if session and session.page == page and session.connected:
             if not self.store.data.app.confirm_disconnect:
