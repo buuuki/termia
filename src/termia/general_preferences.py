@@ -7,7 +7,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
-from .constants import APP_THEMES
+from .constants import APP_THEMES, DEBUG_LOG_FILE
 from .debug import configure_debug_logging
 from .i18n import LANGUAGES, detect_system_language
 from .models import AppSettings
@@ -55,6 +55,9 @@ class GeneralPreferencesMixin:
         send_password_shortcut, send_password_enter = check_buttons[8:10]
         send_password_enter.set_sensitive(send_password_shortcut.get_active())
         send_password_shortcut.connect("toggled", lambda current: send_password_enter.set_sensitive(current.get_active()))
+        check_buttons[-1].set_tooltip_text(
+            self.t("debug_log_path").format(path=DEBUG_LOG_FILE)
+        )
 
         rows: list[tuple[str, Gtk.Widget]] = [(self.t("theme"), theme_combo), (self.t("language"), language_combo)]
         rows.extend(("", button) for button in check_buttons)
@@ -100,7 +103,12 @@ class GeneralPreferencesMixin:
             self.refresh_list()
             configure_debug_logging(self.store.data.app.debug_enabled)
             self.toast_label.set_label(
-                self.t("debug_mode_enabled" if self.store.data.app.debug_enabled else "debug_mode_disabled")
+                (
+                    f"{self.t('debug_mode_enabled')} — "
+                    f"{self.t('debug_log_path').format(path=DEBUG_LOG_FILE)}"
+                    if self.store.data.app.debug_enabled
+                    else self.t("debug_mode_disabled")
+                )
             )
             if previous_language != self.store.data.app.language:
                 self.refresh_translated_chrome()
