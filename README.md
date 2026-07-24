@@ -7,6 +7,8 @@ Spanish documentation: [docs/README.es.md](docs/README.es.md)
 Catalan documentation: [docs/README.ca.md](docs/README.ca.md)
 Roadmap: [ROADMAP.md](ROADMAP.md)
 
+![Termia showing multiple embedded SSH terminal sessions](termia_screen-github.png)
+
 ## Features
 
 - Create, edit, move, and delete server groups and nested subgroups.
