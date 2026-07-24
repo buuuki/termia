@@ -27,6 +27,7 @@ from .debug import configure_debug_logging, log_startup_context, log_store_state
 from .i18n import translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
+from .main_menu_actions import MainMenuActions
 from .preferences import PreferencesMixin
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
@@ -90,6 +91,22 @@ class TermiaWindow(
             lambda: self.store.data.servers,
             lambda: self.run_connections,
             self.t,
+        )
+        self.main_menu_actions = MainMenuActions(
+            general_preferences=lambda: self.on_app_preferences(None),
+            terminal_settings=lambda: self.on_terminal_settings(None),
+            prompt_settings=lambda: self.on_prompt_settings(None),
+            keybinding_settings=lambda: self.on_keybindings_settings(None),
+            security_settings=lambda: self.on_security_settings(None),
+            statistics=lambda: self.on_statistics_dashboard(None),
+            connection_history=lambda: self.on_connection_history(None),
+            data_locations=self.on_data_locations,
+            export_config=self.on_export_config,
+            import_config=self.on_import_config,
+            import_asbru_config=self.on_import_asbru_config,
+            clear_config=self.on_request_clear_config,
+            help=lambda: self.on_help(None),
+            about=lambda: self.on_about(None),
         )
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
@@ -292,7 +309,7 @@ class TermiaWindow(
         menu_button = Gtk.MenuButton()
         self.main_menu_button = menu_button
         menu_button.set_tooltip_text(self.t("main_menu"))
-        menu_button.set_popover(self.build_main_menu())
+        menu_button.set_popover(self.build_main_menu(self.main_menu_actions))
         menu_button.set_child(Gtk.Image.new_from_icon_name("open-menu-symbolic"))
         header.pack_start(menu_button)
 
@@ -493,7 +510,9 @@ class TermiaWindow(
         self.toggle_sidebar_button.set_tooltip_text(self.t("servers"))
         self.new_tab_button.set_tooltip_text(self.t("new_tab"))
         self.main_menu_button.set_tooltip_text(self.t("main_menu"))
-        self.main_menu_button.set_popover(self.build_main_menu())
+        self.main_menu_button.set_popover(
+            self.build_main_menu(self.main_menu_actions)
+        )
         self.read_only_badge.set_label(self.t("read_only_badge"))
         if self.store.read_only:
             self.set_title(f"Termia ({self.t('read_only_badge')})")

@@ -154,6 +154,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Confirm the Recent section appears above Favorites, shows the 10 most recently connected servers without duplicates, and updates after new SSH connections.
 - Open connection history, search for an SSH server, toggle local-terminal entries, and confirm row contents remain unchanged.
 - Open statistics and confirm the four metric cards, current-run count, duration values, ranked servers, counts, and progress bars remain correct.
+- Open every main-menu action and every Connections File submenu action, confirming each still opens or runs the intended feature after the popover closes.
 - Open Preferences from Configuration and confirm the app does not hang.
 - Start a second Termia process and confirm it opens as a separate window with the read-only badge visible.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
@@ -167,7 +168,7 @@ Run at minimum:
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
+python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/main_menu_actions.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
 bash -n scripts/termia-setup.sh
 scripts/compile_translations.py
 scripts/compile_translations.py --check
