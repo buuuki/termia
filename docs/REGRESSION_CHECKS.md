@@ -155,6 +155,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Open connection history, search for an SSH server, toggle local-terminal entries, and confirm row contents remain unchanged.
 - Open statistics and confirm the four metric cards, current-run count, duration values, ranked servers, counts, and progress bars remain correct.
 - Open every main-menu action and every Connections File submenu action, confirming each still opens or runs the intended feature after the popover closes.
+- Open Import/Export, close the menu with `Esc` or its menu button, and confirm reopening starts at the top-level menu.
 - Open Preferences from Configuration and confirm the app does not hang.
 - Start a second Termia process and confirm it opens as a separate window with the read-only badge visible.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.

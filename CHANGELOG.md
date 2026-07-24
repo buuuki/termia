@@ -14,6 +14,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Fixed
 
+- Reset the main menu to its top-level view after closing the Import/Export submenu.
 - Re-enable write-capable sidebar actions after encrypted connections are successfully unlocked.
 - Keep the Debug mode checkbox enabled in General preferences when password shortcut options are present.
 - Refresh write actions after encrypted connections are unlocked so preferences and configuration actions are not left disabled.

@@ -23,6 +23,7 @@ class MainMenuMixin:
         popover.add_css_class("termia-menu-popover")
         popover.set_has_arrow(False)
         popover.set_child(self.build_main_menu_content(popover, actions))
+        popover.connect("closed", lambda *_args: self.reset_main_menu(popover, actions))
         return popover
 
     def build_main_menu_content(
@@ -182,6 +183,13 @@ class MainMenuMixin:
                 popover, callback
             ),
         )
+
+    def reset_main_menu(
+        self,
+        popover: Gtk.Popover,
+        actions: MainMenuActions,
+    ) -> None:
+        popover.set_child(self.build_main_menu_content(popover, actions))
 
     def run_action_after_popover_closed(
         self,
