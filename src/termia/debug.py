@@ -6,12 +6,52 @@ import logging
 import os
 from pathlib import Path
 
+import gi
+
+gi.require_version("GLib", "2.0")
+from gi.repository import GLib
+
 from .constants import DEBUG_LOG_FILE
 
 LOGGER = logging.getLogger("termia")
+_GLIB_WRITER_CONFIGURED = False
+
+
+def _glib_field(fields: object, key: str) -> str | None:
+    if isinstance(fields, dict):
+        value = fields.get(key)
+        return str(value) if value is not None else None
+    for field in fields:  # type: ignore[union-attr]
+        if field.key == key:
+            value = field.value
+            return value.decode() if isinstance(value, bytes) else str(value)
+    return None
+
+
+def _write_glib_log(
+    log_level: GLib.LogLevelFlags,
+    fields: object,
+    _n_fields: int,
+    _user_data: object,
+) -> GLib.LogWriterOutput:
+    message = _glib_field(fields, "MESSAGE")
+    if not message:
+        return GLib.LogWriterOutput.UNHANDLED
+    if log_level & (GLib.LogLevelFlags.LEVEL_ERROR | GLib.LogLevelFlags.LEVEL_CRITICAL):
+        level = logging.ERROR
+    elif log_level & GLib.LogLevelFlags.LEVEL_WARNING:
+        level = logging.WARNING
+    elif log_level & GLib.LogLevelFlags.LEVEL_DEBUG:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    domain = _glib_field(fields, "GLIB_DOMAIN") or "GLib"
+    LOGGER.log(level, "[%s] %s", domain, message)
+    return GLib.LogWriterOutput.HANDLED
 
 
 def configure_debug_logging(enabled: bool) -> None:
+    global _GLIB_WRITER_CONFIGURED
     if not enabled:
         LOGGER.disabled = True
         for handler in LOGGER.handlers[:]:
@@ -21,6 +61,8 @@ def configure_debug_logging(enabled: bool) -> None:
     LOGGER.disabled = False
     if LOGGER.handlers:
         return
+    os.environ.setdefault("G_MESSAGES_DEBUG", "all")
+    os.environ.setdefault("GSK_DEBUG", "renderer")
     os.environ.setdefault("PYTHONFAULTHANDLER", "1")
     LOGGER.setLevel(logging.DEBUG)
     LOGGER.propagate = False
@@ -30,6 +72,9 @@ def configure_debug_logging(enabled: bool) -> None:
         file_handler = logging.FileHandler(DEBUG_LOG_FILE, encoding="utf-8")
         file_handler.setFormatter(formatter)
         LOGGER.addHandler(file_handler)
+        if not _GLIB_WRITER_CONFIGURED:
+            GLib.log_set_writer_func(_write_glib_log, None)
+            _GLIB_WRITER_CONFIGURED = True
     except OSError as exc:
         LOGGER.warning("Could not open debug log %s: %s", DEBUG_LOG_FILE, exc)
     LOGGER.info("Debug logging enabled")
