@@ -147,6 +147,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Close a tab and confirm focus moves to the next terminal.
 - Right-click a terminal and open the context menu.
 - From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
+- Confirm terminal context-menu actions still work: disconnect, show status bar, copy, paste, terminal preferences, session statistics, file transfer, all split directions, and all Tab submenu actions.
 - Create split panes in all four directions and confirm each new pane opens a working shell.
 - Run `exit` inside a split pane and confirm only that pane disappears while the sibling pane keeps focus and remains usable.
 - Right-click a server/group in the tree and open the context menu.
@@ -170,7 +171,7 @@ Run at minimum:
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/main_menu_actions.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
+python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/main_menu_actions.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_menu_actions.py src/termia/terminal_menus.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
 bash -n scripts/termia-setup.sh
 scripts/compile_translations.py
 scripts/compile_translations.py --check

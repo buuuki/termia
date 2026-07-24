@@ -13,6 +13,7 @@ from gi.repository import Gdk, GLib, Gtk, Vte
 
 from .connection_utils import find_server
 from .keybindings import keybinding_label
+from .terminal_menu_actions import TerminalMenuActions
 from .ui_state import TerminalSession
 
 
@@ -26,6 +27,7 @@ class TerminalMenusMixin:
         session: TerminalSession,
         terminal: Vte.Terminal,
     ) -> None:
+        actions: TerminalMenuActions = self.terminal_menu_actions
         popover = Gtk.Popover()
         popover.add_css_class("termia-menu-popover")
         popover.set_has_arrow(False)
@@ -46,22 +48,22 @@ class TerminalMenusMixin:
         menu.set_margin_end(6)
         active_submenu: dict[str, Gtk.Popover | None] = {"popover": None}
         popover.connect("closed", lambda *_args: self.close_active_terminal_submenu(active_submenu))
-        self.add_context_menu_item(menu, self.t("disconnect"), lambda: self.disconnect_from_terminal_menu(popover, session))
+        self.add_context_menu_item(menu, self.t("disconnect"), lambda: actions.disconnect(popover, session))
         if not session.status_bar.get_visible():
             self.add_context_menu_item(
-                menu, self.t("show_session_status_bar"), lambda: self.show_session_status_bar_from_menu(popover, session)
+                menu, self.t("show_session_status_bar"), lambda: actions.show_status_bar(popover, session)
             )
         self.add_terminal_shortcut_menu_item(
             menu,
             self.t("copy"),
             self.store.data.app.keybindings.get("copy", ""),
-            lambda: self.copy_terminal_selection(popover, terminal),
+            lambda: actions.copy(popover, terminal),
         )
         self.add_terminal_shortcut_menu_item(
             menu,
             self.t("paste"),
             self.store.data.app.keybindings.get("paste", ""),
-            lambda: self.paste_terminal_clipboard(popover, terminal),
+            lambda: actions.paste(popover, terminal),
         )
         if session.server_id is not None:
             server = find_server(self.store.data.servers, session.server_id)
@@ -69,13 +71,13 @@ class TerminalMenusMixin:
                 self.add_context_menu_item(
                     menu,
                     self.t("send_files_to_server"),
-                    lambda: self.on_send_files_to_server(popover, server),
+                    lambda: actions.send_files(popover, server),
                 )
-        self.add_context_menu_item(menu, self.t("configure_terminal"), lambda: self.configure_terminal_from_menu(popover))
-        self.add_context_menu_item(menu, self.t("session_statistics"), lambda: self.show_session_statistics(popover, session))
+        self.add_context_menu_item(menu, self.t("configure_terminal"), lambda: actions.configure(popover))
+        self.add_context_menu_item(menu, self.t("session_statistics"), lambda: actions.session_statistics(popover, session))
         self.add_context_menu_separator(menu)
-        self.add_terminal_split_menu(menu, popover, session, terminal, active_submenu)
-        self.add_terminal_tab_menu(menu, popover, session, active_submenu)
+        self.add_terminal_split_menu(menu, popover, session, terminal, active_submenu, actions)
+        self.add_terminal_tab_menu(menu, popover, session, active_submenu, actions)
         popover.set_child(menu)
         popover.popup()
 
@@ -116,12 +118,13 @@ class TerminalMenusMixin:
         session: TerminalSession,
         terminal: Vte.Terminal,
         active_submenu: dict[str, Gtk.Popover | None],
+        actions: TerminalMenuActions,
     ) -> None:
         submenu_items = [
-            (self.t("split_up"), lambda: self.split_terminal_from_menu(parent_popover, session, terminal, "up")),
-            (self.t("split_down"), lambda: self.split_terminal_from_menu(parent_popover, session, terminal, "down")),
-            (self.t("split_right"), lambda: self.split_terminal_from_menu(parent_popover, session, terminal, "right")),
-            (self.t("split_left"), lambda: self.split_terminal_from_menu(parent_popover, session, terminal, "left")),
+            (self.t("split_up"), lambda: actions.split(parent_popover, session, terminal, "up")),
+            (self.t("split_down"), lambda: actions.split(parent_popover, session, terminal, "down")),
+            (self.t("split_right"), lambda: actions.split(parent_popover, session, terminal, "right")),
+            (self.t("split_left"), lambda: actions.split(parent_popover, session, terminal, "left")),
         ]
         self.add_terminal_nested_menu(menu, self.t("split"), submenu_items, active_submenu)
 
@@ -131,12 +134,13 @@ class TerminalMenusMixin:
         parent_popover: Gtk.Popover,
         session: TerminalSession,
         active_submenu: dict[str, Gtk.Popover | None],
+        actions: TerminalMenuActions,
     ) -> None:
         submenu_items = [
-            (self.t("rename_tab"), lambda: self.show_rename_tab_dialog(parent_popover, session)),
-            (self.t("duplicate_tab"), lambda: self.duplicate_tab(parent_popover, session)),
-            (self.t("new_tab"), lambda: self.new_tab_from_terminal_menu(parent_popover)),
-            (self.t("close_tab"), lambda: self.close_tab_from_terminal_menu(parent_popover, session)),
+            (self.t("rename_tab"), lambda: actions.rename_tab(parent_popover, session)),
+            (self.t("duplicate_tab"), lambda: actions.duplicate_tab(parent_popover, session)),
+            (self.t("new_tab"), lambda: actions.new_tab(parent_popover)),
+            (self.t("close_tab"), lambda: actions.close_tab(parent_popover, session)),
         ]
         self.add_terminal_nested_menu(menu, self.t("tab"), submenu_items, active_submenu)
 
