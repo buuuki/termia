@@ -32,7 +32,7 @@ from .preferences import PreferencesMixin
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
 from .statistics_presenter import StatisticsPresenter
-from .statistics_view import StatisticsViewMixin
+from .statistics_view import StatisticsDialog
 from .styles import build_application_css
 from .tabs import TabsMixin
 from .terminal_menus import TerminalMenusMixin
@@ -48,7 +48,6 @@ class TermiaWindow(
     PreferencesMixin,
     SidebarMixin,
     ConnectionHistoryViewMixin,
-    StatisticsViewMixin,
     TerminalMenusMixin,
     TerminalSessionsMixin,
     TabsMixin,
@@ -93,13 +92,14 @@ class TermiaWindow(
             lambda: self.run_connections,
             self.t,
         )
+        self.statistics_dialog = StatisticsDialog(self, self.statistics_presenter, self.t)
         self.main_menu_actions = MainMenuActions(
             general_preferences=lambda: self.on_app_preferences(None),
             terminal_settings=lambda: self.on_terminal_settings(None),
             prompt_settings=lambda: self.on_prompt_settings(None),
             keybinding_settings=lambda: self.on_keybindings_settings(None),
             security_settings=lambda: self.on_security_settings(None),
-            statistics=lambda: self.on_statistics_dashboard(None),
+            statistics=self.statistics_dialog.show,
             connection_history=lambda: self.on_connection_history(None),
             data_locations=self.on_data_locations,
             export_config=self.on_export_config,
