@@ -141,6 +141,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 
 - Open Termia and confirm a local terminal opens if the preference is enabled.
 - Open two local terminals and reorder their tabs with the mouse.
+- Right-click a tab, move it to a new window, repeat with another tab, and restore both detached windows to the main window.
 - Duplicate a local terminal and confirm the custom prompt is applied.
 - Open two SSH sessions and duplicate one of them.
 - Close a tab and confirm focus moves to the next terminal.

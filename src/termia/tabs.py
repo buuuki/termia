@@ -291,8 +291,9 @@ class TabsMixin:
         popover.popdown()
         if session.detached_window is not None:
             return
+        previous_order = self.visible_sessions_in_tab_order()
         self.remove_session_from_main_view(session)
-        self.focus_available_session_after_close(session.id)
+        self.focus_available_session_after_close(session.id, previous_order)
         window = Gtk.Window(title=session.title, transient_for=self)
         if hasattr(window, "set_handle_menubar_accel"):
             window.set_handle_menubar_accel(False)
