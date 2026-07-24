@@ -135,13 +135,15 @@ security, and keybinding dialogs have comparatively small contracts.
 
 ### `TerminalMenusMixin`
 
-- Reads: `store`.
+- Reads: `store` and the explicitly composed `TerminalMenuActions` callback
+  set.
 - Window services: translation and context-menu construction.
-- Cross-mixin dependencies: session splitting and disconnection, file
-  transfer, tab duplication/renaming/closing, terminal copy/paste, preferences,
-  status visibility, and statistics.
-- Architectural note: like the main menu, it should eventually receive an
-  explicit set of actions.
+- Cross-mixin dependencies: none for action dispatch; session splitting and
+  disconnection, file transfer, tab operations, terminal copy/paste,
+  preferences, status visibility, and statistics are supplied as callbacks.
+- Extracted component: `TerminalMenuActions` defines the actions supplied by
+  the application composition root. The menu builder no longer discovers these
+  feature callbacks on the window.
 
 ### `TerminalSessionsMixin`
 
@@ -183,8 +185,8 @@ The principal cycles are:
    dialog parenting.
 2. Use the history and statistics presenters as the pattern for subsequent
    extractions with explicit providers and callbacks.
-3. Pass explicit action callbacks into menu builders. The main menu now uses
-   `MainMenuActions`; terminal menus remain to be converted.
+3. Pass explicit action callbacks into menu builders. The main menu uses
+   `MainMenuActions` and terminal context menus use `TerminalMenuActions`.
 4. Introduce a session registry that owns `open_tabs` and session lookup.
 5. Separate tab placement from session lifecycle using the registry and
    callbacks, then replace `TabsMixin`.

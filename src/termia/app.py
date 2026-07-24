@@ -36,6 +36,7 @@ from .statistics_view import StatisticsViewMixin
 from .styles import build_application_css
 from .tabs import TabsMixin
 from .terminal_menus import TerminalMenusMixin
+from .terminal_menu_actions import TerminalMenuActions
 from .terminal_sessions import TerminalSessionsMixin
 from .ui_state import RowObject, TerminalSession
 
@@ -107,6 +108,20 @@ class TermiaWindow(
             clear_config=self.on_request_clear_config,
             help=lambda: self.on_help(None),
             about=lambda: self.on_about(None),
+        )
+        self.terminal_menu_actions = TerminalMenuActions(
+            disconnect=self.disconnect_from_terminal_menu,
+            show_status_bar=self.show_session_status_bar_from_menu,
+            copy=self.copy_terminal_selection,
+            paste=self.paste_terminal_clipboard,
+            send_files=self.on_send_files_to_server,
+            configure=self.configure_terminal_from_menu,
+            session_statistics=self.show_session_statistics,
+            split=self.split_terminal_from_menu,
+            rename_tab=self.show_rename_tab_dialog,
+            duplicate_tab=self.duplicate_tab,
+            new_tab=self.new_tab_from_terminal_menu,
+            close_tab=self.close_tab_from_terminal_menu,
         )
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
