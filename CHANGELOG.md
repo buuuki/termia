@@ -6,6 +6,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Added
 
+- Close tabs with a middle mouse click (`#141`).
 - Add an opt-in Debug mode in General preferences and a `--debug` launcher option for GTK/VTE rendering, storage-lock, encryption, and read-only diagnostics.
 - Add a keyboard shortcut to focus the server filter (`#96`).
 - Add keyboard navigation shortcuts for the sidebar and tabs (`#98`, `#100`).

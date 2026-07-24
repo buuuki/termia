@@ -145,6 +145,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Duplicate a local terminal and confirm the custom prompt is applied.
 - Open two SSH sessions and duplicate one of them.
 - Close a tab and confirm focus moves to the next terminal.
+- Middle-click a tab and confirm it follows the configured close confirmation and moves focus to the next terminal.
 - Right-click a terminal and open the context menu.
 - From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
 - Confirm terminal context-menu actions still work: disconnect, show status bar, copy, paste, terminal preferences, session statistics, file transfer, all split directions, and all Tab submenu actions.

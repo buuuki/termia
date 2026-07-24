@@ -17,7 +17,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Filter servers with `Ctrl+F` and open multiple tabbed sessions to the same host.
 - Reopen the 10 most recently connected servers from a Recent section above Favorites, without duplicates.
 - Mark servers as favorites and jump to them from a dedicated section in the sidebar.
-- Use embedded, width-sharing tabs and move a tab to a separate window.
+- Use embedded, width-sharing tabs, close tabs with a middle mouse click, and move a tab to a separate window.
 - Create and open configurable local terminal profiles from the sidebar.
 - Split a terminal tab into multiple panes from the terminal context menu.
 - Configure basic split layouts per SSH server or local terminal profile.
