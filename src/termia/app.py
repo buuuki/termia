@@ -327,6 +327,12 @@ class TermiaWindow(
         self.sidebar_width = 280
         root.append(body)
 
+        self.toast_label.set_xalign(0)
+        self.toast_label.set_margin_start(12)
+        self.toast_label.set_margin_end(12)
+        self.toast_label.set_margin_bottom(6)
+        root.append(self.toast_label)
+
         sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         sidebar.set_size_request(120, -1)
         sidebar.set_margin_top(12)
