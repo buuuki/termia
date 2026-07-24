@@ -136,8 +136,8 @@ can also be enabled for one run with:
 python3 run_termia.py --debug
 ```
 
-Debug output is written to `~/.local/state/termia/debug.log` and stderr. It
-does not log passwords or connection contents.
+Debug output is written to `~/.local/state/termia/debug.log`. It does not log
+passwords or connection contents.
 
 The launcher is installed at
 `~/.local/share/applications/local.termia.desktop` and its icon under

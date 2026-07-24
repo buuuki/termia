@@ -106,8 +106,8 @@ debug` en las preferencias Generales. También puedes activarlo para una ejecuci
 python3 run_termia.py --debug
 ```
 
-La información se guarda en `~/.local/state/termia/debug.log` y se muestra
-también por stderr. No registra contraseñas ni el contenido de las conexiones.
+La información se guarda en `~/.local/state/termia/debug.log`. No registra
+contraseñas ni el contenido de las conexiones.
 
 Elimina únicamente el lanzador de escritorio, sin borrar ajustes, conexiones,
 estadísticas ni paquetes del sistema:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 from pathlib import Path
 
 from .constants import DEBUG_LOG_FILE
@@ -22,14 +21,10 @@ def configure_debug_logging(enabled: bool) -> None:
     LOGGER.disabled = False
     if LOGGER.handlers:
         return
-    os.environ.setdefault("G_MESSAGES_DEBUG", "all")
-    os.environ.setdefault("GSK_DEBUG", "renderer")
     os.environ.setdefault("PYTHONFAULTHANDLER", "1")
     LOGGER.setLevel(logging.DEBUG)
+    LOGGER.propagate = False
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    stream_handler = logging.StreamHandler(sys.stderr)
-    stream_handler.setFormatter(formatter)
-    LOGGER.addHandler(stream_handler)
     try:
         DEBUG_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(DEBUG_LOG_FILE, encoding="utf-8")
