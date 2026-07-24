@@ -71,13 +71,14 @@ Some mixins add transient state after construction:
 
 ### `MainMenuMixin`
 
-- Reads: no data widgets beyond the window services; it wires callbacks from
-  nearly every feature area.
+- Reads: the explicitly composed `MainMenuActions` callback set.
 - Window services: translation and writable-action configuration.
-- Cross-mixin dependencies: configuration actions, all preference dialogs,
-  history, statistics, and the shared dialog-button helpers it defines.
-- Architectural note: it is a composition boundary and should receive action
-  callbacks explicitly instead of discovering methods on the window.
+- Cross-mixin dependencies: none for menu dispatch; the shared dialog-button
+  helpers and built-in Help and About dialog implementations remain on the
+  mixin.
+- Extracted component: `MainMenuActions` defines the actions supplied by the
+  application composition root. The menu builder no longer discovers
+  configuration, preference, history, or statistics callbacks on the window.
 
 ### Preference mixins
 
@@ -182,7 +183,8 @@ The principal cycles are:
    dialog parenting.
 2. Use the history and statistics presenters as the pattern for subsequent
    extractions with explicit providers and callbacks.
-3. Pass explicit action callbacks into main and terminal menu builders.
+3. Pass explicit action callbacks into menu builders. The main menu now uses
+   `MainMenuActions`; terminal menus remain to be converted.
 4. Introduce a session registry that owns `open_tabs` and session lookup.
 5. Separate tab placement from session lifecycle using the registry and
    callbacks, then replace `TabsMixin`.
