@@ -14,7 +14,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Fixed
 
-- Keep Debug output in Termia's state log instead of forwarding it to stderr/syslog, and show the visible log path notification when Debug mode is enabled.
+- Keep Debug output in Termia's state log instead of forwarding it to stderr/syslog, and show its path in the Debug preference tooltip.
 - Reset the main menu to its top-level view after closing the Import/Export submenu.
 - Re-enable write-capable sidebar actions after encrypted connections are successfully unlocked.
 - Keep the Debug mode checkbox enabled in General preferences when password shortcut options are present.

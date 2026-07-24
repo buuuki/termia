@@ -55,6 +55,9 @@ class GeneralPreferencesMixin:
         send_password_shortcut, send_password_enter = check_buttons[8:10]
         send_password_enter.set_sensitive(send_password_shortcut.get_active())
         send_password_shortcut.connect("toggled", lambda current: send_password_enter.set_sensitive(current.get_active()))
+        check_buttons[-1].set_tooltip_text(
+            self.t("debug_log_path").format(path=DEBUG_LOG_FILE)
+        )
 
         rows: list[tuple[str, Gtk.Widget]] = [(self.t("theme"), theme_combo), (self.t("language"), language_combo)]
         rows.extend(("", button) for button in check_buttons)
