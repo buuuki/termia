@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -10,12 +12,26 @@ from gi.repository import Gtk
 from .statistics_presenter import StatisticCard, StatisticsDashboard
 
 
-class StatisticsViewMixin:
-    def on_statistics_dashboard(self, _button: Gtk.Button) -> None:
-        dialog = Gtk.Dialog(title=self.t("statistics_title"), transient_for=self, modal=True)
+class StatisticsDialog:
+    """Builds the statistics dialog from explicit GTK and presentation dependencies."""
+
+    def __init__(
+        self,
+        parent: Gtk.Window,
+        presenter: StatisticsPresenter,
+        translate: Callable[[str], str],
+    ) -> None:
+        self.parent = parent
+        self.presenter = presenter
+        self.translate = translate
+
+    def show(self) -> None:
+        dialog = Gtk.Dialog(title=self.translate("statistics_title"), transient_for=self.parent, modal=True)
         dialog.set_resizable(True)
         dialog.set_default_size(620, 520)
-        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
+        close_button = dialog.add_button(self.translate("close"), Gtk.ResponseType.CLOSE)
+        close_button.set_margin_end(12)
+        close_button.set_margin_bottom(12)
 
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -31,7 +47,7 @@ class StatisticsViewMixin:
         scroller.set_child(dashboard)
         content.append(scroller)
 
-        presentation = self.statistics_presenter.dashboard()
+        presentation = self.presenter.dashboard()
         cards = Gtk.Grid()
         cards.set_column_spacing(10)
         cards.set_row_spacing(10)
@@ -47,7 +63,7 @@ class StatisticsViewMixin:
             card.set_hexpand(True)
         dashboard.append(cards)
 
-        title = Gtk.Label(label=self.t("top_servers"))
+        title = Gtk.Label(label=self.translate("top_servers"))
         title.set_xalign(0)
         title.add_css_class("heading")
         dashboard.append(title)
@@ -88,7 +104,7 @@ class StatisticsViewMixin:
         list_box.set_selection_mode(Gtk.SelectionMode.NONE)
         if not presentation.top_servers:
             row = Gtk.ListBoxRow()
-            label = Gtk.Label(label=self.t("no_statistics"))
+            label = Gtk.Label(label=self.translate("no_statistics"))
             label.set_xalign(0)
             label.set_margin_top(8)
             label.set_margin_bottom(8)
