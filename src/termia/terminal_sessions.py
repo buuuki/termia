@@ -31,7 +31,7 @@ from .terminal_config import (
     build_terminal_environment,
     split_layout_plan,
 )
-from .terminal_processes import spawn_terminal_process
+from .terminal_processes import TerminalProcess, signal_terminal_process, spawn_terminal_process
 from .terminal_view import TerminalViewFactory
 from .ui_state import TerminalSession
 
@@ -203,7 +203,7 @@ class TerminalSessionsMixin:
         terminal.grab_focus()
         self.store.record_history_start(session, "local")
         try:
-            child_pid = spawn_terminal_process(
+            child_process = spawn_terminal_process(
                 terminal,
                 working_directory,
                 command,
@@ -222,11 +222,12 @@ class TerminalSessionsMixin:
             self.update_session_tab_title(session, self.t("tab_error_title").format(title=session.title))
             self.toast_label.set_label(message)
             return
-        session.child_pid = child_pid
+        session.child_process = child_process
+        session.child_pid = child_process.pid
         self.update_local_session_directory_title(session)
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_process_terminal_exited, session)
-        session.status_label.set_label(f"{title} · PID {child_pid}")
+        session.status_label.set_label(f"{title} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, fallback_working_directory=working_directory)
         if initial_command.strip():
             GLib.timeout_add(INITIAL_LOCAL_COMMAND_DELAY_MS, self.feed_initial_local_command, terminal, initial_command.strip())
@@ -275,6 +276,7 @@ class TerminalSessionsMixin:
         session.disconnect_requested = False
         session.pending_reconnect = False
         session.child_pid = None
+        session.child_process = None
         session.connected = True
         session.disconnect_button.set_sensitive(True)
         session.status_label.set_label(self.t("connecting"))
@@ -311,7 +313,7 @@ class TerminalSessionsMixin:
         terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
         terminal.grab_focus()
         try:
-            child_pid = spawn_terminal_process(terminal, None, command, envv)
+            child_process = spawn_terminal_process(terminal, None, command, envv)
         except GLib.Error as exc:
             message = self.t("ssh_start_failed").format(error=exc.message)
             terminal.feed(f"{message}\r\n".encode())
@@ -320,11 +322,12 @@ class TerminalSessionsMixin:
             self.mark_session_for_reconnect(session, server, self.t("ssh_start_failed_toast").format(name=server.name))
             return
 
-        session.child_pid = child_pid
+        session.child_process = child_process
+        session.child_pid = child_process.pid
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_terminal_exited, server, session)
         self.record_connection(server.id)
-        session.status_label.set_label(f"{server.name} · PID {child_pid}")
+        session.status_label.set_label(f"{server.name} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, server=server)
         self.toast_label.set_label(self.t("session_opened").format(title=session.title))
 
@@ -674,7 +677,7 @@ class TerminalSessionsMixin:
                 command = build_local_prompt_shell_command(self.store.data.terminal, bash_path)
         working_directory = self.local_terminal_working_directory(source_terminal, fallback_working_directory)
         try:
-            child_pid = spawn_terminal_process(
+            child_process = spawn_terminal_process(
                 terminal,
                 working_directory,
                 command,
@@ -685,7 +688,8 @@ class TerminalSessionsMixin:
             terminal.feed(f"{message}\r\n".encode())
             self.toast_label.set_label(message)
             return
-        session.split_child_pids[id(terminal)] = child_pid
+        session.split_child_pids[id(terminal)] = child_process.pid
+        session.split_processes[id(terminal)] = child_process
         terminal.connect("child-exited", self.on_split_terminal_exited, session)
 
     def start_ssh_split_terminal(
@@ -722,13 +726,14 @@ class TerminalSessionsMixin:
             command = build_ssh_command(server, ssh_path)
         terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
         try:
-            child_pid = spawn_terminal_process(terminal, None, command, envv)
+            child_process = spawn_terminal_process(terminal, None, command, envv)
         except GLib.Error as exc:
             message = self.t("ssh_start_failed").format(error=exc.message)
             terminal.feed(f"{message}\r\n".encode())
             self.toast_label.set_label(self.t("ssh_start_failed_toast").format(name=server.name))
             return
-        session.split_child_pids[id(terminal)] = child_pid
+        session.split_child_pids[id(terminal)] = child_process.pid
+        session.split_processes[id(terminal)] = child_process
         terminal.connect("child-exited", self.on_split_terminal_exited, session)
         self.record_connection(server.id)
         if announce:
@@ -750,6 +755,7 @@ class TerminalSessionsMixin:
 
     def on_split_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         session.split_child_pids.pop(id(terminal), None)
+        session.split_processes.pop(id(terminal), None)
         self.mark_terminal_inactive(terminal, session)
         if terminal in session.split_terminals:
             session.split_terminals.remove(terminal)
@@ -937,14 +943,28 @@ class TerminalSessionsMixin:
         return GLib.SOURCE_CONTINUE
 
     def terminate_split_processes(self, session: TerminalSession) -> None:
-        for child_pid in tuple(session.split_child_pids.values()):
-            try:
-                os.kill(child_pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            except PermissionError:
-                pass
+        for process in tuple(session.split_processes.values()):
+            self.terminate_terminal_process(process)
         session.split_child_pids.clear()
+        session.split_processes.clear()
+
+    def terminate_terminal_process(self, process: TerminalProcess, *, force: bool = False) -> bool:
+        signum = signal.SIGKILL if force else signal.SIGTERM
+        terminated = signal_terminal_process(process, signum)
+        if terminated and not force:
+            GLib.timeout_add(500, self.force_terminate_terminal_process, process)
+        return terminated
+
+    def force_terminate_terminal_process(self, process: TerminalProcess) -> bool:
+        self.terminate_terminal_process(process, force=True)
+        return GLib.SOURCE_REMOVE
+
+    def terminate_open_terminal_processes(self, *, force: bool = False) -> None:
+        for session in tuple(self.open_tabs.values()):
+            if session.child_process is not None:
+                self.terminate_terminal_process(session.child_process, force=force)
+            for process in tuple(session.split_processes.values()):
+                self.terminate_terminal_process(process, force=force)
 
     def on_request_disconnect_session(self, _button: Gtk.Button, session: TerminalSession) -> None:
         if not session.connected:
@@ -964,16 +984,11 @@ class TerminalSessionsMixin:
         if not session.connected:
             return
         session.disconnect_requested = True
-        if session.child_pid is not None:
-            try:
-                os.kill(session.child_pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            except PermissionError:
-                message = self.t("sigterm_failed")
-                session.terminal.feed(f"{message}\r\n".encode())
-                self.toast_label.set_label(message)
-                return
+        if session.child_process is not None and not self.terminate_terminal_process(session.child_process):
+            message = self.t("sigterm_failed")
+            session.terminal.feed(f"{message}\r\n".encode())
+            self.toast_label.set_label(message)
+            return
         self.terminate_split_processes(session)
         self.record_session_duration(session)
         self.save_statistics_now()

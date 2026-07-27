@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import argparse
 import logging
+import signal
 
 import gi
 
@@ -125,8 +126,11 @@ class TermiaWindow(
         )
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
+        self.shutdown_in_progress = False
         self.connect("close-request", self.on_main_window_close_request)
         self.connect("destroy", lambda *_args: self.store.close())
+        if hasattr(GLib, "unix_signal_add"):
+            GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.on_unix_termination_signal)
 
         self.toast_label = Gtk.Label()
         self.toast_label.add_css_class("dim-label")
@@ -239,10 +243,11 @@ class TermiaWindow(
         password_entry.grab_focus()
 
     def on_main_window_close_request(self, _window: Gtk.Window) -> bool:
-        if not self.store.data.app.confirm_close_app:
-            self.save_history_before_close()
-            self.save_statistics_before_close()
+        if self.shutdown_in_progress:
             return False
+        if not self.store.data.app.confirm_close_app:
+            self.begin_main_window_shutdown()
+            return True
         if self.close_confirmation_pending:
             return True
         self.close_confirmation_pending = True
@@ -262,11 +267,27 @@ class TermiaWindow(
         except GLib.Error:
             return
         if response == 1:
-            self.save_history_before_close()
-            self.save_statistics_before_close()
-            application = self.get_application()
-            if application is not None:
-                application.quit()
+            self.begin_main_window_shutdown()
+
+    def on_unix_termination_signal(self) -> bool:
+        self.begin_main_window_shutdown()
+        return GLib.SOURCE_REMOVE
+
+    def begin_main_window_shutdown(self) -> None:
+        if self.shutdown_in_progress:
+            return
+        self.shutdown_in_progress = True
+        self.save_history_before_close()
+        self.save_statistics_before_close()
+        self.terminate_open_terminal_processes()
+        GLib.timeout_add(500, self.finish_main_window_shutdown)
+
+    def finish_main_window_shutdown(self) -> bool:
+        self.terminate_open_terminal_processes(force=True)
+        application = self.get_application()
+        if application is not None:
+            application.quit()
+        return GLib.SOURCE_REMOVE
 
     def apply_app_theme(self) -> None:
         settings = Gtk.Settings.get_default()
