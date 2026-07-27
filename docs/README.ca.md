@@ -86,19 +86,21 @@ estadístiques ni paquets del sistema:
 
 ## Crear un paquet Debian
 
-A Debian, Ubuntu o una distribució compatible, instal·la les dependències de
-compilació i crea el paquet des de l'arrel del repositori:
+A Debian, Ubuntu 22.04 o posterior, o una distribució compatible, instal·la les
+dependències de compilació i crea el paquet des de l'arrel del repositori.
+Ubuntu 20.04 no és compatible perquè no inclou Python 3.10 ni l'entorn GTK 4/VTE
+necessari:
 
 ```bash
 sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fitxer `termia_0.5.0~beta-1_all.deb` es crea al directori pare. Instal·la'l
+El fitxer `termia_0.5.0~beta-2_all.deb` es crea al directori pare. Instal·la'l
 amb:
 
 ```bash
-sudo apt install ../termia_0.5.0~beta-1_all.deb
+sudo apt install ../termia_0.5.0~beta-2_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la

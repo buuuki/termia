@@ -86,19 +86,21 @@ estadísticas ni paquetes del sistema:
 
 ## Crear un paquete Debian
 
-En Debian, Ubuntu o una distribución compatible, instala las dependencias de
-compilación y crea el paquete desde la raíz del repositorio:
+En Debian, Ubuntu 22.04 o posterior, o una distribución compatible, instala las
+dependencias de compilación y crea el paquete desde la raíz del repositorio.
+Ubuntu 20.04 no está soportado porque no incluye Python 3.10 ni el entorno GTK
+4/VTE necesario:
 
 ```bash
 sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fichero `termia_0.5.0~beta-1_all.deb` se crea en el directorio padre.
+El fichero `termia_0.5.0~beta-2_all.deb` se crea en el directorio padre.
 Instálalo con:
 
 ```bash
-sudo apt install ../termia_0.5.0~beta-1_all.deb
+sudo apt install ../termia_0.5.0~beta-2_all.deb
 ```
 
 El paquete Debian instala el comando `termia`, el lanzador de escritorio y el
