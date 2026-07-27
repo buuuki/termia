@@ -8,59 +8,16 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 
 ## Funciones
 
-- Crear, editar, mover y eliminar grupos y subgrupos de servidores.
-- Guardar servidores con nombre, host o IP, usuario, puerto, contraseña y ruta de
-  clave privada.
-- Filtrar servidores con `Ctrl+F` y abrir varias sesiones al mismo host en pestañas.
-- Reabrir los 10 servidores conectados más recientemente desde una sección Recent encima de Favorites, sin duplicados.
-- Usar pestañas embebidas que reparten el ancho disponible, cerrarlas con clic central y mover una pestaña a una ventana independiente.
-- Crear y abrir perfiles configurables de terminal local desde la barra lateral.
-- Dividir una pestaña de terminal en varios paneles desde el menú contextual del terminal.
-- Configurar diseños básicos de división por cada servidor SSH o perfil de terminal local.
-- Enviar ficheros locales a un servidor desde el menú contextual del terminal o del servidor.
-- Ejecutar varias instancias de Termia; la primera conserva acceso de escritura y las siguientes pasan automáticamente a modo solo lectura.
-- Registrar opcionalmente estadísticas locales agregadas de conexiones, duración y uso por servidor.
-- Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
-- Ver un historial local de conexiones con marcas de tiempo, resultados y duraciones.
-- Mostrar u ocultar globalmente la barra de estado de sesión, ocultarla por sesión y restaurarla desde el menú contextual del terminal.
-- Configurar confirmaciones para desconectar sesiones y cerrar Termia.
-- Configurar atajos de terminal haciendo clic en un control y pulsando la combinación que quieras, incluido `Ctrl+Shift+C` para copiar y `Ctrl+Shift+V` para pegar. Las teclas de función sin modificadores se reservan para las aplicaciones del terminal, excepto `F10`, configurable y asignada de forma predeterminada al menú principal.
-- Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Ctrl+P`, con o sin `Enter`.
-- Configurar por separado opciones generales, fuente y colores del terminal VTE, y el prompt PS1.
-- Personalizar el prompt local con colores, temas predefinidos y prefijos de hora o fecha sin cambiar ficheros de inicio ni comandos remotos.
-- Usar la interfaz en español, catalán o inglés. El idioma inicial sigue el locale del sistema cuando está soportado.
-- Importar y exportar configuraciones de Termia.
-- Importar conexiones, grupos anidados y contraseñas guardadas desde YAML de Asbru cuando estén disponibles.
-
-## Notas de uso
-
-El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:
-
-- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
-- `Terminal` controla la fuente, tamaño, colores, grosor y color del separador de división, y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
-- `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
-- `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
-- `Seguridad` controla el modo de almacenamiento de conexiones.
-- Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
-- Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
-- Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
-- El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
-
-Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera. Con botón derecho dentro del terminal puedes abrir los submenús traducidos de `Dividir` y `Pestaña`; los paneles se pueden crear arriba, abajo, a la izquierda o a la derecha, y desaparecen automáticamente cuando su shell termina. Una pestaña solo se cierra con `exit` cuando ha salido el último terminal y ya no quedan paneles divididos.
-
-## Entorno probado
-
-Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
-6.8.0-117-generic, GNOME 46.0 y Wayland.
-
-## Base de ejecución compatible
-
-Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0 y el espacio de
-introspección de VTE para GTK 4, `Vte 3.91`. El entorno actual de validación
-proporciona GTK 4.14.5 y VTE 0.76.0. Las comprobaciones de compatibilidad para
-métodos GTK opcionales como `set_handle_menubar_accel` y
-`set_show_separators` son intencionadas, porque las distribuciones pueden
-exponer distintos niveles de API de GTK.
+- Ejecutar conexiones SSH y terminales locales en terminales VTE de GTK 4 integrados.
+- Trabajar con varias pestañas, ventanas independientes y paneles de terminal divididos.
+- Guardar diseños de división por servidor SSH o perfil de terminal local para reabrir un espacio de trabajo preparado.
+- Subir ficheros locales a servidores remotos con SCP desde el menú contextual del terminal o del servidor.
+- Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
+- Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`.
+- Guardar host, usuario, puerto, contraseña y ruta de clave privada de cada conexión SSH.
+- Importar y exportar configuración de Termia, incluidas conexiones básicas, grupos anidados y credenciales disponibles de YAML de Asbru.
+- Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
+- Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
 ## Descargar e instalar
 
@@ -126,6 +83,36 @@ estadísticas ni paquetes del sistema:
 ```bash
 ./scripts/termia-setup.sh uninstall
 ```
+
+## Notas de uso
+
+El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:
+
+- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
+- `Terminal` controla la fuente, tamaño, colores, grosor y color del separador de división, y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
+- `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
+- `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
+- `Seguridad` controla el modo de almacenamiento de conexiones.
+- Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
+- Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
+- Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
+- El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
+
+Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera. Con botón derecho dentro del terminal puedes abrir los submenús traducidos de `Dividir` y `Pestaña`; los paneles se pueden crear arriba, abajo, a la izquierda o a la derecha, y desaparecen automáticamente cuando su shell termina. Una pestaña solo se cierra con `exit` cuando ha salido el último terminal y ya no quedan paneles divididos.
+
+## Entorno probado
+
+Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
+6.8.0-117-generic, GNOME 46.0 y Wayland.
+
+## Base de ejecución compatible
+
+Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0 y el espacio de
+introspección de VTE para GTK 4, `Vte 3.91`. El entorno actual de validación
+proporciona GTK 4.14.5 y VTE 0.76.0. Las comprobaciones de compatibilidad para
+métodos GTK opcionales como `set_handle_menubar_accel` y
+`set_show_separators` son intencionadas, porque las distribuciones pueden
+exponer distintos niveles de API de GTK.
 
 ## Datos del usuario y seguridad
 
