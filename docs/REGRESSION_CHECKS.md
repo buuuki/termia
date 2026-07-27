@@ -52,6 +52,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Exiting a local shell must follow the configured local terminal close behavior.
 - Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
 - When close-on-exit is enabled, a split tab must close after the last pane exits regardless of whether the original terminal or a split exits last.
+- Closing Termia must terminate every process group in the isolated VTE session for active SSH, local-terminal, and split-pane sessions without signalling unrelated processes.
 
 ### Focus and Keyboard
 
@@ -151,6 +152,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Confirm terminal context-menu actions still work: disconnect, show status bar, copy, paste, terminal preferences, session statistics, file transfer, all split directions, and all Tab submenu actions.
 - Create split panes in all four directions and confirm each new pane opens a working shell.
 - Run `exit` inside a split pane and confirm only that pane disappears while the sibling pane keeps focus and remains usable.
+- Open an SSH session, a local terminal, and a split pane; close Termia and confirm their local child processes do not remain after a brief grace period.
 - Right-click a server/group in the tree and open the context menu.
 - Edit a server and confirm collapsed groups stay collapsed.
 - Search for a group, subgroup, and server in the sidebar filter.

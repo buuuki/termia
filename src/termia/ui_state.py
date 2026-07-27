@@ -11,6 +11,7 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gtk, Vte
 
 from .sidebar_projection import SidebarRow as RowObject
+from .terminal_processes import TerminalProcess
 
 
 @dataclass
@@ -32,6 +33,7 @@ class TerminalSession:
     detached_window: Gtk.Window | None = None
     timeout_id: int | None = None
     child_pid: int | None = None
+    child_process: TerminalProcess | None = None
     connected: bool = True
     disconnect_requested: bool = False
     pending_reconnect: bool = False
@@ -47,4 +49,5 @@ class TerminalSession:
     history_port: int = 0
     split_terminals: list[Vte.Terminal] = field(default_factory=list)
     split_child_pids: dict[int, int] = field(default_factory=dict)
+    split_processes: dict[int, TerminalProcess] = field(default_factory=dict)
     active_terminal_ids: set[int] = field(default_factory=set)
