@@ -1,6 +1,12 @@
+termia (0.5.0~beta-3) unstable; urgency=medium
+
+  * Document Ubuntu 24.04 as the minimum supported Ubuntu release.
+
+ -- Jordi Pons <jpons.git@proton.me>  Mon, 27 Jul 2026 13:45:00 +0200
+
 termia (0.5.0~beta-2) unstable; urgency=medium
 
-  * Require Python 3.10 and use the Ubuntu 22.04 cryptography baseline.
+  * Require Python 3.10 and use the Ubuntu-compatible cryptography baseline.
 
  -- Jordi Pons <jpons.git@proton.me>  Mon, 27 Jul 2026 13:30:00 +0200
 

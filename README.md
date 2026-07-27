@@ -102,20 +102,20 @@ packages:
 
 ## Build a Debian package
 
-On Debian, Ubuntu 22.04 or newer, or a compatible derivative, install the build
-dependencies and create the package from the repository root. Ubuntu 20.04 is
-not supported because it lacks Python 3.10 and the required GTK 4/VTE runtime:
+On Debian, Ubuntu 24.04 or newer, or a compatible derivative, install the build
+dependencies and create the package from the repository root. Ubuntu 22.04 and
+earlier do not provide the required GTK 4 VTE runtime:
 
 ```bash
 sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-The resulting `termia_0.5.0~beta-2_all.deb` is created in the parent directory.
+The resulting `termia_0.5.0~beta-3_all.deb` is created in the parent directory.
 Install it with:
 
 ```bash
-sudo apt install ../termia_0.5.0~beta-2_all.deb
+sudo apt install ../termia_0.5.0~beta-3_all.deb
 ```
 
 The Debian package installs the `termia` command, desktop launcher, and icon;
