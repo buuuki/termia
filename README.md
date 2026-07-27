@@ -11,30 +11,16 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 
 ## Features
 
-- Create, edit, move, and delete server groups and nested subgroups.
-- Store SSH hosts with a display name, host name or IP, user, port, password,
-  and private key path.
-- Filter servers with `Ctrl+F` and open multiple tabbed sessions to the same host.
-- Reopen the 10 most recently connected servers from a Recent section above Favorites, without duplicates.
-- Mark servers as favorites and jump to them from a dedicated section in the sidebar.
-- Use embedded, width-sharing tabs, close tabs with a middle mouse click, and move a tab to a separate window.
-- Create and open configurable local terminal profiles from the sidebar.
-- Split a terminal tab into multiple panes from the terminal context menu.
-- Configure basic split layouts per SSH server or local terminal profile.
-- Send local files to a server from the terminal or server context menus.
-- Run multiple Termia instances; the first keeps write access and later instances fall back to read-only mode.
-- Optionally track aggregate connection, session-duration, and per-server usage statistics locally.
-- Open a statistics dashboard with metric cards, duration summaries, and the most used servers.
-- View a local connection history with timestamps, outcomes, and durations.
-- Show or hide the session status bar globally, hide it per session, and restore it from the terminal context menu.
-- Configure confirmation prompts for disconnecting sessions and closing Termia.
-- Configure terminal keybindings by clicking a control and pressing the combination you want, including `Ctrl+Shift+C` for copy and `Ctrl+Shift+V` for paste. Unmodified function keys are reserved for terminal applications except for configurable `F10`, which opens or closes the main menu by default.
-- Optionally send the saved SSH password to a remote terminal with `Ctrl+P`, with or without `Enter`.
-- Configure general options, VTE terminal font/colors, and PS1 prompt settings separately.
-- Customize local prompt colors, presets, and time/date prefixes without changing remote shell startup files or commands.
-- Use the interface in English, Spanish, or Catalan. The initial language follows the system locale when supported.
-- Import and export Termia configuration files.
-- Import basic connection, nested group, and saved password data from Asbru YAML files when available.
+- Run SSH connections and local terminals in embedded GTK 4 VTE terminals.
+- Work with multiple tabs, detachable windows, and terminal split panes.
+- Save split layouts per SSH server or local terminal profile to reopen a workspace ready to use.
+- Upload local files to remote servers with SCP from the terminal or server context menu.
+- Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
+- Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`.
+- Store host, user, port, password, and private-key settings for each SSH connection.
+- Import and export Termia configuration, including basic connections, nested groups, and available credentials from Asbru YAML.
+- Review connection history and optional local usage statistics, including durations and most-used servers.
+- Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
 
 ## Usage notes
 

@@ -8,29 +8,16 @@ Documentació en castellà: [README.es.md](README.es.md)
 
 ## Funcionalitats
 
-- Crear, editar, moure i eliminar grups i subgrups de servidors.
-- Desar servidors amb nom, host o IP, usuari, port, contrasenya i ruta de clau
-  privada.
-- Filtrar servidors amb `Ctrl+F` i obrir diverses sessions al mateix host en pestanyes.
-- Reobrir els 10 servidors connectats més recentment des d'una secció Recent a sobre de Favorites, sense duplicats.
-- Usar pestanyes incrustades que reparteixen l'amplada disponible, tancar-les amb el clic central i moure una pestanya a una finestra independent.
-- Crear i obrir perfils configurables de terminal local des de la barra lateral.
-- Dividir una pestanya de terminal en diversos panells des del menú contextual del terminal.
-- Configurar dissenys bàsics de divisió per a cada servidor SSH o perfil de terminal local.
-- Enviar fitxers locals a un servidor des del menú contextual del terminal o del servidor.
-- Executar diverses instàncies de Termia; la primera conserva accés d'escriptura i les següents passen automàticament a mode només lectura.
-- Registrar opcionalment estadístiques locals agregades de connexions, durada i ús per servidor.
-- Obrir un dashboard d'estadístiques amb targetes de mètriques, resum de durada i servidors més usats.
-- Veure un historial local de connexions amb marques de temps, resultats i durades.
-- Mostrar o amagar globalment la barra d'estat de sessió, amagar-la per sessió i restaurar-la des del menú contextual del terminal.
-- Configurar confirmacions per desconnectar sessions i tancar Termia.
-- Configurar dreceres de terminal fent clic en un control i prement la combinació que vulguis, incloent `Ctrl+Shift+C` per copiar i `Ctrl+Shift+V` per enganxar. Les tecles de funció sense modificadors es reserven per a les aplicacions del terminal, excepte `F10`, configurable i assignada per defecte al menú principal.
-- Enviar opcionalment la contrasenya SSH desada a un terminal remot amb `Ctrl+P`, amb `Enter` o sense.
-- Configurar per separat opcions generals, tipus de lletra i colors del terminal VTE, i el prompt PS1.
-- Personalitzar el prompt local amb colors, temes predefinits i prefixos d'hora o data sense canviar fitxers d'inici ni ordres remotes.
-- Usar la interfície en castellà, català o anglès. L'idioma inicial segueix el locale del sistema quan està suportat.
-- Importar i exportar configuracions de Termia.
-- Importar connexions, grups imbricats i contrasenyes desades des de YAML d'Asbru quan estiguin disponibles.
+- Executar connexions SSH i terminals locals en terminals VTE de GTK 4 integrats.
+- Treballar amb diverses pestanyes, finestres independents i panells de terminal dividits.
+- Desar dissenys de divisió per servidor SSH o perfil de terminal local per reobrir un espai de treball preparat.
+- Pujar fitxers locals a servidors remots amb SCP des del menú contextual del terminal o del servidor.
+- Mantenir les dades de connexió en local amb emmagatzematge en text pla, ofuscat o xifrat opcional protegit per una contrasenya mestra.
+- Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`.
+- Desar host, usuari, port, contrasenya i ruta de clau privada de cada connexió SSH.
+- Importar i exportar configuració de Termia, incloses connexions bàsiques, grups imbricats i credencials disponibles de YAML d'Asbru.
+- Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
+- Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
 ## Notes d'ús
 

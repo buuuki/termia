@@ -8,29 +8,16 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 
 ## Funciones
 
-- Crear, editar, mover y eliminar grupos y subgrupos de servidores.
-- Guardar servidores con nombre, host o IP, usuario, puerto, contraseña y ruta de
-  clave privada.
-- Filtrar servidores con `Ctrl+F` y abrir varias sesiones al mismo host en pestañas.
-- Reabrir los 10 servidores conectados más recientemente desde una sección Recent encima de Favorites, sin duplicados.
-- Usar pestañas embebidas que reparten el ancho disponible, cerrarlas con clic central y mover una pestaña a una ventana independiente.
-- Crear y abrir perfiles configurables de terminal local desde la barra lateral.
-- Dividir una pestaña de terminal en varios paneles desde el menú contextual del terminal.
-- Configurar diseños básicos de división por cada servidor SSH o perfil de terminal local.
-- Enviar ficheros locales a un servidor desde el menú contextual del terminal o del servidor.
-- Ejecutar varias instancias de Termia; la primera conserva acceso de escritura y las siguientes pasan automáticamente a modo solo lectura.
-- Registrar opcionalmente estadísticas locales agregadas de conexiones, duración y uso por servidor.
-- Abrir un dashboard de estadísticas con tarjetas de métricas, resumen de duración y servidores más usados.
-- Ver un historial local de conexiones con marcas de tiempo, resultados y duraciones.
-- Mostrar u ocultar globalmente la barra de estado de sesión, ocultarla por sesión y restaurarla desde el menú contextual del terminal.
-- Configurar confirmaciones para desconectar sesiones y cerrar Termia.
-- Configurar atajos de terminal haciendo clic en un control y pulsando la combinación que quieras, incluido `Ctrl+Shift+C` para copiar y `Ctrl+Shift+V` para pegar. Las teclas de función sin modificadores se reservan para las aplicaciones del terminal, excepto `F10`, configurable y asignada de forma predeterminada al menú principal.
-- Enviar opcionalmente la contraseña SSH guardada a un terminal remoto con `Ctrl+P`, con o sin `Enter`.
-- Configurar por separado opciones generales, fuente y colores del terminal VTE, y el prompt PS1.
-- Personalizar el prompt local con colores, temas predefinidos y prefijos de hora o fecha sin cambiar ficheros de inicio ni comandos remotos.
-- Usar la interfaz en español, catalán o inglés. El idioma inicial sigue el locale del sistema cuando está soportado.
-- Importar y exportar configuraciones de Termia.
-- Importar conexiones, grupos anidados y contraseñas guardadas desde YAML de Asbru cuando estén disponibles.
+- Ejecutar conexiones SSH y terminales locales en terminales VTE de GTK 4 integrados.
+- Trabajar con varias pestañas, ventanas independientes y paneles de terminal divididos.
+- Guardar diseños de división por servidor SSH o perfil de terminal local para reabrir un espacio de trabajo preparado.
+- Subir ficheros locales a servidores remotos con SCP desde el menú contextual del terminal o del servidor.
+- Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
+- Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`.
+- Guardar host, usuario, puerto, contraseña y ruta de clave privada de cada conexión SSH.
+- Importar y exportar configuración de Termia, incluidas conexiones básicas, grupos anidados y credenciales disponibles de YAML de Asbru.
+- Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
+- Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
 ## Notas de uso
 
