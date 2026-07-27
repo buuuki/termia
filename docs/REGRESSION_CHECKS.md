@@ -95,6 +95,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Import/export configuration must preserve groups, subgroups, servers, SSH user, port, host, password, and private key path where available.
 - Importing Asbru configuration must not add unwanted suffixes such as `- copy`.
 - Launching a second Termia process must open a separate window and leave the new instance in read-only mode instead of writing shared config files concurrently.
+- On writable startup, unfinished history records from an earlier Termia process must be finalized as interrupted; a read-only secondary instance must leave them unchanged.
 - A read-only instance must keep connect and export flows available while preventing edits, imports, clears, preference saves, and statistics writes.
 - Clearing configuration must require confirmation.
 - Passwords are currently stored in the JSON file by explicit project decision; warnings and documentation must remain accurate until storage changes.

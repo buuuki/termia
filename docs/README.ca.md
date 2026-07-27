@@ -98,6 +98,17 @@ També pots executar Termia directament des del repositori:
 python3 run_termia.py
 ```
 
+Per provar una branca sense tancar la finestra habitual de Termia, inicia un
+perfil aïllat. Utilitza una configuració, estat i bloqueig d'escriptura propis:
+
+```bash
+./scripts/run_test_instance.sh --copy-current-config pr-152
+```
+
+L'opció copia les connexions, ajustos, historial de connexions, estadístiques i
+el registre de depuració al perfil de proves. Els canvis fets allà mai no
+modifiquen les dades habituals de Termia.
+
 Per obtenir informació de diagnòstic sobre GTK, VTE, els bloquejos
 d'emmagatzematge, el xifratge i l'inici en mode només lectura, activa `Mode
 debug` a les preferències Generals. També pots activar-lo per a una execució amb:

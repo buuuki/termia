@@ -97,6 +97,8 @@ class ConnectionHistoryPresenter:
             return self._translate("history_result_failed")
         if result == "disconnected":
             return self._translate("history_result_disconnected")
+        if result == "interrupted":
+            return self._translate("history_result_interrupted")
         return self._translate("history_result_closed")
 
     def format_kind(self, kind: str) -> str:

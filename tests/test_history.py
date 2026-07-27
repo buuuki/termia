@@ -76,6 +76,68 @@ class HistoryPersistenceTests(unittest.TestCase):
         self.assertEqual(store.entries[0].result, "success")
         self.assertEqual(store.entries[0].duration_seconds, 3.5)
 
+    def test_unfinished_entries_are_finalized_once_when_writable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "history.jsonl"
+            path.write_text(
+                json.dumps(
+                    {
+                        "session_id": "unfinished",
+                        "kind": "ssh",
+                        "event": "started",
+                        "timestamp": "2026-07-23T10:00:00+02:00",
+                        "title": "Web",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            store = ConnectionHistoryStore(path)
+
+            self.assertEqual(store.finalize_unfinished_entries(timestamp="2026-07-27T10:00:00+02:00"), 1)
+            self.assertEqual(store.finalize_unfinished_entries(timestamp="2026-07-27T10:00:01+02:00"), 0)
+
+        self.assertEqual(store.entries[0].result, "interrupted")
+        self.assertEqual(store.entries[0].ended_at, "2026-07-27T10:00:00+02:00")
+        self.assertIsNone(store.entries[0].duration_seconds)
+
+    def test_read_only_history_does_not_finalize_unfinished_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "history.jsonl"
+            path.write_text(
+                json.dumps({"session_id": "unfinished", "event": "started", "timestamp": "2026-07-23T10:00:00+02:00"})
+                + "\n",
+                encoding="utf-8",
+            )
+            store = ConnectionHistoryStore(path, read_only=True)
+
+            self.assertEqual(store.finalize_unfinished_entries(timestamp="2026-07-27T10:00:00+02:00"), 0)
+
+        self.assertFalse(store.entries[0].ended_at)
+
+    def test_writable_connection_store_finalizes_history_from_an_earlier_run(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            history_path = root / "history.jsonl"
+            history_path.write_text(
+                json.dumps({"session_id": "unfinished", "event": "started", "timestamp": "2026-07-23T10:00:00+02:00"})
+                + "\n",
+                encoding="utf-8",
+            )
+            store = ConnectionStore(
+                root / "connections.json",
+                settings_path=root / "settings.json",
+                statistics_path=root / "statistics.json",
+                lock_path=root / "instance.lock",
+                history_path=history_path,
+            )
+            try:
+                self.assertFalse(store.read_only)
+                self.assertEqual(store.history_store.entries[0].result, "interrupted")
+                self.assertTrue(store.history_store.entries[0].ended_at)
+            finally:
+                store.close()
+
     def test_connection_store_uses_injected_history_and_aggregates_recovery(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

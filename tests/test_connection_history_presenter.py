@@ -63,6 +63,16 @@ class ConnectionHistoryPresenterTests(unittest.TestCase):
         self.assertIn("<history_kind_local>", line)
         self.assertIn("Local shell", line)
 
+    def test_interrupted_entry_uses_the_interrupted_label(self) -> None:
+        entry = ConnectionHistoryEntry(
+            session_id="interrupted",
+            started_at="2026-07-23T10:00:00+02:00",
+            ended_at="2026-07-27T10:00:00+02:00",
+            result="interrupted",
+        )
+
+        self.assertIn("<history_result_interrupted>", self.presenter.build_line(entry))
+
     def test_format_helpers_preserve_invalid_timestamp_and_unknown_kind(self) -> None:
         self.assertEqual(self.presenter.format_timestamp("invalid"), "invalid")
         self.assertEqual(self.presenter.format_kind("other"), "other")

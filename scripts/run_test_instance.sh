@@ -19,6 +19,8 @@ while [ "$#" -gt 0 ]; do
             ;;
         --help|-h)
             echo "Usage: $0 [--copy-current-config] [--fresh] [profile-name]"
+            echo "  --copy-current-config  Copy configuration and persisted state into the isolated profile."
+            echo "  --fresh                Create a new temporary profile directory."
             exit 0
             ;;
         --*)
@@ -43,10 +45,18 @@ mkdir -p "${DATA_ROOT}/config" "${DATA_ROOT}/state"
 if [ "${COPY_CURRENT_CONFIG}" -eq 1 ]; then
     SOURCE_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/termia"
     TARGET_CONFIG_DIR="${DATA_ROOT}/config/termia"
+    SOURCE_STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/termia"
+    TARGET_STATE_DIR="${DATA_ROOT}/state/termia"
     mkdir -p "${TARGET_CONFIG_DIR}"
     for CONFIG_FILE in connections.json settings.json; do
         if [ -f "${SOURCE_CONFIG_DIR}/${CONFIG_FILE}" ]; then
             cp "${SOURCE_CONFIG_DIR}/${CONFIG_FILE}" "${TARGET_CONFIG_DIR}/${CONFIG_FILE}"
+        fi
+    done
+    mkdir -p "${TARGET_STATE_DIR}"
+    for STATE_FILE in connections-history.jsonl statistics.json debug.log; do
+        if [ -f "${SOURCE_STATE_DIR}/${STATE_FILE}" ]; then
+            cp "${SOURCE_STATE_DIR}/${STATE_FILE}" "${TARGET_STATE_DIR}/${STATE_FILE}"
         fi
     done
 fi
@@ -56,7 +66,7 @@ echo "Profile: ${PROFILE_NAME}"
 echo "Config:  ${DATA_ROOT}/config/termia"
 echo "State:   ${DATA_ROOT}/state/termia"
 echo "Fresh:   $([ "${FRESH_INSTANCE}" -eq 1 ] && echo enabled || echo disabled)"
-echo "Copy:    current config $([ "${COPY_CURRENT_CONFIG}" -eq 1 ] && echo enabled || echo disabled)"
+echo "Copy:    current Termia data $([ "${COPY_CURRENT_CONFIG}" -eq 1 ] && echo enabled || echo disabled)"
 echo "Debug:   PYTHONFAULTHANDLER=1 PYTHONUNBUFFERED=1 G_ENABLE_DIAGNOSTIC=1 G_MESSAGES_DEBUG=all"
 echo "PID:     $$"
 

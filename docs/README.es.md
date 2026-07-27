@@ -98,6 +98,17 @@ También puedes ejecutar Termia directamente desde el repositorio:
 python3 run_termia.py
 ```
 
+Para probar una rama sin cerrar la ventana habitual de Termia, inicia un perfil
+aislado. Utiliza una configuración, estado y bloqueo de escritura propios:
+
+```bash
+./scripts/run_test_instance.sh --copy-current-config pr-152
+```
+
+La opción copia las conexiones, ajustes, historial de conexiones, estadísticas y
+el registro de depuración en el perfil de pruebas. Los cambios realizados allí
+nunca modifican los datos habituales de Termia.
+
 Para obtener información de diagnóstico sobre GTK, VTE, los bloqueos de
 almacenamiento, el cifrado y el arranque en modo solo lectura, activa `Modo
 debug` en las preferencias Generales. También puedes activarlo para una ejecución con:

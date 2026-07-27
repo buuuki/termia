@@ -260,6 +260,34 @@ class ConnectionHistoryStore:
         self.events.clear()
         self.entries.clear()
 
+    def finalize_unfinished_entries(self, *, timestamp: str | None = None) -> int:
+        """Close records left open by an earlier Termia process."""
+        if self.read_only:
+            return 0
+        ended_at = timestamp or datetime.now().astimezone().isoformat(timespec="seconds")
+        unfinished = [entry for entry in self.entries if entry.started_at and not entry.ended_at]
+        finalized = 0
+        for entry in unfinished:
+            event = ConnectionHistoryEvent(
+                event_id=str(uuid4()),
+                session_id=entry.session_id,
+                kind=entry.kind,
+                event="ended",
+                timestamp=ended_at,
+                started_at=entry.started_at,
+                ended_at=ended_at,
+                result="interrupted",
+                title=entry.title,
+                server_id=entry.server_id,
+                server_name=entry.server_name,
+                host=entry.host,
+                port=entry.port,
+                user=entry.user,
+            )
+            if self.append_event(event):
+                finalized += 1
+        return finalized
+
     def _event_payload(
         self,
         session: TerminalSession,
@@ -455,6 +483,7 @@ class ConnectionStore:
             state_dir=history_path.parent,
         )
         self.load()
+        self.history_store.finalize_unfinished_entries()
         log_store_state(self)
 
     def load(self) -> None:

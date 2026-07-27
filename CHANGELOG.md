@@ -15,6 +15,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Fixed
 
+- Finalize stale connection-history entries from an earlier Termia process as interrupted instead of leaving them in progress (`#151`).
 - Terminate isolated VTE process groups when disconnecting sessions or closing Termia to avoid orphaned terminal and SSH children (`#148`).
 - Keep Debug output in Termia's state log instead of forwarding it to stderr/syslog, and show its path in the Debug preference tooltip.
 - Fix moving a tab to a new window by preserving the previous tab order when selecting the next focused session.
@@ -25,6 +26,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Changed
 
+- Make isolated test profiles clone the current Termia history, statistics, and debug log along with configuration.
 - Document the supported Python, GTK, GDK, and VTE runtime baseline and retained compatibility guards.
 - Rename the saved-password shortcut settings to avoid implying that Termia executes `sudo`.
 - Unify the setup commands and dependency checks (`#94`).

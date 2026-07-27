@@ -130,6 +130,17 @@ package is missing. On Debian, Ubuntu, or Linux Mint the package is
 python3 run_termia.py
 ```
 
+To test a branch without closing your usual Termia window, launch an isolated
+profile. It uses separate configuration, state, and writer lock:
+
+```bash
+./scripts/run_test_instance.sh --copy-current-config pr-152
+```
+
+The option copies connections, settings, connection history, statistics, and
+the debug log into the test profile. Changes made there never modify your usual
+Termia data.
+
 For diagnostic information about GTK rendering, VTE sessions, storage locks,
 encryption, and read-only startup, enable `Debug mode` in General preferences. It
 can also be enabled for one run with:
