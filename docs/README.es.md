@@ -19,7 +19,16 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
-## Descargar e instalar
+## Descargar e instalar (Ubuntu 24.04+)
+
+Descarga [termia_0.5.0~beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0~beta-4_all.deb)
+e instálalo con APT, que resolverá las dependencias necesarias:
+
+```bash
+sudo apt install ./termia_0.5.0~beta-4_all.deb
+```
+
+## Descargar e instalar desde el código fuente
 
 Clona el repositorio completo:
 

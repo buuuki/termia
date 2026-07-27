@@ -22,7 +22,16 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Review connection history and optional local usage statistics, including durations and most-used servers.
 - Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
 
-## Download
+## Download and install (Ubuntu 24.04+)
+
+Download [termia_0.5.0~beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0~beta-4_all.deb)
+and install it with APT, which resolves the required dependencies:
+
+```bash
+sudo apt install ./termia_0.5.0~beta-4_all.deb
+```
+
+## Download from source
 
 Clone the complete repository instead of downloading individual files:
 
@@ -31,7 +40,7 @@ git clone https://github.com/buuuki/termia.git
 cd termia
 ```
 
-## Install
+## Install from source
 
 Termia uses system GTK and VTE packages. Install missing dependencies, verify the
 result, and add a user-local desktop launcher with:
