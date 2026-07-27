@@ -84,6 +84,26 @@ estadísticas ni paquetes del sistema:
 ./scripts/termia-setup.sh uninstall
 ```
 
+## Crear un paquete Debian
+
+En Debian, Ubuntu o una distribución compatible, instala las dependencias de
+compilación y crea el paquete desde la raíz del repositorio:
+
+```bash
+sudo apt build-dep .
+dpkg-buildpackage -us -uc -b
+```
+
+El fichero `termia_0.5.0~beta-1_all.deb` se crea en el directorio padre.
+Instálalo con:
+
+```bash
+sudo apt install ../termia_0.5.0~beta-1_all.deb
+```
+
+El paquete Debian instala el comando `termia`, el lanzador de escritorio y el
+icono; APT instala las dependencias de GTK, VTE, Python, SSH y cifrado.
+
 ## Notas de uso
 
 El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:

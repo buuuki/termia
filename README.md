@@ -100,6 +100,26 @@ packages:
 ./scripts/termia-setup.sh uninstall
 ```
 
+## Build a Debian package
+
+On Debian, Ubuntu, or a compatible derivative, install the build dependencies
+and create the package from the repository root:
+
+```bash
+sudo apt build-dep .
+dpkg-buildpackage -us -uc -b
+```
+
+The resulting `termia_0.5.0~beta-1_all.deb` is created in the parent directory.
+Install it with:
+
+```bash
+sudo apt install ../termia_0.5.0~beta-1_all.deb
+```
+
+The Debian package installs the `termia` command, desktop launcher, and icon;
+APT installs its GTK, VTE, Python, SSH, and encryption dependencies.
+
 ## Usage notes
 
 The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybindings`, and `Security`:

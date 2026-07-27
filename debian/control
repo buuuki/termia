@@ -1,0 +1,32 @@
+Source: termia
+Section: net
+Priority: optional
+Maintainer: Jordi Pons <jpons.git@proton.me>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               gir1.2-gtk-4.0,
+               gir1.2-vte-3.91,
+               python3-all,
+               python3-cryptography,
+               python3-gi,
+               python3-setuptools,
+               python3-yaml
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/buuuki/termia
+
+Package: termia
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         gir1.2-gtk-4.0,
+         gir1.2-vte-3.91,
+         openssh-client,
+         python3-cryptography,
+         python3-gi,
+         python3-yaml,
+         sshpass
+Description: GTK SSH connection manager with embedded terminals
+ Termia is a GTK 4 SSH connection manager for Linux desktops. It stores
+ connection configuration locally and opens SSH and local-terminal sessions in
+ embedded VTE terminals.

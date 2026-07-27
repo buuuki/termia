@@ -84,6 +84,26 @@ estadístiques ni paquets del sistema:
 ./scripts/termia-setup.sh uninstall
 ```
 
+## Crear un paquet Debian
+
+A Debian, Ubuntu o una distribució compatible, instal·la les dependències de
+compilació i crea el paquet des de l'arrel del repositori:
+
+```bash
+sudo apt build-dep .
+dpkg-buildpackage -us -uc -b
+```
+
+El fitxer `termia_0.5.0~beta-1_all.deb` es crea al directori pare. Instal·la'l
+amb:
+
+```bash
+sudo apt install ../termia_0.5.0~beta-1_all.deb
+```
+
+El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la
+icona; APT instal·la les dependències de GTK, VTE, Python, SSH i xifratge.
+
 ## Notes d'ús
 
 El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Dreceres` i `Seguretat`:
