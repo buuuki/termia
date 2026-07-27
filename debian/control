@@ -10,7 +10,8 @@ Build-Depends: debhelper-compat (= 13),
                python3-cryptography,
                python3-gi,
                python3-setuptools,
-               python3-yaml
+               python3-yaml,
+               pybuild-plugin-pyproject
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
 Homepage: https://github.com/buuuki/termia
