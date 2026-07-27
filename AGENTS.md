@@ -63,6 +63,9 @@ For UI, terminal, keyboard shortcut, SSH, settings, or import/export changes, re
 
 - Keep terminal keyboard shortcuts centralized in terminal session handling unless a feature clearly belongs elsewhere.
 - Be careful with GTK popovers and dialogs; opening dialogs from popovers can require closing or deferring the popover first.
+- Treat every VTE child as a managed terminal process. Launch it through `terminal_processes.spawn_terminal_process()` and retain its captured identity instead of storing or signalling an unvalidated PID.
+- When a feature closes, replaces, duplicates, detaches, or splits a terminal session, preserve the existing process-cleanup path: terminate the isolated VTE session through the terminal-session helpers so background jobs and split panes are also stopped.
+- Never send signals to a process group or session unless it was captured for that VTE child and is known not to be Termia's own group. Keep the PID-reuse safeguard and the bounded `SIGTERM`/`SIGKILL` cleanup behavior intact.
 - Scope CSS changes to Termia classes where practical and avoid overriding GTK or VTE internals unintentionally.
 - Preserve readability on both light and dark terminal backgrounds.
 
