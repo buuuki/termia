@@ -95,11 +95,11 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fitxer `termia_0.5.0~beta-3_all.deb` es crea al directori pare. Instal·la'l
+El fitxer `termia_0.5.0~beta-4_all.deb` es crea al directori pare. Instal·la'l
 amb:
 
 ```bash
-sudo apt install ../termia_0.5.0~beta-3_all.deb
+sudo apt install ../termia_0.5.0~beta-4_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la

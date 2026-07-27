@@ -95,11 +95,11 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fichero `termia_0.5.0~beta-3_all.deb` se crea en el directorio padre.
+El fichero `termia_0.5.0~beta-4_all.deb` se crea en el directorio padre.
 Instálalo con:
 
 ```bash
-sudo apt install ../termia_0.5.0~beta-3_all.deb
+sudo apt install ../termia_0.5.0~beta-4_all.deb
 ```
 
 El paquete Debian instala el comando `termia`, el lanzador de escritorio y el

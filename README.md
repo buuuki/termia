@@ -111,11 +111,11 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-The resulting `termia_0.5.0~beta-3_all.deb` is created in the parent directory.
+The resulting `termia_0.5.0~beta-4_all.deb` is created in the parent directory.
 Install it with:
 
 ```bash
-sudo apt install ../termia_0.5.0~beta-3_all.deb
+sudo apt install ../termia_0.5.0~beta-4_all.deb
 ```
 
 The Debian package installs the `termia` command, desktop launcher, and icon;
