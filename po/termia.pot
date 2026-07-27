@@ -863,6 +863,10 @@ msgstr ""
 msgid "Failed"
 msgstr ""
 
+#: src/termia/i18n.py:history_result_interrupted
+msgid "Interrupted"
+msgstr ""
+
 #: src/termia/i18n.py:history_result_running
 msgid "In progress"
 msgstr ""

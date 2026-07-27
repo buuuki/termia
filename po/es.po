@@ -865,6 +865,10 @@ msgstr "Desconectada"
 msgid "Failed"
 msgstr "Fallida"
 
+#: src/termia/i18n.py:history_result_interrupted
+msgid "Interrupted"
+msgstr "Interrumpida"
+
 #: src/termia/i18n.py:history_result_running
 msgid "In progress"
 msgstr "En curso"
