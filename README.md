@@ -24,11 +24,11 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 
 ## Download and install (Ubuntu 24.04+)
 
-Download [termia_0.5.0~beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0~beta-4_all.deb)
+Download [termia_0.5.0.beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0.beta-4_all.deb)
 and install it with APT, which resolves the required dependencies:
 
 ```bash
-sudo apt install ./termia_0.5.0~beta-4_all.deb
+sudo apt install ./termia_0.5.0.beta-4_all.deb
 ```
 
 ## Download from source

@@ -21,11 +21,11 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 
 ## Descargar e instalar (Ubuntu 24.04+)
 
-Descarga [termia_0.5.0~beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0~beta-4_all.deb)
+Descarga [termia_0.5.0.beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0.beta-4_all.deb)
 e instálalo con APT, que resolverá las dependencias necesarias:
 
 ```bash
-sudo apt install ./termia_0.5.0~beta-4_all.deb
+sudo apt install ./termia_0.5.0.beta-4_all.deb
 ```
 
 ## Descargar e instalar desde el código fuente
