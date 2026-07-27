@@ -112,16 +112,14 @@ security, and keybinding dialogs have comparatively small contracts.
   selection/navigation, rendering, and context actions are separate
   responsibilities despite sharing one mixin.
 
-### `ConnectionHistoryViewMixin`
+### `ConnectionHistoryDialog`
 
-- Reads: `store`, `toast_label`, and the explicitly composed
-  `history_presenter`.
-- Window services: translation, dialog buttons, and writable-action
-  configuration.
-- Cross-mixin dependencies: none beyond those common services.
-- Extracted component: `ConnectionHistoryPresenter` owns filtering and display
-  formatting. It receives only an entries provider and translation callback;
-  the mixin retains GTK dialog and row construction.
+- Composed explicitly with a GTK parent, `ConnectionHistoryPresenter`, a
+  translation callback, history-clearing callback, writable-action callback,
+  and toast callback; it does not receive `TermiaWindow`.
+- Cross-mixin dependencies: none.
+- `ConnectionHistoryPresenter` owns filtering and display formatting, while
+  `ConnectionHistoryDialog` owns GTK dialog and row construction.
 
 ### `StatisticsDialog`
 

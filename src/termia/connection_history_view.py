@@ -2,25 +2,50 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
 from gi.repository import Gio, Gtk, Pango
 
+from .connection_history_presenter import ConnectionHistoryPresenter
 from .models import ConnectionHistoryEntry
 
 
-class ConnectionHistoryViewMixin:
-    def on_connection_history(self, _button: Gtk.Button) -> None:
-        dialog = Gtk.Dialog(title=self.t("connection_history_title"), transient_for=self, modal=True)
+class ConnectionHistoryDialog:
+    """Builds the connection history dialog from explicit dependencies."""
+
+    def __init__(
+        self,
+        parent: Gtk.Window,
+        presenter: ConnectionHistoryPresenter,
+        translate: Callable[[str], str],
+        clear_history: Callable[[], None],
+        configure_write_action: Callable[[Gtk.Widget], Gtk.Widget],
+        show_toast: Callable[[str], None],
+    ) -> None:
+        self.parent = parent
+        self.presenter = presenter
+        self.translate = translate
+        self.clear_history = clear_history
+        self.configure_write_action = configure_write_action
+        self.show_toast = show_toast
+
+    def show(self) -> None:
+        dialog = Gtk.Dialog(title=self.translate("connection_history_title"), transient_for=self.parent, modal=True)
         dialog.set_resizable(True)
         dialog.set_default_size(760, 520)
         state = {"show_local_terminals": True}
-        clear_button = self.add_dialog_action_button(dialog, self.t("clear_history"), Gtk.ResponseType.REJECT)
+        clear_button = dialog.add_button(self.translate("clear_history"), Gtk.ResponseType.REJECT)
+        clear_button.set_margin_end(6)
+        clear_button.set_margin_bottom(12)
         clear_button.add_css_class("destructive-action")
         self.configure_write_action(clear_button)
-        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
+        close_button = dialog.add_button(self.translate("close"), Gtk.ResponseType.CLOSE)
+        close_button.set_margin_end(12)
+        close_button.set_margin_bottom(12)
 
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -32,7 +57,7 @@ class ConnectionHistoryViewMixin:
         actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         actions.set_hexpand(True)
         search_entry = Gtk.SearchEntry()
-        search_entry.set_placeholder_text(self.t("search_history"))
+        search_entry.set_placeholder_text(self.translate("search_history"))
         actions.append(search_entry)
 
         scroller = Gtk.ScrolledWindow()
@@ -48,7 +73,7 @@ class ConnectionHistoryViewMixin:
             lambda _entry: self.refresh_connection_history(state, list_box, search_entry),
         )
 
-        local_toggle = Gtk.ToggleButton(label=self.t("hide_local_terminals"))
+        local_toggle = Gtk.ToggleButton(label=self.translate("hide_local_terminals"))
         local_toggle.set_active(False)
         local_toggle.connect("toggled", self.on_toggle_local_terminals, state, list_box, search_entry)
         actions.append(local_toggle)
@@ -67,7 +92,11 @@ class ConnectionHistoryViewMixin:
         search_entry: Gtk.SearchEntry,
     ) -> None:
         state["show_local_terminals"] = not button.get_active()
-        button.set_label(self.t("show_local_terminals") if button.get_active() else self.t("hide_local_terminals"))
+        button.set_label(
+            self.translate("show_local_terminals")
+            if button.get_active()
+            else self.translate("hide_local_terminals")
+        )
         self.refresh_connection_history(state, list_box, search_entry)
 
     def on_connection_history_response(
@@ -92,11 +121,19 @@ class ConnectionHistoryViewMixin:
         search_entry: Gtk.SearchEntry,
         local_toggle: Gtk.ToggleButton,
     ) -> None:
-        alert = Gtk.AlertDialog(message=self.t("clear_history"), detail=self.t("clear_history_confirm"))
-        alert.set_buttons([self.t("cancel"), self.t("clear_history")])
+        alert = Gtk.AlertDialog(
+            message=self.translate("clear_history"),
+            detail=self.translate("clear_history_confirm"),
+        )
+        alert.set_buttons([self.translate("cancel"), self.translate("clear_history")])
         alert.set_cancel_button(0)
         alert.set_default_button(0)
-        alert.choose(self, None, self.on_clear_connection_history_confirmed, (dialog, state, list_box, search_entry, local_toggle, alert))
+        alert.choose(
+            self.parent,
+            None,
+            self.on_clear_connection_history_confirmed,
+            (dialog, state, list_box, search_entry, local_toggle, alert),
+        )
 
     def on_clear_connection_history_confirmed(
         self,
@@ -111,10 +148,10 @@ class ConnectionHistoryViewMixin:
             return
         if response != 1:
             return
-        self.store.clear_history()
+        self.clear_history()
         self.refresh_connection_history(state, list_box, search_entry)
         local_toggle.set_sensitive(False)
-        self.toast_label.set_label(self.t("history_cleared"))
+        self.show_toast(self.translate("history_cleared"))
         dialog.present()
 
     def refresh_connection_history(
@@ -131,7 +168,7 @@ class ConnectionHistoryViewMixin:
 
         query = search_entry.get_text()
         show_local_terminals = state.get("show_local_terminals", True)
-        entries = self.history_presenter.filter_entries(query, show_local_terminals)
+        entries = self.presenter.filter_entries(query, show_local_terminals)
         if not entries:
             row = Gtk.ListBoxRow()
             label_key = (
@@ -139,7 +176,7 @@ class ConnectionHistoryViewMixin:
                 if query.strip() or not show_local_terminals
                 else "no_connection_history"
             )
-            label = Gtk.Label(label=self.t(label_key))
+            label = Gtk.Label(label=self.translate(label_key))
             label.set_xalign(0)
             label.set_margin_top(8)
             label.set_margin_bottom(8)
@@ -160,7 +197,7 @@ class ConnectionHistoryViewMixin:
         box.set_margin_start(12)
         box.set_margin_end(12)
 
-        label = Gtk.Label(label=self.history_presenter.build_line(entry))
+        label = Gtk.Label(label=self.presenter.build_line(entry))
         label.set_xalign(0)
         label.set_wrap(False)
         label.set_ellipsize(Pango.EllipsizeMode.END)

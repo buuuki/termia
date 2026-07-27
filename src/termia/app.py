@@ -13,7 +13,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 
 from .config_actions import ConfigActionsMixin
 from .connection_history_presenter import ConnectionHistoryPresenter
-from .connection_history_view import ConnectionHistoryViewMixin
+from .connection_history_view import ConnectionHistoryDialog
 from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
     APP_ID,
@@ -48,7 +48,6 @@ class TermiaWindow(
     MainMenuMixin,
     PreferencesMixin,
     SidebarMixin,
-    ConnectionHistoryViewMixin,
     TerminalMenusMixin,
     TerminalSessionsMixin,
     TabsMixin,
@@ -61,9 +60,19 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
+        self.toast_label = Gtk.Label()
+        self.toast_label.add_css_class("dim-label")
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
             self.t,
+        )
+        self.connection_history_dialog = ConnectionHistoryDialog(
+            self,
+            self.history_presenter,
+            self.t,
+            self.store.clear_history,
+            self.configure_write_action,
+            lambda message: self.toast_label.set_label(message),
         )
         if self.store.data.app.debug_enabled:
             configure_debug_logging(True)
@@ -101,7 +110,7 @@ class TermiaWindow(
             keybinding_settings=lambda: self.on_keybindings_settings(None),
             security_settings=lambda: self.on_security_settings(None),
             statistics=self.statistics_dialog.show,
-            connection_history=lambda: self.on_connection_history(None),
+            connection_history=self.connection_history_dialog.show,
             data_locations=self.on_data_locations,
             export_config=self.on_export_config,
             import_config=self.on_import_config,
@@ -131,9 +140,6 @@ class TermiaWindow(
         self.connect("destroy", lambda *_args: self.store.close())
         if hasattr(GLib, "unix_signal_add"):
             GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.on_unix_termination_signal)
-
-        self.toast_label = Gtk.Label()
-        self.toast_label.add_css_class("dim-label")
 
         self._build_ui()
         if self.store.recovery_messages:
