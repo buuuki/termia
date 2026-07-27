@@ -19,36 +19,6 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
-## Notas de uso
-
-El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:
-
-- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
-- `Terminal` controla la fuente, tamaño, colores, grosor y color del separador de división, y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
-- `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
-- `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
-- `Seguridad` controla el modo de almacenamiento de conexiones.
-- Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
-- Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
-- Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
-- El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
-
-Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera. Con botón derecho dentro del terminal puedes abrir los submenús traducidos de `Dividir` y `Pestaña`; los paneles se pueden crear arriba, abajo, a la izquierda o a la derecha, y desaparecen automáticamente cuando su shell termina. Una pestaña solo se cierra con `exit` cuando ha salido el último terminal y ya no quedan paneles divididos.
-
-## Entorno probado
-
-Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
-6.8.0-117-generic, GNOME 46.0 y Wayland.
-
-## Base de ejecución compatible
-
-Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0 y el espacio de
-introspección de VTE para GTK 4, `Vte 3.91`. El entorno actual de validación
-proporciona GTK 4.14.5 y VTE 0.76.0. Las comprobaciones de compatibilidad para
-métodos GTK opcionales como `set_handle_menubar_accel` y
-`set_show_separators` son intencionadas, porque las distribuciones pueden
-exponer distintos niveles de API de GTK.
-
 ## Descargar e instalar
 
 Clona el repositorio completo:
@@ -113,6 +83,36 @@ estadísticas ni paquetes del sistema:
 ```bash
 ./scripts/termia-setup.sh uninstall
 ```
+
+## Notas de uso
+
+El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:
+
+- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
+- `Terminal` controla la fuente, tamaño, colores, grosor y color del separador de división, y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
+- `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
+- `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
+- `Seguridad` controla el modo de almacenamiento de conexiones.
+- Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
+- Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
+- Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
+- El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
+
+Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera. Con botón derecho dentro del terminal puedes abrir los submenús traducidos de `Dividir` y `Pestaña`; los paneles se pueden crear arriba, abajo, a la izquierda o a la derecha, y desaparecen automáticamente cuando su shell termina. Una pestaña solo se cierra con `exit` cuando ha salido el último terminal y ya no quedan paneles divididos.
+
+## Entorno probado
+
+Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
+6.8.0-117-generic, GNOME 46.0 y Wayland.
+
+## Base de ejecución compatible
+
+Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0 y el espacio de
+introspección de VTE para GTK 4, `Vte 3.91`. El entorno actual de validación
+proporciona GTK 4.14.5 y VTE 0.76.0. Las comprobaciones de compatibilidad para
+métodos GTK opcionales como `set_handle_menubar_accel` y
+`set_show_separators` son intencionadas, porque las distribuciones pueden
+exponer distintos niveles de API de GTK.
 
 ## Datos del usuario y seguridad
 

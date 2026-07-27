@@ -26,7 +26,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Changed
 
-- Reorder the README feature lists to highlight embedded terminals, split workspaces, SCP uploads, and encrypted storage.
+- Reorder the README feature and setup sections to highlight embedded terminals, split workspaces, SCP uploads, encrypted storage, and quick-start instructions.
 - Make isolated test profiles clone the current Termia history, statistics, and debug log along with configuration.
 - Document the required managed-process cleanup behavior for future VTE features.
 - Document the supported Python, GTK, GDK, and VTE runtime baseline and retained compatibility guards.

@@ -19,36 +19,6 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
-## Notes d'ús
-
-El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Dreceres` i `Seguretat`:
-
-- `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió, que comença amagada per defecte.
-- `Terminal` controla el tipus de lletra, mida, colors, gruix i color del separador de divisió, i paletes del terminal VTE incrustat. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
-- `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. El color predeterminat del prompt és blanc. No altera ordres SSH ni modifica fitxers d'inici remots.
-- `Dreceres` mostra les dreceres actives i permet gravar combinacions per a accions com filtrar servidors, mostrar la llista, obrir un terminal local, navegar pel focus, copiar, enganxar, canviar de pestanya, ampliar la lletra i enviar la contrasenya desada. `Ctrl+F` enfoca el filtre, `Ctrl+Shift+B` mostra o amaga la llista, `F10` obre o tanca el menú principal, `Ctrl+Shift+T` obre un terminal local i `Ctrl+F6`/`Ctrl+Shift+F6` recorre les regions principals. Les altres tecles de funció sense modificadors s'envien a les aplicacions del terminal.
-- `Seguretat` controla el mode d'emmagatzematge de connexions.
-- Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
-- Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
-- Fes clic dret en un terminal o en un servidor per pujar fitxers a `/tmp/.termia/` a l'host destí.
-- El menú principal inclou historial de connexions, ubicacions de fitxers de dades i accions d'importació/exportació.
-
-Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera. Amb el botó dret dins del terminal pots obrir els submenús traduïts de `Dividir` i `Pestanya`; els panells es poden crear amunt, avall, a l'esquerra o a la dreta, i desapareixen automàticament quan la seva shell acaba. Una pestanya només es tanca amb `exit` quan ha sortit l'últim terminal i ja no queden panells dividits.
-
-## Entorn provat
-
-Termia s'ha provat en Ubuntu 24.04.4 LTS amb kernel Linux
-6.8.0-117-generic, GNOME 46.0 i Wayland.
-
-## Base d'execució compatible
-
-Termia requereix Python 3.10 o posterior, GTK 4.0/GDK 4.0 i l'espai
-d'introspecció de VTE per a GTK 4, `Vte 3.91`. L'entorn actual de validació
-proporciona GTK 4.14.5 i VTE 0.76.0. Les comprovacions de compatibilitat per a
-mètodes GTK opcionals com `set_handle_menubar_accel` i
-`set_show_separators` són intencionades, perquè les distribucions poden
-exposar diferents nivells de l'API de GTK.
-
 ## Descarregar i instal·lar
 
 Clona el repositori complet:
@@ -113,6 +83,36 @@ estadístiques ni paquets del sistema:
 ```bash
 ./scripts/termia-setup.sh uninstall
 ```
+
+## Notes d'ús
+
+El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Dreceres` i `Seguretat`:
+
+- `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió, que comença amagada per defecte.
+- `Terminal` controla el tipus de lletra, mida, colors, gruix i color del separador de divisió, i paletes del terminal VTE incrustat. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
+- `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. El color predeterminat del prompt és blanc. No altera ordres SSH ni modifica fitxers d'inici remots.
+- `Dreceres` mostra les dreceres actives i permet gravar combinacions per a accions com filtrar servidors, mostrar la llista, obrir un terminal local, navegar pel focus, copiar, enganxar, canviar de pestanya, ampliar la lletra i enviar la contrasenya desada. `Ctrl+F` enfoca el filtre, `Ctrl+Shift+B` mostra o amaga la llista, `F10` obre o tanca el menú principal, `Ctrl+Shift+T` obre un terminal local i `Ctrl+F6`/`Ctrl+Shift+F6` recorre les regions principals. Les altres tecles de funció sense modificadors s'envien a les aplicacions del terminal.
+- `Seguretat` controla el mode d'emmagatzematge de connexions.
+- Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
+- Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
+- Fes clic dret en un terminal o en un servidor per pujar fitxers a `/tmp/.termia/` a l'host destí.
+- El menú principal inclou historial de connexions, ubicacions de fitxers de dades i accions d'importació/exportació.
+
+Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera. Amb el botó dret dins del terminal pots obrir els submenús traduïts de `Dividir` i `Pestanya`; els panells es poden crear amunt, avall, a l'esquerra o a la dreta, i desapareixen automàticament quan la seva shell acaba. Una pestanya només es tanca amb `exit` quan ha sortit l'últim terminal i ja no queden panells dividits.
+
+## Entorn provat
+
+Termia s'ha provat en Ubuntu 24.04.4 LTS amb kernel Linux
+6.8.0-117-generic, GNOME 46.0 i Wayland.
+
+## Base d'execució compatible
+
+Termia requereix Python 3.10 o posterior, GTK 4.0/GDK 4.0 i l'espai
+d'introspecció de VTE per a GTK 4, `Vte 3.91`. L'entorn actual de validació
+proporciona GTK 4.14.5 i VTE 0.76.0. Les comprovacions de compatibilitat per a
+mètodes GTK opcionals com `set_handle_menubar_accel` i
+`set_show_separators` són intencionades, perquè les distribucions poden
+exposar diferents nivells de l'API de GTK.
 
 ## Dades de l'usuari i seguretat
 

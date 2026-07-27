@@ -22,58 +22,6 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Review connection history and optional local usage statistics, including durations and most-used servers.
 - Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
 
-## Usage notes
-
-The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybindings`, and `Security`:
-
-- `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
-- `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, split separator color/thickness, and color palettes. New installations start with JetBrains Mono and the Polaris palette.
-- `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. The default prompt color is white. It does not alter SSH commands or modify remote shell startup files.
-- `Keybindings` shows the active shortcuts and lets you record shortcut combinations for common actions such as server filtering, sidebar visibility, opening a local terminal, focus navigation, copy, paste, tab switching, font zoom, and sending the saved password. `Ctrl+F` focuses the server filter, `Ctrl+Shift+B` toggles the server list, `F10` toggles the main menu, `Ctrl+Shift+T` opens a local terminal, and `Ctrl+F6`/`Ctrl+Shift+F6` cycle through the main interface regions. Other unmodified function keys pass through to terminal applications.
-- `Security` controls connection storage mode.
-- Use the terminal-shaped button in the sidebar to create a new local terminal profile; it appears in the sidebar list like a connection and opens an embedded terminal when activated.
-- When another Termia instance is already running with the write lock, a new window opens in read-only mode, shows a header badge, disables write-capable actions, and still allows browsing, connecting, and exporting configuration.
-- Right-click a terminal or a server to upload files to `/tmp/.termia/` on the target host.
-- The main menu includes connection history, data file locations, and import/export actions.
-
-Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle. Right-click inside a terminal to access translated `Split` and `Tab` submenus; split panes can be created up, down, left, or right, and a pane disappears automatically when its shell exits. A tab only closes on `exit` once the last terminal has exited and no split panes remain.
-
-## Tested environment
-
-Termia has been tested on Ubuntu 24.04.4 LTS with Linux kernel
-6.8.0-117-generic, GNOME 46.0, and Wayland.
-
-## Supported runtime baseline
-
-Termia requires Python 3.10 or newer, GTK 4.0/GDK 4.0, and the GTK 4 VTE
-introspection namespace `Vte 3.91`. The current validation environment provides
-GTK 4.14.5 and VTE 0.76.0. Compatibility guards for optional GTK methods such as
-`set_handle_menubar_accel` and `set_show_separators` remain intentional so the
-same source can run across distributions that expose different GTK API levels.
-
-## Project layout
-
-```text
-run_termia.py                     Source-checkout launcher
-src/termia/app.py             Application composition and window setup
-src/termia/                Feature modules for storage, dialogs, tabs, terminal sessions, and UI helpers
-src/termia/__main__.py        Python module entry point
-src/termia/assets/            Desktop and About dialog artwork
-src/termia/locale/            Compiled gettext catalogs bundled with Termia
-po/                           Editable gettext translation catalogs
-scripts/compile_translations.py
-scripts/termia-setup.sh
-docs/README.es.md             Spanish documentation
-docs/README.ca.md             Catalan documentation
-SECURITY.md                    Credential storage warning
-THIRD_PARTY_NOTICES.md         Runtime dependency licenses
-LICENSE                       GPL-3.0-or-later license
-```
-
-The GTK implementation is split into focused modules for application composition,
-storage, import, dialogs, preferences, sidebar, tabs, terminal sessions, and UI
-helpers without changing the launch command.
-
 ## Download
 
 Clone the complete repository instead of downloading individual files:
@@ -151,6 +99,58 @@ packages:
 ```bash
 ./scripts/termia-setup.sh uninstall
 ```
+
+## Usage notes
+
+The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybindings`, and `Security`:
+
+- `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
+- `Terminal` controls the embedded VTE terminal font, size, foreground/background colors, split separator color/thickness, and color palettes. New installations start with JetBrains Mono and the Polaris palette.
+- `Prompt` customizes local terminal PS1 color, presets, and time/date prefixes. The default prompt color is white. It does not alter SSH commands or modify remote shell startup files.
+- `Keybindings` shows the active shortcuts and lets you record shortcut combinations for common actions such as server filtering, sidebar visibility, opening a local terminal, focus navigation, copy, paste, tab switching, font zoom, and sending the saved password. `Ctrl+F` focuses the server filter, `Ctrl+Shift+B` toggles the server list, `F10` toggles the main menu, `Ctrl+Shift+T` opens a local terminal, and `Ctrl+F6`/`Ctrl+Shift+F6` cycle through the main interface regions. Other unmodified function keys pass through to terminal applications.
+- `Security` controls connection storage mode.
+- Use the terminal-shaped button in the sidebar to create a new local terminal profile; it appears in the sidebar list like a connection and opens an embedded terminal when activated.
+- When another Termia instance is already running with the write lock, a new window opens in read-only mode, shows a header badge, disables write-capable actions, and still allows browsing, connecting, and exporting configuration.
+- Right-click a terminal or a server to upload files to `/tmp/.termia/` on the target host.
+- The main menu includes connection history, data file locations, and import/export actions.
+
+Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle. Right-click inside a terminal to access translated `Split` and `Tab` submenus; split panes can be created up, down, left, or right, and a pane disappears automatically when its shell exits. A tab only closes on `exit` once the last terminal has exited and no split panes remain.
+
+## Tested environment
+
+Termia has been tested on Ubuntu 24.04.4 LTS with Linux kernel
+6.8.0-117-generic, GNOME 46.0, and Wayland.
+
+## Supported runtime baseline
+
+Termia requires Python 3.10 or newer, GTK 4.0/GDK 4.0, and the GTK 4 VTE
+introspection namespace `Vte 3.91`. The current validation environment provides
+GTK 4.14.5 and VTE 0.76.0. Compatibility guards for optional GTK methods such as
+`set_handle_menubar_accel` and `set_show_separators` remain intentional so the
+same source can run across distributions that expose different GTK API levels.
+
+## Project layout
+
+```text
+run_termia.py                     Source-checkout launcher
+src/termia/app.py             Application composition and window setup
+src/termia/                Feature modules for storage, dialogs, tabs, terminal sessions, and UI helpers
+src/termia/__main__.py        Python module entry point
+src/termia/assets/            Desktop and About dialog artwork
+src/termia/locale/            Compiled gettext catalogs bundled with Termia
+po/                           Editable gettext translation catalogs
+scripts/compile_translations.py
+scripts/termia-setup.sh
+docs/README.es.md             Spanish documentation
+docs/README.ca.md             Catalan documentation
+SECURITY.md                    Credential storage warning
+THIRD_PARTY_NOTICES.md         Runtime dependency licenses
+LICENSE                       GPL-3.0-or-later license
+```
+
+The GTK implementation is split into focused modules for application composition,
+storage, import, dialogs, preferences, sidebar, tabs, terminal sessions, and UI
+helpers without changing the launch command.
 
 ## User data and security
 
