@@ -19,7 +19,16 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
-## Descargar e instalar
+## Descargar e instalar (Ubuntu 24.04+)
+
+Descarga [termia_0.5.0.beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0.beta-4_all.deb)
+e instálalo con APT, que resolverá las dependencias necesarias:
+
+```bash
+sudo apt install ./termia_0.5.0.beta-4_all.deb
+```
+
+## Descargar e instalar desde el código fuente
 
 Clona el repositorio completo:
 
@@ -83,6 +92,27 @@ estadísticas ni paquetes del sistema:
 ```bash
 ./scripts/termia-setup.sh uninstall
 ```
+
+## Crear un paquete Debian
+
+En Debian, Ubuntu 24.04 o posterior, o una distribución compatible, instala las
+dependencias de compilación y crea el paquete desde la raíz del repositorio.
+Ubuntu 22.04 y anteriores no incluyen el entorno VTE para GTK 4 necesario:
+
+```bash
+sudo apt build-dep .
+dpkg-buildpackage -us -uc -b
+```
+
+El fichero `termia_0.5.0~beta-4_all.deb` se crea en el directorio padre.
+Instálalo con:
+
+```bash
+sudo apt install ../termia_0.5.0~beta-4_all.deb
+```
+
+El paquete Debian instala el comando `termia`, el lanzador de escritorio y el
+icono; APT instala las dependencias de GTK, VTE, Python, SSH y cifrado.
 
 ## Notas de uso
 

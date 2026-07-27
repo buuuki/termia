@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Termia
+Comment=SSH connection manager with embedded terminals
+Exec=termia
+Icon=termia
+Terminal=false
+Categories=Network;RemoteAccess;GTK;
+StartupNotify=true
+StartupWMClass=local.termia

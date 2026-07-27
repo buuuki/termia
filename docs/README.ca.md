@@ -19,7 +19,16 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
-## Descarregar i instal·lar
+## Descarregar i instal·lar (Ubuntu 24.04+)
+
+Descarrega [termia_0.5.0.beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0.beta-4_all.deb)
+i instal·la'l amb APT, que resoldrà les dependències necessàries:
+
+```bash
+sudo apt install ./termia_0.5.0.beta-4_all.deb
+```
+
+## Descarregar i instal·lar des del codi font
 
 Clona el repositori complet:
 
@@ -83,6 +92,27 @@ estadístiques ni paquets del sistema:
 ```bash
 ./scripts/termia-setup.sh uninstall
 ```
+
+## Crear un paquet Debian
+
+A Debian, Ubuntu 24.04 o posterior, o una distribució compatible, instal·la les
+dependències de compilació i crea el paquet des de l'arrel del repositori.
+Ubuntu 22.04 i anteriors no inclouen l'entorn VTE per a GTK 4 necessari:
+
+```bash
+sudo apt build-dep .
+dpkg-buildpackage -us -uc -b
+```
+
+El fitxer `termia_0.5.0~beta-4_all.deb` es crea al directori pare. Instal·la'l
+amb:
+
+```bash
+sudo apt install ../termia_0.5.0~beta-4_all.deb
+```
+
+El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la
+icona; APT instal·la les dependències de GTK, VTE, Python, SSH i xifratge.
 
 ## Notes d'ús
 
