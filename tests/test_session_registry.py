@@ -16,8 +16,11 @@ class SessionRegistryTests(unittest.TestCase):
         self.assertTrue(registry)
         self.assertTrue(registry.contains("first"))
         self.assertIs(registry.get("second"), second)
-        self.assertEqual(registry.sessions(), (first, second))
+        snapshot = registry.sessions()
+        self.assertEqual(snapshot, (first, second))
         self.assertIs(registry.remove("first"), first)
+        self.assertEqual(snapshot, (first, second))
+        self.assertEqual(registry.sessions(), (second,))
         self.assertFalse(registry.contains("first"))
         self.assertIsNone(registry.remove("missing"))
 

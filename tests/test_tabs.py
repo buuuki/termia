@@ -82,6 +82,53 @@ class DetachTabTests(unittest.TestCase):
         self.assertTrue(session.detached_window.presented)
 
 
+class CloseTabTests(unittest.TestCase):
+    def test_close_tab_removes_only_the_closed_session_from_registry(self) -> None:
+        page = object()
+        session = SimpleNamespace(
+            id="closed",
+            page=page,
+            connected=False,
+            detached_window=None,
+        )
+        remaining_session = SimpleNamespace(
+            id="remaining",
+            detached_window=None,
+        )
+
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.session_registry = SessionRegistry([session, remaining_session])
+                self.removed = None
+                self.focused = None
+
+            def visible_sessions_in_tab_order(self):
+                return [session, remaining_session]
+
+            def terminate_split_processes(self, current_session) -> None:
+                pass
+
+            def remove_session_from_main_view(self, current_session) -> None:
+                self.removed = current_session
+
+            def update_session_tab_bar_visibility(self) -> None:
+                pass
+
+            def focus_available_session_after_close(self, closed_id, previous_order) -> None:
+                self.focused = (closed_id, previous_order)
+
+            def sync_window_title_with_visible_session(self) -> None:
+                pass
+
+        host = Host()
+        host.close_tab(session.id, page, disconnect=False)
+
+        self.assertIs(host.removed, session)
+        self.assertIsNone(host.session_registry.get(session.id))
+        self.assertIs(host.session_registry.get(remaining_session.id), remaining_session)
+        self.assertEqual(host.focused, (session.id, [session, remaining_session]))
+
+
 class MiddleClickTabTests(unittest.TestCase):
     def test_middle_click_requests_tab_close(self) -> None:
         page = object()
