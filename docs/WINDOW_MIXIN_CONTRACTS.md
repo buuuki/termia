@@ -32,7 +32,7 @@ receive only the services they use.
 the mixins:
 
 - Persistence and feedback: `store`, `toast_label`.
-- Session state: `open_tabs`, `run_connections`, `stats_save_id`.
+- Session state: `session_registry`, `run_connections`, `stats_save_id`.
 - Sidebar selection: `selected`, `selected_tree_widget`,
   `group_expanded_state`, `collapse_groups_on_startup`, `tree_widgets`, and
   `active_context_popover`.
@@ -144,10 +144,10 @@ security, and keybinding dialogs have comparatively small contracts.
 
 ### `TerminalSessionsMixin`
 
-- Reads: `store`, `open_tabs`, `terminal_stack`, `toast_label`, terminal-menu
+- Reads: `store`, `session_registry`, `terminal_stack`, `toast_label`, terminal-menu
   callbacks, and terminal-font resolution.
 - Writes: `run_connections` and `stats_save_id`; it also mutates
-  `TerminalSession` objects held in `open_tabs`.
+  `TerminalSession` objects held in `session_registry`.
 - Cross-mixin dependencies: tab creation, ordering, activation, title updates,
   closing, terminal menus, and terminal preferences.
 - Architectural note: process launching, terminal views, split panes, and file
@@ -156,7 +156,7 @@ security, and keybinding dialogs have comparatively small contracts.
 
 ### `TabsMixin`
 
-- Reads: `store`, `open_tabs`, `session_tab_bar`, and `terminal_stack`.
+- Reads: `store`, `session_registry`, `session_tab_bar`, and `terminal_stack`.
 - Writes: drag state and the GTK placement of session pages and labels.
 - Cross-mixin dependencies: terminal creation/disconnection/termination,
   terminal context actions, and shared dialog helpers.
@@ -184,7 +184,8 @@ The principal cycles are:
    pattern for subsequent extractions with explicit providers and callbacks.
 3. Pass explicit action callbacks into menu builders. The main menu uses
    `MainMenuActions` and terminal context menus use `TerminalMenuActions`.
-4. Introduce a session registry that owns `open_tabs` and session lookup.
+4. `SessionRegistry` owns open terminal sessions and their lookup for tab and
+   lifecycle code.
 5. Separate tab placement from session lifecycle using the registry and
    callbacks, then replace `TabsMixin`.
 6. Replace the remaining session and sidebar mixins after their state has a

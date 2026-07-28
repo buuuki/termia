@@ -30,6 +30,7 @@ from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
 from .main_menu_actions import MainMenuActions
 from .preferences import PreferencesMixin
+from .session_registry import SessionRegistry
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
 from .statistics_presenter import StatisticsPresenter
@@ -39,7 +40,7 @@ from .tabs import TabsMixin
 from .terminal_menus import TerminalMenusMixin
 from .terminal_menu_actions import TerminalMenuActions
 from .terminal_sessions import TerminalSessionsMixin
-from .ui_state import RowObject, TerminalSession
+from .ui_state import RowObject
 
 
 class TermiaWindow(
@@ -94,7 +95,7 @@ class TermiaWindow(
         self.collapse_groups_on_startup = True
         self.tree_widgets: dict[tuple[str, str], Gtk.Widget] = {}
         self.active_context_popover: Gtk.Popover | None = None
-        self.open_tabs: dict[str, TerminalSession] = {}
+        self.session_registry = SessionRegistry()
         self.run_connections = 0
         self.statistics_presenter = StatisticsPresenter(
             lambda: self.store.data.statistics,
@@ -157,7 +158,7 @@ class TermiaWindow(
             GLib.idle_add(self.open_startup_local_terminal)
 
     def open_startup_local_terminal(self) -> bool:
-        if not self.open_tabs:
+        if not self.session_registry:
             self.on_open_local_terminal(None)
         return GLib.SOURCE_REMOVE
 
