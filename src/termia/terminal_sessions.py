@@ -197,7 +197,7 @@ class TerminalSessionsMixin:
         focus_button.connect("clicked", self.on_hide_session_status_bar, session)
         session.disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
         self.configure_terminal_interactions(terminal, session)
-        self.open_tabs[session.id] = session
+        self.session_registry.register(session)
         self.add_session_to_main_view(session)
         self.update_local_session_directory_title(session)
         terminal.grab_focus()
@@ -264,7 +264,7 @@ class TerminalSessionsMixin:
         focus_button.connect("clicked", self.on_hide_session_status_bar, session)
         session.disconnect_button.connect("clicked", self.on_request_disconnect_session, session)
         self.configure_terminal_interactions(session.terminal, session)
-        self.open_tabs[session.id] = session
+        self.session_registry.register(session)
         self.add_session_to_main_view(session)
 
         self.start_ssh_session(server, session, split_layout=server.split_layout)
@@ -403,7 +403,7 @@ class TerminalSessionsMixin:
                 GLib.source_remove(self.stats_save_id)
                 self.stats_save_id = None
             return
-        for session in tuple(self.open_tabs.values()):
+        for session in self.session_registry.sessions():
             self.record_session_duration(session)
         if self.stats_save_id is not None:
             GLib.source_remove(self.stats_save_id)
@@ -449,7 +449,7 @@ class TerminalSessionsMixin:
         self.schedule_statistics_save()
 
     def save_history_before_close(self) -> None:
-        for session in tuple(self.open_tabs.values()):
+        for session in self.session_registry.sessions():
             if session.history_start_recorded and not session.history_end_recorded:
                 result = "disconnected" if session.disconnect_requested else "closed"
                 self.store.record_history_end(session, result)
@@ -528,7 +528,7 @@ class TerminalSessionsMixin:
 
     def apply_session_status_bar_visibility_to_open_tabs(self) -> None:
         visible = self.should_show_session_status_bar()
-        for session in self.open_tabs.values():
+        for session in self.session_registry.sessions():
             session.status_bar.set_visible(visible)
 
     def change_terminal_font_size(self, delta: int) -> None:
@@ -927,7 +927,7 @@ class TerminalSessionsMixin:
         TerminalViewFactory(self.resolved_terminal_font_family).apply_settings(terminal, self.store.data.terminal)
 
     def apply_terminal_settings_to_open_tabs(self) -> None:
-        for session in self.open_tabs.values():
+        for session in self.session_registry.sessions():
             self.apply_terminal_settings(session.terminal)
             for terminal in session.split_terminals:
                 self.apply_terminal_settings(terminal)
@@ -960,7 +960,7 @@ class TerminalSessionsMixin:
         return GLib.SOURCE_REMOVE
 
     def terminate_open_terminal_processes(self, *, force: bool = False) -> None:
-        for session in tuple(self.open_tabs.values()):
+        for session in self.session_registry.sessions():
             if session.child_process is not None:
                 self.terminate_terminal_process(session.child_process, force=force)
             for process in tuple(session.split_processes.values()):

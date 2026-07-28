@@ -25,7 +25,7 @@ class TabsMixin:
     def visible_sessions_in_tab_order(self) -> list[TerminalSession]:
         sessions_by_label = {
             session.tab_label: session
-            for session in self.open_tabs.values()
+            for session in self.session_registry.sessions()
             if session.detached_window is None
         }
         ordered: list[TerminalSession] = []
@@ -38,7 +38,7 @@ class TabsMixin:
         return ordered
 
     def set_active_session(self, session_id: str) -> None:
-        session = self.open_tabs.get(session_id)
+        session = self.session_registry.get(session_id)
         if session is None or session.detached_window is not None:
             return
         self.terminal_stack.set_visible_child(session.page)
@@ -47,7 +47,7 @@ class TabsMixin:
 
     def update_session_tab_states(self) -> None:
         visible_page = self.terminal_stack.get_visible_child()
-        for session in self.open_tabs.values():
+        for session in self.session_registry.sessions():
             session.tab_label.remove_css_class("active")
             if visible_page is session.page and session.detached_window is None:
                 session.tab_label.add_css_class("active")
@@ -65,11 +65,11 @@ class TabsMixin:
         self.update_session_tab_bar_visibility()
 
     def update_session_tab_bar_visibility(self) -> None:
-        visible_sessions = [session for session in self.open_tabs.values() if session.detached_window is None]
+        visible_sessions = [session for session in self.session_registry.sessions() if session.detached_window is None]
         self.session_tab_bar.set_visible(len(visible_sessions) > 1)
 
     def sync_window_title_with_visible_session(self) -> None:
-        visible_sessions = [session for session in self.open_tabs.values() if session.detached_window is None]
+        visible_sessions = [session for session in self.session_registry.sessions() if session.detached_window is None]
         if len(visible_sessions) == 1:
             session = visible_sessions[0]
             if session.server_id is None and session.title_locked:
@@ -93,7 +93,7 @@ class TabsMixin:
             *previous_order[closed_index + 1 :],
         ]
         for session in focus_candidates:
-            if session.id in self.open_tabs and session.detached_window is None:
+            if self.session_registry.contains(session.id) and session.detached_window is None:
                 self.set_active_session(session.id)
                 return
 
@@ -181,7 +181,7 @@ class TabsMixin:
         session_id: str,
         _tab: Gtk.Widget,
     ) -> Gdk.ContentProvider | None:
-        if session_id not in self.open_tabs:
+        if not self.session_registry.contains(session_id):
             return None
         return Gdk.ContentProvider.new_for_value(session_id)
 
@@ -204,7 +204,7 @@ class TabsMixin:
         _delete_data: bool,
         session_id: str,
     ) -> None:
-        session = self.open_tabs.get(session_id)
+        session = self.session_registry.get(session_id)
         if session is not None:
             session.tab_label.remove_css_class("dragging")
         self.tab_drag_session_id = None
@@ -215,7 +215,7 @@ class TabsMixin:
 
     def on_tab_bar_drop(self, target: Gtk.DropTarget, dragged_session_id: str, x: float, _y: float) -> bool:
         self.reorder_dragged_tab_at_bar_x(target, x, dragged_session_id)
-        dragged = self.open_tabs.get(dragged_session_id)
+        dragged = self.session_registry.get(dragged_session_id)
         if dragged is not None:
             self.set_active_session(dragged.id)
         return True
@@ -229,7 +229,7 @@ class TabsMixin:
         dragged_session_id = dragged_session_id or getattr(self, "tab_drag_session_id", None) or target.get_value()
         if not isinstance(dragged_session_id, str):
             return
-        dragged = self.open_tabs.get(dragged_session_id)
+        dragged = self.session_registry.get(dragged_session_id)
         if dragged is None or dragged.detached_window is not None:
             return
         sessions = self.visible_sessions_in_tab_order()
@@ -273,7 +273,7 @@ class TabsMixin:
         session_id: str,
         parent: Gtk.Widget,
     ) -> None:
-        session = self.open_tabs.get(session_id)
+        session = self.session_registry.get(session_id)
         if session is None:
             return
         popover = Gtk.Popover()
@@ -323,7 +323,7 @@ class TabsMixin:
     def on_detached_window_close(self, window: Gtk.Window, session: TerminalSession) -> bool:
         window.set_child(None)
         session.detached_window = None
-        if session.id in self.open_tabs:
+        if self.session_registry.contains(session.id):
             self.add_session_to_main_view(session)
         return False
 
@@ -357,7 +357,7 @@ class TabsMixin:
         self.request_close_tab(session_id, page)
 
     def request_close_tab(self, session_id: str, page: Gtk.Widget) -> None:
-        session = self.open_tabs.get(session_id)
+        session = self.session_registry.get(session_id)
         if session and session.page == page and session.connected:
             if not self.store.data.app.confirm_disconnect:
                 self.close_tab(session_id, page, disconnect=True)
@@ -374,10 +374,10 @@ class TabsMixin:
         self.close_tab(session_id, page, disconnect=False)
 
     def close_tab(self, session_id: str, page: Gtk.Widget, disconnect: bool) -> None:
-        session = self.open_tabs.get(session_id)
+        session = self.session_registry.get(session_id)
         if disconnect and session and session.page == page and session.connected:
             self.disconnect_session(session)
-            session = self.open_tabs.get(session_id)
+            session = self.session_registry.get(session_id)
         if session is None:
             return
         previous_order = self.visible_sessions_in_tab_order()
@@ -389,7 +389,7 @@ class TabsMixin:
             window.destroy()
         else:
             self.remove_session_from_main_view(session)
-        self.open_tabs.pop(session_id, None)
+        self.session_registry.remove(session_id)
         self.update_session_tab_bar_visibility()
         self.focus_available_session_after_close(session_id, previous_order)
         self.sync_window_title_with_visible_session()

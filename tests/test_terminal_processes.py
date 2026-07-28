@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from termia.terminal_processes import TerminalProcess, signal_terminal_process, spawn_terminal_process
 from termia.terminal_sessions import TerminalSessionsMixin
+from termia.session_registry import SessionRegistry
 
 
 class FakeTerminal:
@@ -64,12 +65,15 @@ class TerminalProcessTests(unittest.TestCase):
 
         class Host(TerminalSessionsMixin):
             def __init__(self) -> None:
-                self.open_tabs = {
-                    "session": SimpleNamespace(
+                self.session_registry = SessionRegistry(
+                    [
+                        SimpleNamespace(
+                            id="session",
                         child_process=main_process,
                         split_processes={"split": split_process},
-                    )
-                }
+                        )
+                    ]
+                )
                 self.terminated = []
 
             def terminate_terminal_process(self, process, *, force=False) -> bool:

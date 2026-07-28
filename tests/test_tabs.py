@@ -2,6 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from termia.session_registry import SessionRegistry
 from termia.tabs import TabsMixin
 
 
@@ -49,7 +50,7 @@ class DetachTabTests(unittest.TestCase):
 
         class Host(TabsMixin):
             def __init__(self) -> None:
-                self.open_tabs = {session.id: session, previous_session.id: previous_session}
+                self.session_registry = SessionRegistry([session, previous_session])
                 self.focused = None
                 self.removed = None
                 self.visible_sessions = [previous_session, session]

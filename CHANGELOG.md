@@ -37,6 +37,7 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 
 ### Refactored
 
+- Introduce an explicit terminal session registry instead of sharing the `open_tabs` dictionary between window mixins (`#156`).
 - Replace the connection history view mixin with an explicitly composed dialog.
 - Replace the statistics view mixin with an explicitly composed statistics dialog.
 - Pass terminal context-menu actions through an explicit callback contract composed by the application window.
