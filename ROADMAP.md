@@ -35,6 +35,15 @@ Goals for moving Termia from a beta release line to a stable release line.
 - [ ] Audit keyboard shortcuts and menu accelerators for consistency with the new configuration layout.
 - [ ] Improve the discoverability of favorite servers and other sidebar actions if they remain split across several entry points.
 
+## Session Workspaces
+
+- [ ] Save the sessions that are open when Termia closes and, on the next
+      launch, ask whether to reconnect all of them.
+- [ ] Allow each pane in a split layout to run an independent remote
+      connection instead of limiting every pane to the same connection.
+- [ ] Save and reopen reusable composite workspaces containing multiple remote
+      connections arranged in split panes.
+
 ## Longer Term
 
 - [ ] Consider richer local terminal profiles if the current single settings model is still too limited after the configuration refactor.
