@@ -39,15 +39,19 @@ class DebugLoggingTests(unittest.TestCase):
             log_path = Path(directory) / "debug.log"
             with patch.object(debug, "DEBUG_LOG_FILE", log_path):
                 debug.configure_debug_logging(True)
-                result = debug._write_glib_log(
+                GLib.log_variant(
+                    "GtkTest",
                     GLib.LogLevelFlags.LEVEL_DEBUG,
-                    {"MESSAGE": "GTK diagnostic", "GLIB_DOMAIN": "Gtk"},
-                    2,
-                    None,
+                    GLib.Variant(
+                        "a{sv}",
+                        {"MESSAGE": GLib.Variant("s", "GTK diagnostic")},
+                    ),
                 )
 
-            self.assertEqual(result, GLib.LogWriterOutput.HANDLED)
-            self.assertIn("[Gtk] GTK diagnostic", log_path.read_text(encoding="utf-8"))
+            contents = log_path.read_text(encoding="utf-8")
+            self.assertIn("GtkTest", contents)
+            self.assertIn("GTK diagnostic", contents)
+            self.assertNotRegex(contents, r"DEBUG \[\d+\] \d+")
 
     def test_debug_logging_does_not_enable_gsk_renderer_output(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
