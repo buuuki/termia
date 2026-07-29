@@ -28,6 +28,7 @@ Changes merged after `0.5.0-beta` (released 2026-07-20).
 
 ### Changed
 
+- Add persistent multi-connection session workspaces to the planned roadmap (`#164`).
 - Reorder the README feature and setup sections to highlight embedded terminals, split workspaces, SCP uploads, encrypted storage, and quick-start instructions.
 - Add and promote an optimized Termia screenshot across the main README, localized documentation, and roadmap.
 - Make isolated test profiles clone the current Termia history, statistics, and debug log along with configuration.
