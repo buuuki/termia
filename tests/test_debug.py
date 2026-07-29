@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 import logging
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -47,3 +48,25 @@ class DebugLoggingTests(unittest.TestCase):
 
             self.assertEqual(result, GLib.LogWriterOutput.HANDLED)
             self.assertIn("[Gtk] GTK diagnostic", log_path.read_text(encoding="utf-8"))
+
+    def test_debug_logging_does_not_enable_gsk_renderer_output(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = Path(directory) / "debug.log"
+            with (
+                patch.object(debug, "DEBUG_LOG_FILE", log_path),
+                patch.dict(os.environ, {}, clear=True),
+            ):
+                debug.configure_debug_logging(True)
+
+                self.assertNotIn("GSK_DEBUG", os.environ)
+
+    def test_debug_logging_preserves_external_gsk_debug_value(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = Path(directory) / "debug.log"
+            with (
+                patch.object(debug, "DEBUG_LOG_FILE", log_path),
+                patch.dict(os.environ, {"GSK_DEBUG": "shaders"}, clear=True),
+            ):
+                debug.configure_debug_logging(True)
+
+                self.assertEqual(os.environ["GSK_DEBUG"], "shaders")

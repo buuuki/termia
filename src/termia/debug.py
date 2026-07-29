@@ -64,7 +64,6 @@ def configure_debug_logging(enabled: bool) -> None:
     if LOGGER.handlers:
         return
     os.environ.setdefault("G_MESSAGES_DEBUG", "all")
-    os.environ.setdefault("GSK_DEBUG", "renderer")
     os.environ.setdefault("PYTHONFAULTHANDLER", "1")
     LOGGER.setLevel(logging.DEBUG)
     LOGGER.propagate = False
