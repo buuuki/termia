@@ -10,7 +10,6 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
 from gi.repository import Gdk, Graphene, Gtk, Pango
 
-from .connection_utils import find_server
 from .ui_state import TerminalSession
 
 
@@ -295,12 +294,7 @@ class TabsMixin:
 
     def duplicate_tab(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
-        if session.server_id is not None:
-            server = find_server(self.store.data.servers, session.server_id)
-            if server is not None:
-                self.open_terminal_tab(server)
-            return
-        self.on_open_local_terminal(None)
+        self.tab_lifecycle_actions.duplicate_session(session)
 
     def detach_tab(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
@@ -363,7 +357,7 @@ class TabsMixin:
                 self.close_tab(session_id, page, disconnect=True)
                 return
             detail = self.t("close_ssh_session_confirm") if session.server_id is not None else self.t("close_local_session_confirm")
-            self.confirm_session_action(
+            self.tab_lifecycle_actions.confirm_session_action(
                 session,
                 self.t("close_session_title"),
                 detail,
@@ -376,12 +370,12 @@ class TabsMixin:
     def close_tab(self, session_id: str, page: Gtk.Widget, disconnect: bool) -> None:
         session = self.session_registry.get(session_id)
         if disconnect and session and session.page == page and session.connected:
-            self.disconnect_session(session)
+            self.tab_lifecycle_actions.disconnect_session(session)
             session = self.session_registry.get(session_id)
         if session is None:
             return
         previous_order = self.visible_sessions_in_tab_order()
-        self.terminate_split_processes(session)
+        self.tab_lifecycle_actions.terminate_split_processes(session)
         if session.detached_window is not None:
             window = session.detached_window
             session.detached_window = None

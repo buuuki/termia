@@ -33,6 +33,8 @@ the mixins:
 
 - Persistence and feedback: `store`, `toast_label`.
 - Session state: `session_registry`, `run_connections`, `stats_save_id`.
+- Explicit actions: `main_menu_actions`, `terminal_menu_actions`, and
+  `tab_lifecycle_actions`.
 - Sidebar selection: `selected`, `selected_tree_widget`,
   `group_expanded_state`, `collapse_groups_on_startup`, `tree_widgets`, and
   `active_context_popover`.
@@ -149,28 +151,32 @@ security, and keybinding dialogs have comparatively small contracts.
 - Writes: `run_connections` and `stats_save_id`; it also mutates
   `TerminalSession` objects held in `session_registry`.
 - Cross-mixin dependencies: tab creation, ordering, activation, title updates,
-  closing, terminal menus, and terminal preferences.
+  closing, terminal menus, and terminal preferences. Tab-triggered duplication,
+  disconnection, confirmation, and split cleanup are exposed through the
+  explicitly composed `TabLifecycleActions` contract.
 - Architectural note: process launching, terminal views, split panes, and file
   transfer are already delegated to focused modules, but lifecycle
   orchestration still depends directly on tab and window state.
 
 ### `TabsMixin`
 
-- Reads: `store`, `session_registry`, `session_tab_bar`, and `terminal_stack`.
+- Reads: `store`, `session_registry`, `tab_lifecycle_actions`,
+  `session_tab_bar`, and `terminal_stack`.
 - Writes: drag state and the GTK placement of session pages and labels.
-- Cross-mixin dependencies: terminal creation/disconnection/termination,
-  terminal context actions, and shared dialog helpers.
-- Architectural note: the circular dependency between tabs and terminal
-  sessions is the most important contract to break before either mixin can be
-  replaced.
+- Cross-mixin dependencies: terminal context actions and shared dialog helpers.
+  Terminal creation, confirmation, disconnection, and split-process cleanup
+  are supplied explicitly through `TabLifecycleActions`.
+- Architectural note: terminal sessions still create and close tabs through
+  `TabsMixin`, but tab management no longer discovers terminal lifecycle
+  methods implicitly on the composed window.
 
 ## Dependency hotspots
 
-The principal cycles are:
+The principal dependency hotspots are:
 
-1. `TerminalSessionsMixin` creates and closes tabs through `TabsMixin`, while
-   `TabsMixin` starts, disconnects, and terminates sessions through
-   `TerminalSessionsMixin`.
+1. `TerminalSessionsMixin` still creates and closes tabs through `TabsMixin`;
+   the former reverse dependency now uses the explicit `TabLifecycleActions`
+   callback contract.
 2. `TerminalMenusMixin` dispatches actions to both tabs and terminal sessions,
    while terminal sessions install the menu callback on each VTE widget.
 3. `SidebarMixin` opens sessions and dialogs, while configuration and
@@ -186,8 +192,9 @@ The principal cycles are:
    `MainMenuActions` and terminal context menus use `TerminalMenuActions`.
 4. `SessionRegistry` owns open terminal sessions and their lookup for tab and
    lifecycle code.
-5. Separate tab placement from session lifecycle using the registry and
-   callbacks, then replace `TabsMixin`.
+5. `TabLifecycleActions` separates tab placement from terminal lifecycle
+   operations. The next step is to replace `TabsMixin` with an explicitly
+   composed tab controller.
 6. Replace the remaining session and sidebar mixins after their state has a
    single explicit owner.
 

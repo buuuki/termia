@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from termia.session_registry import SessionRegistry
+from termia.tab_lifecycle_actions import TabLifecycleActions
 from termia.tabs import TabsMixin
 
 
@@ -82,13 +83,35 @@ class DetachTabTests(unittest.TestCase):
         self.assertTrue(session.detached_window.presented)
 
 
+class DuplicateTabTests(unittest.TestCase):
+    def test_duplicate_tab_closes_popover_and_dispatches_lifecycle_action(self) -> None:
+        session = SimpleNamespace(id="duplicate")
+        duplicated = []
+
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.tab_lifecycle_actions = TabLifecycleActions(
+                    duplicate_session=duplicated.append,
+                    disconnect_session=lambda _session: None,
+                    terminate_split_processes=lambda _session: None,
+                    confirm_session_action=lambda *_args: None,
+                )
+
+        host = Host()
+        popover = FakePopover()
+        host.duplicate_tab(popover, session)
+
+        self.assertTrue(popover.closed)
+        self.assertEqual(duplicated, [session])
+
+
 class CloseTabTests(unittest.TestCase):
     def test_close_tab_removes_only_the_closed_session_from_registry(self) -> None:
         page = object()
         session = SimpleNamespace(
             id="closed",
             page=page,
-            connected=False,
+            connected=True,
             detached_window=None,
         )
         remaining_session = SimpleNamespace(
@@ -101,12 +124,24 @@ class CloseTabTests(unittest.TestCase):
                 self.session_registry = SessionRegistry([session, remaining_session])
                 self.removed = None
                 self.focused = None
+                self.terminated = None
+                self.disconnected = None
+                self.tab_lifecycle_actions = TabLifecycleActions(
+                    duplicate_session=lambda _session: None,
+                    disconnect_session=self.disconnect_session,
+                    terminate_split_processes=self.terminate_split_processes,
+                    confirm_session_action=lambda *_args: None,
+                )
 
             def visible_sessions_in_tab_order(self):
                 return [session, remaining_session]
 
             def terminate_split_processes(self, current_session) -> None:
-                pass
+                self.terminated = current_session
+
+            def disconnect_session(self, current_session) -> None:
+                self.disconnected = current_session
+                current_session.connected = False
 
             def remove_session_from_main_view(self, current_session) -> None:
                 self.removed = current_session
@@ -121,9 +156,11 @@ class CloseTabTests(unittest.TestCase):
                 pass
 
         host = Host()
-        host.close_tab(session.id, page, disconnect=False)
+        host.close_tab(session.id, page, disconnect=True)
 
+        self.assertIs(host.disconnected, session)
         self.assertIs(host.removed, session)
+        self.assertIs(host.terminated, session)
         self.assertIsNone(host.session_registry.get(session.id))
         self.assertIs(host.session_registry.get(remaining_session.id), remaining_session)
         self.assertEqual(host.focused, (session.id, [session, remaining_session]))

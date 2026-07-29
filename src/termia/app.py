@@ -36,6 +36,7 @@ from .sidebar import SidebarMixin
 from .statistics_presenter import StatisticsPresenter
 from .statistics_view import StatisticsDialog
 from .styles import build_application_css
+from .tab_lifecycle_actions import TabLifecycleActions
 from .tabs import TabsMixin
 from .terminal_menus import TerminalMenusMixin
 from .terminal_menu_actions import TerminalMenuActions
@@ -104,6 +105,12 @@ class TermiaWindow(
             self.t,
         )
         self.statistics_dialog = StatisticsDialog(self, self.statistics_presenter, self.t)
+        self.tab_lifecycle_actions = TabLifecycleActions(
+            duplicate_session=self.duplicate_session,
+            disconnect_session=self.disconnect_session,
+            terminate_split_processes=self.terminate_split_processes,
+            confirm_session_action=self.confirm_session_action,
+        )
         self.main_menu_actions = MainMenuActions(
             general_preferences=lambda: self.on_app_preferences(None),
             terminal_settings=lambda: self.on_terminal_settings(None),
