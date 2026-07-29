@@ -173,6 +173,7 @@ scripts/compile_translations.py
 scripts/termia-setup.sh
 docs/README.es.md             Spanish documentation
 docs/README.ca.md             Catalan documentation
+docs/VERSIONING.md            Application and Debian package version policy
 SECURITY.md                    Credential storage warning
 THIRD_PARTY_NOTICES.md         Runtime dependency licenses
 LICENSE                       GPL-3.0-or-later license
