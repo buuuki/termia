@@ -21,11 +21,11 @@ Documentació en castellà: [README.es.md](README.es.md)
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
-Descarrega [termia_0.5.0.beta-4_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta/termia_0.5.0.beta-4_all.deb)
+Descarrega [termia_0.5.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta.2/termia_0.5.0.beta.2-1_all.deb)
 i instal·la'l amb APT, que resoldrà les dependències necessàries:
 
 ```bash
-sudo apt install ./termia_0.5.0.beta-4_all.deb
+sudo apt install ./termia_0.5.0.beta.2-1_all.deb
 ```
 
 ## Descarregar i instal·lar des del codi font
@@ -83,8 +83,8 @@ debug` a les preferències Generals. També pots activar-lo per a una execució 
 python3 run_termia.py --debug
 ```
 
-La informació es desa a `~/.local/state/termia/debug.log` i també es mostra
-per stderr. No registra contrasenyes ni el contingut de les connexions.
+La informació es desa a `~/.local/state/termia/debug.log`. No registra
+contrasenyes ni el contingut de les connexions.
 
 Elimina únicament el llançador d'escriptori, sense esborrar ajustos, connexions,
 estadístiques ni paquets del sistema:
@@ -104,11 +104,11 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fitxer `termia_0.5.0~beta-4_all.deb` es crea al directori pare. Instal·la'l
+El fitxer `termia_0.5.0~beta.2-1_all.deb` es crea al directori pare. Instal·la'l
 amb:
 
 ```bash
-sudo apt install ../termia_0.5.0~beta-4_all.deb
+sudo apt install ../termia_0.5.0~beta.2-1_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la
