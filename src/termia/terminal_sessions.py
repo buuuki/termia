@@ -269,6 +269,14 @@ class TerminalSessionsMixin:
 
         self.start_ssh_session(server, session, split_layout=server.split_layout)
 
+    def duplicate_session(self, session: TerminalSession) -> None:
+        if session.server_id is not None:
+            server = find_server(self.store.data.servers, session.server_id)
+            if server is not None:
+                self.open_terminal_tab(server)
+            return
+        self.on_open_local_terminal(None)
+
     def start_ssh_session(self, server: Server, session: TerminalSession, *, split_layout: str = "none") -> None:
         terminal = session.terminal
         session.started_at = time.monotonic()
