@@ -2,25 +2,25 @@
 
 ## Unreleased
 
-Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
+Changes merged after `0.5.0-beta` (released 2026-07-20).
 
 ### Added
 
-- Add Debian packaging metadata, a downloadable `.deb`, and Pyproject build support to install Termia on Ubuntu 24.04 or newer with its desktop icon.
+- Add Debian packaging metadata, a downloadable `.deb`, and Pyproject build support to install Termia on Ubuntu 24.04 or newer with its desktop icon (`#155`).
 - Close tabs with a middle mouse click (`#141`).
-- Add an opt-in Debug mode in General preferences and a `--debug` launcher option for GTK/VTE rendering, storage-lock, encryption, and read-only diagnostics.
-- Add a keyboard shortcut to focus the server filter (`#96`).
-- Add keyboard navigation shortcuts for the sidebar and tabs (`#98`, `#100`).
-- Add a safety confirmation before starting large server groups (`#90`).
-- Allow creating subgroups from the group context menu (`#92`).
+- Add an opt-in Debug mode in General preferences and a `--debug` launcher option for GTK/VTE rendering, storage-lock, encryption, and read-only diagnostics (`#125`).
+- Add a keyboard shortcut to focus the server filter (`#95`).
+- Add keyboard navigation shortcuts for the sidebar and tabs (`#97`, `#99`).
+- Add a safety confirmation before starting large server groups (`#89`).
+- Allow creating subgroups from the group context menu (`#91`).
 
 ### Fixed
 
 - Finalize stale connection-history entries from an earlier Termia process as interrupted instead of leaving them in progress (`#151`).
 - Terminate isolated VTE process groups when disconnecting sessions or closing Termia to avoid orphaned terminal and SSH children (`#148`).
-- Keep Debug output in Termia's state log instead of forwarding it to stderr/syslog, and show its path in the Debug preference tooltip.
-- Fix moving a tab to a new window by preserving the previous tab order when selecting the next focused session.
-- Reset the main menu to its top-level view after closing the Import/Export submenu.
+- Keep Debug output in Termia's state log instead of forwarding it to stderr/syslog, and show its path in the Debug preference tooltip (`#135`).
+- Fix moving a tab to a new window by preserving the previous tab order when selecting the next focused session (`#137`).
+- Reset the main menu to its top-level view after closing the Import/Export submenu (`#134`).
 - Re-enable write-capable sidebar actions after encrypted connections are successfully unlocked.
 - Keep the Debug mode checkbox enabled in General preferences when password shortcut options are present.
 - Refresh write actions after encrypted connections are unlocked so preferences and configuration actions are not left disabled.
@@ -28,12 +28,13 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 ### Changed
 
 - Reorder the README feature and setup sections to highlight embedded terminals, split workspaces, SCP uploads, encrypted storage, and quick-start instructions.
+- Add and promote an optimized Termia screenshot across the main README, localized documentation, and roadmap.
 - Make isolated test profiles clone the current Termia history, statistics, and debug log along with configuration.
 - Document the required managed-process cleanup behavior for future VTE features.
 - Document the supported Python, GTK, GDK, and VTE runtime baseline and retained compatibility guards.
 - Rename the saved-password shortcut settings to avoid implying that Termia executes `sudo`.
-- Unify the setup commands and dependency checks (`#94`).
-- Synchronize translation catalogs and add automated catalog consistency validation (`#102`).
+- Unify the setup commands and dependency checks (`#93`).
+- Synchronize translation catalogs and add automated catalog consistency validation (`#101`).
 
 ### Refactored
 
@@ -41,16 +42,16 @@ Changes merged after `0.5.0-beta` (2026-07-21 to 2026-07-23).
 - Introduce an explicit terminal session registry instead of sharing the `open_tabs` dictionary between window mixins (`#156`).
 - Replace the connection history view mixin with an explicitly composed dialog.
 - Replace the statistics view mixin with an explicitly composed statistics dialog.
-- Pass terminal context-menu actions through an explicit callback contract composed by the application window.
-- Pass main-menu feature actions through an explicit callback contract composed by the application window.
+- Pass terminal context-menu actions through an explicit callback contract composed by the application window (`#139`).
+- Pass main-menu feature actions through an explicit callback contract composed by the application window (`#132`).
 - Extract statistics dashboard metrics and ranking into an explicitly injected, GTK-independent presenter.
 - Extract connection-history filtering and display formatting into an explicitly injected, GTK-independent presenter.
 - Document the state, services, cross-mixin calls, and dependency hotspots that make up the current `TermiaWindow` mixin contracts.
-- Introduce explicit schema versioning and named migrations for connections, settings, statistics, and history files.
-- Establish an automated unit-test and GTK smoke-test baseline (`#104`).
-- Simplify sidebar row state and introduce a normalized sidebar projection (`#106`, `#116`).
-- Make history persistence injectable and expose history recovery messages (`#108`).
-- Extract SCP file transfers, terminal command/process helpers, split panes, terminal views, and preference sections into focused components (`#110`, `#112`, `#114`, `#118`, `#121`).
+- Introduce explicit schema versioning and named migrations for connections, settings, statistics, and history files (`#122`).
+- Establish an automated unit-test and GTK smoke-test baseline (`#103`).
+- Simplify sidebar row state and introduce a normalized sidebar projection (`#105`, `#115`).
+- Make history persistence injectable and expose history recovery messages (`#107`).
+- Extract SCP file transfers, terminal command/process helpers, split panes, terminal views, and preference sections into focused components (`#109`, `#111`, `#113`, `#117`, `#119`).
 
 ## 0.5.0-beta - 2026-07-20
 
