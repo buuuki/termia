@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 import logging
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -38,12 +39,38 @@ class DebugLoggingTests(unittest.TestCase):
             log_path = Path(directory) / "debug.log"
             with patch.object(debug, "DEBUG_LOG_FILE", log_path):
                 debug.configure_debug_logging(True)
-                result = debug._write_glib_log(
+                GLib.log_variant(
+                    "GtkTest",
                     GLib.LogLevelFlags.LEVEL_DEBUG,
-                    {"MESSAGE": "GTK diagnostic", "GLIB_DOMAIN": "Gtk"},
-                    2,
-                    None,
+                    GLib.Variant(
+                        "a{sv}",
+                        {"MESSAGE": GLib.Variant("s", "GTK diagnostic")},
+                    ),
                 )
 
-            self.assertEqual(result, GLib.LogWriterOutput.HANDLED)
-            self.assertIn("[Gtk] GTK diagnostic", log_path.read_text(encoding="utf-8"))
+            contents = log_path.read_text(encoding="utf-8")
+            self.assertIn("GtkTest", contents)
+            self.assertIn("GTK diagnostic", contents)
+            self.assertNotRegex(contents, r"DEBUG \[\d+\] \d+")
+
+    def test_debug_logging_does_not_enable_gsk_renderer_output(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = Path(directory) / "debug.log"
+            with (
+                patch.object(debug, "DEBUG_LOG_FILE", log_path),
+                patch.dict(os.environ, {}, clear=True),
+            ):
+                debug.configure_debug_logging(True)
+
+                self.assertNotIn("GSK_DEBUG", os.environ)
+
+    def test_debug_logging_preserves_external_gsk_debug_value(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            log_path = Path(directory) / "debug.log"
+            with (
+                patch.object(debug, "DEBUG_LOG_FILE", log_path),
+                patch.dict(os.environ, {"GSK_DEBUG": "shaders"}, clear=True),
+            ):
+                debug.configure_debug_logging(True)
+
+                self.assertEqual(os.environ["GSK_DEBUG"], "shaders")

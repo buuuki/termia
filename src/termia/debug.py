@@ -17,17 +17,6 @@ LOGGER = logging.getLogger("termia")
 _GLIB_WRITER_CONFIGURED = False
 
 
-def _glib_field(fields: object, key: str) -> str | None:
-    if isinstance(fields, dict):
-        value = fields.get(key)
-        return str(value) if value is not None else None
-    for field in fields:  # type: ignore[union-attr]
-        if field.key == key:
-            value = field.value
-            return value.decode() if isinstance(value, bytes) else str(value)
-    return None
-
-
 def _write_glib_log(
     log_level: GLib.LogLevelFlags,
     fields: object,
@@ -35,9 +24,6 @@ def _write_glib_log(
     _user_data: object,
 ) -> GLib.LogWriterOutput:
     if LOGGER.disabled:
-        return GLib.LogWriterOutput.UNHANDLED
-    message = _glib_field(fields, "MESSAGE")
-    if not message:
         return GLib.LogWriterOutput.UNHANDLED
     if log_level & (GLib.LogLevelFlags.LEVEL_ERROR | GLib.LogLevelFlags.LEVEL_CRITICAL):
         level = logging.ERROR
@@ -47,8 +33,13 @@ def _write_glib_log(
         level = logging.DEBUG
     else:
         level = logging.INFO
-    domain = _glib_field(fields, "GLIB_DOMAIN") or "GLib"
-    LOGGER.log(level, "[%s] %s", domain, message)
+    try:
+        message = GLib.log_writer_format_fields(log_level, fields, False).strip()
+    except (TypeError, ValueError, UnicodeError) as exc:
+        LOGGER.warning("Could not format GLib diagnostic: %s", exc)
+        return GLib.LogWriterOutput.HANDLED
+    if message:
+        LOGGER.log(level, "%s", message)
     return GLib.LogWriterOutput.HANDLED
 
 
@@ -64,7 +55,6 @@ def configure_debug_logging(enabled: bool) -> None:
     if LOGGER.handlers:
         return
     os.environ.setdefault("G_MESSAGES_DEBUG", "all")
-    os.environ.setdefault("GSK_DEBUG", "renderer")
     os.environ.setdefault("PYTHONFAULTHANDLER", "1")
     LOGGER.setLevel(logging.DEBUG)
     LOGGER.propagate = False

@@ -16,6 +16,7 @@ Changes merged after `0.5.0-beta` (released 2026-07-20).
 
 ### Fixed
 
+- Stop Debug mode from enabling GSK renderer frame statistics that flood the system log, and format structured GLib diagnostics as readable text (`#162`).
 - Finalize stale connection-history entries from an earlier Termia process as interrupted instead of leaving them in progress (`#151`).
 - Terminate isolated VTE process groups when disconnecting sessions or closing Termia to avoid orphaned terminal and SSH children (`#148`).
 - Keep Debug output in Termia's state log instead of forwarding it to stderr/syslog, and show its path in the Debug preference tooltip (`#135`).
