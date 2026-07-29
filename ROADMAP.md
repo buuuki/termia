@@ -20,7 +20,7 @@ Goals for moving Termia from a beta release line to a stable release line.
       predictable and reversible.
 - [ ] Treat data migration, import/export, and read-only-instance behavior as
       release-blocking if they regress.
-- [ ] Define a versioning policy for stable releases, including what counts as
+- [x] Define a versioning policy for stable releases, including what counts as
       a breaking change.
 
 ## Near Term

@@ -39,6 +39,15 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 - Use a concise entry under `Added`, `Changed`, `Fixed`, `Removed`, or `Refactored`.
 - Do not skip the changelog entry because the change is not user-visible.
 
+## Versioning
+
+- Follow `docs/VERSIONING.md` when preparing application releases or Debian
+  packages.
+- Increment the Termia prerelease or application version when publishing source
+  changes; reserve Debian revision increments for packaging-only changes.
+- Keep the source version, changelog, Debian version, annotated Git tag, GitHub
+  release, and published download links consistent.
+
 ## Validation
 
 Run the narrowest useful checks for the change. At minimum, syntax-check touched Python files. For broader changes, use the project checks from `docs/REGRESSION_CHECKS.md`:
