@@ -80,6 +80,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Server Tree
 
+- The icon-only sidebar actions for creating a group, server, or local terminal
+  and for expanding or collapsing all groups must expose their translated
+  action tooltips. Write actions must show the read-only or locked-connections
+  explanation only while disabled and restore their action tooltip when
+  enabled again.
 - Groups and subgroups must preserve expanded/collapsed state when editing servers or refreshing the list.
 - The server tree must not jump to the top when selecting or right-clicking entries.
 - Filtering must include matching servers, groups, and subgroups.

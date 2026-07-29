@@ -4,6 +4,12 @@
 
 Changes merged after `0.5.0-beta.2` (released 2026-07-29).
 
+### Fixed
+
+- Preserve translated action tooltips for writable sidebar icon buttons while
+  retaining read-only and locked-connection explanations when disabled
+  (`#170`).
+
 ## 0.5.0-beta.2 - 2026-07-29
 
 Changes merged after `0.5.0-beta` (released 2026-07-20).

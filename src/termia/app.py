@@ -182,7 +182,12 @@ class TermiaWindow(
         self.toast_label.set_label(self.t("read_only_mode_enabled"))
         return False
 
-    def configure_write_action(self, widget: Gtk.Widget) -> Gtk.Widget:
+    def configure_write_action(
+        self,
+        widget: Gtk.Widget,
+        *,
+        enabled_tooltip: str | None = None,
+    ) -> Gtk.Widget:
         write_blocked = self.store.read_only or self.store.encryption_locked
         widget.set_sensitive(not write_blocked)
         widget.set_tooltip_text(
@@ -192,7 +197,7 @@ class TermiaWindow(
                 else self.t("read_only_mode_tooltip")
             )
             if write_blocked
-            else None
+            else enabled_tooltip
         )
         return widget
 
@@ -393,19 +398,19 @@ class TermiaWindow(
         sidebar_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         add_group = Gtk.Button(icon_name="folder-new-symbolic")
         self.add_group_button = add_group
-        add_group.set_tooltip_text(self.t("new_group"))
         add_group.connect("clicked", self.on_add_group)
-        self.configure_write_action(add_group)
+        self.configure_write_action(add_group, enabled_tooltip=self.t("new_group"))
         add_server = Gtk.Button(icon_name="list-add-symbolic")
         self.add_server_button = add_server
-        add_server.set_tooltip_text(self.t("new_server"))
         add_server.connect("clicked", self.on_add_server)
-        self.configure_write_action(add_server)
+        self.configure_write_action(add_server, enabled_tooltip=self.t("new_server"))
         add_local_terminal = Gtk.Button(icon_name="utilities-terminal-symbolic")
         self.add_local_terminal_button = add_local_terminal
-        add_local_terminal.set_tooltip_text(self.t("new_local_terminal"))
         add_local_terminal.connect("clicked", self.on_add_local_terminal)
-        self.configure_write_action(add_local_terminal)
+        self.configure_write_action(
+            add_local_terminal,
+            enabled_tooltip=self.t("new_local_terminal"),
+        )
         expand_all = Gtk.Button(icon_name="pan-down-symbolic")
         self.expand_all_button = expand_all
         expand_all.set_tooltip_text(self.t("expand_all"))
@@ -568,12 +573,18 @@ class TermiaWindow(
             self.set_title(f"Termia ({self.t('read_only_badge')})")
         else:
             self.set_title("Termia")
-        self.add_group_button.set_tooltip_text(self.t("new_group"))
-        self.configure_write_action(self.add_group_button)
-        self.add_server_button.set_tooltip_text(self.t("new_server"))
-        self.configure_write_action(self.add_server_button)
-        self.add_local_terminal_button.set_tooltip_text(self.t("new_local_terminal"))
-        self.configure_write_action(self.add_local_terminal_button)
+        self.configure_write_action(
+            self.add_group_button,
+            enabled_tooltip=self.t("new_group"),
+        )
+        self.configure_write_action(
+            self.add_server_button,
+            enabled_tooltip=self.t("new_server"),
+        )
+        self.configure_write_action(
+            self.add_local_terminal_button,
+            enabled_tooltip=self.t("new_local_terminal"),
+        )
         self.expand_all_button.set_tooltip_text(self.t("expand_all"))
         self.collapse_all_button.set_tooltip_text(self.t("collapse_all"))
         self.search_entry.set_placeholder_text(self.t("filter_servers"))
