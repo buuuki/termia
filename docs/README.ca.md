@@ -128,7 +128,15 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Drecer
 - Fes clic dret en un terminal o en un servidor per pujar fitxers a `/tmp/.termia/` a l'host destí.
 - El menú principal inclou historial de connexions, ubicacions de fitxers de dades i accions d'importació/exportació.
 
-Cada sessió pot mostrar una barra d'estat amb estat, PID, temps transcorregut, botó compacte per amagar-la i desconnexió. Pots activar o desactivar les barres d'estat des de `General`; si amagues la barra d'una sessió, pots recuperar-la amb el botó dret dins del terminal i `Mostrar barra d'estat de la sessió`. La barra lateral de servidors té el seu propi botó a la capçalera. Amb el botó dret dins del terminal pots obrir els submenús traduïts de `Dividir` i `Pestanya`; els panells es poden crear amunt, avall, a l'esquerra o a la dreta, i desapareixen automàticament quan la seva shell acaba. Una pestanya només es tanca amb `exit` quan ha sortit l'últim terminal i ja no queden panells dividits.
+Cada panell de terminal pot mostrar la seva pròpia barra d'estat amb el nom de
+la connexió, l'estat, el PID, el temps transcorregut, un botó compacte per
+amagar-la i l'acció de desconnexió. Activa o desactiva les barres des de
+`General`; si amagues la d'un panell, fes clic dret dins seu i selecciona
+`Mostra la barra d'estat de la sessió`. Les accions direccionals de `Divideix`
+dupliquen el panell seleccionat; usa `Obre una connexió en un panell dividit…`
+per triar una direcció i un altre servidor SSH o terminal local desat. Una
+pestanya admet fins a 16 panells. Sortir o desconnectar-ne un no atura els
+altres.
 
 ## Entorn provat
 

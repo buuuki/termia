@@ -170,6 +170,10 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
+#: src/termia/i18n.py:open
+msgid "Open"
+msgstr ""
+
 #: src/termia/i18n.py:save
 msgid "Save"
 msgstr ""
@@ -307,6 +311,34 @@ msgstr ""
 
 #: src/termia/i18n.py:split_left
 msgid "Split left"
+msgstr ""
+
+#: src/termia/i18n.py:open_connection_in_split
+msgid "Open connection in split…"
+msgstr ""
+
+#: src/termia/i18n.py:split_direction
+msgid "Split direction"
+msgstr ""
+
+#: src/termia/i18n.py:connection
+msgid "Connection"
+msgstr ""
+
+#: src/termia/i18n.py:split_ssh_option
+msgid "SSH · {name}"
+msgstr ""
+
+#: src/termia/i18n.py:split_local_option
+msgid "Local · {name}"
+msgstr ""
+
+#: src/termia/i18n.py:split_connection_none_available
+msgid "Create a saved SSH server or local terminal before opening a different connection in a split."
+msgstr ""
+
+#: src/termia/i18n.py:split_pane_limit
+msgid "A tab cannot contain more than {limit} terminal panes."
 msgstr ""
 
 #: src/termia/i18n.py:split_layout_none

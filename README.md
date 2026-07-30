@@ -12,7 +12,8 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 ## Features
 
 - Run SSH connections and local terminals in embedded GTK 4 VTE terminals.
-- Work with multiple tabs, detachable windows, and terminal split panes.
+- Work with multiple tabs, detachable windows, and terminal split panes that
+  can connect independently to different SSH servers or local terminals.
 - Save split layouts per SSH server or local terminal profile to reopen a workspace ready to use.
 - Upload local files to remote servers with SCP from the terminal or server context menu.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
@@ -144,7 +145,15 @@ The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybind
 - Right-click a terminal or a server to upload files to `/tmp/.termia/` on the target host.
 - The main menu includes connection history, data file locations, and import/export actions.
 
-Each session can show a status bar with its state, PID, elapsed time, a compact hide button, and disconnect. Enable or disable session status bars from `General`; if a session status bar is hidden, right-click inside the terminal and choose `Show session status bar` to restore it. The sidebar has its own header toggle. Right-click inside a terminal to access translated `Split` and `Tab` submenus; split panes can be created up, down, left, or right, and a pane disappears automatically when its shell exits. A tab only closes on `exit` once the last terminal has exited and no split panes remain.
+Each terminal pane can show its own status bar with the connection name, state,
+PID, elapsed time, a compact hide button, and disconnect action. Enable or
+disable status bars from `General`; if a pane status bar is hidden, right-click
+inside that pane and choose `Show session status bar` to restore it. The
+directional `Split` actions duplicate the selected pane; choose `Open connection
+in split…` to select a direction and a different saved SSH server or local
+terminal. A tab supports up to 16 panes. Exiting or disconnecting one pane
+leaves its siblings running, and the tab only closes on `exit` once its final
+terminal has exited.
 
 ## Tested environment
 

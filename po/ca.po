@@ -1229,3 +1229,35 @@ msgstr ""
 "Arguments: {arguments}\n"
 "Ordre en iniciar: {command_on_start}\n"
 "Títol de pestanya: {tab_title}"
+
+#: src/termia/i18n.py:open
+msgid "Open"
+msgstr "Obre"
+
+#: src/termia/i18n.py:open_connection_in_split
+msgid "Open connection in split…"
+msgstr "Obre una connexió en un panell dividit…"
+
+#: src/termia/i18n.py:split_direction
+msgid "Split direction"
+msgstr "Direcció de la divisió"
+
+#: src/termia/i18n.py:connection
+msgid "Connection"
+msgstr "Connexió"
+
+#: src/termia/i18n.py:split_ssh_option
+msgid "SSH · {name}"
+msgstr "SSH · {name}"
+
+#: src/termia/i18n.py:split_local_option
+msgid "Local · {name}"
+msgstr "Local · {name}"
+
+#: src/termia/i18n.py:split_connection_none_available
+msgid "Create a saved SSH server or local terminal before opening a different connection in a split."
+msgstr "Crea un servidor SSH o terminal local desat abans d'obrir una connexió diferent en un panell dividit."
+
+#: src/termia/i18n.py:split_pane_limit
+msgid "A tab cannot contain more than {limit} terminal panes."
+msgstr "Una pestanya no pot contenir més de {limit} panells de terminal."

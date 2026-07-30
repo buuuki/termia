@@ -1,13 +1,47 @@
 import json
 import tempfile
+import time
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from termia.models import ConnectionHistoryEvent
 from termia.stores import ConnectionHistoryStore, ConnectionStore
 
 
 class HistoryPersistenceTests(unittest.TestCase):
+    def test_each_terminal_pane_has_an_independent_history_entry(self) -> None:
+        def pane(pane_id: str, title: str, server_id: str):
+            return SimpleNamespace(
+                id=pane_id,
+                title=title,
+                server_id=server_id,
+                started_at=time.monotonic(),
+                history_start_recorded=False,
+                history_end_recorded=False,
+                history_kind="",
+                history_started_at="",
+                history_title="",
+                history_server_name="",
+                history_host="",
+                history_user="",
+                history_port=0,
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            store = ConnectionHistoryStore(Path(directory) / "history.jsonl")
+            first = pane("pane-1", "Web", "server-1")
+            second = pane("pane-2", "Database", "server-2")
+
+            store.record_start(first, "ssh")
+            store.record_start(second, "ssh")
+            store.record_end(first, "closed")
+            store.record_end(first, "closed")
+            store.record_end(second, "disconnected")
+
+        self.assertEqual({entry.session_id for entry in store.entries}, {"pane-1", "pane-2"})
+        self.assertEqual(len([event for event in store.events if event.event == "ended"]), 2)
+
     def test_missing_and_empty_history_are_valid_empty_states(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

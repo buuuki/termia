@@ -1229,3 +1229,35 @@ msgstr ""
 "Argumentos: {arguments}\n"
 "Ejecutar comando al iniciar: {command_on_start}\n"
 "Título de pestaña: {tab_title}"
+
+#: src/termia/i18n.py:open
+msgid "Open"
+msgstr "Abrir"
+
+#: src/termia/i18n.py:open_connection_in_split
+msgid "Open connection in split…"
+msgstr "Abrir conexión en panel dividido…"
+
+#: src/termia/i18n.py:split_direction
+msgid "Split direction"
+msgstr "Dirección de la división"
+
+#: src/termia/i18n.py:connection
+msgid "Connection"
+msgstr "Conexión"
+
+#: src/termia/i18n.py:split_ssh_option
+msgid "SSH · {name}"
+msgstr "SSH · {name}"
+
+#: src/termia/i18n.py:split_local_option
+msgid "Local · {name}"
+msgstr "Local · {name}"
+
+#: src/termia/i18n.py:split_connection_none_available
+msgid "Create a saved SSH server or local terminal before opening a different connection in a split."
+msgstr "Crea un servidor SSH o terminal local guardado antes de abrir una conexión diferente en un panel dividido."
+
+#: src/termia/i18n.py:split_pane_limit
+msgid "A tab cannot contain more than {limit} terminal panes."
+msgstr "Una pestaña no puede contener más de {limit} paneles de terminal."

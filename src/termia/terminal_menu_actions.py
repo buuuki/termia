@@ -16,14 +16,15 @@ TerminalWidget = object
 class TerminalMenuActions:
     """Callbacks exposed to terminal context menus by the composition root."""
 
-    disconnect: Callable[[MenuPopover, TerminalSession], None]
-    show_status_bar: Callable[[MenuPopover, TerminalSession], None]
+    disconnect: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
+    show_status_bar: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
     copy: Callable[[MenuPopover, TerminalWidget], None]
     paste: Callable[[MenuPopover, TerminalWidget], None]
     send_files: Callable[[MenuPopover, Server], None]
     configure: Callable[[MenuPopover], None]
-    session_statistics: Callable[[MenuPopover, TerminalSession], None]
+    session_statistics: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
     split: Callable[[MenuPopover, TerminalSession, TerminalWidget, str], None]
+    split_connection: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
     rename_tab: Callable[[MenuPopover, TerminalSession], None]
     duplicate_tab: Callable[[MenuPopover, TerminalSession], None]
     new_tab: Callable[[MenuPopover], None]

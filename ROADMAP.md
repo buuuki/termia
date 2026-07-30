@@ -39,7 +39,7 @@ Goals for moving Termia from a beta release line to a stable release line.
 
 - [ ] Save the sessions that are open when Termia closes and, on the next
       launch, ask whether to reconnect all of them.
-- [ ] Allow each pane in a split layout to run an independent remote
+- [x] Allow each pane in a split layout to run an independent remote
       connection instead of limiting every pane to the same connection.
 - [ ] Save and reopen reusable composite workspaces containing multiple remote
       connections arranged in split panes.

@@ -48,10 +48,18 @@ class TerminalMenusMixin:
         menu.set_margin_end(6)
         active_submenu: dict[str, Gtk.Popover | None] = {"popover": None}
         popover.connect("closed", lambda *_args: self.close_active_terminal_submenu(active_submenu))
-        self.add_context_menu_item(menu, self.t("disconnect"), lambda: actions.disconnect(popover, session))
-        if not session.status_bar.get_visible():
+        pane = session.pane_for_terminal(terminal)
+        pane_state = pane or session
+        self.add_context_menu_item(
+            menu,
+            self.t("disconnect"),
+            lambda: actions.disconnect(popover, session, terminal),
+        )
+        if not pane_state.status_bar.get_visible():
             self.add_context_menu_item(
-                menu, self.t("show_session_status_bar"), lambda: actions.show_status_bar(popover, session)
+                menu,
+                self.t("show_session_status_bar"),
+                lambda: actions.show_status_bar(popover, session, terminal),
             )
         self.add_terminal_shortcut_menu_item(
             menu,
@@ -65,8 +73,8 @@ class TerminalMenusMixin:
             self.store.data.app.keybindings.get("paste", ""),
             lambda: actions.paste(popover, terminal),
         )
-        if session.server_id is not None:
-            server = find_server(self.store.data.servers, session.server_id)
+        if pane_state.server_id is not None:
+            server = find_server(self.store.data.servers, pane_state.server_id)
             if server is not None:
                 self.add_context_menu_item(
                     menu,
@@ -74,7 +82,11 @@ class TerminalMenusMixin:
                     lambda: actions.send_files(popover, server),
                 )
         self.add_context_menu_item(menu, self.t("configure_terminal"), lambda: actions.configure(popover))
-        self.add_context_menu_item(menu, self.t("session_statistics"), lambda: actions.session_statistics(popover, session))
+        self.add_context_menu_item(
+            menu,
+            self.t("session_statistics"),
+            lambda: actions.session_statistics(popover, session, terminal),
+        )
         self.add_context_menu_separator(menu)
         self.add_terminal_split_menu(menu, popover, session, terminal, active_submenu, actions)
         self.add_terminal_tab_menu(menu, popover, session, active_submenu, actions)
@@ -125,6 +137,10 @@ class TerminalMenusMixin:
             (self.t("split_down"), lambda: actions.split(parent_popover, session, terminal, "down")),
             (self.t("split_right"), lambda: actions.split(parent_popover, session, terminal, "right")),
             (self.t("split_left"), lambda: actions.split(parent_popover, session, terminal, "left")),
+            (
+                self.t("open_connection_in_split"),
+                lambda: actions.split_connection(parent_popover, session, terminal),
+            ),
         ]
         self.add_terminal_nested_menu(menu, self.t("split"), submenu_items, active_submenu)
 

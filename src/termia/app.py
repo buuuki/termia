@@ -136,6 +136,7 @@ class TermiaWindow(
             configure=self.configure_terminal_from_menu,
             session_statistics=self.show_session_statistics,
             split=self.split_terminal_from_menu,
+            split_connection=self.show_split_connection_dialog,
             rename_tab=self.show_rename_tab_dialog,
             duplicate_tab=self.duplicate_tab,
             new_tab=self.new_tab_from_terminal_menu,

@@ -19,6 +19,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
             configure=action("configure"),
             session_statistics=action("session_statistics"),
             split=action("split"),
+            split_connection=action("split_connection"),
             rename_tab=action("rename_tab"),
             duplicate_tab=action("duplicate_tab"),
             new_tab=action("new_tab"),
@@ -29,14 +30,15 @@ class TerminalMenuActionsTests(unittest.TestCase):
         terminal = object()
         server = object()
 
-        actions.disconnect(popover, session)
-        actions.show_status_bar(popover, session)
+        actions.disconnect(popover, session, terminal)
+        actions.show_status_bar(popover, session, terminal)
         actions.copy(popover, terminal)
         actions.paste(popover, terminal)
         actions.send_files(popover, server)
         actions.configure(popover)
-        actions.session_statistics(popover, session)
+        actions.session_statistics(popover, session, terminal)
         actions.split(popover, session, terminal, "left")
+        actions.split_connection(popover, session, terminal)
         actions.rename_tab(popover, session)
         actions.duplicate_tab(popover, session)
         actions.new_tab(popover)
@@ -53,6 +55,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
                 "configure",
                 "session_statistics",
                 "split",
+                "split_connection",
                 "rename_tab",
                 "duplicate_tab",
                 "new_tab",

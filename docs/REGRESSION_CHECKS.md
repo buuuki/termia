@@ -55,6 +55,13 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Exiting an SSH session with `exit` must only close the tab when the relevant preference is enabled, and only after the last terminal in the tab has exited with no split panes remaining.
 - Exiting a local shell must follow the configured local terminal close behavior.
 - Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
+- Every split pane must retain its own SSH or local-profile identity, process,
+  status bar, reconnect state, history entry, statistics, and context actions.
+- Disconnecting one pane must terminate only its managed process; closing the
+  tab or Termia must terminate all pane processes.
+- Directional split actions must duplicate the selected pane, while `Open
+  connection in split…` must allow a different saved SSH or local-terminal
+  profile and enforce the 16-pane limit.
 - When close-on-exit is enabled, a split tab must close after the last pane exits regardless of whether the original terminal or a split exits last.
 - Closing Termia must terminate every process group in the isolated VTE session for active SSH, local-terminal, and split-pane sessions without signalling unrelated processes.
 
@@ -144,7 +151,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Statistics must be disabled by default and must not record command or keystroke counters, even when enabled.
 - Disabling statistics from General preferences must stop new aggregate connection and duration counters from being recorded or flushed.
 - Global and current-run connection counters must remain separate.
-- Per-session statistics must correspond to the selected terminal session.
+- Per-session statistics must correspond to the selected terminal pane.
 
 ## Manual Regression Checklist
 
@@ -161,6 +168,13 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
 - Confirm terminal context-menu actions still work: disconnect, show status bar, copy, paste, terminal preferences, session statistics, file transfer, all split directions, and all Tab submenu actions.
 - Create split panes in all four directions and confirm each new pane opens a working shell.
+- From an SSH pane, use `Open connection in split…` to open a different SSH
+  server and then a saved local terminal; verify each pane's status bar, PID,
+  elapsed time, saved-password action, SCP target, statistics, and history.
+- Disconnect one mixed-connection pane and confirm its siblings remain usable.
+- Trigger a failed SSH connection in a split, press Enter, and confirm only that
+  pane reconnects to its own server.
+- Confirm a seventeenth pane is rejected without changing the current layout.
 - Run `exit` inside a split pane and confirm only that pane disappears while the sibling pane keeps focus and remains usable.
 - Open an SSH session, a local terminal, and a split pane; close Termia and confirm their local child processes do not remain after a brief grace period.
 - Right-click a server/group in the tree and open the context menu.

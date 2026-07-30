@@ -19,6 +19,7 @@ def build_application_css(
         ".termia-session-tabs { background: @headerbar_backdrop_color; padding: 4px 4px 3px 4px; "
         "border: 0; box-shadow: none; } "
         ".termia-terminal-stack { border: 0; box-shadow: none; } "
+        ".termia-terminal-pane.active { box-shadow: inset 0 0 0 1px @theme_selected_bg_color; } "
         f".termia-split-pane > separator {{ background: {split_separator_color}; background-color: {split_separator_color}; "
         f"min-width: {thickness}px; min-height: {thickness}px; }} "
         f".termia-split-pane > separator:hover {{ background: alpha({split_separator_color}, 0.82); "
