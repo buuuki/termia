@@ -51,6 +51,8 @@ class SplitPaneController:
         paned.set_resize_end_child(True)
         paned.set_shrink_start_child(True)
         paned.set_shrink_end_child(True)
+        target.add_css_class("in-split")
+        new_pane.add_css_class("in-split")
 
         if not self.replace_terminal(target, paned):
             session.split_terminals.remove(new_terminal)

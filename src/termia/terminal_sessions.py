@@ -110,6 +110,7 @@ class TerminalSessionsMixin:
         include_margins: bool = False,
     ) -> tuple[Gtk.Box, Gtk.Label, Gtk.Label, Gtk.Button, Gtk.Button]:
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        toolbar.add_css_class("termia-pane-status")
         if include_margins:
             toolbar.set_margin_top(0)
             toolbar.set_margin_bottom(0)
@@ -580,10 +581,10 @@ class TerminalSessionsMixin:
         terminal: Vte.Terminal,
     ) -> None:
         for pane in session.panes.values():
-            pane.container.remove_css_class("active")
+            pane.status_bar.remove_css_class("active")
         pane = session.pane_for_terminal(terminal)
         if pane is not None:
-            pane.container.add_css_class("active")
+            pane.status_bar.add_css_class("active")
 
     def on_terminal_key_pressed(
         self,

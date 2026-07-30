@@ -9,6 +9,7 @@ def build_application_css(
     split_separator_thickness: int,
 ) -> bytes:
     thickness = max(1, split_separator_thickness)
+    handle_size = max(5, thickness)
     return (
         f"@define-color termia_menu_bg {menu_background}; "
         ".termia-tree-item { border-radius: 4px; } "
@@ -19,11 +20,14 @@ def build_application_css(
         ".termia-session-tabs { background: @headerbar_backdrop_color; padding: 4px 4px 3px 4px; "
         "border: 0; box-shadow: none; } "
         ".termia-terminal-stack { border: 0; box-shadow: none; } "
-        ".termia-terminal-pane.active { box-shadow: inset 0 0 0 1px @theme_selected_bg_color; } "
-        f".termia-split-pane > separator {{ background: {split_separator_color}; background-color: {split_separator_color}; "
-        f"min-width: {thickness}px; min-height: {thickness}px; }} "
-        f".termia-split-pane > separator:hover {{ background: alpha({split_separator_color}, 0.82); "
-        f"background-color: alpha({split_separator_color}, 0.82); }} "
+        ".termia-pane-status.active { background-color: alpha(@theme_selected_bg_color, 0.12); } "
+        ".termia-terminal-pane.in-split > .termia-pane-status { padding: 6px; } "
+        f".termia-split-pane.horizontal > separator {{ min-width: {handle_size}px; "
+        f"background: transparent; border-left: {thickness}px solid {split_separator_color}; }} "
+        f".termia-split-pane.vertical > separator {{ min-height: {handle_size}px; "
+        f"background: transparent; border-top: {thickness}px solid {split_separator_color}; }} "
+        f".termia-split-pane.horizontal > separator:hover {{ border-left-color: alpha({split_separator_color}, 0.82); }} "
+        f".termia-split-pane.vertical > separator:hover {{ border-top-color: alpha({split_separator_color}, 0.82); }} "
         ".termia-read-only-badge { font-weight: 600; } "
         ".termia-menu-separator { min-height: 0; background: transparent; background-color: transparent; "
         "border-top: 1px solid rgba(128, 128, 128, 0.35); margin: 4px 12px; } "
