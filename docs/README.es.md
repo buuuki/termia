@@ -9,7 +9,9 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 ## Funciones
 
 - Ejecutar conexiones SSH y terminales locales en terminales VTE de GTK 4 integrados.
-- Trabajar con varias pestañas, ventanas independientes y paneles de terminal divididos.
+- Trabajar con varias pestañas, ventanas independientes y paneles de terminal
+  divididos que pueden conectarse de forma independiente a distintos servidores
+  SSH o terminales locales.
 - Guardar diseños de división por servidor SSH o perfil de terminal local para reabrir un espacio de trabajo preparado.
 - Subir ficheros locales a servidores remotos con SCP desde el menú contextual del terminal o del servidor.
 - Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.

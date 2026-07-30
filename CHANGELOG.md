@@ -21,6 +21,11 @@ Changes merged after `0.5.0-beta.2` (released 2026-07-29).
   saved SSH servers or local terminal profiles, with pane-specific status,
   actions, history, statistics, reconnect state, and process cleanup (`#174`).
 
+### Changed
+
+- Synchronize the Spanish and Catalan feature documentation for independent
+  split-pane connections (`#176`).
+
 ## 0.5.0-beta.2 - 2026-07-29
 
 Changes merged after `0.5.0-beta` (released 2026-07-20).
