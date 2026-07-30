@@ -161,7 +161,11 @@ class TermiaWindow(
         if self.store.encryption_locked:
             self.toast_label.set_label(self.t("connections_locked"))
             GLib.idle_add(self.request_unlock_connections)
-        elif self.store.data.app.open_local_terminal_on_startup:
+        else:
+            self.schedule_startup_local_terminal()
+
+    def schedule_startup_local_terminal(self) -> None:
+        if self.store.data.app.open_local_terminal_on_startup:
             GLib.idle_add(self.open_startup_local_terminal)
 
     def open_startup_local_terminal(self) -> bool:
@@ -247,6 +251,7 @@ class TermiaWindow(
         if response != Gtk.ResponseType.OK:
             dialog.destroy()
             self.toast_label.set_label(self.t("connections_locked"))
+            self.schedule_startup_local_terminal()
             return
         if self.store.unlock_connections(password_entry.get_text()):
             dialog.destroy()
@@ -254,8 +259,7 @@ class TermiaWindow(
             self.refresh_translated_chrome()
             self.refresh_list()
             self.toast_label.set_label(self.t("connections_unlocked"))
-            if self.store.data.app.open_local_terminal_on_startup:
-                GLib.idle_add(self.open_startup_local_terminal)
+            self.schedule_startup_local_terminal()
             return
         error.set_label(self.t("unlock_connections_failed"))
         password_entry.set_text("")
