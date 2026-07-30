@@ -37,12 +37,25 @@ class WriteActionTests(unittest.TestCase):
         self.assertTrue(widget.sensitive)
         self.assertIsNone(widget.tooltip)
 
+    def test_writable_action_keeps_its_action_tooltip(self) -> None:
+        widget = self.widget()
+
+        self.configure_write_action(
+            self.window(read_only=False, encryption_locked=False),
+            widget,
+            enabled_tooltip="new_group",
+        )
+
+        self.assertTrue(widget.sensitive)
+        self.assertEqual(widget.tooltip, "new_group")
+
     def test_encrypted_store_keeps_write_action_disabled(self) -> None:
         widget = self.widget()
 
         self.configure_write_action(
             self.window(read_only=False, encryption_locked=True),
             widget,
+            enabled_tooltip="new_server",
         )
 
         self.assertFalse(widget.sensitive)
@@ -54,7 +67,25 @@ class WriteActionTests(unittest.TestCase):
         self.configure_write_action(
             self.window(read_only=True, encryption_locked=False),
             widget,
+            enabled_tooltip="new_local_terminal",
         )
 
         self.assertFalse(widget.sensitive)
         self.assertEqual(widget.tooltip, "read_only_mode_tooltip")
+
+    def test_action_tooltip_is_restored_after_write_action_is_unblocked(self) -> None:
+        widget = self.widget()
+
+        self.configure_write_action(
+            self.window(read_only=False, encryption_locked=True),
+            widget,
+            enabled_tooltip="new_server",
+        )
+        self.configure_write_action(
+            self.window(read_only=False, encryption_locked=False),
+            widget,
+            enabled_tooltip="new_server",
+        )
+
+        self.assertTrue(widget.sensitive)
+        self.assertEqual(widget.tooltip, "new_server")
