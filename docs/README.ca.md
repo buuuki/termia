@@ -133,14 +133,14 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Drecer
 Cada panell de terminal pot mostrar la seva pròpia barra d'estat amb el nom de
 la connexió, l'estat, el PID, el temps transcorregut, un botó compacte per
 amagar-la i l'acció de desconnexió. Activa o desactiva les barres des de
-`General`; si amagues la d'un panell, fes clic dret dins seu i selecciona
-`Mostra la barra d'estat de la sessió`. Les accions direccionals de `Divideix`
-dupliquen el panell seleccionat; usa `Obre una connexió en un panell dividit…`
-per triar una direcció i un altre servidor SSH o terminal local desat. Una
-pestanya admet fins a 16 panells. Sortir o desconnectar-ne un no atura els
-altres. Un panell que espera una reconnexió mostra automàticament la barra
-d'estat amb l'acció `Tanca`, mentre que Retorn continua permetent reintentar la
-connexió.
+`General`; per canviar la d'un panell, fes clic dret dins seu i selecciona
+`Mostra la barra d'estat de la sessió` o `Amaga la barra d'estat de la sessió`.
+Les accions direccionals de `Divideix` dupliquen el panell seleccionat; usa
+`Obre una connexió en un panell dividit…` per triar una direcció i un altre
+servidor SSH o terminal local desat. Una pestanya admet fins a 16 panells.
+Sortir o desconnectar-ne un no atura els altres. Un panell que espera una
+reconnexió mostra automàticament la barra d'estat amb l'acció `Tanca`, mentre
+que Retorn continua permetent reintentar la connexió.
 
 ## Entorn provat
 

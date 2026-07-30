@@ -375,6 +375,10 @@ msgstr "Tancar la pestanya en desconnectar una sessió"
 msgid "Show session status bar"
 msgstr "Mostrar barra d'estat de la sessió"
 
+#: src/termia/i18n.py:hide_session_status_bar
+msgid "Hide session status bar"
+msgstr "Amagar barra d'estat de la sessió"
+
 #: src/termia/i18n.py:hide_status_bar
 msgid "Hide"
 msgstr "Amagar"

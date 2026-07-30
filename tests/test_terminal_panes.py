@@ -10,12 +10,16 @@ from termia.ui_state import TerminalPane, TerminalSession
 class FakeTerminal:
     def __init__(self) -> None:
         self.output = b""
+        self.focused = False
 
     def feed(self, payload: bytes) -> None:
         self.output += payload
 
     def feed_child(self, payload: bytes) -> None:
         self.output += payload
+
+    def grab_focus(self) -> None:
+        self.focused = True
 
 
 class FakeControl:
@@ -32,6 +36,9 @@ class FakeControl:
 
     def set_visible(self, visible: bool) -> None:
         self.visible = visible
+
+    def get_visible(self) -> bool:
+        return self.visible
 
 
 def make_pane(
@@ -79,6 +86,45 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    def test_context_menu_toggles_only_the_selected_pane_status_bar(self) -> None:
+        root_terminal = FakeTerminal()
+        split_terminal = FakeTerminal()
+        root = make_pane(root_terminal, "root")
+        split = make_pane(split_terminal, "split")
+        session = make_session(root_terminal, root)
+        session.panes[id(split_terminal)] = split
+        session.active_terminal_ids.add(id(split_terminal))
+        root.status_bar.set_visible(True)
+        split.status_bar.set_visible(False)
+
+        class Popover:
+            def __init__(self) -> None:
+                self.closed = False
+
+            def popdown(self) -> None:
+                self.closed = True
+
+        popover = Popover()
+        TerminalSessionsMixin().toggle_session_status_bar_from_menu(
+            popover,
+            session,
+            split_terminal,
+        )
+
+        self.assertTrue(popover.closed)
+        self.assertTrue(split.status_bar.visible)
+        self.assertTrue(root.status_bar.visible)
+        self.assertTrue(split_terminal.focused)
+
+        TerminalSessionsMixin().toggle_session_status_bar_from_menu(
+            Popover(),
+            session,
+            split_terminal,
+        )
+
+        self.assertFalse(split.status_bar.visible)
+        self.assertTrue(root.status_bar.visible)
+
     def test_session_resolves_each_terminal_to_its_independent_pane(self) -> None:
         root_terminal = FakeTerminal()
         split_terminal = FakeTerminal()

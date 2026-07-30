@@ -85,6 +85,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Opening dialogs from popovers must close or defer the popover first to avoid GTK grabbing-popup hangs.
 - Context menus must not cause sidebar scroll jumps or horizontal scroll movement.
 - Context menu actions must operate on the selected/right-clicked item, not a stale selection.
+- The terminal context menu must show `Show session status bar` when the
+  selected pane bar is hidden and `Hide session status bar` when it is visible;
+  toggling it must not change sibling panes or the global default.
 - Terminal context menus must keep the translated `Split` submenu above the `Tab` submenu, with a visual separator before the split actions.
 - Terminal context-menu submenus must share the same hover behavior: open on pointer movement over the submenu row, stay usable while moving into the submenu panel, close when leaving the row and panel, and never close the whole terminal menu unexpectedly.
 - Future terminal context-menu submenus must use the shared nested-menu helper instead of building independent popovers with custom hover behavior.
@@ -168,7 +171,9 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Middle-click a tab and confirm it follows the configured close confirmation and moves focus to the next terminal.
 - Right-click a terminal and open the context menu.
 - From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
-- Confirm terminal context-menu actions still work: disconnect, show status bar, copy, paste, terminal preferences, session statistics, file transfer, all split directions, and all Tab submenu actions.
+- Confirm terminal context-menu actions still work: disconnect, show and hide
+  the selected pane's status bar, copy, paste, terminal preferences, session
+  statistics, file transfer, all split directions, and all Tab submenu actions.
 - Create split panes in all four directions and confirm each new pane opens a working shell.
 - From an SSH pane, use `Open connection in split…` to open a different SSH
   server and then a saved local terminal; verify each pane's status bar, PID,

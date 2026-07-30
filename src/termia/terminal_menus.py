@@ -13,7 +13,10 @@ from gi.repository import Gdk, GLib, Gtk, Vte
 
 from .connection_utils import find_server
 from .keybindings import keybinding_label
-from .terminal_menu_actions import TerminalMenuActions
+from .terminal_menu_actions import (
+    TerminalMenuActions,
+    status_bar_action_label_key,
+)
 from .ui_state import TerminalSession
 
 
@@ -55,12 +58,11 @@ class TerminalMenusMixin:
             self.t("disconnect"),
             lambda: actions.disconnect(popover, session, terminal),
         )
-        if not pane_state.status_bar.get_visible():
-            self.add_context_menu_item(
-                menu,
-                self.t("show_session_status_bar"),
-                lambda: actions.show_status_bar(popover, session, terminal),
-            )
+        self.add_context_menu_item(
+            menu,
+            self.t(status_bar_action_label_key(pane_state.status_bar.get_visible())),
+            lambda: actions.toggle_status_bar(popover, session, terminal),
+        )
         self.add_terminal_shortcut_menu_item(
             menu,
             self.t("copy"),
