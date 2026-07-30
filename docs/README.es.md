@@ -133,13 +133,14 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 Cada panel de terminal puede mostrar su propia barra de estado con el nombre de
 la conexión, estado, PID, tiempo transcurrido, un botón compacto para ocultarla
 y la acción de desconexión. Activa o desactiva las barras desde `General`; si
-ocultas la de un panel, haz clic derecho dentro de él y selecciona `Mostrar
-barra de estado de la sesión`. Las acciones direccionales de `Dividir` duplican
-el panel seleccionado; usa `Abrir conexión en panel dividido…` para elegir una
-dirección y otro servidor SSH o terminal local guardado. Una pestaña admite
-hasta 16 paneles. Salir o desconectar uno no detiene los demás. Un panel que
-espera una reconexión muestra automáticamente su barra de estado con la acción
-`Cerrar`, mientras que Intro sigue permitiendo reintentar la conexión.
+quieres cambiar la de un panel, haz clic derecho dentro de él y selecciona
+`Mostrar barra de estado de la sesión` u `Ocultar barra de estado de la sesión`.
+Las acciones direccionales de `Dividir` duplican el panel seleccionado; usa
+`Abrir conexión en panel dividido…` para elegir una dirección y otro servidor
+SSH o terminal local guardado. Una pestaña admite hasta 16 paneles. Salir o
+desconectar uno no detiene los demás. Un panel que espera una reconexión muestra
+automáticamente su barra de estado con la acción `Cerrar`, mientras que Intro
+sigue permitiendo reintentar la conexión.
 
 ## Entorno probado
 

@@ -6,6 +6,8 @@ Changes merged after `0.5.0-beta.2` (released 2026-07-29).
 
 ### Fixed
 
+- Toggle the selected pane's session status bar from the terminal context menu
+  with translated show and hide actions (`#178`).
 - Show a `Close` action automatically for failed panes awaiting reconnection,
   allow them to be removed without retrying, and keep split separators narrow
   when pane status bars are visible (`#174`).

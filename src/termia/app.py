@@ -129,7 +129,7 @@ class TermiaWindow(
         )
         self.terminal_menu_actions = TerminalMenuActions(
             disconnect=self.disconnect_from_terminal_menu,
-            show_status_bar=self.show_session_status_bar_from_menu,
+            toggle_status_bar=self.toggle_session_status_bar_from_menu,
             copy=self.copy_terminal_selection,
             paste=self.paste_terminal_clipboard,
             send_files=self.on_send_files_to_server,

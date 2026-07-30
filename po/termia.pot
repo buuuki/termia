@@ -410,6 +410,10 @@ msgstr ""
 msgid "Show session status bar"
 msgstr ""
 
+#: src/termia/i18n.py:hide_session_status_bar
+msgid "Hide session status bar"
+msgstr ""
+
 #: src/termia/i18n.py:hide_status_bar
 msgid "Hide"
 msgstr ""

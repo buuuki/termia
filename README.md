@@ -147,8 +147,8 @@ The `Configuration` menu is split into `General`, `Terminal`, `Prompt`, `Keybind
 
 Each terminal pane can show its own status bar with the connection name, state,
 PID, elapsed time, a compact hide button, and disconnect action. Enable or
-disable status bars from `General`; if a pane status bar is hidden, right-click
-inside that pane and choose `Show session status bar` to restore it. The
+disable status bars from `General`; right-click inside a pane and choose `Show
+session status bar` or `Hide session status bar` to toggle its own bar. The
 directional `Split` actions duplicate the selected pane; choose `Open connection
 in split…` to select a direction and a different saved SSH server or local
 terminal. A tab supports up to 16 panes. Exiting or disconnecting one pane

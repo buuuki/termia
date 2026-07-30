@@ -12,12 +12,20 @@ MenuPopover = object
 TerminalWidget = object
 
 
+def status_bar_action_label_key(status_bar_visible: bool) -> str:
+    return (
+        "hide_session_status_bar"
+        if status_bar_visible
+        else "show_session_status_bar"
+    )
+
+
 @dataclass(frozen=True)
 class TerminalMenuActions:
     """Callbacks exposed to terminal context menus by the composition root."""
 
     disconnect: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
-    show_status_bar: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
+    toggle_status_bar: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
     copy: Callable[[MenuPopover, TerminalWidget], None]
     paste: Callable[[MenuPopover, TerminalWidget], None]
     send_files: Callable[[MenuPopover, Server], None]

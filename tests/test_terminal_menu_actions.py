@@ -1,9 +1,22 @@
 import unittest
 
-from termia.terminal_menu_actions import TerminalMenuActions
+from termia.terminal_menu_actions import (
+    TerminalMenuActions,
+    status_bar_action_label_key,
+)
 
 
 class TerminalMenuActionsTests(unittest.TestCase):
+    def test_status_bar_action_label_matches_selected_pane_visibility(self) -> None:
+        self.assertEqual(
+            status_bar_action_label_key(False),
+            "show_session_status_bar",
+        )
+        self.assertEqual(
+            status_bar_action_label_key(True),
+            "hide_session_status_bar",
+        )
+
     def test_each_explicit_action_dispatches_to_its_callback(self) -> None:
         calls = []
 
@@ -12,7 +25,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
 
         actions = TerminalMenuActions(
             disconnect=action("disconnect"),
-            show_status_bar=action("show_status_bar"),
+            toggle_status_bar=action("toggle_status_bar"),
             copy=action("copy"),
             paste=action("paste"),
             send_files=action("send_files"),
@@ -31,7 +44,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
         server = object()
 
         actions.disconnect(popover, session, terminal)
-        actions.show_status_bar(popover, session, terminal)
+        actions.toggle_status_bar(popover, session, terminal)
         actions.copy(popover, terminal)
         actions.paste(popover, terminal)
         actions.send_files(popover, server)
@@ -48,7 +61,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
             [name for name, _args in calls],
             [
                 "disconnect",
-                "show_status_bar",
+                "toggle_status_bar",
                 "copy",
                 "paste",
                 "send_files",

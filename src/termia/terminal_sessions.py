@@ -1249,7 +1249,7 @@ class TerminalSessionsMixin:
         popover.popdown()
         self.on_request_close_tab(None, session.id, session.page)
 
-    def show_session_status_bar_from_menu(
+    def toggle_session_status_bar_from_menu(
         self,
         popover: Gtk.Popover,
         session: TerminalSession,
@@ -1257,7 +1257,7 @@ class TerminalSessionsMixin:
     ) -> None:
         popover.popdown()
         pane = self.pane_state(session, terminal)
-        pane.status_bar.set_visible(True)
+        pane.status_bar.set_visible(not pane.status_bar.get_visible())
         terminal.grab_focus()
 
     def disconnect_from_terminal_menu(
