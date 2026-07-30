@@ -42,8 +42,8 @@ since the previous release.
 ## Current beta baseline
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
-`0.5.0`; its historical tag and release are not renamed. The next publication
-on the same line must use `0.5.0-beta.2`.
+`0.5.0`; its historical tag and release are not renamed. The current source
+release line is `0.5.0-beta.3`.
 
 ## Debian package versions
 
@@ -60,6 +60,7 @@ version. The mapping is:
 | --- | --- |
 | `0.5.0-beta.1` | `0.5.0~beta.1-1` |
 | `0.5.0-beta.2` | `0.5.0~beta.2-1` |
+| `0.5.0-beta.3` | `0.5.0~beta.3-1` |
 | `0.5.1-beta.1` | `0.5.1~beta.1-1` |
 | `0.6.0-beta.1` | `0.6.0~beta.1-1` |
 | `0.5.0` | `0.5.0-1` |
@@ -67,7 +68,7 @@ version. The mapping is:
 This produces the required upgrade ordering:
 
 ```text
-0.5.0~beta.1-1 < 0.5.0~beta.2-1 < 0.5.0-1
+0.5.0~beta.1-1 < 0.5.0~beta.2-1 < 0.5.0~beta.3-1 < 0.5.0-1
 ```
 
 The Debian revision starts at `-1` for every Termia application version.

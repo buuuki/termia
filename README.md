@@ -25,11 +25,11 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 
 ## Download and install (Ubuntu 24.04+)
 
-Download [termia_0.5.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta.2/termia_0.5.0.beta.2-1_all.deb)
+Download [termia_0.5.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.5.0-beta.3/termia_0.5.0.beta.3-1_all.deb)
 and install it with APT, which resolves the required dependencies:
 
 ```bash
-sudo apt install ./termia_0.5.0.beta.2-1_all.deb
+sudo apt install ./termia_0.5.0.beta.3-1_all.deb
 ```
 
 ## Download from source
@@ -121,11 +121,11 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-The resulting `termia_0.5.0~beta.2-1_all.deb` is created in the parent directory.
+The resulting `termia_0.5.0~beta.3-1_all.deb` is created in the parent directory.
 Install it with:
 
 ```bash
-sudo apt install ../termia_0.5.0~beta.2-1_all.deb
+sudo apt install ../termia_0.5.0~beta.3-1_all.deb
 ```
 
 The Debian package installs the `termia` command, desktop launcher, and icon;
