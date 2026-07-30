@@ -243,7 +243,8 @@ class TerminalSessionsMixin:
             session.status_label.set_label("Error")
             session.connected = False
             session.pending_reconnect = True
-            session.disconnect_button.set_sensitive(False)
+            self.sync_root_pane_state(session)
+            self.show_pane_reconnect_controls(self.pane_state(session, terminal))
             self.store.record_history_end(session, "failed", detail=exc.message)
             self.update_session_tab_title(session, self.t("tab_error_title").format(title=session.title))
             self.toast_label.set_label(message)
@@ -317,6 +318,7 @@ class TerminalSessionsMixin:
         session.child_pid = None
         session.child_process = None
         session.connected = True
+        session.disconnect_button.set_label(self.t("disconnect"))
         session.disconnect_button.set_sensitive(True)
         session.status_label.set_label(self.t("connecting"))
         self.store.record_history_start(session, "ssh", server)
@@ -374,8 +376,8 @@ class TerminalSessionsMixin:
     def mark_session_for_reconnect(self, session: TerminalSession, server: Server, toast: str) -> None:
         session.connected = False
         session.pending_reconnect = True
-        session.disconnect_button.set_sensitive(False)
         self.sync_root_pane_state(session)
+        self.show_pane_reconnect_controls(self.pane_state(session, session.terminal))
         self.toast_label.set_label(toast)
         prompt = f"  {self.t('reconnect_prompt')}  "
         session.terminal.feed(f"\r\n\x1b[1;30;48;2;255;213;79m{prompt}\x1b[0m\r\n".encode())
@@ -415,15 +417,22 @@ class TerminalSessionsMixin:
     ) -> None:
         pane.connected = False
         pane.pending_reconnect = True
-        pane.disconnect_button.set_sensitive(False)
+        self.show_pane_reconnect_controls(pane)
         session.active_terminal_ids.discard(id(pane.terminal))
         prompt = f"  {self.t('reconnect_prompt')}  "
         pane.terminal.feed(f"\r\n\x1b[1;30;48;2;255;213;79m{prompt}\x1b[0m\r\n".encode())
         self.toast_label.set_label(toast)
 
+    def show_pane_reconnect_controls(self, pane: TerminalPane) -> None:
+        pane.status_bar.set_visible(True)
+        pane.disconnect_button.set_label(self.t("close"))
+        pane.disconnect_button.set_sensitive(True)
+
     def reset_pane_connection_attempt(self, pane: TerminalPane) -> None:
         pane.pending_reconnect = False
         pane.disconnect_requested = False
+        pane.disconnect_button.set_label(self.t("disconnect"))
+        pane.disconnect_button.set_sensitive(True)
         pane.duration_recorded = False
         pane.history_start_recorded = False
         pane.history_end_recorded = False
@@ -990,6 +999,7 @@ class TerminalSessionsMixin:
         pane.connected = True
         pane.pending_reconnect = False
         pane.disconnect_requested = False
+        pane.disconnect_button.set_label(self.t("disconnect"))
         pane.disconnect_button.set_sensitive(True)
         pane.status_label.set_label(self.t("connecting"))
         session.connected = True
@@ -1054,6 +1064,7 @@ class TerminalSessionsMixin:
         pane.connected = True
         pane.pending_reconnect = False
         pane.disconnect_requested = False
+        pane.disconnect_button.set_label(self.t("disconnect"))
         pane.disconnect_button.set_sensitive(True)
         pane.status_label.set_label(self.t("connecting"))
         session.connected = True
@@ -1411,6 +1422,18 @@ class TerminalSessionsMixin:
             lambda: self.disconnect_session(session),
         )
 
+    def close_pending_reconnect_pane(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+    ) -> None:
+        pane = self.pane_state(session, terminal)
+        pane.pending_reconnect = False
+        if terminal is not session.terminal:
+            self.discard_unstarted_split_pane(session, terminal)
+            return
+        self.close_tab(session.id, session.page, disconnect=False)
+
     def on_request_disconnect_pane(
         self,
         _button: Gtk.Button | None,
@@ -1419,8 +1442,8 @@ class TerminalSessionsMixin:
     ) -> None:
         pane = self.pane_state(session, terminal)
         if not pane.connected:
-            if pane.pending_reconnect and terminal is not session.terminal:
-                self.discard_unstarted_split_pane(session, terminal)
+            if pane.pending_reconnect:
+                self.close_pending_reconnect_pane(session, terminal)
             return
         if not self.store.data.app.confirm_disconnect:
             self.disconnect_pane(session, terminal)
@@ -1436,8 +1459,8 @@ class TerminalSessionsMixin:
     def disconnect_pane(self, session: TerminalSession, terminal: Vte.Terminal) -> None:
         pane = self.pane_state(session, terminal)
         if not pane.connected:
-            if pane.pending_reconnect and terminal is not session.terminal:
-                self.discard_unstarted_split_pane(session, terminal)
+            if pane.pending_reconnect:
+                self.close_pending_reconnect_pane(session, terminal)
             return
         pane.disconnect_requested = True
         process = pane.child_process

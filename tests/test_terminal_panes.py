@@ -18,6 +18,22 @@ class FakeTerminal:
         self.output += payload
 
 
+class FakeControl:
+    def __init__(self) -> None:
+        self.label = ""
+        self.sensitive = False
+        self.visible = False
+
+    def set_label(self, label: str) -> None:
+        self.label = label
+
+    def set_sensitive(self, sensitive: bool) -> None:
+        self.sensitive = sensitive
+
+    def set_visible(self, visible: bool) -> None:
+        self.visible = visible
+
+
 def make_pane(
     terminal,
     pane_id: str,
@@ -25,8 +41,8 @@ def make_pane(
     server_id: str | None = None,
     process: TerminalProcess | None = None,
 ) -> TerminalPane:
-    label = SimpleNamespace(set_label=lambda _label: None)
-    button = SimpleNamespace(set_sensitive=lambda _sensitive: None)
+    label = FakeControl()
+    button = FakeControl()
     return TerminalPane(
         id=pane_id,
         terminal=terminal,
@@ -34,7 +50,7 @@ def make_pane(
         status_label=label,
         timer_label=label,
         disconnect_button=button,
-        status_bar=object(),
+        status_bar=FakeControl(),
         title=pane_id,
         started_at=1.0,
         server_id=server_id,
@@ -132,6 +148,51 @@ class TerminalPaneStateTests(unittest.TestCase):
         host.on_request_disconnect_pane(None, session, split_terminal)
 
         self.assertEqual(host.discarded, (session, split_terminal))
+
+    def test_failed_pane_shows_close_action_while_waiting_for_reconnect(self) -> None:
+        root_terminal = FakeTerminal()
+        split_terminal = FakeTerminal()
+        root = make_pane(root_terminal, "root")
+        split = make_pane(split_terminal, "split", server_id="server-b")
+        session = make_session(root_terminal, root)
+        session.panes[id(split_terminal)] = split
+        session.active_terminal_ids.add(id(split_terminal))
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.toast_label = FakeControl()
+
+            def t(self, key):
+                return {
+                    "close": "Close",
+                    "reconnect_prompt": "Press Enter to reconnect",
+                }[key]
+
+        Host().mark_pane_for_reconnect(session, split, "Connection failed")
+
+        self.assertTrue(split.pending_reconnect)
+        self.assertTrue(split.status_bar.visible)
+        self.assertEqual(split.disconnect_button.label, "Close")
+        self.assertTrue(split.disconnect_button.sensitive)
+
+    def test_close_action_closes_tab_when_failed_pane_is_the_only_pane(self) -> None:
+        root_terminal = FakeTerminal()
+        root = make_pane(root_terminal, "root", server_id="server-a")
+        root.connected = False
+        root.pending_reconnect = True
+        session = make_session(root_terminal, root)
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.closed = None
+
+            def close_tab(self, session_id, page, *, disconnect):
+                self.closed = (session_id, page, disconnect)
+
+        host = Host()
+        host.on_request_disconnect_pane(None, session, root_terminal)
+
+        self.assertEqual(host.closed, (session.id, session.page, False))
 
     def test_same_connection_split_uses_the_selected_pane_identity(self) -> None:
         root_terminal = FakeTerminal()

@@ -153,7 +153,8 @@ directional `Split` actions duplicate the selected pane; choose `Open connection
 in split…` to select a direction and a different saved SSH server or local
 terminal. A tab supports up to 16 panes. Exiting or disconnecting one pane
 leaves its siblings running, and the tab only closes on `exit` once its final
-terminal has exited.
+terminal has exited. A pane awaiting reconnection automatically reveals its
+status bar with a `Close` action, while Enter remains available to retry.
 
 ## Tested environment
 

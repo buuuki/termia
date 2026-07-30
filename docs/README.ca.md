@@ -136,7 +136,9 @@ amagar-la i l'acció de desconnexió. Activa o desactiva les barres des de
 dupliquen el panell seleccionat; usa `Obre una connexió en un panell dividit…`
 per triar una direcció i un altre servidor SSH o terminal local desat. Una
 pestanya admet fins a 16 panells. Sortir o desconnectar-ne un no atura els
-altres.
+altres. Un panell que espera una reconnexió mostra automàticament la barra
+d'estat amb l'acció `Tanca`, mentre que Retorn continua permetent reintentar la
+connexió.
 
 ## Entorn provat
 

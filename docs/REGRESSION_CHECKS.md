@@ -175,9 +175,13 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   elapsed time, saved-password action, SCP target, statistics, and history.
 - Disconnect one mixed-connection pane and confirm its siblings remain usable.
 - Trigger a failed SSH connection in a split, press Enter, and confirm only that
-  pane reconnects to its own server.
-- Trigger a failed SSH connection in a split and use its context-menu
-  disconnect action; confirm the failed pane closes without reconnecting.
+  pane reconnects to its own server, its status bar remains usable, and its
+  action returns from `Close` to `Disconnect`.
+- Trigger a failed SSH connection in a split and confirm its status bar appears
+  automatically with a `Close` action; use it and confirm the failed pane
+  closes without reconnecting while its sibling remains usable.
+- Trigger a failed connection in a tab with only one pane and confirm its
+  automatically displayed `Close` action closes the tab.
 - Confirm a seventeenth pane is rejected without changing the current layout.
 - Run `exit` inside a split pane and confirm only that pane disappears while the sibling pane keeps focus and remains usable.
 - Open an SSH session, a local terminal, and a split pane; close Termia and confirm their local child processes do not remain after a brief grace period.

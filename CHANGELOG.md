@@ -6,8 +6,9 @@ Changes merged after `0.5.0-beta.2` (released 2026-07-29).
 
 ### Fixed
 
-- Allow a failed split-pane connection awaiting reconnection to be closed, and
-  keep split separators narrow when pane status bars are visible (`#174`).
+- Show a `Close` action automatically for failed panes awaiting reconnection,
+  allow them to be removed without retrying, and keep split separators narrow
+  when pane status bars are visible (`#174`).
 - Preserve translated action tooltips for writable sidebar icon buttons while
   retaining read-only and locked-connection explanations when disabled
   (`#170`).
