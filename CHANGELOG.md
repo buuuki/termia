@@ -9,6 +9,8 @@ Changes merged after `0.5.0-beta.2` (released 2026-07-29).
 - Preserve translated action tooltips for writable sidebar icon buttons while
   retaining read-only and locked-connection explanations when disabled
   (`#170`).
+- Open the configured startup local terminal after cancelling encrypted
+  connection unlocking, including in read-only instances (`#172`).
 
 ## 0.5.0-beta.2 - 2026-07-29
 

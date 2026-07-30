@@ -48,6 +48,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Failed SSH connections must leave the tab usable and show the reconnect prompt.
 - The reconnect prompt must be readable on both light and dark terminal backgrounds.
 - Pressing Enter on a failed SSH tab must reconnect to the same server.
+- With the startup local-terminal preference enabled, cancelling the
+  encrypted-connections unlock dialog must open exactly one generic local
+  terminal in writable and read-only instances; disabling the preference must
+  open none, and a successful unlock must not create a duplicate.
 - Exiting an SSH session with `exit` must only close the tab when the relevant preference is enabled, and only after the last terminal in the tab has exited with no split panes remaining.
 - Exiting a local shell must follow the configured local terminal close behavior.
 - Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
