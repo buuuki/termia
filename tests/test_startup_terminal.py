@@ -59,7 +59,9 @@ class StartupTerminalTests(unittest.TestCase):
             unlock_panel=Mock(),
             unlock_scrim=Mock(),
             main_root=Mock(),
-            header=Mock(),
+            toggle_sidebar_button=Mock(),
+            new_tab_button=Mock(),
+            main_menu_button=Mock(),
             unlock_password_entry=Mock(),
             unlock_error_label=Mock(),
         )
@@ -72,6 +74,10 @@ class StartupTerminalTests(unittest.TestCase):
             self.TermiaWindow.hide_unlock_panel,
             window,
         )
+        window.set_unlock_header_actions_sensitive = MethodType(
+            self.TermiaWindow.set_unlock_header_actions_sensitive,
+            window,
+        )
         return window
 
     def test_unlock_panel_is_shown_inside_the_main_window(self) -> None:
@@ -82,7 +88,9 @@ class StartupTerminalTests(unittest.TestCase):
         window.unlock_panel.set_visible.assert_called_once_with(True)
         window.unlock_scrim.set_visible.assert_called_once_with(True)
         window.main_root.set_sensitive.assert_called_once_with(False)
-        window.header.set_sensitive.assert_called_once_with(False)
+        window.toggle_sidebar_button.set_sensitive.assert_called_once_with(False)
+        window.new_tab_button.set_sensitive.assert_called_once_with(False)
+        window.main_menu_button.set_sensitive.assert_called_once_with(False)
         window.unlock_error_label.set_label.assert_called_once_with("synthetic encryption error")
         window.unlock_password_entry.grab_focus.assert_called_once_with()
         self.assertFalse(result)
@@ -98,7 +106,9 @@ class StartupTerminalTests(unittest.TestCase):
         window.unlock_panel.set_visible.assert_called_once_with(False)
         window.unlock_scrim.set_visible.assert_called_once_with(False)
         window.main_root.set_sensitive.assert_called_once_with(True)
-        window.header.set_sensitive.assert_called_once_with(True)
+        window.toggle_sidebar_button.set_sensitive.assert_called_once_with(True)
+        window.new_tab_button.set_sensitive.assert_called_once_with(True)
+        window.main_menu_button.set_sensitive.assert_called_once_with(True)
         window.toast_label.set_label.assert_called_once_with("connections_locked")
         idle_add.assert_called_once_with(window.open_startup_local_terminal)
 

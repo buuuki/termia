@@ -114,7 +114,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - The startup master-password prompt must be an in-window modal layer rather
   than a separate desktop window, so it always stays inside Termia on single-
   and multi-monitor desktops and blocks the underlying controls until it is
-  unlocked or cancelled.
+  unlocked or cancelled. Window-management actions must remain available so
+  the locked window can still be moved, minimized, maximized, or closed.
 - Import/export configuration must preserve groups, subgroups, servers, SSH user, port, host, password, and private key path where available.
 - Importing Asbru configuration must not add unwanted suffixes such as `- copy`.
 - Launching a second Termia process must open a separate window and leave the new instance in read-only mode instead of writing shared config files concurrently.
@@ -206,8 +207,9 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Start a second Termia process and confirm it opens as a separate window with the read-only badge visible.
 - With encrypted connection storage, start Termia on each monitor in turn and
   confirm the master-password prompt is rendered inside the Termia window;
-  verify that underlying controls are blocked and that successful unlock and
-  cancellation work in writable and read-only instances.
+  move the locked window between monitors, verify that underlying application
+  controls are blocked, and confirm that successful unlock and cancellation
+  work in writable and read-only instances.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
 - Change terminal foreground/background/palette and confirm only VTE terminal colors change, not the app chrome.

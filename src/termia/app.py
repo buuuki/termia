@@ -212,15 +212,23 @@ class TermiaWindow(
         self.unlock_scrim.set_visible(True)
         self.unlock_panel.set_visible(True)
         self.main_root.set_sensitive(False)
-        self.header.set_sensitive(False)
+        self.set_unlock_header_actions_sensitive(False)
         self.unlock_password_entry.grab_focus()
         return GLib.SOURCE_REMOVE
+
+    def set_unlock_header_actions_sensitive(self, sensitive: bool) -> None:
+        for control in (
+            self.toggle_sidebar_button,
+            self.new_tab_button,
+            self.main_menu_button,
+        ):
+            control.set_sensitive(sensitive)
 
     def hide_unlock_panel(self) -> None:
         self.unlock_panel.set_visible(False)
         self.unlock_scrim.set_visible(False)
         self.main_root.set_sensitive(True)
-        self.header.set_sensitive(True)
+        self.set_unlock_header_actions_sensitive(True)
 
     def on_unlock_connections_cancelled(self, _button: Gtk.Button | None = None) -> None:
         self.hide_unlock_panel()
