@@ -111,6 +111,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - New plain `connections.json` writes must contain only groups and servers; app and terminal preferences must be written to `settings.json`.
 - Obfuscated connection storage must decode back to the same groups, servers, passwords, and private key paths, and switching modes must rewrite the file immediately.
 - Encrypted connection storage must require a master password on startup, preserve groups, servers, passwords, and private key paths after unlock, allow canceling activation before setting a password, and never silently recover data if the master password is lost.
+- The startup master-password prompt must be an in-window modal layer rather
+  than a separate desktop window, so it always stays inside Termia on single-
+  and multi-monitor desktops and blocks the underlying controls until it is
+  unlocked or cancelled. Window-management actions must remain available so
+  the locked window can still be moved, minimized, maximized, or closed.
 - Import/export configuration must preserve groups, subgroups, servers, SSH user, port, host, password, and private key path where available.
 - Importing Asbru configuration must not add unwanted suffixes such as `- copy`.
 - Launching a second Termia process must open a separate window and leave the new instance in read-only mode instead of writing shared config files concurrently.
@@ -200,6 +205,11 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Open Import/Export, close the menu with `Esc` or its menu button, and confirm reopening starts at the top-level menu.
 - Open Preferences from Configuration and confirm the app does not hang.
 - Start a second Termia process and confirm it opens as a separate window with the read-only badge visible.
+- With encrypted connection storage, start Termia on each monitor in turn and
+  confirm the master-password prompt is rendered inside the Termia window;
+  move the locked window between monitors, verify that underlying application
+  controls are blocked, and confirm that successful unlock and cancellation
+  work in writable and read-only instances.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
 - Change terminal foreground/background/palette and confirm only VTE terminal colors change, not the app chrome.
