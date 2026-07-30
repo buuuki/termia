@@ -145,8 +145,6 @@ class TermiaWindow(
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.shutdown_in_progress = False
-        self.startup_started = False
-        self.startup_source_id: int | None = None
         self.connect("close-request", self.on_main_window_close_request)
         self.connect("destroy", lambda *_args: self.store.close())
         if hasattr(GLib, "unix_signal_add"):
@@ -163,27 +161,9 @@ class TermiaWindow(
         self.refresh_list()
         if self.store.encryption_locked:
             self.toast_label.set_label(self.t("connections_locked"))
-
-    def begin_startup_after_present(self) -> None:
-        if self.startup_started or self.startup_source_id is not None:
-            return
-        self.startup_source_id = GLib.idle_add(
-            self.continue_startup_after_map,
-        )
-
-    def continue_startup_after_map(self) -> bool:
-        if self.startup_started:
-            self.startup_source_id = None
-            return GLib.SOURCE_REMOVE
-        if not self.get_mapped():
-            return GLib.SOURCE_CONTINUE
-        self.startup_started = True
-        self.startup_source_id = None
-        if self.store.encryption_locked:
             self.request_unlock_connections()
         else:
             self.schedule_startup_local_terminal()
-        return GLib.SOURCE_REMOVE
 
     def schedule_startup_local_terminal(self) -> None:
         if self.store.data.app.open_local_terminal_on_startup:
@@ -227,64 +207,42 @@ class TermiaWindow(
         return widget
 
     def request_unlock_connections(self) -> bool:
-        dialog = Gtk.Dialog(title=self.t("unlock_connections_title"), transient_for=self, modal=True)
-        dialog.set_resizable(False)
-        dialog.set_default_size(420, -1)
-        dialog.add_button(self.t("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.t("unlock"), Gtk.ResponseType.OK)
-        dialog.set_default_response(Gtk.ResponseType.OK)
-
-        content = dialog.get_content_area()
-        content.set_margin_top(16)
-        content.set_margin_bottom(16)
-        content.set_margin_start(16)
-        content.set_margin_end(16)
-        content.set_spacing(12)
-
-        detail = Gtk.Label(label=self.t("unlock_connections_detail"))
-        detail.set_xalign(0)
-        detail.set_wrap(True)
-        content.append(detail)
-
-        password_entry = Gtk.PasswordEntry()
-        password_entry.set_show_peek_icon(True)
-        password_entry.connect("activate", lambda _entry: dialog.response(Gtk.ResponseType.OK))
-        content.append(password_entry)
-
-        error = Gtk.Label(label=self.store.encryption_error)
-        error.set_xalign(0)
-        error.set_wrap(True)
-        error.add_css_class("error")
-        content.append(error)
-
-        dialog.connect("response", self.on_unlock_connections_response, password_entry, error)
-        dialog.present()
-        password_entry.grab_focus()
+        self.unlock_password_entry.set_text("")
+        self.unlock_error_label.set_label(self.store.encryption_error)
+        self.unlock_scrim.set_visible(True)
+        self.unlock_panel.set_visible(True)
+        self.main_root.set_sensitive(False)
+        self.header.set_sensitive(False)
+        self.unlock_password_entry.grab_focus()
         return GLib.SOURCE_REMOVE
 
-    def on_unlock_connections_response(
-        self,
-        dialog: Gtk.Dialog,
-        response: Gtk.ResponseType,
-        password_entry: Gtk.PasswordEntry,
-        error: Gtk.Label,
-    ) -> None:
-        if response != Gtk.ResponseType.OK:
-            dialog.destroy()
-            self.toast_label.set_label(self.t("connections_locked"))
-            self.schedule_startup_local_terminal()
-            return
-        if self.store.unlock_connections(password_entry.get_text()):
-            dialog.destroy()
+    def hide_unlock_panel(self) -> None:
+        self.unlock_panel.set_visible(False)
+        self.unlock_scrim.set_visible(False)
+        self.main_root.set_sensitive(True)
+        self.header.set_sensitive(True)
+
+    def on_unlock_connections_cancelled(self, _button: Gtk.Button | None = None) -> None:
+        self.hide_unlock_panel()
+        self.toast_label.set_label(self.t("connections_locked"))
+        self.schedule_startup_local_terminal()
+
+    def on_unlock_connections_requested(self, _button: Gtk.Button | None = None) -> None:
+        if self.store.unlock_connections(self.unlock_password_entry.get_text()):
+            self.hide_unlock_panel()
             self.apply_app_theme()
             self.refresh_translated_chrome()
             self.refresh_list()
             self.toast_label.set_label(self.t("connections_unlocked"))
             self.schedule_startup_local_terminal()
             return
-        error.set_label(self.t("unlock_connections_failed"))
-        password_entry.set_text("")
-        password_entry.grab_focus()
+        self.unlock_error_label.set_label(self.t("unlock_connections_failed"))
+        self.unlock_password_entry.set_text("")
+        self.unlock_password_entry.grab_focus()
+
+    def focus_startup_control(self) -> None:
+        if self.unlock_panel.get_visible():
+            self.unlock_password_entry.grab_focus()
 
     def on_main_window_close_request(self, _window: Gtk.Window) -> bool:
         if self.shutdown_in_progress:
@@ -363,8 +321,12 @@ class TermiaWindow(
         )
 
     def _build_ui(self) -> None:
+        window_overlay = Gtk.Overlay()
+        self.set_child(window_overlay)
+
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.set_child(root)
+        self.main_root = root
+        window_overlay.set_child(root)
 
         window_keys = Gtk.EventControllerKey.new()
         window_keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
@@ -372,6 +334,7 @@ class TermiaWindow(
         self.add_controller(window_keys)
 
         header = Gtk.HeaderBar()
+        self.header = header
         self.set_titlebar(header)
 
         toggle_sidebar = Gtk.Button(icon_name="sidebar-hide-symbolic")
@@ -509,6 +472,70 @@ class TermiaWindow(
         self.terminal_stack.set_vexpand(True)
         detail.append(self.terminal_stack)
 
+        unlock_scrim = Gtk.Box()
+        self.unlock_scrim = unlock_scrim
+        unlock_scrim.set_halign(Gtk.Align.FILL)
+        unlock_scrim.set_valign(Gtk.Align.FILL)
+        unlock_scrim.set_hexpand(True)
+        unlock_scrim.set_vexpand(True)
+        unlock_scrim.set_visible(False)
+        window_overlay.add_overlay(unlock_scrim)
+
+        unlock_panel = Gtk.Frame()
+        self.unlock_panel = unlock_panel
+        unlock_panel.add_css_class("background")
+        unlock_panel.add_css_class("card")
+        unlock_panel.set_halign(Gtk.Align.CENTER)
+        unlock_panel.set_valign(Gtk.Align.CENTER)
+        unlock_panel.set_size_request(420, -1)
+        unlock_panel.set_margin_top(20)
+        unlock_panel.set_margin_bottom(20)
+        unlock_panel.set_margin_start(20)
+        unlock_panel.set_margin_end(20)
+        unlock_panel.set_visible(False)
+
+        unlock_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        unlock_content.set_margin_top(20)
+        unlock_content.set_margin_bottom(20)
+        unlock_content.set_margin_start(20)
+        unlock_content.set_margin_end(20)
+        unlock_panel.set_child(unlock_content)
+
+        unlock_title = Gtk.Label(label=self.t("unlock_connections_title"))
+        unlock_title.set_xalign(0)
+        unlock_title.add_css_class("title-2")
+        unlock_content.append(unlock_title)
+
+        unlock_detail = Gtk.Label(label=self.t("unlock_connections_detail"))
+        unlock_detail.set_xalign(0)
+        unlock_detail.set_wrap(True)
+        unlock_content.append(unlock_detail)
+
+        unlock_password_entry = Gtk.PasswordEntry()
+        self.unlock_password_entry = unlock_password_entry
+        unlock_password_entry.set_show_peek_icon(True)
+        unlock_password_entry.connect("activate", self.on_unlock_connections_requested)
+        unlock_content.append(unlock_password_entry)
+
+        unlock_error = Gtk.Label()
+        self.unlock_error_label = unlock_error
+        unlock_error.set_xalign(0)
+        unlock_error.set_wrap(True)
+        unlock_error.add_css_class("error")
+        unlock_content.append(unlock_error)
+
+        unlock_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        unlock_actions.set_halign(Gtk.Align.END)
+        cancel_button = Gtk.Button(label=self.t("cancel"))
+        cancel_button.connect("clicked", self.on_unlock_connections_cancelled)
+        unlock_actions.append(cancel_button)
+        unlock_button = Gtk.Button(label=self.t("unlock"))
+        unlock_button.add_css_class("suggested-action")
+        unlock_button.connect("clicked", self.on_unlock_connections_requested)
+        unlock_actions.append(unlock_button)
+        unlock_content.append(unlock_actions)
+        window_overlay.add_overlay(unlock_panel)
+
     def on_window_key_pressed(
         self,
         _controller: Gtk.EventControllerKey,
@@ -516,6 +543,11 @@ class TermiaWindow(
         _keycode: int,
         state: Gdk.ModifierType,
     ) -> bool:
+        if self.unlock_panel.get_visible():
+            if keyval == Gdk.KEY_Escape:
+                self.on_unlock_connections_cancelled()
+                return True
+            return False
         keybindings = self.store.data.app.keybindings
         if keybinding_matches(keybindings.get("filter_servers", ""), keyval, state):
             return self.focus_server_filter()
@@ -627,7 +659,7 @@ class TermiaApp(Gtk.Application):
             window = TermiaWindow(self)
         window.present()
         if created:
-            window.begin_startup_after_present()
+            window.focus_startup_control()
 
 
 def main(argv: list[str] | None = None) -> int:
