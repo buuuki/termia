@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Changes merged after `0.5.0-beta.3` (released 2026-07-30).
+
+## 0.5.0-beta.3 - 2026-07-30
+
 Changes merged after `0.5.0-beta.2` (released 2026-07-29).
 
 ### Fixed
