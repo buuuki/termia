@@ -64,7 +64,7 @@ from .models import (
     TerminalSettings,
 )
 from .terminal_config import normalize_split_layout
-from .ui_state import TerminalSession
+from .ui_state import TerminalPane, TerminalSession
 
 
 class ReadOnlyStoreError(RuntimeError):
@@ -290,7 +290,7 @@ class ConnectionHistoryStore:
 
     def _event_payload(
         self,
-        session: TerminalSession,
+        session: TerminalSession | TerminalPane,
         kind: str,
         event: str,
         timestamp: str,
@@ -318,7 +318,13 @@ class ConnectionHistoryStore:
             detail=detail,
         )
 
-    def record_start(self, session: TerminalSession, kind: str, *, server: Server | None = None) -> None:
+    def record_start(
+        self,
+        session: TerminalSession | TerminalPane,
+        kind: str,
+        *,
+        server: Server | None = None,
+    ) -> None:
         if self.read_only or session.history_start_recorded:
             return
         timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
@@ -332,7 +338,13 @@ class ConnectionHistoryStore:
             session.history_user = server.user if server is not None else ""
             session.history_port = server.port if server is not None else 0
 
-    def record_end(self, session: TerminalSession, result: str, *, detail: str = "") -> None:
+    def record_end(
+        self,
+        session: TerminalSession | TerminalPane,
+        result: str,
+        *,
+        detail: str = "",
+    ) -> None:
         if self.read_only or session.history_end_recorded or not session.history_start_recorded:
             return
         timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
@@ -663,10 +675,21 @@ class ConnectionStore:
         self.ensure_writable()
         self.history_store.clear()
 
-    def record_history_start(self, session: TerminalSession, kind: str, server: Server | None = None) -> None:
+    def record_history_start(
+        self,
+        session: TerminalSession | TerminalPane,
+        kind: str,
+        server: Server | None = None,
+    ) -> None:
         self.history_store.record_start(session, kind, server=server)
 
-    def record_history_end(self, session: TerminalSession, result: str, *, detail: str = "") -> None:
+    def record_history_end(
+        self,
+        session: TerminalSession | TerminalPane,
+        result: str,
+        *,
+        detail: str = "",
+    ) -> None:
         self.history_store.record_end(session, result, detail=detail)
 
     def recent_server_ids(self, limit: int = 10) -> list[str]:

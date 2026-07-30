@@ -6,11 +6,20 @@ Changes merged after `0.5.0-beta.2` (released 2026-07-29).
 
 ### Fixed
 
+- Show a `Close` action automatically for failed panes awaiting reconnection,
+  allow them to be removed without retrying, and keep split separators narrow
+  when pane status bars are visible (`#174`).
 - Preserve translated action tooltips for writable sidebar icon buttons while
   retaining read-only and locked-connection explanations when disabled
   (`#170`).
 - Open the configured startup local terminal after cancelling encrypted
   connection unlocking, including in read-only instances (`#172`).
+
+### Added
+
+- Allow split panes in the same tab to connect independently to different
+  saved SSH servers or local terminal profiles, with pane-specific status,
+  actions, history, statistics, reconnect state, and process cleanup (`#174`).
 
 ## 0.5.0-beta.2 - 2026-07-29
 

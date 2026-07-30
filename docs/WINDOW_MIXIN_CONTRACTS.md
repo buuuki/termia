@@ -149,14 +149,19 @@ security, and keybinding dialogs have comparatively small contracts.
 - Reads: `store`, `session_registry`, `terminal_stack`, `toast_label`, terminal-menu
   callbacks, and terminal-font resolution.
 - Writes: `run_connections` and `stats_save_id`; it also mutates
-  `TerminalSession` objects held in `session_registry`.
+  `TerminalSession` objects held in `session_registry`. Each session owns
+  explicit `TerminalPane` state for every VTE pane, including its connection
+  identity, managed process, status widgets, reconnect state, history, and
+  statistics timing.
 - Cross-mixin dependencies: tab creation, ordering, activation, title updates,
   closing, terminal menus, and terminal preferences. Tab-triggered duplication,
   disconnection, confirmation, and split cleanup are exposed through the
   explicitly composed `TabLifecycleActions` contract.
 - Architectural note: process launching, terminal views, split panes, and file
   transfer are already delegated to focused modules, but lifecycle
-  orchestration still depends directly on tab and window state.
+  orchestration still depends directly on tab and window state. Terminal
+  actions resolve the pane that opened the context menu instead of assuming the
+  tab's original connection identity.
 
 ### `TabsMixin`
 

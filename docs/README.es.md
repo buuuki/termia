@@ -128,7 +128,16 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos`
 - Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
 - El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
 
-Cada sesión puede mostrar una barra de estado con estado, PID, tiempo transcurrido, botón compacto para ocultarla y desconexión. Puedes activar o desactivar las barras de estado desde `General`; si ocultas la barra de una sesión, puedes recuperarla con botón derecho dentro del terminal y `Mostrar barra de estado de la sesión`. La barra lateral de servidores tiene su propio botón en la cabecera. Con botón derecho dentro del terminal puedes abrir los submenús traducidos de `Dividir` y `Pestaña`; los paneles se pueden crear arriba, abajo, a la izquierda o a la derecha, y desaparecen automáticamente cuando su shell termina. Una pestaña solo se cierra con `exit` cuando ha salido el último terminal y ya no quedan paneles divididos.
+Cada panel de terminal puede mostrar su propia barra de estado con el nombre de
+la conexión, estado, PID, tiempo transcurrido, un botón compacto para ocultarla
+y la acción de desconexión. Activa o desactiva las barras desde `General`; si
+ocultas la de un panel, haz clic derecho dentro de él y selecciona `Mostrar
+barra de estado de la sesión`. Las acciones direccionales de `Dividir` duplican
+el panel seleccionado; usa `Abrir conexión en panel dividido…` para elegir una
+dirección y otro servidor SSH o terminal local guardado. Una pestaña admite
+hasta 16 paneles. Salir o desconectar uno no detiene los demás. Un panel que
+espera una reconexión muestra automáticamente su barra de estado con la acción
+`Cerrar`, mientras que Intro sigue permitiendo reintentar la conexión.
 
 ## Entorno probado
 

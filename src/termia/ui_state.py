@@ -15,6 +15,37 @@ from .terminal_processes import TerminalProcess
 
 
 @dataclass
+class TerminalPane:
+    id: str
+    terminal: Vte.Terminal
+    container: Gtk.Widget
+    status_label: Gtk.Label
+    timer_label: Gtk.Label
+    disconnect_button: Gtk.Button
+    status_bar: Gtk.Widget
+    title: str
+    started_at: float
+    server_id: str | None = None
+    local_profile_id: str | None = None
+    timeout_id: int | None = None
+    child_pid: int | None = None
+    child_process: TerminalProcess | None = None
+    connected: bool = True
+    disconnect_requested: bool = False
+    pending_reconnect: bool = False
+    duration_recorded: bool = False
+    history_start_recorded: bool = False
+    history_end_recorded: bool = False
+    history_kind: str = ""
+    history_started_at: str = ""
+    history_title: str = ""
+    history_server_name: str = ""
+    history_host: str = ""
+    history_user: str = ""
+    history_port: int = 0
+
+
+@dataclass
 class TerminalSession:
     id: str
     server_id: str | None
@@ -51,3 +82,14 @@ class TerminalSession:
     split_child_pids: dict[int, int] = field(default_factory=dict)
     split_processes: dict[int, TerminalProcess] = field(default_factory=dict)
     active_terminal_ids: set[int] = field(default_factory=set)
+    panes: dict[int, TerminalPane] = field(default_factory=dict)
+
+    def pane_for_terminal(self, terminal: Vte.Terminal) -> TerminalPane | None:
+        return self.panes.get(id(terminal))
+
+    def active_panes(self) -> tuple[TerminalPane, ...]:
+        return tuple(
+            pane
+            for terminal_id, pane in self.panes.items()
+            if terminal_id in self.active_terminal_ids
+        )

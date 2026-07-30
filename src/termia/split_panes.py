@@ -17,11 +17,11 @@ class SplitPaneController:
     def __init__(
         self,
         create_terminal: Callable[[TerminalSession], Vte.Terminal],
-        wrap_terminal: Callable[[Vte.Terminal], Gtk.ScrolledWindow],
+        pane_container: Callable[[TerminalSession, Vte.Terminal], Gtk.Widget | None],
         replace_terminal: Callable[[Gtk.Widget, Gtk.Widget], bool],
     ) -> None:
         self.create_terminal = create_terminal
-        self.wrap_terminal = wrap_terminal
+        self.pane_container = pane_container
         self.replace_terminal = replace_terminal
 
     def split_terminal(
@@ -30,12 +30,17 @@ class SplitPaneController:
         terminal: Vte.Terminal,
         direction: str,
     ) -> Vte.Terminal | None:
-        target = terminal.get_parent()
-        if not isinstance(target, Gtk.Widget):
+        target = self.pane_container(session, terminal)
+        if target is None:
             return None
 
         new_terminal = self.create_terminal(session)
-        new_scroller = self.wrap_terminal(new_terminal)
+        new_pane = self.pane_container(session, new_terminal)
+        if new_pane is None:
+            session.split_terminals.remove(new_terminal)
+            session.active_terminal_ids.discard(id(new_terminal))
+            session.panes.pop(id(new_terminal), None)
+            return None
         orientation = Gtk.Orientation.HORIZONTAL if direction in {"left", "right"} else Gtk.Orientation.VERTICAL
         paned = Gtk.Paned(orientation=orientation)
         paned.add_css_class("termia-split-pane")
@@ -44,20 +49,23 @@ class SplitPaneController:
         paned.set_vexpand(True)
         paned.set_resize_start_child(True)
         paned.set_resize_end_child(True)
-        paned.set_shrink_start_child(False)
-        paned.set_shrink_end_child(False)
+        paned.set_shrink_start_child(True)
+        paned.set_shrink_end_child(True)
+        target.add_css_class("in-split")
+        new_pane.add_css_class("in-split")
 
         if not self.replace_terminal(target, paned):
             session.split_terminals.remove(new_terminal)
             session.active_terminal_ids.discard(id(new_terminal))
+            session.panes.pop(id(new_terminal), None)
             return None
 
         if direction in {"left", "up"}:
-            paned.set_start_child(new_scroller)
+            paned.set_start_child(new_pane)
             paned.set_end_child(target)
         else:
             paned.set_start_child(target)
-            paned.set_end_child(new_scroller)
+            paned.set_end_child(new_pane)
 
         def center_split() -> bool:
             size = paned.get_width() if orientation == Gtk.Orientation.HORIZONTAL else paned.get_height()
