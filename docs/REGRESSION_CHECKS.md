@@ -126,6 +126,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Sidebar group/server selection colors must remain readable and must preserve the distinction between folders/groups and server entries.
 - New CSS rules must be scoped to Termia classes where practical and must not unintentionally override GTK/VTE internals.
 - Split pane separators must remain visible, narrow, and readable on both light and dark themes.
+- Showing pane status bars must not enlarge split separators; narrow panes may
+  ellipsize the connection name while keeping the timer and actions usable.
 
 ### Terminal Appearance
 
@@ -174,6 +176,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Disconnect one mixed-connection pane and confirm its siblings remain usable.
 - Trigger a failed SSH connection in a split, press Enter, and confirm only that
   pane reconnects to its own server.
+- Trigger a failed SSH connection in a split and use its context-menu
+  disconnect action; confirm the failed pane closes without reconnecting.
 - Confirm a seventeenth pane is rejected without changing the current layout.
 - Run `exit` inside a split pane and confirm only that pane disappears while the sibling pane keeps focus and remains usable.
 - Open an SSH session, a local terminal, and a split pane; close Termia and confirm their local child processes do not remain after a brief grace period.

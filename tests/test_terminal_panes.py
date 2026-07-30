@@ -110,6 +110,29 @@ class TerminalPaneStateTests(unittest.TestCase):
         self.assertFalse(root.disconnect_requested)
         self.assertTrue(split.disconnect_requested)
 
+    def test_failed_split_can_be_closed_instead_of_forcing_reconnect(self) -> None:
+        root_terminal = FakeTerminal()
+        split_terminal = FakeTerminal()
+        root = make_pane(root_terminal, "root")
+        split = make_pane(split_terminal, "split", server_id="server-b")
+        split.connected = False
+        split.pending_reconnect = True
+        session = make_session(root_terminal, root)
+        session.panes[id(split_terminal)] = split
+        session.active_terminal_ids.add(id(split_terminal))
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.discarded = None
+
+            def discard_unstarted_split_pane(self, current_session, terminal):
+                self.discarded = (current_session, terminal)
+
+        host = Host()
+        host.on_request_disconnect_pane(None, session, split_terminal)
+
+        self.assertEqual(host.discarded, (session, split_terminal))
+
     def test_same_connection_split_uses_the_selected_pane_identity(self) -> None:
         root_terminal = FakeTerminal()
         source_terminal = FakeTerminal()

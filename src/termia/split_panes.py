@@ -49,8 +49,8 @@ class SplitPaneController:
         paned.set_vexpand(True)
         paned.set_resize_start_child(True)
         paned.set_resize_end_child(True)
-        paned.set_shrink_start_child(False)
-        paned.set_shrink_end_child(False)
+        paned.set_shrink_start_child(True)
+        paned.set_shrink_end_child(True)
 
         if not self.replace_terminal(target, paned):
             session.split_terminals.remove(new_terminal)

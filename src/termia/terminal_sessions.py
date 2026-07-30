@@ -17,8 +17,9 @@ import gi
 gi.require_version("Gdk", "4.0")
 gi.require_version("Gio", "2.0")
 gi.require_version("Gtk", "4.0")
+gi.require_version("Pango", "1.0")
 gi.require_version("Vte", "3.91")
-from gi.repository import Gdk, Gio, GLib, Gtk, Vte
+from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
 from .connection_utils import find_local_terminal_profile, find_server
 from .file_transfer import FileTransferController
@@ -117,6 +118,8 @@ class TerminalSessionsMixin:
 
         status_label = Gtk.Label(label=self.t("connecting"))
         status_label.set_xalign(0)
+        status_label.set_hexpand(True)
+        status_label.set_ellipsize(Pango.EllipsizeMode.END)
         status_label.add_css_class("dim-label")
         timer_label = Gtk.Label(label="00:00:00")
         focus_button = Gtk.Button(label=self.t("hide_status_bar"))
@@ -129,7 +132,6 @@ class TerminalSessionsMixin:
         toolbar.set_visible(self.should_show_session_status_bar())
         toolbar.append(status_label)
         toolbar.append(focus_button)
-        toolbar.append(Gtk.Box(hexpand=True))
         toolbar.append(timer_label)
         toolbar.append(disconnect_button)
         return toolbar, status_label, timer_label, focus_button, disconnect_button
@@ -1416,6 +1418,8 @@ class TerminalSessionsMixin:
     ) -> None:
         pane = self.pane_state(session, terminal)
         if not pane.connected:
+            if pane.pending_reconnect and terminal is not session.terminal:
+                self.discard_unstarted_split_pane(session, terminal)
             return
         if not self.store.data.app.confirm_disconnect:
             self.disconnect_pane(session, terminal)
@@ -1431,6 +1435,8 @@ class TerminalSessionsMixin:
     def disconnect_pane(self, session: TerminalSession, terminal: Vte.Terminal) -> None:
         pane = self.pane_state(session, terminal)
         if not pane.connected:
+            if pane.pending_reconnect and terminal is not session.terminal:
+                self.discard_unstarted_split_pane(session, terminal)
             return
         pane.disconnect_requested = True
         process = pane.child_process
