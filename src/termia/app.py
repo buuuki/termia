@@ -145,6 +145,8 @@ class TermiaWindow(
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.shutdown_in_progress = False
+        self.startup_started = False
+        self.startup_source_id: int | None = None
         self.connect("close-request", self.on_main_window_close_request)
         self.connect("destroy", lambda *_args: self.store.close())
         if hasattr(GLib, "unix_signal_add"):
@@ -161,9 +163,27 @@ class TermiaWindow(
         self.refresh_list()
         if self.store.encryption_locked:
             self.toast_label.set_label(self.t("connections_locked"))
-            GLib.idle_add(self.request_unlock_connections)
+
+    def begin_startup_after_present(self) -> None:
+        if self.startup_started or self.startup_source_id is not None:
+            return
+        self.startup_source_id = GLib.idle_add(
+            self.continue_startup_after_map,
+        )
+
+    def continue_startup_after_map(self) -> bool:
+        if self.startup_started:
+            self.startup_source_id = None
+            return GLib.SOURCE_REMOVE
+        if not self.get_mapped():
+            return GLib.SOURCE_CONTINUE
+        self.startup_started = True
+        self.startup_source_id = None
+        if self.store.encryption_locked:
+            self.request_unlock_connections()
         else:
             self.schedule_startup_local_terminal()
+        return GLib.SOURCE_REMOVE
 
     def schedule_startup_local_terminal(self) -> None:
         if self.store.data.app.open_local_terminal_on_startup:
@@ -602,9 +622,12 @@ class TermiaApp(Gtk.Application):
 
     def do_activate(self) -> None:
         window = self.props.active_window
+        created = window is None
         if window is None:
             window = TermiaWindow(self)
         window.present()
+        if created:
+            window.begin_startup_after_present()
 
 
 def main(argv: list[str] | None = None) -> int:

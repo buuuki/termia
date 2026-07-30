@@ -1,15 +1,104 @@
 import importlib.util
 import unittest
 from types import MethodType, SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 
 @unittest.skipUnless(importlib.util.find_spec("gi"), "GTK bindings are unavailable")
 class StartupTerminalTests(unittest.TestCase):
     def setUp(self) -> None:
-        from termia.app import TermiaWindow
+        from termia.app import TermiaApp, TermiaWindow
 
+        self.TermiaApp = TermiaApp
         self.TermiaWindow = TermiaWindow
+
+    def startup_window(
+        self,
+        *,
+        encryption_locked: bool,
+        mapped: bool,
+    ) -> SimpleNamespace:
+        window = SimpleNamespace(
+            store=SimpleNamespace(encryption_locked=encryption_locked),
+            startup_started=False,
+            startup_source_id=None,
+            get_mapped=Mock(return_value=mapped),
+            request_unlock_connections=Mock(),
+            schedule_startup_local_terminal=Mock(),
+        )
+        window.begin_startup_after_present = MethodType(
+            self.TermiaWindow.begin_startup_after_present,
+            window,
+        )
+        window.continue_startup_after_map = MethodType(
+            self.TermiaWindow.continue_startup_after_map,
+            window,
+        )
+        return window
+
+    def test_application_presents_new_window_before_startup(self) -> None:
+        app = SimpleNamespace(props=SimpleNamespace(active_window=None))
+        window = Mock()
+
+        with patch("termia.app.TermiaWindow", return_value=window):
+            self.TermiaApp.do_activate(app)
+
+        self.assertEqual(
+            window.method_calls,
+            [call.present(), call.begin_startup_after_present()],
+        )
+
+    def test_application_does_not_restart_an_existing_window(self) -> None:
+        window = Mock()
+        app = SimpleNamespace(props=SimpleNamespace(active_window=window))
+
+        self.TermiaApp.do_activate(app)
+
+        self.assertEqual(window.method_calls, [call.present()])
+
+    def test_locked_startup_waits_for_the_first_window_map(self) -> None:
+        window = self.startup_window(encryption_locked=True, mapped=False)
+
+        with patch("termia.app.GLib.idle_add", return_value=73) as idle_add:
+            window.begin_startup_after_present()
+            waiting_result = window.continue_startup_after_map()
+            window.get_mapped.return_value = True
+            mapped_result = window.continue_startup_after_map()
+            duplicate_result = window.continue_startup_after_map()
+
+        idle_add.assert_called_once_with(window.continue_startup_after_map)
+        self.assertTrue(waiting_result)
+        self.assertFalse(mapped_result)
+        self.assertFalse(duplicate_result)
+        window.request_unlock_connections.assert_called_once_with()
+        self.assertTrue(window.startup_started)
+        self.assertIsNone(window.startup_source_id)
+
+    def test_already_mapped_locked_window_schedules_unlock_immediately(self) -> None:
+        window = self.startup_window(encryption_locked=True, mapped=True)
+
+        with patch("termia.app.GLib.idle_add", return_value=73) as idle_add:
+            window.begin_startup_after_present()
+            window.begin_startup_after_present()
+            result = window.continue_startup_after_map()
+
+        idle_add.assert_called_once_with(window.continue_startup_after_map)
+        window.request_unlock_connections.assert_called_once_with()
+        self.assertFalse(result)
+
+    def test_unlocked_startup_waits_for_map_before_opening_terminal(self) -> None:
+        window = self.startup_window(encryption_locked=False, mapped=False)
+
+        with patch("termia.app.GLib.idle_add", return_value=73) as idle_add:
+            window.begin_startup_after_present()
+            waiting_result = window.continue_startup_after_map()
+            window.get_mapped.return_value = True
+            mapped_result = window.continue_startup_after_map()
+
+        idle_add.assert_called_once_with(window.continue_startup_after_map)
+        self.assertTrue(waiting_result)
+        self.assertFalse(mapped_result)
+        window.schedule_startup_local_terminal.assert_called_once_with()
 
     def window(
         self,

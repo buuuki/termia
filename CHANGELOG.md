@@ -4,6 +4,12 @@
 
 Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
+### Fixed
+
+- Open the startup master-password dialog only after its Termia window is
+  mapped so the modal transient stays with its parent on multi-monitor desktops
+  (`#182`).
+
 ## 0.5.0-beta.3 - 2026-07-30
 
 Changes merged after `0.5.0-beta.2` (released 2026-07-29).
