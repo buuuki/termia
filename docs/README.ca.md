@@ -141,6 +141,9 @@ servidor SSH o terminal local desat. Una pestanya admet fins a 16 panells.
 Sortir o desconnectar-ne un no atura els altres. Un panell que espera una
 reconnexió mostra automàticament la barra d'estat amb l'acció `Tanca`, mentre
 que Retorn continua permetent reintentar la connexió.
+Termia permet fins a 40 pestanyes obertes en total, incloses les que són en
+finestres independents. Els espais de treball i grups de servidors que no caben
+en la capacitat disponible es rebutgen abans d'iniciar-ne els processos.
 Fes servir el botó de desar de la barra lateral per emmagatzemar les pestanyes
 i divisions actuals com un espai de treball amb nom. Els espais de treball
 apareixen a la barra lateral amb una icona de quadrícula; des del menú

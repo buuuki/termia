@@ -172,12 +172,16 @@ class SidebarMixin:
         if group is None:
             return
         servers = self.group_servers(group.id)
+        if not self.can_open_terminal_tabs(len(servers)):
+            return
         if len(servers) > GROUP_START_CONFIRMATION_THRESHOLD:
             self.request_start_group_confirmation(group, servers)
             return
         self.start_group_servers(servers)
 
     def start_group_servers(self, servers: list[Server]) -> None:
+        if not self.can_open_terminal_tabs(len(servers)):
+            return
         for server in servers:
             self.open_terminal_tab(server)
 
