@@ -2,6 +2,7 @@ import unittest
 from types import SimpleNamespace
 
 from termia.models import LocalTerminalProfile, Server, Workspace
+from termia.session_registry import SessionRegistry
 from termia.terminal_sessions import TerminalSessionsMixin
 
 
@@ -29,6 +30,7 @@ class WorkspaceOpeningTests(unittest.TestCase):
                         local_terminals=[LocalTerminalProfile(id="shell", name="Shell")],
                     )
                 )
+                self.session_registry = SessionRegistry()
                 self.toast_label = SimpleNamespace(set_label=lambda message: setattr(self, "toast", message))
                 self.opened: list[tuple[str, str]] = []
 
