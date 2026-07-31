@@ -145,8 +145,8 @@ Fes servir el botó de desar de la barra lateral per emmagatzemar les pestanyes
 i divisions actuals com un espai de treball amb nom. Els espais de treball
 apareixen a la barra lateral amb una icona de quadrícula; des del menú
 contextual els pots obrir, actualitzar, reanomenar, duplicar o eliminar. Un
-espai de treball pot contenir fins a 16 panells entre totes les pestanyes;
-obrir-ne 9 o més demana confirmació abans d'iniciar els processos de terminal.
+espai de treball pot contenir fins a 32 panells entre totes les pestanyes i
+s'obre sense cap confirmació addicional.
 
 ## Entorn provat
 

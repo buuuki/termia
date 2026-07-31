@@ -14,8 +14,7 @@ from gi.repository import Gtk
 from .ui_state import TerminalPane, TerminalSession
 
 WorkspaceNode = dict[str, Any]
-WORKSPACE_OPEN_CONFIRMATION_PANES = 8
-MAX_WORKSPACE_PANES = 16
+MAX_WORKSPACE_PANES = 32
 
 
 def pane_workspace_node(pane: TerminalPane) -> WorkspaceNode:

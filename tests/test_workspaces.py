@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from termia.models import LocalTerminalProfile, Server, Workspace
 from termia.sidebar import SidebarMixin
 from termia.terminal_sessions import TerminalSessionsMixin
-from termia.workspace_layout import MAX_WORKSPACE_PANES, WORKSPACE_OPEN_CONFIRMATION_PANES
+from termia.workspace_layout import MAX_WORKSPACE_PANES
 
 
 def pane(connection_type: str, connection_id: str) -> dict[str, str]:
@@ -65,45 +65,13 @@ class WorkspaceOpeningTests(unittest.TestCase):
         )
         self.assertEqual(host.toast, "Workspace opened: Production (2 tabs; 1 skipped)")
 
-    def test_opening_nine_to_sixteen_panes_requires_confirmation(self) -> None:
-        for pane_count in (WORKSPACE_OPEN_CONFIRMATION_PANES + 1, MAX_WORKSPACE_PANES):
-            with self.subTest(pane_count=pane_count):
-                workspace = Workspace(
-                    id="large",
-                    name="Large",
-                    tabs=workspace_tabs(pane_count),
-                )
-                host = SimpleNamespace(
-                    requested_confirmation=None,
-                    opened_workspace=None,
-                    toast_label=SimpleNamespace(set_label=lambda _message: None),
-                )
-                host.request_large_workspace_confirmation = lambda selected, count: setattr(
-                    host,
-                    "requested_confirmation",
-                    (selected.id, count),
-                )
-                host.open_workspace_tabs = lambda selected: setattr(
-                    host,
-                    "opened_workspace",
-                    selected.id,
-                )
-
-                TerminalSessionsMixin.open_workspace(host, workspace)
-
-                self.assertEqual(host.requested_confirmation, ("large", pane_count))
-                self.assertIsNone(host.opened_workspace)
-
-    def test_opening_eight_panes_does_not_require_confirmation(self) -> None:
+    def test_opening_thirty_two_panes_does_not_require_confirmation(self) -> None:
         workspace = Workspace(
             id="regular",
             name="Regular",
-            tabs=workspace_tabs(WORKSPACE_OPEN_CONFIRMATION_PANES),
+            tabs=workspace_tabs(MAX_WORKSPACE_PANES),
         )
         host = SimpleNamespace(opened_workspace=None)
-        host.request_large_workspace_confirmation = lambda *_args: self.fail(
-            "eight-pane workspace must open directly"
-        )
         host.open_workspace_tabs = lambda selected: setattr(
             host,
             "opened_workspace",
@@ -114,7 +82,7 @@ class WorkspaceOpeningTests(unittest.TestCase):
 
         self.assertEqual(host.opened_workspace, "regular")
 
-    def test_opening_more_than_sixteen_panes_is_rejected(self) -> None:
+    def test_opening_more_than_thirty_two_panes_is_rejected(self) -> None:
         workspace = Workspace(
             id="oversized",
             name="Oversized",
@@ -126,9 +94,6 @@ class WorkspaceOpeningTests(unittest.TestCase):
             t=lambda key: {
                 "workspace_pane_limit_exceeded": "Limit {limit}; found {count}",
             }[key],
-            request_large_workspace_confirmation=lambda *_args: self.fail(
-                "oversized workspace must not request confirmation"
-            ),
             open_workspace_tabs=lambda *_args: self.fail(
                 "oversized workspace must not start processes"
             ),
@@ -136,9 +101,9 @@ class WorkspaceOpeningTests(unittest.TestCase):
 
         TerminalSessionsMixin.open_workspace(host, workspace)
 
-        self.assertEqual(host.toast, "Limit 16; found 17")
+        self.assertEqual(host.toast, "Limit 32; found 33")
 
-    def test_saving_more_than_sixteen_panes_is_rejected(self) -> None:
+    def test_saving_more_than_thirty_two_panes_is_rejected(self) -> None:
         host = SimpleNamespace(
             toast=None,
             toast_label=SimpleNamespace(set_label=lambda message: setattr(host, "toast", message)),
@@ -153,4 +118,4 @@ class WorkspaceOpeningTests(unittest.TestCase):
         )
 
         self.assertFalse(accepted)
-        self.assertEqual(host.toast, "Limit 16; found 17")
+        self.assertEqual(host.toast, "Limit 32; found 33")

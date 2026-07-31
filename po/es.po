@@ -1357,11 +1357,3 @@ msgstr "Espacio de trabajo abierto: {name} ({count} pestañas; {skipped} omitida
 #: src/termia/i18n.py:workspace_pane_limit_exceeded
 msgid "A workspace can contain at most {limit} panes; current layout has {count}."
 msgstr "Un espacio de trabajo puede contener como máximo {limit} paneles; la disposición actual tiene {count}."
-
-#: src/termia/i18n.py:open_large_workspace_title
-msgid "Open large workspace?"
-msgstr "¿Abrir un espacio de trabajo grande?"
-
-#: src/termia/i18n.py:open_large_workspace_detail
-msgid "Opening \"{name}\" will start {count} terminal processes. Continue?"
-msgstr "Abrir \"{name}\" iniciará {count} procesos de terminal. ¿Continuar?"

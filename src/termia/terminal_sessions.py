@@ -42,7 +42,6 @@ from .terminal_view import TerminalViewFactory
 from .ui_state import TerminalPane, TerminalSession
 from .workspace_layout import (
     MAX_WORKSPACE_PANES,
-    WORKSPACE_OPEN_CONFIRMATION_PANES,
     workspace_layout_is_valid,
     workspace_pane_count,
     workspace_root_pane,
@@ -345,42 +344,7 @@ class TerminalSessionsMixin:
                 )
             )
             return
-        if pane_count > WORKSPACE_OPEN_CONFIRMATION_PANES:
-            self.request_large_workspace_confirmation(workspace, pane_count)
-            return
         self.open_workspace_tabs(workspace)
-
-    def request_large_workspace_confirmation(self, workspace: Workspace, pane_count: int) -> None:
-        dialog = Gtk.AlertDialog(
-            message=self.t("open_large_workspace_title"),
-            detail=self.t("open_large_workspace_detail").format(
-                name=workspace.name,
-                count=pane_count,
-            ),
-        )
-        dialog.set_buttons([self.t("cancel"), self.t("open_workspace")])
-        dialog.set_cancel_button(0)
-        dialog.set_default_button(0)
-        dialog.choose(
-            self,
-            None,
-            self.on_large_workspace_open_confirmed,
-            (dialog, workspace),
-        )
-
-    def on_large_workspace_open_confirmed(
-        self,
-        dialog: Gtk.AlertDialog,
-        result: Gio.AsyncResult,
-        data: tuple[Gtk.AlertDialog, Workspace],
-    ) -> None:
-        _dialog, workspace = data
-        try:
-            response = dialog.choose_finish(result)
-        except GLib.Error:
-            return
-        if response == 1:
-            self.open_workspace_tabs(workspace)
 
     def open_workspace_tabs(self, workspace: Workspace) -> None:
         opened_tabs = 0

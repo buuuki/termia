@@ -6,8 +6,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
-- Enforce the 16-pane total workspace limit and require confirmation before
-  opening workspaces with more than 8 panes (`#192`).
+- Enforce a 32-pane total workspace limit without prompting for valid
+  workspaces (`#192`).
 - Show the startup master-password prompt as a modal layer inside the Termia
   window so it cannot appear on a different monitor, while keeping the locked
   window movable through its header bar (`#182`).
