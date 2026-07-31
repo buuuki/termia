@@ -43,6 +43,8 @@ from .terminal_menu_actions import TerminalMenuActions
 from .terminal_sessions import TerminalSessionsMixin
 from .ui_state import RowObject
 
+TOAST_VISIBLE_SECONDS = 5
+
 
 class TermiaWindow(
     ConfigActionsMixin,
@@ -64,6 +66,14 @@ class TermiaWindow(
         self.store = ConnectionStore(DATA_FILE)
         self.toast_label = Gtk.Label()
         self.toast_label.add_css_class("dim-label")
+        self.toast_label.set_wrap(True)
+        self.toast_label.set_max_width_chars(80)
+        self.toast_label.set_margin_top(10)
+        self.toast_label.set_margin_bottom(10)
+        self.toast_label.set_margin_start(14)
+        self.toast_label.set_margin_end(14)
+        self.toast_hide_id: int | None = None
+        self.toast_label.connect("notify::label", self.on_toast_label_changed)
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
             self.t,
@@ -172,6 +182,27 @@ class TermiaWindow(
     def open_startup_local_terminal(self) -> bool:
         if not self.session_registry:
             self.on_open_local_terminal(None)
+        return GLib.SOURCE_REMOVE
+
+    def on_toast_label_changed(self, label: Gtk.Label, _param: object) -> None:
+        if not hasattr(self, "toast_revealer"):
+            return
+        if self.toast_hide_id is not None:
+            GLib.source_remove(self.toast_hide_id)
+            self.toast_hide_id = None
+        if not label.get_label().strip():
+            self.toast_revealer.set_reveal_child(False)
+            return
+        self.toast_revealer.set_reveal_child(True)
+        self.toast_hide_id = GLib.timeout_add_seconds(
+            TOAST_VISIBLE_SECONDS,
+            self.hide_toast,
+        )
+
+    def hide_toast(self) -> bool:
+        self.toast_hide_id = None
+        self.toast_revealer.set_reveal_child(False)
+        self.toast_label.set_label("")
         return GLib.SOURCE_REMOVE
 
     def t(self, key: str) -> str:
@@ -551,6 +582,24 @@ class TermiaWindow(
         unlock_actions.append(unlock_button)
         unlock_content.append(unlock_actions)
         window_overlay.add_overlay(unlock_panel)
+
+        toast_revealer = Gtk.Revealer()
+        self.toast_revealer = toast_revealer
+        toast_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
+        toast_revealer.set_transition_duration(180)
+        toast_revealer.set_halign(Gtk.Align.CENTER)
+        toast_revealer.set_valign(Gtk.Align.END)
+        toast_revealer.set_margin_bottom(18)
+        toast_revealer.set_margin_start(18)
+        toast_revealer.set_margin_end(18)
+        toast_revealer.set_can_target(False)
+
+        toast_frame = Gtk.Frame()
+        toast_frame.add_css_class("background")
+        toast_frame.add_css_class("card")
+        toast_frame.set_child(self.toast_label)
+        toast_revealer.set_child(toast_frame)
+        window_overlay.add_overlay(toast_revealer)
 
     def on_window_key_pressed(
         self,

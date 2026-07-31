@@ -1353,3 +1353,7 @@ msgstr "No hi ha pestanyes disponibles per obrir a l'espai de treball: {name}"
 #: src/termia/i18n.py:workspace_opened_with_skipped_tabs
 msgid "Workspace opened: {name} ({count} tabs; {skipped} skipped)"
 msgstr "Espai de treball obert: {name} ({count} pestanyes; {skipped} omeses)"
+
+#: src/termia/i18n.py:global_tab_limit_exceeded
+msgid "Cannot open tabs: {open} already open, {requested} requested, global limit {limit}."
+msgstr "No es poden obrir les pestanyes: n'hi ha {open} d'obertes, se n'han sol·licitat {requested} i el límit global és {limit}."

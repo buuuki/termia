@@ -49,6 +49,7 @@ from .workspace_layout import (
 
 
 INITIAL_LOCAL_COMMAND_DELAY_MS = 300
+MAX_OPEN_TABS = 40
 MAX_TERMINAL_PANES = 16
 
 
@@ -229,7 +230,9 @@ class TerminalSessionsMixin:
         title_locked: bool = False,
         initial_command: str = "",
         split_layout: str = "none",
-    ) -> TerminalSession:
+    ) -> TerminalSession | None:
+        if not self.can_open_terminal_tabs():
+            return None
         session, focus_button = self.create_terminal_session(
             title,
             server_id,
@@ -309,7 +312,29 @@ class TerminalSessionsMixin:
             session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
 
-    def open_terminal_tab(self, server: Server, *, split_layout: str | None = None) -> TerminalSession:
+    def can_open_terminal_tabs(self, requested_tabs: int = 1) -> bool:
+        if requested_tabs <= 0:
+            return True
+        open_tabs = len(self.session_registry.sessions())
+        if open_tabs + requested_tabs <= MAX_OPEN_TABS:
+            return True
+        self.toast_label.set_label(
+            self.t("global_tab_limit_exceeded").format(
+                limit=MAX_OPEN_TABS,
+                open=open_tabs,
+                requested=requested_tabs,
+            )
+        )
+        return False
+
+    def open_terminal_tab(
+        self,
+        server: Server,
+        *,
+        split_layout: str | None = None,
+    ) -> TerminalSession | None:
+        if not self.can_open_terminal_tabs():
+            return None
         session, focus_button = self.create_terminal_session(server.name, server.id, toolbar_margins=True)
         focus_button.connect("clicked", self.on_hide_pane_status_bar, session, session.terminal)
         session.disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, session.terminal)
@@ -333,9 +358,12 @@ class TerminalSessionsMixin:
         self.on_open_local_terminal(None)
 
     def open_workspace(self, workspace: Workspace) -> None:
+        layouts = workspace_tab_layouts(workspace.tabs)
+        if not self.can_open_terminal_tabs(len(layouts)):
+            return
         opened_tabs = 0
         skipped_tabs = 0
-        for layout in workspace_tab_layouts(workspace.tabs):
+        for layout in layouts:
             if not self.workspace_layout_available(layout):
                 skipped_tabs += 1
                 continue

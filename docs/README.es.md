@@ -141,6 +141,9 @@ SSH o terminal local guardado. Una pestaña admite hasta 16 paneles. Salir o
 desconectar uno no detiene los demás. Un panel que espera una reconexión muestra
 automáticamente su barra de estado con la acción `Cerrar`, mientras que Intro
 sigue permitiendo reintentar la conexión.
+Termia permite hasta 40 pestañas abiertas en total, incluidas las que están en
+ventanas independientes. Los espacios de trabajo y grupos de servidores que no
+quepan en la capacidad disponible se rechazan antes de iniciar sus procesos.
 Usa el botón de guardar de la barra lateral para almacenar las pestañas y
 divisiones actuales como un espacio de trabajo con nombre. Los espacios de
 trabajo aparecen en la barra lateral con un icono de cuadrícula; desde su menú
