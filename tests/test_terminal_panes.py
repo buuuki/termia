@@ -1,5 +1,6 @@
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from termia.models import Server
 from termia.terminal_processes import TerminalProcess
@@ -86,6 +87,38 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    def test_split_search_enter_without_a_match_keeps_dialog_open(self) -> None:
+        host = TerminalSessionsMixin()
+        dialog = Mock()
+        connection_list = Mock()
+        connection_list.get_selected_row.return_value = None
+
+        host.on_split_connection_search_activated(
+            Mock(),
+            dialog,
+            connection_list,
+            {"visible_choices": []},
+        )
+
+        dialog.response.assert_not_called()
+
+    def test_split_search_enter_with_a_selection_opens_connection(self) -> None:
+        from gi.repository import Gtk
+
+        host = TerminalSessionsMixin()
+        dialog = Mock()
+        connection_list = Mock()
+        connection_list.get_selected_row.return_value = SimpleNamespace(get_index=lambda: 0)
+
+        host.on_split_connection_search_activated(
+            Mock(),
+            dialog,
+            connection_list,
+            {"visible_choices": [SimpleNamespace(connection_id="server:example")]},
+        )
+
+        dialog.response.assert_called_once_with(Gtk.ResponseType.OK)
+
     def test_context_menu_toggles_only_the_selected_pane_status_bar(self) -> None:
         root_terminal = FakeTerminal()
         split_terminal = FakeTerminal()

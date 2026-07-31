@@ -192,6 +192,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
 - Select `Open connection in split…`, search a saved server by name, host, and
   user, then use `Up`/`Down` and `Enter` to open the selected connection.
+  Search for a value with no matches and confirm `Enter` keeps the dialog open
+  with the query intact.
 - Confirm terminal context-menu actions still work: disconnect, show and hide
   the selected pane's status bar, copy, paste, terminal preferences, session
   statistics, file transfer, all split directions, and all Tab submenu actions.

@@ -1072,7 +1072,13 @@ class TerminalSessionsMixin:
                 open_button,
             ),
         )
-        search_entry.connect("activate", lambda _entry: dialog.response(Gtk.ResponseType.OK))
+        search_entry.connect(
+            "activate",
+            self.on_split_connection_search_activated,
+            dialog,
+            connection_list,
+            state,
+        )
         search_keys = Gtk.EventControllerKey.new()
         search_keys.connect("key-pressed", self.on_split_connection_search_key_pressed, connection_list)
         search_entry.add_controller(search_keys)
@@ -1159,6 +1165,30 @@ class TerminalSessionsMixin:
             connection_list.select_row(target)
         return True
 
+    def selected_split_connection_id(
+        self,
+        connection_list: Gtk.ListBox,
+        state: dict[str, list[SplitConnectionChoice]],
+    ) -> str | None:
+        selected_row = connection_list.get_selected_row()
+        visible_choices = state.get("visible_choices", [])
+        if selected_row is None:
+            return None
+        selected_index = selected_row.get_index()
+        if 0 <= selected_index < len(visible_choices):
+            return visible_choices[selected_index].connection_id
+        return None
+
+    def on_split_connection_search_activated(
+        self,
+        _entry: Gtk.SearchEntry,
+        dialog: Gtk.Dialog,
+        connection_list: Gtk.ListBox,
+        state: dict[str, list[SplitConnectionChoice]],
+    ) -> None:
+        if self.selected_split_connection_id(connection_list, state) is not None:
+            dialog.response(Gtk.ResponseType.OK)
+
     def on_split_connection_dialog_response(
         self,
         dialog: Gtk.Dialog,
@@ -1173,13 +1203,7 @@ class TerminalSessionsMixin:
             dialog.destroy()
             return
         direction = direction_combo.get_active_id()
-        selected_row = connection_list.get_selected_row()
-        visible_choices = state.get("visible_choices", [])
-        connection_id = None
-        if selected_row is not None:
-            selected_index = selected_row.get_index()
-            if 0 <= selected_index < len(visible_choices):
-                connection_id = visible_choices[selected_index].connection_id
+        connection_id = self.selected_split_connection_id(connection_list, state)
         if direction is None or connection_id is None:
             dialog.destroy()
             return
