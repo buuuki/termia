@@ -61,7 +61,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   tab or Termia must terminate all pane processes.
 - Directional split actions must duplicate the selected pane, while `Open
   connection in split…` must allow a different saved SSH or local-terminal
-  profile and enforce the 16-pane limit.
+  profile and enforce the 16-pane limit. Its connection selector must filter
+  saved SSH and local profiles by their useful details and support `Up`,
+  `Down`, and `Enter` from the search field.
 - When close-on-exit is enabled, a split tab must close after the last pane exits regardless of whether the original terminal or a split exits last.
 - Closing Termia must terminate every process group in the isolated VTE session for active SSH, local-terminal, and split-pane sessions without signalling unrelated processes.
 
@@ -176,6 +178,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Middle-click a tab and confirm it follows the configured close confirmation and moves focus to the next terminal.
 - Right-click a terminal and open the context menu.
 - From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
+- Select `Open connection in split…`, search a saved server by name, host, and
+  user, then use `Up`/`Down` and `Enter` to open the selected connection.
 - Confirm terminal context-menu actions still work: disconnect, show and hide
   the selected pane's status bar, copy, paste, terminal preferences, session
   statistics, file transfer, all split directions, and all Tab submenu actions.
