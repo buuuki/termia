@@ -1,6 +1,6 @@
 import unittest
 
-from termia.models import Group, LocalTerminalProfile, Server
+from termia.models import Group, LocalTerminalProfile, Server, Workspace
 from termia.sidebar_projection import build_sidebar_projection
 
 
@@ -19,12 +19,14 @@ class SidebarProjectionTests(unittest.TestCase):
             LocalTerminalProfile(id="z", name="Zulu"),
             LocalTerminalProfile(id="a", name="Alpha", working_directory="/srv/projects"),
         ]
+        self.workspaces = [Workspace(id="workspace", name="Production")]
 
     def build(self, **kwargs: object):
         options = {
             "groups": self.groups,
             "servers": self.servers,
             "local_terminal_profiles": self.profiles,
+            "workspaces": self.workspaces,
             "recent_server_ids": ["db", "db", "missing", "web"],
             "query": "",
             "expanded_groups": {},
@@ -37,6 +39,7 @@ class SidebarProjectionTests(unittest.TestCase):
         projection = self.build()
 
         self.assertEqual([profile.id for profile in projection.local_terminal_profiles], ["a", "z"])
+        self.assertEqual([workspace.id for workspace in projection.workspaces], ["workspace"])
         self.assertEqual([server.id for server in projection.recent_servers], ["db", "web"])
         self.assertEqual([server.id for server in projection.favorite_servers], ["web"])
         self.assertEqual([group.id for group in projection.root_groups], ["prod"])
@@ -44,6 +47,7 @@ class SidebarProjectionTests(unittest.TestCase):
         self.assertEqual(
             [(row.kind, row.item_id) for row in projection.rows],
             [
+                ("workspace", "workspace"),
                 ("local_terminal", "a"),
                 ("local_terminal", "z"),
                 ("recent", "db"),
@@ -63,6 +67,7 @@ class SidebarProjectionTests(unittest.TestCase):
         self.assertEqual(
             [(row.kind, row.item_id) for row in projection.rows],
             [
+                ("workspace", "workspace"),
                 ("local_terminal", "a"),
                 ("local_terminal", "z"),
                 ("recent", "db"),
@@ -77,6 +82,7 @@ class SidebarProjectionTests(unittest.TestCase):
         projection = self.build(query="projects", expanded_groups={"prod": False})
 
         self.assertEqual([profile.id for profile in projection.local_terminal_profiles], ["a"])
+        self.assertEqual(projection.workspaces, [])
         self.assertEqual(projection.recent_servers, [])
         self.assertEqual(projection.favorite_servers, [])
         self.assertEqual([(row.kind, row.item_id) for row in projection.rows], [("local_terminal", "a")])

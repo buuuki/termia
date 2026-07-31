@@ -407,6 +407,13 @@ class TermiaWindow(
             add_local_terminal,
             enabled_tooltip=self.t("new_local_terminal"),
         )
+        save_workspace = Gtk.Button(icon_name="document-save-symbolic")
+        self.save_workspace_button = save_workspace
+        save_workspace.connect("clicked", self.on_save_workspace)
+        self.configure_write_action(
+            save_workspace,
+            enabled_tooltip=self.t("save_workspace"),
+        )
         expand_all = Gtk.Button(icon_name="pan-down-symbolic")
         self.expand_all_button = expand_all
         expand_all.set_tooltip_text(self.t("expand_all"))
@@ -418,6 +425,7 @@ class TermiaWindow(
         sidebar_actions.append(add_group)
         sidebar_actions.append(add_server)
         sidebar_actions.append(add_local_terminal)
+        sidebar_actions.append(save_workspace)
         sidebar_actions.append(expand_all)
         sidebar_actions.append(collapse_all)
         sidebar.append(sidebar_actions)
@@ -649,6 +657,10 @@ class TermiaWindow(
         self.configure_write_action(
             self.add_local_terminal_button,
             enabled_tooltip=self.t("new_local_terminal"),
+        )
+        self.configure_write_action(
+            self.save_workspace_button,
+            enabled_tooltip=self.t("save_workspace"),
         )
         self.expand_all_button.set_tooltip_text(self.t("expand_all"))
         self.collapse_all_button.set_tooltip_text(self.t("collapse_all"))

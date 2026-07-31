@@ -35,6 +35,7 @@ from .config_io import (
     connection_storage_mode_from_payload,
     decoded_connections_payload,
     read_raw_connections_payload,
+    workspaces_from_payload,
     write_connections_file,
 )
 from .debug import log_lock_failure, log_startup_context, log_store_state
@@ -62,6 +63,7 @@ from .models import (
     StatisticsSettings,
     StoreData,
     TerminalSettings,
+    Workspace,
 )
 from .terminal_config import normalize_split_layout
 from .ui_state import TerminalPane, TerminalSession
@@ -577,6 +579,7 @@ class ConnectionStore:
             groups=[Group(**item) for item in payload.get("groups", [])],
             servers=[Server(**item) for item in payload.get("servers", [])],
             local_terminals=[LocalTerminalProfile(**item) for item in payload.get("local_terminals", [])],
+            workspaces=workspaces_from_payload(payload.get("workspaces", [])),
             terminal=terminal,
             app=app,
             statistics=self.statistics_store.data,
@@ -650,6 +653,7 @@ class ConnectionStore:
             self.data.local_terminals,
             self.data.app.connection_storage_mode,
             self.master_password,
+            self.data.workspaces,
         )
 
     def save_settings(self) -> None:
@@ -868,6 +872,37 @@ class ConnectionStore:
         original_count = len(self.data.local_terminals)
         self.data.local_terminals = [profile for profile in self.data.local_terminals if profile.id != profile_id]
         if len(self.data.local_terminals) != original_count:
+            self.save_connections()
+
+    def add_workspace(self, name: str, tabs: list[dict[str, object]]) -> Workspace:
+        self.ensure_writable()
+        workspace = Workspace(id=str(uuid4()), name=name.strip(), tabs=tabs)
+        self.data.workspaces.append(workspace)
+        self.save_connections()
+        return workspace
+
+    def update_workspace(self, workspace_id: str, name: str, tabs: list[dict[str, object]]) -> None:
+        self.ensure_writable()
+        for workspace in self.data.workspaces:
+            if workspace.id == workspace_id:
+                workspace.name = name.strip()
+                workspace.tabs = tabs
+                self.save_connections()
+                return
+
+    def rename_workspace(self, workspace_id: str, name: str) -> None:
+        self.ensure_writable()
+        for workspace in self.data.workspaces:
+            if workspace.id == workspace_id:
+                workspace.name = name.strip()
+                self.save_connections()
+                return
+
+    def delete_workspace(self, workspace_id: str) -> None:
+        self.ensure_writable()
+        previous_count = len(self.data.workspaces)
+        self.data.workspaces = [workspace for workspace in self.data.workspaces if workspace.id != workspace_id]
+        if len(self.data.workspaces) != previous_count:
             self.save_connections()
 
     def update_terminal_settings(

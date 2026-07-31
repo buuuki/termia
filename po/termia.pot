@@ -838,6 +838,86 @@ msgstr ""
 msgid "Local terminals"
 msgstr ""
 
+#: src/termia/i18n.py:workspaces
+msgid "Workspaces"
+msgstr ""
+
+#: src/termia/i18n.py:save_workspace
+msgid "Save current workspace"
+msgstr ""
+
+#: src/termia/i18n.py:save_workspace_title
+msgid "Save workspace"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_name
+msgid "Workspace name"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_empty
+msgid "Open at least one terminal tab before saving a workspace."
+msgstr ""
+
+#: src/termia/i18n.py:workspace_saved
+msgid "Workspace saved: {name}"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_renamed
+msgid "Workspace renamed: {name}"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_updated
+msgid "Workspace updated: {name}"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_duplicated
+msgid "Workspace duplicated: {name}"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_deleted
+msgid "Workspace deleted: {name}"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_detail_info
+msgid "{tabs} tabs · {panes} panes"
+msgstr ""
+
+#: src/termia/i18n.py:open_workspace
+msgid "Open workspace"
+msgstr ""
+
+#: src/termia/i18n.py:update_workspace
+msgid "Update workspace with current tabs"
+msgstr ""
+
+#: src/termia/i18n.py:rename_workspace
+msgid "Rename workspace"
+msgstr ""
+
+#: src/termia/i18n.py:duplicate_workspace
+msgid "Duplicate workspace"
+msgstr ""
+
+#: src/termia/i18n.py:delete_workspace
+msgid "Delete workspace"
+msgstr ""
+
+#: src/termia/i18n.py:delete_workspace_confirm
+msgid "Delete workspace \"{name}\"? This action cannot be undone."
+msgstr ""
+
+#: src/termia/i18n.py:workspace_opened
+msgid "Workspace opened: {name} ({count} tabs)"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_no_available_tabs
+msgid "No available tabs to open in workspace: {name}"
+msgstr ""
+
+#: src/termia/i18n.py:workspace_opened_with_skipped_tabs
+msgid "Workspace opened: {name} ({count} tabs; {skipped} skipped)"
+msgstr ""
+
 #: src/termia/i18n.py:connection_history
 msgid "Connection history"
 msgstr ""
@@ -1142,7 +1222,7 @@ msgid "Ásbrú: imported {groups} groups and {servers} servers"
 msgstr ""
 
 #: src/termia/i18n.py:clear_confirm
-msgid "Delete all groups and servers? This action cannot be undone."
+msgid "Delete all groups, servers, local terminals, and workspaces? This action cannot be undone."
 msgstr ""
 
 #: src/termia/i18n.py:rename_tab

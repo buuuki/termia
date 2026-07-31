@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from .constants import (
     DEFAULT_PROMPT_COLOR,
@@ -51,6 +52,20 @@ class LocalTerminalProfile:
     command_on_start: str = ""
     tab_title: str = ""
     split_layout: str = "none"
+
+
+@dataclass
+class Workspace:
+    """A reusable arrangement of saved terminal connections.
+
+    ``tabs`` contains only saved connection/profile IDs and split-layout
+    metadata. It never contains terminal output, live processes, credentials,
+    or directories captured from a terminal.
+    """
+
+    id: str
+    name: str
+    tabs: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -140,6 +155,7 @@ class StoreData:
     groups: list[Group] = field(default_factory=list)
     servers: list[Server] = field(default_factory=list)
     local_terminals: list[LocalTerminalProfile] = field(default_factory=list)
+    workspaces: list[Workspace] = field(default_factory=list)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     app: AppSettings = field(default_factory=AppSettings)
     statistics: StatisticsSettings = field(default_factory=StatisticsSettings)

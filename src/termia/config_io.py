@@ -14,8 +14,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from .models import Group, LocalTerminalProfile, Server, StoreData
+from .models import Group, LocalTerminalProfile, Server, StoreData, Workspace
 from .migrations import CURRENT_SCHEMA_VERSION, migrate_connections_payload
+from .workspace_layout import workspace_tab_layouts
 
 CONNECTION_STORAGE_PLAIN = "plain"
 CONNECTION_STORAGE_OBFUSCATED = "obfuscated"
@@ -42,12 +43,14 @@ def connections_payload(
     local_terminals: list[LocalTerminalProfile],
     storage_mode: str,
     master_password: str | None = None,
+    workspaces: list[Workspace] | None = None,
 ) -> dict[str, object]:
     payload = {
         "schema_version": CURRENT_SCHEMA_VERSION,
         "groups": [asdict(group) for group in groups],
         "servers": [asdict(server) for server in servers],
         "local_terminals": [asdict(profile) for profile in local_terminals],
+        "workspaces": [asdict(workspace) for workspace in workspaces or []],
     }
     raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     if storage_mode == CONNECTION_STORAGE_OBFUSCATED:
@@ -158,10 +161,11 @@ def write_connections_file(
     local_terminals: list[LocalTerminalProfile],
     storage_mode: str,
     master_password: str | None = None,
+    workspaces: list[Workspace] | None = None,
 ) -> None:
     mode = storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = connections_payload(groups, servers, local_terminals, mode, master_password)
+    payload = connections_payload(groups, servers, local_terminals, mode, master_password, workspaces)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     path.chmod(0o600)
 
@@ -177,7 +181,36 @@ def load_store_data_from_json(path: Path, current: StoreData, master_password: s
         groups=[Group(**item) for item in payload.get("groups", [])],
         servers=[Server(**item) for item in payload.get("servers", [])],
         local_terminals=[LocalTerminalProfile(**item) for item in payload.get("local_terminals", [])],
+        workspaces=workspaces_from_payload(payload.get("workspaces", [])),
         terminal=current.terminal,
         app=current.app,
         statistics=current.statistics,
     )
+
+
+def workspaces_from_payload(payload: object) -> list[Workspace]:
+    if not isinstance(payload, list):
+        return []
+    workspaces: list[Workspace] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        workspace_id = item.get("id")
+        name = item.get("name")
+        tabs = item.get("tabs", [])
+        if (
+            not isinstance(workspace_id, str)
+            or not workspace_id
+            or not isinstance(name, str)
+            or not name.strip()
+            or not isinstance(tabs, list)
+        ):
+            continue
+        workspaces.append(
+            Workspace(
+                id=workspace_id,
+                name=name,
+                tabs=[{"layout": layout} for layout in workspace_tab_layouts(tabs)],
+            )
+        )
+    return workspaces

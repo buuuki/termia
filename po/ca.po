@@ -1082,8 +1082,8 @@ msgid "Ásbrú: imported {groups} groups and {servers} servers"
 msgstr "Ásbrú: {groups} grups i {servers} servidors importats"
 
 #: src/termia/i18n.py:clear_confirm
-msgid "Delete all groups and servers? This action cannot be undone."
-msgstr "Vols eliminar tots els grups i servidors? Aquesta acció no es pot desfer."
+msgid "Delete all groups, servers, local terminals, and workspaces? This action cannot be undone."
+msgstr "Voleu eliminar tots els grups, servidors, terminals locals i espais de treball? Aquesta acció no es pot desfer."
 
 #: src/termia/i18n.py:rename_tab
 msgid "Rename tab"
@@ -1265,3 +1265,83 @@ msgstr "Crea un servidor SSH o terminal local desat abans d'obrir una connexió 
 #: src/termia/i18n.py:split_pane_limit
 msgid "A tab cannot contain more than {limit} terminal panes."
 msgstr "Una pestanya no pot contenir més de {limit} panells de terminal."
+
+#: src/termia/i18n.py:workspaces
+msgid "Workspaces"
+msgstr "Espais de treball"
+
+#: src/termia/i18n.py:save_workspace
+msgid "Save current workspace"
+msgstr "Desa l'espai de treball actual"
+
+#: src/termia/i18n.py:save_workspace_title
+msgid "Save workspace"
+msgstr "Desa l'espai de treball"
+
+#: src/termia/i18n.py:workspace_name
+msgid "Workspace name"
+msgstr "Nom de l'espai de treball"
+
+#: src/termia/i18n.py:workspace_empty
+msgid "Open at least one terminal tab before saving a workspace."
+msgstr "Obre almenys una pestanya de terminal abans de desar un espai de treball."
+
+#: src/termia/i18n.py:workspace_saved
+msgid "Workspace saved: {name}"
+msgstr "Espai de treball desat: {name}"
+
+#: src/termia/i18n.py:workspace_renamed
+msgid "Workspace renamed: {name}"
+msgstr "Espai de treball reanomenat: {name}"
+
+#: src/termia/i18n.py:workspace_updated
+msgid "Workspace updated: {name}"
+msgstr "Espai de treball actualitzat: {name}"
+
+#: src/termia/i18n.py:workspace_duplicated
+msgid "Workspace duplicated: {name}"
+msgstr "Espai de treball duplicat: {name}"
+
+#: src/termia/i18n.py:workspace_deleted
+msgid "Workspace deleted: {name}"
+msgstr "Espai de treball eliminat: {name}"
+
+#: src/termia/i18n.py:workspace_detail_info
+msgid "{tabs} tabs · {panes} panes"
+msgstr "{tabs} pestanyes · {panes} panells"
+
+#: src/termia/i18n.py:open_workspace
+msgid "Open workspace"
+msgstr "Obre l'espai de treball"
+
+#: src/termia/i18n.py:update_workspace
+msgid "Update workspace with current tabs"
+msgstr "Actualitza l'espai de treball amb les pestanyes actuals"
+
+#: src/termia/i18n.py:rename_workspace
+msgid "Rename workspace"
+msgstr "Reanomena l'espai de treball"
+
+#: src/termia/i18n.py:duplicate_workspace
+msgid "Duplicate workspace"
+msgstr "Duplica l'espai de treball"
+
+#: src/termia/i18n.py:delete_workspace
+msgid "Delete workspace"
+msgstr "Elimina l'espai de treball"
+
+#: src/termia/i18n.py:delete_workspace_confirm
+msgid "Delete workspace \"{name}\"? This action cannot be undone."
+msgstr "Voleu eliminar l'espai de treball \"{name}\"? Aquesta acció no es pot desfer."
+
+#: src/termia/i18n.py:workspace_opened
+msgid "Workspace opened: {name} ({count} tabs)"
+msgstr "Espai de treball obert: {name} ({count} pestanyes)"
+
+#: src/termia/i18n.py:workspace_no_available_tabs
+msgid "No available tabs to open in workspace: {name}"
+msgstr "No hi ha pestanyes disponibles per obrir a l'espai de treball: {name}"
+
+#: src/termia/i18n.py:workspace_opened_with_skipped_tabs
+msgid "Workspace opened: {name} ({count} tabs; {skipped} skipped)"
+msgstr "Espai de treball obert: {name} ({count} pestanyes; {skipped} omeses)"

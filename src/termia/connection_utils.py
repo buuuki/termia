@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
-from .models import Group, LocalTerminalProfile, Server
+from .models import Group, LocalTerminalProfile, Server, Workspace
 
 
 def find_server(servers: list[Server], server_id: str) -> Server | None:
@@ -19,6 +19,10 @@ def find_local_terminal_profile(
     return next((profile for profile in profiles if profile.id == profile_id), None)
 
 
+def find_workspace(workspaces: list[Workspace], workspace_id: str) -> Workspace | None:
+    return next((workspace for workspace in workspaces if workspace.id == workspace_id), None)
+
+
 def unique_server_clone_name(servers: list[Server], name: str) -> str:
     existing_names = {server.name for server in servers}
     base_name = f"{name}-clone"
@@ -32,6 +36,17 @@ def unique_server_clone_name(servers: list[Server], name: str) -> str:
 
 def unique_local_terminal_clone_name(profiles: list[LocalTerminalProfile], name: str) -> str:
     existing_names = {profile.name for profile in profiles}
+    base_name = f"{name}-clone"
+    if base_name not in existing_names:
+        return base_name
+    index = 2
+    while f"{base_name}-{index}" in existing_names:
+        index += 1
+    return f"{base_name}-{index}"
+
+
+def unique_workspace_clone_name(workspaces: list[Workspace], name: str) -> str:
+    existing_names = {workspace.name for workspace in workspaces}
     base_name = f"{name}-clone"
     if base_name not in existing_names:
         return base_name

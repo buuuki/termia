@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .connection_utils import group_matches_query, server_matches_query
-from .models import Group, LocalTerminalProfile, Server
+from .models import Group, LocalTerminalProfile, Server, Workspace
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,7 @@ class SidebarProjection:
     children_by_parent: dict[str | None, list[Group]]
     servers_by_group: dict[str | None, list[Server]]
     local_terminal_profiles: list[LocalTerminalProfile]
+    workspaces: list[Workspace]
     recent_servers: list[Server]
     favorite_servers: list[Server]
     root_groups: list[Group]
@@ -48,10 +49,15 @@ def local_terminal_profile_matches_query(profile: LocalTerminalProfile, query: s
     return query in haystack
 
 
+def workspace_matches_query(workspace: Workspace, query: str) -> bool:
+    return query in workspace.name.casefold()
+
+
 def build_sidebar_projection(
     groups: list[Group],
     servers: list[Server],
     local_terminal_profiles: list[LocalTerminalProfile],
+    workspaces: list[Workspace],
     recent_server_ids: list[str],
     query: str,
     expanded_groups: dict[str, bool],
@@ -69,6 +75,10 @@ def build_sidebar_projection(
     profiles = sorted(local_terminal_profiles, key=lambda item: item.name.lower())
     if query:
         profiles = [profile for profile in profiles if local_terminal_profile_matches_query(profile, query)]
+
+    visible_workspaces = sorted(workspaces, key=lambda item: item.name.casefold())
+    if query:
+        visible_workspaces = [workspace for workspace in visible_workspaces if workspace_matches_query(workspace, query)]
 
     servers_by_id = {server.id: server for server in filtered_servers}
     recent: list[Server] = []
@@ -91,7 +101,7 @@ def build_sidebar_projection(
     def is_expanded(group_id: str) -> bool:
         if query:
             return True
-        default = True if group_id in {"__recent__", "__favorites__", "__local_terminals__"} else not collapse_groups_on_startup
+        default = True if group_id in {"__recent__", "__favorites__", "__local_terminals__", "__workspaces__"} else not collapse_groups_on_startup
         return expanded_groups.get(group_id, default)
 
     def server_row(server: Server, kind: str = "server") -> SidebarRow:
@@ -109,7 +119,8 @@ def build_sidebar_projection(
         descendant_servers = sum(1 for row in child_rows if row.kind == "server")
         return [SidebarRow("group", group.id, group.name, f"{descendant_servers} servidor(es)"), *child_rows]
 
-    rows = [SidebarRow("local_terminal", profile.id, profile.name or "Local terminal") for profile in profiles]
+    rows = [SidebarRow("workspace", workspace.id, workspace.name) for workspace in visible_workspaces]
+    rows.extend(SidebarRow("local_terminal", profile.id, profile.name or "Local terminal") for profile in profiles)
     if is_expanded("__recent__"):
         rows.extend(server_row(server, "recent") for server in recent)
     if is_expanded("__favorites__"):
@@ -123,6 +134,7 @@ def build_sidebar_projection(
         children_by_parent=children_by_parent,
         servers_by_group=servers_by_group,
         local_terminal_profiles=profiles,
+        workspaces=visible_workspaces,
         recent_servers=recent,
         favorite_servers=favorites,
         root_groups=root_groups,
