@@ -138,6 +138,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Split pane separators must remain visible, narrow, and readable on both light and dark themes.
 - Showing pane status bars must not enlarge split separators; narrow panes may
   ellipsize the connection name while keeping the timer and actions usable.
+- Showing or hiding a pane status bar must preserve the existing position of
+  every affected split divider.
 
 ### Terminal Appearance
 
@@ -183,6 +185,9 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Confirm terminal context-menu actions still work: disconnect, show and hide
   the selected pane's status bar, copy, paste, terminal preferences, session
   statistics, file transfer, all split directions, and all Tab submenu actions.
+- Drag a horizontal split divider away from the centre, then show and hide its
+  pane status bar from both the context menu and `Hide` button; the divider
+  must remain at the chosen position and long status titles must ellipsize.
 - Create split panes in all four directions and confirm each new pane opens a working shell.
 - From an SSH pane, use `Open connection in split…` to open a different SSH
   server and then a saved local terminal; verify each pane's status bar, PID,

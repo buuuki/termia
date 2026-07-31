@@ -9,6 +9,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 - Show the startup master-password prompt as a modal layer inside the Termia
   window so it cannot appear on a different monitor, while keeping the locked
   window movable through its header bar (`#182`).
+- Preserve split-divider positions when showing or hiding a pane status bar
+  and allow status labels to ellipsize instead of forcing pane width (`#189`).
 
 ### Added
 
