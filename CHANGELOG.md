@@ -14,6 +14,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 - Save named multi-server workspaces from the sidebar and reopen their tabs,
   independent SSH/local split panes, and split layout safely (`#185`).
+- Search saved SSH and local-terminal profiles by keyboard when opening a
+  connection in a split (`#187`).
 
 ## 0.5.0-beta.3 - 2026-07-30
 

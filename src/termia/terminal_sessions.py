@@ -27,6 +27,11 @@ from .keybindings import is_unmodified_function_key, keybinding_matches
 from .models import LocalTerminalProfile, Server, Workspace
 from .session_commands import build_ssh_command
 from .split_panes import SplitPaneController
+from .split_connection_search import (
+    SplitConnectionChoice,
+    build_split_connection_choices,
+    filter_split_connection_choices,
+)
 from .terminal_config import (
     build_local_prompt_shell_command,
     build_terminal_environment,
@@ -965,8 +970,9 @@ class TerminalSessionsMixin:
             transient_for=self,
             modal=True,
         )
-        dialog.set_resizable(False)
-        self.add_dialog_action_buttons(dialog, self.t("open"))
+        dialog.set_resizable(True)
+        dialog.set_default_size(640, 460)
+        _cancel_button, open_button = self.add_dialog_action_buttons(dialog, self.t("open"))
 
         grid = Gtk.Grid(column_spacing=12, row_spacing=12)
         grid.set_margin_top(16)
@@ -979,30 +985,126 @@ class TerminalSessionsMixin:
             direction_combo.append(direction, self.t(f"split_{direction}"))
         direction_combo.set_active_id("right")
 
-        connection_combo = Gtk.ComboBoxText()
-        for server in sorted(self.store.data.servers, key=lambda item: item.name.casefold()):
-            connection_combo.append(f"server:{server.id}", self.t("split_ssh_option").format(name=server.name))
-        for profile in sorted(self.store.data.local_terminals, key=lambda item: item.name.casefold()):
-            connection_combo.append(
-                f"local:{profile.id}",
-                self.t("split_local_option").format(name=profile.name),
-            )
-        connection_combo.set_active(0)
+        search_entry = Gtk.SearchEntry()
+        search_entry.set_placeholder_text(self.t("search_connections"))
+        connection_list = Gtk.ListBox()
+        connection_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        connection_list.set_activate_on_single_click(False)
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_min_content_height(260)
+        scroller.set_vexpand(True)
+        scroller.set_child(connection_list)
+        connection_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        connection_box.set_hexpand(True)
+        connection_box.append(search_entry)
+        connection_box.append(scroller)
+        choices = build_split_connection_choices(self.store.data.servers, self.store.data.local_terminals)
+        state: dict[str, list[SplitConnectionChoice]] = {"choices": choices}
+        self.refresh_split_connection_choices(connection_list, state, "", open_button)
 
         grid.attach(self.build_form_label(self.t("split_direction"), True), 0, 0, 1, 1)
         grid.attach(direction_combo, 1, 0, 1, 1)
-        grid.attach(self.build_form_label(self.t("connection"), True), 0, 1, 1, 1)
-        grid.attach(connection_combo, 1, 1, 1, 1)
+        connection_label = self.build_form_label(self.t("connection"), True)
+        connection_label.set_valign(Gtk.Align.START)
+        grid.attach(connection_label, 0, 1, 1, 1)
+        grid.attach(connection_box, 1, 1, 1, 1)
         dialog.get_content_area().append(grid)
+        search_entry.connect(
+            "search-changed",
+            lambda entry: self.refresh_split_connection_choices(
+                connection_list,
+                state,
+                entry.get_text(),
+                open_button,
+            ),
+        )
+        search_entry.connect("activate", lambda _entry: dialog.response(Gtk.ResponseType.OK))
+        search_keys = Gtk.EventControllerKey.new()
+        search_keys.connect("key-pressed", self.on_split_connection_search_key_pressed, connection_list)
+        search_entry.add_controller(search_keys)
+        connection_list.connect("row-activated", lambda _list, _row: dialog.response(Gtk.ResponseType.OK))
         dialog.connect(
             "response",
             self.on_split_connection_dialog_response,
             session,
             source_terminal,
             direction_combo,
-            connection_combo,
+            connection_list,
+            state,
         )
+        search_entry.grab_focus()
         dialog.present()
+
+    def refresh_split_connection_choices(
+        self,
+        connection_list: Gtk.ListBox,
+        state: dict[str, list[SplitConnectionChoice]],
+        query: str,
+        open_button: Gtk.Button,
+    ) -> None:
+        child = connection_list.get_first_child()
+        while child is not None:
+            next_child = child.get_next_sibling()
+            connection_list.remove(child)
+            child = next_child
+
+        visible_choices = filter_split_connection_choices(state["choices"], query)
+        state["visible_choices"] = visible_choices
+        open_button.set_sensitive(bool(visible_choices))
+        if not visible_choices:
+            row = Gtk.ListBoxRow()
+            label = Gtk.Label(label=self.t("no_matching_connections"))
+            label.set_xalign(0)
+            label.set_margin_top(8)
+            label.set_margin_bottom(8)
+            label.set_margin_start(8)
+            label.set_margin_end(8)
+            row.set_child(label)
+            row.set_selectable(False)
+            connection_list.append(row)
+            return
+
+        for choice in visible_choices:
+            row = Gtk.ListBoxRow()
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            box.set_margin_top(6)
+            box.set_margin_bottom(6)
+            box.set_margin_start(8)
+            box.set_margin_end(8)
+            title = Gtk.Label(
+                label=(
+                    self.t("split_ssh_option").format(name=choice.name)
+                    if choice.kind == "server"
+                    else self.t("split_local_option").format(name=choice.name)
+                )
+            )
+            title.set_xalign(0)
+            box.append(title)
+            row.set_child(box)
+            connection_list.append(row)
+        connection_list.select_row(connection_list.get_row_at_index(0))
+
+    def on_split_connection_search_key_pressed(
+        self,
+        _controller: Gtk.EventControllerKey,
+        keyval: int,
+        _keycode: int,
+        _state: Gdk.ModifierType,
+        connection_list: Gtk.ListBox,
+    ) -> bool:
+        if keyval not in {Gdk.KEY_Up, Gdk.KEY_Down}:
+            return False
+        selected = connection_list.get_selected_row()
+        if selected is None:
+            selected = connection_list.get_row_at_index(0)
+        if selected is None:
+            return True
+        target_index = selected.get_index() + (-1 if keyval == Gdk.KEY_Up else 1)
+        target = connection_list.get_row_at_index(target_index)
+        if target is not None:
+            connection_list.select_row(target)
+        return True
 
     def on_split_connection_dialog_response(
         self,
@@ -1011,13 +1113,20 @@ class TerminalSessionsMixin:
         session: TerminalSession,
         source_terminal: Vte.Terminal,
         direction_combo: Gtk.ComboBoxText,
-        connection_combo: Gtk.ComboBoxText,
+        connection_list: Gtk.ListBox,
+        state: dict[str, list[SplitConnectionChoice]],
     ) -> None:
         if response != Gtk.ResponseType.OK:
             dialog.destroy()
             return
         direction = direction_combo.get_active_id()
-        connection_id = connection_combo.get_active_id()
+        selected_row = connection_list.get_selected_row()
+        visible_choices = state.get("visible_choices", [])
+        connection_id = None
+        if selected_row is not None:
+            selected_index = selected_row.get_index()
+            if 0 <= selected_index < len(visible_choices):
+                connection_id = visible_choices[selected_index].connection_id
         if direction is None or connection_id is None:
             dialog.destroy()
             return

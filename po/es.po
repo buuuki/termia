@@ -1250,6 +1250,14 @@ msgstr "Dirección de la división"
 msgid "Connection"
 msgstr "Conexión"
 
+#: src/termia/i18n.py:search_connections
+msgid "Search connections"
+msgstr "Buscar conexiones"
+
+#: src/termia/i18n.py:no_matching_connections
+msgid "No matching connections."
+msgstr "No hay conexiones coincidentes."
+
 #: src/termia/i18n.py:split_ssh_option
 msgid "SSH · {name}"
 msgstr "SSH · {name}"
