@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -16,13 +17,16 @@ from .connection_utils import (
     find_group,
     find_local_terminal_profile,
     find_server,
+    find_workspace,
     group_descendant_ids,
     group_matches_query,
     unique_local_terminal_clone_name,
     unique_server_clone_name,
+    unique_workspace_clone_name,
 )
-from .models import Group, LocalTerminalProfile, Server
+from .models import Group, LocalTerminalProfile, Server, Workspace
 from .sidebar_projection import SidebarRow as RowObject, build_sidebar_projection
+from .workspace_layout import capture_workspace_tabs, workspace_pane_count, workspace_tab_layouts
 
 GROUP_START_CONFIRMATION_THRESHOLD = 10
 
@@ -246,7 +250,7 @@ class SidebarMixin:
     def get_group_expanded(self, group_id: str, query: str) -> bool:
         if query:
             return True
-        if group_id in {"__recent__", "__favorites__", "__local_terminals__"}:
+        if group_id in {"__recent__", "__favorites__", "__local_terminals__", "__workspaces__"}:
             return self.group_expanded_state.get(group_id, True)
         return self.group_expanded_state.get(group_id, not self.collapse_groups_on_startup)
 
@@ -270,6 +274,7 @@ class SidebarMixin:
             self.store.data.groups,
             self.store.data.servers,
             self.store.data.local_terminals,
+            self.store.data.workspaces,
             self.store.recent_server_ids(),
             query,
             self.group_expanded_state,
@@ -277,6 +282,8 @@ class SidebarMixin:
         )
         self.sidebar_projection = projection
         self.visible_tree_rows = projection.rows
+        if projection.workspaces:
+            self.server_list.append(self.build_workspaces_widget(projection.workspaces, query))
         if projection.local_terminal_profiles:
             self.server_list.append(self.build_local_terminals_widget(projection.local_terminal_profiles, query))
         if projection.recent_servers:
@@ -300,6 +307,62 @@ class SidebarMixin:
     def build_local_terminal_row_object(self, profile: LocalTerminalProfile) -> RowObject:
         title = profile.name or self.t("local_terminal")
         return RowObject("local_terminal", profile.id, title)
+
+    def build_workspace_row_object(self, workspace: Workspace) -> RowObject:
+        return RowObject("workspace", workspace.id, workspace.name)
+
+    def build_workspaces_widget(self, workspaces: list[Workspace], query: str) -> Gtk.Widget:
+        expander = Gtk.Expander()
+        expander.set_focusable(False)
+        expander.set_label_widget(self.build_workspaces_label(f"{self.t('workspaces')} ({len(workspaces)})"))
+        self.group_expanders.append(expander)
+        expander.group_id = "__workspaces__"
+        expander.set_expanded(self.get_group_expanded("__workspaces__", query))
+        expander.connect("notify::expanded", self.on_group_expanded_changed)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        for workspace in workspaces:
+            content.append(self.build_workspace_widget(workspace))
+        expander.set_child(content)
+        return expander
+
+    def build_workspaces_label(self, text: str) -> Gtk.Widget:
+        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        label_box.append(Gtk.Image.new_from_icon_name("view-grid-symbolic"))
+        label = Gtk.Label(label=text)
+        label.add_css_class("heading")
+        label_box.append(label)
+        return label_box
+
+    def build_workspace_widget(self, workspace: Workspace) -> Gtk.Widget:
+        row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        row.set_focusable(False)
+        row.set_margin_start(18)
+        row.set_margin_end(6)
+        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        title_box.append(Gtk.Image.new_from_icon_name("view-grid-symbolic"))
+        title = Gtk.Label(label=workspace.name)
+        title.set_xalign(0)
+        title_box.append(title)
+        row.append(title_box)
+        row.set_tooltip_text(self.workspace_description(workspace))
+        row_obj = self.build_workspace_row_object(workspace)
+        self.register_tree_widget(row_obj, row)
+        left_click = Gtk.GestureClick.new()
+        left_click.set_button(1)
+        left_click.connect("pressed", self.on_workspace_widget_left_click, row_obj)
+        row.add_controller(left_click)
+        right_click = Gtk.GestureClick.new()
+        right_click.set_button(3)
+        right_click.connect("pressed", self.on_workspace_widget_right_click, row_obj, row)
+        row.add_controller(right_click)
+        return row
+
+    def workspace_description(self, workspace: Workspace) -> str:
+        layouts = workspace_tab_layouts(workspace.tabs)
+        return self.t("workspace_detail_info").format(
+            tabs=len(layouts),
+            panes=sum(workspace_pane_count(layout) for layout in layouts),
+        )
 
     def build_server_row_object(self, server: Server, row_kind: str = "server") -> RowObject:
         return RowObject(row_kind, server.id, server.name, self.get_server_connection_text(server))
@@ -519,7 +582,7 @@ class SidebarMixin:
         widget.add_css_class("termia-tree-item")
         if row.kind == "group":
             widget.add_css_class("termia-group-item")
-        if row.kind in {"server", "favorite", "recent", "local_terminal"}:
+        if row.kind in {"server", "favorite", "recent", "local_terminal", "workspace"}:
             widget.add_css_class("termia-server-item")
         widget.set_focusable(True)
         self.tree_widgets[(row.kind, row.item_id)] = widget
@@ -642,6 +705,12 @@ class SidebarMixin:
                 return False
             self.open_local_terminal_profile(profile)
             return True
+        if self.selected.kind == "workspace":
+            workspace = find_workspace(self.store.data.workspaces, self.selected.item_id)
+            if workspace is None:
+                return False
+            self.open_workspace(workspace)
+            return True
         if self.selected.kind in {"server", "favorite", "recent"}:
             server = find_server(self.store.data.servers, self.selected.item_id)
             if server is None:
@@ -748,6 +817,37 @@ class SidebarMixin:
                 self.open_local_terminal_profile(profile)
 
     def on_local_terminal_widget_right_click(
+        self,
+        _gesture: Gtk.GestureClick,
+        _n_press: int,
+        _x: float,
+        _y: float,
+        row: RowObject,
+        parent: Gtk.Widget,
+    ) -> None:
+        scroll_values = self.get_sidebar_scroll_values()
+        self.close_active_context_menu()
+        self.select_tree_row(row, parent)
+        self.show_row_context_menu(row, parent, _x, _y)
+        self.preserve_sidebar_scroll(*scroll_values)
+
+    def on_workspace_widget_left_click(
+        self,
+        _gesture: Gtk.GestureClick,
+        n_press: int,
+        _x: float,
+        _y: float,
+        row: RowObject,
+    ) -> None:
+        widget = self.tree_widgets[(row.kind, row.item_id)]
+        self.select_tree_row(row, widget)
+        widget.grab_focus()
+        if n_press == 2:
+            workspace = find_workspace(self.store.data.workspaces, row.item_id)
+            if workspace is not None:
+                self.open_workspace(workspace)
+
+    def on_workspace_widget_right_click(
         self,
         _gesture: Gtk.GestureClick,
         _n_press: int,
@@ -886,6 +986,37 @@ class SidebarMixin:
                 destructive=True,
                 enabled=not self.store.read_only,
             )
+        elif row.kind == "workspace":
+            self.add_context_menu_item(
+                menu,
+                self.t("open_workspace"),
+                lambda: self.on_workspace_context_open(popover, row.item_id),
+            )
+            self.add_context_menu_item(
+                menu,
+                self.t("update_workspace"),
+                lambda: self.on_workspace_context_update(popover, row.item_id),
+                enabled=not self.store.read_only,
+            )
+            self.add_context_menu_item(
+                menu,
+                self.t("rename_workspace"),
+                lambda: self.on_workspace_context_rename(popover, row.item_id),
+                enabled=not self.store.read_only,
+            )
+            self.add_context_menu_item(
+                menu,
+                self.t("duplicate_workspace"),
+                lambda: self.on_workspace_context_duplicate(popover, row.item_id),
+                enabled=not self.store.read_only,
+            )
+            self.add_context_menu_item(
+                menu,
+                self.t("delete_workspace"),
+                lambda: self.on_workspace_context_delete(popover, row.item_id),
+                destructive=True,
+                enabled=not self.store.read_only,
+            )
         elif row.kind == "group":
             self.add_context_menu_item(
                 menu,
@@ -992,6 +1123,155 @@ class SidebarMixin:
         self.refresh_list()
         self.render_detail()
 
+    def on_save_workspace(self, _button: Gtk.Button) -> None:
+        if not self.ensure_writable():
+            return
+        tabs = capture_workspace_tabs(self.visible_sessions_in_tab_order())
+        if not tabs:
+            self.toast_label.set_label(self.t("workspace_empty"))
+            return
+        self.show_workspace_name_dialog(self.t("save_workspace_title"), "", tabs)
+
+    def show_workspace_name_dialog(
+        self,
+        title: str,
+        initial_name: str,
+        tabs: list[dict[str, object]] | None = None,
+        workspace_id: str | None = None,
+    ) -> None:
+        dialog = Gtk.Dialog(title=title, transient_for=self, modal=True)
+        dialog.add_button(self.t("cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(self.t("save"), Gtk.ResponseType.OK)
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        content = dialog.get_content_area()
+        content.set_spacing(12)
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        entry = Gtk.Entry(text=initial_name)
+        entry.set_hexpand(True)
+        entry.set_activates_default(True)
+        grid = Gtk.Grid(column_spacing=12, row_spacing=12)
+        grid.attach(self.build_form_label(self.t("workspace_name"), True), 0, 0, 1, 1)
+        grid.attach(entry, 1, 0, 1, 1)
+        content.append(grid)
+        dialog.connect("response", self.on_workspace_name_dialog_response, entry, tabs, workspace_id)
+        dialog.present()
+        entry.grab_focus()
+
+    def on_workspace_name_dialog_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        entry: Gtk.Entry,
+        tabs: list[dict[str, object]] | None,
+        workspace_id: str | None,
+    ) -> None:
+        if response != Gtk.ResponseType.OK:
+            dialog.destroy()
+            return
+        name = entry.get_text().strip()
+        if not name:
+            entry.add_css_class("error")
+            return
+        if not self.ensure_writable():
+            dialog.destroy()
+            return
+        if workspace_id is None:
+            workspace = self.store.add_workspace(name, tabs or [])
+            self.toast_label.set_label(self.t("workspace_saved").format(name=workspace.name))
+            self.selected = self.build_workspace_row_object(workspace)
+        else:
+            self.store.rename_workspace(workspace_id, name)
+            workspace = find_workspace(self.store.data.workspaces, workspace_id)
+            if workspace is not None:
+                self.selected = self.build_workspace_row_object(workspace)
+                self.toast_label.set_label(self.t("workspace_renamed").format(name=workspace.name))
+        dialog.destroy()
+        self.refresh_list()
+        self.render_detail()
+
+    def on_workspace_context_open(self, popover: Gtk.Popover, workspace_id: str) -> None:
+        popover.popdown()
+        workspace = find_workspace(self.store.data.workspaces, workspace_id)
+        if workspace is not None:
+            self.open_workspace(workspace)
+
+    def on_workspace_context_update(self, popover: Gtk.Popover, workspace_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        workspace = find_workspace(self.store.data.workspaces, workspace_id)
+        tabs = capture_workspace_tabs(self.visible_sessions_in_tab_order())
+        if workspace is None or not tabs:
+            self.toast_label.set_label(self.t("workspace_empty"))
+            return
+        self.store.update_workspace(workspace.id, workspace.name, tabs)
+        self.toast_label.set_label(self.t("workspace_updated").format(name=workspace.name))
+        self.refresh_list()
+        self.render_detail()
+
+    def on_workspace_context_rename(self, popover: Gtk.Popover, workspace_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        workspace = find_workspace(self.store.data.workspaces, workspace_id)
+        if workspace is not None:
+            self.show_workspace_name_dialog(self.t("rename_workspace"), workspace.name, workspace_id=workspace.id)
+
+    def on_workspace_context_duplicate(self, popover: Gtk.Popover, workspace_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        workspace = find_workspace(self.store.data.workspaces, workspace_id)
+        if workspace is None:
+            return
+        clone = self.store.add_workspace(
+            unique_workspace_clone_name(self.store.data.workspaces, workspace.name),
+            deepcopy(workspace.tabs),
+        )
+        self.selected = self.build_workspace_row_object(clone)
+        self.toast_label.set_label(self.t("workspace_duplicated").format(name=clone.name))
+        self.refresh_list()
+        self.render_detail()
+
+    def on_workspace_context_delete(self, popover: Gtk.Popover, workspace_id: str) -> None:
+        popover.popdown()
+        if not self.ensure_writable():
+            return
+        workspace = find_workspace(self.store.data.workspaces, workspace_id)
+        if workspace is None:
+            return
+        dialog = Gtk.AlertDialog(
+            message=self.t("delete_workspace"),
+            detail=self.t("delete_workspace_confirm").format(name=workspace.name),
+        )
+        dialog.set_buttons([self.t("cancel"), self.t("delete_workspace")])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(0)
+        dialog.choose(self, None, self.on_delete_workspace_confirmed, (dialog, workspace.id, workspace.name))
+
+    def on_delete_workspace_confirmed(
+        self,
+        dialog: Gtk.AlertDialog,
+        result: Gio.AsyncResult,
+        data: tuple[Gtk.AlertDialog, str, str],
+    ) -> None:
+        _dialog, workspace_id, workspace_name = data
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        if response != 1 or not self.ensure_writable():
+            return
+        self.store.delete_workspace(workspace_id)
+        if self.selected and self.selected.kind == "workspace" and self.selected.item_id == workspace_id:
+            self.selected = None
+        self.toast_label.set_label(self.t("workspace_deleted").format(name=workspace_name))
+        self.refresh_list()
+        self.render_detail()
+
     def add_context_menu_separator(self, menu: Gtk.ListBox) -> None:
         row = Gtk.ListBoxRow()
         row.set_activatable(False)
@@ -1031,6 +1311,14 @@ class SidebarMixin:
                     tab_title=profile.tab_title or profile.name or self.t("local_terminal"),
                 )
             )
+            return
+
+        if self.selected.kind == "workspace":
+            workspace = find_workspace(self.store.data.workspaces, self.selected.item_id)
+            if workspace is None:
+                return
+            self.title_label.set_label(workspace.name)
+            self.info_label.set_label(self.workspace_description(workspace))
             return
 
         if self.selected.kind not in {"server", "favorite", "recent"}:

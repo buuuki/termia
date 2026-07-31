@@ -141,6 +141,11 @@ SSH o terminal local guardado. Una pestaña admite hasta 16 paneles. Salir o
 desconectar uno no detiene los demás. Un panel que espera una reconexión muestra
 automáticamente su barra de estado con la acción `Cerrar`, mientras que Intro
 sigue permitiendo reintentar la conexión.
+Usa el botón de guardar de la barra lateral para almacenar las pestañas y
+divisiones actuales como un espacio de trabajo con nombre. Los espacios de
+trabajo aparecen en la barra lateral con un icono de cuadrícula; desde su menú
+contextual puedes abrirlos, actualizarlos, renombrarlos, duplicarlos o
+eliminarlos.
 
 ## Entorno probado
 

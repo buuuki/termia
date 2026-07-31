@@ -24,7 +24,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 from .connection_utils import find_local_terminal_profile, find_server
 from .file_transfer import FileTransferController
 from .keybindings import is_unmodified_function_key, keybinding_matches
-from .models import LocalTerminalProfile, Server
+from .models import LocalTerminalProfile, Server, Workspace
 from .session_commands import build_ssh_command
 from .split_panes import SplitPaneController
 from .terminal_config import (
@@ -35,6 +35,12 @@ from .terminal_config import (
 from .terminal_processes import TerminalProcess, signal_terminal_process, spawn_terminal_process
 from .terminal_view import TerminalViewFactory
 from .ui_state import TerminalPane, TerminalSession
+from .workspace_layout import (
+    workspace_layout_is_valid,
+    workspace_pane_count,
+    workspace_root_pane,
+    workspace_tab_layouts,
+)
 
 
 INITIAL_LOCAL_COMMAND_DELAY_MS = 300
@@ -45,15 +51,20 @@ class TerminalSessionsMixin:
     def on_open_local_terminal(self, _button: Gtk.Button) -> None:
         self.open_local_terminal_profile(None)
 
-    def open_local_terminal_profile(self, profile: LocalTerminalProfile | None) -> None:
+    def open_local_terminal_profile(
+        self,
+        profile: LocalTerminalProfile | None,
+        *,
+        split_layout: str | None = None,
+    ) -> TerminalSession | None:
         title = self.local_terminal_session_title(profile)
         try:
             command = self.build_local_terminal_command(profile)
         except ValueError as exc:
             self.toast_label.set_label(self.t("local_terminal_invalid_arguments").format(error=exc))
-            return
+            return None
         working_directory = self.local_terminal_profile_working_directory(profile)
-        self.open_process_terminal_tab(
+        return self.open_process_terminal_tab(
             title,
             command,
             None,
@@ -61,7 +72,7 @@ class TerminalSessionsMixin:
             local_profile_id=profile.id if profile is not None else None,
             title_locked=profile is not None,
             initial_command=profile.command_on_start if profile is not None else "",
-            split_layout=profile.split_layout if profile is not None else "none",
+            split_layout=split_layout if split_layout is not None else (profile.split_layout if profile is not None else "none"),
         )
 
     def local_terminal_session_title(self, profile: LocalTerminalProfile | None) -> str:
@@ -212,7 +223,7 @@ class TerminalSessionsMixin:
         title_locked: bool = False,
         initial_command: str = "",
         split_layout: str = "none",
-    ) -> None:
+    ) -> TerminalSession:
         session, focus_button = self.create_terminal_session(
             title,
             server_id,
@@ -248,7 +259,7 @@ class TerminalSessionsMixin:
             self.store.record_history_end(session, "failed", detail=exc.message)
             self.update_session_tab_title(session, self.t("tab_error_title").format(title=session.title))
             self.toast_label.set_label(message)
-            return
+            return session
         session.child_process = child_process
         session.child_pid = child_process.pid
         self.sync_root_pane_state(session)
@@ -259,6 +270,7 @@ class TerminalSessionsMixin:
         self.apply_split_layout(session, split_layout, fallback_working_directory=working_directory)
         if initial_command.strip():
             GLib.timeout_add(INITIAL_LOCAL_COMMAND_DELAY_MS, self.feed_initial_local_command, terminal, initial_command.strip())
+        return session
 
     def feed_initial_local_command(self, terminal: Vte.Terminal, command: str) -> bool:
         terminal.feed_child(f"{command}\n".encode())
@@ -291,7 +303,7 @@ class TerminalSessionsMixin:
             session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
 
-    def open_terminal_tab(self, server: Server) -> None:
+    def open_terminal_tab(self, server: Server, *, split_layout: str | None = None) -> TerminalSession:
         session, focus_button = self.create_terminal_session(server.name, server.id, toolbar_margins=True)
         focus_button.connect("clicked", self.on_hide_pane_status_bar, session, session.terminal)
         session.disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, session.terminal)
@@ -299,7 +311,12 @@ class TerminalSessionsMixin:
         self.session_registry.register(session)
         self.add_session_to_main_view(session)
 
-        self.start_ssh_session(server, session, split_layout=server.split_layout)
+        self.start_ssh_session(
+            server,
+            session,
+            split_layout=split_layout if split_layout is not None else server.split_layout,
+        )
+        return session
 
     def duplicate_session(self, session: TerminalSession) -> None:
         if session.server_id is not None:
@@ -308,6 +325,116 @@ class TerminalSessionsMixin:
                 self.open_terminal_tab(server)
             return
         self.on_open_local_terminal(None)
+
+    def open_workspace(self, workspace: Workspace) -> None:
+        opened_tabs = 0
+        skipped_tabs = 0
+        for layout in workspace_tab_layouts(workspace.tabs):
+            if not self.workspace_layout_available(layout):
+                skipped_tabs += 1
+                continue
+            root = workspace_root_pane(layout)
+            if root is None:
+                skipped_tabs += 1
+                continue
+            session = self.open_workspace_root(root)
+            if session is None:
+                skipped_tabs += 1
+                continue
+            self.restore_workspace_node(session, session.terminal, layout)
+            opened_tabs += 1
+        if opened_tabs:
+            self.toast_label.set_label(
+                self.t("workspace_opened").format(name=workspace.name, count=opened_tabs)
+            )
+        else:
+            self.toast_label.set_label(self.t("workspace_no_available_tabs").format(name=workspace.name))
+        if opened_tabs and skipped_tabs:
+            self.toast_label.set_label(
+                self.t("workspace_opened_with_skipped_tabs").format(
+                    name=workspace.name,
+                    count=opened_tabs,
+                    skipped=skipped_tabs,
+                )
+            )
+
+    def workspace_layout_available(self, node: dict[str, object]) -> bool:
+        if not workspace_layout_is_valid(node) or workspace_pane_count(node) > MAX_TERMINAL_PANES:
+            return False
+        if node["type"] == "pane":
+            connection_type = node["connection_type"]
+            connection_id = node["connection_id"]
+            if connection_type == "server":
+                return find_server(self.store.data.servers, str(connection_id)) is not None
+            return not connection_id or find_local_terminal_profile(
+                self.store.data.local_terminals,
+                str(connection_id),
+            ) is not None
+        return self.workspace_layout_available(node["start"]) and self.workspace_layout_available(node["end"])
+
+    def open_workspace_root(self, node: dict[str, object]) -> TerminalSession | None:
+        connection_type = node["connection_type"]
+        connection_id = str(node["connection_id"])
+        if connection_type == "server":
+            server = find_server(self.store.data.servers, connection_id)
+            return self.open_terminal_tab(server, split_layout="none") if server is not None else None
+        profile = find_local_terminal_profile(self.store.data.local_terminals, connection_id) if connection_id else None
+        return self.open_local_terminal_profile(profile, split_layout="none")
+
+    def restore_workspace_node(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        node: dict[str, object],
+    ) -> None:
+        if node["type"] == "pane":
+            return
+        orientation = node["orientation"]
+        direction = "right" if orientation == "horizontal" else "down"
+        new_terminal = self.split_terminal_pane(session, terminal, direction)
+        if new_terminal is None:
+            return
+        end = node["end"]
+        end_root = workspace_root_pane(end)
+        if end_root is None or not self.start_workspace_pane(session, new_terminal, terminal, end_root):
+            self.discard_unstarted_split_pane(session, new_terminal)
+            return
+        paned = self.terminal_pane_container(session, new_terminal).get_parent()
+        self.restore_workspace_node(session, terminal, node["start"])
+        self.restore_workspace_node(session, new_terminal, end)
+        if isinstance(paned, Gtk.Paned):
+            self.restore_workspace_split_position(paned, float(node.get("position", 0.5)))
+
+    def start_workspace_pane(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        source_terminal: Vte.Terminal,
+        node: dict[str, object],
+    ) -> bool:
+        connection_type = node["connection_type"]
+        connection_id = str(node["connection_id"])
+        if connection_type == "server":
+            server = find_server(self.store.data.servers, connection_id)
+            if server is None:
+                return False
+            self.start_ssh_split_terminal(session, terminal, server, announce=False)
+            return True
+        profile = find_local_terminal_profile(self.store.data.local_terminals, connection_id) if connection_id else None
+        self.start_local_split_terminal(session, terminal, source_terminal, profile=profile)
+        return True
+
+    def restore_workspace_split_position(self, paned: Gtk.Paned, ratio: float, attempts: int = 4) -> None:
+        def apply_position() -> bool:
+            size = paned.get_width() if paned.get_orientation() == Gtk.Orientation.HORIZONTAL else paned.get_height()
+            if size <= 0 and attempts > 0:
+                GLib.timeout_add(80, self.restore_workspace_split_position, paned, ratio, attempts - 1)
+                return GLib.SOURCE_REMOVE
+            if size > 0:
+                paned.set_position(round(size * max(0.1, min(ratio, 0.9))))
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(apply_position)
 
     def start_ssh_session(self, server: Server, session: TerminalSession, *, split_layout: str = "none") -> None:
         terminal = session.terminal

@@ -10,6 +10,11 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
   window so it cannot appear on a different monitor, while keeping the locked
   window movable through its header bar (`#182`).
 
+### Added
+
+- Save named multi-server workspaces from the sidebar and reopen their tabs,
+  independent SSH/local split panes, and split layout safely (`#185`).
+
 ## 0.5.0-beta.3 - 2026-07-30
 
 Changes merged after `0.5.0-beta.2` (released 2026-07-29).

@@ -9,9 +9,10 @@ from termia.config_io import (
     InvalidMasterPasswordError,
     MissingMasterPasswordError,
     read_connections_payload,
+    workspaces_from_payload,
     write_connections_file,
 )
-from termia.models import Group, LocalTerminalProfile, Server
+from termia.models import Group, LocalTerminalProfile, Server, Workspace
 
 
 class ConfigIOTests(unittest.TestCase):
@@ -19,17 +20,34 @@ class ConfigIOTests(unittest.TestCase):
         self.groups = [Group(id="group-1", name="Production")]
         self.servers = [Server(id="server-1", name="web", host="example.test", user="admin")]
         self.terminals = [LocalTerminalProfile(id="local-1", name="Shell")]
+        self.workspaces = [
+            Workspace(
+                id="workspace-1",
+                name="Production",
+                tabs=[
+                    {
+                        "layout": {
+                            "type": "pane",
+                            "connection_type": "server",
+                            "connection_id": "server-1",
+                        }
+                    }
+                ],
+            )
+        ]
 
     def test_plain_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "connections.json"
-            write_connections_file(path, self.groups, self.servers, self.terminals, "plain")
+            write_connections_file(path, self.groups, self.servers, self.terminals, "plain", workspaces=self.workspaces)
 
             payload = read_connections_payload(path)
 
         self.assertEqual(payload["groups"][0]["name"], "Production")
         self.assertEqual(payload["servers"][0]["host"], "example.test")
         self.assertEqual(payload["local_terminals"][0]["name"], "Shell")
+        self.assertEqual(payload["workspaces"][0]["name"], "Production")
+        self.assertNotIn("password", payload["workspaces"][0])
 
     def test_obfuscated_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -67,3 +85,29 @@ class ConfigIOTests(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 read_connections_payload(path)
+
+    def test_workspace_import_discards_non_layout_data(self) -> None:
+        workspaces = workspaces_from_payload(
+            [
+                {
+                    "id": "workspace-1",
+                    "name": "Production",
+                    "tabs": [
+                        {
+                            "layout": {
+                                "type": "pane",
+                                "connection_type": "server",
+                                "connection_id": "server-1",
+                                "password": "must-not-be-persisted",
+                            }
+                        }
+                    ],
+                }
+            ]
+        )
+
+        self.assertEqual(workspaces[0].tabs[0]["layout"], {
+            "type": "pane",
+            "connection_type": "server",
+            "connection_id": "server-1",
+        })

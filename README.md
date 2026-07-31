@@ -15,6 +15,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Work with multiple tabs, detachable windows, and terminal split panes that
   can connect independently to different SSH servers or local terminals.
 - Save split layouts per SSH server or local terminal profile to reopen a workspace ready to use.
+- Save named workspaces containing multiple tabs and independent SSH or local split panes, then reopen them from the sidebar.
 - Upload local files to remote servers with SCP from the terminal or server context menu.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
 - Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`.
@@ -155,6 +156,9 @@ terminal. A tab supports up to 16 panes. Exiting or disconnecting one pane
 leaves its siblings running, and the tab only closes on `exit` once its final
 terminal has exited. A pane awaiting reconnection automatically reveals its
 status bar with a `Close` action, while Enter remains available to retry.
+Use the save button in the sidebar to store the current tabs and split layout
+as a named workspace. Workspaces appear in the sidebar with a grid icon; open,
+update, rename, duplicate, or delete them from their context menu.
 
 ## Tested environment
 
