@@ -15,6 +15,22 @@ msgstr ""
 msgid "Show or hide server list"
 msgstr "Mostrar o amagar el llistat de servidors"
 
+#: src/termia/i18n.py:open_local_terminal_tooltip
+msgid "Open local terminal"
+msgstr "Obrir un terminal local"
+
+#: src/termia/i18n.py:create_group_tooltip
+msgid "Create group"
+msgstr "Crear un grup"
+
+#: src/termia/i18n.py:create_ssh_connection_tooltip
+msgid "Create SSH connection"
+msgstr "Crear una connexió SSH"
+
+#: src/termia/i18n.py:create_local_terminal_profile_tooltip
+msgid "Create local terminal profile"
+msgstr "Crear un perfil de terminal local"
+
 #: src/termia/i18n.py:new_group
 msgid "New group"
 msgstr "Nou grup"

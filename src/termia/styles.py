@@ -15,6 +15,7 @@ def build_application_css(
         ".termia-tree-item { border-radius: 4px; } "
         ".termia-server-item, .termia-group-item { padding-top: 2px; padding-bottom: 2px; } "
         ".prompt-preset-button { padding: 1px 6px; min-height: 24px; } "
+        ".termia-add-icon-badge { background: @theme_bg_color; border-radius: 999px; } "
         "headerbar { background: @headerbar_backdrop_color; border-bottom-width: 0; box-shadow: none; } "
         "headerbar:backdrop { background: @headerbar_backdrop_color; } "
         ".termia-session-tabs { background: @headerbar_backdrop_color; padding: 4px 4px 3px 4px; "

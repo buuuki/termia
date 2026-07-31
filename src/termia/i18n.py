@@ -42,6 +42,10 @@ def translate_key(key: str, language: str | None) -> str:
 
 
 MESSAGES = {'servers': 'Show or hide server list',
+ 'open_local_terminal_tooltip': 'Open local terminal',
+ 'create_group_tooltip': 'Create group',
+ 'create_ssh_connection_tooltip': 'Create SSH connection',
+ 'create_local_terminal_profile_tooltip': 'Create local terminal profile',
  'new_group': 'New group',
  'new_subgroup': 'New subgroup',
  'new_server': 'New server',

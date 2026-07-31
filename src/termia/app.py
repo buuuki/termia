@@ -46,6 +46,22 @@ from .ui_state import RowObject
 TOAST_VISIBLE_SECONDS = 5
 
 
+def build_add_badged_icon(icon_name: str) -> Gtk.Overlay:
+    overlay = Gtk.Overlay()
+
+    icon = Gtk.Image.new_from_icon_name(icon_name)
+    icon.set_pixel_size(16)
+    overlay.set_child(icon)
+
+    badge = Gtk.Image.new_from_icon_name("list-add-symbolic")
+    badge.set_pixel_size(9)
+    badge.set_halign(Gtk.Align.END)
+    badge.set_valign(Gtk.Align.END)
+    badge.add_css_class("termia-add-icon-badge")
+    overlay.add_overlay(badge)
+    return overlay
+
+
 class TermiaWindow(
     ConfigActionsMixin,
     ConnectionDialogsMixin,
@@ -376,24 +392,28 @@ class TermiaWindow(
         self.header = header
         self.set_titlebar(header)
 
+        header_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        header_actions.set_margin_start(6)
+
         toggle_sidebar = Gtk.Button(icon_name="sidebar-hide-symbolic")
         self.toggle_sidebar_button = toggle_sidebar
         toggle_sidebar.set_tooltip_text(self.t("servers"))
         toggle_sidebar.connect("clicked", self.on_toggle_sidebar)
-        header.pack_start(toggle_sidebar)
+        header_actions.append(toggle_sidebar)
 
         new_tab_button = Gtk.Button(icon_name="tab-new-symbolic")
         self.new_tab_button = new_tab_button
-        new_tab_button.set_tooltip_text(self.t("new_tab"))
+        new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
         new_tab_button.connect("clicked", self.on_open_local_terminal)
-        header.pack_start(new_tab_button)
+        header_actions.append(new_tab_button)
 
         menu_button = Gtk.MenuButton()
         self.main_menu_button = menu_button
         menu_button.set_tooltip_text(self.t("main_menu"))
         menu_button.set_popover(self.build_main_menu(self.main_menu_actions))
         menu_button.set_child(Gtk.Image.new_from_icon_name("open-menu-symbolic"))
-        header.pack_start(menu_button)
+        header_actions.append(menu_button)
+        header.pack_start(header_actions)
 
         self.read_only_badge = Gtk.Label(label=self.t("read_only_badge"))
         self.read_only_badge.add_css_class("dim-label")
@@ -426,17 +446,24 @@ class TermiaWindow(
         add_group = Gtk.Button(icon_name="folder-new-symbolic")
         self.add_group_button = add_group
         add_group.connect("clicked", self.on_add_group)
-        self.configure_write_action(add_group, enabled_tooltip=self.t("new_group"))
+        self.configure_write_action(
+            add_group,
+            enabled_tooltip=self.t("create_group_tooltip"),
+        )
         add_server = Gtk.Button(icon_name="list-add-symbolic")
         self.add_server_button = add_server
         add_server.connect("clicked", self.on_add_server)
-        self.configure_write_action(add_server, enabled_tooltip=self.t("new_server"))
-        add_local_terminal = Gtk.Button(icon_name="utilities-terminal-symbolic")
+        self.configure_write_action(
+            add_server,
+            enabled_tooltip=self.t("create_ssh_connection_tooltip"),
+        )
+        add_local_terminal = Gtk.Button()
+        add_local_terminal.set_child(build_add_badged_icon("utilities-terminal-symbolic"))
         self.add_local_terminal_button = add_local_terminal
         add_local_terminal.connect("clicked", self.on_add_local_terminal)
         self.configure_write_action(
             add_local_terminal,
-            enabled_tooltip=self.t("new_local_terminal"),
+            enabled_tooltip=self.t("create_local_terminal_profile_tooltip"),
         )
         save_workspace = Gtk.Button(icon_name="document-save-symbolic")
         self.save_workspace_button = save_workspace
@@ -685,7 +712,7 @@ class TermiaWindow(
 
     def refresh_translated_chrome(self) -> None:
         self.toggle_sidebar_button.set_tooltip_text(self.t("servers"))
-        self.new_tab_button.set_tooltip_text(self.t("new_tab"))
+        self.new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
         self.main_menu_button.set_tooltip_text(self.t("main_menu"))
         self.main_menu_button.set_popover(
             self.build_main_menu(self.main_menu_actions)
@@ -697,15 +724,15 @@ class TermiaWindow(
             self.set_title("Termia")
         self.configure_write_action(
             self.add_group_button,
-            enabled_tooltip=self.t("new_group"),
+            enabled_tooltip=self.t("create_group_tooltip"),
         )
         self.configure_write_action(
             self.add_server_button,
-            enabled_tooltip=self.t("new_server"),
+            enabled_tooltip=self.t("create_ssh_connection_tooltip"),
         )
         self.configure_write_action(
             self.add_local_terminal_button,
-            enabled_tooltip=self.t("new_local_terminal"),
+            enabled_tooltip=self.t("create_local_terminal_profile_tooltip"),
         )
         self.configure_write_action(
             self.save_workspace_button,
