@@ -20,6 +20,10 @@ class SplitSeparatorStyleTests(unittest.TestCase):
         self.assertIn("min-height: 5px", css)
         self.assertIn("border-top: 1px solid #008712", css)
         self.assertIn(".termia-pane-status > label { min-width: 0; }", css)
+        self.assertIn(
+            ".termia-add-icon-badge { background: @theme_bg_color; border-radius: 999px; }",
+            css,
+        )
 
     def test_configured_thickness_expands_the_handle_when_needed(self) -> None:
         css = build_application_css("#202020", "#008712", 8).decode()

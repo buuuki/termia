@@ -6,6 +6,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Align header and sidebar action buttons, clarify their creation tooltips, and
+  mark local-terminal profile creation with a terminal-plus icon (`#197`).
 - Enforce a 32-pane total workspace limit without prompting for valid
   workspaces (`#192`).
 - Keep the split-connection search dialog open when Enter is pressed without a

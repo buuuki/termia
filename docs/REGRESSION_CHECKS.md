@@ -25,6 +25,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 - Main toolbar action icons are protected UI decisions and must not be changed without explicit user approval.
 - The local/new terminal tab action icon and sidebar toggle icon must remain stable unless a change is requested directly.
+- Header actions must retain the same six-pixel spacing as sidebar actions and
+  align with the sidebar's content inset when the sidebar is visible.
+- The sidebar local-terminal profile action must show a terminal icon with a
+  small plus badge; the main-toolbar new-tab action must retain
+  `tab-new-symbolic` without that custom badge.
 - If a toolbar icon is changed intentionally, document the previous icon name, new icon name, and reason in the commit message or related issue.
 
 ### Tabs
@@ -106,6 +111,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   action tooltips. Write actions must show the read-only or locked-connections
   explanation only while disabled and restore their action tooltip when
   enabled again.
+- Creation tooltips must distinguish opening an immediate local terminal from
+  creating an SSH connection or a reusable local-terminal profile.
 - Groups and subgroups must preserve expanded/collapsed state when editing servers or refreshing the list.
 - The server tree must not jump to the top when selecting or right-clicking entries.
 - Filtering must include matching servers, groups, and subgroups.
