@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 from termia.models import LocalTerminalProfile, Server, Workspace
 from termia.sidebar import SidebarMixin
+from termia.session_registry import SessionRegistry
 from termia.terminal_sessions import TerminalSessionsMixin
 from termia.workspace_layout import MAX_WORKSPACE_PANES
 
@@ -35,6 +36,7 @@ class WorkspaceOpeningTests(unittest.TestCase):
                         local_terminals=[LocalTerminalProfile(id="shell", name="Shell")],
                     )
                 )
+                self.session_registry = SessionRegistry()
                 self.toast_label = SimpleNamespace(set_label=lambda message: setattr(self, "toast", message))
                 self.opened: list[tuple[str, str]] = []
 
@@ -71,7 +73,10 @@ class WorkspaceOpeningTests(unittest.TestCase):
             name="Regular",
             tabs=workspace_tabs(MAX_WORKSPACE_PANES),
         )
-        host = SimpleNamespace(opened_workspace=None)
+        host = SimpleNamespace(
+            opened_workspace=None,
+            can_open_terminal_tabs=lambda _count: True,
+        )
         host.open_workspace_tabs = lambda selected: setattr(
             host,
             "opened_workspace",

@@ -8,6 +8,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 - Enforce a 32-pane total workspace limit without prompting for valid
   workspaces (`#192`).
+- Keep the split-connection search dialog open when Enter is pressed without a
+  matching saved connection (`#191`).
 - Show the startup master-password prompt as a modal layer inside the Termia
   window so it cannot appear on a different monitor, while keeping the locked
   window movable through its header bar (`#182`).
@@ -16,6 +18,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Added
 
+- Limit open terminal tabs globally to 40, including detached tabs; reject
+  oversized workspace or group batches before starting processes, and show
+  application notifications through a visible temporary overlay (`#195`).
 - Save named multi-server workspaces from the sidebar and reopen their tabs,
   independent SSH/local split panes, and split layout safely (`#185`).
 - Search saved SSH and local-terminal profiles by keyboard when opening a

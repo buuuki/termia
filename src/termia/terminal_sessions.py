@@ -51,6 +51,7 @@ from .workspace_layout import (
 
 
 INITIAL_LOCAL_COMMAND_DELAY_MS = 300
+MAX_OPEN_TABS = 40
 MAX_TERMINAL_PANES = 16
 
 
@@ -231,7 +232,9 @@ class TerminalSessionsMixin:
         title_locked: bool = False,
         initial_command: str = "",
         split_layout: str = "none",
-    ) -> TerminalSession:
+    ) -> TerminalSession | None:
+        if not self.can_open_terminal_tabs():
+            return None
         session, focus_button = self.create_terminal_session(
             title,
             server_id,
@@ -311,7 +314,29 @@ class TerminalSessionsMixin:
             session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
 
-    def open_terminal_tab(self, server: Server, *, split_layout: str | None = None) -> TerminalSession:
+    def can_open_terminal_tabs(self, requested_tabs: int = 1) -> bool:
+        if requested_tabs <= 0:
+            return True
+        open_tabs = len(self.session_registry.sessions())
+        if open_tabs + requested_tabs <= MAX_OPEN_TABS:
+            return True
+        self.toast_label.set_label(
+            self.t("global_tab_limit_exceeded").format(
+                limit=MAX_OPEN_TABS,
+                open=open_tabs,
+                requested=requested_tabs,
+            )
+        )
+        return False
+
+    def open_terminal_tab(
+        self,
+        server: Server,
+        *,
+        split_layout: str | None = None,
+    ) -> TerminalSession | None:
+        if not self.can_open_terminal_tabs():
+            return None
         session, focus_button = self.create_terminal_session(server.name, server.id, toolbar_margins=True)
         focus_button.connect("clicked", self.on_hide_pane_status_bar, session, session.terminal)
         session.disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, session.terminal)
@@ -343,6 +368,9 @@ class TerminalSessionsMixin:
                     limit=MAX_WORKSPACE_PANES,
                 )
             )
+            return
+        layouts = workspace_tab_layouts(workspace.tabs)
+        if not self.can_open_terminal_tabs(len(layouts)):
             return
         self.open_workspace_tabs(workspace)
 
@@ -1058,7 +1086,13 @@ class TerminalSessionsMixin:
                 open_button,
             ),
         )
-        search_entry.connect("activate", lambda _entry: dialog.response(Gtk.ResponseType.OK))
+        search_entry.connect(
+            "activate",
+            self.on_split_connection_search_activated,
+            dialog,
+            connection_list,
+            state,
+        )
         search_keys = Gtk.EventControllerKey.new()
         search_keys.connect("key-pressed", self.on_split_connection_search_key_pressed, connection_list)
         search_entry.add_controller(search_keys)
@@ -1145,6 +1179,30 @@ class TerminalSessionsMixin:
             connection_list.select_row(target)
         return True
 
+    def selected_split_connection_id(
+        self,
+        connection_list: Gtk.ListBox,
+        state: dict[str, list[SplitConnectionChoice]],
+    ) -> str | None:
+        selected_row = connection_list.get_selected_row()
+        visible_choices = state.get("visible_choices", [])
+        if selected_row is None:
+            return None
+        selected_index = selected_row.get_index()
+        if 0 <= selected_index < len(visible_choices):
+            return visible_choices[selected_index].connection_id
+        return None
+
+    def on_split_connection_search_activated(
+        self,
+        _entry: Gtk.SearchEntry,
+        dialog: Gtk.Dialog,
+        connection_list: Gtk.ListBox,
+        state: dict[str, list[SplitConnectionChoice]],
+    ) -> None:
+        if self.selected_split_connection_id(connection_list, state) is not None:
+            dialog.response(Gtk.ResponseType.OK)
+
     def on_split_connection_dialog_response(
         self,
         dialog: Gtk.Dialog,
@@ -1159,13 +1217,7 @@ class TerminalSessionsMixin:
             dialog.destroy()
             return
         direction = direction_combo.get_active_id()
-        selected_row = connection_list.get_selected_row()
-        visible_choices = state.get("visible_choices", [])
-        connection_id = None
-        if selected_row is not None:
-            selected_index = selected_row.get_index()
-            if 0 <= selected_index < len(visible_choices):
-                connection_id = visible_choices[selected_index].connection_id
+        connection_id = self.selected_split_connection_id(connection_list, state)
         if direction is None or connection_id is None:
             dialog.destroy()
             return

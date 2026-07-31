@@ -156,6 +156,9 @@ terminal. A tab supports up to 16 panes. Exiting or disconnecting one pane
 leaves its siblings running, and the tab only closes on `exit` once its final
 terminal has exited. A pane awaiting reconnection automatically reveals its
 status bar with a `Close` action, while Enter remains available to retry.
+Termia allows up to 40 open tabs in total, including tabs in detached windows.
+Workspaces and server groups that do not fit within the remaining capacity are
+rejected before any of their terminal processes start.
 Use the save button in the sidebar to store the current tabs and split layout
 as a named workspace. Workspaces appear in the sidebar with a grid icon; open,
 update, rename, duplicate, or delete them from their context menu. A workspace
