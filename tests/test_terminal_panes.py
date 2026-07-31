@@ -125,6 +125,17 @@ class TerminalPaneStateTests(unittest.TestCase):
         self.assertFalse(split.status_bar.visible)
         self.assertTrue(root.status_bar.visible)
 
+    def test_hiding_status_bar_uses_the_same_selected_pane_path(self) -> None:
+        root_terminal = FakeTerminal()
+        root = make_pane(root_terminal, "root")
+        session = make_session(root_terminal, root)
+        root.status_bar.set_visible(True)
+
+        TerminalSessionsMixin().on_hide_pane_status_bar(None, session, root_terminal)
+
+        self.assertFalse(root.status_bar.visible)
+        self.assertTrue(root_terminal.focused)
+
     def test_session_resolves_each_terminal_to_its_independent_pane(self) -> None:
         root_terminal = FakeTerminal()
         split_terminal = FakeTerminal()

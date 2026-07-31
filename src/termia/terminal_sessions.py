@@ -136,6 +136,7 @@ class TerminalSessionsMixin:
         status_label = Gtk.Label(label=self.t("connecting"))
         status_label.set_xalign(0)
         status_label.set_hexpand(True)
+        status_label.set_size_request(0, -1)
         status_label.set_ellipsize(Pango.EllipsizeMode.END)
         status_label.add_css_class("dim-label")
         timer_label = Gtk.Label(label="00:00:00")
@@ -817,14 +818,38 @@ class TerminalSessionsMixin:
         terminal: Vte.Terminal,
     ) -> None:
         pane = self.pane_state(session, terminal)
-        pane.status_bar.set_visible(False)
+        self.set_pane_status_bar_visibility(pane, False)
         terminal.grab_focus()
+
+    def set_pane_status_bar_visibility(self, pane: TerminalPane, visible: bool) -> None:
+        """Toggle a pane bar without allowing its new width to move a split."""
+
+        parent_getter = getattr(pane.container, "get_parent", None)
+        parent = parent_getter() if callable(parent_getter) else None
+        ratio: float | None = None
+        if isinstance(parent, Gtk.Paned):
+            size = parent.get_width() if parent.get_orientation() == Gtk.Orientation.HORIZONTAL else parent.get_height()
+            if size > 0:
+                ratio = parent.get_position() / size
+
+        pane.status_bar.set_visible(visible)
+        if ratio is not None and isinstance(parent, Gtk.Paned):
+            self.restore_split_position_after_status_bar_toggle(parent, ratio)
+
+    def restore_split_position_after_status_bar_toggle(self, paned: Gtk.Paned, ratio: float) -> None:
+        def restore_position() -> bool:
+            size = paned.get_width() if paned.get_orientation() == Gtk.Orientation.HORIZONTAL else paned.get_height()
+            if size > 0:
+                paned.set_position(round(size * max(0.0, min(ratio, 1.0))))
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(restore_position)
 
     def apply_session_status_bar_visibility_to_open_tabs(self) -> None:
         visible = self.should_show_session_status_bar()
         for session in self.session_registry.sessions():
             for pane in session.panes.values():
-                pane.status_bar.set_visible(visible)
+                self.set_pane_status_bar_visibility(pane, visible)
 
     def change_terminal_font_size(self, delta: int) -> None:
         if not self.ensure_writable():
@@ -1493,7 +1518,7 @@ class TerminalSessionsMixin:
     ) -> None:
         popover.popdown()
         pane = self.pane_state(session, terminal)
-        pane.status_bar.set_visible(not pane.status_bar.get_visible())
+        self.set_pane_status_bar_visibility(pane, not pane.status_bar.get_visible())
         terminal.grab_focus()
 
     def disconnect_from_terminal_menu(

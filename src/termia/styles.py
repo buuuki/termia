@@ -21,6 +21,7 @@ def build_application_css(
         "border: 0; box-shadow: none; } "
         ".termia-terminal-stack { border: 0; box-shadow: none; } "
         ".termia-pane-status.active { background-color: alpha(@theme_selected_bg_color, 0.12); } "
+        ".termia-pane-status > label { min-width: 0; } "
         ".termia-terminal-pane.in-split > .termia-pane-status { padding: 6px; } "
         f".termia-split-pane.horizontal > separator {{ min-width: {handle_size}px; "
         f"background: transparent; border-left: {thickness}px solid {split_separator_color}; }} "
