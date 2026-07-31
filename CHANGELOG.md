@@ -6,6 +6,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Keep the split-connection search dialog open when Enter is pressed without a
+  matching saved connection (`#191`).
 - Show the startup master-password prompt as a modal layer inside the Termia
   window so it cannot appear on a different monitor, while keeping the locked
   window movable through its header bar (`#182`).
