@@ -1354,6 +1354,10 @@ msgstr "No hay pestañas disponibles para abrir en el espacio de trabajo: {name}
 msgid "Workspace opened: {name} ({count} tabs; {skipped} skipped)"
 msgstr "Espacio de trabajo abierto: {name} ({count} pestañas; {skipped} omitidas)"
 
+#: src/termia/i18n.py:workspace_pane_limit_exceeded
+msgid "A workspace can contain at most {limit} panes; current layout has {count}."
+msgstr "Un espacio de trabajo puede contener como máximo {limit} paneles; la disposición actual tiene {count}."
+
 #: src/termia/i18n.py:global_tab_limit_exceeded
 msgid "Cannot open tabs: {open} already open, {requested} requested, global limit {limit}."
 msgstr "No se pueden abrir las pestañas: hay {open} abiertas, se han solicitado {requested} y el límite global es {limit}."

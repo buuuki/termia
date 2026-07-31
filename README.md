@@ -161,7 +161,9 @@ Workspaces and server groups that do not fit within the remaining capacity are
 rejected before any of their terminal processes start.
 Use the save button in the sidebar to store the current tabs and split layout
 as a named workspace. Workspaces appear in the sidebar with a grid icon; open,
-update, rename, duplicate, or delete them from their context menu.
+update, rename, duplicate, or delete them from their context menu. A workspace
+can contain up to 32 panes across all tabs and opens without an additional
+confirmation.
 
 ## Tested environment
 

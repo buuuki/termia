@@ -26,7 +26,13 @@ from .connection_utils import (
 )
 from .models import Group, LocalTerminalProfile, Server, Workspace
 from .sidebar_projection import SidebarRow as RowObject, build_sidebar_projection
-from .workspace_layout import capture_workspace_tabs, workspace_pane_count, workspace_tab_layouts
+from .workspace_layout import (
+    MAX_WORKSPACE_PANES,
+    capture_workspace_tabs,
+    workspace_pane_count,
+    workspace_tab_layouts,
+    workspace_total_pane_count,
+)
 
 GROUP_START_CONFIRMATION_THRESHOLD = 10
 
@@ -1134,7 +1140,21 @@ class SidebarMixin:
         if not tabs:
             self.toast_label.set_label(self.t("workspace_empty"))
             return
+        if not self.workspace_tabs_within_pane_limit(tabs):
+            return
         self.show_workspace_name_dialog(self.t("save_workspace_title"), "", tabs)
+
+    def workspace_tabs_within_pane_limit(self, tabs: object) -> bool:
+        pane_count = workspace_total_pane_count(tabs)
+        if pane_count <= MAX_WORKSPACE_PANES:
+            return True
+        self.toast_label.set_label(
+            self.t("workspace_pane_limit_exceeded").format(
+                count=pane_count,
+                limit=MAX_WORKSPACE_PANES,
+            )
+        )
+        return False
 
     def show_workspace_name_dialog(
         self,
@@ -1182,6 +1202,9 @@ class SidebarMixin:
         if not self.ensure_writable():
             dialog.destroy()
             return
+        if tabs is not None and not self.workspace_tabs_within_pane_limit(tabs):
+            dialog.destroy()
+            return
         if workspace_id is None:
             workspace = self.store.add_workspace(name, tabs or [])
             self.toast_label.set_label(self.t("workspace_saved").format(name=workspace.name))
@@ -1211,6 +1234,8 @@ class SidebarMixin:
         if workspace is None or not tabs:
             self.toast_label.set_label(self.t("workspace_empty"))
             return
+        if not self.workspace_tabs_within_pane_limit(tabs):
+            return
         self.store.update_workspace(workspace.id, workspace.name, tabs)
         self.toast_label.set_label(self.t("workspace_updated").format(name=workspace.name))
         self.refresh_list()
@@ -1230,6 +1255,8 @@ class SidebarMixin:
             return
         workspace = find_workspace(self.store.data.workspaces, workspace_id)
         if workspace is None:
+            return
+        if not self.workspace_tabs_within_pane_limit(workspace.tabs):
             return
         clone = self.store.add_workspace(
             unique_workspace_clone_name(self.store.data.workspaces, workspace.name),

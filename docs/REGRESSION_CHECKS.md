@@ -212,6 +212,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   connection identities, split orientations, and usable split panes as new
   terminal processes. Confirm its context menu can update, rename, duplicate,
   and delete it, while write actions are disabled in a read-only instance.
+- Confirm a workspace with 32 total panes opens directly without confirmation,
+  while saving, updating, duplicating, or opening one with more than 32 total
+  panes is rejected without starting terminal processes or deleting the saved
+  workspace.
 - Trigger a failed SSH connection in a split, press Enter, and confirm only that
   pane reconnects to its own server, its status bar remains usable, and its
   action returns from `Close` to `Disconnect`.

@@ -926,6 +926,10 @@ msgstr ""
 msgid "Workspace opened: {name} ({count} tabs; {skipped} skipped)"
 msgstr ""
 
+#: src/termia/i18n.py:workspace_pane_limit_exceeded
+msgid "A workspace can contain at most {limit} panes; current layout has {count}."
+msgstr ""
+
 #: src/termia/i18n.py:global_tab_limit_exceeded
 msgid "Cannot open tabs: {open} already open, {requested} requested, global limit {limit}."
 msgstr ""
