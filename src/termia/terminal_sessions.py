@@ -1005,7 +1005,9 @@ class TerminalSessionsMixin:
 
         grid.attach(self.build_form_label(self.t("split_direction"), True), 0, 0, 1, 1)
         grid.attach(direction_combo, 1, 0, 1, 1)
-        grid.attach(self.build_form_label(self.t("connection"), True), 0, 1, 1, 1)
+        connection_label = self.build_form_label(self.t("connection"), True)
+        connection_label.set_valign(Gtk.Align.START)
+        grid.attach(connection_label, 0, 1, 1, 1)
         grid.attach(connection_box, 1, 1, 1, 1)
         dialog.get_content_area().append(grid)
         search_entry.connect(
@@ -1079,11 +1081,6 @@ class TerminalSessionsMixin:
             )
             title.set_xalign(0)
             box.append(title)
-            if choice.detail:
-                detail = Gtk.Label(label=choice.detail)
-                detail.set_xalign(0)
-                detail.add_css_class("dim-label")
-                box.append(detail)
             row.set_child(box)
             connection_list.append(row)
         connection_list.select_row(connection_list.get_row_at_index(0))
