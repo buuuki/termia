@@ -926,6 +926,18 @@ msgstr ""
 msgid "Workspace opened: {name} ({count} tabs; {skipped} skipped)"
 msgstr ""
 
+#: src/termia/i18n.py:workspace_pane_limit_exceeded
+msgid "A workspace can contain at most {limit} panes; current layout has {count}."
+msgstr ""
+
+#: src/termia/i18n.py:open_large_workspace_title
+msgid "Open large workspace?"
+msgstr ""
+
+#: src/termia/i18n.py:open_large_workspace_detail
+msgid "Opening \"{name}\" will start {count} terminal processes. Continue?"
+msgstr ""
+
 #: src/termia/i18n.py:connection_history
 msgid "Connection history"
 msgstr ""

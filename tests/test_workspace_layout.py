@@ -1,10 +1,12 @@
 import unittest
 
 from termia.workspace_layout import (
+    MAX_WORKSPACE_PANES,
     workspace_layout_is_valid,
     workspace_pane_count,
     workspace_root_pane,
     workspace_tab_layouts,
+    workspace_total_pane_count,
 )
 
 
@@ -40,3 +42,8 @@ class WorkspaceLayoutTests(unittest.TestCase):
         self.assertEqual(root["connection_id"], "web")
         self.assertEqual(workspace_pane_count(self.layout), 2)
         self.assertEqual(workspace_tab_layouts([{"layout": self.layout}, {"layout": {}}]), [self.layout])
+
+    def test_total_pane_count_spans_all_workspace_tabs(self) -> None:
+        tabs = [{"layout": self.layout} for _index in range(MAX_WORKSPACE_PANES // 2)]
+
+        self.assertEqual(workspace_total_pane_count(tabs), MAX_WORKSPACE_PANES)

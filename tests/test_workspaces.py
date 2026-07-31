@@ -2,11 +2,17 @@ import unittest
 from types import SimpleNamespace
 
 from termia.models import LocalTerminalProfile, Server, Workspace
+from termia.sidebar import SidebarMixin
 from termia.terminal_sessions import TerminalSessionsMixin
+from termia.workspace_layout import MAX_WORKSPACE_PANES, WORKSPACE_OPEN_CONFIRMATION_PANES
 
 
 def pane(connection_type: str, connection_id: str) -> dict[str, str]:
     return {"type": "pane", "connection_type": connection_type, "connection_id": connection_id}
+
+
+def workspace_tabs(count: int) -> list[dict[str, dict[str, str]]]:
+    return [{"layout": pane("server", "web")} for _index in range(count)]
 
 
 class WorkspaceOpeningTests(unittest.TestCase):
@@ -58,3 +64,93 @@ class WorkspaceOpeningTests(unittest.TestCase):
             [("server", "web"), ("layout", "web"), ("local", "shell"), ("layout", "shell")],
         )
         self.assertEqual(host.toast, "Workspace opened: Production (2 tabs; 1 skipped)")
+
+    def test_opening_nine_to_sixteen_panes_requires_confirmation(self) -> None:
+        for pane_count in (WORKSPACE_OPEN_CONFIRMATION_PANES + 1, MAX_WORKSPACE_PANES):
+            with self.subTest(pane_count=pane_count):
+                workspace = Workspace(
+                    id="large",
+                    name="Large",
+                    tabs=workspace_tabs(pane_count),
+                )
+                host = SimpleNamespace(
+                    requested_confirmation=None,
+                    opened_workspace=None,
+                    toast_label=SimpleNamespace(set_label=lambda _message: None),
+                )
+                host.request_large_workspace_confirmation = lambda selected, count: setattr(
+                    host,
+                    "requested_confirmation",
+                    (selected.id, count),
+                )
+                host.open_workspace_tabs = lambda selected: setattr(
+                    host,
+                    "opened_workspace",
+                    selected.id,
+                )
+
+                TerminalSessionsMixin.open_workspace(host, workspace)
+
+                self.assertEqual(host.requested_confirmation, ("large", pane_count))
+                self.assertIsNone(host.opened_workspace)
+
+    def test_opening_eight_panes_does_not_require_confirmation(self) -> None:
+        workspace = Workspace(
+            id="regular",
+            name="Regular",
+            tabs=workspace_tabs(WORKSPACE_OPEN_CONFIRMATION_PANES),
+        )
+        host = SimpleNamespace(opened_workspace=None)
+        host.request_large_workspace_confirmation = lambda *_args: self.fail(
+            "eight-pane workspace must open directly"
+        )
+        host.open_workspace_tabs = lambda selected: setattr(
+            host,
+            "opened_workspace",
+            selected.id,
+        )
+
+        TerminalSessionsMixin.open_workspace(host, workspace)
+
+        self.assertEqual(host.opened_workspace, "regular")
+
+    def test_opening_more_than_sixteen_panes_is_rejected(self) -> None:
+        workspace = Workspace(
+            id="oversized",
+            name="Oversized",
+            tabs=workspace_tabs(MAX_WORKSPACE_PANES + 1),
+        )
+        host = SimpleNamespace(
+            toast=None,
+            toast_label=SimpleNamespace(set_label=lambda message: setattr(host, "toast", message)),
+            t=lambda key: {
+                "workspace_pane_limit_exceeded": "Limit {limit}; found {count}",
+            }[key],
+            request_large_workspace_confirmation=lambda *_args: self.fail(
+                "oversized workspace must not request confirmation"
+            ),
+            open_workspace_tabs=lambda *_args: self.fail(
+                "oversized workspace must not start processes"
+            ),
+        )
+
+        TerminalSessionsMixin.open_workspace(host, workspace)
+
+        self.assertEqual(host.toast, "Limit 16; found 17")
+
+    def test_saving_more_than_sixteen_panes_is_rejected(self) -> None:
+        host = SimpleNamespace(
+            toast=None,
+            toast_label=SimpleNamespace(set_label=lambda message: setattr(host, "toast", message)),
+            t=lambda key: {
+                "workspace_pane_limit_exceeded": "Limit {limit}; found {count}",
+            }[key],
+        )
+
+        accepted = SidebarMixin.workspace_tabs_within_pane_limit(
+            host,
+            workspace_tabs(MAX_WORKSPACE_PANES + 1),
+        )
+
+        self.assertFalse(accepted)
+        self.assertEqual(host.toast, "Limit 16; found 17")

@@ -145,7 +145,9 @@ Usa el botón de guardar de la barra lateral para almacenar las pestañas y
 divisiones actuales como un espacio de trabajo con nombre. Los espacios de
 trabajo aparecen en la barra lateral con un icono de cuadrícula; desde su menú
 contextual puedes abrirlos, actualizarlos, renombrarlos, duplicarlos o
-eliminarlos.
+eliminarlos. Un espacio de trabajo puede contener hasta 16 paneles entre todas
+sus pestañas; abrir 9 o más solicita confirmación antes de iniciar sus procesos
+de terminal.
 
 ## Entorno probado
 

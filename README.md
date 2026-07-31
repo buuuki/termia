@@ -158,7 +158,9 @@ terminal has exited. A pane awaiting reconnection automatically reveals its
 status bar with a `Close` action, while Enter remains available to retry.
 Use the save button in the sidebar to store the current tabs and split layout
 as a named workspace. Workspaces appear in the sidebar with a grid icon; open,
-update, rename, duplicate, or delete them from their context menu.
+update, rename, duplicate, or delete them from their context menu. A workspace
+can contain up to 16 panes across all tabs; opening 9 or more asks for
+confirmation before starting its terminal processes.
 
 ## Tested environment
 

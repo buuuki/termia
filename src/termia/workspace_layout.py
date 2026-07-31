@@ -14,6 +14,8 @@ from gi.repository import Gtk
 from .ui_state import TerminalPane, TerminalSession
 
 WorkspaceNode = dict[str, Any]
+WORKSPACE_OPEN_CONFIRMATION_PANES = 8
+MAX_WORKSPACE_PANES = 16
 
 
 def pane_workspace_node(pane: TerminalPane) -> WorkspaceNode:
@@ -134,3 +136,9 @@ def workspace_tab_layouts(tabs: object) -> list[WorkspaceNode]:
         if layout is not None:
             layouts.append(layout)
     return layouts
+
+
+def workspace_total_pane_count(tabs: object) -> int:
+    """Count panes across every valid tab in a saved workspace."""
+
+    return sum(workspace_pane_count(layout) for layout in workspace_tab_layouts(tabs))
