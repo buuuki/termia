@@ -39,6 +39,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - The global 40-tab limit must count detached tabs and reject individual or
   batched openings before starting any terminal process; closing a tab must
   immediately restore one available slot.
+- Application notifications must appear in a visible temporary overlay and
+  hide automatically without blocking terminal input.
 - Duplicating an SSH tab must open a new SSH connection to the same server.
 - Duplicating a local terminal tab must use the same local-terminal startup path as opening a new local terminal, including prompt settings.
 
@@ -182,7 +184,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - With 39 tabs open, confirm one additional local or SSH tab opens; with 40
   open, confirm individual tabs are rejected with an explanation. Confirm a
   workspace or server group that would exceed 40 is rejected in full, without
-  starting a partial batch, and that detached tabs count toward the limit.
+  starting a partial batch, and that detached tabs count toward the limit. The
+  rejection notification must be visible and hide automatically.
 - Close a tab and confirm focus moves to the next terminal.
 - Middle-click a tab and confirm it follows the configured close confirmation and moves focus to the next terminal.
 - Right-click a terminal and open the context menu.
