@@ -13,6 +13,22 @@ from .i18n import LANGUAGES, detect_system_language
 from .models import AppSettings
 from .stores import ReadOnlyStoreError
 
+GENERAL_PREFERENCE_FIELDS = (
+    ("theme", "theme"),
+    ("language", "language"),
+    ("close_tab_on_disconnect", "close_tab_on_disconnect"),
+    ("close_tab_on_ssh_exit", "close_tab_on_ssh_exit"),
+    ("open_local_terminal_on_startup", "open_local_terminal_on_startup"),
+    ("show_sidebar_on_startup", "show_sidebar_on_startup"),
+    ("show_session_status_bar", "show_session_status_bar"),
+    ("statistics_enabled", "statistics_enabled"),
+    ("confirm_disconnect", "confirm_disconnect"),
+    ("confirm_close_app", "confirm_close_app"),
+    ("send_password_shortcut", "send_password_shortcut"),
+    ("send_password_enter", "send_password_enter"),
+    ("debug_mode", "debug_enabled"),
+)
+
 
 class GeneralPreferencesMixin:
     def on_app_preferences(self, _button: Gtk.Button) -> None:
@@ -71,10 +87,17 @@ class GeneralPreferencesMixin:
         dialog.connect("response", self.on_app_preferences_response, theme_combo, language_combo, *check_buttons)
         dialog.present()
 
+    @staticmethod
+    def general_preference_values(settings: AppSettings) -> dict[str, str | bool]:
+        return {
+            setting_key: getattr(settings, attribute)
+            for setting_key, attribute in GENERAL_PREFERENCE_FIELDS
+        }
+
     def on_app_preferences_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType, theme_combo: Gtk.ComboBoxText,
                                     language_combo: Gtk.ComboBoxText, *check_buttons: Gtk.CheckButton) -> None:
         if response == Gtk.ResponseType.OK:
-            previous_language = self.store.data.app.language
+            previous_values = self.general_preference_values(self.store.data.app)
             values = [button.get_active() for button in check_buttons]
             try:
                 self.store.update_app_settings(AppSettings(
@@ -101,16 +124,33 @@ class GeneralPreferencesMixin:
             self.group_expanded_state = {group.id: False for group in self.store.data.groups}
             self.group_expanded_state["__ungrouped__"] = False
             self.refresh_list()
-            configure_debug_logging(self.store.data.app.debug_enabled)
+            if previous_values["language"] != self.store.data.app.language:
+                self.refresh_translated_chrome()
+            self.notify_general_preference_changes(previous_values)
+        dialog.destroy()
+
+    def notify_general_preference_changes(
+        self,
+        previous_values: dict[str, str | bool],
+    ) -> None:
+        current_values = GeneralPreferencesMixin.general_preference_values(
+            self.store.data.app
+        )
+        if previous_values["debug_mode"] != current_values["debug_mode"]:
+            configure_debug_logging(bool(current_values["debug_mode"]))
+        for setting_key, _attribute in GENERAL_PREFERENCE_FIELDS:
+            value = current_values[setting_key]
+            if previous_values[setting_key] == value:
+                continue
+            if setting_key == "theme":
+                value_label = self.t(f"theme_{value}")
+            elif setting_key == "language":
+                value_label = LANGUAGES.get(str(value), str(value))
+            else:
+                value_label = self.t("setting_enabled" if value else "setting_disabled")
             self.toast_label.set_label(
-                (
-                    f"{self.t('debug_mode_enabled')} — "
-                    f"{self.t('debug_log_path').format(path=DEBUG_LOG_FILE)}"
-                    if self.store.data.app.debug_enabled
-                    else self.t("debug_mode_disabled")
+                self.t("setting_changed").format(
+                    setting=self.t(setting_key),
+                    value=value_label,
                 )
             )
-            if previous_language != self.store.data.app.language:
-                self.refresh_translated_chrome()
-                self.toast_label.set_label(self.t("language_settings_saved"))
-        dialog.destroy()

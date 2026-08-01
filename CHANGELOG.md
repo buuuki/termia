@@ -11,6 +11,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Group concurrent application notifications so later events do not hide
+  earlier feedback, and report every changed General preference without
+  emitting messages for unchanged settings (`#203`).
 - Align header and sidebar action buttons, clarify their creation tooltips, and
   mark local-terminal profile creation with a terminal-plus icon (`#197`).
 - Enforce a 32-pane total workspace limit without prompting for valid
