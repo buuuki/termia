@@ -527,24 +527,50 @@ class TermiaWindow(
         self.info_label.set_xalign(0)
         self.info_label.set_wrap(True)
 
+        self.session_tab_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        self.session_tab_controls.add_css_class("termia-session-tab-controls")
+        self.session_tab_controls.set_visible(False)
+
         self.session_tab_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         self.session_tab_bar.set_homogeneous(True)
         self.session_tab_bar.add_css_class("termia-session-tabs")
         self.session_tab_bar.set_hexpand(True)
-        self.session_tab_bar.set_visible(False)
         tab_bar_drop = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
         tab_bar_drop.set_preload(True)
         tab_bar_drop.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         tab_bar_drop.connect("motion", self.on_tab_bar_drop_motion)
         tab_bar_drop.connect("drop", self.on_tab_bar_drop)
         self.session_tab_bar.add_controller(tab_bar_drop)
-        detail.append(self.session_tab_bar)
+
+        self.session_tab_scroller = Gtk.ScrolledWindow()
+        self.session_tab_scroller.add_css_class("termia-session-tab-scroller")
+        self.session_tab_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        self.session_tab_scroller.set_overlay_scrolling(False)
+        self.session_tab_scroller.set_propagate_natural_width(False)
+        self.session_tab_scroller.set_min_content_width(0)
+        self.session_tab_scroller.set_hexpand(True)
+        self.session_tab_scroller.set_child(self.session_tab_bar)
+        self.session_tab_scroller.get_hadjustment().connect(
+            "changed", self.on_tab_scroll_adjustment_changed
+        )
+        self.session_tab_controls.append(self.session_tab_scroller)
+
+        self.tab_overflow_button = Gtk.MenuButton()
+        self.tab_overflow_button.add_css_class("termia-tab-overflow-button")
+        self.tab_overflow_button.add_css_class("flat")
+        overflow_icon = Gtk.Image.new_from_icon_name("view-more-symbolic")
+        overflow_icon.set_pixel_size(14)
+        self.tab_overflow_button.set_child(overflow_icon)
+        self.tab_overflow_button.set_tooltip_text(self.t("tab"))
+        self.session_tab_controls.append(self.tab_overflow_button)
+        detail.append(self.session_tab_controls)
 
         self.terminal_stack = Gtk.Stack()
         self.terminal_stack.add_css_class("termia-terminal-stack")
         self.terminal_stack.set_hexpand(True)
         self.terminal_stack.set_vexpand(True)
         detail.append(self.terminal_stack)
+        self.rebuild_tab_overflow_popover()
 
         unlock_scrim = Gtk.Box()
         self.unlock_scrim = unlock_scrim

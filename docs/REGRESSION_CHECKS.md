@@ -163,6 +163,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Font size shortcuts must update existing open terminals.
 - LS color customization must continue to reduce overly bright directory/file colors.
 - Tab labels should show short and medium names without unnecessary truncation, and provide a tooltip with the full title.
+- The terminal tab strip must keep tabs at a readable width, show its compact
+  horizontal scrollbar only when tabs overflow, and never widen the window or
+  collapse/change the selected server-sidebar width.
+- The tab overflow control must list every attached tab in visual order, show
+  full titles, indicate the active tab, and support keyboard activation.
 
 ### Connection History
 
@@ -185,6 +190,13 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 
 - Open Termia and confirm a local terminal opens if the preference is enabled.
 - Open two local terminals and reorder their tabs with the mouse.
+- At 1280, 1366, 1920, and 2560 logical pixels, open enough tabs to overflow
+  with the sidebar visible and hidden. Confirm the compact horizontal scrollbar
+  appears only while needed, the window and sidebar widths remain unchanged,
+  and every tab is reachable from the strip and overflow control.
+- At each target width, confirm the active tab is revealed after opening,
+  closing, keyboard navigation, overflow selection, drag reordering, resizing,
+  and toggling the sidebar.
 - Right-click a tab, move it to a new window, repeat with another tab, and restore both detached windows to the main window.
 - Duplicate a local terminal and confirm the custom prompt is applied.
 - Open two SSH sessions and duplicate one of them.

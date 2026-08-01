@@ -25,6 +25,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Added
 
+- Keep up to 40 terminal tabs reachable at normal window widths with a compact
+  horizontal overflow strip, automatic active-tab reveal, and a complete tab
+  selector (`#199`).
 - Limit open terminal tabs globally to 40, including detached tabs; reject
   oversized workspace or group batches before starting processes, and show
   application notifications through a visible temporary overlay (`#195`).
