@@ -163,6 +163,12 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Terminal palette changes must preserve readable ANSI colors for common output such as directories, executables, warnings, errors, and prompts.
 - Reconnect and warning messages printed inside VTE must remain readable on both light and dark terminal backgrounds.
 - Prompt color customization must remain visible with the configured terminal background.
+- Terminal appearance and local prompt settings must share one preferences
+  dialog and one live preview showing prompt, command output, and ANSI colors.
+- The standard Terminal preferences window must show its appearance controls,
+  shared preview, and prompt controls together without requiring vertical scrolling.
+- Saving prompt settings must never inject commands into running local shells
+  or SSH sessions; changes apply only to new and duplicated local Bash terminals.
 - Font size shortcuts must update existing open terminals.
 - LS color customization must continue to reduce overly bright directory/file colors.
 - Tab labels should show short and medium names without unnecessary truncation, and provide a tooltip with the full title.
@@ -271,6 +277,11 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
 - Change terminal foreground/background/palette and confirm only VTE terminal colors change, not the app chrome.
+- Open Terminal preferences and change appearance and prompt controls together;
+  confirm the shared preview updates both, appearance updates all open panes on
+  save, and prompt changes appear only in a newly opened or duplicated local Bash terminal.
+- At the default Terminal preferences size, confirm the shared preview remains
+  visible while changing the font family and size, and controls use compact natural widths.
 - Confirm terminal ANSI colors, prompt colors, and the reconnect prompt are readable on both light and dark terminal backgrounds.
 
 ## Automated Checks

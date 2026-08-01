@@ -118,11 +118,10 @@ icona; APT instal·la les dependències de GTK, VTE, Python, SSH i xifratge.
 
 ## Notes d'ús
 
-El menú `Configuració` es divideix en `General`, `Terminal`, `Prompt`, `Dreceres` i `Seguretat`:
+El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seguretat`:
 
 - `General` controla tema, idioma, confirmacions, comportament en iniciar, dreceres de contrasenya i barra d'estat de sessió, que comença amagada per defecte.
-- `Terminal` controla el tipus de lletra, mida, colors, gruix i color del separador de divisió, i paletes del terminal VTE incrustat. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
-- `Prompt` personalitza el PS1 de terminals locals amb color, temes predefinits i prefixos d'hora o data. El color predeterminat del prompt és blanc. No altera ordres SSH ni modifica fitxers d'inici remots.
+- `Terminal` combina l'aparença del VTE i el prompt local amb una única vista prèvia. Els canvis d'aparença s'apliquen a terminals oberts; els del prompt només a Bash locals nous o duplicacions i mai injecten ordres en shells locals actius ni sessions SSH. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
 - `Dreceres` mostra les dreceres actives i permet gravar combinacions per a accions com filtrar servidors, mostrar la llista, obrir un terminal local, navegar pel focus, copiar, enganxar, canviar de pestanya, ampliar la lletra i enviar la contrasenya desada. `Ctrl+F` enfoca el filtre, `Ctrl+Shift+B` mostra o amaga la llista, `F10` obre o tanca el menú principal, `Ctrl+Shift+T` obre un terminal local i `Ctrl+F6`/`Ctrl+Shift+F6` recorre les regions principals. Les altres tecles de funció sense modificadors s'envien a les aplicacions del terminal.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.

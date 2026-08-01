@@ -14,7 +14,6 @@ class MainMenuActions:
 
     general_preferences: MenuAction
     terminal_settings: MenuAction
-    prompt_settings: MenuAction
     keybinding_settings: MenuAction
     security_settings: MenuAction
     statistics: MenuAction

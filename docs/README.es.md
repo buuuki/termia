@@ -118,11 +118,10 @@ icono; APT instala las dependencias de GTK, VTE, Python, SSH y cifrado.
 
 ## Notas de uso
 
-El menú `Configuración` se divide en `General`, `Terminal`, `Prompt`, `Atajos` y `Seguridad`:
+El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguridad`:
 
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
-- `Terminal` controla la fuente, tamaño, colores, grosor y color del separador de división, y paletas del terminal VTE embebido. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
-- `Prompt` personaliza el PS1 de terminales locales con color, temas predefinidos y prefijos de hora o fecha. El color predeterminado del prompt es blanco. No altera comandos SSH ni modifica ficheros de inicio remotos.
+- `Terminal` combina la apariencia del VTE y el prompt local con una única vista previa. Los cambios de apariencia se aplican a terminales abiertos; los del prompt solo a nuevos Bash locales o duplicaciones y nunca inyectan comandos en shells locales activos ni sesiones SSH. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
 - `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.

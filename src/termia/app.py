@@ -142,7 +142,6 @@ class TermiaWindow(
         self.main_menu_actions = MainMenuActions(
             general_preferences=lambda: self.on_app_preferences(None),
             terminal_settings=lambda: self.on_terminal_settings(None),
-            prompt_settings=lambda: self.on_prompt_settings(None),
             keybinding_settings=lambda: self.on_keybindings_settings(None),
             security_settings=lambda: self.on_security_settings(None),
             statistics=self.statistics_dialog.show,
