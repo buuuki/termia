@@ -56,6 +56,30 @@ msgstr ""
 msgid "Prompt"
 msgstr ""
 
+#: src/termia/i18n.py:terminal_appearance
+msgid "Terminal appearance"
+msgstr ""
+
+#: src/termia/i18n.py:local_prompt
+msgid "Local prompt"
+msgstr ""
+
+#: src/termia/i18n.py:prompt_new_terminals_only
+msgid "Prompt changes apply only to new local Bash terminals; running local shells and SSH sessions are left unchanged."
+msgstr ""
+
+#: src/termia/i18n.py:terminal_preview
+msgid "Shared preview"
+msgstr ""
+
+#: src/termia/i18n.py:terminal_preview_command
+msgid "printf \"Termia preview\""
+msgstr ""
+
+#: src/termia/i18n.py:terminal_preview_output
+msgid "Termia preview output"
+msgstr ""
+
 #: src/termia/i18n.py:keybindings
 msgid "Keybindings"
 msgstr ""

@@ -14,7 +14,6 @@ class MainMenuActionsTests(unittest.TestCase):
         actions = MainMenuActions(
             general_preferences=action("general_preferences"),
             terminal_settings=action("terminal_settings"),
-            prompt_settings=action("prompt_settings"),
             keybinding_settings=action("keybinding_settings"),
             security_settings=action("security_settings"),
             statistics=action("statistics"),

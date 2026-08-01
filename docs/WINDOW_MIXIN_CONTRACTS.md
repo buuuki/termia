@@ -92,16 +92,16 @@ Some mixins add transient state after construction:
   list-refresh methods.
 - `TerminalPreferencesMixin` reads `store` and `toast_label`; it needs Pango
   font information, tree-style refresh, and application of terminal settings
-  to open sessions.
-- `PromptPreferencesMixin` reads `store` and `toast_label`; it otherwise needs
-  only translation, the writable guard, and dialog helpers.
+  to open sessions, and composes the shared Terminal/Prompt dialog.
+- `PromptPreferencesMixin` provides reusable prompt preset and preview helpers
+  to the combined Terminal preferences surface.
 - `SecurityPreferencesMixin` reads `store` and `toast_label`; it otherwise
   needs translation, the writable guard, and dialog helpers.
 - `KeybindingPreferencesMixin` reads `store` and `toast_label`; it otherwise
   needs translation, the writable guard, and dialog helpers.
 
-The general and terminal dialogs have cross-feature side effects. Prompt,
-security, and keybinding dialogs have comparatively small contracts.
+The general and terminal dialogs have cross-feature side effects. Security and
+keybinding dialogs have comparatively small contracts.
 
 ### `SidebarMixin`
 

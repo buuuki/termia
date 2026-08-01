@@ -51,6 +51,30 @@ msgstr "Terminal"
 msgid "Prompt"
 msgstr "Prompt"
 
+#: src/termia/i18n.py:terminal_appearance
+msgid "Terminal appearance"
+msgstr "Aparença del terminal"
+
+#: src/termia/i18n.py:local_prompt
+msgid "Local prompt"
+msgstr "Prompt local"
+
+#: src/termia/i18n.py:prompt_new_terminals_only
+msgid "Prompt changes apply only to new local Bash terminals; running local shells and SSH sessions are left unchanged."
+msgstr "Els canvis del prompt només s'apliquen a terminals Bash locals nous; els shells locals en execució i les sessions SSH no es modifiquen."
+
+#: src/termia/i18n.py:terminal_preview
+msgid "Shared preview"
+msgstr "Vista prèvia compartida"
+
+#: src/termia/i18n.py:terminal_preview_command
+msgid "printf \"Termia preview\""
+msgstr "printf \"Vista prèvia de Termia\""
+
+#: src/termia/i18n.py:terminal_preview_output
+msgid "Termia preview output"
+msgstr "Sortida de vista prèvia de Termia"
+
 #: src/termia/i18n.py:keybindings
 msgid "Keybindings"
 msgstr "Dreceres"

@@ -54,12 +54,6 @@ class MainMenuMixin:
         self.configure_write_action(terminal)
         menu.append(terminal)
 
-        prompt = Gtk.Button(label=self.t("prompt"))
-        prompt.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(prompt, popover, actions.prompt_settings)
-        self.configure_write_action(prompt)
-        menu.append(prompt)
-
         keybindings = Gtk.Button(label=self.t("keybindings"))
         keybindings.set_halign(Gtk.Align.FILL)
         self.connect_main_menu_action(
