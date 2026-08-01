@@ -84,6 +84,19 @@ msgstr ""
 msgid "Debug log: {path}"
 msgstr ""
 
+#: src/termia/i18n.py:setting_changed
+msgid "{setting}: {value}"
+msgstr ""
+
+#: src/termia/i18n.py:setting_enabled
+msgid "Enabled"
+msgstr ""
+
+#: src/termia/i18n.py:setting_disabled
+#: src/termia/i18n.py:keybinding_disabled
+msgid "Disabled"
+msgstr ""
+
 #: src/termia/i18n.py:preferences
 msgid "Preferences"
 msgstr ""
@@ -556,10 +569,6 @@ msgstr ""
 
 #: src/termia/i18n.py:keybindings_conflict
 msgid "Shortcut {shortcut} is already assigned to another action"
-msgstr ""
-
-#: src/termia/i18n.py:keybinding_disabled
-msgid "Disabled"
 msgstr ""
 
 #: src/termia/i18n.py:keybinding_action_copy

@@ -79,6 +79,18 @@ msgstr "Mode debug desactivat"
 msgid "Debug log: {path}"
 msgstr "Registre de debug: {path}"
 
+#: src/termia/i18n.py:setting_changed
+msgid "{setting}: {value}"
+msgstr "{setting}: {value}"
+
+#: src/termia/i18n.py:setting_enabled
+msgid "Enabled"
+msgstr "Activat"
+
+#: src/termia/i18n.py:setting_disabled
+msgid "Disabled"
+msgstr "Desactivat"
+
 #: src/termia/i18n.py:preferences
 msgid "Preferences"
 msgstr "Preferències"

@@ -14,7 +14,8 @@ Most mixins expect the window to provide some combination of these services:
 - `store`: the `ConnectionStore` and its app, terminal, connection, history,
   and statistics data.
 - `t(key)`: translation using the language stored in `store`.
-- `toast_label`: shared status and error feedback.
+- `toast_label`: grouped shared status and error feedback; repeated calls to
+  `set_label()` append messages to the current visible notification group.
 - `ensure_writable()`: write-lock and encrypted-store guard.
 - `configure_write_action(widget)`: sensitivity and tooltip configuration for
   actions that require writable storage.

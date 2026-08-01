@@ -46,6 +46,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   immediately restore one available slot.
 - Application notifications must appear in a visible temporary overlay and
   hide automatically without blocking terminal input.
+- Notifications triggered while the overlay is visible must remain grouped in
+  arrival order, including repeated messages, and each new message must restart
+  the hide timer instead of replacing earlier feedback.
 - Duplicating an SSH tab must open a new SSH connection to the same server.
 - Duplicating a local terminal tab must use the same local-terminal startup path as opening a new local terminal, including prompt settings.
 
@@ -255,6 +258,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Open every main-menu action and every Connections File submenu action, confirming each still opens or runs the intended feature after the popover closes.
 - Open Import/Export, close the menu with `Esc` or its menu button, and confirm reopening starts at the top-level menu.
 - Open Preferences from Configuration and confirm the app does not hang.
+- Save unchanged General preferences and confirm no setting-change notification
+  appears. Then change Theme, Language, Debug mode, and several switches
+  together; confirm every changed setting appears once, with its translated
+  value, in the same notification panel.
 - Start a second Termia process and confirm it opens as a separate window with the read-only badge visible.
 - With encrypted connection storage, start Termia on each monitor in turn and
   confirm the master-password prompt is rendered inside the Termia window;

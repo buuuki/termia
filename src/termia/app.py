@@ -29,6 +29,7 @@ from .i18n import translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
 from .main_menu_actions import MainMenuActions
+from .notifications import GroupedNotificationLabel
 from .preferences import PreferencesMixin
 from .session_registry import SessionRegistry
 from .stores import ConnectionStore
@@ -80,7 +81,9 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
-        self.toast_label = Gtk.Label()
+        self.toast_messages: list[str] = []
+        self.toast_label = GroupedNotificationLabel()
+        self.toast_label.set_notification_handler(self.show_toast)
         self.toast_label.add_css_class("dim-label")
         self.toast_label.set_wrap(True)
         self.toast_label.set_max_width_chars(80)
@@ -89,7 +92,6 @@ class TermiaWindow(
         self.toast_label.set_margin_start(14)
         self.toast_label.set_margin_end(14)
         self.toast_hide_id: int | None = None
-        self.toast_label.connect("notify::label", self.on_toast_label_changed)
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
             self.t,
@@ -200,15 +202,16 @@ class TermiaWindow(
             self.on_open_local_terminal(None)
         return GLib.SOURCE_REMOVE
 
-    def on_toast_label_changed(self, label: Gtk.Label, _param: object) -> None:
+    def show_toast(self, message: str) -> None:
+        if not message:
+            return
+        self.toast_messages.append(message)
+        self.toast_label.set_grouped_text("\n".join(self.toast_messages))
         if not hasattr(self, "toast_revealer"):
             return
         if self.toast_hide_id is not None:
             GLib.source_remove(self.toast_hide_id)
             self.toast_hide_id = None
-        if not label.get_label().strip():
-            self.toast_revealer.set_reveal_child(False)
-            return
         self.toast_revealer.set_reveal_child(True)
         self.toast_hide_id = GLib.timeout_add_seconds(
             TOAST_VISIBLE_SECONDS,
@@ -218,7 +221,8 @@ class TermiaWindow(
     def hide_toast(self) -> bool:
         self.toast_hide_id = None
         self.toast_revealer.set_reveal_child(False)
-        self.toast_label.set_label("")
+        self.toast_messages.clear()
+        self.toast_label.set_grouped_text("")
         return GLib.SOURCE_REMOVE
 
     def t(self, key: str) -> str:
