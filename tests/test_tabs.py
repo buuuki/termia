@@ -36,6 +36,24 @@ class FakeWindow:
         self.presented = True
 
 
+class FakeTab:
+    def __init__(self) -> None:
+        self.next_sibling = None
+
+    def get_next_sibling(self):
+        return self.next_sibling
+
+
+class FakeTabBar:
+    def __init__(self, tabs) -> None:
+        self.first_child = tabs[0] if tabs else None
+        for current, following in zip(tabs, tabs[1:]):
+            current.next_sibling = following
+
+    def get_first_child(self):
+        return self.first_child
+
+
 class DetachTabTests(unittest.TestCase):
     def test_detach_tab_keeps_previous_order_for_focus_selection(self) -> None:
         session = SimpleNamespace(
@@ -181,3 +199,84 @@ class MiddleClickTabTests(unittest.TestCase):
         host.on_tab_middle_press(None, 1, 0.0, 0.0, "session", page)
 
         self.assertEqual(host.closed, ("session", page))
+
+
+class TabOverflowTests(unittest.TestCase):
+    def test_overflow_order_matches_visual_tab_order_and_skips_detached_tabs(self) -> None:
+        first_tab = FakeTab()
+        second_tab = FakeTab()
+        detached_tab = FakeTab()
+        first = SimpleNamespace(id="first", tab_label=first_tab, detached_window=None)
+        second = SimpleNamespace(id="second", tab_label=second_tab, detached_window=None)
+        detached = SimpleNamespace(id="detached", tab_label=detached_tab, detached_window=object())
+
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.session_registry = SessionRegistry([first, detached, second])
+                self.session_tab_bar = FakeTabBar([second_tab, detached_tab, first_tab])
+
+        self.assertEqual(Host().visible_sessions_in_tab_order(), [second, first])
+
+    def test_overflow_item_activates_selected_session_after_closing_popover(self) -> None:
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.activated = None
+
+            def set_active_session(self, session_id: str) -> None:
+                self.activated = session_id
+
+        host = Host()
+        popover = FakePopover()
+
+        host.on_tab_overflow_item_clicked(None, "selected", popover)
+
+        self.assertTrue(popover.closed)
+        self.assertEqual(host.activated, "selected")
+
+    def test_reveal_scrolls_right_until_active_tab_is_fully_visible(self) -> None:
+        value = TabsMixin.tab_reveal_scroll_value(
+            current=100,
+            page_size=300,
+            lower=0,
+            upper=1000,
+            tab_start=380,
+            tab_end=498,
+        )
+
+        self.assertEqual(value, 198)
+
+    def test_reveal_scrolls_left_to_active_tab_start(self) -> None:
+        value = TabsMixin.tab_reveal_scroll_value(
+            current=300,
+            page_size=300,
+            lower=0,
+            upper=1000,
+            tab_start=118,
+            tab_end=236,
+        )
+
+        self.assertEqual(value, 118)
+
+    def test_reveal_keeps_scroll_when_active_tab_is_visible(self) -> None:
+        value = TabsMixin.tab_reveal_scroll_value(
+            current=100,
+            page_size=300,
+            lower=0,
+            upper=1000,
+            tab_start=150,
+            tab_end=268,
+        )
+
+        self.assertEqual(value, 100)
+
+    def test_reveal_clamps_scroll_to_adjustment_upper_bound(self) -> None:
+        value = TabsMixin.tab_reveal_scroll_value(
+            current=600,
+            page_size=300,
+            lower=0,
+            upper=800,
+            tab_start=720,
+            tab_end=838,
+        )
+
+        self.assertEqual(value, 500)

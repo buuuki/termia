@@ -8,7 +8,7 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Graphene", "1.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
-from gi.repository import Gdk, Graphene, Gtk, Pango
+from gi.repository import Gdk, GLib, Graphene, Gtk, Pango
 
 from .ui_state import TerminalSession
 
@@ -20,6 +20,22 @@ class TabsMixin:
         self.update_session_tab_bar_visibility()
         self.set_active_session(session.id)
         self.sync_window_title_with_visible_session()
+
+    @staticmethod
+    def tab_reveal_scroll_value(
+        current: float,
+        page_size: float,
+        lower: float,
+        upper: float,
+        tab_start: float,
+        tab_end: float,
+    ) -> float:
+        maximum = max(lower, upper - page_size)
+        if tab_start < current:
+            return max(lower, tab_start)
+        if tab_end > current + page_size:
+            return min(maximum, tab_end - page_size)
+        return min(maximum, max(lower, current))
 
     def visible_sessions_in_tab_order(self) -> list[TerminalSession]:
         sessions_by_label = {
@@ -42,6 +58,7 @@ class TabsMixin:
             return
         self.terminal_stack.set_visible_child(session.page)
         self.update_session_tab_states()
+        self.schedule_active_tab_reveal()
         session.terminal.grab_focus()
 
     def update_session_tab_states(self) -> None:
@@ -50,6 +67,105 @@ class TabsMixin:
             session.tab_label.remove_css_class("active")
             if visible_page is session.page and session.detached_window is None:
                 session.tab_label.add_css_class("active")
+        self.rebuild_tab_overflow_popover()
+
+    def schedule_active_tab_reveal(self) -> None:
+        pending_id = getattr(self, "active_tab_reveal_id", None)
+        if pending_id is not None:
+            GLib.source_remove(pending_id)
+        self.active_tab_reveal_id = GLib.idle_add(self.reveal_active_tab)
+
+    def reveal_active_tab(self) -> bool:
+        self.active_tab_reveal_id = None
+        visible_page = self.terminal_stack.get_visible_child()
+        active_session = next(
+            (
+                session
+                for session in self.visible_sessions_in_tab_order()
+                if session.page is visible_page
+            ),
+            None,
+        )
+        if active_session is None:
+            return GLib.SOURCE_REMOVE
+        ok, bounds = active_session.tab_label.compute_bounds(self.session_tab_bar)
+        if not ok:
+            return GLib.SOURCE_REMOVE
+        adjustment = self.session_tab_scroller.get_hadjustment()
+        adjustment.set_value(
+            self.tab_reveal_scroll_value(
+                adjustment.get_value(),
+                adjustment.get_page_size(),
+                adjustment.get_lower(),
+                adjustment.get_upper(),
+                bounds.get_x(),
+                bounds.get_x() + bounds.get_width(),
+            )
+        )
+        return GLib.SOURCE_REMOVE
+
+    def on_tab_scroll_adjustment_changed(self, _adjustment: Gtk.Adjustment) -> None:
+        self.schedule_active_tab_reveal()
+
+    def rebuild_tab_overflow_popover(self) -> None:
+        if not hasattr(self, "tab_overflow_button"):
+            return
+        popover = Gtk.Popover()
+        popover.add_css_class("termia-menu-popover")
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        panel.add_css_class("termia-menu-panel")
+        panel.set_margin_top(6)
+        panel.set_margin_bottom(6)
+        panel.set_margin_start(6)
+        panel.set_margin_end(6)
+        visible_page = self.terminal_stack.get_visible_child()
+        for session in self.visible_sessions_in_tab_order():
+            display_title = self.session_tab_display_title(session)
+            button = Gtk.Button()
+            button.add_css_class("flat")
+            button.add_css_class("termia-tab-overflow-item")
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            marker = Gtk.Image.new_from_icon_name("object-select-symbolic")
+            marker.set_visible(session.page is visible_page)
+            label = Gtk.Label(label=display_title)
+            label.set_xalign(0)
+            label.set_hexpand(True)
+            label.set_wrap(True)
+            label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            label.set_max_width_chars(50)
+            label.set_tooltip_text(display_title)
+            row.append(marker)
+            row.append(label)
+            button.set_child(row)
+            button.connect("clicked", self.on_tab_overflow_item_clicked, session.id, popover)
+            panel.append(button)
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_max_content_height(360)
+        scroller.set_propagate_natural_height(True)
+        scroller.set_child(panel)
+        popover.set_child(scroller)
+        self.tab_overflow_button.set_popover(popover)
+
+    @staticmethod
+    def session_tab_display_title(session: TerminalSession) -> str:
+        child = session.tab_label.get_first_child()
+        if isinstance(child, Gtk.Label):
+            return child.get_label()
+        if isinstance(child, Gtk.Box):
+            label = child.get_first_child()
+            if isinstance(label, Gtk.Label):
+                return label.get_label()
+        return session.title
+
+    def on_tab_overflow_item_clicked(
+        self,
+        _button: Gtk.Button,
+        session_id: str,
+        popover: Gtk.Popover,
+    ) -> None:
+        popover.popdown()
+        self.set_active_session(session_id)
 
     def remove_session_from_main_view(self, session: TerminalSession) -> None:
         if session.detached_window is None:
@@ -65,7 +181,8 @@ class TabsMixin:
 
     def update_session_tab_bar_visibility(self) -> None:
         visible_sessions = [session for session in self.session_registry.sessions() if session.detached_window is None]
-        self.session_tab_bar.set_visible(len(visible_sessions) > 1)
+        self.session_tab_controls.set_visible(len(visible_sessions) > 1)
+        self.rebuild_tab_overflow_popover()
 
     def sync_window_title_with_visible_session(self) -> None:
         visible_sessions = [session for session in self.session_registry.sessions() if session.detached_window is None]
@@ -100,16 +217,18 @@ class TabsMixin:
         child = session.tab_label.get_first_child()
         if isinstance(child, Gtk.Label):
             child.set_label(title)
-            return
-        if isinstance(child, Gtk.Box):
+        elif isinstance(child, Gtk.Box):
             label = child.get_first_child()
             if isinstance(label, Gtk.Label):
                 label.set_label(title)
+        self.rebuild_tab_overflow_popover()
+        self.schedule_active_tab_reveal()
 
     def build_tab_label(self, title: str, session_id: str, page: Gtk.Widget) -> Gtk.Widget:
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         box.add_css_class("termia-tab-label")
-        box.set_hexpand(True)
+        box.set_hexpand(False)
+        box.set_size_request(118, -1)
         box.set_can_target(True)
         box.set_margin_start(0)
         box.set_margin_end(0)
@@ -118,8 +237,8 @@ class TabsMixin:
         label.set_hexpand(True)
         label.set_single_line_mode(True)
         label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_width_chars(1)
-        label.set_max_width_chars(36)
+        label.set_width_chars(8)
+        label.set_max_width_chars(8)
         label.set_tooltip_text(title)
         label.set_can_target(False)
         label.set_margin_start(4)
@@ -262,6 +381,7 @@ class TabsMixin:
             return
         self.session_tab_bar.reorder_child_after(dragged.tab_label, previous_sibling)
         self.update_session_tab_states()
+        self.schedule_active_tab_reveal()
 
     def on_tab_right_click(
         self,
