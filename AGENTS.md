@@ -26,12 +26,11 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Development Workflow
 
-- Start from `main` unless the task names an existing branch.
-- Use feature branches for issue work, for example `feature/14-shortcuts-configuration`.
-- Keep commits focused and use messages that describe the resolved behavior. Include the issue reference when applicable.
+- Base issue branches on current `main` unless the task names another base.
+- Keep each change focused and avoid unrelated refactors or cleanup.
 - Do not commit local user configuration, exported credentials, generated caches, or unrelated cleanup.
-- If a task changes user-facing behavior, update the README and localized docs when the behavior is documented there.
-- If a task changes UI text, update all three translation dictionaries in `src/termia/i18n.py` unless the string is intentionally language-specific.
+- Update the README and localized documentation when documented user-facing behavior changes.
+- When UI text changes, update English, Spanish, and Catalan catalogs unless the string is intentionally language-specific.
 
 ## Changelog
 
@@ -50,23 +49,30 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Validation
 
-Run the narrowest useful checks for the change. At minimum, syntax-check touched Python files. For broader changes, use the project checks from `docs/REGRESSION_CHECKS.md`:
+For code changes, use the narrowest relevant checks while iterating. At
+minimum, syntax-check touched Python files and run the affected test module
+without verbose output. For example, for a tabs-only change:
 
 ```bash
-python3 -m py_compile run_termia.py src/termia/app.py src/termia/asbru_import.py src/termia/config_actions.py src/termia/config_io.py src/termia/connection_dialogs.py src/termia/connection_utils.py src/termia/constants.py src/termia/i18n.py src/termia/keybindings.py src/termia/main_menu.py src/termia/models.py src/termia/preferences.py src/termia/sidebar.py src/termia/statistics_utils.py src/termia/statistics_view.py src/termia/stores.py src/termia/styles.py src/termia/tabs.py src/termia/terminal_sessions.py src/termia/terminal_config.py src/termia/ui_state.py
-bash -n scripts/install_dependencies.sh
-bash -n scripts/install_desktop.sh
-bash -n scripts/uninstall_desktop.sh
+python3 -m py_compile src/termia/tabs.py
+PYTHONPATH=src python3 -m unittest tests.test_tabs
 ```
 
-When the system packages are available, also run:
+Rerun only a failing module or case with `-v` when detailed output helps.
+
+After a code implementation is stable and before opening the PR, run the
+complete non-verbose checks from `docs/REGRESSION_CHECKS.md` once. Do not repeat
+an unchanged successful command. If later edits can affect its coverage, rerun
+the relevant check; rerun the full suite only when the later change warrants
+it. For documentation-only changes, validate the affected documentation,
+links, and documented commands without running unrelated application tests.
+
+When UI behavior changes, run an isolated test instance and review the relevant
+manual regression sections:
 
 ```bash
-./scripts/install_dependencies.sh --check
-python3 run_termia.py
+scripts/run_test_instance.sh --fresh
 ```
-
-For UI, terminal, keyboard shortcut, SSH, settings, or import/export changes, review the relevant sections in `docs/REGRESSION_CHECKS.md` and mention what was covered.
 
 ## GTK/VTE Notes
 

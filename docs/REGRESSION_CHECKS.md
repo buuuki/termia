@@ -256,17 +256,30 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 
 ## Automated Checks
 
-Run at minimum:
+While iterating on code, run the affected test module and syntax-check the
+touched Python files. Use non-verbose output by default; rerun only a failing
+module or case with `-v` when its detailed output helps diagnose the failure.
+
+After a code implementation is stable and before opening the PR, run at minimum:
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -v
+PYTHONPATH=src python3 -m unittest discover -s tests
 python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/*.py tests/*.py
 bash -n scripts/termia-setup.sh
-scripts/compile_translations.py
 scripts/compile_translations.py --check
 ```
 
-When practical, add targeted tests for pure logic such as prompt templates, config migration, import/export, and statistics.
+If translations changed, run `scripts/compile_translations.py` before its
+`--check` mode. Do not repeat an unchanged successful command. If subsequent
+edits can affect a check's coverage, rerun that check; repeat the complete suite
+only when the later change warrants it.
+
+For documentation-only changes, validate the affected documentation, links,
+and documented command availability without running unrelated application
+tests.
+
+When practical, add targeted tests for pure logic such as prompt templates,
+config migration, import/export, and statistics.
 
 The automated equivalent runs in GitHub Actions for every pull request and
 every push to `main`.

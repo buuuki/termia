@@ -4,6 +4,11 @@
 
 Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
+### Changed
+
+- Streamline repository maintenance guidance and validation output while
+  preserving required test coverage (`#200`).
+
 ### Fixed
 
 - Align header and sidebar action buttons, clarify their creation tooltips, and
