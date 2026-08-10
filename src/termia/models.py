@@ -90,6 +90,7 @@ class AppSettings:
     close_tab_on_disconnect: bool = False
     close_tab_on_ssh_exit: bool = False
     open_local_terminal_on_startup: bool = True
+    restore_sessions_on_startup: bool = False
     show_sidebar_on_startup: bool = True
     show_session_status_bar: bool = False
     audible_bell: bool = False

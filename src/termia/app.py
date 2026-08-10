@@ -22,6 +22,7 @@ from .constants import (
     HISTORY_FILE,
     INSTANCE_LOCK_FILE,
     SETTINGS_FILE,
+    SESSION_SNAPSHOT_FILE,
     STATE_DIR,
 )
 from .debug import configure_debug_logging, log_startup_context, log_store_state
@@ -32,6 +33,7 @@ from .main_menu_actions import MainMenuActions
 from .notifications import GroupedNotificationLabel
 from .preferences import PreferencesMixin
 from .session_registry import SessionRegistry
+from .session_snapshot import SessionSnapshotStore
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
 from .statistics_presenter import StatisticsPresenter
@@ -81,6 +83,18 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
+        self.session_snapshot_store = SessionSnapshotStore(
+            SESSION_SNAPSHOT_FILE,
+            read_only=self.store.read_only,
+        )
+        self.pending_session_snapshot = (
+            self.session_snapshot_store.load()
+            if self.store.data.app.restore_sessions_on_startup
+            else []
+        )
+        if not self.store.read_only and not self.store.data.app.restore_sessions_on_startup:
+            self.session_snapshot_store.clear()
+        self.startup_restore_prompt_pending = False
         self.toast_messages: list[str] = []
         self.toast_label = GroupedNotificationLabel()
         self.toast_label.set_notification_handler(self.show_toast)
@@ -190,11 +204,47 @@ class TermiaWindow(
             self.toast_label.set_label(self.t("connections_locked"))
             self.request_unlock_connections()
         else:
-            self.schedule_startup_local_terminal()
+            self.schedule_startup_restore_or_local()
 
     def schedule_startup_local_terminal(self) -> None:
         if self.store.data.app.open_local_terminal_on_startup:
             GLib.idle_add(self.open_startup_local_terminal)
+
+    def schedule_startup_restore_or_local(self) -> None:
+        if self.store.data.app.restore_sessions_on_startup and self.pending_session_snapshot:
+            GLib.idle_add(self.prompt_restore_last_session)
+        else:
+            self.schedule_startup_local_terminal()
+
+    def prompt_restore_last_session(self) -> bool:
+        if self.startup_restore_prompt_pending or self.session_registry:
+            return GLib.SOURCE_REMOVE
+        self.startup_restore_prompt_pending = True
+        dialog = Gtk.AlertDialog(
+            message=self.t("restore_sessions_title"),
+            detail=self.t("restore_sessions_detail").format(count=len(self.pending_session_snapshot)),
+        )
+        dialog.set_buttons([self.t("skip_restore_sessions"), self.t("restore_sessions")])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(1)
+        dialog.choose(self, None, self.on_restore_last_session_decided, dialog)
+        return GLib.SOURCE_REMOVE
+
+    def on_restore_last_session_decided(
+        self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, _data: Gtk.AlertDialog
+    ) -> None:
+        self.startup_restore_prompt_pending = False
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        snapshot = self.pending_session_snapshot
+        self.pending_session_snapshot = []
+        self.session_snapshot_store.clear()
+        if response == 1:
+            self.restore_session_snapshot(snapshot)
+        else:
+            self.schedule_startup_local_terminal()
 
     def open_startup_local_terminal(self) -> bool:
         if not self.session_registry:
@@ -283,6 +333,7 @@ class TermiaWindow(
     def on_unlock_connections_cancelled(self, _button: Gtk.Button | None = None) -> None:
         self.hide_unlock_panel()
         self.toast_label.set_label(self.t("connections_locked"))
+        self.pending_session_snapshot = []
         self.schedule_startup_local_terminal()
 
     def on_unlock_connections_requested(self, _button: Gtk.Button | None = None) -> None:
@@ -292,7 +343,16 @@ class TermiaWindow(
             self.refresh_translated_chrome()
             self.refresh_list()
             self.toast_label.set_label(self.t("connections_unlocked"))
-            self.schedule_startup_local_terminal()
+            snapshot_store = getattr(self, "session_snapshot_store", None)
+            if snapshot_store is None:
+                self.schedule_startup_local_terminal()
+                return
+            self.pending_session_snapshot = (
+                snapshot_store.load()
+                if self.store.data.app.restore_sessions_on_startup
+                else []
+            )
+            self.schedule_startup_restore_or_local()
             return
         self.unlock_error_label.set_label(self.t("unlock_connections_failed"))
         self.unlock_password_entry.set_text("")
@@ -337,10 +397,20 @@ class TermiaWindow(
         if self.shutdown_in_progress:
             return
         self.shutdown_in_progress = True
+        self.save_session_snapshot_before_close()
         self.save_history_before_close()
         self.save_statistics_before_close()
         self.terminate_open_terminal_processes()
         GLib.timeout_add(500, self.finish_main_window_shutdown)
+
+    def save_session_snapshot_before_close(self) -> None:
+        if self.store.read_only or not self.store.data.app.restore_sessions_on_startup:
+            return
+        from .workspace_layout import capture_workspace_tabs
+
+        self.session_snapshot_store.save(
+            capture_workspace_tabs(self.session_registry.sessions())
+        )
 
     def finish_main_window_shutdown(self) -> bool:
         self.terminate_open_terminal_processes(force=True)

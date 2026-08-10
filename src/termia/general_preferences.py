@@ -19,6 +19,7 @@ GENERAL_PREFERENCE_FIELDS = (
     ("close_tab_on_disconnect", "close_tab_on_disconnect"),
     ("close_tab_on_ssh_exit", "close_tab_on_ssh_exit"),
     ("open_local_terminal_on_startup", "open_local_terminal_on_startup"),
+    ("restore_sessions_on_startup", "restore_sessions_on_startup"),
     ("show_sidebar_on_startup", "show_sidebar_on_startup"),
     ("show_session_status_bar", "show_session_status_bar"),
     ("audible_bell", "audible_bell"),
@@ -56,6 +57,7 @@ class GeneralPreferencesMixin:
             ("close_tab_on_disconnect", self.store.data.app.close_tab_on_disconnect),
             ("close_tab_on_ssh_exit", self.store.data.app.close_tab_on_ssh_exit),
             ("open_local_terminal_on_startup", self.store.data.app.open_local_terminal_on_startup),
+            ("restore_sessions_on_startup", self.store.data.app.restore_sessions_on_startup),
             ("show_sidebar_on_startup", self.store.data.app.show_sidebar_on_startup),
             ("show_session_status_bar", self.store.data.app.show_session_status_bar),
             ("audible_bell", self.store.data.app.audible_bell),
@@ -106,18 +108,25 @@ class GeneralPreferencesMixin:
                     theme=theme_combo.get_active_id() or "system",
                     language=language_combo.get_active_id() or detect_system_language(),
                     close_tab_on_disconnect=values[0], close_tab_on_ssh_exit=values[1],
-                    open_local_terminal_on_startup=values[2], show_sidebar_on_startup=values[3],
-                    show_session_status_bar=values[4], audible_bell=values[5], statistics_enabled=values[6],
-                    confirm_disconnect=values[7], confirm_close_app=values[8],
-                    send_password_shortcut=values[9], send_password_enter=values[10],
+                    open_local_terminal_on_startup=values[2], show_sidebar_on_startup=values[4],
+                    restore_sessions_on_startup=values[3],
+                    show_session_status_bar=values[5], audible_bell=values[6], statistics_enabled=values[7],
+                    confirm_disconnect=values[8], confirm_close_app=values[9],
+                    send_password_shortcut=values[10], send_password_enter=values[11],
                     connection_storage_mode=self.store.data.app.connection_storage_mode,
-                    debug_enabled=values[11],
+                    debug_enabled=values[12],
                     keybindings=self.store.data.app.keybindings,
                 ))
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
                 dialog.destroy()
                 return
+            if previous_values["restore_sessions_on_startup"] != self.store.data.app.restore_sessions_on_startup:
+                if self.store.data.app.restore_sessions_on_startup:
+                    self.pending_session_snapshot = self.session_snapshot_store.load()
+                else:
+                    self.pending_session_snapshot = []
+                    self.session_snapshot_store.clear()
             self.apply_app_theme()
             self.install_tree_styles()
             if previous_values["audible_bell"] != self.store.data.app.audible_bell:

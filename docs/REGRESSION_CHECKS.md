@@ -276,6 +276,22 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   move the locked window between monitors, verify that underlying application
   controls are blocked, and confirm that successful unlock and cancellation
   work in writable and read-only instances.
+- Open a local terminal, a saved SSH connection, and a mixed split layout in
+  several tabs, then close Termia. Reopen it and confirm that the restore dialog
+  appears (after unlocking encrypted connections when enabled), restoring the
+  tab order, saved identities, split directions, and divider positions as new
+  processes. Confirm terminal output and the old processes are not restored.
+- In a fresh profile, confirm `Restore the previous session when Termia starts`
+  is disabled in `General`; create and close sessions, reopen Termia, and
+  confirm no restoration prompt appears. Enable it, repeat the close/reopen
+  flow, and confirm the prompt and restoration are available.
+- Choose `Start fresh` in the restore dialog and confirm normal startup behavior
+  continues, the same snapshot is not offered again, and the configured startup
+  local-terminal preference still works. Delete one saved connection before
+  restoring and confirm the unavailable tab is skipped with a notification.
+- Start a second read-only Termia instance while a snapshot exists and confirm
+  it never modifies or deletes the snapshot; close the writable instance and
+  confirm the snapshot remains restorable.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
 - Change terminal foreground/background/palette and confirm only VTE terminal colors change, not the app chrome.

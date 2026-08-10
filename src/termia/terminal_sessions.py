@@ -409,6 +409,42 @@ class TerminalSessionsMixin:
                 )
             )
 
+    def restore_session_snapshot(self, tabs: list[dict[str, object]]) -> None:
+        """Reopen the last session from safe connection references."""
+        layouts = workspace_tab_layouts(tabs)
+        pane_count = workspace_total_pane_count(tabs)
+        if pane_count > MAX_WORKSPACE_PANES or not self.can_open_terminal_tabs(len(layouts)):
+            return
+
+        opened_tabs = 0
+        skipped_tabs = 0
+        for layout in layouts:
+            if not self.workspace_layout_available(layout):
+                skipped_tabs += 1
+                continue
+            root = workspace_root_pane(layout)
+            if root is None:
+                skipped_tabs += 1
+                continue
+            session = self.open_workspace_root(root)
+            if session is None:
+                skipped_tabs += 1
+                continue
+            self.restore_workspace_node(session, session.terminal, layout)
+            opened_tabs += 1
+
+        if opened_tabs:
+            self.toast_label.set_label(self.t("sessions_restored").format(count=opened_tabs))
+        else:
+            self.toast_label.set_label(self.t("sessions_not_restored"))
+        if opened_tabs and skipped_tabs:
+            self.toast_label.set_label(
+                self.t("sessions_restored_with_skipped").format(
+                    count=opened_tabs,
+                    skipped=skipped_tabs,
+                )
+            )
+
     def workspace_layout_available(self, node: dict[str, object]) -> bool:
         if not workspace_layout_is_valid(node) or workspace_pane_count(node) > MAX_TERMINAL_PANES:
             return False

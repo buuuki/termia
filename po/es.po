@@ -277,6 +277,10 @@ msgstr "Cerrar la pestaña al salir de una sesión SSH con exit"
 msgid "Open a local terminal when Termia starts"
 msgstr "Abrir terminal local al iniciar Termia"
 
+#: src/termia/i18n.py:restore_sessions_on_startup
+msgid "Restore the previous session when Termia starts"
+msgstr "Restaurar la sesión anterior al iniciar Termia"
+
 #: src/termia/i18n.py:show_sidebar_on_startup
 msgid "Show the server list when Termia starts"
 msgstr "Mostrar listado de servidores al iniciar Termia"
@@ -1413,6 +1417,34 @@ msgstr "Espacio de trabajo abierto: {name} ({count} pestañas; {skipped} omitida
 #: src/termia/i18n.py:workspace_pane_limit_exceeded
 msgid "A workspace can contain at most {limit} panes; current layout has {count}."
 msgstr "Un espacio de trabajo puede contener como máximo {limit} paneles; la disposición actual tiene {count}."
+
+#: src/termia/i18n.py:restore_sessions_title
+msgid "Restore the previous Termia session?"
+msgstr "¿Quieres restaurar la sesión anterior de Termia?"
+
+#: src/termia/i18n.py:restore_sessions_detail
+msgid "Termia found {count} open tab(s) from the previous run. Restore their saved connections and split layout? Terminal output and running processes are not restored."
+msgstr "Termia ha encontrado {count} pestaña(s) abiertas de la ejecución anterior. ¿Quieres restaurar sus conexiones guardadas y la disposición de los splits? La salida de los terminales y los procesos en ejecución no se restauran."
+
+#: src/termia/i18n.py:restore_sessions
+msgid "Restore session"
+msgstr "Restaurar sesión"
+
+#: src/termia/i18n.py:skip_restore_sessions
+msgid "Start fresh"
+msgstr "Empezar de cero"
+
+#: src/termia/i18n.py:sessions_restored
+msgid "Previous session restored: {count} tab(s)"
+msgstr "Sesión anterior restaurada: {count} pestaña(s)"
+
+#: src/termia/i18n.py:sessions_not_restored
+msgid "Previous session was not restored."
+msgstr "La sesión anterior no se ha restaurado."
+
+#: src/termia/i18n.py:sessions_restored_with_skipped
+msgid "Previous session restored: {count} tab(s); {skipped} unavailable tab(s) skipped."
+msgstr "Sesión anterior restaurada: {count} pestaña(s); se han omitido {skipped} pestaña(s) no disponibles."
 
 #: src/termia/i18n.py:global_tab_limit_exceeded
 msgid "Cannot open tabs: {open} already open, {requested} requested, global limit {limit}."
