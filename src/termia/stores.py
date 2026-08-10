@@ -917,6 +917,7 @@ class ConnectionStore:
         prompt_enabled: bool | None = None,
         prompt_template: str | None = None,
         prompt_color: str | None = None,
+        audible_bell: bool | None = None,
     ) -> None:
         self.ensure_writable()
         current = self.data.terminal
@@ -940,6 +941,7 @@ class ConnectionStore:
             prompt_enabled=current.prompt_enabled if prompt_enabled is None else prompt_enabled,
             prompt_template=(prompt_template if prompt_template is not None else current.prompt_template) if (prompt_template if prompt_template is not None else current.prompt_template).strip() else r"\u@\h:\w\$ ",
             prompt_color=(prompt_color if prompt_color is not None else current.prompt_color).strip() or DEFAULT_PROMPT_COLOR,
+            audible_bell=current.audible_bell if audible_bell is None else audible_bell,
         )
         self.save_settings()
 
@@ -958,6 +960,7 @@ class ConnectionStore:
             prompt_enabled=enabled,
             prompt_template=template if template.strip() else r"\u@\h:\w\$ ",
             prompt_color=color.strip() or DEFAULT_PROMPT_COLOR,
+            audible_bell=current.audible_bell,
         )
         self.save_settings()
 

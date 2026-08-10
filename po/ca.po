@@ -55,6 +55,10 @@ msgstr "Prompt"
 msgid "Terminal appearance"
 msgstr "Aparença del terminal"
 
+#: src/termia/i18n.py:audible_bell
+msgid "Audible terminal bell"
+msgstr "So de campana del terminal"
+
 #: src/termia/i18n.py:local_prompt
 msgid "Local prompt"
 msgstr "Prompt local"

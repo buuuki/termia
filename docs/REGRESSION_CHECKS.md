@@ -159,6 +159,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 ### Terminal Appearance
 
 - Terminal foreground, background, font, font size, ANSI palette, and prompt settings must apply to new terminal sessions.
+- The audible terminal bell must be disabled by default, and its preference
+  must apply to newly opened and already open VTE terminals.
 - Terminal foreground/background color changes must not affect app menus, header bars, sidebars, dialogs, or tab chrome.
 - Terminal palette changes must preserve readable ANSI colors for common output such as directories, executables, warnings, errors, and prompts.
 - Reconnect and warning messages printed inside VTE must remain readable on both light and dark terminal backgrounds.
@@ -282,6 +284,9 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   save, and prompt changes appear only in a newly opened or duplicated local Bash terminal.
 - At the default Terminal preferences size, confirm the shared preview remains
   visible while changing the font family and size, and controls use compact natural widths.
+- Open Terminal preferences, enable the audible terminal bell, and press Tab in
+  a shell where completion produces a bell; disable it again and confirm the
+  same action is silent. Verify the default is disabled in a fresh profile.
 - Confirm terminal ANSI colors, prompt colors, and the reconnect prompt are readable on both light and dark terminal backgrounds.
 
 ## Automated Checks

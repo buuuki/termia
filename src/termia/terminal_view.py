@@ -37,3 +37,4 @@ class TerminalViewFactory:
         palette = [parse_color(color, fallback) for color, fallback in zip(palette_values, DEFAULT_ANSI_PALETTE)]
         terminal.set_font(font)
         terminal.set_colors(foreground, background, palette)
+        terminal.set_enable_bell(settings.audible_bell)

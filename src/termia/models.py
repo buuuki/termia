@@ -81,6 +81,7 @@ class TerminalSettings:
     prompt_enabled: bool = False
     prompt_template: str = r"\u@\h:\w\$ "
     prompt_color: str = DEFAULT_PROMPT_COLOR
+    audible_bell: bool = False
 
 
 @dataclass
