@@ -92,6 +92,8 @@ class TermiaWindow(
             if self.store.data.app.restore_sessions_on_startup
             else []
         )
+        if not self.store.read_only and not self.store.data.app.restore_sessions_on_startup:
+            self.session_snapshot_store.clear()
         self.startup_restore_prompt_pending = False
         self.toast_messages: list[str] = []
         self.toast_label = GroupedNotificationLabel()
