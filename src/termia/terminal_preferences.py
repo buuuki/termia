@@ -143,10 +143,6 @@ class TerminalPreferencesMixin:
         palette_label.set_xalign(0)
         grid.attach(palette_label, 0, len(rows), 1, 1)
         grid.attach(palette_box, 1, len(rows), 3, 1)
-        audible_bell = Gtk.CheckButton(label=self.t("audible_bell"))
-        audible_bell.set_active(settings.audible_bell)
-        audible_bell.set_halign(Gtk.Align.START)
-        grid.attach(audible_bell, 0, len(rows) + 1, 4, 1)
         appearance_frame = Gtk.Frame(label=self.t("terminal_appearance"))
         appearance_frame.set_child(grid)
         preferences_box.append(appearance_frame)
@@ -196,7 +192,6 @@ class TerminalPreferencesMixin:
             prompt_datetime_combo,
             prompt_template_entry,
             prompt_color_button,
-            audible_bell,
             prompt_preset_box,
         )
         for prompt_widget in prompt_controls:
@@ -283,7 +278,6 @@ class TerminalPreferencesMixin:
             prompt_datetime_combo,
             prompt_template_entry,
             prompt_color_button,
-            audible_bell,
         )
         dialog.connect("destroy", cleanup_preview_providers)
         dialog.present()
@@ -378,7 +372,6 @@ class TerminalPreferencesMixin:
         prompt_datetime_combo: Gtk.ComboBoxText,
         prompt_template_entry: Gtk.Entry,
         prompt_color_button: Gtk.ColorButton,
-        audible_bell: Gtk.CheckButton,
     ) -> None:
         if response == Gtk.ResponseType.OK:
             try:
@@ -395,7 +388,6 @@ class TerminalPreferencesMixin:
                         prompt_datetime_combo.get_active_id() or "none",
                     ),
                     prompt_color=rgba_to_hex(prompt_color_button.get_rgba()),
-                    audible_bell=audible_bell.get_active(),
                 )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))

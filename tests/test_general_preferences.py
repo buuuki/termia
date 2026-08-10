@@ -21,6 +21,7 @@ class GeneralPreferencesNotificationTests(unittest.TestCase):
             open_local_terminal_on_startup=False,
             show_sidebar_on_startup=False,
             show_session_status_bar=False,
+            audible_bell=False,
             statistics_enabled=False,
             confirm_disconnect=False,
             confirm_close_app=False,

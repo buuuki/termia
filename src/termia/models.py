@@ -81,7 +81,6 @@ class TerminalSettings:
     prompt_enabled: bool = False
     prompt_template: str = r"\u@\h:\w\$ "
     prompt_color: str = DEFAULT_PROMPT_COLOR
-    audible_bell: bool = False
 
 
 @dataclass
@@ -93,6 +92,7 @@ class AppSettings:
     open_local_terminal_on_startup: bool = True
     show_sidebar_on_startup: bool = True
     show_session_status_bar: bool = False
+    audible_bell: bool = False
     confirm_disconnect: bool = True
     confirm_close_app: bool = False
     send_password_shortcut: bool = False

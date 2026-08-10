@@ -21,6 +21,7 @@ GENERAL_PREFERENCE_FIELDS = (
     ("open_local_terminal_on_startup", "open_local_terminal_on_startup"),
     ("show_sidebar_on_startup", "show_sidebar_on_startup"),
     ("show_session_status_bar", "show_session_status_bar"),
+    ("audible_bell", "audible_bell"),
     ("statistics_enabled", "statistics_enabled"),
     ("confirm_disconnect", "confirm_disconnect"),
     ("confirm_close_app", "confirm_close_app"),
@@ -57,6 +58,7 @@ class GeneralPreferencesMixin:
             ("open_local_terminal_on_startup", self.store.data.app.open_local_terminal_on_startup),
             ("show_sidebar_on_startup", self.store.data.app.show_sidebar_on_startup),
             ("show_session_status_bar", self.store.data.app.show_session_status_bar),
+            ("audible_bell", self.store.data.app.audible_bell),
             ("statistics_enabled", self.store.data.app.statistics_enabled),
             ("confirm_disconnect", self.store.data.app.confirm_disconnect),
             ("confirm_close_app", self.store.data.app.confirm_close_app),
@@ -68,7 +70,7 @@ class GeneralPreferencesMixin:
         for button, (_, active) in zip(check_buttons, checks):
             button.set_active(active)
             button.set_halign(Gtk.Align.START)
-        send_password_shortcut, send_password_enter = check_buttons[8:10]
+        send_password_shortcut, send_password_enter = check_buttons[9:11]
         send_password_enter.set_sensitive(send_password_shortcut.get_active())
         send_password_shortcut.connect("toggled", lambda current: send_password_enter.set_sensitive(current.get_active()))
         check_buttons[-1].set_tooltip_text(
@@ -105,11 +107,11 @@ class GeneralPreferencesMixin:
                     language=language_combo.get_active_id() or detect_system_language(),
                     close_tab_on_disconnect=values[0], close_tab_on_ssh_exit=values[1],
                     open_local_terminal_on_startup=values[2], show_sidebar_on_startup=values[3],
-                    show_session_status_bar=values[4], statistics_enabled=values[5],
-                    confirm_disconnect=values[6], confirm_close_app=values[7],
-                    send_password_shortcut=values[8], send_password_enter=values[9],
+                    show_session_status_bar=values[4], audible_bell=values[5], statistics_enabled=values[6],
+                    confirm_disconnect=values[7], confirm_close_app=values[8],
+                    send_password_shortcut=values[9], send_password_enter=values[10],
                     connection_storage_mode=self.store.data.app.connection_storage_mode,
-                    debug_enabled=values[10],
+                    debug_enabled=values[11],
                     keybindings=self.store.data.app.keybindings,
                 ))
             except ReadOnlyStoreError:

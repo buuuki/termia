@@ -26,7 +26,7 @@ class FakeTerminal:
         self.background = background
         self.palette = palette
 
-    def set_enable_bell(self, enabled: bool) -> None:
+    def set_audible_bell(self, enabled: bool) -> None:
         self.enable_bell = enabled
 
 

@@ -284,7 +284,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   save, and prompt changes appear only in a newly opened or duplicated local Bash terminal.
 - At the default Terminal preferences size, confirm the shared preview remains
   visible while changing the font family and size, and controls use compact natural widths.
-- Open Terminal preferences, enable the audible terminal bell, and press Tab in
+- Open General preferences, enable the audible terminal bell, and press Tab in
   a shell where completion produces a bell; disable it again and confirm the
   same action is silent. Verify the default is disabled in a fresh profile.
 - Confirm terminal ANSI colors, prompt colors, and the reconnect prompt are readable on both light and dark terminal backgrounds.

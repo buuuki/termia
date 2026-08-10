@@ -9,6 +9,11 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 - Add a terminal preference to enable or disable the audible bell, disabled by
   default (`#207`).
 
+### Fixed
+
+- Apply the audible-bell preference through the supported VTE API and expose it
+  independently in General preferences (`#207`).
+
 ### Changed
 
 - Unify Terminal appearance and local Prompt preferences in one dialog with a

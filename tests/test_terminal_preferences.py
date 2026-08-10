@@ -79,14 +79,12 @@ class TerminalPreferencesTests(unittest.TestCase):
             SimpleNamespace(get_active_id=lambda: "time"),
             SimpleNamespace(get_text=lambda: r"\u@\h:\w\$ "),
             color_button,
-            SimpleNamespace(get_active=lambda: False),
         )
 
         saved = host.store.update_terminal_settings.call_args.kwargs
         self.assertTrue(saved["prompt_enabled"])
         self.assertIn(r"[\A]", saved["prompt_template"])
         self.assertEqual(saved["prompt_color"], "#336699")
-        self.assertFalse(saved["audible_bell"])
         host.apply_terminal_settings_to_open_tabs.assert_called_once_with()
         host.install_tree_styles.assert_called_once_with()
         dialog.destroy.assert_called_once_with()
