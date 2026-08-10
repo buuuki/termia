@@ -120,6 +120,8 @@ class GeneralPreferencesMixin:
                 return
             self.apply_app_theme()
             self.install_tree_styles()
+            if previous_values["audible_bell"] != self.store.data.app.audible_bell:
+                self.apply_terminal_settings_to_open_tabs()
             self.apply_session_status_bar_visibility_to_open_tabs()
             self.set_sidebar_visible(self.store.data.app.show_sidebar_on_startup)
             self.collapse_groups_on_startup = True
