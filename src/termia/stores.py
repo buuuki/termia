@@ -970,6 +970,7 @@ class ConnectionStore:
             close_tab_on_disconnect=app.close_tab_on_disconnect,
             close_tab_on_ssh_exit=app.close_tab_on_ssh_exit,
             open_local_terminal_on_startup=app.open_local_terminal_on_startup,
+            restore_sessions_on_startup=app.restore_sessions_on_startup,
             show_sidebar_on_startup=app.show_sidebar_on_startup,
             show_session_status_bar=app.show_session_status_bar,
             audible_bell=app.audible_bell,

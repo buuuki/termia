@@ -291,6 +291,10 @@ msgstr ""
 msgid "Open a local terminal when Termia starts"
 msgstr ""
 
+#: src/termia/i18n.py:restore_sessions_on_startup
+msgid "Restore the previous session when Termia starts"
+msgstr ""
+
 #: src/termia/i18n.py:show_sidebar_on_startup
 msgid "Show the server list when Termia starts"
 msgstr ""

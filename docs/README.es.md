@@ -120,7 +120,7 @@ icono; APT instala las dependencias de GTK, VTE, Python, SSH y cifrado.
 
 El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguridad`:
 
-- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto.
+- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, recuperación de la sesión anterior, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto. La recuperación de la sesión anterior está desactivada por defecto.
 - `Terminal` combina la apariencia del VTE y el prompt local con una única vista previa. Los cambios de apariencia se aplican a terminales abiertos; los del prompt solo a nuevos Bash locales o duplicaciones y nunca inyectan comandos en shells locales activos ni sesiones SSH. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
 - `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
 - `Seguridad` controla el modo de almacenamiento de conexiones.

@@ -11,6 +11,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 - Restore the previous tabs and split layouts on startup after explicit user
   confirmation, using a private snapshot containing only saved connection
   references (`#184`).
+- Add a General preference to enable previous-session restoration, disabled by
+  default (`#184`).
 
 ### Fixed
 

@@ -114,6 +114,7 @@ MESSAGES = {'servers': 'Show or hide server list',
  'reconnect_prompt': 'Press Enter to reconnect.',
  'close_tab_on_ssh_exit': 'Close the tab when leaving an SSH session with exit',
  'open_local_terminal_on_startup': 'Open a local terminal when Termia starts',
+ 'restore_sessions_on_startup': 'Restore the previous session when Termia starts',
  'show_sidebar_on_startup': 'Show the server list when Termia starts',
  'delete_group_confirm': 'Delete group',
  'delete_group_confirm_detail': 'Delete {name}? All nested subgroups and servers will also be '

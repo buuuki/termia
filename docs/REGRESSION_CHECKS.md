@@ -281,6 +281,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   appears (after unlocking encrypted connections when enabled), restoring the
   tab order, saved identities, split directions, and divider positions as new
   processes. Confirm terminal output and the old processes are not restored.
+- In a fresh profile, confirm `Restore the previous session when Termia starts`
+  is disabled in `General`; create and close sessions, reopen Termia, and
+  confirm no restoration prompt appears. Enable it, repeat the close/reopen
+  flow, and confirm the prompt and restoration are available.
 - Choose `Start fresh` in the restore dialog and confirm normal startup behavior
   continues, the same snapshot is not offered again, and the configured startup
   local-terminal preference still works. Delete one saved connection before

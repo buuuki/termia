@@ -277,6 +277,10 @@ msgstr "Cerrar la pestaña al salir de una sesión SSH con exit"
 msgid "Open a local terminal when Termia starts"
 msgstr "Abrir terminal local al iniciar Termia"
 
+#: src/termia/i18n.py:restore_sessions_on_startup
+msgid "Restore the previous session when Termia starts"
+msgstr "Restaurar la sesión anterior al iniciar Termia"
+
 #: src/termia/i18n.py:show_sidebar_on_startup
 msgid "Show the server list when Termia starts"
 msgstr "Mostrar listado de servidores al iniciar Termia"

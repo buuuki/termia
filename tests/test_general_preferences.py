@@ -19,6 +19,7 @@ class GeneralPreferencesNotificationTests(unittest.TestCase):
             close_tab_on_disconnect=False,
             close_tab_on_ssh_exit=False,
             open_local_terminal_on_startup=False,
+            restore_sessions_on_startup=False,
             show_sidebar_on_startup=False,
             show_session_status_bar=False,
             audible_bell=False,
