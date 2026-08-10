@@ -26,6 +26,9 @@ class FakeTerminal:
         self.background = background
         self.palette = palette
 
+    def set_audible_bell(self, enabled: bool) -> None:
+        self.enable_bell = enabled
+
 
 class TerminalViewTests(unittest.TestCase):
     def test_apply_settings_resolves_font_and_applies_palette(self) -> None:
@@ -46,3 +49,4 @@ class TerminalViewTests(unittest.TestCase):
         self.assertEqual(terminal.foreground.red, 1.0)
         self.assertEqual(terminal.background.blue, 0.0)
         self.assertEqual(len(terminal.palette), 2)
+        self.assertFalse(terminal.enable_bell)

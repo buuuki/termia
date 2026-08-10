@@ -972,6 +972,7 @@ class ConnectionStore:
             open_local_terminal_on_startup=app.open_local_terminal_on_startup,
             show_sidebar_on_startup=app.show_sidebar_on_startup,
             show_session_status_bar=app.show_session_status_bar,
+            audible_bell=app.audible_bell,
             confirm_disconnect=app.confirm_disconnect,
             confirm_close_app=app.confirm_close_app,
             send_password_shortcut=app.send_password_shortcut,

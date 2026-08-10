@@ -19,16 +19,22 @@ class TerminalViewFactory:
     def __init__(self, resolve_font_family: Callable[[str], str]) -> None:
         self.resolve_font_family = resolve_font_family
 
-    def create(self, settings: TerminalSettings) -> Vte.Terminal:
+    def create(self, settings: TerminalSettings, *, audible_bell: bool = False) -> Vte.Terminal:
         terminal = Vte.Terminal()
         terminal.set_hexpand(True)
         terminal.set_vexpand(True)
         terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.ON)
         terminal.set_scrollback_lines(10000)
-        self.apply_settings(terminal, settings)
+        self.apply_settings(terminal, settings, audible_bell=audible_bell)
         return terminal
 
-    def apply_settings(self, terminal: Vte.Terminal, settings: TerminalSettings) -> None:
+    def apply_settings(
+        self,
+        terminal: Vte.Terminal,
+        settings: TerminalSettings,
+        *,
+        audible_bell: bool = False,
+    ) -> None:
         font_family = self.resolve_font_family(settings.font_family)
         font = Pango.FontDescription(f"{font_family} {settings.font_size}")
         foreground = parse_color(settings.foreground, DEFAULT_TERMINAL_FOREGROUND)
@@ -37,3 +43,4 @@ class TerminalViewFactory:
         palette = [parse_color(color, fallback) for color, fallback in zip(palette_values, DEFAULT_ANSI_PALETTE)]
         terminal.set_font(font)
         terminal.set_colors(foreground, background, palette)
+        terminal.set_audible_bell(audible_bell)

@@ -60,6 +60,10 @@ msgstr ""
 msgid "Terminal appearance"
 msgstr ""
 
+#: src/termia/i18n.py:audible_bell
+msgid "Audible terminal bell"
+msgstr ""
+
 #: src/termia/i18n.py:local_prompt
 msgid "Local prompt"
 msgstr ""

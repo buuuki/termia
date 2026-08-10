@@ -121,7 +121,10 @@ class TerminalSessionsMixin:
         return Path(shell).name == "bash"
 
     def create_configured_terminal(self) -> Vte.Terminal:
-        return TerminalViewFactory(self.resolved_terminal_font_family).create(self.store.data.terminal)
+        return TerminalViewFactory(self.resolved_terminal_font_family).create(
+            self.store.data.terminal,
+            audible_bell=self.store.data.app.audible_bell,
+        )
 
     def build_session_status_bar(
         self,
@@ -1683,7 +1686,11 @@ class TerminalSessionsMixin:
         self.update_session_tab_title(session, title)
 
     def apply_terminal_settings(self, terminal: Vte.Terminal) -> None:
-        TerminalViewFactory(self.resolved_terminal_font_family).apply_settings(terminal, self.store.data.terminal)
+        TerminalViewFactory(self.resolved_terminal_font_family).apply_settings(
+            terminal,
+            self.store.data.terminal,
+            audible_bell=self.store.data.app.audible_bell,
+        )
 
     def apply_terminal_settings_to_open_tabs(self) -> None:
         for session in self.session_registry.sessions():
