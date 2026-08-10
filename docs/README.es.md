@@ -126,6 +126,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
+- Al cerrar Termia se guarda de forma segura la disposición de las pestañas y splits abiertos. Al volver a iniciarlo, después de desbloquear las conexiones cifradas, pregunta si quieres restaurarlos; no guarda la salida de los terminales, procesos, PID, contraseñas ni rutas privadas.
 - Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
 - El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
 

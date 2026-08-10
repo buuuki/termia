@@ -16,6 +16,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
   can connect independently to different SSH servers or local terminals.
 - Save split layouts per SSH server or local terminal profile to reopen a workspace ready to use.
 - Save named workspaces containing multiple tabs and independent SSH or local split panes, then reopen them from the sidebar.
+- Restore the previous tabs and split layout on startup after confirmation; only saved connection references are stored, never terminal output, running processes, PIDs, passwords, or private paths.
 - Upload local files to remote servers with SCP from the terminal or server context menu.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
 - Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`.

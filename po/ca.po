@@ -1414,6 +1414,34 @@ msgstr "Espai de treball obert: {name} ({count} pestanyes; {skipped} omeses)"
 msgid "A workspace can contain at most {limit} panes; current layout has {count}."
 msgstr "Un espai de treball pot contenir com a màxim {limit} panells; la disposició actual en té {count}."
 
+#: src/termia/i18n.py:restore_sessions_title
+msgid "Restore the previous Termia session?"
+msgstr "Vols restaurar la sessió anterior de Termia?"
+
+#: src/termia/i18n.py:restore_sessions_detail
+msgid "Termia found {count} open tab(s) from the previous run. Restore their saved connections and split layout? Terminal output and running processes are not restored."
+msgstr "Termia ha trobat {count} pestanya(es) obertes de l'execució anterior. Vols restaurar-ne les connexions desades i la disposició dels splits? La sortida dels terminals i els processos en execució no es restauren."
+
+#: src/termia/i18n.py:restore_sessions
+msgid "Restore session"
+msgstr "Restaurar sessió"
+
+#: src/termia/i18n.py:skip_restore_sessions
+msgid "Start fresh"
+msgstr "Començar de zero"
+
+#: src/termia/i18n.py:sessions_restored
+msgid "Previous session restored: {count} tab(s)"
+msgstr "Sessió anterior restaurada: {count} pestanya(es)"
+
+#: src/termia/i18n.py:sessions_not_restored
+msgid "Previous session was not restored."
+msgstr "La sessió anterior no s'ha restaurat."
+
+#: src/termia/i18n.py:sessions_restored_with_skipped
+msgid "Previous session restored: {count} tab(s); {skipped} unavailable tab(s) skipped."
+msgstr "Sessió anterior restaurada: {count} pestanya(es); s'han omès {skipped} pestanya(es) no disponibles."
+
 #: src/termia/i18n.py:global_tab_limit_exceeded
 msgid "Cannot open tabs: {open} already open, {requested} requested, global limit {limit}."
 msgstr "No es poden obrir les pestanyes: n'hi ha {open} d'obertes, se n'han sol·licitat {requested} i el límit global és {limit}."

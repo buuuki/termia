@@ -126,6 +126,7 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
+- En tancar Termia es desa de manera segura la disposició de les pestanyes i divisions obertes. En tornar-lo a iniciar, després de desbloquejar les connexions xifrades, pregunta si les vols restaurar; no desa la sortida dels terminals, processos, PID, contrasenyes ni rutes privades.
 - Fes clic dret en un terminal o en un servidor per pujar fitxers a `/tmp/.termia/` a l'host destí.
 - El menú principal inclou historial de connexions, ubicacions de fitxers de dades i accions d'importació/exportació.
 
