@@ -16,6 +16,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Show the tab overflow selector only when the visible tab titles exceed the
+  available tab-strip width (`#211`).
 - Apply the audible-bell preference through the supported VTE API and expose it
   independently in General preferences (`#207`).
 - Apply audible-bell changes immediately to already open terminal panes after

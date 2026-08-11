@@ -14,6 +14,8 @@ from .ui_state import TerminalSession
 
 
 class TabsMixin:
+    TAB_OVERFLOW_EPSILON = 1.0
+
     def add_session_to_main_view(self, session: TerminalSession) -> None:
         self.terminal_stack.add_named(session.page, session.id)
         self.session_tab_bar.append(session.tab_label)
@@ -36,6 +38,17 @@ class TabsMixin:
         if tab_end > current + page_size:
             return min(maximum, tab_end - page_size)
         return min(maximum, max(lower, current))
+
+    @classmethod
+    def tab_strip_has_overflow(
+        cls,
+        *,
+        page_size: float,
+        lower: float,
+        upper: float,
+    ) -> bool:
+        """Return whether the tab strip is wider than its viewport."""
+        return upper - lower > page_size + cls.TAB_OVERFLOW_EPSILON
 
     def visible_sessions_in_tab_order(self) -> list[TerminalSession]:
         sessions_by_label = {
@@ -104,8 +117,34 @@ class TabsMixin:
         )
         return GLib.SOURCE_REMOVE
 
-    def on_tab_scroll_adjustment_changed(self, _adjustment: Gtk.Adjustment) -> None:
+    def on_tab_scroll_adjustment_changed(
+        self,
+        adjustment: Gtk.Adjustment,
+        *_args: object,
+    ) -> None:
         self.schedule_active_tab_reveal()
+        self.schedule_tab_overflow_visibility()
+
+    def schedule_tab_overflow_visibility(self) -> None:
+        pending_id = getattr(self, "tab_overflow_visibility_id", None)
+        if pending_id is not None:
+            GLib.source_remove(pending_id)
+        self.tab_overflow_visibility_id = GLib.idle_add(self.update_tab_overflow_visibility)
+
+    def update_tab_overflow_visibility(self) -> bool:
+        self.tab_overflow_visibility_id = None
+        if not self.session_tab_controls.get_visible():
+            self.tab_overflow_button.set_visible(False)
+            return GLib.SOURCE_REMOVE
+        adjustment = self.session_tab_scroller.get_hadjustment()
+        self.tab_overflow_button.set_visible(
+            self.tab_strip_has_overflow(
+                page_size=adjustment.get_page_size(),
+                lower=adjustment.get_lower(),
+                upper=adjustment.get_upper(),
+            )
+        )
+        return GLib.SOURCE_REMOVE
 
     def rebuild_tab_overflow_popover(self) -> None:
         if not hasattr(self, "tab_overflow_button"):
@@ -181,7 +220,11 @@ class TabsMixin:
 
     def update_session_tab_bar_visibility(self) -> None:
         visible_sessions = [session for session in self.session_registry.sessions() if session.detached_window is None]
-        self.session_tab_controls.set_visible(len(visible_sessions) > 1)
+        has_multiple_tabs = len(visible_sessions) > 1
+        self.session_tab_controls.set_visible(has_multiple_tabs)
+        self.tab_overflow_button.set_visible(False)
+        if has_multiple_tabs:
+            self.schedule_tab_overflow_visibility()
         self.rebuild_tab_overflow_popover()
 
     def sync_window_title_with_visible_session(self) -> None:
@@ -223,6 +266,7 @@ class TabsMixin:
                 label.set_label(title)
         self.rebuild_tab_overflow_popover()
         self.schedule_active_tab_reveal()
+        self.schedule_tab_overflow_visibility()
 
     def build_tab_label(self, title: str, session_id: str, page: Gtk.Widget) -> Gtk.Widget:
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)

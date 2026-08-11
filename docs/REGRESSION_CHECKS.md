@@ -205,6 +205,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   with the sidebar visible and hidden. Confirm the compact horizontal scrollbar
   appears only while needed, the window and sidebar widths remain unchanged,
   and every tab is reachable from the strip and overflow control.
+- With exactly two tabs whose titles fit, confirm the overflow selector is
+  hidden. Reduce the window width or lengthen a tab title until the strip
+  overflows, then confirm the selector appears; restore the width and confirm
+  it hides again.
 - At each target width, confirm the active tab is revealed after opening,
   closing, keyboard navigation, overflow selection, drag reordering, resizing,
   and toggling the sidebar.

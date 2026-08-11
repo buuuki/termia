@@ -202,6 +202,14 @@ class MiddleClickTabTests(unittest.TestCase):
 
 
 class TabOverflowTests(unittest.TestCase):
+    def test_tab_strip_overflow_requires_content_wider_than_viewport(self) -> None:
+        self.assertFalse(
+            TabsMixin.tab_strip_has_overflow(page_size=300, lower=0, upper=300)
+        )
+        self.assertTrue(
+            TabsMixin.tab_strip_has_overflow(page_size=300, lower=0, upper=301.1)
+        )
+
     def test_overflow_order_matches_visual_tab_order_and_skips_detached_tabs(self) -> None:
         first_tab = FakeTab()
         second_tab = FakeTab()

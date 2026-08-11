@@ -626,6 +626,12 @@ class TermiaWindow(
         self.session_tab_scroller.get_hadjustment().connect(
             "changed", self.on_tab_scroll_adjustment_changed
         )
+        self.session_tab_scroller.get_hadjustment().connect(
+            "notify::page-size", self.on_tab_scroll_adjustment_changed
+        )
+        self.session_tab_scroller.get_hadjustment().connect(
+            "notify::upper", self.on_tab_scroll_adjustment_changed
+        )
         self.session_tab_controls.append(self.session_tab_scroller)
 
         self.tab_overflow_button = Gtk.MenuButton()
