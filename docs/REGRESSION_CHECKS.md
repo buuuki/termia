@@ -213,6 +213,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   closing, keyboard navigation, overflow selection, drag reordering, resizing,
   and toggling the sidebar.
 - Right-click a tab, move it to a new window, repeat with another tab, and restore both detached windows to the main window.
+- Move a tab to a new window and confirm its title bar shows the configured
+  GNOME minimize, maximize, and close controls. Minimize and maximize it
+  without closing the session, then close the detached window and confirm the
+  tab returns to the main window.
 - Duplicate a local terminal and confirm the custom prompt is applied.
 - Open two SSH sessions and duplicate one of them.
 - With 39 tabs open, confirm one additional local or SSH tab opens; with 40

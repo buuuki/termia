@@ -16,15 +16,20 @@ class FakePopover:
 
 
 class FakeWindow:
-    def __init__(self, **_kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
+        self.properties = kwargs
         self.child = None
         self.presented = False
+        self.titlebar = None
 
     def set_handle_menubar_accel(self, _enabled: bool) -> None:
         pass
 
     def set_default_size(self, _width: int, _height: int) -> None:
         pass
+
+    def set_titlebar(self, titlebar) -> None:
+        self.titlebar = titlebar
 
     def set_child(self, child) -> None:
         self.child = child
@@ -34,6 +39,14 @@ class FakeWindow:
 
     def present(self) -> None:
         self.presented = True
+
+
+class FakeHeaderBar:
+    def __init__(self) -> None:
+        pass
+
+    def set_title_widget(self, _widget) -> None:
+        pass
 
 
 class FakeTab:
@@ -69,6 +82,7 @@ class DetachTabTests(unittest.TestCase):
 
         class Host(TabsMixin):
             def __init__(self) -> None:
+                self.application = object()
                 self.session_registry = SessionRegistry([session, previous_session])
                 self.focused = None
                 self.removed = None
@@ -76,6 +90,9 @@ class DetachTabTests(unittest.TestCase):
 
             def visible_sessions_in_tab_order(self):
                 return self.visible_sessions
+
+            def get_application(self):
+                return self.application
 
             def remove_session_from_main_view(self, current_session) -> None:
                 self.removed = current_session
@@ -91,13 +108,20 @@ class DetachTabTests(unittest.TestCase):
 
         host = Host()
         popover = FakePopover()
-        with patch("termia.tabs.Gtk.Window", FakeWindow):
+        with (
+            patch("termia.tabs.Gtk.Window", FakeWindow),
+            patch("termia.tabs.Gtk.HeaderBar", FakeHeaderBar),
+            patch("termia.tabs.Gtk.Label", lambda **_kwargs: object()),
+        ):
             host.detach_tab(popover, session)
 
         self.assertTrue(popover.closed)
         self.assertIs(host.removed, session)
         self.assertEqual(host.focused, (session.id, [previous_session, session]))
         self.assertIsInstance(session.detached_window, FakeWindow)
+        self.assertIs(session.detached_window.properties["application"], host.application)
+        self.assertNotIn("transient_for", session.detached_window.properties)
+        self.assertIsInstance(session.detached_window.titlebar, FakeHeaderBar)
         self.assertTrue(session.detached_window.presented)
 
 
