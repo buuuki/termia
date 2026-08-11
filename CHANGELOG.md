@@ -16,6 +16,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Create detached sessions as normal application windows instead of transient
+  windows so GTK exposes native minimize, maximize, and close controls while
+  preserving tab restoration on close (`#209`).
 - Show the tab overflow selector only when the visible tab titles exceed the
   available tab-strip width (`#211`).
 - Apply the audible-bell preference through the supported VTE API and expose it
