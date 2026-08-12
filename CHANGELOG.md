@@ -19,6 +19,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Prevent Enter in the server filter from reopening a stale selection that is
+  absent from the current search results (`#216`).
 - Create detached sessions as normal application windows instead of transient
   windows so GTK exposes native minimize, maximize, and close controls while
   preserving tab restoration on close (`#209`).
