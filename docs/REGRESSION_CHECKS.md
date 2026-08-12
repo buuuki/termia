@@ -199,6 +199,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 
+- Filter for one server and open it with Enter. Type a different query and
+  immediately press Enter; only the first server in the current results may
+  open. Repeat with a query that has no matches and confirm nothing opens.
+
 - Open Termia and confirm a local terminal opens if the preference is enabled.
 - Open two local terminals and reorder their tabs with the mouse.
 - At 1280, 1366, 1920, and 2560 logical pixels, open enough tabs to overflow

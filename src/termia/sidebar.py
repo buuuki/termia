@@ -292,6 +292,9 @@ class SidebarMixin:
         )
         self.sidebar_projection = projection
         self.visible_tree_rows = projection.rows
+        if self.selected is not None and self.get_visible_tree_row_index(self.selected) is None:
+            self.selected = None
+            self.selected_tree_widget = None
         if projection.workspaces:
             self.server_list.append(self.build_workspaces_widget(projection.workspaces, query))
         if projection.local_terminal_profiles:
@@ -707,7 +710,10 @@ class SidebarMixin:
         return self.select_visible_tree_row(target_index)
 
     def activate_selected_tree_row(self) -> bool:
-        if self.selected is None:
+        if self.selected is None or self.get_visible_tree_row_index(self.selected) is None:
+            if not self.select_visible_tree_row(0):
+                return False
+        if self.selected is None or self.get_visible_tree_row_index(self.selected) is None:
             return False
         if self.selected.kind == "local_terminal":
             profile = find_local_terminal_profile(self.store.data.local_terminals, self.selected.item_id)
