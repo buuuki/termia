@@ -250,6 +250,11 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   connection identities, split orientations, and usable split panes as new
   terminal processes. Confirm its context menu can update, rename, duplicate,
   and delete it, while write actions are disabled in a read-only instance.
+- Rename a tab, change the working directory independently in two local split
+  panes, save the workspace, and reopen it. Confirm the custom tab title and
+  both local directories are restored. Remove one saved directory and confirm
+  that pane falls back to its normal startup directory without blocking the
+  rest of the workspace. Confirm SSH panes do not persist a remote directory.
 - Confirm a workspace with 32 total panes opens directly without confirmation,
   while saving, updating, duplicating, or opening one with more than 32 total
   panes is rejected without starting terminal processes or deleting the saved

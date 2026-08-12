@@ -149,7 +149,10 @@ i divisions actuals com un espai de treball amb nom. Els espais de treball
 apareixen a la barra lateral amb una icona de quadrícula; des del menú
 contextual els pots obrir, actualitzar, reanomenar, duplicar o eliminar. Un
 espai de treball pot contenir fins a 32 panells entre totes les pestanyes i
-s'obre sense cap confirmació addicional.
+s'obre sense cap confirmació addicional. Els espais de treball també restauren
+els títols personalitzats i el directori de treball de cada panell local. No es
+capturen directoris SSH; si un directori local ja no està disponible, s'utilitza
+el directori inicial normal del perfil.
 
 ## Entorn provat
 

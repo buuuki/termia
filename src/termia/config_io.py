@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from .models import Group, LocalTerminalProfile, Server, StoreData, Workspace
 from .migrations import CURRENT_SCHEMA_VERSION, migrate_connections_payload
-from .workspace_layout import workspace_tab_layouts
+from .workspace_layout import normalized_workspace_tabs
 
 CONNECTION_STORAGE_PLAIN = "plain"
 CONNECTION_STORAGE_OBFUSCATED = "obfuscated"
@@ -210,7 +210,7 @@ def workspaces_from_payload(payload: object) -> list[Workspace]:
             Workspace(
                 id=workspace_id,
                 name=name,
-                tabs=[{"layout": layout} for layout in workspace_tab_layouts(tabs)],
+                tabs=normalized_workspace_tabs(tabs),
             )
         )
     return workspaces

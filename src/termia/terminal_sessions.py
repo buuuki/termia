@@ -42,6 +42,7 @@ from .terminal_view import TerminalViewFactory
 from .ui_state import TerminalPane, TerminalSession
 from .workspace_layout import (
     MAX_WORKSPACE_PANES,
+    normalized_workspace_tabs,
     workspace_layout_is_valid,
     workspace_pane_count,
     workspace_root_pane,
@@ -64,6 +65,7 @@ class TerminalSessionsMixin:
         profile: LocalTerminalProfile | None,
         *,
         split_layout: str | None = None,
+        working_directory_override: str | None = None,
     ) -> TerminalSession | None:
         title = self.local_terminal_session_title(profile)
         try:
@@ -71,7 +73,11 @@ class TerminalSessionsMixin:
         except ValueError as exc:
             self.toast_label.set_label(self.t("local_terminal_invalid_arguments").format(error=exc))
             return None
-        working_directory = self.local_terminal_profile_working_directory(profile)
+        working_directory = (
+            working_directory_override
+            if working_directory_override is not None
+            else self.local_terminal_profile_working_directory(profile)
+        )
         return self.open_process_terminal_tab(
             title,
             command,
@@ -380,7 +386,8 @@ class TerminalSessionsMixin:
     def open_workspace_tabs(self, workspace: Workspace) -> None:
         opened_tabs = 0
         skipped_tabs = 0
-        for layout in workspace_tab_layouts(workspace.tabs):
+        for tab in normalized_workspace_tabs(workspace.tabs):
+            layout = tab["layout"]
             if not self.workspace_layout_available(layout):
                 skipped_tabs += 1
                 continue
@@ -393,6 +400,7 @@ class TerminalSessionsMixin:
                 skipped_tabs += 1
                 continue
             self.restore_workspace_node(session, session.terminal, layout)
+            self.restore_workspace_tab_title(session, tab.get("title"))
             opened_tabs += 1
         if opened_tabs:
             self.toast_label.set_label(
@@ -411,14 +419,16 @@ class TerminalSessionsMixin:
 
     def restore_session_snapshot(self, tabs: list[dict[str, object]]) -> None:
         """Reopen the last session from safe connection references."""
-        layouts = workspace_tab_layouts(tabs)
+        saved_tabs = normalized_workspace_tabs(tabs)
+        layouts = [tab["layout"] for tab in saved_tabs]
         pane_count = workspace_total_pane_count(tabs)
         if pane_count > MAX_WORKSPACE_PANES or not self.can_open_terminal_tabs(len(layouts)):
             return
 
         opened_tabs = 0
         skipped_tabs = 0
-        for layout in layouts:
+        for tab in saved_tabs:
+            layout = tab["layout"]
             if not self.workspace_layout_available(layout):
                 skipped_tabs += 1
                 continue
@@ -431,6 +441,7 @@ class TerminalSessionsMixin:
                 skipped_tabs += 1
                 continue
             self.restore_workspace_node(session, session.terminal, layout)
+            self.restore_workspace_tab_title(session, tab.get("title"))
             opened_tabs += 1
 
         if opened_tabs:
@@ -466,7 +477,35 @@ class TerminalSessionsMixin:
             server = find_server(self.store.data.servers, connection_id)
             return self.open_terminal_tab(server, split_layout="none") if server is not None else None
         profile = find_local_terminal_profile(self.store.data.local_terminals, connection_id) if connection_id else None
-        return self.open_local_terminal_profile(profile, split_layout="none")
+        working_directory = self.available_workspace_working_directory(node)
+        if working_directory is None:
+            return self.open_local_terminal_profile(profile, split_layout="none")
+        return self.open_local_terminal_profile(
+            profile,
+            split_layout="none",
+            working_directory_override=working_directory,
+        )
+
+    @staticmethod
+    def available_workspace_working_directory(node: dict[str, object]) -> str | None:
+        working_directory = node.get("working_directory")
+        if not isinstance(working_directory, str):
+            return None
+        path = Path(working_directory)
+        if not path.is_absolute() or not path.is_dir() or not os.access(path, os.X_OK):
+            return None
+        return str(path)
+
+    def restore_workspace_tab_title(self, session: TerminalSession, title: object) -> None:
+        if not isinstance(title, str) or not title.strip():
+            return
+        session.title = title.strip()
+        session.title_locked = True
+        pane = session.pane_for_terminal(session.terminal)
+        if pane is not None:
+            pane.title = session.title
+        self.update_session_tab_title(session, session.title)
+        self.sync_window_title_with_visible_session()
 
     def restore_workspace_node(
         self,
@@ -508,7 +547,14 @@ class TerminalSessionsMixin:
             self.start_ssh_split_terminal(session, terminal, server, announce=False)
             return True
         profile = find_local_terminal_profile(self.store.data.local_terminals, connection_id) if connection_id else None
-        self.start_local_split_terminal(session, terminal, source_terminal, profile=profile)
+        working_directory = self.available_workspace_working_directory(node)
+        self.start_local_split_terminal(
+            session,
+            terminal,
+            source_terminal,
+            profile=profile,
+            working_directory_override=working_directory,
+        )
         return True
 
     def restore_workspace_split_position(self, paned: Gtk.Paned, ratio: float, attempts: int = 4) -> None:
@@ -1356,6 +1402,7 @@ class TerminalSessionsMixin:
         fallback_working_directory: str | None = None,
         *,
         profile: LocalTerminalProfile | None = None,
+        working_directory_override: str | None = None,
     ) -> None:
         pane = self.pane_state(session, terminal)
         pane.server_id = None
@@ -1378,7 +1425,7 @@ class TerminalSessionsMixin:
             pane.status_label.set_label("Error")
             self.mark_pane_for_reconnect(session, pane, message)
             return
-        working_directory = (
+        working_directory = working_directory_override or (
             self.local_terminal_profile_working_directory(profile)
             if profile is not None
             else self.local_terminal_working_directory(source_terminal, fallback_working_directory)

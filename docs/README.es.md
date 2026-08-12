@@ -149,7 +149,10 @@ divisiones actuales como un espacio de trabajo con nombre. Los espacios de
 trabajo aparecen en la barra lateral con un icono de cuadrícula; desde su menú
 contextual puedes abrirlos, actualizarlos, renombrarlos, duplicarlos o
 eliminarlos. Un espacio de trabajo puede contener hasta 32 paneles entre todas
-sus pestañas y se abre sin una confirmación adicional.
+sus pestañas y se abre sin una confirmación adicional. Los espacios de trabajo
+también restauran los títulos personalizados y el directorio de trabajo de cada
+panel local. No se capturan directorios SSH; si un directorio local ya no está
+disponible, se usa el directorio inicial normal del perfil.
 
 ## Entorno probado
 

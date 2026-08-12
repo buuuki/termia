@@ -409,7 +409,10 @@ class TermiaWindow(
         from .workspace_layout import capture_workspace_tabs
 
         self.session_snapshot_store.save(
-            capture_workspace_tabs(self.session_registry.sessions())
+            capture_workspace_tabs(
+                self.session_registry.sessions(),
+                include_local_context=False,
+            )
         )
 
     def finish_main_window_shutdown(self) -> bool:

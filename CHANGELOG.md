@@ -6,6 +6,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Added
 
+- Preserve custom tab titles and per-pane local working directories in saved
+  workspaces, with safe fallback for unavailable paths and no SSH path capture
+  (`#214`).
 - Add a terminal preference to enable or disable the audible bell, disabled by
   default (`#207`).
 - Restore the previous tabs and split layouts on startup after explicit user

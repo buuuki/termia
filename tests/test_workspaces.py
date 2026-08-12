@@ -1,4 +1,6 @@
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
 from termia.models import LocalTerminalProfile, Server, Workspace
@@ -124,3 +126,117 @@ class WorkspaceOpeningTests(unittest.TestCase):
 
         self.assertFalse(accepted)
         self.assertEqual(host.toast, "Limit 32; found 33")
+
+    def test_local_workspace_root_uses_saved_available_directory(self) -> None:
+        profile = LocalTerminalProfile(id="shell", name="Shell")
+        host = SimpleNamespace(
+            store=SimpleNamespace(data=SimpleNamespace(local_terminals=[profile])),
+            opened=None,
+            available_workspace_working_directory=(
+                TerminalSessionsMixin.available_workspace_working_directory
+            ),
+        )
+
+        def open_local(selected, **kwargs):
+            host.opened = (selected, kwargs)
+            return "session"
+
+        host.open_local_terminal_profile = open_local
+        with tempfile.TemporaryDirectory() as directory:
+            session = TerminalSessionsMixin.open_workspace_root(
+                host,
+                {
+                    "type": "pane",
+                    "connection_type": "local",
+                    "connection_id": "shell",
+                    "working_directory": directory,
+                },
+            )
+
+        self.assertEqual(session, "session")
+        self.assertIs(host.opened[0], profile)
+        self.assertEqual(host.opened[1]["working_directory_override"], directory)
+
+    def test_missing_workspace_directory_falls_back_to_profile_default(self) -> None:
+        profile = LocalTerminalProfile(id="shell", name="Shell")
+        host = SimpleNamespace(
+            store=SimpleNamespace(data=SimpleNamespace(local_terminals=[profile])),
+            opened=None,
+            available_workspace_working_directory=(
+                TerminalSessionsMixin.available_workspace_working_directory
+            ),
+        )
+
+        def open_local(selected, **kwargs):
+            host.opened = (selected, kwargs)
+            return "session"
+
+        host.open_local_terminal_profile = open_local
+        missing = str(Path(tempfile.gettempdir()) / "termia-missing-workspace-directory")
+        TerminalSessionsMixin.open_workspace_root(
+            host,
+            {
+                "type": "pane",
+                "connection_type": "local",
+                "connection_id": "shell",
+                "working_directory": missing,
+            },
+        )
+
+        self.assertEqual(host.opened[1], {"split_layout": "none"})
+
+    def test_local_split_uses_its_own_saved_directory(self) -> None:
+        profile = LocalTerminalProfile(id="shell", name="Shell")
+        host = SimpleNamespace(
+            store=SimpleNamespace(data=SimpleNamespace(local_terminals=[profile])),
+            started=None,
+            available_workspace_working_directory=(
+                TerminalSessionsMixin.available_workspace_working_directory
+            ),
+        )
+
+        def start_local(session, terminal, source_terminal, **kwargs):
+            host.started = (session, terminal, source_terminal, kwargs)
+
+        host.start_local_split_terminal = start_local
+        with tempfile.TemporaryDirectory() as directory:
+            started = TerminalSessionsMixin.start_workspace_pane(
+                host,
+                "session",
+                "terminal",
+                "source",
+                {
+                    "type": "pane",
+                    "connection_type": "local",
+                    "connection_id": "shell",
+                    "working_directory": directory,
+                },
+            )
+
+        self.assertTrue(started)
+        self.assertEqual(host.started[3]["working_directory_override"], directory)
+
+    def test_restores_saved_custom_tab_title(self) -> None:
+        pane_state = SimpleNamespace(title="Shell")
+        session = SimpleNamespace(
+            title="Shell",
+            title_locked=False,
+            terminal=object(),
+            pane_for_terminal=lambda _terminal: pane_state,
+        )
+        host = SimpleNamespace(
+            updated=None,
+            synced=False,
+            update_session_tab_title=lambda current, title: setattr(
+                host, "updated", (current, title)
+            ),
+            sync_window_title_with_visible_session=lambda: setattr(host, "synced", True),
+        )
+
+        TerminalSessionsMixin.restore_workspace_tab_title(host, session, " Project shell ")
+
+        self.assertEqual(session.title, "Project shell")
+        self.assertTrue(session.title_locked)
+        self.assertEqual(pane_state.title, "Project shell")
+        self.assertEqual(host.updated, (session, "Project shell"))
+        self.assertTrue(host.synced)
