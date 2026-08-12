@@ -58,9 +58,9 @@ class LocalTerminalProfile:
 class Workspace:
     """A reusable arrangement of saved terminal connections.
 
-    ``tabs`` contains only saved connection/profile IDs and split-layout
-    metadata. It never contains terminal output, live processes, credentials,
-    or directories captured from a terminal.
+    ``tabs`` contains only saved connection/profile IDs, split-layout metadata,
+    optional custom tab titles, and local shell working directories. It never
+    contains terminal output, live processes, credentials, or remote paths.
     """
 
     id: str

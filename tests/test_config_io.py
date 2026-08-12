@@ -86,7 +86,7 @@ class ConfigIOTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 read_connections_payload(path)
 
-    def test_workspace_import_discards_non_layout_data(self) -> None:
+    def test_workspace_import_keeps_safe_local_context_and_discards_private_data(self) -> None:
         workspaces = workspaces_from_payload(
             [
                 {
@@ -94,10 +94,12 @@ class ConfigIOTests(unittest.TestCase):
                     "name": "Production",
                     "tabs": [
                         {
+                            "title": "Project shell",
                             "layout": {
                                 "type": "pane",
-                                "connection_type": "server",
-                                "connection_id": "server-1",
+                                "connection_type": "local",
+                                "connection_id": "local-1",
+                                "working_directory": "/srv/project",
                                 "password": "must-not-be-persisted",
                             }
                         }
@@ -106,8 +108,12 @@ class ConfigIOTests(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(workspaces[0].tabs[0]["layout"], {
-            "type": "pane",
-            "connection_type": "server",
-            "connection_id": "server-1",
+        self.assertEqual(workspaces[0].tabs[0], {
+            "title": "Project shell",
+            "layout": {
+                "type": "pane",
+                "connection_type": "local",
+                "connection_id": "local-1",
+                "working_directory": "/srv/project",
+            },
         })

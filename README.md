@@ -164,7 +164,10 @@ Use the save button in the sidebar to store the current tabs and split layout
 as a named workspace. Workspaces appear in the sidebar with a grid icon; open,
 update, rename, duplicate, or delete them from their context menu. A workspace
 can contain up to 32 panes across all tabs and opens without an additional
-confirmation.
+confirmation. Saved workspaces also restore custom tab titles and the working
+directory of each local terminal pane. SSH working directories are not
+captured; unavailable local directories fall back to the terminal profile's
+normal startup directory.
 
 ## Tested environment
 
