@@ -1640,14 +1640,43 @@ class TerminalSessionsMixin:
         )
         if sibling is None:
             return GLib.SOURCE_REMOVE
+        focus_target = self.active_terminal_in_split_subtree(session, sibling)
+        self.clear_split_focus_before_replacement(parent)
         self.replace_split_container(parent, sibling)
         session.panes.pop(id(terminal), None)
         if self.should_close_tab_after_terminal_exit(session):
             self.close_tab(session.id, session.page, disconnect=False)
             return GLib.SOURCE_REMOVE
-        active_panes = session.active_panes()
-        if active_panes:
-            active_panes[-1].terminal.grab_focus()
+        if focus_target is None:
+            active_panes = session.active_panes()
+            focus_target = active_panes[-1].terminal if active_panes else None
+        if focus_target is not None:
+            GLib.idle_add(self.restore_terminal_focus, focus_target)
+        return GLib.SOURCE_REMOVE
+
+    def active_terminal_in_split_subtree(
+        self,
+        session: TerminalSession,
+        subtree: Gtk.Widget,
+    ) -> Vte.Terminal | None:
+        for pane in session.active_panes():
+            widget: Gtk.Widget | None = pane.container
+            while widget is not None:
+                if widget is subtree:
+                    return pane.terminal
+                widget = widget.get_parent()
+        return None
+
+    def clear_split_focus_before_replacement(self, paned: Gtk.Paned) -> None:
+        root = paned.get_root()
+        get_focus = getattr(root, "get_focus", None)
+        set_focus = getattr(root, "set_focus", None)
+        focused = get_focus() if callable(get_focus) else None
+        if focused is not None and callable(set_focus):
+            set_focus(None)
+
+    def restore_terminal_focus(self, terminal: Vte.Terminal) -> bool:
+        terminal.grab_focus()
         return GLib.SOURCE_REMOVE
 
     def remove_terminal_pane_if_split(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
