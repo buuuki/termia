@@ -6,6 +6,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Added
 
+- Add configurable `Ctrl+Arrow` keybindings for directional focus navigation
+  between local and SSH split panes, with a scrollable shortcut editor (`#218`).
 - Preserve custom tab titles and per-pane local working directories in saved
   workspaces, with safe fallback for unavailable paths and no SSH path capture
   (`#214`).

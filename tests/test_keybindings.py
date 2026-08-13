@@ -25,3 +25,9 @@ class KeybindingTests(unittest.TestCase):
         self.assertEqual(normalized["copy"], "Ctrl+Shift+C")
         self.assertEqual(normalized["paste"], DEFAULT_KEYBINDINGS["paste"])
         self.assertEqual(set(normalized), set(DEFAULT_KEYBINDINGS))
+
+    def test_split_focus_defaults_use_control_and_arrow_keys(self) -> None:
+        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_left"], "Ctrl+Left")
+        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_right"], "Ctrl+Right")
+        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_up"], "Ctrl+Up")
+        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_down"], "Ctrl+Down")
