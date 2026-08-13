@@ -2,7 +2,6 @@
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: GPL-3.0-or-later
 import argparse
-import logging
 import signal
 
 import gi
@@ -18,14 +17,12 @@ from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
     APP_ID,
     DATA_FILE,
-    DEBUG_LOG_FILE,
-    HISTORY_FILE,
     INSTANCE_LOCK_FILE,
     SETTINGS_FILE,
     SESSION_SNAPSHOT_FILE,
     STATE_DIR,
 )
-from .debug import configure_debug_logging, log_startup_context, log_store_state
+from .debug import configure_debug_logging, log_event, log_startup_context, log_store_state
 from .i18n import translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
@@ -127,7 +124,7 @@ class TermiaWindow(
             state_dir=STATE_DIR,
         )
         log_store_state(self.store)
-        logging.getLogger("termia").debug("debug_log_file=%s history_path=%s", DEBUG_LOG_FILE, HISTORY_FILE)
+        log_event("application.window_created", read_only=self.store.read_only)
         if self.store.read_only:
             self.set_title(f"Termia ({self.t('read_only_badge')})")
         self.apply_app_theme()
@@ -397,6 +394,7 @@ class TermiaWindow(
         if self.shutdown_in_progress:
             return
         self.shutdown_in_progress = True
+        log_event("application.shutdown_started", sessions=len(self.session_registry.sessions()))
         self.save_session_snapshot_before_close()
         self.save_history_before_close()
         self.save_statistics_before_close()
@@ -417,6 +415,7 @@ class TermiaWindow(
 
     def finish_main_window_shutdown(self) -> bool:
         self.terminate_open_terminal_processes(force=True)
+        log_event("application.shutdown_finished")
         application = self.get_application()
         if application is not None:
             application.quit()
@@ -861,6 +860,7 @@ class TermiaApp(Gtk.Application):
         created = window is None
         if window is None:
             window = TermiaWindow(self)
+        log_event("application.activated", window_created=created)
         window.present()
         if created:
             window.focus_startup_control()

@@ -88,16 +88,17 @@ The option copies connections, settings, connection history, statistics, and
 the debug log into the test profile. Changes made there never modify your usual
 Termia data.
 
-For diagnostic information about GTK rendering, VTE sessions, storage locks,
-encryption, and read-only startup, enable `Debug mode` in General preferences. It
-can also be enabled for one run with:
+For diagnostic information about tabs, splits, VTE process lifecycles, GTK
+warnings, storage locks, encryption, and read-only startup, enable `Debug mode`
+in General preferences. It can also be enabled for one run with:
 
 ```bash
 python3 run_termia.py --debug
 ```
 
-Debug output is written to `~/.local/state/termia/debug.log`. It does not log
-passwords or connection contents.
+Debug output is written to `~/.local/state/termia/debug.log`. Fatal signals also
+write the active Python stacks there when possible. It does not log passwords,
+commands, terminal contents, connection endpoints, or private paths.
 
 The launcher is installed at
 `~/.local/share/applications/local.termia.desktop` and its icon under

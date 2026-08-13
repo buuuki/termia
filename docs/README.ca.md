@@ -77,16 +77,19 @@ L'opció copia les connexions, ajustos, historial de connexions, estadístiques 
 el registre de depuració al perfil de proves. Els canvis fets allà mai no
 modifiquen les dades habituals de Termia.
 
-Per obtenir informació de diagnòstic sobre GTK, VTE, els bloquejos
-d'emmagatzematge, el xifratge i l'inici en mode només lectura, activa `Mode
-debug` a les preferències Generals. També pots activar-lo per a una execució amb:
+Per obtenir informació de diagnòstic sobre pestanyes, splits, processos VTE,
+avisos de GTK, bloquejos d'emmagatzematge, xifratge i inici en mode només lectura,
+activa `Mode debug` a les preferències Generals. També pots activar-lo per a una
+execució amb:
 
 ```bash
 python3 run_termia.py --debug
 ```
 
-La informació es desa a `~/.local/state/termia/debug.log`. No registra
-contrasenyes ni el contingut de les connexions.
+La informació es desa a `~/.local/state/termia/debug.log`. Quan és possible, els
+senyals fatals també hi escriuen les piles Python actives. No registra
+contrasenyes, ordres, contingut del terminal, destinacions de connexió ni rutes
+privades.
 
 Elimina únicament el llançador d'escriptori, sense esborrar ajustos, connexions,
 estadístiques ni paquets del sistema:

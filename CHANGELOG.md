@@ -37,6 +37,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Changed
 
+- Make debug logging focus on privacy-safe Termia lifecycle events, retain
+  actionable GTK warnings, and capture Python stacks on fatal signals (`#221`).
 - Unify Terminal appearance and local Prompt preferences in one dialog with a
   compact shared live preview, while preserving running shell environments (`#205`).
 - Streamline repository maintenance guidance and validation output while

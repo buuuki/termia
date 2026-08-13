@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import faulthandler
 import logging
 import os
 from pathlib import Path
@@ -15,6 +16,13 @@ from .constants import DEBUG_LOG_FILE
 
 LOGGER = logging.getLogger("termia")
 _GLIB_WRITER_CONFIGURED = False
+_FAULT_HANDLER_CONFIGURED = False
+
+
+def log_event(event: str, **fields: object) -> None:
+    """Write a privacy-safe, machine-searchable application lifecycle event."""
+    details = " ".join(f"{key}={value}" for key, value in sorted(fields.items()) if value is not None)
+    LOGGER.debug("event=%s%s", event, f" {details}" if details else "")
 
 
 def _write_glib_log(
@@ -38,14 +46,17 @@ def _write_glib_log(
     except (TypeError, ValueError, UnicodeError) as exc:
         LOGGER.warning("Could not format GLib diagnostic: %s", exc)
         return GLib.LogWriterOutput.HANDLED
-    if message:
+    if message and level >= logging.WARNING:
         LOGGER.log(level, "%s", message)
     return GLib.LogWriterOutput.HANDLED
 
 
 def configure_debug_logging(enabled: bool) -> None:
-    global _GLIB_WRITER_CONFIGURED
+    global _FAULT_HANDLER_CONFIGURED, _GLIB_WRITER_CONFIGURED
     if not enabled:
+        if _FAULT_HANDLER_CONFIGURED and faulthandler.is_enabled():
+            faulthandler.disable()
+        _FAULT_HANDLER_CONFIGURED = False
         LOGGER.disabled = True
         for handler in LOGGER.handlers[:]:
             LOGGER.removeHandler(handler)
@@ -54,8 +65,6 @@ def configure_debug_logging(enabled: bool) -> None:
     LOGGER.disabled = False
     if LOGGER.handlers:
         return
-    os.environ.setdefault("G_MESSAGES_DEBUG", "all")
-    os.environ.setdefault("PYTHONFAULTHANDLER", "1")
     LOGGER.setLevel(logging.DEBUG)
     LOGGER.propagate = False
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
@@ -64,6 +73,8 @@ def configure_debug_logging(enabled: bool) -> None:
         file_handler = logging.FileHandler(DEBUG_LOG_FILE, encoding="utf-8")
         file_handler.setFormatter(formatter)
         LOGGER.addHandler(file_handler)
+        faulthandler.enable(file=file_handler.stream, all_threads=True)
+        _FAULT_HANDLER_CONFIGURED = True
         if not _GLIB_WRITER_CONFIGURED:
             GLib.log_set_writer_func(_write_glib_log, None)
             _GLIB_WRITER_CONFIGURED = True
@@ -73,10 +84,15 @@ def configure_debug_logging(enabled: bool) -> None:
 
 
 def log_startup_context(*, lock_path: Path, data_path: Path, settings_path: Path, state_dir: Path) -> None:
-    LOGGER.debug("PID=%s PPID=%s", os.getpid(), os.getppid())
-    LOGGER.debug("XDG_SESSION_TYPE=%s", os.environ.get("XDG_SESSION_TYPE", ""))
-    LOGGER.debug("GDK_BACKEND=%s GSK_RENDERER=%s", os.environ.get("GDK_BACKEND", ""), os.environ.get("GSK_RENDERER", ""))
-    LOGGER.debug("lock_path=%s data_path=%s settings_path=%s state_dir=%s", lock_path, data_path, settings_path, state_dir)
+    log_event(
+        "application.started",
+        pid=os.getpid(),
+        parent_pid=os.getppid(),
+        session_type=os.environ.get("XDG_SESSION_TYPE", "unknown"),
+        gdk_backend=os.environ.get("GDK_BACKEND", "default"),
+        gsk_renderer=os.environ.get("GSK_RENDERER", "default"),
+        locations_configured=all((lock_path, data_path, settings_path, state_dir)),
+    )
 
 
 def log_lock_failure(path: Path, reason: str) -> None:
