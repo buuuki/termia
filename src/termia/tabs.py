@@ -10,6 +10,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
 from gi.repository import Gdk, GLib, Graphene, Gtk, Pango
 
+from .debug import log_event
 from .ui_state import TerminalSession
 
 
@@ -22,6 +23,7 @@ class TabsMixin:
         self.update_session_tab_bar_visibility()
         self.set_active_session(session.id)
         self.sync_window_title_with_visible_session()
+        log_event("tab.attached", session_id=session.id)
 
     @staticmethod
     def tab_reveal_scroll_value(
@@ -73,6 +75,7 @@ class TabsMixin:
         self.update_session_tab_states()
         self.schedule_active_tab_reveal()
         session.terminal.grab_focus()
+        log_event("tab.selected", session_id=session.id)
 
     def update_session_tab_states(self) -> None:
         visible_page = self.terminal_stack.get_visible_child()
@@ -483,12 +486,14 @@ class TabsMixin:
         self.sync_window_title_with_visible_session()
         window.connect("close-request", self.on_detached_window_close, session)
         window.present()
+        log_event("tab.detached", session_id=session.id)
 
     def on_detached_window_close(self, window: Gtk.Window, session: TerminalSession) -> bool:
         window.set_child(None)
         session.detached_window = None
         if self.session_registry.contains(session.id):
             self.add_session_to_main_view(session)
+            log_event("tab.reattached", session_id=session.id)
         return False
 
     def show_rename_tab_dialog(self, popover: Gtk.Popover, session: TerminalSession) -> None:
@@ -557,3 +562,4 @@ class TabsMixin:
         self.update_session_tab_bar_visibility()
         self.focus_available_session_after_close(session_id, previous_order)
         self.sync_window_title_with_visible_session()
+        log_event("tab.closed", session_id=session_id, remaining_tabs=len(self.session_registry.sessions()))
