@@ -87,6 +87,45 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    def test_split_focus_grabs_selected_neighbor(self) -> None:
+        root_terminal = FakeTerminal()
+        split_terminal = FakeTerminal()
+        root = make_pane(root_terminal, "root")
+        split = make_pane(split_terminal, "split")
+        root.container = SimpleNamespace(
+            compute_bounds=lambda _page: (
+                True,
+                SimpleNamespace(
+                    get_x=lambda: 0,
+                    get_y=lambda: 0,
+                    get_width=lambda: 100,
+                    get_height=lambda: 100,
+                ),
+            )
+        )
+        split.container = SimpleNamespace(
+            compute_bounds=lambda _page: (
+                True,
+                SimpleNamespace(
+                    get_x=lambda: 100,
+                    get_y=lambda: 0,
+                    get_width=lambda: 100,
+                    get_height=lambda: 100,
+                ),
+            )
+        )
+        session = make_session(root_terminal, root)
+        session.page = object()
+        session.panes[id(split_terminal)] = split
+        session.active_terminal_ids.add(id(split_terminal))
+
+        moved = TerminalSessionsMixin.move_split_pane_focus(
+            TerminalSessionsMixin(), session, root_terminal, "right"
+        )
+
+        self.assertTrue(moved)
+        self.assertTrue(split_terminal.focused)
+
     def test_split_search_enter_without_a_match_keeps_dialog_open(self) -> None:
         host = TerminalSessionsMixin()
         dialog = Mock()

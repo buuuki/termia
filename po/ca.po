@@ -611,6 +611,22 @@ msgstr "Enfocar la regió següent de la interfície"
 msgid "Focus previous interface region"
 msgstr "Enfocar la regió anterior de la interfície"
 
+#: src/termia/i18n.py:keybinding_action_focus_split_left
+msgid "Focus split pane to the left"
+msgstr "Enfocar el panell dividit de l'esquerra"
+
+#: src/termia/i18n.py:keybinding_action_focus_split_right
+msgid "Focus split pane to the right"
+msgstr "Enfocar el panell dividit de la dreta"
+
+#: src/termia/i18n.py:keybinding_action_focus_split_up
+msgid "Focus split pane above"
+msgstr "Enfocar el panell dividit superior"
+
+#: src/termia/i18n.py:keybinding_action_focus_split_down
+msgid "Focus split pane below"
+msgstr "Enfocar el panell dividit inferior"
+
 #: src/termia/i18n.py:close_app
 msgid "Close Termia"
 msgstr "Tancar Termia"

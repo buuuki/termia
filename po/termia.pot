@@ -647,6 +647,22 @@ msgstr ""
 msgid "Focus previous interface region"
 msgstr ""
 
+#: src/termia/i18n.py:keybinding_action_focus_split_left
+msgid "Focus split pane to the left"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_focus_split_right
+msgid "Focus split pane to the right"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_focus_split_up
+msgid "Focus split pane above"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_focus_split_down
+msgid "Focus split pane below"
+msgstr ""
+
 #: src/termia/i18n.py:close_app
 msgid "Close Termia"
 msgstr ""

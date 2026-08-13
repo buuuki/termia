@@ -26,7 +26,7 @@ from .file_transfer import FileTransferController
 from .keybindings import is_unmodified_function_key, keybinding_matches
 from .models import LocalTerminalProfile, Server, Workspace
 from .session_commands import build_ssh_command
-from .split_panes import SplitPaneController
+from .split_panes import SplitPaneController, directional_pane_neighbor
 from .split_connection_search import (
     SplitConnectionChoice,
     build_split_connection_choices,
@@ -890,6 +890,10 @@ class TerminalSessionsMixin:
         if keybinding_matches(keybindings.get("next_tab", ""), keyval, state):
             self.move_terminal_tab_focus(session, 1)
             return True
+        for direction in ("left", "right", "up", "down"):
+            if keybinding_matches(keybindings.get(f"focus_split_{direction}", ""), keyval, state):
+                self.move_split_pane_focus(session, terminal, direction)
+                return True
         if keybinding_matches(keybindings.get("font_increase", ""), keyval, state):
             self.change_terminal_font_size(1)
             return True
@@ -902,6 +906,33 @@ class TerminalSessionsMixin:
             self.send_saved_password(session, terminal)
             return True
         return False
+
+    def move_split_pane_focus(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        direction: str,
+    ) -> bool:
+        rectangles: dict[int, tuple[float, float, float, float]] = {}
+        terminals: dict[int, Vte.Terminal] = {}
+        for pane in session.active_panes():
+            ok, bounds = pane.container.compute_bounds(session.page)
+            if not ok:
+                continue
+            pane_id = id(pane.terminal)
+            rectangles[pane_id] = (
+                bounds.get_x(),
+                bounds.get_y(),
+                bounds.get_width(),
+                bounds.get_height(),
+            )
+            terminals[pane_id] = pane.terminal
+        target_id = directional_pane_neighbor(id(terminal), direction, rectangles)
+        target = terminals.get(target_id) if target_id is not None else None
+        if target is None:
+            return False
+        target.grab_focus()
+        return True
 
     def move_terminal_tab_focus(self, session: TerminalSession, delta: int) -> None:
         sessions = self.visible_sessions_in_tab_order()

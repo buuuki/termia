@@ -12,6 +12,48 @@ from gi.repository import GLib, Gtk, Vte
 
 from .ui_state import TerminalSession
 
+PaneRect = tuple[float, float, float, float]
+
+
+def directional_pane_neighbor(
+    source_id: int,
+    direction: str,
+    rectangles: dict[int, PaneRect],
+) -> int | None:
+    """Return the visually nearest pane in one cardinal direction."""
+    source = rectangles.get(source_id)
+    if source is None or direction not in {"left", "right", "up", "down"}:
+        return None
+    sx, sy, sw, sh = source
+    source_primary = sx + sw / 2 if direction in {"left", "right"} else sy + sh / 2
+    source_cross_start, source_cross_end = (sy, sy + sh) if direction in {"left", "right"} else (sx, sx + sw)
+    candidates: list[tuple[tuple[float, ...], int]] = []
+    for pane_id, (x, y, width, height) in rectangles.items():
+        if pane_id == source_id:
+            continue
+        candidate_primary = x + width / 2 if direction in {"left", "right"} else y + height / 2
+        if direction in {"left", "up"} and candidate_primary >= source_primary:
+            continue
+        if direction in {"right", "down"} and candidate_primary <= source_primary:
+            continue
+        cross_start, cross_end = (y, y + height) if direction in {"left", "right"} else (x, x + width)
+        cross_overlap = max(
+            0.0,
+            min(source_cross_end, cross_end) - max(source_cross_start, cross_start),
+        )
+        cross_gap = max(0.0, source_cross_start - cross_end, cross_start - source_cross_end)
+        primary_gap = abs(candidate_primary - source_primary)
+        cross_center_gap = abs((cross_start + cross_end) / 2 - (source_cross_start + source_cross_end) / 2)
+        score = (
+            1.0 if cross_overlap == 0 else 0.0,
+            cross_gap,
+            primary_gap,
+            -cross_overlap,
+            cross_center_gap,
+        )
+        candidates.append((score, pane_id))
+    return min(candidates)[1] if candidates else None
+
 
 class SplitPaneController:
     def __init__(

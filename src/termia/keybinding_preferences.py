@@ -98,6 +98,7 @@ class KeybindingPreferencesMixin:
         description.add_css_class("dim-label")
         content.append(description)
         grid = Gtk.Grid(column_spacing=12, row_spacing=10)
+        grid.set_margin_end(8)
         rows: list[tuple[str, KeybindingCaptureRow]] = []
         for index, (action, label_key) in enumerate(KEYBINDING_ACTIONS):
             label = Gtk.Label(label=self.t(label_key))
@@ -109,7 +110,12 @@ class KeybindingPreferencesMixin:
             rows.append((action, row))
             grid.attach(label, 0, index, 1, 1)
             grid.attach(row, 1, index, 1, 1)
-        content.append(grid)
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_max_content_height(560)
+        scroller.set_propagate_natural_height(True)
+        scroller.set_child(grid)
+        content.append(scroller)
         dialog.connect("response", self.on_keybindings_settings_response, rows)
         dialog.present()
 

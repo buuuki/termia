@@ -16,6 +16,10 @@ DEFAULT_KEYBINDINGS: dict[str, str] = {
     "new_local_terminal": "Ctrl+Shift+T",
     "focus_next_region": "Ctrl+F6",
     "focus_previous_region": "Ctrl+Shift+F6",
+    "focus_split_left": "Ctrl+Left",
+    "focus_split_right": "Ctrl+Right",
+    "focus_split_up": "Ctrl+Up",
+    "focus_split_down": "Ctrl+Down",
 }
 
 KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
@@ -32,6 +36,10 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
     ("new_local_terminal", "keybinding_action_new_local_terminal"),
     ("focus_next_region", "keybinding_action_focus_next_region"),
     ("focus_previous_region", "keybinding_action_focus_previous_region"),
+    ("focus_split_left", "keybinding_action_focus_split_left"),
+    ("focus_split_right", "keybinding_action_focus_split_right"),
+    ("focus_split_up", "keybinding_action_focus_split_up"),
+    ("focus_split_down", "keybinding_action_focus_split_down"),
 )
 
 _MODIFIER_ORDER = ("Ctrl", "Shift", "Alt", "Super")
@@ -60,6 +68,8 @@ _KEY_ALIASES = {
     "kp_subtract": "-",
     "left": "Left",
     "right": "Right",
+    "up": "Up",
+    "down": "Down",
 }
 _KEYVAL_ALIASES = {
     "PageUp": {"page_up", "kp_page_up"},
@@ -68,6 +78,8 @@ _KEYVAL_ALIASES = {
     "-": {"minus", "underscore", "kp_subtract"},
     "Left": {"left", "kp_left"},
     "Right": {"right", "kp_right"},
+    "Up": {"up", "kp_up"},
+    "Down": {"down", "kp_down"},
 }
 
 
