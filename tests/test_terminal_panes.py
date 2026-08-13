@@ -42,6 +42,14 @@ class FakeControl:
         return self.visible
 
 
+class FakeWidget:
+    def __init__(self, parent=None) -> None:
+        self.parent = parent
+
+    def get_parent(self):
+        return self.parent
+
+
 def make_pane(
     terminal,
     pane_id: str,
@@ -87,6 +95,49 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    def test_split_removal_selects_focus_target_from_surviving_nested_subtree(self) -> None:
+        root_terminal = FakeTerminal()
+        nested_terminal = FakeTerminal()
+        other_terminal = FakeTerminal()
+        surviving_subtree = FakeWidget()
+        nested_container = FakeWidget(surviving_subtree)
+        other_container = FakeWidget(FakeWidget())
+        root = make_pane(root_terminal, "root")
+        nested = make_pane(nested_terminal, "nested")
+        other = make_pane(other_terminal, "other")
+        root.container = FakeWidget()
+        nested.container = nested_container
+        other.container = other_container
+        session = make_session(root_terminal, root)
+        session.panes[id(nested_terminal)] = nested
+        session.panes[id(other_terminal)] = other
+        session.active_terminal_ids.update((id(nested_terminal), id(other_terminal)))
+
+        target = TerminalSessionsMixin().active_terminal_in_split_subtree(session, surviving_subtree)
+
+        self.assertIs(target, nested_terminal)
+
+    def test_restoring_split_focus_is_deferred_callback_safe(self) -> None:
+        terminal = FakeTerminal()
+
+        result = TerminalSessionsMixin().restore_terminal_focus(terminal)
+
+        self.assertTrue(terminal.focused)
+        from gi.repository import GLib
+
+        self.assertEqual(result, GLib.SOURCE_REMOVE)
+
+    def test_split_replacement_clears_existing_window_focus(self) -> None:
+        focused = object()
+        root = Mock()
+        root.get_focus.return_value = focused
+        paned = Mock()
+        paned.get_root.return_value = root
+
+        TerminalSessionsMixin().clear_split_focus_before_replacement(paned)
+
+        root.set_focus.assert_called_once_with(None)
+
     def test_split_focus_grabs_selected_neighbor(self) -> None:
         root_terminal = FakeTerminal()
         split_terminal = FakeTerminal()

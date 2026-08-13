@@ -21,6 +21,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Transfer focus safely before collapsing nested split layouts so closing a
+  pane does not leave stale `GtkPaned` focus state (`#219`).
 - Prevent Enter in the server filter from reopening a stale selection that is
   absent from the current search results (`#216`).
 - Create detached sessions as normal application windows instead of transient
