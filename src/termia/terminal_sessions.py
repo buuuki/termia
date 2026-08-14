@@ -2113,13 +2113,17 @@ class TerminalSessionsMixin:
         result: Gio.AsyncResult,
         data: tuple[Gtk.AlertDialog, TerminalSession, Any],
     ) -> None:
-        dialog, session, on_confirm = data
+        dialog, _session, on_confirm = data
         try:
             response = dialog.choose_finish(result)
         except GLib.Error:
             return
         if response == 1:
-            on_confirm()
+            GLib.idle_add(self.run_confirmed_session_action, on_confirm)
+
+    def run_confirmed_session_action(self, on_confirm: Any) -> bool:
+        on_confirm()
+        return GLib.SOURCE_REMOVE
 
     def on_terminal_exited(
         self,

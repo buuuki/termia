@@ -1173,6 +1173,10 @@ msgstr "Duplicar pestaña"
 msgid "Move to new window"
 msgstr "Mover a nueva ventana"
 
+#: src/termia/i18n.py:reattach_tab
+msgid "Reattach to main window"
+msgstr "Volver a acoplar a la ventana principal"
+
 #: src/termia/i18n.py:expand_all
 msgid "Expand all groups"
 msgstr "Expandir todos los grupos"
