@@ -1173,6 +1173,10 @@ msgstr "Duplicar pestanya"
 msgid "Move to new window"
 msgstr "Moure a una finestra nova"
 
+#: src/termia/i18n.py:reattach_tab
+msgid "Reattach to main window"
+msgstr "Tornar a acoblar a la finestra principal"
+
 #: src/termia/i18n.py:expand_all
 msgid "Expand all groups"
 msgstr "Expandir tots els grups"

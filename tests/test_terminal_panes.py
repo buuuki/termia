@@ -178,6 +178,30 @@ class TerminalPaneStateTests(unittest.TestCase):
             (dialog, session, confirmed),
         )
 
+    def test_confirmed_session_action_runs_after_dialog_callback(self) -> None:
+        session = SimpleNamespace()
+        confirmed = Mock()
+        dialog = Mock()
+        dialog.choose_finish.return_value = 1
+        host = TerminalSessionsMixin()
+
+        with patch("termia.terminal_sessions.GLib.idle_add") as idle_add:
+            host.on_confirm_session_action(
+                dialog,
+                object(),
+                (dialog, session, confirmed),
+            )
+
+        confirmed.assert_not_called()
+        idle_add.assert_called_once_with(host.run_confirmed_session_action, confirmed)
+
+        result = host.run_confirmed_session_action(confirmed)
+
+        confirmed.assert_called_once_with()
+        from gi.repository import GLib
+
+        self.assertEqual(result, GLib.SOURCE_REMOVE)
+
     def test_split_removal_selects_focus_target_from_surviving_nested_subtree(self) -> None:
         root_terminal = FakeTerminal()
         nested_terminal = FakeTerminal()

@@ -22,6 +22,7 @@ class FakeWindow:
         self.presented = False
         self.titlebar = None
         self.title = kwargs.get("title", "")
+        self.destroyed = False
 
     def set_handle_menubar_accel(self, _enabled: bool) -> None:
         pass
@@ -46,6 +47,9 @@ class FakeWindow:
 
     def present(self) -> None:
         self.presented = True
+
+    def destroy(self) -> None:
+        self.destroyed = True
 
 
 class FakeHeaderBar:
@@ -86,6 +90,80 @@ class FakeTabBar:
 
 
 class DetachTabTests(unittest.TestCase):
+    def test_closing_detached_window_defers_session_close_until_after_signal(self) -> None:
+        window = FakeWindow()
+        session = SimpleNamespace(id="detached", page=object(), detached_window=window)
+
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.session_registry = SessionRegistry([session])
+                self.requested = None
+
+            def request_close_tab(self, session_id, page) -> None:
+                self.requested = (session_id, page)
+
+        host = Host()
+        with patch("termia.tabs.GLib.idle_add") as idle_add:
+            handled = host.on_detached_window_close(window, session)
+
+        self.assertTrue(handled)
+        self.assertIsNone(host.requested)
+        idle_add.assert_called_once_with(host.finish_detached_window_close, window, session)
+        self.assertIs(session.detached_window, window)
+        self.assertIs(window.child, None)
+
+        result = host.finish_detached_window_close(window, session)
+
+        self.assertEqual(host.requested, (session.id, session.page))
+        from gi.repository import GLib
+
+        self.assertEqual(result, GLib.SOURCE_REMOVE)
+
+    def test_deferred_close_ignores_session_reattached_before_callback(self) -> None:
+        window = FakeWindow()
+        session = SimpleNamespace(id="detached", page=object(), detached_window=window)
+
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.session_registry = SessionRegistry([session])
+                self.requested = False
+
+            def request_close_tab(self, _session_id, _page) -> None:
+                self.requested = True
+
+        host = Host()
+        session.detached_window = None
+
+        host.finish_detached_window_close(window, session)
+
+        self.assertFalse(host.requested)
+
+    def test_explicit_reattach_preserves_session_and_destroys_only_window(self) -> None:
+        page = object()
+        window = FakeWindow()
+        window.set_child(page)
+        session = SimpleNamespace(id="detached", page=page, detached_window=window)
+
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.session_registry = SessionRegistry([session])
+                self.attached = None
+
+            def add_session_to_main_view(self, current_session) -> None:
+                self.attached = current_session
+
+        host = Host()
+        popover = FakePopover()
+
+        host.reattach_tab(popover, session)
+
+        self.assertTrue(popover.closed)
+        self.assertIsNone(session.detached_window)
+        self.assertIsNone(window.child)
+        self.assertTrue(window.destroyed)
+        self.assertIs(host.attached, session)
+        self.assertTrue(host.session_registry.contains(session.id))
+
     def test_dialog_owner_uses_detached_window_when_available(self) -> None:
         detached_window = object()
         session = SimpleNamespace(detached_window=detached_window)

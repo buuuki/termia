@@ -34,6 +34,7 @@ class TerminalMenuActions:
     split: Callable[[MenuPopover, TerminalSession, TerminalWidget, str], None]
     split_connection: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
     rename_tab: Callable[[MenuPopover, TerminalSession], None]
+    reattach_tab: Callable[[MenuPopover, TerminalSession], None]
     duplicate_tab: Callable[[MenuPopover, TerminalSession], None]
     new_tab: Callable[[MenuPopover], None]
     close_tab: Callable[[MenuPopover, TerminalSession], None]

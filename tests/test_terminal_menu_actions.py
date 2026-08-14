@@ -34,6 +34,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
             split=action("split"),
             split_connection=action("split_connection"),
             rename_tab=action("rename_tab"),
+            reattach_tab=action("reattach_tab"),
             duplicate_tab=action("duplicate_tab"),
             new_tab=action("new_tab"),
             close_tab=action("close_tab"),
@@ -53,6 +54,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
         actions.split(popover, session, terminal, "left")
         actions.split_connection(popover, session, terminal)
         actions.rename_tab(popover, session)
+        actions.reattach_tab(popover, session)
         actions.duplicate_tab(popover, session)
         actions.new_tab(popover)
         actions.close_tab(popover, session)
@@ -70,6 +72,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
                 "split",
                 "split_connection",
                 "rename_tab",
+                "reattach_tab",
                 "duplicate_tab",
                 "new_tab",
                 "close_tab",

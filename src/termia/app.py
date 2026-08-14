@@ -176,6 +176,7 @@ class TermiaWindow(
             split=self.split_terminal_from_menu,
             split_connection=self.show_split_connection_dialog,
             rename_tab=self.show_rename_tab_dialog,
+            reattach_tab=self.reattach_tab,
             duplicate_tab=self.duplicate_tab,
             new_tab=self.new_tab_from_terminal_menu,
             close_tab=self.close_tab_from_terminal_menu,

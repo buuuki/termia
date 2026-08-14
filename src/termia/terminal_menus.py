@@ -162,8 +162,12 @@ class TerminalMenusMixin:
             (self.t("rename_tab"), lambda: actions.rename_tab(parent_popover, session)),
             (self.t("duplicate_tab"), lambda: actions.duplicate_tab(parent_popover, session)),
             (self.t("new_tab"), lambda: actions.new_tab(parent_popover)),
-            (self.t("close_tab"), lambda: actions.close_tab(parent_popover, session)),
         ]
+        if session.detached_window is not None:
+            submenu_items.append(
+                (self.t("reattach_tab"), lambda: actions.reattach_tab(parent_popover, session))
+            )
+        submenu_items.append((self.t("close_tab"), lambda: actions.close_tab(parent_popover, session)))
         self.add_terminal_nested_menu(menu, self.t("tab"), submenu_items, active_submenu)
 
     def add_terminal_nested_menu(

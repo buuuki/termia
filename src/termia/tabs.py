@@ -489,12 +489,36 @@ class TabsMixin:
         log_event("tab.detached", session_id=session.id)
 
     def on_detached_window_close(self, window: Gtk.Window, session: TerminalSession) -> bool:
+        if session.detached_window is not window:
+            return False
+        if not getattr(window, "termia_close_pending", False):
+            window.termia_close_pending = True
+            GLib.idle_add(self.finish_detached_window_close, window, session)
+        return True
+
+    def finish_detached_window_close(
+        self,
+        window: Gtk.Window,
+        session: TerminalSession,
+    ) -> bool:
+        window.termia_close_pending = False
+        if (
+            session.detached_window is window
+            and self.session_registry.contains(session.id)
+        ):
+            self.request_close_tab(session.id, session.page)
+        return GLib.SOURCE_REMOVE
+
+    def reattach_tab(self, popover: Gtk.Popover, session: TerminalSession) -> None:
+        popover.popdown()
+        window = session.detached_window
+        if window is None or not self.session_registry.contains(session.id):
+            return
         window.set_child(None)
         session.detached_window = None
-        if self.session_registry.contains(session.id):
-            self.add_session_to_main_view(session)
-            log_event("tab.reattached", session_id=session.id)
-        return False
+        window.destroy()
+        self.add_session_to_main_view(session)
+        log_event("tab.reattached", session_id=session.id)
 
     def show_rename_tab_dialog(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
