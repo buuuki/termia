@@ -328,6 +328,8 @@ class TerminalSessionsMixin:
         )
         self.store.record_history_end(session, result)
         pane.connected = False
+        if getattr(self, "shutdown_in_progress", False):
+            return
         pane.disconnect_button.set_sensitive(False)
         if not pane.disconnect_requested and self.child_status_successful(_status) and session.active_terminal_ids:
             self.remove_terminal_pane_if_split(terminal, session)
@@ -1710,13 +1712,16 @@ class TerminalSessionsMixin:
             )
             self.store.record_history_end(pane, result)
             pane.connected = False
+        self.save_statistics_now()
+        if getattr(self, "shutdown_in_progress", False):
+            return
+        if pane is not None:
             pane.disconnect_button.set_sensitive(False)
             pane.status_label.set_label(
                 self.t("session_disconnected_status").format(title=pane.title)
                 if pane.disconnect_requested
                 else self.t("session_closed_status").format(title=pane.title)
             )
-        self.save_statistics_now()
         if (
             pane is not None
             and not pane.disconnect_requested
@@ -2010,13 +2015,26 @@ class TerminalSessionsMixin:
             signal=signum.name,
             accepted=terminated,
         )
-        if terminated and not force:
+        if terminated and not force and not getattr(self, "shutdown_in_progress", False):
             GLib.timeout_add(500, self.force_terminate_terminal_process, process)
         return terminated
 
     def force_terminate_terminal_process(self, process: TerminalProcess) -> bool:
         self.terminate_terminal_process(process, force=True)
         return GLib.SOURCE_REMOVE
+
+    def prepare_terminal_sessions_for_shutdown(self) -> None:
+        for session in self.session_registry.sessions():
+            session.disconnect_requested = True
+            session.pending_reconnect = False
+            for pane in session.panes.values():
+                pane.disconnect_requested = True
+                pane.pending_reconnect = False
+            log_event(
+                "session.shutdown_prepared",
+                session_id=session.id,
+                panes=len(session.panes),
+            )
 
     def terminate_open_terminal_processes(self, *, force: bool = False) -> None:
         for session in self.session_registry.sessions():
@@ -2188,6 +2206,8 @@ class TerminalSessionsMixin:
         )
         self.store.record_history_end(session, result)
         pane.connected = False
+        if getattr(self, "shutdown_in_progress", False):
+            return
         pane.disconnect_button.set_sensitive(False)
         if not pane.disconnect_requested and self.child_status_successful(_status) and session.active_terminal_ids:
             self.remove_terminal_pane_if_split(terminal, session)

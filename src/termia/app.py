@@ -399,6 +399,7 @@ class TermiaWindow(
         self.save_session_snapshot_before_close()
         self.save_history_before_close()
         self.save_statistics_before_close()
+        self.prepare_terminal_sessions_for_shutdown()
         self.terminate_open_terminal_processes()
         GLib.timeout_add(500, self.finish_main_window_shutdown)
 
