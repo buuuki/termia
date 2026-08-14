@@ -1,6 +1,6 @@
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from termia.models import Server
 from termia.terminal_processes import TerminalProcess
@@ -95,6 +95,89 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    def test_terminal_preferences_from_menu_use_session_window(self) -> None:
+        owner = object()
+        session = SimpleNamespace()
+        popover = Mock()
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.opened = None
+
+            def window_for_session(self, current_session):
+                self.assert_session = current_session
+                return owner
+
+            def on_terminal_settings(self, button, parent=None):
+                self.opened = (button, parent)
+
+        host = Host()
+        host.configure_terminal_from_menu(popover, session)
+
+        popover.popdown.assert_called_once_with()
+        self.assertIs(host.assert_session, session)
+        self.assertEqual(host.opened, (None, owner))
+
+    def test_scp_from_menu_uses_session_window(self) -> None:
+        owner = object()
+        session = SimpleNamespace()
+        server = object()
+        popover = Mock()
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.toast_label = object()
+                self.add_dialog_action_button = object()
+                self.has_known_host_key = object()
+
+            def window_for_session(self, current_session):
+                self.assert_session = current_session
+                return owner
+
+            def t(self, key):
+                return key
+
+        host = Host()
+        with patch("termia.terminal_sessions.FileTransferController") as controller:
+            host.on_send_files_to_server(popover, session, server)
+
+        popover.popdown.assert_called_once_with()
+        self.assertIs(host.assert_session, session)
+        controller.assert_called_once_with(
+            owner,
+            host.t,
+            host.toast_label,
+            host.add_dialog_action_button,
+            host.has_known_host_key,
+        )
+        controller.return_value.open_file_selection.assert_called_once_with(server)
+
+    def test_session_confirmation_uses_session_window(self) -> None:
+        owner = object()
+        session = SimpleNamespace()
+        confirmed = Mock()
+
+        class Host(TerminalSessionsMixin):
+            def window_for_session(self, current_session):
+                self.assert_session = current_session
+                return owner
+
+            def t(self, key):
+                return key
+
+        host = Host()
+        dialog = Mock()
+        with patch("termia.terminal_sessions.Gtk.AlertDialog", return_value=dialog):
+            host.confirm_session_action(session, "Title", "Detail", "Confirm", confirmed)
+
+        self.assertIs(host.assert_session, session)
+        dialog.choose.assert_called_once_with(
+            owner,
+            None,
+            host.on_confirm_session_action,
+            (dialog, session, confirmed),
+        )
+
     def test_split_removal_selects_focus_target_from_surviving_nested_subtree(self) -> None:
         root_terminal = FakeTerminal()
         nested_terminal = FakeTerminal()

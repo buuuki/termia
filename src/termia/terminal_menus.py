@@ -81,9 +81,13 @@ class TerminalMenusMixin:
                 self.add_context_menu_item(
                     menu,
                     self.t("send_files_to_server"),
-                    lambda: actions.send_files(popover, server),
+                    lambda: actions.send_files(popover, session, server),
                 )
-        self.add_context_menu_item(menu, self.t("configure_terminal"), lambda: actions.configure(popover))
+        self.add_context_menu_item(
+            menu,
+            self.t("configure_terminal"),
+            lambda: actions.configure(popover, session),
+        )
         self.add_context_menu_item(
             menu,
             self.t("session_statistics"),
