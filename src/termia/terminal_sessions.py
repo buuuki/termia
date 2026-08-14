@@ -1204,7 +1204,7 @@ class TerminalSessionsMixin:
 
         dialog = Gtk.Dialog(
             title=self.t("open_connection_in_split"),
-            transient_for=self,
+            transient_for=self.window_for_session(session),
             modal=True,
         )
         dialog.set_resizable(True)
@@ -1832,9 +1832,13 @@ class TerminalSessionsMixin:
         popover.popdown()
         terminal.paste_clipboard()
 
-    def configure_terminal_from_menu(self, popover: Gtk.Popover) -> None:
+    def configure_terminal_from_menu(
+        self,
+        popover: Gtk.Popover,
+        session: TerminalSession,
+    ) -> None:
         popover.popdown()
-        self.on_terminal_settings(None)
+        self.on_terminal_settings(None, self.window_for_session(session))
 
     def show_session_statistics(
         self,
@@ -1847,7 +1851,11 @@ class TerminalSessionsMixin:
         server_connections = 0
         if pane.server_id is not None:
             server_connections = self.store.data.statistics.server_connections.get(pane.server_id, 0)
-        dialog = Gtk.Dialog(title=self.t("session_statistics"), transient_for=self, modal=True)
+        dialog = Gtk.Dialog(
+            title=self.t("session_statistics"),
+            transient_for=self.window_for_session(session),
+            modal=True,
+        )
         dialog.set_resizable(False)
         self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
         label = Gtk.Label(label=f"{self.t('server_connections')}: {server_connections}")
@@ -1861,10 +1869,15 @@ class TerminalSessionsMixin:
         dialog.connect("response", lambda current, _response: current.destroy())
         dialog.present()
 
-    def on_send_files_to_server(self, popover: Gtk.Popover, server: Server) -> None:
+    def on_send_files_to_server(
+        self,
+        popover: Gtk.Popover,
+        session: TerminalSession,
+        server: Server,
+    ) -> None:
         popover.popdown()
         FileTransferController(
-            self,
+            self.window_for_session(session),
             self.t,
             self.toast_label,
             self.add_dialog_action_button,
@@ -2087,7 +2100,12 @@ class TerminalSessionsMixin:
         dialog.set_buttons([self.t("cancel"), confirm_label])
         dialog.set_cancel_button(0)
         dialog.set_default_button(0)
-        dialog.choose(self, None, self.on_confirm_session_action, (dialog, session, on_confirm))
+        dialog.choose(
+            self.window_for_session(session),
+            None,
+            self.on_confirm_session_action,
+            (dialog, session, on_confirm),
+        )
 
     def on_confirm_session_action(
         self,

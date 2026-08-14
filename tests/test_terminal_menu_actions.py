@@ -47,8 +47,8 @@ class TerminalMenuActionsTests(unittest.TestCase):
         actions.toggle_status_bar(popover, session, terminal)
         actions.copy(popover, terminal)
         actions.paste(popover, terminal)
-        actions.send_files(popover, server)
-        actions.configure(popover)
+        actions.send_files(popover, session, server)
+        actions.configure(popover, session)
         actions.session_statistics(popover, session, terminal)
         actions.split(popover, session, terminal, "left")
         actions.split_connection(popover, session, terminal)
@@ -75,3 +75,5 @@ class TerminalMenuActionsTests(unittest.TestCase):
                 "close_tab",
             ],
         )
+        self.assertEqual(calls[4], ("send_files", (popover, session, server)))
+        self.assertEqual(calls[5], ("configure", (popover, session)))

@@ -28,10 +28,15 @@ from .terminal_config import (
 
 
 class TerminalPreferencesMixin:
-    def on_terminal_settings(self, _button: Gtk.Button) -> None:
+    def on_terminal_settings(
+        self,
+        _button: Gtk.Button | None,
+        parent: Gtk.Window | None = None,
+    ) -> None:
         if not self.ensure_writable():
             return
-        dialog = Gtk.Dialog(title=self.t("terminal"), transient_for=self, modal=True)
+        owner = parent if parent is not None else self
+        dialog = Gtk.Dialog(title=self.t("terminal"), transient_for=owner, modal=True)
         dialog.set_resizable(True)
         dialog.set_default_size(760, 620)
         self.add_dialog_action_buttons(dialog, self.t("save"))
