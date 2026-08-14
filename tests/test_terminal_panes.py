@@ -128,7 +128,6 @@ class TerminalPaneStateTests(unittest.TestCase):
             def __init__(self) -> None:
                 self.toast_label = object()
                 self.add_dialog_action_button = object()
-                self.has_known_host_key = object()
 
             def window_for_session(self, current_session):
                 self.assert_session = current_session
@@ -148,7 +147,7 @@ class TerminalPaneStateTests(unittest.TestCase):
             host.t,
             host.toast_label,
             host.add_dialog_action_button,
-            host.has_known_host_key,
+            unittest.mock.ANY,
         )
         controller.return_value.open_file_selection.assert_called_once_with(server)
 

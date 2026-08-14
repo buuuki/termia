@@ -1,8 +1,9 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
-from termia.file_transfer import DESTINATION, build_scp_commands
+from termia.file_transfer import DESTINATION, FileTransferController, build_scp_commands
 from termia.models import Server
 
 
@@ -50,3 +51,25 @@ class FileTransferTests(unittest.TestCase):
         self.assertEqual(ssh_command[:2], ["/usr/bin/sshpass", "-e"])
         self.assertEqual(scp_command[:2], ["/usr/bin/sshpass", "-e"])
         self.assertIn("file;touch compromised", scp_command)
+
+    def test_defers_upload_until_known_host_check_finishes(self) -> None:
+        inspect_known_host = Mock()
+        toast = Mock()
+        controller = FileTransferController(object(), lambda key: key, toast, Mock(), inspect_known_host)
+        controller.show_transfer_dialog = Mock()
+
+        with patch(
+            "termia.file_transfer.GLib.find_program_in_path",
+            side_effect=lambda program: f"/usr/bin/{program}",
+        ):
+            controller.start_upload(
+                Server(id="server-1", name="Web", host="example.test", user="admin"),
+                [Path("report.txt")],
+            )
+
+        inspect_known_host.assert_called_once()
+        controller.show_transfer_dialog.assert_not_called()
+        callback = inspect_known_host.call_args.args[2]
+        callback(False)
+        toast.set_label.assert_called_once_with("send_files_to_server_fingerprint")
+        controller.show_transfer_dialog.assert_not_called()
