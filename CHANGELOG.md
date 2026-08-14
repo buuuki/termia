@@ -21,6 +21,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Inspect SSH known-host files asynchronously so connection and SCP startup
+  cannot block the GTK interface while `ssh-keygen -F` runs (`#230`).
 - Bind session-specific dialogs, confirmations, terminal preferences, and SCP
   flows to the detached window that initiated them (`#226`).
 - Keep a detached window's native and header titles synchronized when its tab

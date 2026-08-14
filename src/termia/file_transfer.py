@@ -51,13 +51,13 @@ class FileTransferController:
         translate: Callable[[str], str],
         toast_label: Gtk.Label,
         add_dialog_action_button: Callable[..., Gtk.Button],
-        has_known_host_key: Callable[[str, int], bool],
+        inspect_known_host: Callable[[str, int, Callable[[bool], None]], None],
     ) -> None:
         self.parent = parent
         self.t = translate
         self.toast_label = toast_label
         self.add_dialog_action_button = add_dialog_action_button
-        self.has_known_host_key = has_known_host_key
+        self.inspect_known_host = inspect_known_host
 
     def open_file_selection(self, server: Server) -> None:
         dialog = Gtk.FileDialog(title=self.t("send_files_to_server"))
@@ -92,7 +92,21 @@ class FileTransferController:
         if ssh_path is None or scp_path is None:
             self.toast_label.set_label(self.t("send_files_to_server_missing"))
             return
-        if not self.has_known_host_key(server.host, server.port):
+        self.inspect_known_host(
+            server.host,
+            server.port,
+            lambda known: self._start_upload_after_known_host_check(server, local_paths, ssh_path, scp_path, known),
+        )
+
+    def _start_upload_after_known_host_check(
+        self,
+        server: Server,
+        local_paths: list[Path],
+        ssh_path: str,
+        scp_path: str,
+        known_host: bool,
+    ) -> None:
+        if not known_host:
             self.toast_label.set_label(self.t("send_files_to_server_fingerprint"))
             return
 

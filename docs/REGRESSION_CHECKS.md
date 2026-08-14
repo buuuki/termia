@@ -58,6 +58,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Local terminal prompt customization must apply to newly opened and duplicated local terminals.
 - SSH sessions must not send arbitrary commands automatically to remote servers.
 - SSH fingerprint prompts must remain visible and interactive in the terminal.
+- Starting a password-backed SSH connection or SCP transfer must leave the
+  interface responsive while the SSH known-host lookup completes.
 - Failed SSH connections must leave the tab usable and show the reconnect prompt.
 - The reconnect prompt must be readable on both light and dark terminal backgrounds.
 - Pressing Enter on a failed SSH tab must reconnect to the same server.

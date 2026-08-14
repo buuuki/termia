@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import signal
-import subprocess
 import shlex
 import time
 from pathlib import Path
@@ -24,6 +23,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 from .connection_utils import find_local_terminal_profile, find_server
 from .file_transfer import FileTransferController
 from .keybindings import is_unmodified_function_key, keybinding_matches
+from .known_hosts import inspect_known_host_async
 from .models import LocalTerminalProfile, Server, Workspace
 from .session_commands import build_ssh_command
 from .split_panes import SplitPaneController, directional_pane_neighbor
@@ -621,9 +621,35 @@ class TerminalSessionsMixin:
             self.mark_session_for_reconnect(session, server, message)
             return
 
+        if server.password:
+            inspect_known_host_async(
+                server.host,
+                server.port,
+                lambda known: self.finish_start_ssh_session(server, session, split_layout, ssh_path, known),
+            )
+            return
+        self.finish_start_ssh_session(server, session, split_layout, ssh_path, False)
+
+    def finish_start_ssh_session(
+        self,
+        server: Server,
+        session: TerminalSession,
+        split_layout: str,
+        ssh_path: str,
+        known_host: bool,
+    ) -> None:
+        root_pane = session.pane_for_terminal(session.terminal)
+        if (
+            self.session_registry.get(session.id) is not session
+            or session.disconnect_requested
+            or root_pane is None
+            or root_pane.disconnect_requested
+        ):
+            return
+        terminal = session.terminal
         envv = build_terminal_environment(self.store.data.terminal.ls_colors, server.password)
-        use_sshpass = bool(server.password)
-        if server.password and not self.has_known_host_key(server.host, server.port):
+        use_sshpass = bool(server.password and known_host)
+        if server.password and not known_host:
             use_sshpass = False
             message = self.t("ssh_fingerprint_manual")
             terminal.feed(f"{message}\r\n\r\n".encode())
@@ -781,25 +807,6 @@ class TerminalSessionsMixin:
             return os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0
         except ValueError:
             return False
-
-    def has_known_host_key(self, host: str, port: int) -> bool:
-        ssh_keygen = GLib.find_program_in_path("ssh-keygen")
-        if ssh_keygen is None:
-            return False
-        lookup_host = f"[{host}]:{port}" if port != 22 else host
-        known_hosts_files = [Path.home() / ".ssh" / "known_hosts", Path.home() / ".ssh" / "known_hosts2"]
-        for known_hosts in known_hosts_files:
-            if not known_hosts.exists():
-                continue
-            result = subprocess.run(
-                [ssh_keygen, "-F", lookup_host, "-f", str(known_hosts)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-            if result.returncode == 0:
-                return True
-        return False
 
     def schedule_statistics_save(self) -> None:
         if self.store.data.app.statistics_enabled and self.stats_save_id is None:
@@ -1584,9 +1591,41 @@ class TerminalSessionsMixin:
             self.mark_pane_for_reconnect(session, pane, message)
             return
 
+        if server.password:
+            inspect_known_host_async(
+                server.host,
+                server.port,
+                lambda known: self.finish_start_ssh_split_terminal(
+                    session,
+                    terminal,
+                    server,
+                    announce,
+                    ssh_path,
+                    known,
+                ),
+            )
+            return
+        self.finish_start_ssh_split_terminal(session, terminal, server, announce, ssh_path, False)
+
+    def finish_start_ssh_split_terminal(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        server: Server,
+        announce: bool,
+        ssh_path: str,
+        known_host: bool,
+    ) -> None:
+        pane = session.pane_for_terminal(terminal)
+        if (
+            self.session_registry.get(session.id) is not session
+            or pane is None
+            or pane.disconnect_requested
+        ):
+            return
         envv = build_terminal_environment(self.store.data.terminal.ls_colors, server.password)
-        use_sshpass = bool(server.password)
-        if server.password and not self.has_known_host_key(server.host, server.port):
+        use_sshpass = bool(server.password and known_host)
+        if server.password and not known_host:
             use_sshpass = False
             message = self.t("ssh_fingerprint_manual")
             terminal.feed(f"{message}\r\n\r\n".encode())
@@ -1881,7 +1920,7 @@ class TerminalSessionsMixin:
             self.t,
             self.toast_label,
             self.add_dialog_action_button,
-            self.has_known_host_key,
+            inspect_known_host_async,
         ).open_file_selection(server)
 
     def local_directory_title(self, path: Path) -> str:
