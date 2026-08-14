@@ -21,6 +21,7 @@ class FakeWindow:
         self.child = None
         self.presented = False
         self.titlebar = None
+        self.title = kwargs.get("title", "")
 
     def set_handle_menubar_accel(self, _enabled: bool) -> None:
         pass
@@ -30,6 +31,12 @@ class FakeWindow:
 
     def set_titlebar(self, titlebar) -> None:
         self.titlebar = titlebar
+
+    def get_titlebar(self):
+        return self.titlebar
+
+    def set_title(self, title: str) -> None:
+        self.title = title
 
     def set_child(self, child) -> None:
         self.child = child
@@ -43,10 +50,21 @@ class FakeWindow:
 
 class FakeHeaderBar:
     def __init__(self) -> None:
-        pass
+        self.title_widget = None
 
-    def set_title_widget(self, _widget) -> None:
-        pass
+    def set_title_widget(self, widget) -> None:
+        self.title_widget = widget
+
+    def get_title_widget(self):
+        return self.title_widget
+
+
+class FakeLabel:
+    def __init__(self, *, label: str) -> None:
+        self.label = label
+
+    def set_label(self, label: str) -> None:
+        self.label = label
 
 
 class FakeTab:
@@ -68,6 +86,19 @@ class FakeTabBar:
 
 
 class DetachTabTests(unittest.TestCase):
+    def test_dialog_owner_uses_detached_window_when_available(self) -> None:
+        detached_window = object()
+        session = SimpleNamespace(detached_window=detached_window)
+        host = TabsMixin()
+
+        self.assertIs(host.window_for_session(session), detached_window)
+
+    def test_dialog_owner_uses_main_window_for_attached_session(self) -> None:
+        session = SimpleNamespace(detached_window=None)
+        host = TabsMixin()
+
+        self.assertIs(host.window_for_session(session), host)
+
     def test_detach_tab_keeps_previous_order_for_focus_selection(self) -> None:
         session = SimpleNamespace(
             id="detached",
@@ -111,7 +142,7 @@ class DetachTabTests(unittest.TestCase):
         with (
             patch("termia.tabs.Gtk.Window", FakeWindow),
             patch("termia.tabs.Gtk.HeaderBar", FakeHeaderBar),
-            patch("termia.tabs.Gtk.Label", lambda **_kwargs: object()),
+            patch("termia.tabs.Gtk.Label", FakeLabel),
         ):
             host.detach_tab(popover, session)
 
@@ -122,7 +153,49 @@ class DetachTabTests(unittest.TestCase):
         self.assertIs(session.detached_window.properties["application"], host.application)
         self.assertNotIn("transient_for", session.detached_window.properties)
         self.assertIsInstance(session.detached_window.titlebar, FakeHeaderBar)
+        self.assertEqual(session.detached_window.titlebar.title_widget.label, session.title)
         self.assertTrue(session.detached_window.presented)
+
+    def test_renaming_detached_tab_updates_window_and_header_titles(self) -> None:
+        window = FakeWindow(title="Old title")
+        header = FakeHeaderBar()
+        header.set_title_widget(FakeLabel(label="Old title"))
+        window.set_titlebar(header)
+        session = SimpleNamespace(
+            title="Old title",
+            title_locked=False,
+            detached_window=window,
+        )
+        dialog = SimpleNamespace(destroy=lambda: setattr(dialog, "destroyed", True))
+        entry = SimpleNamespace(get_text=lambda: "New title")
+
+        class Host(TabsMixin):
+            def __init__(self) -> None:
+                self.updated = None
+                self.synced = False
+
+            def update_session_tab_title(self, current_session, title) -> None:
+                self.updated = (current_session, title)
+
+            def sync_window_title_with_visible_session(self) -> None:
+                self.synced = True
+
+        from gi.repository import Gtk
+
+        host = Host()
+        with (
+            patch("termia.tabs.Gtk.HeaderBar", FakeHeaderBar),
+            patch("termia.tabs.Gtk.Label", FakeLabel),
+        ):
+            host.on_rename_tab_response(dialog, Gtk.ResponseType.OK, entry, session)
+
+        self.assertEqual(session.title, "New title")
+        self.assertTrue(session.title_locked)
+        self.assertEqual(host.updated, (session, "New title"))
+        self.assertEqual(window.title, "New title")
+        self.assertEqual(header.title_widget.label, "New title")
+        self.assertTrue(host.synced)
+        self.assertTrue(dialog.destroyed)
 
 
 class DuplicateTabTests(unittest.TestCase):

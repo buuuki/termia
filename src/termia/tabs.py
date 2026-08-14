@@ -498,7 +498,11 @@ class TabsMixin:
 
     def show_rename_tab_dialog(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
-        dialog = Gtk.Dialog(title=self.t("rename_tab"), transient_for=self, modal=True)
+        dialog = Gtk.Dialog(
+            title=self.t("rename_tab"),
+            transient_for=self.window_for_session(session),
+            modal=True,
+        )
         dialog.set_resizable(False)
         self.add_dialog_action_buttons(dialog, self.t("save"))
         entry = Gtk.Entry(text=session.title)
@@ -510,6 +514,10 @@ class TabsMixin:
         dialog.get_content_area().append(entry)
         dialog.connect("response", self.on_rename_tab_response, entry, session)
         dialog.present()
+        entry.grab_focus()
+
+    def window_for_session(self, session: TerminalSession) -> Gtk.Window:
+        return session.detached_window or self
 
     def on_rename_tab_response(
         self, dialog: Gtk.Dialog, response: Gtk.ResponseType, entry: Gtk.Entry, session: TerminalSession
@@ -519,8 +527,21 @@ class TabsMixin:
             session.title = title
             session.title_locked = True
             self.update_session_tab_title(session, title)
+            self.update_detached_window_title(session, title)
             self.sync_window_title_with_visible_session()
         dialog.destroy()
+
+    def update_detached_window_title(self, session: TerminalSession, title: str) -> None:
+        window = session.detached_window
+        if window is None:
+            return
+        window.set_title(title)
+        titlebar = window.get_titlebar()
+        if not isinstance(titlebar, Gtk.HeaderBar):
+            return
+        title_widget = titlebar.get_title_widget()
+        if isinstance(title_widget, Gtk.Label):
+            title_widget.set_label(title)
 
     def on_request_close_tab(self, _button: Gtk.Button, session_id: str, page: Gtk.Widget) -> None:
         self.request_close_tab(session_id, page)
