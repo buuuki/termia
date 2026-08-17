@@ -49,6 +49,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Changed
 
+- Define `0.6.0-beta.1` as a stabilization checkpoint, prioritize SCP maturity
+  before the first stable release, and allow stable pre-1.0 releases while
+  reserving `1.0.0` for the long-term compatibility milestone.
 - Make closing a detached window close its session, and provide an explicit
   action to reattach the live session to the main window (`#228`).
 - Make debug logging focus on privacy-safe Termia lifecycle events, retain
