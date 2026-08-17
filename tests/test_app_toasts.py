@@ -3,7 +3,7 @@ from types import MethodType, SimpleNamespace
 from unittest.mock import Mock, patch
 
 from termia.app import TOAST_VISIBLE_SECONDS, TermiaWindow
-from termia.notifications import GroupedNotificationLabel
+from termia.notifications import NOTIFICATION_ICONS, GroupedNotificationLabel, NotificationSeverity
 
 
 class AppToastTests(unittest.TestCase):
@@ -12,6 +12,8 @@ class AppToastTests(unittest.TestCase):
             toast_hide_id=hide_id,
             toast_revealer=Mock(),
             toast_messages=[],
+            toast_severity=NotificationSeverity.INFORMATION,
+            toast_icon=Mock(),
             toast_label=Mock(spec=GroupedNotificationLabel),
         )
         host.hide_toast = MethodType(TermiaWindow.hide_toast, host)
@@ -32,6 +34,9 @@ class AppToastTests(unittest.TestCase):
         host.toast_revealer.set_reveal_child.assert_called_once_with(True)
         timeout_add.assert_called_once_with(TOAST_VISIBLE_SECONDS, host.hide_toast)
         self.assertEqual(host.toast_hide_id, 11)
+        host.toast_icon.set_from_icon_name.assert_called_once_with(
+            NOTIFICATION_ICONS[NotificationSeverity.INFORMATION]
+        )
 
     def test_messages_are_grouped_in_arrival_order_and_keep_duplicates(self) -> None:
         host = self.host()
@@ -50,6 +55,19 @@ class AppToastTests(unittest.TestCase):
         )
         self.assertEqual(host.toast_hide_id, 9)
 
+    def test_group_keeps_the_highest_severity_icon_until_hidden(self) -> None:
+        host = self.host()
+
+        with patch("termia.app.GLib.timeout_add_seconds", side_effect=[7, 8, 9]):
+            host.show_toast("Connected", NotificationSeverity.SUCCESS)
+            host.show_toast("Connection failed", NotificationSeverity.ERROR)
+            host.show_toast("Closing connection", NotificationSeverity.INFORMATION)
+
+        self.assertEqual(host.toast_severity, NotificationSeverity.ERROR)
+        host.toast_icon.set_from_icon_name.assert_called_with(
+            NOTIFICATION_ICONS[NotificationSeverity.ERROR]
+        )
+
     def test_hide_clears_message_for_future_identical_notifications(self) -> None:
         host = self.host(hide_id=11)
         host.toast_messages.extend(["Global tab limit reached", "Connected"])
@@ -59,6 +77,10 @@ class AppToastTests(unittest.TestCase):
         host.toast_revealer.set_reveal_child.assert_called_once_with(False)
         host.toast_label.set_grouped_text.assert_called_once_with("")
         self.assertEqual(host.toast_messages, [])
+        self.assertEqual(host.toast_severity, NotificationSeverity.INFORMATION)
+        host.toast_icon.set_from_icon_name.assert_called_once_with(
+            NOTIFICATION_ICONS[NotificationSeverity.INFORMATION]
+        )
         self.assertIsNone(host.toast_hide_id)
         self.assertFalse(result)
 

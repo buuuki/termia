@@ -27,7 +27,7 @@ from .i18n import translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
 from .main_menu_actions import MainMenuActions
-from .notifications import GroupedNotificationLabel
+from .notifications import NOTIFICATION_ICONS, GroupedNotificationLabel, NotificationSeverity
 from .preferences import PreferencesMixin
 from .session_registry import SessionRegistry
 from .session_snapshot import SessionSnapshotStore
@@ -93,6 +93,11 @@ class TermiaWindow(
             self.session_snapshot_store.clear()
         self.startup_restore_prompt_pending = False
         self.toast_messages: list[str] = []
+        self.toast_severity = NotificationSeverity.INFORMATION
+        self.toast_icon = Gtk.Image.new_from_icon_name(
+            NOTIFICATION_ICONS[NotificationSeverity.INFORMATION]
+        )
+        self.toast_icon.set_pixel_size(18)
         self.toast_label = GroupedNotificationLabel()
         self.toast_label.set_notification_handler(self.show_toast)
         self.toast_label.add_css_class("dim-label")
@@ -100,8 +105,6 @@ class TermiaWindow(
         self.toast_label.set_max_width_chars(80)
         self.toast_label.set_margin_top(10)
         self.toast_label.set_margin_bottom(10)
-        self.toast_label.set_margin_start(14)
-        self.toast_label.set_margin_end(14)
         self.toast_hide_id: int | None = None
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
@@ -249,10 +252,16 @@ class TermiaWindow(
             self.on_open_local_terminal(None)
         return GLib.SOURCE_REMOVE
 
-    def show_toast(self, message: str) -> None:
+    def show_toast(
+        self,
+        message: str,
+        severity: NotificationSeverity = NotificationSeverity.INFORMATION,
+    ) -> None:
         if not message:
             return
         self.toast_messages.append(message)
+        self.toast_severity = max(self.toast_severity, severity)
+        self.toast_icon.set_from_icon_name(NOTIFICATION_ICONS[self.toast_severity])
         self.toast_label.set_grouped_text("\n".join(self.toast_messages))
         if not hasattr(self, "toast_revealer"):
             return
@@ -269,6 +278,10 @@ class TermiaWindow(
         self.toast_hide_id = None
         self.toast_revealer.set_reveal_child(False)
         self.toast_messages.clear()
+        self.toast_severity = NotificationSeverity.INFORMATION
+        self.toast_icon.set_from_icon_name(
+            NOTIFICATION_ICONS[NotificationSeverity.INFORMATION]
+        )
         self.toast_label.set_grouped_text("")
         return GLib.SOURCE_REMOVE
 
@@ -733,7 +746,12 @@ class TermiaWindow(
         toast_frame = Gtk.Frame()
         toast_frame.add_css_class("background")
         toast_frame.add_css_class("card")
-        toast_frame.set_child(self.toast_label)
+        toast_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        toast_content.set_margin_start(14)
+        toast_content.set_margin_end(14)
+        toast_content.prepend(self.toast_icon)
+        toast_content.append(self.toast_label)
+        toast_frame.set_child(toast_content)
         toast_revealer.set_child(toast_frame)
         window_overlay.add_overlay(toast_revealer)
 

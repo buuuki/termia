@@ -90,7 +90,7 @@ class FileTransferController:
         ssh_path = GLib.find_program_in_path("ssh")
         scp_path = GLib.find_program_in_path("scp")
         if ssh_path is None or scp_path is None:
-            self.toast_label.set_label(self.t("send_files_to_server_missing"))
+            self.toast_label.set_error(self.t("send_files_to_server_missing"))
             return
         self.inspect_known_host(
             server.host,
@@ -114,7 +114,7 @@ class FileTransferController:
         if server.password:
             sshpass_path = GLib.find_program_in_path("sshpass")
             if sshpass_path is None:
-                self.toast_label.set_label(self.t("sshpass_missing"))
+                self.toast_label.set_error(self.t("sshpass_missing"))
                 return
         ssh_command, scp_command = build_scp_commands(
             server,
@@ -279,7 +279,10 @@ class FileTransferController:
         state["status"].set_label(message)
         state["progress"].set_fraction(0.0 if failed else 1.0)
         state["cancel"].set_label(self.t("close"))
-        self.toast_label.set_label(message)
+        if failed:
+            self.toast_label.set_error(message)
+        else:
+            self.toast_label.set_success(message)
 
     def cleanup_dialog(self, state: dict[str, Any]) -> None:
         pulse_id = state.get("pulse_id")

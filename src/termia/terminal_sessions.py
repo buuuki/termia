@@ -72,7 +72,7 @@ class TerminalSessionsMixin:
         try:
             command = self.build_local_terminal_command(profile)
         except ValueError as exc:
-            self.toast_label.set_label(self.t("local_terminal_invalid_arguments").format(error=exc))
+            self.toast_label.set_error(self.t("local_terminal_invalid_arguments").format(error=exc))
             return None
         working_directory = (
             working_directory_override
@@ -285,7 +285,7 @@ class TerminalSessionsMixin:
             self.show_pane_reconnect_controls(self.pane_state(session, terminal))
             self.store.record_history_end(session, "failed", detail=exc.message)
             self.update_session_tab_title(session, self.t("tab_error_title").format(title=session.title))
-            self.toast_label.set_label(message)
+            self.toast_label.set_error(message)
             return session
         session.child_process = child_process
         session.child_pid = child_process.pid
@@ -353,7 +353,7 @@ class TerminalSessionsMixin:
         open_tabs = len(self.session_registry.sessions())
         if open_tabs + requested_tabs <= MAX_OPEN_TABS:
             return True
-        self.toast_label.set_label(
+        self.toast_label.set_warning(
             self.t("global_tab_limit_exceeded").format(
                 limit=MAX_OPEN_TABS,
                 open=open_tabs,
@@ -396,7 +396,7 @@ class TerminalSessionsMixin:
         pane_count = workspace_total_pane_count(workspace.tabs)
         log_event("workspace.open_requested", workspace_id=workspace.id, panes=pane_count)
         if pane_count > MAX_WORKSPACE_PANES:
-            self.toast_label.set_label(
+            self.toast_label.set_warning(
                 self.t("workspace_pane_limit_exceeded").format(
                     count=pane_count,
                     limit=MAX_WORKSPACE_PANES,
@@ -432,7 +432,9 @@ class TerminalSessionsMixin:
                 self.t("workspace_opened").format(name=workspace.name, count=opened_tabs)
             )
         else:
-            self.toast_label.set_label(self.t("workspace_no_available_tabs").format(name=workspace.name))
+            self.toast_label.set_warning(
+                self.t("workspace_no_available_tabs").format(name=workspace.name)
+            )
         if opened_tabs and skipped_tabs:
             self.toast_label.set_label(
                 self.t("workspace_opened_with_skipped_tabs").format(
@@ -702,7 +704,7 @@ class TerminalSessionsMixin:
         session.pending_reconnect = True
         self.sync_root_pane_state(session)
         self.show_pane_reconnect_controls(self.pane_state(session, session.terminal))
-        self.toast_label.set_label(toast)
+        self.toast_label.set_error(toast)
         prompt = f"  {self.t('reconnect_prompt')}  "
         session.terminal.feed(f"\r\n\x1b[1;30;48;2;255;213;79m{prompt}\x1b[0m\r\n".encode())
         self.update_session_tab_title(session, self.t("tab_error_title").format(title=session.title))
@@ -714,7 +716,7 @@ class TerminalSessionsMixin:
         server = find_server(self.store.data.servers, session.server_id)
         if server is None:
             session.pending_reconnect = False
-            self.toast_label.set_label(self.t("server_reconnect_missing"))
+            self.toast_label.set_error(self.t("server_reconnect_missing"))
             return
         session.pending_reconnect = False
         self.close_tab(session.id, session.page, disconnect=False)
@@ -746,7 +748,7 @@ class TerminalSessionsMixin:
         session.active_terminal_ids.discard(id(pane.terminal))
         prompt = f"  {self.t('reconnect_prompt')}  "
         pane.terminal.feed(f"\r\n\x1b[1;30;48;2;255;213;79m{prompt}\x1b[0m\r\n".encode())
-        self.toast_label.set_label(toast)
+        self.toast_label.set_error(toast)
         log_event(
             "session.reconnect_pending",
             session_id=session.id,
@@ -793,7 +795,7 @@ class TerminalSessionsMixin:
         )
         if pane.server_id is not None and server is None:
             pane.pending_reconnect = False
-            self.toast_label.set_label(self.t("server_reconnect_missing"))
+            self.toast_label.set_error(self.t("server_reconnect_missing"))
             return
         self.reset_pane_connection_attempt(pane)
         session.active_terminal_ids.add(id(terminal))
@@ -1084,7 +1086,7 @@ class TerminalSessionsMixin:
         pane = self.pane_state(session, target)
         server = find_server(self.store.data.servers, pane.server_id) if pane.server_id is not None else None
         if not pane.connected or server is None or not server.password:
-            self.toast_label.set_label(self.t("send_password_unavailable"))
+            self.toast_label.set_warning(self.t("send_password_unavailable"))
             return
         payload = server.password.encode()
         if self.store.data.app.send_password_enter:
@@ -1099,7 +1101,7 @@ class TerminalSessionsMixin:
         direction: str,
     ) -> Vte.Terminal | None:
         if len(session.panes) >= MAX_TERMINAL_PANES:
-            self.toast_label.set_label(self.t("split_pane_limit").format(limit=MAX_TERMINAL_PANES))
+            self.toast_label.set_warning(self.t("split_pane_limit").format(limit=MAX_TERMINAL_PANES))
             return None
         new_terminal = SplitPaneController(
             self.create_split_terminal,
@@ -1205,7 +1207,7 @@ class TerminalSessionsMixin:
     ) -> None:
         popover.popdown()
         if len(session.panes) >= MAX_TERMINAL_PANES:
-            self.toast_label.set_label(self.t("split_pane_limit").format(limit=MAX_TERMINAL_PANES))
+            self.toast_label.set_warning(self.t("split_pane_limit").format(limit=MAX_TERMINAL_PANES))
             return
         if not self.store.data.servers and not self.store.data.local_terminals:
             self.toast_label.set_label(self.t("split_connection_none_available"))
@@ -1631,7 +1633,7 @@ class TerminalSessionsMixin:
             use_sshpass = False
             message = self.t("ssh_fingerprint_manual")
             terminal.feed(f"{message}\r\n\r\n".encode())
-            self.toast_label.set_label(message)
+            self.toast_label.set_warning(message)
         if use_sshpass:
             sshpass_path = GLib.find_program_in_path("sshpass")
             if sshpass_path is None:
@@ -2103,7 +2105,7 @@ class TerminalSessionsMixin:
         if process is not None and not self.terminate_terminal_process(process):
             message = self.t("sigterm_failed")
             terminal.feed(f"{message}\r\n".encode())
-            self.toast_label.set_label(message)
+            self.toast_label.set_error(message)
             pane.disconnect_requested = False
             return
         pane.disconnect_button.set_sensitive(False)
@@ -2131,7 +2133,7 @@ class TerminalSessionsMixin:
         if session.child_process is not None and not self.terminate_terminal_process(session.child_process):
             message = self.t("sigterm_failed")
             session.terminal.feed(f"{message}\r\n".encode())
-            self.toast_label.set_label(message)
+            self.toast_label.set_error(message)
             return
         self.terminate_split_processes(session)
         self.record_session_duration(session)

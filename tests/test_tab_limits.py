@@ -22,7 +22,9 @@ class LimitHost(TerminalSessionsMixin):
     def __init__(self, open_tabs: int, *, detached: bool = False) -> None:
         self.session_registry = sessions(open_tabs, detached=detached)
         self.toast = None
-        self.toast_label = SimpleNamespace(set_label=lambda message: setattr(self, "toast", message))
+        self.toast_label = SimpleNamespace(
+            set_warning=lambda message: setattr(self, "toast", message)
+        )
 
     def t(self, key: str) -> str:
         return {

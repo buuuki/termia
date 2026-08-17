@@ -129,7 +129,7 @@ class KeybindingPreferencesMixin:
             keybindings = {action: row.get_accelerator() for action, row in rows}
             conflict = self.duplicate_keybinding(keybindings)
             if conflict:
-                self.toast_label.set_label(self.t("keybindings_conflict").format(shortcut=conflict))
+                self.toast_label.set_warning(self.t("keybindings_conflict").format(shortcut=conflict))
                 return
             try:
                 self.store.update_keybindings(keybindings)
