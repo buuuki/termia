@@ -14,23 +14,31 @@ Termia versions use `MAJOR.MINOR.PATCH` with an optional prerelease suffix:
 0.5.0-beta.2
 0.5.1-beta.1
 0.6.0-beta.1
+0.9.0-beta.1
+0.9.0-rc.1
+0.9.0
 1.0.0
 ```
 
-While Termia remains in beta:
+Before `1.0.0`:
 
-- Increment the trailing prerelease number for each published iteration of the
-  same planned application version. New source changes published after
-  `0.5.0-beta.1` therefore become `0.5.0-beta.2`.
+- While a release remains in prerelease, increment the trailing prerelease
+  number for each published iteration of the same planned application version.
+  New source changes published after `0.5.0-beta.1` therefore become
+  `0.5.0-beta.2`.
 - Increment `PATCH` when accumulated fixes and improvements justify a new
   application version without introducing an important new feature set. A new
   prerelease line starts at `.1`, for example `0.5.1-beta.1`.
 - Increment `MINOR` for important features, substantial user-facing changes,
   compatibility changes, or a materially expanded release scope. A new line
   starts at `.1`, for example `0.6.0-beta.1`.
-- Reserve `1.0.0` for the first stable release. After `1.0.0`, increment
-  `MAJOR` for incompatible changes to documented behavior, supported data, or
-  other public compatibility guarantees.
+- A pre-1.0 line can become stable when it satisfies the documented release
+  criteria. For example, a future `0.9.0-beta.1` could advance through
+  `0.9.0-rc.1` to stable `0.9.0` without renaming the release to `1.0.0`.
+- Reserve `1.0.0` for the first long-term compatibility milestone, when public
+  behavior and persisted formats carry explicit compatibility guarantees.
+  After `1.0.0`, increment `MAJOR` for incompatible changes to those
+  guarantees.
 
 Alpha, beta, and release-candidate versions are prereleases. GitHub releases
 for them must be marked as prereleases.
@@ -63,12 +71,21 @@ version. The mapping is:
 | `0.5.0-beta.3` | `0.5.0~beta.3-1` |
 | `0.5.1-beta.1` | `0.5.1~beta.1-1` |
 | `0.6.0-beta.1` | `0.6.0~beta.1-1` |
+| `0.9.0-beta.1` | `0.9.0~beta.1-1` |
+| `0.9.0-rc.1` | `0.9.0~rc.1-1` |
+| `0.9.0` | `0.9.0-1` |
 | `0.5.0` | `0.5.0-1` |
 
 This produces the required upgrade ordering:
 
 ```text
 0.5.0~beta.1-1 < 0.5.0~beta.2-1 < 0.5.0~beta.3-1 < 0.5.0-1
+```
+
+For a release line that includes a release candidate, Debian ordering is:
+
+```text
+0.9.0~beta.1-1 < 0.9.0~rc.1-1 < 0.9.0-1
 ```
 
 The Debian revision starts at `-1` for every Termia application version.
