@@ -2217,7 +2217,6 @@ class TerminalSessionsMixin:
         session.connected = bool(session.active_terminal_ids)
         if pane.disconnect_requested:
             session.status_label.set_label(self.t("session_disconnected_status").format(title=session.title))
-            self.toast_label.set_label(self.t("session_disconnected_toast").format(title=session.title))
             return
         if self.child_status_successful(_status):
             if self.should_close_tab_after_terminal_exit(session):
