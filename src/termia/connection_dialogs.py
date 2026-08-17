@@ -215,7 +215,7 @@ class ConnectionDialogsMixin:
 
         if response == Gtk.ResponseType.OK:
             if not name or not host or not user:
-                self.toast_label.set_label(self.t("server_required_fields"))
+                self.toast_label.set_warning(self.t("server_required_fields"))
                 for widget in (widgets["name"], widgets["host"], widgets["user"]):
                     if not widget.get_text().strip():
                         widget.grab_focus()
@@ -358,7 +358,7 @@ class ConnectionDialogsMixin:
 
         if response == Gtk.ResponseType.OK:
             if not name or not shell:
-                self.toast_label.set_label(self.t("local_terminal_required_fields"))
+                self.toast_label.set_warning(self.t("local_terminal_required_fields"))
                 for widget in (widgets["name"], widgets["shell"]):
                     if not widget.get_text().strip():
                         widget.grab_focus()
@@ -368,7 +368,7 @@ class ConnectionDialogsMixin:
                 if arguments:
                     shlex.split(arguments)
             except ValueError as exc:
-                self.toast_label.set_label(self.t("local_terminal_invalid_arguments").format(error=exc))
+                self.toast_label.set_error(self.t("local_terminal_invalid_arguments").format(error=exc))
                 widgets["arguments"].grab_focus()
                 return
             try:

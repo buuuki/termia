@@ -155,7 +155,7 @@ class ConfigActionsMixin:
             try:
                 imported = load_store_data_from_json(Path(file.get_path()), self.store.data)
             except (OSError, ValueError, TypeError) as exc:
-                self.toast_label.set_label(self.t("import_config_failed").format(error=exc))
+                self.toast_label.set_error(self.t("import_config_failed").format(error=exc))
                 return
             self.store.data = imported
             self.store.save_connections()
@@ -177,10 +177,10 @@ class ConfigActionsMixin:
         try:
             payload = yaml.safe_load(Path(file.get_path()).read_text(encoding="utf-8")) or {}
         except (OSError, yaml.YAMLError) as exc:
-            self.toast_label.set_label(self.t("import_asbru_failed").format(error=exc))
+            self.toast_label.set_error(self.t("import_asbru_failed").format(error=exc))
             return
         if not isinstance(payload, dict):
-            self.toast_label.set_label(self.t("import_asbru_invalid"))
+            self.toast_label.set_error(self.t("import_asbru_invalid"))
             return
         if "__PAC__EXPORTED__PARTIAL_CONF" in payload:
             payload = payload["__PAC__EXPORTED__PARTIAL_CONF"]

@@ -97,7 +97,7 @@ class WorkspaceOpeningTests(unittest.TestCase):
         )
         host = SimpleNamespace(
             toast=None,
-            toast_label=SimpleNamespace(set_label=lambda message: setattr(host, "toast", message)),
+            toast_label=SimpleNamespace(set_warning=lambda message: setattr(host, "toast", message)),
             t=lambda key: {
                 "workspace_pane_limit_exceeded": "Limit {limit}; found {count}",
             }[key],

@@ -32,6 +32,12 @@ class FakeControl:
     def set_label(self, label: str) -> None:
         self.label = label
 
+    def set_error(self, label: str) -> None:
+        self.label = label
+
+    def set_warning(self, label: str) -> None:
+        self.label = label
+
     def set_sensitive(self, sensitive: bool) -> None:
         self.sensitive = sensitive
 
@@ -539,7 +545,10 @@ class TerminalPaneStateTests(unittest.TestCase):
         self.assertEqual(root_terminal.output, b"")
 
     def test_split_limit_is_enforced_before_creating_a_widget(self) -> None:
-        toast = SimpleNamespace(value="", set_label=lambda value: setattr(toast, "value", value))
+        toast = SimpleNamespace(
+            value="",
+            set_warning=lambda value: setattr(toast, "value", value),
+        )
 
         class Host(TerminalSessionsMixin):
             def __init__(self) -> None:
