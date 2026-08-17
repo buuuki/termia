@@ -550,7 +550,12 @@ class TerminalSessionsMixin:
             return
         orientation = node["orientation"]
         direction = "right" if orientation == "horizontal" else "down"
-        new_terminal = self.split_terminal_pane(session, terminal, direction)
+        new_terminal = self.split_terminal_pane(
+            session,
+            terminal,
+            direction,
+            preserve_ancestor_positions=False,
+        )
         if new_terminal is None:
             return
         end = node["end"]
@@ -590,17 +595,32 @@ class TerminalSessionsMixin:
         )
         return True
 
-    def restore_workspace_split_position(self, paned: Gtk.Paned, ratio: float, attempts: int = 4) -> None:
-        def apply_position() -> bool:
-            size = paned.get_width() if paned.get_orientation() == Gtk.Orientation.HORIZONTAL else paned.get_height()
-            if size <= 0 and attempts > 0:
-                GLib.timeout_add(80, self.restore_workspace_split_position, paned, ratio, attempts - 1)
+    def restore_workspace_split_position(self, paned: Gtk.Paned, ratio: float) -> None:
+        clamped_ratio = max(0.1, min(ratio, 0.9))
+        handlers: list[int] = []
+        applied = {"done": False}
+
+        def apply_position(current: Gtk.Paned, *_args: object) -> bool:
+            if applied["done"]:
                 return GLib.SOURCE_REMOVE
-            if size > 0:
-                paned.set_position(round(size * max(0.1, min(ratio, 0.9))))
+            if not current.get_mapped() or current.get_property("max-position") <= 0:
+                return GLib.SOURCE_REMOVE
+            size = current.get_width() if current.get_orientation() == Gtk.Orientation.HORIZONTAL else current.get_height()
+            if size <= 0:
+                return GLib.SOURCE_REMOVE
+            current.set_position(round(size * clamped_ratio))
+            applied["done"] = True
+            for handler_id in handlers:
+                current.disconnect(handler_id)
+            handlers.clear()
             return GLib.SOURCE_REMOVE
 
-        GLib.idle_add(apply_position)
+        def apply_after_mapping(current: Gtk.Paned, *_args: object) -> None:
+            GLib.idle_add(apply_position, current)
+
+        handlers.append(paned.connect("map", apply_after_mapping))
+        handlers.append(paned.connect("notify::max-position", apply_position))
+        GLib.idle_add(apply_position, paned)
 
     def start_ssh_session(self, server: Server, session: TerminalSession, *, split_layout: str = "none") -> None:
         terminal = session.terminal
@@ -1099,6 +1119,8 @@ class TerminalSessionsMixin:
         session: TerminalSession,
         terminal: Vte.Terminal,
         direction: str,
+        *,
+        preserve_ancestor_positions: bool = True,
     ) -> Vte.Terminal | None:
         if len(session.panes) >= MAX_TERMINAL_PANES:
             self.toast_label.set_warning(self.t("split_pane_limit").format(limit=MAX_TERMINAL_PANES))
@@ -1107,7 +1129,12 @@ class TerminalSessionsMixin:
             self.create_split_terminal,
             self.terminal_pane_container,
             self.replace_terminal_pane,
-        ).split_terminal(session, terminal, direction)
+        ).split_terminal(
+            session,
+            terminal,
+            direction,
+            preserve_ancestor_positions=preserve_ancestor_positions,
+        )
         if new_terminal is not None:
             pane = session.pane_for_terminal(new_terminal)
             log_event(

@@ -260,6 +260,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   including a nested split with an odd-sized selected pane. Confirm the
   one-pixel difference is the largest imbalance and the terminal prompt is not
   repeatedly redrawn while the connection starts.
+- Save and reopen a workspace containing several tabs with nested local and SSH
+  splits. Visit every restored tab and confirm all left/right and top/bottom
+  panes are visible immediately, without opening a context menu, while saved
+  divider proportions remain intact.
 - From an SSH pane, use `Open connection in split…` to open a different SSH
   server and then a saved local terminal; verify each pane's status bar, PID,
   elapsed time, saved-password action, SCP target, statistics, and history.

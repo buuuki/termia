@@ -284,8 +284,9 @@ class SplitPaneControllerTests(unittest.TestCase):
 
             for ancestor, _position in ancestors:
                 ancestor.position = -2
-            callback, args = idle_callbacks.pop()
-            callback(*args)
+            if ancestors:
+                callback, args = idle_callbacks.pop()
+                callback(*args)
             for ancestor, position in ancestors:
                 self.assertEqual(ancestor.position, position)
             return result, created_split
@@ -342,6 +343,41 @@ class SplitPaneControllerTests(unittest.TestCase):
 
                 self.assertEqual(paned.position, expected)
                 self.assertEqual(paned.handlers, {})
+
+    def test_workspace_reconstruction_skips_provisional_ancestor_restore(self) -> None:
+        outer = FakePaned(orientation=Gtk.Orientation.HORIZONTAL)
+        outer.position = 0
+        target = FakeWidget(width=400, height=300, parent=outer)
+        outer.set_end_child(target)
+        new_terminal = FakeTerminal()
+        new_pane = FakeWidget()
+
+        def replace_terminal(_target, replacement):
+            outer.position = 37
+            outer.set_end_child(replacement)
+            return True
+
+        controller = SplitPaneController(
+            lambda _session: new_terminal,
+            lambda _session, selected: (
+                new_pane if selected is new_terminal else target
+            ),
+            replace_terminal,
+        )
+
+        with (
+            patch("termia.split_panes.Gtk.Paned", FakePaned),
+            patch("termia.split_panes.GLib.idle_add") as idle_add,
+        ):
+            controller.split_terminal(
+                SimpleNamespace(),
+                FakeTerminal(),
+                "down",
+                preserve_ancestor_positions=False,
+            )
+
+        self.assertEqual(outer.position, 37)
+        idle_add.assert_not_called()
 
 
 if __name__ == "__main__":

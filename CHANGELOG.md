@@ -22,6 +22,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Restore hidden workspace tabs' split proportions when GTK first allocates
+  them so every pane is visible without requiring interaction (`#245`).
 - Preserve ancestor divider positions and split only the selected pane 50/50
   when adding a terminal to an existing nested layout.
 - Avoid showing the same SSH disconnected notification twice when closing an

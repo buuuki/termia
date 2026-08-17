@@ -2,11 +2,12 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from termia.models import LocalTerminalProfile, Server, Workspace
 from termia.sidebar import SidebarMixin
 from termia.session_registry import SessionRegistry
-from termia.terminal_sessions import TerminalSessionsMixin
+from termia.terminal_sessions import Gtk, TerminalSessionsMixin
 from termia.workspace_layout import MAX_WORKSPACE_PANES
 
 
@@ -16,6 +17,53 @@ def pane(connection_type: str, connection_id: str) -> dict[str, str]:
 
 def workspace_tabs(count: int) -> list[dict[str, dict[str, str]]]:
     return [{"layout": pane("server", "web")} for _index in range(count)]
+
+
+class FakePaned:
+    next_handler_id = 1
+
+    def __init__(self, orientation, *, width=0, height=0, mapped=False) -> None:
+        self.orientation = orientation
+        self.width = width
+        self.height = height
+        self.mapped = mapped
+        self.max_position = max(width, height) - 1 if mapped else 0
+        self.position = 0
+        self.handlers = {}
+
+    def get_orientation(self):
+        return self.orientation
+
+    def get_width(self):
+        return self.width
+
+    def get_height(self):
+        return self.height
+
+    def get_mapped(self):
+        return self.mapped
+
+    def get_property(self, name):
+        if name != "max-position":
+            raise AssertionError(f"unexpected property: {name}")
+        return self.max_position
+
+    def set_position(self, position):
+        self.position = position
+
+    def connect(self, signal, callback):
+        handler_id = self.next_handler_id
+        type(self).next_handler_id += 1
+        self.handlers[handler_id] = (signal, callback)
+        return handler_id
+
+    def disconnect(self, handler_id):
+        self.handlers.pop(handler_id)
+
+    def emit(self, signal):
+        for _handler_id, (registered_signal, callback) in tuple(self.handlers.items()):
+            if registered_signal == signal:
+                callback(self, object())
 
 
 class WorkspaceOpeningTests(unittest.TestCase):
@@ -240,3 +288,190 @@ class WorkspaceOpeningTests(unittest.TestCase):
         self.assertEqual(pane_state.title, "Project shell")
         self.assertEqual(host.updated, (session, "Project shell"))
         self.assertTrue(host.synced)
+
+    def test_hidden_workspace_split_waits_for_real_allocation(self) -> None:
+        paned = FakePaned(Gtk.Orientation.HORIZONTAL, width=80, height=40)
+        idle_callbacks = []
+
+        with (
+            patch(
+                "termia.terminal_sessions.GLib.idle_add",
+                side_effect=lambda callback, *args: idle_callbacks.append(
+                    (callback, args)
+                ),
+            ),
+            patch("termia.terminal_sessions.GLib.timeout_add") as timeout_add,
+        ):
+            TerminalSessionsMixin.restore_workspace_split_position(
+                SimpleNamespace(), paned, 0.25
+            )
+
+            callback, args = idle_callbacks.pop()
+            callback(*args)
+            self.assertEqual(paned.position, 0)
+            self.assertEqual(len(paned.handlers), 2)
+
+            paned.width = 800
+            paned.max_position = 799
+            paned.emit("notify::max-position")
+            self.assertEqual(paned.position, 0)
+
+            paned.mapped = True
+            paned.emit("map")
+            callback, args = idle_callbacks.pop()
+            callback(*args)
+
+        self.assertEqual(paned.position, 200)
+        self.assertEqual(paned.handlers, {})
+        timeout_add.assert_not_called()
+
+    def test_visible_workspace_splits_restore_both_orientations_once(self) -> None:
+        cases = (
+            (Gtk.Orientation.HORIZONTAL, 801, 300, 0.25, 200),
+            (Gtk.Orientation.VERTICAL, 400, 601, 0.75, 451),
+        )
+
+        for orientation, width, height, ratio, expected in cases:
+            with self.subTest(orientation=orientation):
+                paned = FakePaned(
+                    orientation,
+                    width=width,
+                    height=height,
+                    mapped=True,
+                )
+                idle_callbacks = []
+
+                with patch(
+                    "termia.terminal_sessions.GLib.idle_add",
+                    side_effect=lambda callback, *args: idle_callbacks.append(
+                        (callback, args)
+                    ),
+                ):
+                    TerminalSessionsMixin.restore_workspace_split_position(
+                        SimpleNamespace(), paned, ratio
+                    )
+                    callback, args = idle_callbacks.pop()
+                    callback(*args)
+
+                self.assertEqual(paned.position, expected)
+                self.assertEqual(paned.handlers, {})
+
+    def test_multiple_hidden_workspace_splits_restore_independently(self) -> None:
+        outer = FakePaned(Gtk.Orientation.HORIZONTAL)
+        nested = FakePaned(Gtk.Orientation.VERTICAL)
+        idle_callbacks = []
+
+        with patch(
+            "termia.terminal_sessions.GLib.idle_add",
+            side_effect=lambda callback, *args: idle_callbacks.append(
+                (callback, args)
+            ),
+        ):
+            TerminalSessionsMixin.restore_workspace_split_position(
+                SimpleNamespace(), outer, 0.4
+            )
+            TerminalSessionsMixin.restore_workspace_split_position(
+                SimpleNamespace(), nested, 0.6
+            )
+            for callback, args in idle_callbacks:
+                callback(*args)
+
+            self.assertEqual(len(outer.handlers), 2)
+            self.assertEqual(len(nested.handlers), 2)
+
+            outer.width = 1000
+            outer.max_position = 999
+            outer.mapped = True
+            outer.emit("notify::max-position")
+            self.assertEqual(outer.position, 400)
+            self.assertEqual(outer.handlers, {})
+            self.assertEqual(nested.position, 0)
+
+            nested.height = 500
+            nested.max_position = 499
+            nested.mapped = True
+            nested.emit("notify::max-position")
+
+        self.assertEqual(nested.position, 300)
+        self.assertEqual(nested.handlers, {})
+
+    def test_workspace_tree_uses_noninteractive_split_reconstruction(self) -> None:
+        layout = {
+            "type": "split",
+            "orientation": "horizontal",
+            "position": 0.5,
+            "start": pane("local", ""),
+            "end": {
+                "type": "split",
+                "orientation": "vertical",
+                "position": 0.5,
+                "start": pane("local", ""),
+                "end": pane("local", ""),
+            },
+        }
+        split_calls = []
+        terminals = iter(("right", "bottom"))
+        outer = FakePaned(
+            Gtk.Orientation.HORIZONTAL,
+            width=800,
+            height=600,
+            mapped=True,
+        )
+        nested = FakePaned(
+            Gtk.Orientation.VERTICAL,
+            width=400,
+            height=600,
+            mapped=True,
+        )
+        parents = {"right": outer, "bottom": nested}
+        idle_callbacks = []
+
+        def split_terminal(_session, terminal, direction, **kwargs):
+            split_calls.append((terminal, direction, kwargs))
+            return next(terminals)
+
+        host = SimpleNamespace(
+            split_terminal_pane=split_terminal,
+            start_workspace_pane=lambda *_args: True,
+            discard_unstarted_split_pane=lambda *_args: None,
+            terminal_pane_container=lambda _session, terminal: SimpleNamespace(
+                get_parent=lambda: parents[terminal]
+            ),
+            restore_workspace_node=None,
+            restore_workspace_split_position=None,
+        )
+        host.restore_workspace_node = lambda session, terminal, node: (
+            TerminalSessionsMixin.restore_workspace_node(host, session, terminal, node)
+        )
+        host.restore_workspace_split_position = lambda paned, ratio: (
+            TerminalSessionsMixin.restore_workspace_split_position(
+                host, paned, ratio
+            )
+        )
+
+        with (
+            patch("termia.terminal_sessions.Gtk.Paned", FakePaned),
+            patch(
+                "termia.terminal_sessions.GLib.idle_add",
+                side_effect=lambda callback, *args: idle_callbacks.append(
+                    (callback, args)
+                ),
+            ),
+        ):
+            TerminalSessionsMixin.restore_workspace_node(
+                host, "session", "left", layout
+            )
+            for callback, args in idle_callbacks:
+                callback(*args)
+
+        self.assertEqual(
+            split_calls,
+            [
+                ("left", "right", {"preserve_ancestor_positions": False}),
+                ("right", "down", {"preserve_ancestor_positions": False}),
+            ],
+        )
+        self.assertEqual(outer.position, 400)
+        self.assertEqual(nested.position, 300)
+        self.assertEqual(outer.handlers, {})
+        self.assertEqual(nested.handlers, {})
