@@ -161,6 +161,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   ellipsize the connection name while keeping the timer and actions usable.
 - Showing or hiding a pane status bar must preserve the existing position of
   every affected split divider.
+- Adding a split inside an existing nested layout must preserve every ancestor
+  divider and divide only the selected pane approximately 50/50, allowing a
+  one-pixel difference for odd dimensions.
 
 ### Terminal Appearance
 
@@ -249,6 +252,11 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   pane status bar from both the context menu and `Hide` button; the divider
   must remain at the chosen position and long status titles must ellipsize.
 - Create split panes in all four directions and confirm each new pane opens a working shell.
+- Create a three-pane nested layout, move its existing dividers away from their
+  defaults, then open a fourth local and SSH connection by splitting one
+  selected pane. Confirm only that pane is divided approximately 50/50, every
+  previous divider remains fixed, and the new terminal prompt is not repeatedly
+  redrawn while the connection starts.
 - From an SSH pane, use `Open connection in split…` to open a different SSH
   server and then a saved local terminal; verify each pane's status bar, PID,
   elapsed time, saved-password action, SCP target, statistics, and history.

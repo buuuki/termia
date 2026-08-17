@@ -13,6 +13,7 @@ from gi.repository import GLib, Gtk, Vte
 from .ui_state import TerminalSession
 
 PaneRect = tuple[float, float, float, float]
+SplitPosition = tuple[Gtk.Paned, int]
 
 
 def directional_pane_neighbor(
@@ -75,6 +76,9 @@ class SplitPaneController:
         target = self.pane_container(session, terminal)
         if target is None:
             return None
+        target_width = target.get_width()
+        target_height = target.get_height()
+        ancestor_positions = self.capture_ancestor_positions(target)
 
         new_terminal = self.create_terminal(session)
         new_pane = self.pane_container(session, new_terminal)
@@ -109,12 +113,58 @@ class SplitPaneController:
             paned.set_start_child(target)
             paned.set_end_child(new_pane)
 
-        def center_split() -> bool:
-            size = paned.get_width() if orientation == Gtk.Orientation.HORIZONTAL else paned.get_height()
-            if size > 0:
-                paned.set_position(size // 2)
-            new_terminal.grab_focus()
-            return GLib.SOURCE_REMOVE
-
-        GLib.timeout_add(80, center_split)
+        target_size = (
+            target_width
+            if orientation == Gtk.Orientation.HORIZONTAL
+            else target_height
+        )
+        self.initialize_split_position(paned, orientation, target_size)
+        self.restore_ancestor_positions(ancestor_positions)
+        GLib.idle_add(self.restore_ancestor_positions, ancestor_positions)
+        new_terminal.grab_focus()
         return new_terminal
+
+    @staticmethod
+    def capture_ancestor_positions(widget: Gtk.Widget) -> tuple[SplitPosition, ...]:
+        positions: list[SplitPosition] = []
+        parent = widget.get_parent()
+        while parent is not None:
+            if isinstance(parent, Gtk.Paned):
+                positions.append((parent, parent.get_position()))
+            parent = parent.get_parent()
+        return tuple(positions)
+
+    @staticmethod
+    def restore_ancestor_positions(positions: tuple[SplitPosition, ...]) -> bool:
+        for paned, position in positions:
+            paned.set_position(position)
+        return GLib.SOURCE_REMOVE
+
+    @staticmethod
+    def initialize_split_position(
+        paned: Gtk.Paned,
+        orientation: Gtk.Orientation,
+        target_size: int,
+    ) -> None:
+        if target_size > 0:
+            paned.set_position(target_size // 2)
+            return
+
+        handler: dict[str, int | None] = {"id": None}
+
+        def center_when_allocated(current: Gtk.Paned, _parameter: object) -> None:
+            size = (
+                current.get_width()
+                if orientation == Gtk.Orientation.HORIZONTAL
+                else current.get_height()
+            )
+            if size <= 0:
+                return
+            current.set_position(size // 2)
+            handler_id = handler["id"]
+            if handler_id is not None:
+                current.disconnect(handler_id)
+                handler["id"] = None
+
+        handler["id"] = paned.connect("notify::max-position", center_when_allocated)
+        center_when_allocated(paned, object())
