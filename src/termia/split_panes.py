@@ -72,13 +72,19 @@ class SplitPaneController:
         session: TerminalSession,
         terminal: Vte.Terminal,
         direction: str,
+        *,
+        preserve_ancestor_positions: bool = True,
     ) -> Vte.Terminal | None:
         target = self.pane_container(session, terminal)
         if target is None:
             return None
         target_width = target.get_width()
         target_height = target.get_height()
-        ancestor_positions = self.capture_ancestor_positions(target)
+        ancestor_positions = (
+            self.capture_ancestor_positions(target)
+            if preserve_ancestor_positions
+            else ()
+        )
 
         new_terminal = self.create_terminal(session)
         new_pane = self.pane_container(session, new_terminal)
@@ -119,8 +125,9 @@ class SplitPaneController:
             else target_height
         )
         self.initialize_split_position(paned, orientation, target_size)
-        self.restore_ancestor_positions(ancestor_positions)
-        GLib.idle_add(self.restore_ancestor_positions, ancestor_positions)
+        if ancestor_positions:
+            self.restore_ancestor_positions(ancestor_positions)
+            GLib.idle_add(self.restore_ancestor_positions, ancestor_positions)
         new_terminal.grab_focus()
         return new_terminal
 
