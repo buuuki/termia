@@ -180,6 +180,59 @@ class TerminalProcessTests(unittest.TestCase):
         self.assertFalse(host.reconnect_requested)
         host.toast_label.set_label.assert_not_called()
 
+    def test_ssh_exit_after_requested_disconnect_does_not_notify_twice(self) -> None:
+        terminal = object()
+        pane = SimpleNamespace(
+            id="pane",
+            connected=True,
+            disconnect_requested=True,
+            disconnect_button=Mock(),
+        )
+        session = SimpleNamespace(
+            id="session",
+            title="Example",
+            terminal=terminal,
+            panes={id(terminal): pane},
+            active_terminal_ids=set(),
+            status_label=Mock(),
+            connected=True,
+        )
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.shutdown_in_progress = False
+                self.store = SimpleNamespace(record_history_end=Mock())
+                self.toast_label = Mock()
+
+            def mark_terminal_inactive(self, _terminal, _session) -> None:
+                pass
+
+            def pane_state(self, _session, _terminal):
+                return pane
+
+            def record_session_duration(self, _session) -> None:
+                pass
+
+            def save_statistics_now(self) -> None:
+                pass
+
+            def t(self, key):
+                return {
+                    "session_disconnected_status": "Disconnected: {title}",
+                }[key]
+
+        host = Host()
+        host.on_terminal_exited(
+            terminal,
+            0,
+            SimpleNamespace(name="Example"),
+            session,
+        )
+
+        host.store.record_history_end.assert_called_once_with(session, "disconnected")
+        session.status_label.set_label.assert_called_once_with("Disconnected: Example")
+        host.toast_label.set_label.assert_not_called()
+
     def test_split_exit_during_shutdown_does_not_reconnect_or_touch_widgets(self) -> None:
         terminal = object()
         pane = SimpleNamespace(

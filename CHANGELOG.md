@@ -22,6 +22,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Avoid showing the same SSH disconnected notification twice when closing an
+  active tab.
 - Treat managed terminal exits during application shutdown as intentional,
   suppress reconnect notifications, and avoid duplicate forced termination
   requests (`#233`).
