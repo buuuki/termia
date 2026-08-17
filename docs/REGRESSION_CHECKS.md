@@ -251,12 +251,15 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Drag a horizontal split divider away from the centre, then show and hide its
   pane status bar from both the context menu and `Hide` button; the divider
   must remain at the chosen position and long status titles must ellipsize.
-- Create split panes in all four directions and confirm each new pane opens a working shell.
-- Create a three-pane nested layout, move its existing dividers away from their
-  defaults, then open a fourth local and SSH connection by splitting one
-  selected pane. Confirm only that pane is divided approximately 50/50, every
-  previous divider remains fixed, and the new terminal prompt is not repeatedly
-  redrawn while the connection starts.
+- Starting from one pane, create the second, third, and fourth panes. Before
+  every insertion, move all existing dividers away from their defaults. Repeat
+  the sequence as needed to cover left, right, up, and down. Confirm each new
+  split divides only the selected pane approximately 50/50, every previous
+  divider remains fixed, and every new pane opens a working shell.
+- Repeat the progressive one-to-four-pane check with local and SSH connections,
+  including a nested split with an odd-sized selected pane. Confirm the
+  one-pixel difference is the largest imbalance and the terminal prompt is not
+  repeatedly redrawn while the connection starts.
 - From an SSH pane, use `Open connection in split…` to open a different SSH
   server and then a saved local terminal; verify each pane's status bar, PID,
   elapsed time, saved-password action, SCP target, statistics, and history.
