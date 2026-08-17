@@ -95,6 +95,20 @@ class FakePaned(FakeWidget):
             callback(self, object())
 
 
+class FakeRoot(FakeWidget):
+    def __init__(self, child) -> None:
+        super().__init__()
+        self.child = child
+        child.parent = self
+
+    def replace(self, target, replacement):
+        if self.child is not target:
+            return False
+        self.child = replacement
+        replacement.parent = self
+        return True
+
+
 class SplitPaneControllerTests(unittest.TestCase):
     def controller(self, target, new_terminal, new_pane, ancestor, outer_ancestor):
         def replace_terminal(_target, replacement):
@@ -169,6 +183,165 @@ class SplitPaneControllerTests(unittest.TestCase):
         paned.emit_max_position_changed()
         self.assertEqual(paned.position, 150)
         self.assertEqual(paned.handlers, {})
+
+    def test_every_direction_splits_only_the_target_in_half(self) -> None:
+        cases = (
+            ("left", Gtk.Orientation.HORIZONTAL, 401, 260, 200, True),
+            ("right", Gtk.Orientation.HORIZONTAL, 401, 260, 200, False),
+            ("up", Gtk.Orientation.VERTICAL, 401, 261, 130, True),
+            ("down", Gtk.Orientation.VERTICAL, 401, 261, 130, False),
+        )
+
+        for direction, orientation, width, height, expected, new_first in cases:
+            with self.subTest(direction=direction):
+                target_terminal = FakeTerminal()
+                target = FakeWidget(width=width, height=height)
+                root = FakeRoot(target)
+                new_terminal = FakeTerminal()
+                new_pane = FakeWidget()
+
+                controller = SplitPaneController(
+                    lambda _session: new_terminal,
+                    lambda _session, selected: (
+                        new_pane if selected is new_terminal else target
+                    ),
+                    root.replace,
+                )
+
+                with (
+                    patch("termia.split_panes.Gtk.Paned", FakePaned),
+                    patch("termia.split_panes.GLib.idle_add"),
+                    patch("termia.split_panes.GLib.timeout_add") as timeout_add,
+                ):
+                    controller.split_terminal(
+                        SimpleNamespace(), target_terminal, direction
+                    )
+
+                created_split = root.child
+                self.assertEqual(created_split.orientation, orientation)
+                self.assertEqual(created_split.position, expected)
+                self.assertIs(
+                    created_split.start_child,
+                    new_pane if new_first else target,
+                )
+                self.assertIs(
+                    created_split.end_child,
+                    target if new_first else new_pane,
+                )
+                timeout_add.assert_not_called()
+
+    def test_progressive_second_third_and_fourth_panes_preserve_geometry(self) -> None:
+        session = SimpleNamespace()
+        first_terminal = FakeTerminal()
+        first_pane = FakeWidget(width=801, height=601)
+        root = FakeRoot(first_pane)
+        panes = {first_terminal: first_pane}
+        idle_callbacks = []
+
+        def create_terminal(_session):
+            terminal = FakeTerminal()
+            panes[terminal] = FakeWidget()
+            return terminal
+
+        def replace_terminal(target, replacement):
+            parent = target.parent
+            if isinstance(parent, FakeRoot):
+                replaced = parent.replace(target, replacement)
+            elif parent.start_child is target:
+                parent.set_start_child(replacement)
+                replaced = True
+            elif parent.end_child is target:
+                parent.set_end_child(replacement)
+                replaced = True
+            else:
+                replaced = False
+
+            current = replacement.parent
+            while isinstance(current, FakePaned):
+                current.position = -1
+                current = current.parent
+            return replaced
+
+        controller = SplitPaneController(
+            create_terminal,
+            lambda _session, terminal: panes[terminal],
+            replace_terminal,
+        )
+
+        def split_and_check(terminal, direction, expected_position):
+            target = panes[terminal]
+            ancestors = []
+            parent = target.parent
+            while isinstance(parent, FakePaned):
+                ancestors.append((parent, parent.position))
+                parent = parent.parent
+
+            result = controller.split_terminal(session, terminal, direction)
+            created_split = target.parent
+            self.assertEqual(created_split.position, expected_position)
+            for ancestor, position in ancestors:
+                self.assertEqual(ancestor.position, position)
+
+            for ancestor, _position in ancestors:
+                ancestor.position = -2
+            callback, args = idle_callbacks.pop()
+            callback(*args)
+            for ancestor, position in ancestors:
+                self.assertEqual(ancestor.position, position)
+            return result, created_split
+
+        with (
+            patch("termia.split_panes.Gtk.Paned", FakePaned),
+            patch(
+                "termia.split_panes.GLib.idle_add",
+                side_effect=lambda callback, *args: idle_callbacks.append(
+                    (callback, args)
+                ),
+            ),
+            patch("termia.split_panes.GLib.timeout_add") as timeout_add,
+        ):
+            second_terminal, outer = split_and_check(first_terminal, "right", 400)
+
+            outer.position = 347
+            first_pane.width = 400
+            first_pane.height = 601
+            third_terminal, lower_split = split_and_check(
+                first_terminal, "down", 300
+            )
+
+            outer.position = 347
+            lower_split.position = 219
+            panes[third_terminal].width = 401
+            panes[third_terminal].height = 300
+            _fourth_terminal, _inner_split = split_and_check(
+                third_terminal, "left", 200
+            )
+
+        self.assertIsNotNone(second_terminal)
+        self.assertEqual(len(panes), 4)
+        self.assertEqual(outer.position, 347)
+        self.assertEqual(lower_split.position, 219)
+        timeout_add.assert_not_called()
+
+    def test_unallocated_split_centers_for_both_orientations(self) -> None:
+        cases = (
+            (Gtk.Orientation.HORIZONTAL, 303, 99, 151),
+            (Gtk.Orientation.VERTICAL, 99, 305, 152),
+        )
+
+        for orientation, width, height, expected in cases:
+            with self.subTest(orientation=orientation):
+                paned = FakePaned(orientation=orientation)
+
+                SplitPaneController.initialize_split_position(
+                    paned, orientation, 0
+                )
+                paned.width = width
+                paned.height = height
+                paned.emit_max_position_changed()
+
+                self.assertEqual(paned.position, expected)
+                self.assertEqual(paned.handlers, {})
 
 
 if __name__ == "__main__":
