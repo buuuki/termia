@@ -22,6 +22,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Isolate SCP process trees, cancel them safely from every window-close path,
+  prevent late transfer phases, and distinguish cancelled outcomes from errors
+  with privacy-safe lifecycle diagnostics (`#253`).
 - Open the SCP file selector correctly from saved-server context menus while
   preserving session-window ownership for terminal context actions (`#251`).
 - Keep connected and failed sibling splits open when closing an original pane

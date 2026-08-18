@@ -13,6 +13,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 from .config_actions import ConfigActionsMixin
 from .connection_history_presenter import ConnectionHistoryPresenter
 from .connection_history_view import ConnectionHistoryDialog
+from .file_transfer import FileTransferController
 from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
     APP_ID,
@@ -187,6 +188,7 @@ class TermiaWindow(
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.shutdown_in_progress = False
+        self.file_transfer_controllers: set[FileTransferController] = set()
         self.connect("close-request", self.on_main_window_close_request)
         self.connect("destroy", lambda *_args: self.store.close())
         if hasattr(GLib, "unix_signal_add"):
@@ -409,6 +411,7 @@ class TermiaWindow(
             return
         self.shutdown_in_progress = True
         log_event("application.shutdown_started", sessions=len(self.session_registry.sessions()))
+        self.cancel_file_transfers(close_dialog=True)
         self.save_session_snapshot_before_close()
         self.save_history_before_close()
         self.save_statistics_before_close()

@@ -126,7 +126,7 @@ class TerminalPaneStateTests(unittest.TestCase):
 
     def test_scp_from_menu_uses_session_window(self) -> None:
         owner = object()
-        session = SimpleNamespace()
+        session = SimpleNamespace(id="session-1")
         server = object()
         popover = Mock()
 
@@ -154,8 +154,11 @@ class TerminalPaneStateTests(unittest.TestCase):
             host.toast_label,
             host.add_dialog_action_button,
             unittest.mock.ANY,
+            host.unregister_file_transfer,
+            session.id,
         )
         controller.return_value.open_file_selection.assert_called_once_with(server)
+        self.assertIn(controller.return_value, host.file_transfer_controllers)
 
     def test_scp_without_session_uses_main_window(self) -> None:
         server = object()
@@ -183,8 +186,34 @@ class TerminalPaneStateTests(unittest.TestCase):
             host.toast_label,
             host.add_dialog_action_button,
             unittest.mock.ANY,
+            host.unregister_file_transfer,
+            None,
         )
         controller.return_value.open_file_selection.assert_called_once_with(server)
+        self.assertIn(controller.return_value, host.file_transfer_controllers)
+
+    def test_scp_shutdown_cancels_only_matching_owner_or_all_transfers(self) -> None:
+        first = SimpleNamespace(owner_session_id="first", cancel_active_transfer=Mock())
+        second = SimpleNamespace(owner_session_id="second", cancel_active_transfer=Mock())
+        global_transfer = SimpleNamespace(owner_session_id=None, cancel_active_transfer=Mock())
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.file_transfer_controllers = (first, second, global_transfer)
+
+        host = Host()
+        host.cancel_file_transfers("first")
+
+        first.cancel_active_transfer.assert_called_once_with(close_dialog=False)
+        second.cancel_active_transfer.assert_not_called()
+        global_transfer.cancel_active_transfer.assert_not_called()
+
+        host.cancel_file_transfers(close_dialog=True)
+
+        self.assertEqual(first.cancel_active_transfer.call_count, 2)
+        first.cancel_active_transfer.assert_called_with(close_dialog=True)
+        second.cancel_active_transfer.assert_called_once_with(close_dialog=True)
+        global_transfer.cancel_active_transfer.assert_called_once_with(close_dialog=True)
 
     def test_session_confirmation_uses_session_window(self) -> None:
         owner = object()

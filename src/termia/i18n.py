@@ -188,7 +188,7 @@ MESSAGES = {'servers': 'Show or hide server list',
  'send_files_to_server_failed_detail': 'Could not complete the transfer: {error}',
  'send_files_to_server_cancelled': 'Transfer cancelled.',
  'send_files_to_server_start_failed': 'Could not start file transfer: {error}',
- 'send_files_to_server_missing': 'scp or ssh was not found in PATH.',
+ 'send_files_to_server_missing': 'scp, ssh, or setsid was not found in PATH.',
  'send_files_to_server_fingerprint': 'Confirm the host fingerprint in the terminal if prompted, '
                                      'then enter the password if needed.',
  'keybindings_description': 'Click a shortcut and press the combination you want. Use Clear to '
