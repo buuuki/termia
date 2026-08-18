@@ -608,6 +608,69 @@ class TerminalPaneStateTests(unittest.TestCase):
 
         self.assertEqual(host.closed, (session.id, session.page, False))
 
+    def test_failed_root_pane_closes_independently_while_a_sibling_remains(self) -> None:
+        for sibling_pending_reconnect in (False, True):
+            with self.subTest(sibling_pending_reconnect=sibling_pending_reconnect):
+                root_terminal = FakeTerminal()
+                sibling_terminal = FakeTerminal()
+                root = make_pane(root_terminal, "root", server_id="server-a")
+                sibling = make_pane(sibling_terminal, "sibling", server_id="server-b")
+                root.connected = False
+                root.pending_reconnect = True
+                sibling.connected = not sibling_pending_reconnect
+                sibling.pending_reconnect = sibling_pending_reconnect
+                session = make_session(root_terminal, root)
+                session.connected = sibling.connected
+                session.pending_reconnect = True
+                session.active_terminal_ids.discard(id(root_terminal))
+                if sibling.connected:
+                    session.active_terminal_ids.add(id(sibling_terminal))
+                session.panes[id(sibling_terminal)] = sibling
+
+                class Host(TerminalSessionsMixin):
+                    def __init__(self) -> None:
+                        self.discarded = None
+                        self.closed = None
+
+                    def discard_unstarted_split_pane(self, current_session, terminal):
+                        self.discarded = (current_session, terminal)
+
+                    def close_tab(self, session_id, page, *, disconnect):
+                        self.closed = (session_id, page, disconnect)
+
+                host = Host()
+                host.on_request_disconnect_pane(None, session, root_terminal)
+
+                self.assertEqual(host.discarded, (session, root_terminal))
+                self.assertIsNone(host.closed)
+                self.assertFalse(root.pending_reconnect)
+                self.assertFalse(session.pending_reconnect)
+                self.assertEqual(sibling.pending_reconnect, sibling_pending_reconnect)
+                self.assertIn(id(sibling_terminal), session.panes)
+
+    def test_pending_reconnect_sibling_prevents_automatic_tab_close(self) -> None:
+        root_terminal = FakeTerminal()
+        sibling_terminal = FakeTerminal()
+        root = make_pane(root_terminal, "root", server_id="server-a")
+        sibling = make_pane(sibling_terminal, "sibling", server_id="server-b")
+        root.connected = False
+        sibling.connected = False
+        sibling.pending_reconnect = True
+        session = make_session(root_terminal, root)
+        session.active_terminal_ids.clear()
+        session.panes[id(sibling_terminal)] = sibling
+
+        host = TerminalSessionsMixin()
+        host.store = SimpleNamespace(
+            data=SimpleNamespace(app=SimpleNamespace(close_tab_on_ssh_exit=True))
+        )
+
+        self.assertFalse(host.should_close_tab_after_terminal_exit(session))
+
+        sibling.pending_reconnect = False
+
+        self.assertTrue(host.should_close_tab_after_terminal_exit(session))
+
     def test_same_connection_split_uses_the_selected_pane_identity(self) -> None:
         root_terminal = FakeTerminal()
         source_terminal = FakeTerminal()

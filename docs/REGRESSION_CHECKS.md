@@ -78,6 +78,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   tab must remove and collapse that pane just like any later split, keep sibling
   panes usable, and clear its process identity so detached-window, tab, and
   application shutdown never signal the completed process again.
+- Closing an original/first pane that is waiting to reconnect must remove only
+  that pane while any connected or failed sibling remains; the whole tab closes
+  only when its final pane is closed.
 - Directional split actions must duplicate the selected pane, while `Open
   connection in split…` must allow a different saved SSH or local-terminal
   profile and enforce the 16-pane limit. Its connection selector must filter
@@ -298,6 +301,9 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Trigger a failed SSH connection in a split and confirm its status bar appears
   automatically with a `Close` action; use it and confirm the failed pane
   closes without reconnecting while its sibling remains usable.
+- Start with a failed original SSH pane, add both failed and successfully
+  connected SSH splits, and close the original pane. Confirm only that pane is
+  removed, every sibling keeps its own state, and the tab remains open.
 - Trigger a failed connection in a tab with only one pane and confirm its
   automatically displayed `Close` action closes the tab.
 - Confirm a seventeenth pane is rejected without changing the current layout.
