@@ -63,6 +63,15 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - `Send files to server` must open its selector from both a saved server's
   sidebar context menu and a terminal context menu; the latter must use its
   owning main or detached window, and cancelling either selector must be safe.
+- Cancelling an SCP transfer, closing its progress window, closing its owning
+  detached window, or closing Termia must stop the isolated transfer process
+  tree without starting a later phase, emitting duplicate outcomes, or leaving
+  `sshpass`, `ssh`, `scp`, or `setsid` descendants behind.
+- An SCP transfer started from a terminal belongs to that terminal session, not
+  its current window: detaching the tab and then closing it, or closing the tab
+  while still attached, must cancel the transfer and close its progress dialog.
+- SCP diagnostics may record only lifecycle phase and outcome; they must not
+  contain passwords, server identities, usernames, or selected paths.
 - Failed SSH connections must leave the tab usable and show the reconnect prompt.
 - The reconnect prompt must be readable on both light and dark terminal backgrounds.
 - Pressing Enter on a failed SSH tab must reconnect to the same server.
@@ -277,6 +286,15 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - From an SSH pane, use `Open connection in split…` to open a different SSH
   server and then a saved local terminal; verify each pane's status bar, PID,
   elapsed time, saved-password action, SCP target, statistics, and history.
+- Start an SCP upload and cancel it once while preparing the remote directory
+  and once while copying. Repeat by closing the progress window and by closing
+  its owning Termia window; confirm a single cancelled outcome and no transfer
+  processes remain. Complete one password-backed and one key-backed upload and
+  confirm success, then force a remote failure and confirm an error outcome.
+- While a terminal-owned SCP copy is active, detach its tab and close the new
+  window; repeat by closing an attached tab. Confirm both paths cancel the copy
+  and close its dialog, while a sidebar-started transfer is unaffected by
+  closing an unrelated terminal tab.
 - Disconnect one mixed-connection pane and confirm its siblings remain usable.
 - In attached and detached tabs with at least three panes, explicitly disconnect
   the original/first local and SSH pane. Confirm it disappears, the remaining

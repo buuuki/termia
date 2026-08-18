@@ -319,6 +319,7 @@ class CloseTabTests(unittest.TestCase):
                 self.focused = None
                 self.terminated = None
                 self.disconnected = None
+                self.cancelled_transfers = None
                 self.tab_lifecycle_actions = TabLifecycleActions(
                     duplicate_session=lambda _session: None,
                     disconnect_session=self.disconnect_session,
@@ -335,6 +336,9 @@ class CloseTabTests(unittest.TestCase):
             def disconnect_session(self, current_session) -> None:
                 self.disconnected = current_session
                 current_session.connected = False
+
+            def cancel_file_transfers(self, session_id, *, close_dialog=False) -> None:
+                self.cancelled_transfers = (session_id, close_dialog)
 
             def remove_session_from_main_view(self, current_session) -> None:
                 self.removed = current_session
@@ -354,6 +358,7 @@ class CloseTabTests(unittest.TestCase):
         self.assertIs(host.disconnected, session)
         self.assertIs(host.removed, session)
         self.assertIs(host.terminated, session)
+        self.assertEqual(host.cancelled_transfers, (session.id, True))
         self.assertIsNone(host.session_registry.get(session.id))
         self.assertIs(host.session_registry.get(remaining_session.id), remaining_session)
         self.assertEqual(host.focused, (session.id, [session, remaining_session]))

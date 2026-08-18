@@ -528,8 +528,8 @@ msgid "Could not start file transfer: {error}"
 msgstr "No se pudo iniciar la transferencia: {error}"
 
 #: src/termia/i18n.py:send_files_to_server_missing
-msgid "scp or ssh was not found in PATH."
-msgstr "No se encontró scp o ssh en el PATH."
+msgid "scp, ssh, or setsid was not found in PATH."
+msgstr "No se encontró scp, ssh o setsid en el PATH."
 
 #: src/termia/i18n.py:send_files_to_server_fingerprint
 msgid "Confirm the host fingerprint in the terminal if prompted, then enter the password if needed."

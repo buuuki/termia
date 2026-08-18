@@ -1984,13 +1984,38 @@ class TerminalSessionsMixin:
         server: Server,
     ) -> None:
         popover.popdown()
-        FileTransferController(
-            self if session is None else self.window_for_session(session),
+        parent = self if session is None else self.window_for_session(session)
+        controller = FileTransferController(
+            parent,
             self.t,
             self.toast_label,
             self.add_dialog_action_button,
             inspect_known_host_async,
-        ).open_file_selection(server)
+            self.unregister_file_transfer,
+            session.id if session is not None else None,
+        )
+        controllers = getattr(self, "file_transfer_controllers", None)
+        if controllers is None:
+            controllers = set()
+            self.file_transfer_controllers = controllers
+        controllers.add(controller)
+        controller.open_file_selection(server)
+
+    def unregister_file_transfer(self, controller: FileTransferController) -> None:
+        controllers = getattr(self, "file_transfer_controllers", None)
+        if controllers is not None:
+            controllers.discard(controller)
+
+    def cancel_file_transfers(
+        self,
+        session_id: str | None = None,
+        *,
+        close_dialog: bool = False,
+    ) -> None:
+        controllers = tuple(getattr(self, "file_transfer_controllers", ()))
+        for controller in controllers:
+            if session_id is None or controller.owner_session_id == session_id:
+                controller.cancel_active_transfer(close_dialog=close_dialog)
 
     def local_directory_title(self, path: Path) -> str:
         try:

@@ -596,6 +596,7 @@ class TabsMixin:
             return
         previous_order = self.visible_sessions_in_tab_order()
         self.tab_lifecycle_actions.terminate_split_processes(session)
+        self.cancel_file_transfers(session.id, close_dialog=True)
         if session.detached_window is not None:
             window = session.detached_window
             session.detached_window = None
