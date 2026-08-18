@@ -1,5 +1,6 @@
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from termia.models import Server
 from termia.sidebar import SidebarMixin
@@ -80,3 +81,12 @@ class SidebarNavigationTests(unittest.TestCase):
 
         self.assertFalse(activated)
         self.assertIsNone(host.opened)
+
+    def test_server_scp_action_uses_no_session_context(self) -> None:
+        host, server = self.build_host([])
+        popover = Mock()
+        host.on_send_files_to_server = Mock()
+
+        host.on_server_context_send_files(None, popover, server.id)
+
+        host.on_send_files_to_server.assert_called_once_with(popover, None, server)

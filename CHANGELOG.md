@@ -22,6 +22,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Open the SCP file selector correctly from saved-server context menus while
+  preserving session-window ownership for terminal context actions (`#251`).
 - Keep connected and failed sibling splits open when closing an original pane
   that is waiting for reconnection (`#249`).
 - Remove explicitly disconnected original split panes and clear completed local

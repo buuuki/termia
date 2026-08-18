@@ -1980,12 +1980,12 @@ class TerminalSessionsMixin:
     def on_send_files_to_server(
         self,
         popover: Gtk.Popover,
-        session: TerminalSession,
+        session: TerminalSession | None,
         server: Server,
     ) -> None:
         popover.popdown()
         FileTransferController(
-            self.window_for_session(session),
+            self if session is None else self.window_for_session(session),
             self.t,
             self.toast_label,
             self.add_dialog_action_button,
