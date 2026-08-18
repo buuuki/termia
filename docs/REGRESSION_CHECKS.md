@@ -74,6 +74,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   status bar, reconnect state, history entry, statistics, and context actions.
 - Disconnecting one pane must terminate only its managed process; closing the
   tab or Termia must terminate all pane processes.
+- Explicitly disconnecting the original/first pane of a multi-pane local or SSH
+  tab must remove and collapse that pane just like any later split, keep sibling
+  panes usable, and clear its process identity so detached-window, tab, and
+  application shutdown never signal the completed process again.
 - Directional split actions must duplicate the selected pane, while `Open
   connection in split…` must allow a different saved SSH or local-terminal
   profile and enforce the 16-pane limit. Its connection selector must filter
@@ -268,6 +272,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   server and then a saved local terminal; verify each pane's status bar, PID,
   elapsed time, saved-password action, SCP target, statistics, and history.
 - Disconnect one mixed-connection pane and confirm its siblings remain usable.
+- In attached and detached tabs with at least three panes, explicitly disconnect
+  the original/first local and SSH pane. Confirm it disappears, the remaining
+  split fills the space, focus stays usable, and later window/application close
+  reports no failed or duplicate termination for the disconnected process.
 - Open several SSH and local-terminal tabs with mixed split panes, use the
   sidebar save-workspace button, name the workspace, and confirm it appears
   with a grid icon in the `Workspaces` section.
