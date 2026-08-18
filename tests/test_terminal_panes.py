@@ -157,6 +157,35 @@ class TerminalPaneStateTests(unittest.TestCase):
         )
         controller.return_value.open_file_selection.assert_called_once_with(server)
 
+    def test_scp_without_session_uses_main_window(self) -> None:
+        server = object()
+        popover = Mock()
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.toast_label = object()
+                self.add_dialog_action_button = object()
+
+            def window_for_session(self, _session):
+                raise AssertionError("Sidebar SCP must use the main window")
+
+            def t(self, key):
+                return key
+
+        host = Host()
+        with patch("termia.terminal_sessions.FileTransferController") as controller:
+            host.on_send_files_to_server(popover, None, server)
+
+        popover.popdown.assert_called_once_with()
+        controller.assert_called_once_with(
+            host,
+            host.t,
+            host.toast_label,
+            host.add_dialog_action_button,
+            unittest.mock.ANY,
+        )
+        controller.return_value.open_file_selection.assert_called_once_with(server)
+
     def test_session_confirmation_uses_session_window(self) -> None:
         owner = object()
         session = SimpleNamespace()

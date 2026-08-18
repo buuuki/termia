@@ -60,6 +60,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - SSH fingerprint prompts must remain visible and interactive in the terminal.
 - Starting a password-backed SSH connection or SCP transfer must leave the
   interface responsive while the SSH known-host lookup completes.
+- `Send files to server` must open its selector from both a saved server's
+  sidebar context menu and a terminal context menu; the latter must use its
+  owning main or detached window, and cancelling either selector must be safe.
 - Failed SSH connections must leave the tab usable and show the reconnect prompt.
 - The reconnect prompt must be readable on both light and dark terminal backgrounds.
 - Pressing Enter on a failed SSH tab must reconnect to the same server.

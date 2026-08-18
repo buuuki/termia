@@ -138,10 +138,9 @@ class SidebarMixin:
         self.render_detail()
 
     def on_server_context_send_files(self, _button: Gtk.Button, popover: Gtk.Popover, server_id: str) -> None:
-        popover.popdown()
         server = find_server(self.store.data.servers, server_id)
         if server is not None:
-            self.on_send_files_to_server(popover, server)
+            self.on_send_files_to_server(popover, None, server)
 
     def on_group_context_edit(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
         popover.popdown()
