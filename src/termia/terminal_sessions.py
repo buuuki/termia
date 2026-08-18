@@ -37,7 +37,12 @@ from .terminal_config import (
     build_terminal_environment,
     split_layout_plan,
 )
-from .terminal_processes import TerminalProcess, signal_terminal_process, spawn_terminal_process
+from .terminal_processes import (
+    TerminalProcess,
+    signal_terminal_process,
+    spawn_terminal_process,
+    terminal_process_is_active,
+)
 from .terminal_view import TerminalViewFactory
 from .ui_state import TerminalPane, TerminalSession
 from .workspace_layout import (
@@ -313,6 +318,7 @@ class TerminalSessionsMixin:
     def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         self.mark_terminal_inactive(terminal, session)
         pane = self.pane_state(session, terminal)
+        self.clear_terminal_process_state(session, terminal, pane)
         self.record_session_duration(session)
         self.save_statistics_now()
         result = "disconnected" if pane.disconnect_requested else (
@@ -336,7 +342,7 @@ class TerminalSessionsMixin:
             return
         session.connected = bool(session.active_terminal_ids)
         if pane.disconnect_requested:
-            session.status_label.set_label(self.t("session_disconnected_status").format(title=session.title))
+            self.finish_disconnected_root_pane_exit(session, terminal)
             return
         if self.child_status_successful(_status):
             if self.should_close_tab_after_terminal_exit(session):
@@ -1723,10 +1729,9 @@ class TerminalSessionsMixin:
 
     def on_split_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         pane = session.pane_for_terminal(terminal)
-        session.split_child_pids.pop(id(terminal), None)
-        session.split_processes.pop(id(terminal), None)
         self.mark_terminal_inactive(terminal, session)
         if pane is not None:
+            self.clear_terminal_process_state(session, terminal, pane)
             self.record_pane_duration(pane)
             result = "disconnected" if pane.disconnect_requested else (
                 "closed" if self.child_status_successful(_status) else "failed"
@@ -1845,6 +1850,31 @@ class TerminalSessionsMixin:
 
     def mark_terminal_inactive(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
         session.active_terminal_ids.discard(id(terminal))
+
+    @staticmethod
+    def clear_terminal_process_state(
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+        pane: TerminalPane,
+    ) -> None:
+        pane.child_pid = None
+        pane.child_process = None
+        if terminal is session.terminal:
+            session.child_pid = None
+            session.child_process = None
+        session.split_child_pids.pop(id(terminal), None)
+        session.split_processes.pop(id(terminal), None)
+
+    def finish_disconnected_root_pane_exit(
+        self,
+        session: TerminalSession,
+        terminal: Vte.Terminal,
+    ) -> None:
+        session.status_label.set_label(
+            self.t("session_disconnected_status").format(title=session.title)
+        )
+        if session.active_terminal_ids:
+            self.remove_terminal_pane_if_split(terminal, session)
 
     def should_close_tab_after_terminal_exit(self, session: TerminalSession) -> bool:
         return self.store.data.app.close_tab_on_ssh_exit and not session.active_terminal_ids
@@ -2049,6 +2079,13 @@ class TerminalSessionsMixin:
         return terminated
 
     def force_terminate_terminal_process(self, process: TerminalProcess) -> bool:
+        if not terminal_process_is_active(process):
+            log_event(
+                "process.force_termination_skipped",
+                pid=process.pid,
+                reason="already_exited",
+            )
+            return GLib.SOURCE_REMOVE
         self.terminate_terminal_process(process, force=True)
         return GLib.SOURCE_REMOVE
 
@@ -2220,6 +2257,7 @@ class TerminalSessionsMixin:
     ) -> None:
         self.mark_terminal_inactive(terminal, session)
         pane = self.pane_state(session, terminal)
+        self.clear_terminal_process_state(session, terminal, pane)
         self.record_session_duration(session)
         self.save_statistics_now()
         result = "disconnected" if pane.disconnect_requested else (
@@ -2243,7 +2281,7 @@ class TerminalSessionsMixin:
             return
         session.connected = bool(session.active_terminal_ids)
         if pane.disconnect_requested:
-            session.status_label.set_label(self.t("session_disconnected_status").format(title=session.title))
+            self.finish_disconnected_root_pane_exit(session, terminal)
             return
         if self.child_status_successful(_status):
             if self.should_close_tab_after_terminal_exit(session):

@@ -3,7 +3,12 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from termia.terminal_processes import TerminalProcess, signal_terminal_process, spawn_terminal_process
+from termia.terminal_processes import (
+    TerminalProcess,
+    signal_terminal_process,
+    spawn_terminal_process,
+    terminal_process_is_active,
+)
 from termia.terminal_sessions import TerminalSessionsMixin
 from termia.session_registry import SessionRegistry
 
@@ -15,6 +20,28 @@ class FakeTerminal:
 
 
 class TerminalProcessTests(unittest.TestCase):
+    @patch("termia.terminal_processes.process_groups_in_session", return_value={99})
+    def test_terminal_process_is_active_while_a_session_group_remains(self, groups) -> None:
+        process = TerminalProcess(42, 99, 500, "42")
+
+        self.assertTrue(terminal_process_is_active(process))
+
+        groups.assert_called_once_with(500)
+
+    @patch("termia.terminal_processes.process_start_time", return_value=None)
+    @patch("termia.terminal_processes.process_groups_in_session", return_value=set())
+    def test_terminal_process_is_inactive_after_every_session_process_exits(
+        self,
+        groups,
+        start_time,
+    ) -> None:
+        process = TerminalProcess(42, 99, 500, "42")
+
+        self.assertFalse(terminal_process_is_active(process))
+
+        groups.assert_called_once_with(500)
+        start_time.assert_called_once_with(42)
+
     def test_spawn_helper_centralizes_vte_arguments(self) -> None:
         terminal = FakeTerminal()
         environment = ["TERM=xterm-256color"]
@@ -127,6 +154,38 @@ class TerminalProcessTests(unittest.TestCase):
         signal_process.assert_called_once_with(process, signal.SIGTERM)
         timeout_add.assert_not_called()
 
+    @patch("termia.terminal_sessions.log_event")
+    @patch("termia.terminal_sessions.terminal_process_is_active", return_value=False)
+    def test_forced_cleanup_skips_a_process_that_already_exited(
+        self,
+        is_active,
+        log_event,
+    ) -> None:
+        process = TerminalProcess(pid=42, process_group_id=99, session_id=500, start_time="42")
+        host = TerminalSessionsMixin()
+        host.terminate_terminal_process = Mock()
+
+        host.force_terminate_terminal_process(process)
+
+        is_active.assert_called_once_with(process)
+        host.terminate_terminal_process.assert_not_called()
+        log_event.assert_called_once_with(
+            "process.force_termination_skipped",
+            pid=42,
+            reason="already_exited",
+        )
+
+    @patch("termia.terminal_sessions.terminal_process_is_active", return_value=True)
+    def test_forced_cleanup_still_kills_remaining_session_processes(self, is_active) -> None:
+        process = TerminalProcess(pid=42, process_group_id=99, session_id=500, start_time="42")
+        host = TerminalSessionsMixin()
+        host.terminate_terminal_process = Mock()
+
+        host.force_terminate_terminal_process(process)
+
+        is_active.assert_called_once_with(process)
+        host.terminate_terminal_process.assert_called_once_with(process, force=True)
+
     def test_ssh_exit_during_shutdown_does_not_reconnect_or_notify(self) -> None:
         terminal = object()
         pane = SimpleNamespace(
@@ -135,13 +194,19 @@ class TerminalProcessTests(unittest.TestCase):
             disconnect_requested=False,
             pending_reconnect=True,
             disconnect_button=Mock(),
+            child_pid=42,
+            child_process=object(),
         )
         session = SimpleNamespace(
             id="session",
             terminal=terminal,
+            child_pid=42,
+            child_process=pane.child_process,
             disconnect_requested=False,
             pending_reconnect=True,
             panes={id(terminal): pane},
+            split_child_pids={},
+            split_processes={},
         )
 
         class Host(TerminalSessionsMixin):
@@ -187,13 +252,19 @@ class TerminalProcessTests(unittest.TestCase):
             connected=True,
             disconnect_requested=True,
             disconnect_button=Mock(),
+            child_pid=42,
+            child_process=object(),
         )
         session = SimpleNamespace(
             id="session",
             title="Example",
             terminal=terminal,
+            child_pid=42,
+            child_process=pane.child_process,
             panes={id(terminal): pane},
             active_terminal_ids=set(),
+            split_child_pids={},
+            split_processes={},
             status_label=Mock(),
             connected=True,
         )
@@ -244,9 +315,12 @@ class TerminalProcessTests(unittest.TestCase):
             pending_reconnect=True,
             disconnect_button=Mock(),
             status_label=Mock(),
+            child_pid=42,
+            child_process=object(),
         )
         session = SimpleNamespace(
             id="session",
+            terminal=object(),
             disconnect_requested=False,
             pending_reconnect=True,
             panes={id(terminal): pane},

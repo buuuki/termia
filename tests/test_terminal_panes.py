@@ -418,6 +418,128 @@ class TerminalPaneStateTests(unittest.TestCase):
         self.assertFalse(root.disconnect_requested)
         self.assertTrue(split.disconnect_requested)
 
+    def test_explicitly_disconnected_first_pane_is_removed_for_local_and_ssh(self) -> None:
+        for kind in ("local", "ssh"):
+            with self.subTest(kind=kind):
+                root_terminal = FakeTerminal()
+                sibling_terminal = FakeTerminal()
+                root_process = TerminalProcess(10, 100, 1000, "10")
+                sibling_process = TerminalProcess(20, 200, 2000, "20")
+                root = make_pane(
+                    root_terminal,
+                    "root",
+                    server_id="server-a" if kind == "ssh" else None,
+                    process=root_process,
+                )
+                sibling = make_pane(
+                    sibling_terminal,
+                    "sibling",
+                    server_id="server-b",
+                    process=sibling_process,
+                )
+                session = make_session(root_terminal, root)
+                session.detached_window = object()
+                session.child_pid = root_process.pid
+                session.child_process = root_process
+                session.panes[id(sibling_terminal)] = sibling
+                session.active_terminal_ids.add(id(sibling_terminal))
+                session.split_child_pids[id(sibling_terminal)] = sibling_process.pid
+                session.split_processes[id(sibling_terminal)] = sibling_process
+
+                class Host(TerminalSessionsMixin):
+                    def __init__(self) -> None:
+                        self.store = SimpleNamespace(
+                            data=SimpleNamespace(
+                                app=SimpleNamespace(close_tab_on_disconnect=True)
+                            ),
+                            record_history_end=Mock(),
+                        )
+                        self.removed = []
+                        self.terminated = []
+                        self.toast_label = FakeControl()
+
+                    def terminate_terminal_process(self, process, *, force=False):
+                        self.terminated.append((process, force))
+                        return True
+
+                    def record_session_duration(self, _session):
+                        pass
+
+                    def save_statistics_now(self):
+                        pass
+
+                    def remove_terminal_pane_if_split(self, terminal, current_session):
+                        self.removed.append((terminal, current_session))
+
+                    def t(self, key):
+                        return {
+                            "session_disconnected_status": "{title} disconnected",
+                            "session_disconnected_terminal": "Disconnected",
+                            "session_disconnected_toast": "{title} disconnected",
+                        }[key]
+
+                host = Host()
+                host.disconnect_pane(session, root_terminal)
+                if kind == "local":
+                    host.on_process_terminal_exited(root_terminal, 65280, session)
+                else:
+                    host.on_terminal_exited(
+                        root_terminal,
+                        65280,
+                        Server(
+                            id="server-a",
+                            name="Server A",
+                            host="server-a.test",
+                            user="admin",
+                        ),
+                        session,
+                    )
+
+                self.assertEqual(host.terminated, [(root_process, False)])
+                self.assertEqual(host.removed, [(root_terminal, session)])
+                self.assertNotIn(id(root_terminal), session.active_terminal_ids)
+                self.assertIn(id(sibling_terminal), session.active_terminal_ids)
+                self.assertIsNone(root.child_pid)
+                self.assertIsNone(root.child_process)
+                self.assertIsNone(session.child_pid)
+                self.assertIsNone(session.child_process)
+                self.assertEqual(
+                    session.split_processes[id(sibling_terminal)],
+                    sibling_process,
+                )
+
+    def test_completed_split_process_identity_is_cleared_without_touching_siblings(self) -> None:
+        root_terminal = FakeTerminal()
+        split_terminal = FakeTerminal()
+        other_terminal = FakeTerminal()
+        split_process = TerminalProcess(20, 200, 2000, "20")
+        other_process = TerminalProcess(30, 300, 3000, "30")
+        root = make_pane(root_terminal, "root")
+        split = make_pane(split_terminal, "split", process=split_process)
+        session = make_session(root_terminal, root)
+        session.panes[id(split_terminal)] = split
+        session.split_child_pids = {
+            id(split_terminal): split_process.pid,
+            id(other_terminal): other_process.pid,
+        }
+        session.split_processes = {
+            id(split_terminal): split_process,
+            id(other_terminal): other_process,
+        }
+
+        TerminalSessionsMixin.clear_terminal_process_state(
+            session,
+            split_terminal,
+            split,
+        )
+
+        self.assertIsNone(split.child_pid)
+        self.assertIsNone(split.child_process)
+        self.assertNotIn(id(split_terminal), session.split_child_pids)
+        self.assertNotIn(id(split_terminal), session.split_processes)
+        self.assertEqual(session.split_child_pids[id(other_terminal)], other_process.pid)
+        self.assertEqual(session.split_processes[id(other_terminal)], other_process)
+
     def test_failed_split_can_be_closed_instead_of_forcing_reconnect(self) -> None:
         root_terminal = FakeTerminal()
         split_terminal = FakeTerminal()

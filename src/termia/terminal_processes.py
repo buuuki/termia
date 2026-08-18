@@ -111,6 +111,16 @@ def signal_terminal_process(process: TerminalProcess, signum: int) -> bool:
     return True
 
 
+def terminal_process_is_active(process: TerminalProcess) -> bool:
+    """Return whether the captured VTE process or any session group still exists."""
+    if process.session_id is not None and process_groups_in_session(process.session_id):
+        return True
+    current_start_time = process_start_time(process.pid)
+    if process.start_time is not None:
+        return current_start_time == process.start_time
+    return current_start_time is not None
+
+
 def spawn_terminal_process(
     terminal: Vte.Terminal,
     working_directory: str | None,
