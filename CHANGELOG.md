@@ -22,6 +22,8 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Fixed
 
+- Keep connected and failed sibling splits open when closing an original pane
+  that is waiting for reconnection (`#249`).
 - Remove explicitly disconnected original split panes and clear completed local
   and SSH process identities before later window or application cleanup (`#247`).
 - Restore hidden workspace tabs' split proportions when GTK first allocates

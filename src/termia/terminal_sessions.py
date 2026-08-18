@@ -1877,7 +1877,12 @@ class TerminalSessionsMixin:
             self.remove_terminal_pane_if_split(terminal, session)
 
     def should_close_tab_after_terminal_exit(self, session: TerminalSession) -> bool:
-        return self.store.data.app.close_tab_on_ssh_exit and not session.active_terminal_ids
+        has_pending_reconnect = any(pane.pending_reconnect for pane in session.panes.values())
+        return (
+            self.store.data.app.close_tab_on_ssh_exit
+            and not session.active_terminal_ids
+            and not has_pending_reconnect
+        )
 
     def replace_split_container(self, paned: Gtk.Paned, replacement: Gtk.Widget) -> bool:
         parent = paned.get_parent()
@@ -2130,7 +2135,9 @@ class TerminalSessionsMixin:
     ) -> None:
         pane = self.pane_state(session, terminal)
         pane.pending_reconnect = False
-        if terminal is not session.terminal:
+        if len(session.panes) > 1:
+            if terminal is session.terminal:
+                session.pending_reconnect = False
             self.discard_unstarted_split_pane(session, terminal)
             return
         self.close_tab(session.id, session.page, disconnect=False)
