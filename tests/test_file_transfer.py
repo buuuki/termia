@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 import signal
+import shlex
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -9,7 +10,13 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, Gtk
 
-from termia.file_transfer import DESTINATION, FileTransferController, build_scp_commands
+from termia.file_transfer import (
+    DESTINATION,
+    FileTransferController,
+    build_scp_commands,
+    format_scp_remote_path,
+    normalize_remote_destination,
+)
 from termia.models import Server
 from termia.terminal_processes import TerminalProcess
 
@@ -66,10 +73,46 @@ class FileTransferTests(unittest.TestCase):
             )
 
         self.assertEqual(ssh_command[:5], ["/usr/bin/ssh", "-p", "2200", "-i", str(Path("~/.ssh/id_ed25519").expanduser())])
-        self.assertEqual(ssh_command[-4:], ["admin@example.test", "mkdir", "-p", DESTINATION])
+        self.assertEqual(
+            ssh_command[-2:],
+            ["admin@example.test", f"test -d {DESTINATION}"],
+        )
+        self.assertNotIn("mkdir", ssh_command[-1])
         self.assertIn("-r", scp_command)
         self.assertEqual(scp_command[-1], f"admin@example.test:{DESTINATION}/")
         self.assertIn(str(file_path), scp_command)
+
+    def test_normalizes_absolute_remote_destinations(self) -> None:
+        self.assertEqual(normalize_remote_destination(" /srv/uploads/ "), "/srv/uploads")
+        self.assertEqual(normalize_remote_destination("/"), "/")
+
+    def test_rejects_invalid_remote_destinations(self) -> None:
+        for destination in ("", "relative/path", "/srv/../root", "/tmp/new\nline", "\x7f/tmp"):
+            with self.subTest(destination=destination):
+                with self.assertRaises(ValueError):
+                    normalize_remote_destination(destination)
+
+    def test_formats_remote_destination_for_ssh_and_scp_without_literal_quotes(self) -> None:
+        destination = "/srv/reports; touch $HOME & 'quoted'/with spaces"
+        server = Server(id="server-1", name="Web", host="example.test", user="admin")
+
+        ssh_command, scp_command = build_scp_commands(
+            server,
+            [Path("report.txt")],
+            "/usr/bin/ssh",
+            "/usr/bin/scp",
+            destination=destination,
+        )
+
+        self.assertEqual(
+            ssh_command[-1],
+            f"test -d {shlex.quote(destination)}",
+        )
+        self.assertEqual(
+            scp_command[-1],
+            f"admin@example.test:{format_scp_remote_path(destination)}",
+        )
+        self.assertNotIn(shlex.quote(destination), scp_command[-1])
 
     def test_wraps_commands_with_sshpass_without_shell_interpolation(self) -> None:
         server = Server(id="server-1", name="Web", host="example.test", user="admin")
@@ -107,6 +150,52 @@ class FileTransferTests(unittest.TestCase):
         callback(False)
         toast.set_label.assert_called_once_with("send_files_to_server_fingerprint")
         controller.show_transfer_dialog.assert_not_called()
+
+    def test_destination_dialog_rejects_invalid_path_without_starting_upload(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        dialog = Mock()
+        entry = Mock()
+        entry.get_text.return_value = "relative/path"
+        error = Mock()
+        controller.start_upload = Mock()
+
+        controller.on_destination_dialog_response(
+            dialog,
+            Gtk.ResponseType.OK,
+            Server(id="server-1", name="Web", host="example.test", user="admin"),
+            [Path("report.txt")],
+            entry,
+            error,
+        )
+
+        controller.start_upload.assert_not_called()
+        dialog.destroy.assert_not_called()
+        error.set_label.assert_called_once_with("send_files_to_server_destination_invalid")
+        error.set_visible.assert_called_once_with(True)
+
+    def test_destination_dialog_starts_upload_with_normalized_path(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        dialog = Mock()
+        entry = Mock()
+        entry.get_text.return_value = " /srv/uploads/ "
+        error = Mock()
+        server = Server(id="server-1", name="Web", host="example.test", user="admin")
+        local_paths = [Path("report.txt")]
+        controller.start_upload = Mock()
+        controller.pending_destination_dialog = dialog
+
+        controller.on_destination_dialog_response(
+            dialog,
+            Gtk.ResponseType.OK,
+            server,
+            local_paths,
+            entry,
+            error,
+        )
+
+        dialog.destroy.assert_called_once_with()
+        controller.start_upload.assert_called_once_with(server, local_paths, "/srv/uploads")
+        self.assertIsNone(controller.pending_destination_dialog)
 
     def test_run_command_uses_an_isolated_session_and_captures_identity(self) -> None:
         controller, _parent, _toast = self.build_controller()
@@ -190,6 +279,25 @@ class FileTransferTests(unittest.TestCase):
 
         controller.cancel_transfer.assert_called_once_with(state)
 
+    def test_owner_close_destroys_pending_destination_dialog(self) -> None:
+        inactive = Mock()
+        controller = FileTransferController(
+            Mock(),
+            lambda key: key,
+            Mock(),
+            Mock(),
+            Mock(),
+            on_inactive=inactive,
+        )
+        dialog = Mock()
+        controller.pending_destination_dialog = dialog
+
+        controller.cancel_active_transfer(close_dialog=True)
+
+        dialog.destroy.assert_called_once_with()
+        self.assertIsNone(controller.pending_destination_dialog)
+        inactive.assert_called_once_with(controller)
+
     def test_owner_close_cancels_and_destroys_transfer_dialog_once(self) -> None:
         controller, _parent, _toast = self.build_controller()
         dialog = Mock()
@@ -223,6 +331,7 @@ class FileTransferTests(unittest.TestCase):
         controller._start_upload_after_known_host_check(
             Server(id="server-1", name="Web", host="example.test", user="admin"),
             [Path("report.txt")],
+            DESTINATION,
             "/usr/bin/ssh",
             "/usr/bin/scp",
             True,
@@ -242,3 +351,15 @@ class FileTransferTests(unittest.TestCase):
         toast.set_success.assert_called_once_with("finished")
         failed_state["progress"].set_fraction.assert_called_once_with(0.0)
         successful_state["progress"].set_fraction.assert_called_once_with(1.0)
+
+    def test_failure_message_identifies_prepare_and_copy_phases(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+
+        self.assertEqual(
+            controller.failure_message(self.build_state(phase="prepare")),
+            "send_files_to_server_prepare_failed",
+        )
+        self.assertEqual(
+            controller.failure_message(self.build_state(phase="copy")),
+            "send_files_to_server_copy_failed",
+        )

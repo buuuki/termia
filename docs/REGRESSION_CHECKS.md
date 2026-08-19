@@ -63,6 +63,17 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - `Send files to server` must open its selector from both a saved server's
   sidebar context menu and a terminal context menu; the latter must use its
   owning main or detached window, and cancelling either selector must be safe.
+- After local file selection, SCP must prompt for a per-transfer absolute remote
+  destination defaulting to `/tmp/.termia`; invalid, relative, control-character,
+  and parent-traversal paths must not start host inspection or a child process.
+- SCP must only verify that the remote destination already exists and is a
+  directory; it must never create a missing destination as an implicit side
+  effect of sending files. Its remote `test -d` command must remain compatible
+  with shell builtins and safely quote the absolute destination operand.
+- Remote destinations containing spaces or shell metacharacters must remain one
+  argument, must not gain literal shell-quote characters in SFTP-mode SCP, and
+  must never execute as shell syntax. Transfer failures must safely identify
+  whether remote preparation or file copying failed without exposing raw output.
 - Cancelling an SCP transfer, closing its progress window, closing its owning
   detached window, or closing Termia must stop the isolated transfer process
   tree without starting a later phase, emitting duplicate outcomes, or leaving
@@ -291,6 +302,12 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   its owning Termia window; confirm a single cancelled outcome and no transfer
   processes remain. Complete one password-backed and one key-backed upload and
   confirm success, then force a remote failure and confirm an error outcome.
+- Upload to the default destination and to a custom absolute path, including a
+  path with spaces. Reject an empty path, a relative path, a `..` segment, and a
+  pasted newline while keeping the destination dialog open and starting no
+  SSH/SCP process.
+- Select a missing but otherwise valid absolute destination and confirm that the
+  transfer reports it as unavailable without creating it on the remote server.
 - While a terminal-owned SCP copy is active, detach its tab and close the new
   window; repeat by closing an attached tab. Confirm both paths cancel the copy
   and close its dialog, while a sidebar-started transfer is unaffected by

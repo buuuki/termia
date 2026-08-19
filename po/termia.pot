@@ -531,6 +531,22 @@ msgstr ""
 msgid "Send files to server"
 msgstr ""
 
+#: src/termia/i18n.py:send_files_to_server_destination_title
+msgid "Upload destination for {name}"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_destination_label
+msgid "Remote directory"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_destination_confirm
+msgid "Upload"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_destination_invalid
+msgid "Enter an absolute remote path without control characters or .. segments."
+msgstr ""
+
 #: src/termia/i18n.py:send_files_to_server_title
 msgid "Uploading to {name}"
 msgstr ""
@@ -544,11 +560,19 @@ msgid "Uploading to {name} in {destination}"
 msgstr ""
 
 #: src/termia/i18n.py:send_files_to_server_prepare_remote
-msgid "Preparing remote directory..."
+msgid "Checking remote destination..."
 msgstr ""
 
 #: src/termia/i18n.py:send_files_to_server_copying
 msgid "Copying files..."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_prepare_failed
+msgid "The remote destination does not exist or is not accessible."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_copy_failed
+msgid "SCP could not copy the selected files."
 msgstr ""
 
 #: src/termia/i18n.py:send_files_to_server_finished

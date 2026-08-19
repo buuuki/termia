@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import signal
+import shlex
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,21 @@ from .terminal_processes import (
 DESTINATION = "/tmp/.termia"
 
 
+def normalize_remote_destination(value: str) -> str:
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise ValueError("destination contains control characters")
+    destination = value.strip()
+    if not destination or not destination.startswith("/"):
+        raise ValueError("destination must be an absolute path")
+    if ".." in destination.split("/"):
+        raise ValueError("destination contains a parent traversal segment")
+    return destination.rstrip("/") or "/"
+
+
+def format_scp_remote_path(destination: str) -> str:
+    return f"{destination.rstrip('/')}/" if destination != "/" else "/"
+
+
 def build_scp_commands(
     server: Server,
     local_paths: list[Path],
@@ -34,6 +50,7 @@ def build_scp_commands(
     sshpass_path: str | None = None,
     destination: str = DESTINATION,
 ) -> tuple[list[str], list[str]]:
+    destination = normalize_remote_destination(destination)
     ssh_target = f"{server.user}@{server.host}"
     ssh_command = [ssh_path, "-p", str(server.port)]
     scp_command = [scp_path, "-P", str(server.port)]
@@ -43,9 +60,12 @@ def build_scp_commands(
         scp_command.extend(["-i", identity_file])
     if any(path.is_dir() for path in local_paths):
         scp_command.append("-r")
-    ssh_command.extend([ssh_target, "mkdir", "-p", destination])
+    ssh_command.extend([ssh_target, f"test -d {shlex.quote(destination)}"])
     scp_command.extend(str(path) for path in local_paths)
-    scp_command.append(f"{ssh_target}:{destination}/")
+    # Gio launches SCP directly without a local shell. Keep its remote path in
+    # one argv element, but do not add shell quotes that SFTP-mode SCP can treat
+    # as literal filename characters.
+    scp_command.append(f"{ssh_target}:{format_scp_remote_path(destination)}")
     if sshpass_path is not None:
         ssh_command = [sshpass_path, "-e", *ssh_command]
         scp_command = [sshpass_path, "-e", *scp_command]
@@ -71,6 +91,7 @@ class FileTransferController:
         self.on_inactive = on_inactive
         self.owner_session_id = owner_session_id
         self.selection_cancellable: Gio.Cancellable | None = None
+        self.pending_destination_dialog: Gtk.Dialog | None = None
         self.active_state: dict[str, Any] | None = None
         self.inactive_notified = False
         self.cancelled = False
@@ -107,11 +128,92 @@ class FileTransferController:
             if path:
                 local_paths.append(Path(path).expanduser())
         if local_paths:
-            self.start_upload(server, local_paths)
+            self.show_destination_dialog(server, local_paths)
             return
         self.mark_inactive()
 
-    def start_upload(self, server: Server, local_paths: list[Path]) -> None:
+    def show_destination_dialog(self, server: Server, local_paths: list[Path]) -> None:
+        dialog = Gtk.Dialog(
+            title=self.t("send_files_to_server_destination_title").format(name=server.name),
+            transient_for=self.parent,
+            modal=True,
+        )
+        dialog.set_resizable(False)
+        dialog.set_default_size(460, -1)
+        self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        self.add_dialog_action_button(
+            dialog,
+            self.t("send_files_to_server_destination_confirm"),
+            Gtk.ResponseType.OK,
+            last=True,
+        )
+        dialog.set_default_response(Gtk.ResponseType.OK)
+
+        content = dialog.get_content_area()
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_spacing(8)
+        label = Gtk.Label(label=self.t("send_files_to_server_destination_label"))
+        label.set_xalign(0)
+        entry = Gtk.Entry()
+        entry.set_text(DESTINATION)
+        entry.set_activates_default(True)
+        error = Gtk.Label(label="")
+        error.set_xalign(0)
+        error.set_wrap(True)
+        error.add_css_class("error")
+        error.set_visible(False)
+        content.append(label)
+        content.append(entry)
+        content.append(error)
+
+        self.pending_destination_dialog = dialog
+        dialog.connect(
+            "response",
+            self.on_destination_dialog_response,
+            server,
+            local_paths,
+            entry,
+            error,
+        )
+        dialog.present()
+        entry.grab_focus()
+        entry.select_region(0, -1)
+
+    def on_destination_dialog_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        server: Server,
+        local_paths: list[Path],
+        entry: Gtk.Entry,
+        error: Gtk.Label,
+    ) -> None:
+        if response != Gtk.ResponseType.OK:
+            self.pending_destination_dialog = None
+            dialog.destroy()
+            self.mark_inactive()
+            return
+        try:
+            destination = normalize_remote_destination(entry.get_text())
+        except ValueError:
+            error.set_label(self.t("send_files_to_server_destination_invalid"))
+            error.set_visible(True)
+            entry.grab_focus()
+            return
+        self.pending_destination_dialog = None
+        dialog.destroy()
+        self.start_upload(server, local_paths, destination)
+
+    def start_upload(
+        self,
+        server: Server,
+        local_paths: list[Path],
+        destination: str = DESTINATION,
+    ) -> None:
+        destination = normalize_remote_destination(destination)
         ssh_path = GLib.find_program_in_path("ssh")
         scp_path = GLib.find_program_in_path("scp")
         if ssh_path is None or scp_path is None:
@@ -121,13 +223,21 @@ class FileTransferController:
         self.inspect_known_host(
             server.host,
             server.port,
-            lambda known: self._start_upload_after_known_host_check(server, local_paths, ssh_path, scp_path, known),
+            lambda known: self._start_upload_after_known_host_check(
+                server,
+                local_paths,
+                destination,
+                ssh_path,
+                scp_path,
+                known,
+            ),
         )
 
     def _start_upload_after_known_host_check(
         self,
         server: Server,
         local_paths: list[Path],
+        destination: str,
         ssh_path: str,
         scp_path: str,
         known_host: bool,
@@ -153,9 +263,10 @@ class FileTransferController:
             ssh_path,
             scp_path,
             sshpass_path=sshpass_path,
+            destination=destination,
         )
         file_list = ", ".join(path.name for path in local_paths)
-        dialog_state = self.show_transfer_dialog(server, DESTINATION, file_list)
+        dialog_state = self.show_transfer_dialog(server, destination, file_list)
         dialog_state["phase"] = "prepare"
         log_event(
             "scp.transfer_started",
@@ -262,6 +373,10 @@ class FileTransferController:
         if self.selection_cancellable is not None:
             self.selection_cancellable.cancel()
             self.selection_cancellable = None
+        if self.pending_destination_dialog is not None:
+            dialog = self.pending_destination_dialog
+            self.pending_destination_dialog = None
+            dialog.destroy()
         state = self.active_state
         if state is not None:
             self.cancel_transfer(state)
@@ -350,14 +465,14 @@ class FileTransferController:
         on_success: Callable[[], None],
     ) -> None:
         try:
-            _ok, stdout, stderr = process.communicate_utf8_finish(result)
+            process.communicate_utf8_finish(result)
         except GLib.Error:
             if state.get("completed") or state["cancellable"].is_cancelled():
                 return
             self.clear_process_state(state, process)
             self.finish_dialog(
                 state,
-                self.t("send_files_to_server_failed_generic"),
+                self.failure_message(state),
                 outcome="failed",
             )
             return
@@ -365,14 +480,20 @@ class FileTransferController:
         if state.get("completed"):
             return
         if not process.get_successful():
-            detail = self.last_output_line(stdout, stderr)
             self.finish_dialog(
                 state,
-                self.t("send_files_to_server_failed_detail").format(error=detail),
+                self.failure_message(state),
                 outcome="failed",
             )
             return
         on_success()
+
+    def failure_message(self, state: dict[str, Any]) -> str:
+        if state.get("phase") == "prepare":
+            return self.t("send_files_to_server_prepare_failed")
+        if state.get("phase") == "copy":
+            return self.t("send_files_to_server_copy_failed")
+        return self.t("send_files_to_server_failed_generic")
 
     @staticmethod
     def capture_subprocess_identity(process: Gio.Subprocess) -> TerminalProcess | None:
@@ -443,10 +564,6 @@ class FileTransferController:
         if state.get("process") is process:
             state["process"] = None
             state["process_identity"] = None
-
-    def last_output_line(self, stdout: str | None, stderr: str | None) -> str:
-        lines = [line.strip() for line in f"{stdout or ''}\n{stderr or ''}".splitlines() if line.strip()]
-        return lines[-1] if lines else self.t("send_files_to_server_failed_generic")
 
     def finish_dialog(self, state: dict[str, Any], message: str, *, outcome: str) -> None:
         if state.get("completed"):
