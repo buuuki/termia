@@ -6,6 +6,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
 ### Added
 
+- Add a validated per-transfer SCP destination prompt, defaulting to
+  `/tmp/.termia`, with non-destructive destination checks, safe remote command
+  quoting, and phase-specific failure feedback (`#256`).
 - Add severity icons to in-app information, success, warning, and error notifications.
 - Add configurable `Ctrl+Arrow` keybindings for directional focus navigation
   between local and SSH split panes, with a scrollable shortcut editor (`#218`).

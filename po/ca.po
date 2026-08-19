@@ -487,6 +487,22 @@ msgstr "Aquest terminal no té cap contrasenya desada"
 msgid "Send files to server"
 msgstr "Enviar fitxers al servidor"
 
+#: src/termia/i18n.py:send_files_to_server_destination_title
+msgid "Upload destination for {name}"
+msgstr "Destinació de pujada per a {name}"
+
+#: src/termia/i18n.py:send_files_to_server_destination_label
+msgid "Remote directory"
+msgstr "Directori remot"
+
+#: src/termia/i18n.py:send_files_to_server_destination_confirm
+msgid "Upload"
+msgstr "Puja"
+
+#: src/termia/i18n.py:send_files_to_server_destination_invalid
+msgid "Enter an absolute remote path without control characters or .. segments."
+msgstr "Introduïu una ruta remota absoluta sense caràcters de control ni segments ..."
+
 #: src/termia/i18n.py:send_files_to_server_title
 msgid "Uploading to {name}"
 msgstr "Pujant a {name}"
@@ -500,12 +516,20 @@ msgid "Uploading to {name} in {destination}"
 msgstr "Pujant a {name} a {destination}"
 
 #: src/termia/i18n.py:send_files_to_server_prepare_remote
-msgid "Preparing remote directory..."
-msgstr "Preparant directori remot..."
+msgid "Checking remote destination..."
+msgstr "Comprovant la destinació remota..."
 
 #: src/termia/i18n.py:send_files_to_server_copying
 msgid "Copying files..."
 msgstr "Copiant fitxers..."
+
+#: src/termia/i18n.py:send_files_to_server_prepare_failed
+msgid "The remote destination does not exist or is not accessible."
+msgstr "La destinació remota no existeix o no és accessible."
+
+#: src/termia/i18n.py:send_files_to_server_copy_failed
+msgid "SCP could not copy the selected files."
+msgstr "SCP no ha pogut copiar els fitxers seleccionats."
 
 #: src/termia/i18n.py:send_files_to_server_finished
 msgid "Files sent to {name}"
