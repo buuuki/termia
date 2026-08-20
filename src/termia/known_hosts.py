@@ -19,11 +19,12 @@ def known_host_lookup_commands(
     ssh_keygen: str,
     known_hosts_files: Iterable[Path],
 ) -> list[list[str]]:
-    lookup_host = f"[{host}]:{port}" if port != 22 else host
+    lookup_hosts = [host] if port == 22 else [f"[{host}]:{port}", host]
     return [
         [ssh_keygen, "-F", lookup_host, "-f", str(path)]
         for path in known_hosts_files
         if path.exists()
+        for lookup_host in lookup_hosts
     ]
 
 

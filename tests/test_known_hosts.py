@@ -46,8 +46,26 @@ class KnownHostsTests(unittest.TestCase):
 
         self.assertEqual(
             commands,
-            [["/usr/bin/ssh-keygen", "-F", "[example.test]:2200", "-f", str(existing)]],
+            [
+                ["/usr/bin/ssh-keygen", "-F", "[example.test]:2200", "-f", str(existing)],
+                ["/usr/bin/ssh-keygen", "-F", "example.test", "-f", str(existing)],
+            ],
         )
+
+    def test_uses_only_host_for_default_ssh_port(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            known_hosts = Path(directory) / "known_hosts"
+            known_hosts.touch()
+
+            commands = known_host_lookup_commands(
+                "example.test",
+                22,
+                "/usr/bin/ssh-keygen",
+                [known_hosts],
+            )
+
+        self.assertEqual(len(commands), 1)
+        self.assertEqual(commands[0][2], "example.test")
 
     def test_checks_files_sequentially_until_host_is_found(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -56,7 +74,7 @@ class KnownHostsTests(unittest.TestCase):
             first.touch()
             second.touch()
             commands: list[list[str]] = []
-            launcher = FakeLauncher([False, True], commands)
+            launcher = FakeLauncher([False, False, True], commands)
             results: list[bool] = []
 
             with (
@@ -65,20 +83,20 @@ class KnownHostsTests(unittest.TestCase):
             ):
                 inspect_known_host_async(
                     "example.test",
-                    22,
+                    2200,
                     results.append,
                     known_hosts_files=[first, second],
                 )
 
         self.assertEqual(results, [True])
-        self.assertEqual(len(commands), 2)
-        self.assertEqual(commands[0][2], "example.test")
+        self.assertEqual(len(commands), 3)
+        self.assertEqual(commands[0][2], "[example.test]:2200")
 
     def test_reports_unknown_after_all_files_fail(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             known_hosts = Path(directory) / "known_hosts"
             known_hosts.touch()
-            launcher = FakeLauncher([False], [])
+            launcher = FakeLauncher([False, False], [])
             results: list[bool] = []
 
             with (
