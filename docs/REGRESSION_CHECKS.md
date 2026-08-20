@@ -58,6 +58,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Local terminal prompt customization must apply to newly opened and duplicated local terminals.
 - SSH sessions must not send arbitrary commands automatically to remote servers.
 - SSH fingerprint prompts must remain visible and interactive in the terminal.
+- Known-host inspection must prefer the configured endpoint (`host` on port 22
+  or `[host]:port` otherwise), then mirror OpenSSH's non-standard-port fallback
+  to `host` without modifying any known_hosts file. A genuinely unknown host
+  must still show the interactive fingerprint prompt.
 - Starting a password-backed SSH connection or SCP transfer must leave the
   interface responsive while the SSH known-host lookup completes.
 - `Send files to server` must open its selector from both a saved server's
