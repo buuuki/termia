@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 import signal
@@ -186,6 +187,52 @@ class FileTransferTests(unittest.TestCase):
         controller.write_host_key.assert_called_once_with(scanned)
         controller.start_upload.assert_called_once_with(server, local_paths, DESTINATION)
 
+    def test_authentication_failure_opens_native_password_dialog(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        controller.show_password_dialog = Mock()
+        state = self.build_state(phase="prepare")
+        server = Server(id="server-1", name="Web", host="example.test", user="admin")
+        scp_command = ["/usr/bin/scp", "source", "target"]
+
+        controller.on_initial_prepare_failure(
+            server,
+            scp_command,
+            state,
+            "Permission denied (publickey,password).",
+        )
+
+        controller.show_password_dialog.assert_called_once_with(server, scp_command, state)
+
+    def test_password_dialog_retries_prepare_with_sshpass_without_logging_secret(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        dialog = Mock()
+        password = Mock()
+        password.get_text.return_value = "temporary-secret"
+        error = Mock()
+        state = self.build_state(phase="prepare", ssh_command=["/usr/bin/ssh", "host", "test -d /tmp"])
+        controller.pending_password_dialog = dialog
+        controller.run_command = Mock()
+        server = Server(id="server-1", name="Web", host="example.test", user="admin")
+        scp_command = ["/usr/bin/scp", "source", "target"]
+
+        with patch("termia.file_transfer.GLib.find_program_in_path", return_value="/usr/bin/sshpass"):
+            controller.on_password_dialog_response(
+                dialog,
+                Gtk.ResponseType.OK,
+                server,
+                scp_command,
+                state,
+                password,
+                error,
+            )
+
+        dialog.destroy.assert_called_once_with()
+        controller.run_command.assert_called_once()
+        command, secret = controller.run_command.call_args.args[:2]
+        self.assertEqual(command, ["/usr/bin/sshpass", "-e", "/usr/bin/ssh", "host", "test -d /tmp"])
+        self.assertEqual(secret, "temporary-secret")
+        self.assertNotIn("temporary-secret", command)
+
     def test_cancelling_scanned_fingerprint_does_not_write_key(self) -> None:
         controller, _parent, _toast = self.build_controller()
         scanned = [ScannedHostKey("example.test", "ssh-ed25519", "c3ludGhldGlj", "SHA256:test")]
@@ -275,6 +322,34 @@ class FileTransferTests(unittest.TestCase):
         self.assertIs(state["process"], process)
         self.assertEqual(state["process_identity"], identity)
         process.communicate_utf8_async.assert_called_once()
+
+    def test_passwordless_prepare_disables_interactive_subprocess_input(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        state = self.build_state(phase="prepare")
+        launcher = Mock()
+        process = Mock()
+        process.get_identifier.return_value = "321"
+        launcher.spawnv.return_value = process
+        identity = TerminalProcess(321, 321, 321, "start")
+
+        with (
+            patch("termia.file_transfer.GLib.find_program_in_path", return_value="/usr/bin/setsid"),
+            patch("termia.file_transfer.Gio.SubprocessLauncher.new", return_value=launcher) as new_launcher,
+            patch("termia.file_transfer.capture_terminal_process", return_value=identity),
+        ):
+            controller.run_command(
+                ["/usr/bin/ssh", "host", "test -d /tmp"],
+                "",
+                state,
+                Mock(),
+                disable_askpass=True,
+            )
+
+        flags = new_launcher.call_args.args[0]
+        self.assertEqual(flags, Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE)
+        launcher.set_stdin_file_path.assert_called_once_with(os.devnull)
+        launcher.unsetenv.assert_any_call("SSH_ASKPASS")
+        launcher.unsetenv.assert_any_call("DISPLAY")
 
     def test_cancel_requests_bounded_process_tree_termination_once(self) -> None:
         controller, _parent, toast = self.build_controller()

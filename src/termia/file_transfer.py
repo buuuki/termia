@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import os
 import signal
 import shlex
 from collections.abc import Callable
@@ -98,6 +99,7 @@ class FileTransferController:
         self.selection_cancellable: Gio.Cancellable | None = None
         self.pending_destination_dialog: Gtk.Dialog | None = None
         self.pending_fingerprint_dialog: Gtk.Dialog | None = None
+        self.pending_password_dialog: Gtk.Dialog | None = None
         self.active_state: dict[str, Any] | None = None
         self.inactive_notified = False
         self.cancelled = False
@@ -282,6 +284,10 @@ class FileTransferController:
         file_list = ", ".join(path.name for path in local_paths)
         dialog_state = self.show_transfer_dialog(server, destination, file_list)
         dialog_state["phase"] = "prepare"
+        dialog_state["transfer_password"] = server.password if sshpass_path else ""
+        dialog_state["use_password"] = bool(sshpass_path)
+        dialog_state["ssh_command"] = ssh_command
+        dialog_state["scp_command"] = scp_command
         log_event(
             "scp.transfer_started",
             authentication="password" if sshpass_path else "key_or_agent",
@@ -289,13 +295,158 @@ class FileTransferController:
         )
         dialog_state["status"].set_label(self.t("send_files_to_server_prepare_remote"))
         log_event("scp.transfer_phase", phase="prepare")
+        if sshpass_path:
+            self.run_command(
+                ssh_command,
+                server.password,
+                dialog_state,
+                lambda: self._start_copy_step(server, scp_command, dialog_state, True),
+            )
+        else:
+            publickey_command = [
+                ssh_command[0],
+                "-o",
+                "BatchMode=yes",
+                "-o",
+                "PreferredAuthentications=publickey",
+                *ssh_command[1:],
+            ]
+            self.run_command(
+                publickey_command,
+                "",
+                dialog_state,
+                lambda: self._start_copy_step(server, scp_command, dialog_state, False),
+                on_failure=lambda stderr: self.on_initial_prepare_failure(
+                    server,
+                    scp_command,
+                    dialog_state,
+                    stderr,
+                ),
+                disable_askpass=True,
+            )
+        self.toast_label.set_label(self.t("send_files_to_server_started").format(name=server.name))
+
+    @staticmethod
+    def is_authentication_failure(output: str) -> bool:
+        output = output.lower()
+        return any(
+            marker in output
+            for marker in (
+                "permission denied (",
+                "authentication that can continue",
+                "no supported authentication methods available",
+            )
+        )
+
+    def on_initial_prepare_failure(
+        self,
+        server: Server,
+        scp_command: list[str],
+        state: dict[str, Any],
+        stderr: str,
+    ) -> None:
+        if self.is_authentication_failure(stderr):
+            self.show_password_dialog(server, scp_command, state)
+            return
+        self.finish_dialog(state, self.failure_message(state), outcome="failed")
+
+    def show_password_dialog(
+        self,
+        server: Server,
+        scp_command: list[str],
+        state: dict[str, Any],
+    ) -> None:
+        dialog = Gtk.Dialog(
+            title=self.t("send_files_to_server_password_title"),
+            transient_for=self.parent,
+            modal=True,
+        )
+        dialog.set_resizable(False)
+        self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        self.add_dialog_action_button(
+            dialog,
+            self.t("send_files_to_server_password_confirm"),
+            Gtk.ResponseType.OK,
+            last=True,
+        )
+        content = dialog.get_content_area()
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_spacing(8)
+        detail = Gtk.Label(
+            label=self.t("send_files_to_server_password_detail").format(
+                user=server.user,
+                host=server.host,
+            )
+        )
+        detail.set_xalign(0)
+        password = Gtk.PasswordEntry()
+        password.set_show_peek_icon(True)
+        error = Gtk.Label(label="")
+        error.set_xalign(0)
+        error.add_css_class("error")
+        error.set_visible(False)
+        content.append(detail)
+        content.append(password)
+        content.append(error)
+        self.pending_password_dialog = dialog
+        dialog.connect(
+            "response",
+            self.on_password_dialog_response,
+            server,
+            scp_command,
+            state,
+            password,
+            error,
+        )
+        dialog.present()
+        password.grab_focus()
+
+    def on_password_dialog_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        server: Server,
+        scp_command: list[str],
+        state: dict[str, Any],
+        password: Gtk.PasswordEntry,
+        error: Gtk.Label,
+    ) -> None:
+        if response != Gtk.ResponseType.OK:
+            self.pending_password_dialog = None
+            dialog.destroy()
+            self.cancel_transfer(state)
+            return
+        secret = password.get_text()
+        if not secret:
+            error.set_label(self.t("send_files_to_server_password_empty"))
+            error.set_visible(True)
+            password.grab_focus()
+            return
+        self.pending_password_dialog = None
+        dialog.destroy()
+        sshpass_path = GLib.find_program_in_path("sshpass")
+        if sshpass_path is None:
+            self.finish_dialog(state, self.t("sshpass_missing"), outcome="failed")
+            return
+        state["transfer_password"] = secret
+        state["use_password"] = True
+        state["password_attempted"] = True
+        ssh_command = [sshpass_path, "-e", *state["ssh_command"]]
+        scp_command = [sshpass_path, "-e", *scp_command]
         self.run_command(
             ssh_command,
-            server.password if sshpass_path else "",
-            dialog_state,
-            lambda: self._start_copy_step(server, scp_command, dialog_state, bool(sshpass_path)),
+            secret,
+            state,
+            lambda: self._start_copy_step(server, scp_command, state, True),
+            on_failure=lambda stderr: self.on_password_prepare_failure(state, stderr),
         )
-        self.toast_label.set_label(self.t("send_files_to_server_started").format(name=server.name))
+
+    def on_password_prepare_failure(self, state: dict[str, Any], stderr: str) -> None:
+        message = self.t("send_files_to_server_auth_failed") if self.is_authentication_failure(stderr) else self.failure_message(state)
+        self.finish_dialog(state, message, outcome="failed")
 
     def on_scanned_host_keys(
         self,
@@ -486,6 +637,10 @@ class FileTransferController:
             dialog = self.pending_fingerprint_dialog
             self.pending_fingerprint_dialog = None
             dialog.destroy()
+        if self.pending_password_dialog is not None:
+            dialog = self.pending_password_dialog
+            self.pending_password_dialog = None
+            dialog.destroy()
         state = self.active_state
         if state is not None:
             self.cancel_transfer(state)
@@ -525,7 +680,7 @@ class FileTransferController:
         log_event("scp.transfer_phase", phase="copy")
         self.run_command(
             scp_command,
-            server.password if use_sshpass else "",
+            state.get("transfer_password", "") if use_sshpass else "",
             state,
             lambda: self.finish_dialog(
                 state,
@@ -534,7 +689,15 @@ class FileTransferController:
             ),
         )
 
-    def run_command(self, command: list[str], password: str, state: dict[str, Any], on_success: Callable[[], None]) -> None:
+    def run_command(
+        self,
+        command: list[str],
+        password: str,
+        state: dict[str, Any],
+        on_success: Callable[[], None],
+        on_failure: Callable[[str], None] | None = None,
+        disable_askpass: bool = False,
+    ) -> None:
         if state.get("completed"):
             return
         setsid_path = GLib.find_program_in_path("setsid")
@@ -546,9 +709,15 @@ class FileTransferController:
             )
             return
         try:
-            launcher = Gio.SubprocessLauncher.new(Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE)
+            flags = Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+            launcher = Gio.SubprocessLauncher.new(flags)
             if password:
                 launcher.setenv("SSHPASS", password, True)
+            if disable_askpass:
+                launcher.setenv("SSH_ASKPASS_REQUIRE", "never", True)
+                launcher.unsetenv("SSH_ASKPASS")
+                launcher.unsetenv("DISPLAY")
+                launcher.set_stdin_file_path(os.devnull)
             process = launcher.spawnv([setsid_path, "--wait", *command])
         except GLib.Error as exc:
             self.finish_dialog(
@@ -563,7 +732,13 @@ class FileTransferController:
         process.communicate_utf8_async(
             None,
             state["cancellable"],
-            lambda current_process, result: self.on_command_finished(current_process, result, state, on_success),
+            lambda current_process, result: self.on_command_finished(
+                current_process,
+                result,
+                state,
+                on_success,
+                on_failure,
+            ),
         )
 
     def on_command_finished(
@@ -572,9 +747,10 @@ class FileTransferController:
         result: Gio.AsyncResult,
         state: dict[str, Any],
         on_success: Callable[[], None],
+        on_failure: Callable[[str], None] | None = None,
     ) -> None:
         try:
-            process.communicate_utf8_finish(result)
+            _ok, stdout, stderr = process.communicate_utf8_finish(result)
         except GLib.Error:
             if state.get("completed") or state["cancellable"].is_cancelled():
                 return
@@ -589,6 +765,9 @@ class FileTransferController:
         if state.get("completed"):
             return
         if not process.get_successful():
+            if on_failure is not None:
+                on_failure(stderr or "")
+                return
             self.finish_dialog(
                 state,
                 self.failure_message(state),

@@ -583,6 +583,26 @@ msgstr "No s'ha pogut obtenir la petjada del servidor."
 msgid "Could not save the server fingerprint."
 msgstr "No s'ha pogut desar la petjada del servidor."
 
+#: src/termia/i18n.py:send_files_to_server_password_title
+msgid "SCP password required"
+msgstr "Cal la contrasenya per a SCP"
+
+#: src/termia/i18n.py:send_files_to_server_password_detail
+msgid "Enter the password for {user}@{host}:"
+msgstr "Introduïu la contrasenya per a {user}@{host}:"
+
+#: src/termia/i18n.py:send_files_to_server_password_confirm
+msgid "Continue"
+msgstr "Continua"
+
+#: src/termia/i18n.py:send_files_to_server_password_empty
+msgid "Enter a password."
+msgstr "Introduïu una contrasenya."
+
+#: src/termia/i18n.py:send_files_to_server_auth_failed
+msgid "SCP authentication failed."
+msgstr "L'autenticació SCP ha fallat."
+
 #: src/termia/i18n.py:keybindings_description
 msgid "Click a shortcut and press the combination you want. Use Clear to leave it disabled so the combination reaches the remote shell."
 msgstr "Fes clic en una drecera i prem la combinació que vulguis. Usa Esborrar per deixar-la desactivada i que la combinació arribi al shell remot."
