@@ -559,6 +559,30 @@ msgstr "No se encontró scp, ssh o setsid en el PATH."
 msgid "Confirm the host fingerprint in the terminal if prompted, then enter the password if needed."
 msgstr "Confirma la huella del host en la terminal si aparece y después introduce la contraseña si se pide."
 
+#: src/termia/i18n.py:send_files_to_server_fingerprint_title
+msgid "Confirm SSH host fingerprint"
+msgstr "Confirma la huella del host SSH"
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_detail
+msgid "Host: {host}\nPort: {port}\nServer keys:\n{keys}"
+msgstr "Host: {host}\nPuerto: {port}\nClaves del servidor:\n{keys}"
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_warning
+msgid "Verify this fingerprint before accepting it. Accepting saves it to known_hosts."
+msgstr "Verifica esta huella antes de aceptarla. Al aceptarla se guardará en known_hosts."
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_accept
+msgid "Accept fingerprint"
+msgstr "Aceptar huella"
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_failed
+msgid "Could not retrieve the server fingerprint."
+msgstr "No se pudo obtener la huella del servidor."
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_save_failed
+msgid "Could not save the server fingerprint."
+msgstr "No se pudo guardar la huella del servidor."
+
 #: src/termia/i18n.py:keybindings_description
 msgid "Click a shortcut and press the combination you want. Use Clear to leave it disabled so the combination reaches the remote shell."
 msgstr "Haz clic en un atajo y pulsa la combinación que quieras. Usa Borrar para dejarlo desactivado y que la combinación llegue al shell remoto."

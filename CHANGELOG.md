@@ -47,6 +47,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
   cannot block the GTK interface while `ssh-keygen -F` runs (`#230`).
 - Match OpenSSH known-host resolution for non-standard SSH ports to avoid false
   new-host prompts when a compatible entry is stored without the port (`#258`).
+- Add an explicit SCP fingerprint dialog for unknown endpoints, with visible
+  identity details, confirmation-gated known_hosts persistence, and safe
+  cancellation (`#260`).
 - Bind session-specific dialogs, confirmations, terminal preferences, and SCP
   flows to the detached window that initiated them (`#226`).
 - Keep a detached window's native and header titles synchronized when its tab

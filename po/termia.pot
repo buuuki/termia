@@ -603,6 +603,34 @@ msgstr ""
 msgid "Confirm the host fingerprint in the terminal if prompted, then enter the password if needed."
 msgstr ""
 
+#: src/termia/i18n.py:send_files_to_server_fingerprint_title
+msgid "Confirm SSH host fingerprint"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_detail
+msgid ""
+"Host: {host}\n"
+"Port: {port}\n"
+"Server keys:\n"
+"{keys}"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_warning
+msgid "Verify this fingerprint before accepting it. Accepting saves it to known_hosts."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_accept
+msgid "Accept fingerprint"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_failed
+msgid "Could not retrieve the server fingerprint."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_save_failed
+msgid "Could not save the server fingerprint."
+msgstr ""
+
 #: src/termia/i18n.py:keybindings_description
 msgid "Click a shortcut and press the combination you want. Use Clear to leave it disabled so the combination reaches the remote shell."
 msgstr ""
