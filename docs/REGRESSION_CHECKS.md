@@ -67,6 +67,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - `Send files to server` must open its selector from both a saved server's
   sidebar context menu and a terminal context menu; the latter must use its
   owning main or detached window, and cancelling either selector must be safe.
+- When SCP targets an unknown endpoint, it must show an explicit dialog with
+  host, port, key type, and SHA-256 fingerprint. Accepting must save the key
+  only after confirmation and continue the transfer; cancelling must leave
+  known_hosts unchanged. The flow must work from both sidebar and terminal
+  context actions.
 - After local file selection, SCP must prompt for a per-transfer absolute remote
   destination defaulting to `/tmp/.termia`; invalid, relative, control-character,
   and parent-traversal paths must not start host inspection or a child process.

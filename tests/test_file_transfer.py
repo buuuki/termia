@@ -17,6 +17,7 @@ from termia.file_transfer import (
     format_scp_remote_path,
     normalize_remote_destination,
 )
+from termia.known_hosts import ScannedHostKey
 from termia.models import Server
 from termia.terminal_processes import TerminalProcess
 
@@ -131,8 +132,16 @@ class FileTransferTests(unittest.TestCase):
 
     def test_defers_upload_until_known_host_check_finishes(self) -> None:
         inspect_known_host = Mock()
+        fetch_host_key = Mock()
         toast = Mock()
-        controller = FileTransferController(object(), lambda key: key, toast, Mock(), inspect_known_host)
+        controller = FileTransferController(
+            object(),
+            lambda key: key,
+            toast,
+            Mock(),
+            inspect_known_host,
+            fetch_host_key=fetch_host_key,
+        )
         controller.show_transfer_dialog = Mock()
 
         with patch(
@@ -148,8 +157,54 @@ class FileTransferTests(unittest.TestCase):
         controller.show_transfer_dialog.assert_not_called()
         callback = inspect_known_host.call_args.args[2]
         callback(False)
-        toast.set_label.assert_called_once_with("send_files_to_server_fingerprint")
+        fetch_host_key.assert_called_once()
+        fingerprint_callback = fetch_host_key.call_args.args[2]
+        fingerprint_callback([])
+        toast.set_error.assert_called_once_with("send_files_to_server_fingerprint_failed")
         controller.show_transfer_dialog.assert_not_called()
+
+    def test_accepting_scanned_fingerprint_saves_key_and_retries_upload(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        scanned = [ScannedHostKey("example.test", "ssh-ed25519", "c3ludGhldGlj", "SHA256:test")]
+        controller.write_host_key = Mock(return_value=True)
+        controller.start_upload = Mock()
+        dialog = Mock()
+        controller.pending_fingerprint_dialog = dialog
+        server = Server(id="server-1", name="Web", host="example.test", user="admin")
+        local_paths = [Path("report.txt")]
+
+        controller.on_fingerprint_dialog_response(
+            dialog,
+            Gtk.ResponseType.OK,
+            server,
+            local_paths,
+            DESTINATION,
+            scanned,
+        )
+
+        dialog.destroy.assert_called_once_with()
+        controller.write_host_key.assert_called_once_with(scanned)
+        controller.start_upload.assert_called_once_with(server, local_paths, DESTINATION)
+
+    def test_cancelling_scanned_fingerprint_does_not_write_key(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        scanned = [ScannedHostKey("example.test", "ssh-ed25519", "c3ludGhldGlj", "SHA256:test")]
+        controller.write_host_key = Mock(return_value=True)
+        dialog = Mock()
+        controller.pending_fingerprint_dialog = dialog
+        server = Server(id="server-1", name="Web", host="example.test", user="admin")
+
+        controller.on_fingerprint_dialog_response(
+            dialog,
+            Gtk.ResponseType.CANCEL,
+            server,
+            [Path("report.txt")],
+            DESTINATION,
+            scanned,
+        )
+
+        controller.write_host_key.assert_not_called()
+        self.assertIsNone(controller.pending_fingerprint_dialog)
 
     def test_destination_dialog_rejects_invalid_path_without_starting_upload(self) -> None:
         controller, _parent, _toast = self.build_controller()
@@ -297,6 +352,16 @@ class FileTransferTests(unittest.TestCase):
         dialog.destroy.assert_called_once_with()
         self.assertIsNone(controller.pending_destination_dialog)
         inactive.assert_called_once_with(controller)
+
+    def test_owner_close_destroys_pending_fingerprint_dialog(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        dialog = Mock()
+        controller.pending_fingerprint_dialog = dialog
+
+        controller.cancel_active_transfer(close_dialog=True)
+
+        dialog.destroy.assert_called_once_with()
+        self.assertIsNone(controller.pending_fingerprint_dialog)
 
     def test_owner_close_cancels_and_destroys_transfer_dialog_once(self) -> None:
         controller, _parent, _toast = self.build_controller()

@@ -559,6 +559,30 @@ msgstr "No s'ha trobat scp, ssh o setsid al PATH."
 msgid "Confirm the host fingerprint in the terminal if prompted, then enter the password if needed."
 msgstr "Confirma la petjada de l'host a la terminal si apareix i després introdueix la contrasenya si se't demana."
 
+#: src/termia/i18n.py:send_files_to_server_fingerprint_title
+msgid "Confirm SSH host fingerprint"
+msgstr "Confirmeu la petjada de l'host SSH"
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_detail
+msgid "Host: {host}\nPort: {port}\nServer keys:\n{keys}"
+msgstr "Host: {host}\nPort: {port}\nClaus del servidor:\n{keys}"
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_warning
+msgid "Verify this fingerprint before accepting it. Accepting saves it to known_hosts."
+msgstr "Verifiqueu aquesta petjada abans d'acceptar-la. En acceptar-la es desarà a known_hosts."
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_accept
+msgid "Accept fingerprint"
+msgstr "Accepta la petjada"
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_failed
+msgid "Could not retrieve the server fingerprint."
+msgstr "No s'ha pogut obtenir la petjada del servidor."
+
+#: src/termia/i18n.py:send_files_to_server_fingerprint_save_failed
+msgid "Could not save the server fingerprint."
+msgstr "No s'ha pogut desar la petjada del servidor."
+
 #: src/termia/i18n.py:keybindings_description
 msgid "Click a shortcut and press the combination you want. Use Clear to leave it disabled so the combination reaches the remote shell."
 msgstr "Fes clic en una drecera i prem la combinació que vulguis. Usa Esborrar per deixar-la desactivada i que la combinació arribi al shell remot."

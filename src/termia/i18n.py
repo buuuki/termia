@@ -197,6 +197,12 @@ MESSAGES = {'servers': 'Show or hide server list',
  'send_files_to_server_missing': 'scp, ssh, or setsid was not found in PATH.',
  'send_files_to_server_fingerprint': 'Confirm the host fingerprint in the terminal if prompted, '
                                      'then enter the password if needed.',
+ 'send_files_to_server_fingerprint_title': 'Confirm SSH host fingerprint',
+ 'send_files_to_server_fingerprint_detail': 'Host: {host}\nPort: {port}\nServer keys:\n{keys}',
+ 'send_files_to_server_fingerprint_warning': 'Verify this fingerprint before accepting it. Accepting saves it to known_hosts.',
+ 'send_files_to_server_fingerprint_accept': 'Accept fingerprint',
+ 'send_files_to_server_fingerprint_failed': 'Could not retrieve the server fingerprint.',
+ 'send_files_to_server_fingerprint_save_failed': 'Could not save the server fingerprint.',
  'keybindings_description': 'Click a shortcut and press the combination you want. Use Clear to '
                             'leave it disabled so the combination reaches the remote shell.',
  'keybinding_capture_prompt': 'Press the combination',

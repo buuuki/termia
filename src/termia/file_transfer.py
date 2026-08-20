@@ -15,6 +15,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, Gtk
 
 from .debug import log_event
+from .known_hosts import ScannedHostKey, append_scanned_host_keys, scan_host_key_async
 from .models import Server
 from .terminal_processes import (
     TerminalProcess,
@@ -82,6 +83,8 @@ class FileTransferController:
         inspect_known_host: Callable[[str, int, Callable[[bool], None]], None],
         on_inactive: Callable[[FileTransferController], None] | None = None,
         owner_session_id: str | None = None,
+        fetch_host_key: Callable[[str, int, Callable[[list[ScannedHostKey]], None]], None] = scan_host_key_async,
+        write_host_key: Callable[[list[ScannedHostKey]], bool] = append_scanned_host_keys,
     ) -> None:
         self.parent = parent
         self.t = translate
@@ -90,8 +93,11 @@ class FileTransferController:
         self.inspect_known_host = inspect_known_host
         self.on_inactive = on_inactive
         self.owner_session_id = owner_session_id
+        self.fetch_host_key = fetch_host_key
+        self.write_host_key = write_host_key
         self.selection_cancellable: Gio.Cancellable | None = None
         self.pending_destination_dialog: Gtk.Dialog | None = None
+        self.pending_fingerprint_dialog: Gtk.Dialog | None = None
         self.active_state: dict[str, Any] | None = None
         self.inactive_notified = False
         self.cancelled = False
@@ -246,8 +252,16 @@ class FileTransferController:
             self.mark_inactive()
             return
         if not known_host:
-            self.toast_label.set_label(self.t("send_files_to_server_fingerprint"))
-            self.mark_inactive()
+            self.fetch_host_key(
+                server.host,
+                server.port,
+                lambda scanned_keys: self.on_scanned_host_keys(
+                    server,
+                    local_paths,
+                    destination,
+                    scanned_keys,
+                ),
+            )
             return
 
         sshpass_path = None
@@ -282,6 +296,97 @@ class FileTransferController:
             lambda: self._start_copy_step(server, scp_command, dialog_state, bool(sshpass_path)),
         )
         self.toast_label.set_label(self.t("send_files_to_server_started").format(name=server.name))
+
+    def on_scanned_host_keys(
+        self,
+        server: Server,
+        local_paths: list[Path],
+        destination: str,
+        scanned_keys: list[ScannedHostKey],
+    ) -> None:
+        if self.cancelled:
+            self.mark_inactive()
+            return
+        if not scanned_keys:
+            self.toast_label.set_error(self.t("send_files_to_server_fingerprint_failed"))
+            self.mark_inactive()
+            return
+        self.show_fingerprint_dialog(server, local_paths, destination, scanned_keys)
+
+    def show_fingerprint_dialog(
+        self,
+        server: Server,
+        local_paths: list[Path],
+        destination: str,
+        scanned_keys: list[ScannedHostKey],
+    ) -> None:
+        dialog = Gtk.Dialog(
+            title=self.t("send_files_to_server_fingerprint_title"),
+            transient_for=self.parent,
+            modal=True,
+        )
+        dialog.set_resizable(False)
+        self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        self.add_dialog_action_button(
+            dialog,
+            self.t("send_files_to_server_fingerprint_accept"),
+            Gtk.ResponseType.OK,
+            last=True,
+        )
+        content = dialog.get_content_area()
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_spacing(8)
+        detail = Gtk.Label(
+            label=self.t("send_files_to_server_fingerprint_detail").format(
+                host=server.host,
+                port=server.port,
+                keys="\n".join(
+                    f"{scanned_key.key_type}: {scanned_key.fingerprint}"
+                    for scanned_key in scanned_keys
+                ),
+            )
+        )
+        detail.set_xalign(0)
+        detail.set_wrap(True)
+        warning = Gtk.Label(label=self.t("send_files_to_server_fingerprint_warning"))
+        warning.set_xalign(0)
+        warning.set_wrap(True)
+        warning.add_css_class("warning")
+        content.append(detail)
+        content.append(warning)
+        self.pending_fingerprint_dialog = dialog
+        dialog.connect(
+            "response",
+            self.on_fingerprint_dialog_response,
+            server,
+            local_paths,
+            destination,
+            scanned_keys,
+        )
+        dialog.present()
+
+    def on_fingerprint_dialog_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        server: Server,
+        local_paths: list[Path],
+        destination: str,
+        scanned_keys: list[ScannedHostKey],
+    ) -> None:
+        self.pending_fingerprint_dialog = None
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK:
+            self.mark_inactive()
+            return
+        if not self.write_host_key(scanned_keys):
+            self.toast_label.set_error(self.t("send_files_to_server_fingerprint_save_failed"))
+            self.mark_inactive()
+            return
+        self.start_upload(server, local_paths, destination)
 
     def show_transfer_dialog(self, server: Server, destination: str, file_list: str) -> dict[str, Any]:
         dialog = Gtk.Dialog(
@@ -376,6 +481,10 @@ class FileTransferController:
         if self.pending_destination_dialog is not None:
             dialog = self.pending_destination_dialog
             self.pending_destination_dialog = None
+            dialog.destroy()
+        if self.pending_fingerprint_dialog is not None:
+            dialog = self.pending_fingerprint_dialog
+            self.pending_fingerprint_dialog = None
             dialog.destroy()
         state = self.active_state
         if state is not None:
