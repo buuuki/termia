@@ -216,6 +216,7 @@ msgid "Cancel"
 msgstr ""
 
 #: src/termia/i18n.py:continue
+#: src/termia/i18n.py:send_files_to_server_password_confirm
 msgid "Continue"
 msgstr ""
 
@@ -629,6 +630,22 @@ msgstr ""
 
 #: src/termia/i18n.py:send_files_to_server_fingerprint_save_failed
 msgid "Could not save the server fingerprint."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_password_title
+msgid "SCP password required"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_password_detail
+msgid "Enter the password for {user}@{host}:"
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_password_empty
+msgid "Enter a password."
+msgstr ""
+
+#: src/termia/i18n.py:send_files_to_server_auth_failed
+msgid "SCP authentication failed."
 msgstr ""
 
 #: src/termia/i18n.py:keybindings_description

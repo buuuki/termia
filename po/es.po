@@ -583,6 +583,26 @@ msgstr "No se pudo obtener la huella del servidor."
 msgid "Could not save the server fingerprint."
 msgstr "No se pudo guardar la huella del servidor."
 
+#: src/termia/i18n.py:send_files_to_server_password_title
+msgid "SCP password required"
+msgstr "Se necesita la contraseña para SCP"
+
+#: src/termia/i18n.py:send_files_to_server_password_detail
+msgid "Enter the password for {user}@{host}:"
+msgstr "Introduce la contraseña para {user}@{host}:"
+
+#: src/termia/i18n.py:send_files_to_server_password_confirm
+msgid "Continue"
+msgstr "Continuar"
+
+#: src/termia/i18n.py:send_files_to_server_password_empty
+msgid "Enter a password."
+msgstr "Introduce una contraseña."
+
+#: src/termia/i18n.py:send_files_to_server_auth_failed
+msgid "SCP authentication failed."
+msgstr "La autenticación SCP ha fallado."
+
 #: src/termia/i18n.py:keybindings_description
 msgid "Click a shortcut and press the combination you want. Use Clear to leave it disabled so the combination reaches the remote shell."
 msgstr "Haz clic en un atajo y pulsa la combinación que quieras. Usa Borrar para dejarlo desactivado y que la combinación llegue al shell remoto."

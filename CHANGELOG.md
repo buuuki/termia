@@ -50,6 +50,9 @@ Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 - Add an explicit SCP fingerprint dialog for unknown endpoints, with visible
   identity details, confirmation-gated known_hosts persistence, and safe
   cancellation (`#260`).
+- Use one native Termia password dialog for SCP fallback authentication instead
+  of repeated system SSH_ASKPASS prompts, while keeping the password in memory
+  only for the active transfer (`#262`).
 - Bind session-specific dialogs, confirmations, terminal preferences, and SCP
   flows to the detached window that initiated them (`#226`).
 - Keep a detached window's native and header titles synchronized when its tab

@@ -72,6 +72,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   only after confirmation and continue the transfer; cancelling must leave
   known_hosts unchanged. The flow must work from both sidebar and terminal
   context actions.
+- When no saved password is available, SCP must suppress system SSH_ASKPASS,
+  try public-key authentication first, and show one native Termia password
+  dialog only when key authentication fails. The entered password must be
+  reused for preparation and copying without being logged or persisted.
 - After local file selection, SCP must prompt for a per-transfer absolute remote
   destination defaulting to `/tmp/.termia`; invalid, relative, control-character,
   and parent-traversal paths must not start host inspection or a child process.
