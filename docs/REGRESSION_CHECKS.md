@@ -199,9 +199,23 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Context menus and popovers must use readable foreground/background colors and must not inherit terminal colors.
 - Sidebar group/server selection colors must remain readable and must preserve the distinction between folders/groups and server entries.
 - New CSS rules must be scoped to Termia classes where practical and must not unintentionally override GTK/VTE internals.
-- Split pane separators must remain visible, narrow, and readable on both light and dark themes.
-- Showing pane status bars must not enlarge split separators; narrow panes may
-  ellipsize the connection name while keeping the timer and actions usable.
+- Split pane dividers have two deliberately different visual parts that must be
+  checked separately:
+  - The thin visual separator line uses the configured split-separator color
+    (green `#008712` by default) and configured thickness. It must remain
+    distinct from the drag area and must not be replaced by the terminal
+    background color.
+  - The wider draggable area uses the configured terminal background color, so
+    it must change when the terminal background changes and must follow the
+    active terminal theme/background. Its minimum drag size is 5 px, or the
+    configured separator thickness when that is larger; it is vertical for
+    horizontal splits and horizontal for vertical splits.
+- Split dividers must remain readable on both light and dark themes. Confirm
+  that the thin configured line remains visible while the wider drag area
+  blends with the terminal background.
+- Showing pane status bars must not enlarge either the thin separator line or
+  the draggable area; narrow panes may ellipsize the connection name while
+  keeping the timer and actions usable.
 - Showing or hiding a pane status bar must preserve the existing position of
   every affected split divider.
 - Adding a split inside an existing nested layout must preserve every ancestor
@@ -294,6 +308,16 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Drag a horizontal split divider away from the centre, then show and hide its
   pane status bar from both the context menu and `Hide` button; the divider
   must remain at the chosen position and long status titles must ellipsize.
+  Check the divider's two visual parts independently: the thin line must keep
+  its configured color and thickness, while the wider drag area must retain its
+  minimum drag size and terminal-background color.
+- In both light and dark application themes, change the terminal background in
+  Terminal preferences and save it. Confirm that the wider draggable area
+  changes to the new terminal background while the thin separator line keeps
+  its configured color. Change the separator thickness as well and confirm
+  that only the thin line's configured thickness changes, with the drag area
+  remaining at least 5 px wide/tall or growing to the configured thickness when
+  that exceeds 5 px.
 - Starting from one pane, create the second, third, and fourth panes. Before
   every insertion, move all existing dividers away from their defaults. Repeat
   the sequence as needed to cover left, right, up, and down. Confirm each new

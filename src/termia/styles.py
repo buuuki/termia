@@ -5,6 +5,7 @@ from __future__ import annotations
 
 def build_application_css(
     menu_background: str,
+    terminal_background: str,
     split_separator_color: str,
     split_separator_thickness: int,
 ) -> bytes:
@@ -29,9 +30,9 @@ def build_application_css(
         ".termia-pane-status > label { min-width: 0; } "
         ".termia-terminal-pane.in-split > .termia-pane-status { padding: 6px; } "
         f".termia-split-pane.horizontal > separator {{ min-width: {handle_size}px; "
-        f"background: transparent; border-left: {thickness}px solid {split_separator_color}; }} "
+        f"background: {terminal_background}; border-left: {thickness}px solid {split_separator_color}; }} "
         f".termia-split-pane.vertical > separator {{ min-height: {handle_size}px; "
-        f"background: transparent; border-top: {thickness}px solid {split_separator_color}; }} "
+        f"background: {terminal_background}; border-top: {thickness}px solid {split_separator_color}; }} "
         f".termia-split-pane.horizontal > separator:hover {{ border-left-color: alpha({split_separator_color}, 0.82); }} "
         f".termia-split-pane.vertical > separator:hover {{ border-top-color: alpha({split_separator_color}, 0.82); }} "
         ".termia-read-only-badge { font-weight: 600; } "

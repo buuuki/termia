@@ -4,6 +4,10 @@
 
 Changes merged after `0.5.0-beta.3` (released 2026-07-30).
 
+### Changed
+
+- Match the split-pane drag area background to the configured terminal background.
+
 ### Added
 
 - Add a validated per-transfer SCP destination prompt, defaulting to
