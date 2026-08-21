@@ -460,6 +460,7 @@ class TermiaWindow(
         provider.load_from_data(
             build_application_css(
                 menu_bg,
+                terminal_settings.background,
                 terminal_settings.split_separator_color,
                 terminal_settings.split_separator_thickness,
             )
