@@ -51,7 +51,7 @@ since the previous release.
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
 `0.5.0`; its historical tag and release are not renamed. The current source
-release line is `0.5.0-beta.3`.
+release line is `0.6.0-beta.1`.
 
 ## Debian package versions
 
