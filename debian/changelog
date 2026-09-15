@@ -1,3 +1,11 @@
+termia (0.6.0~beta.1-1) unstable; urgency=medium
+
+  * Release Termia 0.6.0-beta.1 with SCP stabilization, safer terminal
+    lifecycle handling, workspace restoration, and split-pane improvements.
+  * Synchronize application, Debian package, changelog, and download versions.
+
+ -- Jordi Pons <jpons.git@proton.me>  Tue, 15 Sep 2026 09:00:00 +0200
+
 termia (0.5.0~beta.3-1) unstable; urgency=medium
 
   * Release Termia 0.5.0-beta.3 with independent split-pane connections and
