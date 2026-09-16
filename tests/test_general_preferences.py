@@ -2,7 +2,12 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from termia.general_preferences import GENERAL_PREFERENCE_FIELDS, GeneralPreferencesMixin
+from termia.general_preferences import (
+    GENERAL_PREFERENCE_FIELDS,
+    GeneralPreferencesMixin,
+    password_preference_hint_visibility,
+    password_preference_sensitivity,
+)
 
 
 class GeneralPreferencesNotificationTests(unittest.TestCase):
@@ -78,6 +83,26 @@ class GeneralPreferencesNotificationTests(unittest.TestCase):
 
         configure.assert_not_called()
         host.toast_label.set_label.assert_called_once_with("confirm_close_app: Enabled")
+
+    def test_password_options_require_configured_shortcut_and_main_option(self) -> None:
+        self.assertEqual(password_preference_sensitivity({"send_password": "Ctrl+P"}, False), (True, False))
+        self.assertEqual(password_preference_sensitivity({"send_password": "Ctrl+P"}, True), (True, True))
+        self.assertEqual(password_preference_sensitivity({"send_password": ""}, False), (False, False))
+        self.assertEqual(password_preference_sensitivity({}, True), (False, False))
+
+    def test_password_preference_hints_explain_unavailable_options(self) -> None:
+        self.assertEqual(
+            password_preference_hint_visibility({"send_password": "Ctrl+P"}, False),
+            (False, True),
+        )
+        self.assertEqual(
+            password_preference_hint_visibility({"send_password": "Ctrl+P"}, True),
+            (False, False),
+        )
+        self.assertEqual(
+            password_preference_hint_visibility({"send_password": ""}, False),
+            (True, False),
+        )
 
 
 if __name__ == "__main__":

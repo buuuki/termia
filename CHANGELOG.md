@@ -8,6 +8,10 @@
   directory navigation, uploads/downloads, progress, cancellation, and confirmed
   file operations without changing terminal layouts or SCP behavior (`#269`).
 
+### Fixed
+
+- Keep saved-password preference sensitivity independent from the close-confirmation setting, require its keybinding to be configured, and explain unavailable options (`#272`).
+
 ### Changed
 
 - Clarify the active `0.6.0` beta cadence in `ROADMAP.md`.

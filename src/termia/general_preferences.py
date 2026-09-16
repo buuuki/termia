@@ -32,6 +32,24 @@ GENERAL_PREFERENCE_FIELDS = (
 )
 
 
+def password_preference_sensitivity(
+    keybindings: dict[str, str], shortcut_active: bool
+) -> tuple[bool, bool]:
+    """Return sensitivity for the permission and trailing-Enter options."""
+    shortcut_configured = bool(keybindings.get("send_password", "").strip())
+    return shortcut_configured, shortcut_configured and shortcut_active
+
+
+def password_preference_hint_visibility(
+    keybindings: dict[str, str], shortcut_active: bool
+) -> tuple[bool, bool]:
+    """Return visibility for the shortcut and dependent-option explanations."""
+    shortcut_sensitive, _enter_sensitive = password_preference_sensitivity(
+        keybindings, shortcut_active
+    )
+    return not shortcut_sensitive, shortcut_sensitive and not shortcut_active
+
+
 class GeneralPreferencesMixin:
     def on_app_preferences(self, _button: Gtk.Button) -> None:
         if not self.ensure_writable():
@@ -72,15 +90,57 @@ class GeneralPreferencesMixin:
         for button, (_, active) in zip(check_buttons, checks):
             button.set_active(active)
             button.set_halign(Gtk.Align.START)
-        send_password_shortcut, send_password_enter = check_buttons[9:11]
-        send_password_enter.set_sensitive(send_password_shortcut.get_active())
-        send_password_shortcut.connect("toggled", lambda current: send_password_enter.set_sensitive(current.get_active()))
+        send_password_shortcut = check_buttons[10]
+        send_password_enter = check_buttons[11]
+        shortcut_sensitive, enter_sensitive = password_preference_sensitivity(
+            self.store.data.app.keybindings,
+            send_password_shortcut.get_active(),
+        )
+        if not shortcut_sensitive:
+            send_password_shortcut.set_active(False)
+            enter_sensitive = False
+        send_password_shortcut.set_sensitive(shortcut_sensitive)
+        send_password_enter.set_sensitive(enter_sensitive)
+        shortcut_hint = Gtk.Label(
+            label=self.t("send_password_shortcut_unavailable"), xalign=0
+        )
+        shortcut_hint.set_wrap(True)
+        shortcut_hint.add_css_class("dim-label")
+        enter_hint = Gtk.Label(
+            label=self.t("send_password_enter_unavailable"), xalign=0
+        )
+        enter_hint.set_wrap(True)
+        enter_hint.add_css_class("dim-label")
+
+        shortcut_hint_visible, enter_hint_visible = password_preference_hint_visibility(
+            self.store.data.app.keybindings,
+            send_password_shortcut.get_active(),
+        )
+        shortcut_hint.set_visible(shortcut_hint_visible)
+        enter_hint.set_visible(enter_hint_visible)
+
+        def update_password_preference_help(current: Gtk.CheckButton) -> None:
+            active = current.get_active()
+            send_password_enter.set_sensitive(shortcut_sensitive and active)
+            shortcut_hint.set_visible(not shortcut_sensitive)
+            enter_hint.set_visible(shortcut_sensitive and not active)
+
+        send_password_shortcut.connect("toggled", update_password_preference_help)
         check_buttons[-1].set_tooltip_text(
             self.t("debug_log_path").format(path=DEBUG_LOG_FILE)
         )
 
         rows: list[tuple[str, Gtk.Widget]] = [(self.t("theme"), theme_combo), (self.t("language"), language_combo)]
-        rows.extend(("", button) for button in check_buttons)
+        rows.extend(("", button) for button in check_buttons[:10])
+        shortcut_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        shortcut_box.set_hexpand(True)
+        shortcut_box.append(send_password_shortcut)
+        shortcut_box.append(shortcut_hint)
+        enter_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        enter_box.set_hexpand(True)
+        enter_box.append(send_password_enter)
+        enter_box.append(enter_hint)
+        rows.extend((("", shortcut_box), ("", enter_box), ("", check_buttons[-1])))
         for index, (label_text, widget) in enumerate(rows):
             label = Gtk.Label(label=label_text)
             label.set_xalign(0)

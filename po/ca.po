@@ -534,9 +534,17 @@ msgstr "Confirmar per tancar Termia"
 msgid "Allow sending saved password with shortcut"
 msgstr "Permetre enviar la contrasenya desada amb una drecera"
 
+#: src/termia/i18n.py:send_password_shortcut_unavailable
+msgid "Configure the \"Send saved password\" shortcut in Keybindings to enable this option."
+msgstr "Configura la drecera \"Envia la contrasenya desada\" a Dreceres de teclat per activar aquesta opció."
+
 #: src/termia/i18n.py:send_password_enter
 msgid "Send saved password and press Enter"
 msgstr "Enviar contrasenya i prémer Enter"
+
+#: src/termia/i18n.py:send_password_enter_unavailable
+msgid "Enable \"Allow sending saved password with shortcut\" first."
+msgstr "Activa primer \"Permetre enviar la contrasenya desada amb una drecera\"."
 
 #: src/termia/i18n.py:send_password_sent
 msgid "Saved password sent to the terminal"

@@ -534,9 +534,17 @@ msgstr "Confirmar para cerrar Termia"
 msgid "Allow sending saved password with shortcut"
 msgstr "Permitir enviar la contraseña guardada con un atajo"
 
+#: src/termia/i18n.py:send_password_shortcut_unavailable
+msgid "Configure the \"Send saved password\" shortcut in Keybindings to enable this option."
+msgstr "Configura el atajo \"Enviar contraseña guardada\" en Atajos de teclado para activar esta opción."
+
 #: src/termia/i18n.py:send_password_enter
 msgid "Send saved password and press Enter"
 msgstr "Enviar contraseña y pulsar Enter"
+
+#: src/termia/i18n.py:send_password_enter_unavailable
+msgid "Enable \"Allow sending saved password with shortcut\" first."
+msgstr "Activa primero \"Permitir enviar la contraseña guardada con un atajo\"."
 
 #: src/termia/i18n.py:send_password_sent
 msgid "Saved password sent to the terminal"

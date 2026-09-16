@@ -601,8 +601,16 @@ msgstr ""
 msgid "Allow sending saved password with shortcut"
 msgstr ""
 
+#: src/termia/i18n.py:send_password_shortcut_unavailable
+msgid "Configure the \"Send saved password\" shortcut in Keybindings to enable this option."
+msgstr ""
+
 #: src/termia/i18n.py:send_password_enter
 msgid "Send saved password and press Enter"
+msgstr ""
+
+#: src/termia/i18n.py:send_password_enter_unavailable
+msgid "Enable \"Allow sending saved password with shortcut\" first."
 msgstr ""
 
 #: src/termia/i18n.py:send_password_sent
