@@ -21,6 +21,22 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
+## Explorador SFTP (código en desarrollo)
+
+Abre **Explorar archivos (SFTP)** desde el menú de un servidor o panel SSH.
+Instala las dependencias con `scripts/termia-setup.sh install`. La ventana
+independiente permite navegar, subir archivos/carpetas, descargar, crear
+carpetas, renombrar y borrar archivos o carpetas vacías. No sobrescribe destinos
+existentes ni transfiere enlaces simbólicos. Cancelar desconecta SFTP; reconecta
+para continuar. Pueden quedar archivos remotos o carpetas incompletos. El progreso
+es por archivo. Cerrar la pestaña propietaria o Termia cierra la conexión SFTP.
+
+Paramiko usa el host y la identidad guardados, SSH-agent/claves predeterminadas
+o contraseña en memoria. Confirma las huellas desconocidas; se rechazan claves
+modificadas. No se incluyen alias de OpenSSH, ProxyJump, proveedores de claves
+hardware ni MFA interactivo. SCP sigue disponible. Esta función todavía no
+forma parte del paquete beta.1 publicado.
+
 ## Descargar e instalar (Ubuntu 24.04+)
 
 Descarga [termia_0.6.0.beta.1-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.1/termia_0.6.0.beta.1-1_all.deb)

@@ -178,6 +178,25 @@ keybinding dialogs have comparatively small contracts.
 
 ## Dependency hotspots
 
+### SFTP boundary
+
+- `sftp_service.py` defines immutable endpoint/entry data, typed authentication
+  events and the `SFTPBackend` protocol without GTK or Paramiko dependencies.
+- `SFTPService` serializes work off the GTK thread. Its injected dispatcher
+  delivers results on the UI loop and suppresses queued callbacks after closure.
+- `sftp_backend.py` implements that protocol using Paramiko. It owns the SSH
+  transport, known-host verification, bounded I/O, and explicit file operations.
+  It never executes shell commands, mounts paths or receives GTK widgets.
+- `sftp_view.py` owns the independent window, prompts and selection state;
+  tests can inject a backend. New backends must implement the service contract
+  and translate authentication errors to its typed events.
+- `ManagedTransfer` provides the common lifecycle contract with existing SCP.
+  Session-owned explorers are closed through the existing tab/application
+  transfer cleanup. Sidebar-owned explorers have no terminal session owner.
+- The initial adapter uses saved endpoint fields rather than OpenSSH config
+  interpretation. SFTP credentials are never persisted. Backend replacement,
+  remote editing or transfer queues must not alter terminal layout or styling.
+
 The principal dependency hotspots are:
 
 1. `TerminalSessionsMixin` still creates and closes tabs through `TabsMixin`;

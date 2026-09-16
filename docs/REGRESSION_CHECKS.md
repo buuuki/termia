@@ -263,6 +263,33 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ## Manual Regression Checklist
 
+### Native SFTP explorer
+
+- From the saved-server menu and from each SSH pane of a mixed split, open
+  `Browse files (SFTP)` and check the correct endpoint. Terminal size, divider
+  positions, application CSS, and existing SCP actions must remain unchanged.
+- Check passwords, SSH-agent/default keys and explicit private keys. Reject an
+  unknown fingerprint and verify no key is saved; accept a verified fingerprint
+  and reconnect. A changed known key must be refused, without an accept option.
+- Navigate and refresh, including paths with spaces. Upload multiple files and
+  nested directories, download them and compare contents. Existing destinations
+  must be refused without truncating data, including symbolic-link destinations.
+- Create and rename directories. Confirm deletion only affects the selected
+  file or empty directory. Symbolic links must not be followed in recursive
+  transfers, and nonempty directories must not be recursively deleted.
+- Cancel during connection and transfer. Reconnect explicitly and repeat the
+  operation; no old callbacks may affect the new session. Partial remote files
+  or newly created directories may remain, as explained by the status message.
+- Close the explorer, its owning tab (also after detaching), and Termia during
+  a transfer. Confirm the SFTP transport closes and no worker remains after the
+  bounded network timeout. Unrelated terminals and sidebar-owned explorers must
+  remain usable when closing a different tab.
+- Check light/dark themes and English/Spanish/Catalan labels. Verify remote
+  errors do not expose credentials or private paths in debug logs. A read-only
+  Termia instance must not persist passwords or alter connection configuration.
+
+### Existing application behavior
+
 Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 
 - Filter for one server and open it with Enter. Type a different query and

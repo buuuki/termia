@@ -78,6 +78,11 @@ class TerminalMenusMixin:
         if pane_state.server_id is not None:
             server = find_server(self.store.data.servers, pane_state.server_id)
             if server is not None:
+                if actions.browse_files is not None:
+                    self.add_context_menu_item(
+                        menu, self.t("sftp_browse"),
+                        lambda: actions.browse_files(popover, session, server),
+                    )
                 self.add_context_menu_item(
                     menu,
                     self.t("send_files_to_server"),

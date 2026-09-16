@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Add a native SFTP explorer with an isolated transport/service/UI architecture,
+  directory navigation, uploads/downloads, progress, cancellation, and confirmed
+  file operations without changing terminal layouts or SCP behavior (`#269`).
+
 ### Changed
 
 - Clarify the active `0.6.0` beta cadence in `ROADMAP.md`.

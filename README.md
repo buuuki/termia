@@ -26,6 +26,24 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Review connection history and optional local usage statistics, including durations and most-used servers.
 - Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
 
+## SFTP explorer (development checkout)
+
+Use **Browse files (SFTP)** in saved-server and SSH-pane context menus to open
+an independent file window. Install dependencies using
+`scripts/termia-setup.sh install`. Browse, upload files/folders, download into a
+local folder, create directories, rename, and delete files or empty directories.
+Existing destination paths and symbolic links are refused. Cancellation closes
+SFTP; reconnect to continue. Partial remote files and newly created directories
+may remain after cancellation or failure. Progress is per file. Closing the
+owning tab or Termia closes its SFTP connections.
+
+The Paramiko backend uses the saved endpoint and identity, SSH-agent/default
+keys, or a password prompt. Verify unknown host fingerprints before accepting;
+changed keys are refused. Entered passwords are held in memory only. OpenSSH
+config aliases, ProxyJump, hardware-key providers, and interactive MFA are not
+covered by this initial backend. SCP remains available. The SFTP feature is
+not included in the published beta.1 package below.
+
 ## Download and install (Ubuntu 24.04+)
 
 Download [termia_0.6.0.beta.1-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.1/termia_0.6.0.beta.1-1_all.deb)
