@@ -16,6 +16,96 @@ msgstr ""
 msgid "Show or hide server list"
 msgstr ""
 
+#: src/termia/i18n.py:sftp_browse
+msgid "Browse files (SFTP)"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_up
+msgid "Parent directory"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_refresh
+msgid "Refresh"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_upload
+msgid "Upload files"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_upload_folder
+msgid "Upload folder"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_download
+msgid "Download"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_mkdir
+msgid "Create directory"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_rename
+msgid "Rename"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_delete
+msgid "Delete"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_reconnect
+msgid "Reconnect SFTP"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_reconnect_required
+msgid "Reconnect SFTP to continue."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_working
+msgid "Working…"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_done
+msgid "Operation completed."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_trust
+msgid "Verify this fingerprint through a trusted channel before accepting. Save this host key?"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_password
+msgid "SSH password or private-key passphrase (not saved)"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_key_changed
+msgid "Host key changed. Connection refused; verify the server identity."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_cancelled
+msgid "Cancelled. Reconnect to continue. Partial remote files or directories may remain."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_failed
+msgid "SFTP operation failed. Check the connection, permissions and destination. Existing paths are never overwritten; partial files or directories may remain."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_invalid_name
+msgid "Enter a filename without path separators or control characters."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_delete_confirm
+msgid "Permanently delete the selected item? Only empty directories can be removed."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_select
+msgid "Select"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_continue
+#: src/termia/i18n.py:continue
+#: src/termia/i18n.py:send_files_to_server_password_confirm
+msgid "Continue"
+msgstr ""
+
 #: src/termia/i18n.py:open_local_terminal_tooltip
 msgid "Open local terminal"
 msgstr ""
@@ -213,11 +303,6 @@ msgstr ""
 
 #: src/termia/i18n.py:cancel
 msgid "Cancel"
-msgstr ""
-
-#: src/termia/i18n.py:continue
-#: src/termia/i18n.py:send_files_to_server_password_confirm
-msgid "Continue"
 msgstr ""
 
 #: src/termia/i18n.py:unlock

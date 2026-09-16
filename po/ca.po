@@ -2,6 +2,69 @@
 # Copyright (C) 2026 Jordi Pons
 # This file is distributed under the same license as the Termia package.
 #
+msgid "Browse files (SFTP)"
+msgstr "Explora fitxers (SFTP)"
+
+msgid "Parent directory"
+msgstr "Carpeta superior"
+
+msgid "Refresh"
+msgstr "Actualitza"
+
+msgid "Upload files"
+msgstr "Puja fitxers"
+
+msgid "Upload folder"
+msgstr "Puja una carpeta"
+
+msgid "Download"
+msgstr "Baixa"
+
+msgid "Create directory"
+msgstr "Crea una carpeta"
+
+msgid "Rename"
+msgstr "Canvia el nom"
+
+msgid "Delete"
+msgstr "Suprimeix"
+
+msgid "Reconnect SFTP"
+msgstr "Reconnecta SFTP"
+
+msgid "Reconnect SFTP to continue."
+msgstr "Reconnecta SFTP per continuar."
+
+msgid "Working…"
+msgstr "Processant…"
+
+msgid "Operation completed."
+msgstr "Operació completada."
+
+msgid "Verify this fingerprint through a trusted channel before accepting. Save this host key?"
+msgstr "Verifica aquesta empremta per un canal de confiança abans d'acceptar-la. Vols desar aquesta clau del servidor?"
+
+msgid "SSH password or private-key passphrase (not saved)"
+msgstr "Contrasenya SSH o frase de la clau privada (no es desa)"
+
+msgid "Host key changed. Connection refused; verify the server identity."
+msgstr "La clau del servidor ha canviat. Connexió rebutjada; verifica'n la identitat."
+
+msgid "Cancelled. Reconnect to continue. Partial remote files or directories may remain."
+msgstr "Cancel·lat. Reconnecta per continuar. Poden quedar fitxers remots o carpetes incomplets."
+
+msgid "SFTP operation failed. Check the connection, permissions and destination. Existing paths are never overwritten; partial files or directories may remain."
+msgstr "L'operació SFTP ha fallat. Comprova la connexió, els permisos i la destinació. No se sobreescriuen rutes existents; poden quedar fitxers o carpetes incomplets."
+
+msgid "Enter a filename without path separators or control characters."
+msgstr "Introdueix un nom sense separadors de ruta ni caràcters de control."
+
+msgid "Permanently delete the selected item? Only empty directories can be removed."
+msgstr "Vols suprimir permanentment l'element seleccionat? Només es poden suprimir carpetes buides."
+
+msgid "Select"
+msgstr "Selecciona"
+
 msgid ""
 msgstr ""
 "Project-Id-Version: termia\n"

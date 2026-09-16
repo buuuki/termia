@@ -2,6 +2,69 @@
 # Copyright (C) 2026 Jordi Pons
 # This file is distributed under the same license as the Termia package.
 #
+msgid "Browse files (SFTP)"
+msgstr "Explorar archivos (SFTP)"
+
+msgid "Parent directory"
+msgstr "Carpeta superior"
+
+msgid "Refresh"
+msgstr "Actualizar"
+
+msgid "Upload files"
+msgstr "Subir archivos"
+
+msgid "Upload folder"
+msgstr "Subir carpeta"
+
+msgid "Download"
+msgstr "Descargar"
+
+msgid "Create directory"
+msgstr "Crear carpeta"
+
+msgid "Rename"
+msgstr "Renombrar"
+
+msgid "Delete"
+msgstr "Eliminar"
+
+msgid "Reconnect SFTP"
+msgstr "Reconectar SFTP"
+
+msgid "Reconnect SFTP to continue."
+msgstr "Reconecta SFTP para continuar."
+
+msgid "Working…"
+msgstr "Procesando…"
+
+msgid "Operation completed."
+msgstr "Operación completada."
+
+msgid "Verify this fingerprint through a trusted channel before accepting. Save this host key?"
+msgstr "Verifica esta huella por un canal de confianza antes de aceptarla. ¿Guardar esta clave del servidor?"
+
+msgid "SSH password or private-key passphrase (not saved)"
+msgstr "Contraseña SSH o frase de la clave privada (no se guarda)"
+
+msgid "Host key changed. Connection refused; verify the server identity."
+msgstr "La clave del servidor ha cambiado. Conexión rechazada; verifica su identidad."
+
+msgid "Cancelled. Reconnect to continue. Partial remote files or directories may remain."
+msgstr "Cancelado. Reconecta para continuar. Pueden quedar archivos remotos o carpetas incompletos."
+
+msgid "SFTP operation failed. Check the connection, permissions and destination. Existing paths are never overwritten; partial files or directories may remain."
+msgstr "La operación SFTP ha fallado. Comprueba la conexión, los permisos y el destino. No se sobrescriben rutas existentes; pueden quedar archivos o carpetas incompletos."
+
+msgid "Enter a filename without path separators or control characters."
+msgstr "Introduce un nombre sin separadores de ruta ni caracteres de control."
+
+msgid "Permanently delete the selected item? Only empty directories can be removed."
+msgstr "¿Eliminar permanentemente el elemento seleccionado? Solo se pueden eliminar carpetas vacías."
+
+msgid "Select"
+msgstr "Seleccionar"
+
 msgid ""
 msgstr ""
 "Project-Id-Version: termia\n"

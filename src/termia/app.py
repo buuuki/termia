@@ -14,6 +14,7 @@ from .config_actions import ConfigActionsMixin
 from .connection_history_presenter import ConnectionHistoryPresenter
 from .connection_history_view import ConnectionHistoryDialog
 from .file_transfer import FileTransferController
+from .transfer_lifecycle import ManagedTransfer
 from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
     APP_ID,
@@ -175,6 +176,7 @@ class TermiaWindow(
             copy=self.copy_terminal_selection,
             paste=self.paste_terminal_clipboard,
             send_files=self.on_send_files_to_server,
+            browse_files=self.on_browse_sftp,
             configure=self.configure_terminal_from_menu,
             session_statistics=self.show_session_statistics,
             split=self.split_terminal_from_menu,
@@ -188,7 +190,7 @@ class TermiaWindow(
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.shutdown_in_progress = False
-        self.file_transfer_controllers: set[FileTransferController] = set()
+        self.file_transfer_controllers: set[ManagedTransfer] = set()
         self.connect("close-request", self.on_main_window_close_request)
         self.connect("destroy", lambda *_args: self.store.close())
         if hasattr(GLib, "unix_signal_add"):

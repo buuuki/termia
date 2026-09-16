@@ -22,6 +22,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
 from .connection_utils import find_local_terminal_profile, find_server
 from .file_transfer import FileTransferController
+from .transfer_lifecycle import ManagedTransfer
 from .keybindings import is_unmodified_function_key, keybinding_matches
 from .known_hosts import inspect_known_host_async
 from .models import LocalTerminalProfile, Server, Workspace
@@ -2001,7 +2002,29 @@ class TerminalSessionsMixin:
         controllers.add(controller)
         controller.open_file_selection(server)
 
-    def unregister_file_transfer(self, controller: FileTransferController) -> None:
+    def on_browse_sftp(self, popover, session, server) -> None:
+        from .sftp_service import Endpoint
+        from .sftp_view import SFTPWindow
+
+        popover.popdown()
+        parent = self if session is None else self.window_for_session(session)
+        endpoint = Endpoint(server.host, server.port, server.user, server.public_key, server.password)
+
+        def open_window():
+            if self.shutdown_in_progress:
+                return GLib.SOURCE_REMOVE
+            if session is not None and not self.session_registry.contains(session.id):
+                return GLib.SOURCE_REMOVE
+            window = SFTPWindow(parent, endpoint, server.name, self.t,
+                                self.unregister_file_transfer,
+                                session.id if session is not None else None)
+            self.file_transfer_controllers.add(window)
+            window.present()
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(open_window)
+
+    def unregister_file_transfer(self, controller: ManagedTransfer) -> None:
         controllers = getattr(self, "file_transfer_controllers", None)
         if controllers is not None:
             controllers.discard(controller)

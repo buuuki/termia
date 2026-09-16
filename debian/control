@@ -9,6 +9,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-all,
                python3-cryptography,
                python3-gi,
+               python3-paramiko (>= 2.12),
                python3-setuptools,
                python3-yaml,
                pybuild-plugin-pyproject
@@ -26,6 +27,7 @@ Depends: ${misc:Depends},
          python3 (>= 3.10),
          python3-cryptography (>= 3.4),
          python3-gi,
+         python3-paramiko (>= 2.12),
          python3-yaml,
          sshpass
 Description: GTK SSH connection manager with embedded terminals

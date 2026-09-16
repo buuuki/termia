@@ -21,6 +21,22 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
+## Explorador SFTP (codi en desenvolupament)
+
+Obre **Explora fitxers (SFTP)** des del menú d'un servidor o panell SSH.
+Instal·la les dependències amb `scripts/termia-setup.sh install`. La finestra
+independent permet navegar, pujar fitxers/carpetes, baixar, crear carpetes,
+canviar noms i suprimir fitxers o carpetes buides. No sobreescriu destinacions
+existents ni transfereix enllaços simbòlics. Cancel·lar desconnecta SFTP;
+reconnecta per continuar. Poden quedar fitxers remots o carpetes incomplets.
+El progrés és per fitxer. Tancar la pestanya propietària o Termia tanca SFTP.
+
+Paramiko usa el host i la identitat desats, SSH-agent/claus predeterminades o
+contrasenya en memòria. Confirma les empremtes desconegudes; es rebutgen claus
+modificades. No s'inclouen àlies d'OpenSSH, ProxyJump, proveïdors de claus
+hardware ni MFA interactiu. SCP continua disponible. Aquesta funció encara no
+forma part del paquet beta.1 publicat.
+
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
 Descarrega [termia_0.6.0.beta.1-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.1/termia_0.6.0.beta.1-1_all.deb)

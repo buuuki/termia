@@ -38,3 +38,4 @@ class TerminalMenuActions:
     duplicate_tab: Callable[[MenuPopover, TerminalSession], None]
     new_tab: Callable[[MenuPopover], None]
     close_tab: Callable[[MenuPopover, TerminalSession], None]
+    browse_files: Callable[[MenuPopover, TerminalSession, Server], None] | None = None
