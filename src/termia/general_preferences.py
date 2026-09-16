@@ -32,6 +32,14 @@ GENERAL_PREFERENCE_FIELDS = (
 )
 
 
+def password_preference_sensitivity(
+    keybindings: dict[str, str], shortcut_active: bool
+) -> tuple[bool, bool]:
+    """Return sensitivity for the permission and trailing-Enter options."""
+    shortcut_configured = bool(keybindings.get("send_password", "").strip())
+    return shortcut_configured, shortcut_configured and shortcut_active
+
+
 class GeneralPreferencesMixin:
     def on_app_preferences(self, _button: Gtk.Button) -> None:
         if not self.ensure_writable():
@@ -72,9 +80,23 @@ class GeneralPreferencesMixin:
         for button, (_, active) in zip(check_buttons, checks):
             button.set_active(active)
             button.set_halign(Gtk.Align.START)
-        send_password_shortcut, send_password_enter = check_buttons[9:11]
-        send_password_enter.set_sensitive(send_password_shortcut.get_active())
-        send_password_shortcut.connect("toggled", lambda current: send_password_enter.set_sensitive(current.get_active()))
+        send_password_shortcut = check_buttons[10]
+        send_password_enter = check_buttons[11]
+        shortcut_sensitive, enter_sensitive = password_preference_sensitivity(
+            self.store.data.app.keybindings,
+            send_password_shortcut.get_active(),
+        )
+        if not shortcut_sensitive:
+            send_password_shortcut.set_active(False)
+            enter_sensitive = False
+        send_password_shortcut.set_sensitive(shortcut_sensitive)
+        send_password_enter.set_sensitive(enter_sensitive)
+        send_password_shortcut.connect(
+            "toggled",
+            lambda current: send_password_enter.set_sensitive(
+                shortcut_sensitive and current.get_active()
+            ),
+        )
         check_buttons[-1].set_tooltip_text(
             self.t("debug_log_path").format(path=DEBUG_LOG_FILE)
         )
