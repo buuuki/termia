@@ -1,4 +1,5 @@
 import time
+import os
 import unittest
 from unittest.mock import Mock
 
@@ -11,10 +12,16 @@ from termia.sftp_service import Endpoint, RemoteEntry
 from termia.sftp_view import SFTPWindow
 
 
-@unittest.skipUnless(Gtk.init_check(), "GTK display unavailable")
+@unittest.skipUnless(
+    os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"),
+    "GTK display unavailable",
+)
 class SFTPViewTests(unittest.TestCase):
     def test_window_lists_files_without_changing_parent_and_closes_backend(self):
-        parent = Gtk.Window()
+        try:
+            parent = Gtk.Window()
+        except RuntimeError as error:
+            self.skipTest(str(error))
         backend = Mock()
         backend.connect.return_value = "/home/synthetic"
         backend.list_directory.return_value = [RemoteEntry("test.txt", 4, 0, 0o100600)]
