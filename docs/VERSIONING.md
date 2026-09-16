@@ -47,6 +47,27 @@ Version numbers are updated when preparing a release, not in every feature or
 bug-fix pull request. The release version must describe all changes accumulated
 since the previous release.
 
+## Release development branches
+
+`main` represents the latest published release. Development for the next
+prerelease is isolated in one branch named with the target version and a `-dev`
+suffix, for example `release/0.6.0-beta.2-dev`. This branch is a workflow
+marker, not a published application or Debian package version. The About
+dialog may display the development marker so that source checkouts are not
+mistaken for the last published release.
+
+Feature and bugfix branches must be based on the active release-development
+branch, and their pull requests must target that branch. When the release is
+ready, update the application, changelog, Debian metadata, and documentation
+to the exact release version on the development branch. Merge that validated
+state into `main`, create the matching annotated tag and GitHub release, and
+then create the next `release/<next-version>-dev` branch from the updated
+`main`.
+
+For the current cycle, the next development branch is
+`release/0.6.0-beta.2-dev`; the next published release containing changes after
+`0.6.0-beta.1` must be `0.6.0-beta.2`.
+
 ## Current beta baseline
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of

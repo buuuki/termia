@@ -10,6 +10,12 @@ include new features, fixes, and improvements that belong to the current
 release scope. Increment the trailing beta number for each published
 iteration, as defined in `docs/VERSIONING.md`.
 
+The active development branch for the next iteration is
+`release/0.6.0-beta.2-dev`. New feature and bugfix branches must start from it
+and their pull requests must target it. `main` remains the latest published
+release line; after beta.2 is validated and published, create
+`release/0.6.0-beta.3-dev` from the updated `main`.
+
 `0.6.0-beta.1` was published after completing the following checks:
 
 - [x] Exercise large mixed workspaces containing local and SSH panes.

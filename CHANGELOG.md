@@ -15,6 +15,8 @@
 ### Changed
 
 - Clarify the active `0.6.0` beta cadence in `ROADMAP.md`.
+- Document release-development branches and keep `main` aligned with published
+  releases (`#275`).
 
 ## 0.6.0-beta.1 - 2026-09-15
 
