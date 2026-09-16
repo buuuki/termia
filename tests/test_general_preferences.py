@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from termia.general_preferences import (
     GENERAL_PREFERENCE_FIELDS,
     GeneralPreferencesMixin,
+    password_preference_hint_visibility,
     password_preference_sensitivity,
 )
 
@@ -88,6 +89,20 @@ class GeneralPreferencesNotificationTests(unittest.TestCase):
         self.assertEqual(password_preference_sensitivity({"send_password": "Ctrl+P"}, True), (True, True))
         self.assertEqual(password_preference_sensitivity({"send_password": ""}, False), (False, False))
         self.assertEqual(password_preference_sensitivity({}, True), (False, False))
+
+    def test_password_preference_hints_explain_unavailable_options(self) -> None:
+        self.assertEqual(
+            password_preference_hint_visibility({"send_password": "Ctrl+P"}, False),
+            (False, True),
+        )
+        self.assertEqual(
+            password_preference_hint_visibility({"send_password": "Ctrl+P"}, True),
+            (False, False),
+        )
+        self.assertEqual(
+            password_preference_hint_visibility({"send_password": ""}, False),
+            (True, False),
+        )
 
 
 if __name__ == "__main__":

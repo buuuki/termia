@@ -10,7 +10,7 @@
 
 ### Fixed
 
-- Keep saved-password preference sensitivity independent from the close-confirmation setting and require its keybinding to be configured (`#272`).
+- Keep saved-password preference sensitivity independent from the close-confirmation setting, require its keybinding to be configured, and explain unavailable options (`#272`).
 
 ### Changed
 
