@@ -17,6 +17,8 @@
 - Clarify the active `0.6.0` beta cadence in `ROADMAP.md`.
 - Document release-development branches and keep `main` aligned with published
   releases (`#275`).
+- Mark the active source checkout as `0.6.0-beta.2-dev` until the next release
+  is prepared (`#277`).
 
 ## 0.6.0-beta.1 - 2026-09-15
 
