@@ -26,7 +26,9 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Development Workflow
 
-- Base issue branches on current `main` unless the task names another base.
+- Base issue branches on the active release-development branch, such as
+  `release/0.6.0-beta.2-dev`. Use `main` only for release preparation and
+  maintenance that must apply to the published-release line.
 - Keep each change focused and avoid unrelated refactors or cleanup.
 - Do not commit local user configuration, exported credentials, generated caches, or unrelated cleanup.
 - Update the README and localized documentation when documented user-facing behavior changes.
@@ -94,7 +96,8 @@ scripts/run_test_instance.sh --fresh
 
 Before opening or merging a PR, confirm:
 
-- The branch is based on current `main`.
+- The branch is based on the active release-development branch, or on `main`
+  when the task explicitly targets the published-release line.
 - The diff contains only files related to the task.
 - User-facing docs and translations are updated when needed.
 - Validation commands were run, or any skipped checks are explicitly noted.

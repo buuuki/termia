@@ -28,10 +28,22 @@ python3 run_termia.py
 
 ## Branches and Commits
 
-- Start feature and bugfix work from an up-to-date `main` branch.
+- Start feature and bugfix work from the active release-development branch,
+  such as `release/0.6.0-beta.2-dev`. Use an up-to-date `main` branch only for
+  release preparation or work that explicitly targets the published-release
+  line.
 - Use descriptive branch names, preferably tied to an issue, for example `feature/14-shortcuts-configuration` or `fix/reconnect-status-message`.
 - Write focused commit messages that describe the behavior change.
 - Reference issues when appropriate with `Closes #<issue>` in the pull request description, not necessarily in every commit.
+
+The `main` branch represents the latest published release. During an active
+prerelease cycle, the next release has one development branch named with the
+target version and a `-dev` suffix, for example
+`release/0.6.0-beta.2-dev`. Feature and bugfix branches are based on that
+branch and pull requests target it. Once the release is validated, prepare the
+exact release version on the development branch, merge it into `main`, tag and
+publish the release, and create the next development branch from the updated
+`main`.
 
 ## Code Guidelines
 
