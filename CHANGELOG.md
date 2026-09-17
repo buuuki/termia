@@ -4,6 +4,9 @@
 
 ### Added
 
+- Add About-based update checks, verified Debian downloads and explicit
+  installation, and guarded Git release updates through independent adapters
+  with cancellable preparation (`#274`).
 - Add a native SFTP explorer with an isolated transport/service/UI architecture,
   directory navigation, uploads/downloads, progress, cancellation, and confirmed
   file operations without changing terminal layouts or SCP behavior (`#269`).
