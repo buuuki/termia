@@ -35,15 +35,41 @@ Paramiko usa el host y la identidad guardados, SSH-agent/claves predeterminadas
 o contraseña en memoria. Confirma las huellas desconocidas; se rechazan claves
 modificadas. No se incluyen alias de OpenSSH, ProxyJump, proveedores de claves
 hardware ni MFA interactivo. SCP sigue disponible. Esta función todavía no
-forma parte del paquete beta.1 publicado.
+forma parte del paquete beta.2 publicado.
 
 ## Descargar e instalar (Ubuntu 24.04+)
 
-Descarga [termia_0.6.0.beta.1-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.1/termia_0.6.0.beta.1-1_all.deb)
+### Actualizaciones (código en desarrollo)
+
+Abre **Acerca de → Buscar actualizaciones** para consultar las versiones oficiales.
+Las betas/RC permanecen en su línea de versión, incluida su versión estable final;
+las instalaciones estables solo ofrecen versiones estables más recientes.
+La consulta es manual y no envía configuración ni datos SSH.
+
+**Descargar e instalar** solicita confirmación. Para Debian se verifica el SHA-256
+publicado por GitHub y la identidad y versión del paquete. Se necesitan APT,
+`pkexec` y un agente de autenticación del escritorio. Si faltan herramientas o
+metadatos verificables, se ofrece el enlace oficial para instalar manualmente.
+
+Git solo permite actualizar un repositorio limpio, exactamente en la etiqueta de
+su versión actual, en `main` o separado de una rama en dicha etiqueta. Descarga
+la etiqueta oficial seleccionada y solo avanza sin crear merges. Las ramas de
+desarrollo, cambios locales e historiales divergentes requieren actualización
+manual. Después ejecuta `scripts/termia-setup.sh install` para verificar las
+dependencias y reinicia Termia manualmente.
+
+Se pueden cancelar las consultas y descargas. Una vez iniciada la instalación,
+hay que dejarla terminar; cerrar Termia no detiene al gestor de paquetes.
+Esta función está incluida en el paquete beta.2 y no actualiza revisiones
+exclusivamente Debian de la misma versión de la aplicación.
+
+### Paquete publicado
+
+Descarga [termia_0.6.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.2/termia_0.6.0.beta.2-1_all.deb)
 e instálalo con APT, que resolverá las dependencias necesarias:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.1-1_all.deb
+sudo apt install ./termia_0.6.0.beta.2-1_all.deb
 ```
 
 ## Descargar e instalar desde el código fuente
@@ -125,11 +151,11 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fichero `termia_0.6.0~beta.1-1_all.deb` se crea en el directorio padre.
+El fichero `termia_0.6.0~beta.2-1_all.deb` se crea en el directorio padre.
 Instálalo con:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.1-1_all.deb
+sudo apt install ../termia_0.6.0~beta.2-1_all.deb
 ```
 
 El paquete Debian instala el comando `termia`, el lanzador de escritorio y el

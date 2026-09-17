@@ -31,6 +31,29 @@ command contents, or clipboard contents, and it does not transmit these counters
 Statistics are flushed at most every 30 seconds while typing, when sessions end, and
 when Termia closes.
 
+## Application updates
+
+Update checks are explicit and contact the public GitHub Releases API. GitHub
+receives the normal network request (including the client IP), but Termia sends
+no saved configuration, SSH endpoints or credentials. Network responses have
+size/time limits. Downloads accept HTTPS only and restrict redirects to GitHub's
+official release-asset host. The SHA-256 digest comes from the official API over
+TLS; this detects corrupt/substituted bytes but is not an independent publisher
+signature and does not protect against compromise of the official repository.
+
+Debian packages require a matching digest, package name, application version,
+architecture and an upgrade over the installed package. The desktop polkit agent
+handles administrator authentication; Termia never collects that password.
+APT resolves dependencies and refuses removals. Already-running installations
+are not killed when the UI closes. Temporary packages are removed afterwards;
+the updater retains a per-user lock across profiles until the operation ends.
+
+Git updates only fast-forward clean release checkouts to a tag fetched from the
+fixed official HTTPS repository. They never reset, stash or force-push. Git hooks
+are disabled for updater commands. Git configuration is trusted local state;
+do not run a checkout supplied by an untrusted third party. The fetched tag may
+remain after cancellation, but the working tree is not changed by preparation.
+
 ## Reporting a vulnerability
 
 Do not include credentials, private keys, exported configurations, or server

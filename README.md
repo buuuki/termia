@@ -42,15 +42,41 @@ keys, or a password prompt. Verify unknown host fingerprints before accepting;
 changed keys are refused. Entered passwords are held in memory only. OpenSSH
 config aliases, ProxyJump, hardware-key providers, and interactive MFA are not
 covered by this initial backend. SCP remains available. The SFTP feature is
-not included in the published beta.1 package below.
+included in the published beta.2 package below.
 
 ## Download and install (Ubuntu 24.04+)
 
-Download [termia_0.6.0.beta.1-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.1/termia_0.6.0.beta.1-1_all.deb)
+### Updates (development checkout)
+
+Open **About → Check for updates** to check official GitHub releases. Beta/RC
+installations stay in their application release line (including its final stable
+release); stable installations only offer newer stable releases. Checking is
+manual and does not send configuration or SSH data.
+
+**Download and install** asks for confirmation. Debian installations require a
+compatible official package with a GitHub SHA-256 digest, APT, `pkexec` and a
+desktop authentication agent. The package identity and version are checked before
+the system asks for administrator authorization. Missing tools or verification
+metadata leave the official release link available for manual installation.
+
+Git updates require a clean checkout exactly at its current release tag, on
+`main` or detached at that tag. The updater fetches the selected official tag and
+only fast-forwards; development branches, local changes and divergent histories
+require manual updating. Afterwards, run `scripts/termia-setup.sh install` in the
+checkout to verify runtime dependencies, then restart Termia yourself.
+
+Checks and downloads can be cancelled. Once installation starts, allow it to
+finish; closing Termia does not terminate the package-manager transaction.
+Restart manually to use the new version. It does not update Debian-only rebuilds
+of the same app version.
+
+### Published package
+
+Download [termia_0.6.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.2/termia_0.6.0.beta.2-1_all.deb)
 and install it with APT, which resolves the required dependencies:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.1-1_all.deb
+sudo apt install ./termia_0.6.0.beta.2-1_all.deb
 ```
 
 ## Download from source
@@ -143,11 +169,11 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-The resulting `termia_0.6.0~beta.1-1_all.deb` is created in the parent directory.
+The resulting `termia_0.6.0~beta.2-1_all.deb` is created in the parent directory.
 Install it with:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.1-1_all.deb
+sudo apt install ../termia_0.6.0~beta.2-1_all.deb
 ```
 
 The Debian package installs the `termia` command, desktop launcher, and icon;

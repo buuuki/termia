@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+No changes yet.
+
+## 0.6.0-beta.2 - 2026-09-17
+
+Changes merged after `0.6.0-beta.1`.
+
 ### Added
 
+- Add About-based update checks, verified Debian downloads and explicit
+  installation, and guarded Git release updates through independent adapters
+  with cancellable preparation (`#274`).
 - Add a native SFTP explorer with an isolated transport/service/UI architecture,
   directory navigation, uploads/downloads, progress, cancellation, and confirmed
   file operations without changing terminal layouts or SCP behavior (`#269`).
@@ -17,6 +26,8 @@
 - Clarify the active `0.6.0` beta cadence in `ROADMAP.md`.
 - Document release-development branches and keep `main` aligned with published
   releases (`#275`).
+- Mark the active source checkout as `0.6.0-beta.2-dev` until the next release
+  is prepared (`#277`).
 
 ## 0.6.0-beta.1 - 2026-09-15
 

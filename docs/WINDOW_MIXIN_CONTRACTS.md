@@ -178,6 +178,25 @@ keybinding dialogs have comparatively small contracts.
 
 ## Dependency hotspots
 
+### Update boundary
+
+- `update_service.py` owns immutable release/version models, release-channel
+  policy and bounded HTTPS downloads. It imports neither GTK nor installers.
+- `update_installers.py` defines the `Installer` protocol and Git/Debian
+  adapters. `availability` explains restrictions, `prepare` supports cancellation
+  and stages a verified artifact, and `apply` finishes the confirmed transaction.
+  Adapters never receive widgets, terminal sessions or connection stores.
+- `update_controller.py` serializes work, owns the cross-profile process lock
+  and temporary directory, and dispatches callbacks through an injected function.
+  Closing suppresses queued callbacks and cancels preparation; an application
+  transaction retains a non-daemon worker until the installer exits.
+- `update_view.py` adds one header-bar action to About using public GTK APIs and
+  owns the update/confirmation dialogs. It receives only a GTK parent and a
+  translator. It changes no terminal CSS, geometry, keyboard dispatch or storage.
+- To add another installation format, implement `Installer` and extend detection;
+  keep release selection and widgets independent. Release APIs can be replaced
+  through the injected client; tests inject clients/adapters without installing.
+
 ### SFTP boundary
 
 - `sftp_service.py` defines immutable endpoint/entry data, typed authentication

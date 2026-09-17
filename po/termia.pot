@@ -16,6 +16,106 @@ msgstr ""
 msgid "Show or hide server list"
 msgstr ""
 
+#: src/termia/i18n.py:update_title
+msgid "Termia updates"
+msgstr ""
+
+#: src/termia/i18n.py:update_check
+msgid "Check for updates"
+msgstr ""
+
+#: src/termia/i18n.py:update_current
+msgid "Current version: {version}"
+msgstr ""
+
+#: src/termia/i18n.py:update_intro
+msgid "Check official releases for a newer compatible version."
+msgstr ""
+
+#: src/termia/i18n.py:update_notes
+msgid "Release notes"
+msgstr ""
+
+#: src/termia/i18n.py:update_install
+msgid "Download and install"
+msgstr ""
+
+#: src/termia/i18n.py:update_checking
+msgid "Checking for updates…"
+msgstr ""
+
+#: src/termia/i18n.py:update_available
+msgid "Version {version} is available."
+msgstr ""
+
+#: src/termia/i18n.py:update_current_latest
+msgid "No newer compatible release is available."
+msgstr ""
+
+#: src/termia/i18n.py:update_confirm
+msgid "Install Termia {version}? Debian installation may request administrator authentication. Once installation starts, let it finish. Restart Termia manually afterwards."
+msgstr ""
+
+#: src/termia/i18n.py:update_preparing
+msgid "Downloading and verifying the update…"
+msgstr ""
+
+#: src/termia/i18n.py:update_applying
+msgid "Installing… Please wait for the installation to finish."
+msgstr ""
+
+#: src/termia/i18n.py:update_installed
+msgid "Update installed. Restart Termia to use the new version."
+msgstr ""
+
+#: src/termia/i18n.py:update_installed_source
+msgid "Source updated. Run scripts/termia-setup.sh install in the checkout to verify dependencies, then restart Termia."
+msgstr ""
+
+#: src/termia/i18n.py:update_cancelling
+msgid "Cancelling…"
+msgstr ""
+
+#: src/termia/i18n.py:update_cancelled
+msgid "Update cancelled."
+msgstr ""
+
+#: src/termia/i18n.py:update_busy
+msgid "Another update is in progress. Try again when it finishes."
+msgstr ""
+
+#: src/termia/i18n.py:update_network_failed
+msgid "Could not contact the release server. Check your connection and try again later."
+msgstr ""
+
+#: src/termia/i18n.py:update_untrusted
+msgid "Update verification failed. Nothing has been installed."
+msgstr ""
+
+#: src/termia/i18n.py:update_failed
+msgid "The update could not be completed. Try checking again."
+msgstr ""
+
+#: src/termia/i18n.py:update_install_failed
+msgid "Installation failed or authorization was cancelled. Check permissions, dependencies and package-manager availability before trying again."
+msgstr ""
+
+#: src/termia/i18n.py:update_checkout_blocked
+msgid "Automatic installation is available only for a clean release checkout on main or a release tag. Development branches and local changes must be updated manually."
+msgstr ""
+
+#: src/termia/i18n.py:update_no_verified_asset
+msgid "This release has no compatible Debian package with a SHA-256 digest. Use the release page for manual installation."
+msgstr ""
+
+#: src/termia/i18n.py:update_installer_missing
+msgid "Automatic installation requires APT, dpkg and pkexec with a desktop authentication agent."
+msgstr ""
+
+#: src/termia/i18n.py:update_unknown_installation
+msgid "This installation type cannot be updated automatically. Use the official release page."
+msgstr ""
+
 #: src/termia/i18n.py:sftp_browse
 msgid "Browse files (SFTP)"
 msgstr ""

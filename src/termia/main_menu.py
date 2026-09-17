@@ -247,6 +247,9 @@ class MainMenuMixin:
         dialog.set_website_label(self.t("report_issue"))
         if ABOUT_IMAGE.exists():
             dialog.set_logo(Gdk.Texture.new_from_filename(str(ABOUT_IMAGE)))
+        from .update_view import attach_updates
+        attach_updates(dialog, self.t)
+        dialog.set_destroy_with_parent(True)
         dialog.present()
         GLib.idle_add(self.clear_about_dialog_selection, dialog)
 
