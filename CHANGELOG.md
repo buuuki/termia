@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-No changes yet.
+### Changed
+
+- Clarify the beta.2 feature list and release status in the root and localized
+  README files (`#282`).
 
 ## 0.6.0-beta.2 - 2026-09-17
 

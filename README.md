@@ -19,6 +19,9 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Restore the previous tabs and split layout on startup after confirmation; only saved connection references are stored, never terminal output, running processes, PIDs, passwords, or private paths.
 - Enable `Restore the previous session when Termia starts` from `General` to opt into this behavior; it is disabled by default.
 - Upload local files to remote servers with SCP from the terminal or server context menu.
+- Browse remote files through a native SFTP explorer with navigation, transfers,
+  progress, cancellation, and confirmed file operations.
+- Check for official releases and install verified updates from `About`.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
 - Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`.
 - Store host, user, port, password, and private-key settings for each SSH connection.
@@ -26,7 +29,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Review connection history and optional local usage statistics, including durations and most-used servers.
 - Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
 
-## SFTP explorer (development checkout)
+## SFTP explorer
 
 Use **Browse files (SFTP)** in saved-server and SSH-pane context menus to open
 an independent file window. Install dependencies using
@@ -46,7 +49,7 @@ included in the published beta.2 package below.
 
 ## Download and install (Ubuntu 24.04+)
 
-### Updates (development checkout)
+### Updates
 
 Open **About → Check for updates** to check official GitHub releases. Beta/RC
 installations stay in their application release line (including its final stable
