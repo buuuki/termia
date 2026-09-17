@@ -1608,3 +1608,102 @@ msgstr "Sessió anterior restaurada: {count} pestanya(es); s'han omès {skipped}
 #: src/termia/i18n.py:global_tab_limit_exceeded
 msgid "Cannot open tabs: {open} already open, {requested} requested, global limit {limit}."
 msgstr "No es poden obrir les pestanyes: n'hi ha {open} d'obertes, se n'han sol·licitat {requested} i el límit global és {limit}."
+#: src/termia/i18n.py:update_title
+msgid "Termia updates"
+msgstr "Actualitzacions de Termia"
+
+#: src/termia/i18n.py:update_check
+msgid "Check for updates"
+msgstr "Cerca actualitzacions"
+
+#: src/termia/i18n.py:update_current
+msgid "Current version: {version}"
+msgstr "Versió actual: {version}"
+
+#: src/termia/i18n.py:update_intro
+msgid "Check official releases for a newer compatible version."
+msgstr "Cerca una versió compatible més recent entre les publicacions oficials."
+
+#: src/termia/i18n.py:update_notes
+msgid "Release notes"
+msgstr "Notes de la versió"
+
+#: src/termia/i18n.py:update_install
+msgid "Download and install"
+msgstr "Baixa i instal·la"
+
+#: src/termia/i18n.py:update_checking
+msgid "Checking for updates…"
+msgstr "Cercant actualitzacions…"
+
+#: src/termia/i18n.py:update_available
+msgid "Version {version} is available."
+msgstr "La versió {version} està disponible."
+
+#: src/termia/i18n.py:update_current_latest
+msgid "No newer compatible release is available."
+msgstr "No hi ha cap versió compatible més recent disponible."
+
+#: src/termia/i18n.py:update_confirm
+msgid "Install Termia {version}? Debian installation may request administrator authentication. Once installation starts, let it finish. Restart Termia manually afterwards."
+msgstr "Vols instal·lar Termia {version}? La instal·lació Debian pot demanar autenticació d’administrador. Un cop iniciada la instal·lació, deixa que acabi. Després reinicia Termia manualment."
+
+#: src/termia/i18n.py:update_preparing
+msgid "Downloading and verifying the update…"
+msgstr "Baixant i verificant l’actualització…"
+
+#: src/termia/i18n.py:update_applying
+msgid "Installing… Please wait for the installation to finish."
+msgstr "Instal·lant… Espera que acabi la instal·lació."
+
+#: src/termia/i18n.py:update_installed
+msgid "Update installed. Restart Termia to use the new version."
+msgstr "Actualització instal·lada. Reinicia Termia per utilitzar la nova versió."
+
+#: src/termia/i18n.py:update_installed_source
+msgid "Source updated. Run scripts/termia-setup.sh install in the checkout to verify dependencies, then restart Termia."
+msgstr "Codi actualitzat. Executa scripts/termia-setup.sh install al repositori per verificar les dependències i després reinicia Termia."
+
+#: src/termia/i18n.py:update_cancelling
+msgid "Cancelling…"
+msgstr "Cancel·lant…"
+
+#: src/termia/i18n.py:update_cancelled
+msgid "Update cancelled."
+msgstr "Actualització cancel·lada."
+
+#: src/termia/i18n.py:update_busy
+msgid "Another update is in progress. Try again when it finishes."
+msgstr "Hi ha una altra actualització en curs. Torna-ho a provar quan acabi."
+
+#: src/termia/i18n.py:update_network_failed
+msgid "Could not contact the release server. Check your connection and try again later."
+msgstr "No s’ha pogut contactar amb el servidor de versions. Comprova la connexió i torna-ho a provar més tard."
+
+#: src/termia/i18n.py:update_untrusted
+msgid "Update verification failed. Nothing has been installed."
+msgstr "La verificació de l’actualització ha fallat. No s’ha instal·lat res."
+
+#: src/termia/i18n.py:update_failed
+msgid "The update could not be completed. Try checking again."
+msgstr "No s’ha pogut completar l’actualització. Torna a cercar actualitzacions."
+
+#: src/termia/i18n.py:update_install_failed
+msgid "Installation failed or authorization was cancelled. Check permissions, dependencies and package-manager availability before trying again."
+msgstr "La instal·lació ha fallat o s’ha cancel·lat l’autorització. Comprova els permisos, les dependències i la disponibilitat del gestor de paquets abans de tornar-ho a provar."
+
+#: src/termia/i18n.py:update_checkout_blocked
+msgid "Automatic installation is available only for a clean release checkout on main or a release tag. Development branches and local changes must be updated manually."
+msgstr "La instal·lació automàtica només està disponible en un repositori net d’una versió publicada, a main o a la seva etiqueta. Les branques de desenvolupament i els canvis locals s’han d’actualitzar manualment."
+
+#: src/termia/i18n.py:update_no_verified_asset
+msgid "This release has no compatible Debian package with a SHA-256 digest. Use the release page for manual installation."
+msgstr "Aquesta versió no té cap paquet Debian compatible amb SHA-256. Consulta la pàgina de la versió per instal·lar-la manualment."
+
+#: src/termia/i18n.py:update_installer_missing
+msgid "Automatic installation requires APT, dpkg and pkexec with a desktop authentication agent."
+msgstr "La instal·lació automàtica requereix APT, dpkg i pkexec amb un agent d’autenticació d’escriptori."
+
+#: src/termia/i18n.py:update_unknown_installation
+msgid "This installation type cannot be updated automatically. Use the official release page."
+msgstr "Aquest tipus d’instal·lació no es pot actualitzar automàticament. Consulta la pàgina oficial de versions."

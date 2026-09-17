@@ -46,6 +46,32 @@ not included in the published beta.1 package below.
 
 ## Download and install (Ubuntu 24.04+)
 
+### Updates (development checkout)
+
+Open **About → Check for updates** to check official GitHub releases. Beta/RC
+installations stay in their application release line (including its final stable
+release); stable installations only offer newer stable releases. Checking is
+manual and does not send configuration or SSH data.
+
+**Download and install** asks for confirmation. Debian installations require a
+compatible official package with a GitHub SHA-256 digest, APT, `pkexec` and a
+desktop authentication agent. The package identity and version are checked before
+the system asks for administrator authorization. Missing tools or verification
+metadata leave the official release link available for manual installation.
+
+Git updates require a clean checkout exactly at its current release tag, on
+`main` or detached at that tag. The updater fetches the selected official tag and
+only fast-forwards; development branches, local changes and divergent histories
+require manual updating. Afterwards, run `scripts/termia-setup.sh install` in the
+checkout to verify runtime dependencies, then restart Termia yourself.
+
+Checks and downloads can be cancelled. Once installation starts, allow it to
+finish; closing Termia does not terminate the package-manager transaction.
+Restart manually to use the new version. This feature is not in the beta.1
+package below. It does not update Debian-only rebuilds of the same app version.
+
+### Published package
+
 Download [termia_0.6.0.beta.1-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.1/termia_0.6.0.beta.1-1_all.deb)
 and install it with APT, which resolves the required dependencies:
 

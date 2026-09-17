@@ -39,6 +39,32 @@ forma part del paquet beta.1 publicat.
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
+### Actualitzacions (codi en desenvolupament)
+
+Obre **Quant a → Cerca actualitzacions** per consultar les versions oficials.
+Les betes/RC es mantenen dins la seva línia, inclosa la versió estable final;
+les instal·lacions estables només ofereixen versions estables més recents.
+La consulta és manual i no envia configuració ni dades SSH.
+
+**Baixa i instal·la** demana confirmació. Per a Debian es verifica el SHA-256
+publicat per GitHub i la identitat i versió del paquet. Calen APT, `pkexec` i un
+agent d’autenticació d’escriptori. Si falten eines o metadades verificables,
+s’ofereix l’enllaç oficial per instal·lar manualment.
+
+Git només permet actualitzar un repositori net, exactament a l’etiqueta de la
+versió actual, a `main` o separat d’una branca en aquella etiqueta. Baixa
+l’etiqueta oficial seleccionada i només avança sense crear merges. Les branques
+de desenvolupament, canvis locals i historials divergents requereixen una
+actualització manual. Després executa `scripts/termia-setup.sh install` per
+verificar les dependències i reinicia Termia manualment.
+
+Es poden cancel·lar consultes i baixades. Un cop iniciada la instal·lació, cal
+deixar-la acabar; tancar Termia no atura el gestor de paquets. Aquesta funció no
+és al paquet beta.1 ni actualitza revisions exclusivament Debian de la mateixa
+versió de l’aplicació.
+
+### Paquet publicat
+
 Descarrega [termia_0.6.0.beta.1-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.1/termia_0.6.0.beta.1-1_all.deb)
 i instal·la'l amb APT, que resoldrà les dependències necessàries:
 

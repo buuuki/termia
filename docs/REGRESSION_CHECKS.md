@@ -263,6 +263,33 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ## Manual Regression Checklist
 
+### About updates
+
+- Open About and use Check for updates. Keep the existing logo, version,
+  license, issue link and native dialog appearance. Check keyboard access,
+  light/dark themes, and English/Spanish/Catalan. Terminal and split geometry
+  must remain unchanged; opening About alone must not query the network.
+- Run from the development branch: no downgrade to beta.1 is offered and the
+  checkout restriction is explained. Verify no-update, offline, timeout,
+  malformed metadata and newer compatible release states using injected clients.
+- Check numeric beta ordering and beta-to-final-stable progression in the same
+  application line. Stable users must never be offered prereleases automatically.
+- In a disposable clean release checkout, prepare an official tag and confirm a
+  fast-forward. Repeat with dirty, development, detached non-release and divergent
+  checkouts: refuse without resetting or stashing user files. A fetch may leave
+  a tag, but cancellation before application must not alter the working tree.
+- In a disposable Debian installation, verify a compatible package's digest,
+  package identity, version and architecture. Reject missing/wrong digests,
+  truncated/oversized downloads and downgrades before requesting authorization.
+  Confirm installation through the desktop authentication agent and separately
+  cancel authorization; check missing tools and a busy package manager.
+- Cancel a download and close/reopen the dialog during checks; suppress late
+  callbacks and remove partial downloads. A second profile must not start a
+  concurrent job. Once package installation starts, let APT finish even if Termia
+  closes, retain its temporary package until then, and restart manually.
+- Verify debug logs contain only update lifecycle events, not downloaded bodies,
+  command output, credentials or paths. Existing connection data is untouched.
+
 ### Native SFTP explorer
 
 - From the saved-server menu and from each SSH pane of a mixed split, open
