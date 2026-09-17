@@ -35,7 +35,7 @@ Paramiko usa el host i la identitat desats, SSH-agent/claus predeterminades o
 contrasenya en memòria. Confirma les empremtes desconegudes; es rebutgen claus
 modificades. No s'inclouen àlies d'OpenSSH, ProxyJump, proveïdors de claus
 hardware ni MFA interactiu. SCP continua disponible. Aquesta funció encara no
-forma part del paquet beta.1 publicat.
+forma part del paquet beta.2 publicat.
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
@@ -60,16 +60,16 @@ verificar les dependències i reinicia Termia manualment.
 
 Es poden cancel·lar consultes i baixades. Un cop iniciada la instal·lació, cal
 deixar-la acabar; tancar Termia no atura el gestor de paquets. Aquesta funció no
-és al paquet beta.1 ni actualitza revisions exclusivament Debian de la mateixa
-versió de l’aplicació.
+és al paquet beta.2 i no actualitza revisions exclusivament Debian de la
+mateixa versió de l'aplicació.
 
 ### Paquet publicat
 
-Descarrega [termia_0.6.0.beta.1-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.1/termia_0.6.0.beta.1-1_all.deb)
+Descarrega [termia_0.6.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.2/termia_0.6.0.beta.2-1_all.deb)
 i instal·la'l amb APT, que resoldrà les dependències necessàries:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.1-1_all.deb
+sudo apt install ./termia_0.6.0.beta.2-1_all.deb
 ```
 
 ## Descarregar i instal·lar des del codi font
@@ -151,11 +151,11 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fitxer `termia_0.6.0~beta.1-1_all.deb` es crea al directori pare. Instal·la'l
+El fitxer `termia_0.6.0~beta.2-1_all.deb` es crea al directori pare. Instal·la'l
 amb:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.1-1_all.deb
+sudo apt install ../termia_0.6.0~beta.2-1_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la

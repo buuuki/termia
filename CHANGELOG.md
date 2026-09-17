@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+No changes yet.
+
+## 0.6.0-beta.2 - 2026-09-17
+
+Changes merged after `0.6.0-beta.1`.
+
 ### Added
 
 - Add About-based update checks, verified Debian downloads and explicit

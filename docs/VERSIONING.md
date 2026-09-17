@@ -65,14 +65,14 @@ then create the next `release/<next-version>-dev` branch from the updated
 `main`.
 
 For the current cycle, the next development branch is
-`release/0.6.0-beta.2-dev`; the next published release containing changes after
-`0.6.0-beta.1` must be `0.6.0-beta.2`.
+`release/0.6.0-beta.3-dev`; the next published release containing changes after
+`0.6.0-beta.2` must be `0.6.0-beta.3`.
 
 ## Current beta baseline
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
 `0.5.0`; its historical tag and release are not renamed. The current source
-release line is `0.6.0-beta.1`.
+release line is `0.6.0-beta.2`.
 
 ## Debian package versions
 

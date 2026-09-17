@@ -1,3 +1,11 @@
+termia (0.6.0~beta.2-1) unstable; urgency=medium
+
+  * Release Termia 0.6.0-beta.2 with native SFTP, About-based update checks,
+    verified installation, and the fixes accumulated since beta.1.
+  * Synchronize application, Debian package, changelog, and download versions.
+
+ -- Jordi Pons <jpons.git@proton.me>  Thu, 17 Sep 2026 10:00:00 +0200
+
 termia (0.6.0~beta.1-1) unstable; urgency=medium
 
   * Release Termia 0.6.0-beta.1 with SCP stabilization, safer terminal
