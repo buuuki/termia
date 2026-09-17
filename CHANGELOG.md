@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Mark the active source checkout as `0.6.0-beta.3-dev` for the next release
+  development cycle (`#284`).
 - Clarify the beta.2 feature list and release status in the root and localized
   README files (`#282`).
 
