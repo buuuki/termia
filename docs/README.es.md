@@ -14,6 +14,10 @@ Documentación en catalán: [README.ca.md](README.ca.md)
   SSH o terminales locales.
 - Guardar diseños de división por servidor SSH o perfil de terminal local para reabrir un espacio de trabajo preparado.
 - Subir ficheros locales a servidores remotos con SCP desde el menú contextual del terminal o del servidor.
+- Explorar archivos remotos mediante un explorador SFTP nativo con navegación,
+  transferencias, progreso, cancelación y operaciones confirmadas.
+- Buscar versiones oficiales e instalar actualizaciones verificadas desde
+  **Acerca de**.
 - Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
 - Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`.
 - Guardar host, usuario, puerto, contraseña y ruta de clave privada de cada conexión SSH.
@@ -21,7 +25,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
-## Explorador SFTP (código en desarrollo)
+## Explorador SFTP
 
 Abre **Explorar archivos (SFTP)** desde el menú de un servidor o panel SSH.
 Instala las dependencias con `scripts/termia-setup.sh install`. La ventana
@@ -39,7 +43,7 @@ forma parte del paquete beta.2 publicado.
 
 ## Descargar e instalar (Ubuntu 24.04+)
 
-### Actualizaciones (código en desarrollo)
+### Actualizaciones
 
 Abre **Acerca de → Buscar actualizaciones** para consultar las versiones oficiales.
 Las betas/RC permanecen en su línea de versión, incluida su versión estable final;

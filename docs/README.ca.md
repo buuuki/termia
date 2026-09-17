@@ -14,6 +14,10 @@ Documentació en castellà: [README.es.md](README.es.md)
   terminals locals.
 - Desar dissenys de divisió per servidor SSH o perfil de terminal local per reobrir un espai de treball preparat.
 - Pujar fitxers locals a servidors remots amb SCP des del menú contextual del terminal o del servidor.
+- Explorar fitxers remots mitjançant un explorador SFTP natiu amb navegació,
+  transferències, progrés, cancel·lació i operacions confirmades.
+- Cercar versions oficials i instal·lar actualitzacions verificades des de
+  **Quant a**.
 - Mantenir les dades de connexió en local amb emmagatzematge en text pla, ofuscat o xifrat opcional protegit per una contrasenya mestra.
 - Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`.
 - Desar host, usuari, port, contrasenya i ruta de clau privada de cada connexió SSH.
@@ -21,7 +25,7 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
-## Explorador SFTP (codi en desenvolupament)
+## Explorador SFTP
 
 Obre **Explora fitxers (SFTP)** des del menú d'un servidor o panell SSH.
 Instal·la les dependències amb `scripts/termia-setup.sh install`. La finestra
@@ -39,7 +43,7 @@ forma part del paquet beta.2 publicat.
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
-### Actualitzacions (codi en desenvolupament)
+### Actualitzacions
 
 Obre **Quant a → Cerca actualitzacions** per consultar les versions oficials.
 Les betes/RC es mantenen dins la seva línia, inclosa la versió estable final;
