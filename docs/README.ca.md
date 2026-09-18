@@ -18,6 +18,9 @@ Documentació en castellà: [README.es.md](README.es.md)
   transferències, progrés, cancel·lació i operacions confirmades.
 - Cercar versions oficials i instal·lar actualitzacions verificades des de
   **Quant a**.
+- Desar fragments d'ordres reutilitzables per categoria i limitar-los a tots
+  els terminals, un grup o un servidor; previsualitzar les variables abans
+  d'enviar-los explícitament al terminal seleccionat.
 - Mantenir les dades de connexió en local amb emmagatzematge en text pla, ofuscat o xifrat opcional protegit per una contrasenya mestra.
 - Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`.
 - Desar host, usuari, port, contrasenya i ruta de clau privada de cada connexió SSH.

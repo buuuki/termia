@@ -5,7 +5,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from termia.constants import DEFAULT_TERMINAL_BACKGROUND, DEFAULT_TERMINAL_FOREGROUND
-from termia.migrations import CURRENT_SCHEMA_VERSION, migrate_settings_payload
+from termia.migrations import (
+    CURRENT_CONNECTIONS_SCHEMA_VERSION,
+    CURRENT_SCHEMA_VERSION,
+    migrate_connections_payload,
+    migrate_settings_payload,
+)
 from termia.stores import ConnectionStore, SettingsStore
 
 
@@ -79,10 +84,28 @@ class MigrationTests(unittest.TestCase):
             finally:
                 store.close()
 
-            self.assertEqual(json.loads(connections_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
+            self.assertEqual(
+                json.loads(connections_path.read_text())["schema_version"],
+                CURRENT_CONNECTIONS_SCHEMA_VERSION,
+            )
             self.assertEqual(json.loads(settings_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertEqual(json.loads(statistics_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertTrue(SettingsStore(settings_path).app.debug_enabled)
+
+    def test_connections_schema_adds_empty_snippets_collection(self) -> None:
+        migrated, changed = migrate_connections_payload(
+            {
+                "schema_version": 1,
+                "groups": [],
+                "servers": [],
+                "local_terminals": [],
+                "workspaces": [],
+            }
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(migrated["schema_version"], CURRENT_CONNECTIONS_SCHEMA_VERSION)
+        self.assertEqual(migrated["snippets"], [])
 
     def test_connection_store_migrates_embedded_settings(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -88,6 +88,12 @@ class TerminalMenusMixin:
                     self.t("send_files_to_server"),
                     lambda: actions.send_files(popover, session, server),
                 )
+        if actions.run_snippet is not None:
+            self.add_context_menu_item(
+                menu,
+                self.t("run_snippet"),
+                lambda: actions.run_snippet(popover, session, terminal),
+            )
         self.add_context_menu_item(
             menu,
             self.t("configure_terminal"),

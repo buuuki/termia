@@ -1707,3 +1707,85 @@ msgstr "La instal·lació automàtica requereix APT, dpkg i pkexec amb un agent 
 #: src/termia/i18n.py:update_unknown_installation
 msgid "This installation type cannot be updated automatically. Use the official release page."
 msgstr "Aquest tipus d’instal·lació no es pot actualitzar automàticament. Consulta la pàgina oficial de versions."
+
+#: src/termia/i18n.py:snippets
+msgid "Manage snippets…"
+msgstr "Gestiona fragments…"
+
+msgid "Run snippet…"
+msgstr "Executa fragment…"
+
+msgid "Add snippet"
+msgstr "Afegeix un fragment"
+
+msgid "Edit snippet"
+msgstr "Edita el fragment"
+
+msgid "Duplicate snippet"
+msgstr "Duplica el fragment"
+
+msgid "Delete snippet"
+msgstr "Suprimeix el fragment"
+
+msgid "Delete snippet \"{name}\"? This action cannot be undone."
+msgstr "Voleu suprimir el fragment \"{name}\"? Aquesta acció no es pot desfer."
+
+msgid "Category"
+msgstr "Categoria"
+
+msgid "Availability"
+msgstr "Disponibilitat"
+
+msgid "All terminals"
+msgstr "Tots els terminals"
+
+msgid "Server group"
+msgstr "Grup de servidors"
+
+msgid "Specific server"
+msgstr "Servidor específic"
+
+msgid "Command"
+msgstr "Ordre"
+
+msgid "(copy)"
+msgstr "(còpia)"
+
+msgid "Search snippets"
+msgstr "Cerca fragments"
+
+msgid "No matching snippets."
+msgstr "No hi ha fragments coincidents."
+
+msgid "Snippet variables"
+msgstr "Variables del fragment"
+
+msgid "Preview command"
+msgstr "Previsualitza l'ordre"
+
+msgid "Review the command before sending it to the selected terminal."
+msgstr "Reviseu l'ordre abans d'enviar-la al terminal seleccionat."
+
+msgid "Send to terminal"
+msgstr "Envia al terminal"
+
+msgid "Snippet sent to terminal."
+msgstr "Fragment enviat al terminal."
+
+msgid "A snippet name is required."
+msgstr "Cal un nom de fragment."
+
+msgid "A snippet command is required."
+msgstr "Cal una ordre de fragment."
+
+msgid "Select the server or group for this snippet."
+msgstr "Seleccioneu el servidor o grup per a aquest fragment."
+
+msgid "Enter a value for every snippet variable."
+msgstr "Introduïu un valor per a cada variable del fragment."
+
+msgid "The snippet availability is invalid."
+msgstr "La disponibilitat del fragment no és vàlida."
+
+msgid "The selected terminal is no longer available."
+msgstr "El terminal seleccionat ja no està disponible."

@@ -13,22 +13,35 @@ from .constants import (
 from .models import DEFAULT_ANSI_PALETTE, TerminalSettings
 
 CURRENT_SCHEMA_VERSION = 1
+CURRENT_CONNECTIONS_SCHEMA_VERSION = 2
 
 
-def _add_schema_version(payload: dict[str, Any], kind: str) -> tuple[dict[str, Any], bool]:
+def _add_schema_version(
+    payload: dict[str, Any],
+    kind: str,
+    current_version: int = CURRENT_SCHEMA_VERSION,
+) -> tuple[dict[str, Any], bool]:
     version = payload.get("schema_version", 0)
     if not isinstance(version, int) or version < 0:
         raise ValueError(f"{kind} payload has an invalid schema version.")
-    if version > CURRENT_SCHEMA_VERSION:
+    if version > current_version:
         raise ValueError(f"{kind} payload uses an unsupported schema version: {version}.")
     migrated = dict(payload)
-    changed = version != CURRENT_SCHEMA_VERSION
-    migrated["schema_version"] = CURRENT_SCHEMA_VERSION
+    changed = version != current_version
+    migrated["schema_version"] = current_version
     return migrated, changed
 
 
 def migrate_connections_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], bool]:
-    return _add_schema_version(payload, "Connections")
+    migrated, changed = _add_schema_version(
+        payload,
+        "Connections",
+        CURRENT_CONNECTIONS_SCHEMA_VERSION,
+    )
+    if "snippets" not in migrated:
+        migrated["snippets"] = []
+        changed = True
+    return migrated, changed
 
 
 def migrate_settings_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], bool]:
