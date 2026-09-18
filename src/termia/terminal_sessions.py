@@ -839,6 +839,20 @@ class TerminalSessionsMixin:
         except ValueError:
             return False
 
+    def ssh_status_is_clean_exit(self, status: int) -> bool:
+        """Return whether an SSH child ended through its remote shell.
+
+        OpenSSH reserves exit status 255 for local transport, authentication,
+        and protocol failures. Any other normal exit status is relayed from the
+        remote command or shell, including a shell that exits after its last
+        command failed. Those exits must follow Termia's normal close-on-exit
+        behavior rather than showing the reconnect prompt.
+        """
+        try:
+            return os.WIFEXITED(status) and os.WEXITSTATUS(status) < 255
+        except ValueError:
+            return False
+
     def schedule_statistics_save(self) -> None:
         if self.store.data.app.statistics_enabled and self.stats_save_id is None:
             self.stats_save_id = GLib.timeout_add_seconds(30, self.flush_statistics)
@@ -1734,8 +1748,13 @@ class TerminalSessionsMixin:
         if pane is not None:
             self.clear_terminal_process_state(session, terminal, pane)
             self.record_pane_duration(pane)
+            clean_exit = (
+                self.ssh_status_is_clean_exit(_status)
+                if pane.server_id is not None
+                else self.child_status_successful(_status)
+            )
             result = "disconnected" if pane.disconnect_requested else (
-                "closed" if self.child_status_successful(_status) else "failed"
+                "closed" if clean_exit else "failed"
             )
             log_event(
                 "process.exited",
@@ -1760,7 +1779,7 @@ class TerminalSessionsMixin:
         if (
             pane is not None
             and not pane.disconnect_requested
-            and not self.child_status_successful(_status)
+            and not clean_exit
         ):
             self.mark_pane_for_reconnect(
                 session,
@@ -2315,8 +2334,9 @@ class TerminalSessionsMixin:
         self.clear_terminal_process_state(session, terminal, pane)
         self.record_session_duration(session)
         self.save_statistics_now()
+        clean_exit = self.ssh_status_is_clean_exit(_status)
         result = "disconnected" if pane.disconnect_requested else (
-            "closed" if self.child_status_successful(_status) else "failed"
+            "closed" if clean_exit else "failed"
         )
         log_event(
             "process.exited",
@@ -2331,14 +2351,14 @@ class TerminalSessionsMixin:
         if getattr(self, "shutdown_in_progress", False):
             return
         pane.disconnect_button.set_sensitive(False)
-        if not pane.disconnect_requested and self.child_status_successful(_status) and session.active_terminal_ids:
+        if not pane.disconnect_requested and clean_exit and session.active_terminal_ids:
             self.remove_terminal_pane_if_split(terminal, session)
             return
         session.connected = bool(session.active_terminal_ids)
         if pane.disconnect_requested:
             self.finish_disconnected_root_pane_exit(session, terminal)
             return
-        if self.child_status_successful(_status):
+        if clean_exit:
             if self.should_close_tab_after_terminal_exit(session):
                 self.close_tab(session.id, session.page, disconnect=False)
                 self.toast_label.set_label(self.t("session_closed_toast").format(title=server.name))

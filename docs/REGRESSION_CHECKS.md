@@ -104,6 +104,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   terminal in writable and read-only instances; disabling the preference must
   open none, and a successful unlock must not create a duplicate.
 - Exiting an SSH session with `exit` must only close the tab when the relevant preference is enabled, and only after the last terminal in the tab has exited with no split panes remaining.
+- An SSH shell that exits after a failed or cancelled remote command (for
+  example, cancelling `sudo` and then running `exit`) must follow the same
+  clean-close behavior. OpenSSH transport/authentication failures (exit status
+  `255`) and signalled SSH children must instead retain the reconnect prompt.
 - Exiting a local shell must follow the configured local terminal close behavior.
 - Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
 - Every split pane must retain its own SSH or local-profile identity, process,

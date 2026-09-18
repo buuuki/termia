@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Treat normal nonzero remote SSH shell exits as clean closures instead of
+  incorrectly offering reconnection (`#285`).
+
 ### Changed
 
 - Mark the active source checkout as `0.6.0-beta.3-dev` for the next release
