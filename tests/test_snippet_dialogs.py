@@ -13,7 +13,7 @@ from gi.repository import GLib, Gtk
 
 from termia.i18n import translate_key
 from termia.models import CommandSnippet
-from termia.snippet_dialogs import PickerState, SnippetDialogs
+from termia.snippet_dialogs import SnippetDialogs
 from termia.snippet_presenter import SnippetPresenter
 
 
@@ -28,28 +28,32 @@ class SnippetDialogTests(unittest.TestCase):
         while context.pending():
             context.iteration(False)
 
-    def test_manager_rebuilds_repeatedly_without_gc_lifecycle_callbacks(self):
-        try:
-            parent = Gtk.Window()
-        except RuntimeError as error:
-            self.skipTest(str(error))
-        data = SimpleNamespace(snippets=[], groups=[], servers=[])
-        store = SimpleNamespace(data=data)
-        presenter = SnippetPresenter(lambda: data.snippets, lambda: [], lambda: [])
-        dialogs = SnippetDialogs(
+    def make_dialogs(self, parent, data, *, store=None, notice=None):
+        return SnippetDialogs(
             parent,
-            store,
-            presenter,
+            store or SimpleNamespace(data=data),
+            SnippetPresenter(lambda: data.snippets, lambda: data.groups, lambda: data.servers),
             lambda key: translate_key(key, "en"),
             lambda: True,
             Mock(),
-            Mock(),
+            notice or Mock(),
         )
+
+    def make_parent(self):
+        try:
+            return Gtk.Window()
+        except RuntimeError as error:
+            self.skipTest(str(error))
+
+    def test_manager_rebuilds_repeatedly_without_selection_callbacks(self):
+        parent = self.make_parent()
+        data = SimpleNamespace(snippets=[], groups=[], servers=[])
+        dialogs = self.make_dialogs(parent, data)
         self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
 
         state = dialogs.show_manager()
         self.assertIsNotNone(state)
-        self.addCleanup(state.dialog.destroy)
         for index in range(20):
             data.snippets.append(CommandSnippet(str(index), f"Snippet {index}", "true"))
             dialogs.refresh_manager(state, str(index))
@@ -58,42 +62,36 @@ class SnippetDialogTests(unittest.TestCase):
         self.assertEqual(len(state.visible_ids), 20)
         self.assertEqual(state.selected_id, "19")
 
-    def test_manager_state_survives_native_list_teardown(self):
-        try:
-            parent = Gtk.Window()
-        except RuntimeError as error:
-            self.skipTest(str(error))
+    def test_manager_reuses_one_window_during_repeated_editor_cancellation(self):
+        parent = self.make_parent()
         data = SimpleNamespace(
             snippets=[CommandSnippet("one", "Disk usage", "df -h")],
             groups=[],
             servers=[],
         )
-        dialogs = SnippetDialogs(
-            parent,
-            SimpleNamespace(data=data),
-            SnippetPresenter(lambda: data.snippets, lambda: [], lambda: []),
-            lambda key: translate_key(key, "en"),
-            lambda: True,
-            Mock(),
-            Mock(),
-        )
+        dialogs = self.make_dialogs(parent, data)
         self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
 
-        for _index in range(20):
-            state = dialogs.show_manager()
-            self.assertIsNotNone(state)
-            dialogs.refresh_manager(state, "one")
-            dialogs.destroy_dialog(state.dialog)
-            gc.collect()
-            self.drain_main_context()
+        state = dialogs.show_manager()
+        manager_window = state.window
+        for index in range(10):
+            dialogs.show_editor(state, None, False)
+            self.assertEqual(state.stack.get_visible_child_name(), "editor")
+            dialogs.on_editor_cancel(Mock(), state)
+            self.assertEqual(state.stack.get_visible_child_name(), "manager")
+            dialogs.hide_manager(state)
+            reopened = dialogs.show_manager()
+            self.assertIs(reopened.window, manager_window)
+            parent.set_default_size(640 + index, 480 + index)
 
-        self.assertEqual(dialogs._active_dialog_states, {})
+        gc.collect()
+        self.drain_main_context()
+
+        self.assertIs(dialogs.manager_state.window, manager_window)
 
     def test_picker_single_selection_survives_filter_rebuild(self):
-        try:
-            parent = Gtk.Window()
-        except RuntimeError as error:
-            self.skipTest(str(error))
+        parent = self.make_parent()
         data = SimpleNamespace(
             snippets=[
                 CommandSnippet("one", "Disk usage", "df -h", "System"),
@@ -102,53 +100,32 @@ class SnippetDialogTests(unittest.TestCase):
             groups=[],
             servers=[],
         )
-        presenter = SnippetPresenter(lambda: data.snippets, lambda: [], lambda: [])
-        dialogs = SnippetDialogs(
-            parent,
-            SimpleNamespace(data=data),
-            presenter,
-            lambda key: translate_key(key, "en"),
-            lambda: True,
-            Mock(),
-            Mock(),
+        dialogs = self.make_dialogs(parent, data)
+        terminal = Mock()
+        pane = SimpleNamespace(server_id=None, connected=True)
+        session = SimpleNamespace(
+            detached_window=None,
+            active_terminal_ids={id(terminal)},
+            pane_for_terminal=lambda candidate: pane if candidate is terminal else None,
         )
-        dialog = Gtk.Dialog(transient_for=parent)
-        search = Gtk.SearchEntry()
-        listing = Gtk.ListBox()
-        preview = Gtk.Button()
-        state = PickerState(
-            dialog,
-            parent,
-            SimpleNamespace(),
-            Mock(),
-            None,
-            search,
-            listing,
-            preview,
-            [],
-        )
-        state.selection_handler_id = listing.connect("row-selected", dialogs.on_picker_selected, state)
-        self.addCleanup(dialog.destroy)
         self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
 
-        dialogs.refresh_picker(state)
-        listing.select_row(listing.get_row_at_index(0))
+        state = dialogs.show_picker(Gtk.Popover(), session, terminal)
+        state.listing.select_row(state.listing.get_row_at_index(0))
         self.assertEqual(state.selected_id, "one")
-        self.assertTrue(preview.get_sensitive())
+        self.assertTrue(state.preview_button.get_sensitive())
 
-        search.set_text("process")
+        state.search.set_text("process")
         dialogs.refresh_picker(state)
-        listing.select_row(listing.get_row_at_index(0))
+        state.listing.select_row(state.listing.get_row_at_index(0))
         gc.collect()
 
         self.assertEqual(state.selected_id, "two")
-        self.assertTrue(preview.get_sensitive())
+        self.assertTrue(state.preview_button.get_sensitive())
 
-    def test_run_flow_disconnects_dialogs_before_window_resize(self):
-        try:
-            parent = Gtk.Window()
-        except RuntimeError as error:
-            self.skipTest(str(error))
+    def test_run_flow_reuses_one_window_during_send_and_resize(self):
+        parent = self.make_parent()
         data = SimpleNamespace(
             snippets=[CommandSnippet("one", "Disk usage", "df -h")],
             groups=[],
@@ -162,33 +139,56 @@ class SnippetDialogTests(unittest.TestCase):
             pane_for_terminal=lambda candidate: pane if candidate is terminal else None,
         )
         notice = Mock()
-        dialogs = SnippetDialogs(
-            parent,
-            SimpleNamespace(data=data),
-            SnippetPresenter(lambda: data.snippets, lambda: [], lambda: []),
-            lambda key: translate_key(key, "en"),
-            lambda: True,
-            Mock(),
-            notice,
-        )
+        dialogs = self.make_dialogs(parent, data, notice=notice)
         self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
 
-        for index in range(20):
-            picker = dialogs.show_picker(Gtk.Popover(), session, terminal)
-            self.assertIsNotNone(picker)
-            picker.listing.select_row(picker.listing.get_row_at_index(0))
-            picker.dialog.response(Gtk.ResponseType.OK)
-            preview = next(
-                lifetime.dialog
-                for lifetime in dialogs._active_dialog_states.values()
-                if lifetime.dialog.get_title() == translate_key("snippet_preview", "en")
-                and not lifetime.closing
-            )
-            preview.response(Gtk.ResponseType.OK)
+        runner_window = None
+        for index in range(10):
+            state = dialogs.show_picker(Gtk.Popover(), session, terminal)
+            if runner_window is None:
+                runner_window = state.window
+            self.assertIs(state.window, runner_window)
+            state.listing.select_row(state.listing.get_row_at_index(0))
+            dialogs.on_picker_preview(Mock(), state)
+            self.assertEqual(state.stack.get_visible_child_name(), "preview")
+            dialogs.on_preview_send(Mock(), state)
+            self.assertFalse(state.window.get_visible())
             parent.set_default_size(640 + index, 480 + index)
-            gc.collect()
-            self.drain_main_context()
 
-        self.assertEqual(dialogs._active_dialog_states, {})
-        self.assertEqual(terminal.feed_child.call_count, 20)
-        self.assertEqual(notice.call_count, 20)
+        gc.collect()
+        self.drain_main_context()
+
+        self.assertIs(dialogs.picker_state.window, runner_window)
+        self.assertEqual(terminal.feed_child.call_count, 10)
+        self.assertEqual(notice.call_count, 10)
+
+    def test_variable_page_can_be_cancelled_without_destroying_runner(self):
+        parent = self.make_parent()
+        data = SimpleNamespace(
+            snippets=[CommandSnippet("one", "Restart", "systemctl restart {{service}}")],
+            groups=[],
+            servers=[],
+        )
+        terminal = Mock()
+        pane = SimpleNamespace(server_id=None, connected=True)
+        session = SimpleNamespace(
+            detached_window=None,
+            active_terminal_ids={id(terminal)},
+            pane_for_terminal=lambda candidate: pane if candidate is terminal else None,
+        )
+        dialogs = self.make_dialogs(parent, data)
+        self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
+
+        state = dialogs.show_picker(Gtk.Popover(), session, terminal)
+        runner_window = state.window
+        state.listing.select_row(state.listing.get_row_at_index(0))
+        dialogs.on_picker_preview(Mock(), state)
+        self.assertEqual(state.stack.get_visible_child_name(), "variables")
+
+        dialogs.on_picker_cancel(Mock(), state)
+        self.assertFalse(runner_window.get_visible())
+        reopened = dialogs.show_picker(Gtk.Popover(), session, terminal)
+        self.assertIs(reopened.window, runner_window)
+        self.assertEqual(reopened.stack.get_visible_child_name(), "picker")

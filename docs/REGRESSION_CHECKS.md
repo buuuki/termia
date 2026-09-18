@@ -64,6 +64,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   group-scoped snippet must apply to servers in that group and its nested
   subgroups. Invalid or deleted scope targets must never broaden a snippet to
   global availability.
+- Repeatedly opening, cancelling, and reusing snippet management and execution
+  flows must reuse their existing windows and remain responsive during window
+  resizing; these flows must not accumulate top-level GTK surfaces.
 - SSH fingerprint prompts must remain visible and interactive in the terminal.
 - Known-host inspection must prefer the configured endpoint (`host` on port 22
   or `[host]:port` otherwise), then mirror OpenSSH's non-standard-port fallback

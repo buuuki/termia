@@ -431,6 +431,7 @@ class TermiaWindow(
             return
         self.shutdown_in_progress = True
         log_event("application.shutdown_started", sessions=len(self.session_registry.sessions()))
+        self.snippet_dialogs.shutdown()
         self.cancel_file_transfers(close_dialog=True)
         self.save_session_snapshot_before_close()
         self.save_history_before_close()

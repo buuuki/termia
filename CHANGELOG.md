@@ -10,8 +10,9 @@
 
 ### Fixed
 
-- Keep snippet dialog state alive through native GTK list teardown and suppress
-  selection callbacks while rebuilding lists (`#270`).
+- Reuse persistent snippet windows and suppress selection callbacks while
+  rebuilding lists, avoiding native GTK/Gallium lifecycle crashes and hangs
+  during repeated editing and execution (`#270`).
 - Treat normal nonzero remote SSH shell exits as clean closures instead of
   incorrectly offering reconnection (`#285`).
 
