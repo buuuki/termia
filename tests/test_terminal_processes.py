@@ -186,6 +186,141 @@ class TerminalProcessTests(unittest.TestCase):
         is_active.assert_called_once_with(process)
         host.terminate_terminal_process.assert_called_once_with(process, force=True)
 
+    def test_ssh_clean_exit_accepts_remote_nonzero_statuses_but_not_transport_failures(self) -> None:
+        host = TerminalSessionsMixin()
+
+        self.assertTrue(host.ssh_status_is_clean_exit(0))
+        self.assertTrue(host.ssh_status_is_clean_exit(256))
+        self.assertTrue(host.ssh_status_is_clean_exit(254 << 8))
+        self.assertFalse(host.ssh_status_is_clean_exit(255 << 8))
+        self.assertFalse(host.ssh_status_is_clean_exit(signal.SIGTERM))
+
+    def test_ssh_remote_nonzero_exit_closes_the_root_session(self) -> None:
+        terminal = object()
+        pane = SimpleNamespace(
+            id="pane",
+            connected=True,
+            disconnect_requested=False,
+            disconnect_button=Mock(),
+        )
+        session = SimpleNamespace(
+            id="session",
+            title="Example",
+            terminal=terminal,
+            page=object(),
+            active_terminal_ids=set(),
+            status_label=Mock(),
+            connected=True,
+        )
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.shutdown_in_progress = False
+                self.store = SimpleNamespace(record_history_end=Mock())
+                self.toast_label = Mock()
+                self.closed = []
+                self.reconnect_requested = False
+
+            def mark_terminal_inactive(self, _terminal, _session) -> None:
+                pass
+
+            def pane_state(self, _session, _terminal):
+                return pane
+
+            def clear_terminal_process_state(self, *_args) -> None:
+                pass
+
+            def record_session_duration(self, _session) -> None:
+                pass
+
+            def save_statistics_now(self) -> None:
+                pass
+
+            def should_close_tab_after_terminal_exit(self, _session) -> bool:
+                return True
+
+            def close_tab(self, *args, **kwargs) -> None:
+                self.closed.append((args, kwargs))
+
+            def mark_session_for_reconnect(self, *_args) -> None:
+                self.reconnect_requested = True
+
+            def t(self, key):
+                return {
+                    "session_closed_toast": "Closed: {title}",
+                }[key]
+
+        host = Host()
+        host.on_terminal_exited(terminal, 256, SimpleNamespace(name="Example"), session)
+
+        host.store.record_history_end.assert_called_once_with(session, "closed")
+        self.assertEqual(len(host.closed), 1)
+        self.assertFalse(host.reconnect_requested)
+
+    def test_ssh_remote_nonzero_exit_closes_a_split_pane(self) -> None:
+        terminal = object()
+        pane = SimpleNamespace(
+            id="split-pane",
+            title="Example",
+            server_id="server",
+            connected=True,
+            disconnect_requested=False,
+            disconnect_button=Mock(),
+            status_label=Mock(),
+        )
+        session = SimpleNamespace(
+            id="session",
+            title="Example",
+            page=object(),
+            active_terminal_ids=set(),
+            connected=True,
+            pane_for_terminal=lambda current: pane if current is terminal else None,
+            split_terminals=[terminal],
+            status_label=Mock(),
+            disconnect_button=Mock(),
+        )
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.shutdown_in_progress = False
+                self.store = SimpleNamespace(record_history_end=Mock())
+                self.closed = []
+                self.reconnect_requested = False
+
+            def mark_terminal_inactive(self, _terminal, _session) -> None:
+                pass
+
+            def clear_terminal_process_state(self, *_args) -> None:
+                pass
+
+            def record_pane_duration(self, _pane) -> None:
+                pass
+
+            def save_statistics_now(self) -> None:
+                pass
+
+            def should_close_tab_after_terminal_exit(self, _session) -> bool:
+                return True
+
+            def close_tab(self, *args, **kwargs) -> None:
+                self.closed.append((args, kwargs))
+
+            def mark_pane_for_reconnect(self, *_args) -> None:
+                self.reconnect_requested = True
+
+            def t(self, key):
+                return {
+                    "session_closed_status": "Closed: {title}",
+                    "connection_failed_toast": "Failed: {title}",
+                }[key]
+
+        host = Host()
+        host.on_split_terminal_exited(terminal, 256, session)
+
+        host.store.record_history_end.assert_called_once_with(pane, "closed")
+        self.assertEqual(len(host.closed), 1)
+        self.assertFalse(host.reconnect_requested)
+
     def test_ssh_exit_during_shutdown_does_not_reconnect_or_notify(self) -> None:
         terminal = object()
         pane = SimpleNamespace(
