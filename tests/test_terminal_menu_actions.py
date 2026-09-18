@@ -38,6 +38,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
             duplicate_tab=action("duplicate_tab"),
             new_tab=action("new_tab"),
             close_tab=action("close_tab"),
+            run_snippet=action("run_snippet"),
         )
         popover = object()
         session = object()
@@ -58,6 +59,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
         actions.duplicate_tab(popover, session)
         actions.new_tab(popover)
         actions.close_tab(popover, session)
+        actions.run_snippet(popover, session, terminal)
 
         self.assertEqual(
             [name for name, _args in calls],
@@ -76,6 +78,7 @@ class TerminalMenuActionsTests(unittest.TestCase):
                 "duplicate_tab",
                 "new_tab",
                 "close_tab",
+                "run_snippet",
             ],
         )
         self.assertEqual(calls[4], ("send_files", (popover, session, server)))

@@ -14,8 +14,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from .models import Group, LocalTerminalProfile, Server, StoreData, Workspace
-from .migrations import CURRENT_SCHEMA_VERSION, migrate_connections_payload
+from .models import CommandSnippet, Group, LocalTerminalProfile, Server, StoreData, Workspace
+from .migrations import CURRENT_CONNECTIONS_SCHEMA_VERSION, migrate_connections_payload
+from .snippets import SnippetError, normalize_snippet, snippet_target_exists
 from .workspace_layout import normalized_workspace_tabs
 
 CONNECTION_STORAGE_PLAIN = "plain"
@@ -44,13 +45,15 @@ def connections_payload(
     storage_mode: str,
     master_password: str | None = None,
     workspaces: list[Workspace] | None = None,
+    snippets: list[CommandSnippet] | None = None,
 ) -> dict[str, object]:
     payload = {
-        "schema_version": CURRENT_SCHEMA_VERSION,
+        "schema_version": CURRENT_CONNECTIONS_SCHEMA_VERSION,
         "groups": [asdict(group) for group in groups],
         "servers": [asdict(server) for server in servers],
         "local_terminals": [asdict(profile) for profile in local_terminals],
         "workspaces": [asdict(workspace) for workspace in workspaces or []],
+        "snippets": [asdict(snippet) for snippet in snippets or []],
     }
     raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     if storage_mode == CONNECTION_STORAGE_OBFUSCATED:
@@ -162,10 +165,11 @@ def write_connections_file(
     storage_mode: str,
     master_password: str | None = None,
     workspaces: list[Workspace] | None = None,
+    snippets: list[CommandSnippet] | None = None,
 ) -> None:
     mode = storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = connections_payload(groups, servers, local_terminals, mode, master_password, workspaces)
+    payload = connections_payload(groups, servers, local_terminals, mode, master_password, workspaces, snippets)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     path.chmod(0o600)
 
@@ -177,15 +181,48 @@ def export_connections_file(source: Path, destination: Path) -> None:
 
 def load_store_data_from_json(path: Path, current: StoreData, master_password: str | None = None) -> StoreData:
     payload, _ = migrate_connections_payload(read_connections_payload(path, master_password))
+    groups = [Group(**item) for item in payload.get("groups", [])]
+    servers = [Server(**item) for item in payload.get("servers", [])]
     return StoreData(
-        groups=[Group(**item) for item in payload.get("groups", [])],
-        servers=[Server(**item) for item in payload.get("servers", [])],
+        groups=groups,
+        servers=servers,
         local_terminals=[LocalTerminalProfile(**item) for item in payload.get("local_terminals", [])],
         workspaces=workspaces_from_payload(payload.get("workspaces", [])),
+        snippets=snippets_from_payload(payload.get("snippets", []), groups, servers),
         terminal=current.terminal,
         app=current.app,
         statistics=current.statistics,
     )
+
+
+def snippets_from_payload(
+    payload: object,
+    groups: list[Group] | None = None,
+    servers: list[Server] | None = None,
+) -> list[CommandSnippet]:
+    if not isinstance(payload, list):
+        return []
+    snippets: list[CommandSnippet] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        values = (item.get("id"), item.get("name"), item.get("content"))
+        if not all(isinstance(value, str) and value for value in values):
+            continue
+        try:
+            snippet = normalize_snippet(
+                item["id"], item["name"], item["content"],
+                item.get("category", "") if isinstance(item.get("category", ""), str) else "",
+                item.get("scope", "global") if isinstance(item.get("scope", "global"), str) else "global",
+                item.get("target_id", "") if isinstance(item.get("target_id", ""), str) else "",
+            )
+            if groups is not None and servers is not None:
+                if not snippet_target_exists(snippet, groups, servers):
+                    continue
+            snippets.append(snippet)
+        except SnippetError:
+            continue
+    return snippets
 
 
 def workspaces_from_payload(payload: object) -> list[Workspace]:

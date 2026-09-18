@@ -69,6 +69,18 @@ class Workspace:
 
 
 @dataclass
+class CommandSnippet:
+    """A user-authored command template, scoped without storing credentials."""
+
+    id: str
+    name: str
+    content: str
+    category: str = ""
+    scope: str = "global"
+    target_id: str = ""
+
+
+@dataclass
 class TerminalSettings:
     font_family: str = DEFAULT_TERMINAL_FONT_FAMILY
     font_size: int = 13
@@ -158,6 +170,7 @@ class StoreData:
     servers: list[Server] = field(default_factory=list)
     local_terminals: list[LocalTerminalProfile] = field(default_factory=list)
     workspaces: list[Workspace] = field(default_factory=list)
+    snippets: list[CommandSnippet] = field(default_factory=list)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     app: AppSettings = field(default_factory=AppSettings)
     statistics: StatisticsSettings = field(default_factory=StatisticsSettings)

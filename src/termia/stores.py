@@ -35,6 +35,7 @@ from .config_io import (
     connection_storage_mode_from_payload,
     decoded_connections_payload,
     read_raw_connections_payload,
+    snippets_from_payload,
     workspaces_from_payload,
     write_connections_file,
 )
@@ -55,6 +56,7 @@ from .keybindings import normalize_keybindings
 from .models import (
     DEFAULT_ANSI_PALETTE,
     AppSettings,
+    CommandSnippet,
     ConnectionHistoryEntry,
     ConnectionHistoryEvent,
     Group,
@@ -65,6 +67,7 @@ from .models import (
     TerminalSettings,
     Workspace,
 )
+from .snippets import SnippetError, normalize_snippet, snippet_target_exists
 from .terminal_config import normalize_split_layout
 from .ui_state import TerminalPane, TerminalSession
 
@@ -486,6 +489,7 @@ class ConnectionStore:
         self.master_password: str | None = None
         self.data = StoreData(
             local_terminals=[],
+            snippets=[],
             terminal=self.settings_store.terminal,
             app=self.settings_store.app,
             statistics=self.statistics_store.data,
@@ -504,6 +508,7 @@ class ConnectionStore:
         if not self.path.exists():
             self.data = StoreData(
                 local_terminals=[],
+                snippets=[],
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
@@ -520,6 +525,7 @@ class ConnectionStore:
             self.encryption_error = ""
             self.data = StoreData(
                 local_terminals=[],
+                snippets=[],
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
@@ -531,6 +537,7 @@ class ConnectionStore:
             self.encryption_error = str(exc)
             self.data = StoreData(
                 local_terminals=[],
+                snippets=[],
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
@@ -542,6 +549,7 @@ class ConnectionStore:
             self.recovery_messages.append(str(backup or self.path))
             self.data = StoreData(
                 local_terminals=[],
+                snippets=[],
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
@@ -575,11 +583,14 @@ class ConnectionStore:
             self.settings_store.save()
             settings_migrated = True
 
+        groups = [Group(**item) for item in payload.get("groups", [])]
+        servers = [Server(**item) for item in payload.get("servers", [])]
         self.data = StoreData(
-            groups=[Group(**item) for item in payload.get("groups", [])],
-            servers=[Server(**item) for item in payload.get("servers", [])],
+            groups=groups,
+            servers=servers,
             local_terminals=[LocalTerminalProfile(**item) for item in payload.get("local_terminals", [])],
             workspaces=workspaces_from_payload(payload.get("workspaces", [])),
+            snippets=snippets_from_payload(payload.get("snippets", []), groups, servers),
             terminal=terminal,
             app=app,
             statistics=self.statistics_store.data,
@@ -654,6 +665,7 @@ class ConnectionStore:
             self.data.app.connection_storage_mode,
             self.master_password,
             self.data.workspaces,
+            self.data.snippets,
         )
 
     def save_settings(self) -> None:
@@ -742,7 +754,17 @@ class ConnectionStore:
             group_ids.update(child_ids)
             pending.extend(child_ids)
         self.data.groups = [group for group in self.data.groups if group.id not in group_ids]
-        self.data.servers = [server for server in self.data.servers if server.group_id not in group_ids]
+        removed_server_ids = {
+            server.id for server in self.data.servers if server.group_id in group_ids
+        }
+        self.data.servers = [server for server in self.data.servers if server.id not in removed_server_ids]
+        self.data.snippets = [
+            snippet for snippet in self.data.snippets
+            if not (
+                (snippet.scope == "group" and snippet.target_id in group_ids)
+                or (snippet.scope == "server" and snippet.target_id in removed_server_ids)
+            )
+        ]
         self.save_connections()
 
     def add_server(
@@ -813,6 +835,10 @@ class ConnectionStore:
     def delete_server(self, server_id: str) -> None:
         self.ensure_writable()
         self.data.servers = [server for server in self.data.servers if server.id != server_id]
+        self.data.snippets = [
+            snippet for snippet in self.data.snippets
+            if not (snippet.scope == "server" and snippet.target_id == server_id)
+        ]
         self.save_connections()
 
     def add_local_terminal(
@@ -903,6 +929,37 @@ class ConnectionStore:
         previous_count = len(self.data.workspaces)
         self.data.workspaces = [workspace for workspace in self.data.workspaces if workspace.id != workspace_id]
         if len(self.data.workspaces) != previous_count:
+            self.save_connections()
+
+    def add_snippet(
+        self, name: str, content: str, category: str = "", scope: str = "global", target_id: str = "",
+    ) -> CommandSnippet:
+        self.ensure_writable()
+        snippet = normalize_snippet(str(uuid4()), name, content, category, scope, target_id)
+        if not snippet_target_exists(snippet, self.data.groups, self.data.servers):
+            raise SnippetError("snippet_scope_target_required")
+        self.data.snippets.append(snippet)
+        self.save_connections()
+        return snippet
+
+    def update_snippet(
+        self, snippet_id: str, name: str, content: str, category: str = "", scope: str = "global", target_id: str = "",
+    ) -> None:
+        self.ensure_writable()
+        updated = normalize_snippet(snippet_id, name, content, category, scope, target_id)
+        if not snippet_target_exists(updated, self.data.groups, self.data.servers):
+            raise SnippetError("snippet_scope_target_required")
+        for index, snippet in enumerate(self.data.snippets):
+            if snippet.id == snippet_id:
+                self.data.snippets[index] = updated
+                self.save_connections()
+                return
+
+    def delete_snippet(self, snippet_id: str) -> None:
+        self.ensure_writable()
+        before = len(self.data.snippets)
+        self.data.snippets = [snippet for snippet in self.data.snippets if snippet.id != snippet_id]
+        if len(self.data.snippets) != before:
             self.save_connections()
 
     def update_terminal_settings(

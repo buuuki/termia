@@ -33,6 +33,8 @@ from .notifications import NOTIFICATION_ICONS, GroupedNotificationLabel, Notific
 from .preferences import PreferencesMixin
 from .session_registry import SessionRegistry
 from .session_snapshot import SessionSnapshotStore
+from .snippet_dialogs import SnippetDialogs
+from .snippet_presenter import SnippetPresenter
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
 from .statistics_presenter import StatisticsPresenter
@@ -149,6 +151,20 @@ class TermiaWindow(
             self.t,
         )
         self.statistics_dialog = StatisticsDialog(self, self.statistics_presenter, self.t)
+        self.snippet_presenter = SnippetPresenter(
+            lambda: self.store.data.snippets,
+            lambda: self.store.data.groups,
+            lambda: self.store.data.servers,
+        )
+        self.snippet_dialogs = SnippetDialogs(
+            self,
+            self.store,
+            self.snippet_presenter,
+            self.t,
+            self.ensure_writable,
+            self.toast_label.set_error,
+            self.toast_label.set_label,
+        )
         self.tab_lifecycle_actions = TabLifecycleActions(
             duplicate_session=self.duplicate_session,
             disconnect_session=self.disconnect_session,
@@ -160,6 +176,7 @@ class TermiaWindow(
             terminal_settings=lambda: self.on_terminal_settings(None),
             keybinding_settings=lambda: self.on_keybindings_settings(None),
             security_settings=lambda: self.on_security_settings(None),
+            manage_snippets=self.snippet_dialogs.show_manager,
             statistics=self.statistics_dialog.show,
             connection_history=self.connection_history_dialog.show,
             data_locations=self.on_data_locations,
@@ -186,6 +203,7 @@ class TermiaWindow(
             duplicate_tab=self.duplicate_tab,
             new_tab=self.new_tab_from_terminal_menu,
             close_tab=self.close_tab_from_terminal_menu,
+            run_snippet=self.snippet_dialogs.show_picker,
         )
         self.stats_save_id: int | None = None
         self.close_confirmation_pending = False

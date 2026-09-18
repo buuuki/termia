@@ -57,6 +57,13 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Local terminals must start in the user's home directory unless a future setting explicitly changes it.
 - Local terminal prompt customization must apply to newly opened and duplicated local terminals.
 - SSH sessions must not send arbitrary commands automatically to remote servers.
+- Command snippets must be stored locally and run only after explicit selection,
+  variable entry when required, and confirmation of the final preview. Their
+  command text and variable values must never be written to debug logs.
+- Snippet variable values must be shell-quoted as individual arguments, and a
+  group-scoped snippet must apply to servers in that group and its nested
+  subgroups. Invalid or deleted scope targets must never broaden a snippet to
+  global availability.
 - SSH fingerprint prompts must remain visible and interactive in the terminal.
 - Known-host inspection must prefer the configured endpoint (`host` on port 22
   or `[host]:port` otherwise), then mirror OpenSSH's non-standard-port fallback
