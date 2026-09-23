@@ -12,7 +12,7 @@ from termia.config_io import (
     workspaces_from_payload,
     write_connections_file,
 )
-from termia.models import Group, LocalTerminalProfile, Server, Workspace
+from termia.models import CommandSnippet, Group, LocalTerminalProfile, Server, Workspace
 
 
 class ConfigIOTests(unittest.TestCase):
@@ -39,7 +39,15 @@ class ConfigIOTests(unittest.TestCase):
     def test_plain_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "connections.json"
-            write_connections_file(path, self.groups, self.servers, self.terminals, "plain", workspaces=self.workspaces)
+            write_connections_file(
+                path,
+                self.groups,
+                self.servers,
+                self.terminals,
+                "plain",
+                workspaces=self.workspaces,
+                snippets=[CommandSnippet("snippet-1", "Restart", "systemctl restart {{service}}")],
+            )
 
             payload = read_connections_payload(path)
 
@@ -47,16 +55,25 @@ class ConfigIOTests(unittest.TestCase):
         self.assertEqual(payload["servers"][0]["host"], "example.test")
         self.assertEqual(payload["local_terminals"][0]["name"], "Shell")
         self.assertEqual(payload["workspaces"][0]["name"], "Production")
+        self.assertEqual(payload["snippets"][0]["name"], "Restart")
         self.assertNotIn("password", payload["workspaces"][0])
 
     def test_obfuscated_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "connections.json"
-            write_connections_file(path, self.groups, self.servers, self.terminals, CONNECTION_STORAGE_OBFUSCATED)
+            write_connections_file(
+                path,
+                self.groups,
+                self.servers,
+                self.terminals,
+                CONNECTION_STORAGE_OBFUSCATED,
+                snippets=[CommandSnippet("snippet-1", "Restart", "true")],
+            )
 
             payload = read_connections_payload(path)
 
         self.assertEqual(payload["servers"][0]["id"], "server-1")
+        self.assertEqual(payload["snippets"][0]["id"], "snippet-1")
 
     def test_encrypted_round_trip_and_password_errors(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -68,6 +85,7 @@ class ConfigIOTests(unittest.TestCase):
                 self.terminals,
                 CONNECTION_STORAGE_ENCRYPTED,
                 "correct horse",
+                snippets=[CommandSnippet("snippet-1", "Restart", "true")],
             )
 
             with self.assertRaises(MissingMasterPasswordError):
@@ -77,6 +95,7 @@ class ConfigIOTests(unittest.TestCase):
             payload = read_connections_payload(path, "correct horse")
 
         self.assertEqual(payload["servers"][0]["user"], "admin")
+        self.assertEqual(payload["snippets"][0]["id"], "snippet-1")
 
     def test_invalid_json_is_reported(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

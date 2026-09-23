@@ -18,6 +18,9 @@ Documentación en catalán: [README.ca.md](README.ca.md)
   transferencias, progreso, cancelación y operaciones confirmadas.
 - Buscar versiones oficiales e instalar actualizaciones verificadas desde
   **Acerca de**.
+- Guardar fragmentos de comandos reutilizables por categoría y limitarlos a
+  todos los terminales, un grupo o un servidor; previsualizar las variables
+  antes de enviarlos explícitamente al terminal seleccionado.
 - Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
 - Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`.
 - Guardar host, usuario, puerto, contraseña y ruta de clave privada de cada conexión SSH.

@@ -1672,3 +1672,111 @@ msgstr ""
 #: src/termia/i18n.py:about_content
 msgid "SSH connection manager with embedded terminals"
 msgstr ""
+
+#: src/termia/i18n.py:manage_snippets
+msgid "Manage snippets…"
+msgstr ""
+
+#: src/termia/i18n.py:run_snippet
+msgid "Run snippet…"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_add
+msgid "Add snippet"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_edit
+msgid "Edit snippet"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_duplicate
+msgid "Duplicate snippet"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_delete
+msgid "Delete snippet"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_delete_confirm
+msgid "Delete snippet \"{name}\"? This action cannot be undone."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category
+msgid "Category"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_scope
+msgid "Availability"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_scope_global
+msgid "All terminals"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_scope_group
+msgid "Server group"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_scope_server
+msgid "Specific server"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_content
+msgid "Command"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_copy_suffix
+msgid "(copy)"
+msgstr ""
+
+#: src/termia/i18n.py:search_snippets
+msgid "Search snippets"
+msgstr ""
+
+#: src/termia/i18n.py:no_snippets
+msgid "No matching snippets."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_variables
+msgid "Snippet variables"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_preview
+msgid "Preview command"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_preview_detail
+msgid "Review the command before sending it to the selected terminal."
+msgstr ""
+
+#: src/termia/i18n.py:send_snippet
+msgid "Send to terminal"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_sent
+msgid "Snippet sent to terminal."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_name_required
+msgid "A snippet name is required."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_content_required
+msgid "A snippet command is required."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_scope_invalid
+msgid "The snippet availability is invalid."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_scope_target_required
+msgid "Select the server or group for this snippet."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_variable_required
+msgid "Enter a value for every snippet variable."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_terminal_unavailable
+msgid "The selected terminal is no longer available."
+msgstr ""

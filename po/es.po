@@ -1707,3 +1707,85 @@ msgstr "La instalación automática requiere APT, dpkg y pkexec con un agente de
 #: src/termia/i18n.py:update_unknown_installation
 msgid "This installation type cannot be updated automatically. Use the official release page."
 msgstr "Este tipo de instalación no puede actualizarse automáticamente. Consulta la página oficial de versiones."
+
+#: src/termia/i18n.py:snippets
+msgid "Manage snippets…"
+msgstr "Gestionar fragmentos…"
+
+msgid "Run snippet…"
+msgstr "Ejecutar fragmento…"
+
+msgid "Add snippet"
+msgstr "Añadir fragmento"
+
+msgid "Edit snippet"
+msgstr "Editar fragmento"
+
+msgid "Duplicate snippet"
+msgstr "Duplicar fragmento"
+
+msgid "Delete snippet"
+msgstr "Eliminar fragmento"
+
+msgid "Delete snippet \"{name}\"? This action cannot be undone."
+msgstr "¿Eliminar el fragmento \"{name}\"? Esta acción no se puede deshacer."
+
+msgid "Category"
+msgstr "Categoría"
+
+msgid "Availability"
+msgstr "Disponibilidad"
+
+msgid "All terminals"
+msgstr "Todos los terminales"
+
+msgid "Server group"
+msgstr "Grupo de servidores"
+
+msgid "Specific server"
+msgstr "Servidor específico"
+
+msgid "Command"
+msgstr "Comando"
+
+msgid "(copy)"
+msgstr "(copia)"
+
+msgid "Search snippets"
+msgstr "Buscar fragmentos"
+
+msgid "No matching snippets."
+msgstr "No hay fragmentos coincidentes."
+
+msgid "Snippet variables"
+msgstr "Variables del fragmento"
+
+msgid "Preview command"
+msgstr "Vista previa del comando"
+
+msgid "Review the command before sending it to the selected terminal."
+msgstr "Revisa el comando antes de enviarlo al terminal seleccionado."
+
+msgid "Send to terminal"
+msgstr "Enviar al terminal"
+
+msgid "Snippet sent to terminal."
+msgstr "Fragmento enviado al terminal."
+
+msgid "A snippet name is required."
+msgstr "Se requiere un nombre para el fragmento."
+
+msgid "A snippet command is required."
+msgstr "Se requiere un comando para el fragmento."
+
+msgid "Select the server or group for this snippet."
+msgstr "Selecciona el servidor o grupo para este fragmento."
+
+msgid "Enter a value for every snippet variable."
+msgstr "Introduce un valor para cada variable del fragmento."
+
+msgid "The snippet availability is invalid."
+msgstr "La disponibilidad del fragmento no es válida."
+
+msgid "The selected terminal is no longer available."
+msgstr "El terminal seleccionado ya no está disponible."

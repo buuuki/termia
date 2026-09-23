@@ -2,13 +2,24 @@
 
 ## Unreleased
 
+### Added
+
+- Add reusable command snippets with scoped storage, category search, explicit
+  variable entry, and mandatory command preview before terminal execution
+  (`#270`).
+
 ### Fixed
 
+- Reuse persistent snippet windows and suppress selection callbacks while
+  rebuilding lists, avoiding native GTK/Gallium lifecycle crashes and hangs
+  during repeated editing and execution (`#270`).
 - Treat normal nonzero remote SSH shell exits as clean closures instead of
   incorrectly offering reconnection (`#285`).
 
 ### Changed
 
+- Migrate connection storage to schema 2 for command snippets, preventing older
+  versions from silently discarding snippet data (`#270`).
 - Mark the active source checkout as `0.6.0-beta.3-dev` for the next release
   development cycle (`#284`).
 - Clarify the beta.2 feature list and release status in the root and localized
