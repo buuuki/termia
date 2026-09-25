@@ -60,6 +60,26 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Command snippets must be stored locally and run only after explicit selection,
   variable entry when required, and confirmation of the final preview. Their
   command text and variable values must never be written to debug logs.
+- Snippet management must open with three visible columns: compact categories
+  with counts, a snippet list, and a read-only command preview. The preview and
+  Edit/Duplicate/Delete actions must remain empty or disabled until a snippet
+  is selected. Category rows must remain uniformly sized, including long names
+  and empty categories. Selecting a category filters the list; typing in search
+  must search across all categories, even after a category was selected.
+  Search spans the top alone; Manage categories appears above the category
+  column, Create snippet above the list, and a modest Command preview label
+  above the read-only preview. The selection hint appears beneath the list
+  until a snippet is selected, including below No matching snippets when the
+  list is empty. A category-filtered list shows snippet names only; global
+  search and the execution picker retain
+  category-qualified names. Category creation from the editor remains available.
+  Adding from a category must preselect it, and uncategorized snippets must
+  remain selectable even when other categories exist. Category management must
+  preserve empty categories, rename all contained snippets, duplicate them
+  with new IDs, and move them to Uncategorized on confirmed deletion. The
+  category-management page must have no repeated heading; All categories
+  remains at the top, while Cancel sits beside Delete category and both return
+  to the three-column snippet manager.
 - Snippet variable values must be shell-quoted as individual arguments, and a
   group-scoped snippet must apply to servers in that group and its nested
   subgroups. Invalid or deleted scope targets must never broaden a snippet to

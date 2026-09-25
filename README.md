@@ -24,7 +24,11 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Check for official releases and install verified updates from `About`.
 - Save reusable command snippets by category and scope them to all terminals, a
   server group, or one server; preview variable-expanded commands before
-  explicitly sending them to a selected terminal.
+  explicitly sending them to a selected terminal. Manage them through a
+  three-column view with category counts, snippet lists, a read-only command
+  preview, and global search.
+  Create, rename, duplicate, and delete categories independently; deleting a
+  category moves its snippets to Uncategorized.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
 - Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`.
 - Store host, user, port, password, and private-key settings for each SSH connection.

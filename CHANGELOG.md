@@ -7,9 +7,13 @@
 - Add reusable command snippets with scoped storage, category search, explicit
   variable entry, and mandatory command preview before terminal execution
   (`#270`).
+- Add persistent snippet-category management, including empty categories,
+  renaming, duplication, and non-destructive deletion (`#288`).
 
 ### Fixed
 
+- Fix category listing visibility and preserve category selection when creating
+  snippets (`#288`).
 - Reuse persistent snippet windows and suppress selection callbacks while
   rebuilding lists, avoiding native GTK/Gallium lifecycle crashes and hangs
   during repeated editing and execution (`#270`).
@@ -18,6 +22,16 @@
 
 ### Changed
 
+- Redesign snippet management as a three-column view with category counts,
+  snippet lists, and a read-only command preview; place category and snippet
+  creation actions above their columns, with selection guidance beneath the
+  list, while retaining global search and category creation from the editor
+  (`#288`).
+- Simplify the Manage snippets header and group its actions by purpose (`#288`).
+- Remove the redundant Manage categories heading and add a footer Cancel action
+  that returns to snippet management (`#288`).
+- Keep “snippet” terminology in the Spanish and Catalan interface and docs
+  (`#288`).
 - Migrate connection storage to schema 2 for command snippets, preventing older
   versions from silently discarding snippet data (`#270`).
 - Mark the active source checkout as `0.6.0-beta.3-dev` for the next release

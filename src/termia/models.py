@@ -171,6 +171,7 @@ class StoreData:
     local_terminals: list[LocalTerminalProfile] = field(default_factory=list)
     workspaces: list[Workspace] = field(default_factory=list)
     snippets: list[CommandSnippet] = field(default_factory=list)
+    snippet_categories: list[str] = field(default_factory=list)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     app: AppSettings = field(default_factory=AppSettings)
     statistics: StatisticsSettings = field(default_factory=StatisticsSettings)

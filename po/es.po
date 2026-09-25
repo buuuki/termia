@@ -1709,29 +1709,86 @@ msgid "This installation type cannot be updated automatically. Use the official 
 msgstr "Este tipo de instalación no puede actualizarse automáticamente. Consulta la página oficial de versiones."
 
 #: src/termia/i18n.py:snippets
-msgid "Manage snippets…"
-msgstr "Gestionar fragmentos…"
+msgid "Manage snippets"
+msgstr "Gestionar snippets"
+
+msgid "Manage categories"
+msgstr "Gestionar categorías"
+
+msgid "Add category"
+msgstr "Añadir categoría"
+
+msgid "Rename category"
+msgstr "Renombrar categoría"
+
+msgid "Duplicate category"
+msgstr "Duplicar categoría"
+
+msgid "Delete category"
+msgstr "Eliminar categoría"
+
+msgid "Delete category \"{name}\"? Snippets in this category ({count}) will move to Uncategorized."
+msgstr "¿Eliminar la categoría \"{name}\"? Sus snippets ({count}) pasarán a Sin categoría."
+
+msgid "A category with this name already exists."
+msgstr "Ya existe una categoría con este nombre."
+
+msgid "The selected category no longer exists."
+msgstr "La categoría seleccionada ya no existe."
+
+msgid "Select a snippet to preview its command."
+msgstr "Selecciona un snippet para previsualizar su comando."
+
+msgid "Command preview"
+msgstr "Vista previa del comando"
+
+msgid "All categories"
+msgstr "Todas las categorías"
+
+msgid "{count} snippets"
+msgstr "{count} snippets"
+
+msgid "Uncategorized"
+msgstr "Sin categoría"
+
+msgid "Create a new category"
+msgstr "Crear una categoría nueva"
+
+msgid "New category name"
+msgstr "Nombre de la categoría nueva"
 
 msgid "Run snippet…"
-msgstr "Ejecutar fragmento…"
+msgstr "Ejecutar snippet…"
 
 msgid "Add snippet"
-msgstr "Añadir fragmento"
+msgstr "Añadir snippet"
+
+msgid "Create snippet"
+msgstr "Crear snippet"
 
 msgid "Edit snippet"
-msgstr "Editar fragmento"
+msgstr "Editar snippet"
 
 msgid "Duplicate snippet"
-msgstr "Duplicar fragmento"
+msgstr "Duplicar snippet"
 
 msgid "Delete snippet"
-msgstr "Eliminar fragmento"
+msgstr "Eliminar snippet"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Duplicate"
+msgstr "Duplicar"
 
 msgid "Delete snippet \"{name}\"? This action cannot be undone."
-msgstr "¿Eliminar el fragmento \"{name}\"? Esta acción no se puede deshacer."
+msgstr "¿Eliminar el snippet \"{name}\"? Esta acción no se puede deshacer."
 
 msgid "Category"
 msgstr "Categoría"
+
+msgid "A category name is required."
+msgstr "Se requiere un nombre para la categoría."
 
 msgid "Availability"
 msgstr "Disponibilidad"
@@ -1752,13 +1809,13 @@ msgid "(copy)"
 msgstr "(copia)"
 
 msgid "Search snippets"
-msgstr "Buscar fragmentos"
+msgstr "Buscar snippets"
 
 msgid "No matching snippets."
-msgstr "No hay fragmentos coincidentes."
+msgstr "No hay snippets coincidentes."
 
 msgid "Snippet variables"
-msgstr "Variables del fragmento"
+msgstr "Variables del snippet"
 
 msgid "Preview command"
 msgstr "Vista previa del comando"
@@ -1770,22 +1827,22 @@ msgid "Send to terminal"
 msgstr "Enviar al terminal"
 
 msgid "Snippet sent to terminal."
-msgstr "Fragmento enviado al terminal."
+msgstr "Snippet enviado al terminal."
 
 msgid "A snippet name is required."
-msgstr "Se requiere un nombre para el fragmento."
+msgstr "Se requiere un nombre para el snippet."
 
 msgid "A snippet command is required."
-msgstr "Se requiere un comando para el fragmento."
+msgstr "Se requiere un comando para el snippet."
 
 msgid "Select the server or group for this snippet."
-msgstr "Selecciona el servidor o grupo para este fragmento."
+msgstr "Selecciona el servidor o grupo para este snippet."
 
 msgid "Enter a value for every snippet variable."
-msgstr "Introduce un valor para cada variable del fragmento."
+msgstr "Introduce un valor para cada variable del snippet."
 
 msgid "The snippet availability is invalid."
-msgstr "La disponibilidad del fragmento no es válida."
+msgstr "La disponibilidad del snippet no es válida."
 
 msgid "The selected terminal is no longer available."
 msgstr "El terminal seleccionado ya no está disponible."

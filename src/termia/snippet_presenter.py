@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from .connection_utils import find_server, group_path_labels
 from .models import CommandSnippet, Group, Server
-from .snippets import available_snippets
+from .snippets import available_snippets, normalized_categories
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,14 @@ class SnippetTargetItem:
     label: str
 
 
+@dataclass(frozen=True)
+class SnippetCategoryItem:
+    key: str
+    label: str
+    count: int
+    icon_name: str
+
+
 class SnippetPresenter:
     """Pure presentation logic for snippet manager and runner views."""
 
@@ -30,10 +38,12 @@ class SnippetPresenter:
         snippets: Callable[[], list[CommandSnippet]],
         groups: Callable[[], list[Group]],
         servers: Callable[[], list[Server]],
+        categories: Callable[[], list[str]] | None = None,
     ) -> None:
         self._snippets = snippets
         self._groups = groups
         self._servers = servers
+        self._categories = categories or (lambda: [])
 
     @staticmethod
     def label(snippet: CommandSnippet) -> str:
@@ -42,12 +52,46 @@ class SnippetPresenter:
     def snippet(self, snippet_id: str | None) -> CommandSnippet | None:
         return next((item for item in self._snippets() if item.id == snippet_id), None)
 
-    def manager_items(self) -> list[SnippetListItem]:
+    def categories(self) -> list[SnippetCategoryItem]:
+        counts = {
+            name: 0 for name in normalized_categories(self._categories(), self._snippets())
+        }
+        for snippet in self._snippets():
+            counts[snippet.category] = counts.get(snippet.category, 0) + 1
+        return [
+            SnippetCategoryItem(
+                key=category,
+                label=category,
+                count=count,
+                icon_name="folder-open-symbolic" if not category else "folder-symbolic",
+            )
+            for category, count in sorted(
+                counts.items(),
+                key=lambda item: (not item[0], item[0].lower()),
+            )
+        ]
+
+    def manager_items(
+        self,
+        category: str | None = None,
+        query: str = "",
+    ) -> list[SnippetListItem]:
+        query = query.strip().lower()
         snippets = sorted(
-            self._snippets(),
+            (
+                item for item in self._snippets()
+                if (category is None or item.category == category)
+                and (
+                    not query
+                    or query in " ".join((item.name, item.category, item.content)).lower()
+                )
+            ),
             key=lambda item: (item.category.lower(), item.name.lower()),
         )
-        return [SnippetListItem(item.id, self.label(item)) for item in snippets]
+        return [
+            SnippetListItem(item.id, item.name if category is not None else self.label(item))
+            for item in snippets
+        ]
 
     def run_items(self, server_id: str | None, query: str) -> list[SnippetListItem]:
         server = find_server(self._servers(), server_id) if server_id else None

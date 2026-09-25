@@ -22,7 +22,9 @@ format is an object or event payload.
 
 - `connections.json`: object schema `2`; embedded legacy settings and
   statistics are extracted into their dedicated files, and schema `2` adds
-  locally stored command snippets.
+  locally stored command snippets and persistent snippet categories. Existing
+  development files without the category list recover category names from
+  their snippets when loaded; empty categories are stored explicitly.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
 - `statistics.json`: object schema `1`.

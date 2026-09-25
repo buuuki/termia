@@ -106,6 +106,7 @@ class ConfigActionsMixin:
         self.store.data.local_terminals = []
         self.store.data.workspaces = []
         self.store.data.snippets = []
+        self.store.data.snippet_categories = []
         self.store.save_connections()
         self.selected = None
         self.refresh_list()
@@ -136,6 +137,7 @@ class ConfigActionsMixin:
                     self.store.master_password,
                     self.store.data.workspaces,
                     self.store.data.snippets,
+                    self.store.data.snippet_categories,
                 )
             else:
                 self.store.save_connections()
