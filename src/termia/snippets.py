@@ -16,6 +16,21 @@ class SnippetError(ValueError):
     """A translation key for invalid snippet data or variable input."""
 
 
+def normalized_categories(categories: object, snippets: list[CommandSnippet]) -> list[str]:
+    """Keep saved empty categories and recover names from older snippet-only files."""
+    result: list[str] = []
+    for raw_name in (categories if isinstance(categories, list) else []):
+        if not isinstance(raw_name, str):
+            continue
+        name = raw_name.strip()
+        if name and name not in result:
+            result.append(name)
+    for snippet in snippets:
+        if snippet.category and snippet.category not in result:
+            result.append(snippet.category)
+    return result
+
+
 def normalize_snippet(
     snippet_id: str, name: str, content: str, category: str = "",
     scope: str = "global", target_id: str = "",

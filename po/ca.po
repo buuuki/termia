@@ -1709,29 +1709,86 @@ msgid "This installation type cannot be updated automatically. Use the official 
 msgstr "Aquest tipus d’instal·lació no es pot actualitzar automàticament. Consulta la pàgina oficial de versions."
 
 #: src/termia/i18n.py:snippets
-msgid "Manage snippets…"
-msgstr "Gestiona fragments…"
+msgid "Manage snippets"
+msgstr "Gestiona snippets"
+
+msgid "Manage categories"
+msgstr "Gestiona categories"
+
+msgid "Add category"
+msgstr "Afegeix una categoria"
+
+msgid "Rename category"
+msgstr "Reanomena categoria"
+
+msgid "Duplicate category"
+msgstr "Duplica la categoria"
+
+msgid "Delete category"
+msgstr "Suprimeix la categoria"
+
+msgid "Delete category \"{name}\"? Snippets in this category ({count}) will move to Uncategorized."
+msgstr "Voleu suprimir la categoria \"{name}\"? Els seus snippets ({count}) passaran a Sense categoria."
+
+msgid "A category with this name already exists."
+msgstr "Ja existeix una categoria amb aquest nom."
+
+msgid "The selected category no longer exists."
+msgstr "La categoria seleccionada ja no existeix."
+
+msgid "Select a snippet to preview its command."
+msgstr "Seleccioneu un snippet per previsualitzar-ne l'ordre."
+
+msgid "Command preview"
+msgstr "Previsualització de l'ordre"
+
+msgid "All categories"
+msgstr "Totes les categories"
+
+msgid "{count} snippets"
+msgstr "{count} snippets"
+
+msgid "Uncategorized"
+msgstr "Sense categoria"
+
+msgid "Create a new category"
+msgstr "Crea una categoria nova"
+
+msgid "New category name"
+msgstr "Nom de la categoria nova"
 
 msgid "Run snippet…"
-msgstr "Executa fragment…"
+msgstr "Executa snippet…"
 
 msgid "Add snippet"
-msgstr "Afegeix un fragment"
+msgstr "Afegeix un snippet"
+
+msgid "Create snippet"
+msgstr "Crea un snippet"
 
 msgid "Edit snippet"
-msgstr "Edita el fragment"
+msgstr "Edita el snippet"
 
 msgid "Duplicate snippet"
-msgstr "Duplica el fragment"
+msgstr "Duplica el snippet"
 
 msgid "Delete snippet"
-msgstr "Suprimeix el fragment"
+msgstr "Suprimeix el snippet"
+
+msgid "Edit"
+msgstr "Edita"
+
+msgid "Duplicate"
+msgstr "Duplica"
 
 msgid "Delete snippet \"{name}\"? This action cannot be undone."
-msgstr "Voleu suprimir el fragment \"{name}\"? Aquesta acció no es pot desfer."
+msgstr "Voleu suprimir el snippet \"{name}\"? Aquesta acció no es pot desfer."
 
 msgid "Category"
 msgstr "Categoria"
+
+msgid "A category name is required."
+msgstr "Es necessita un nom per a la categoria."
 
 msgid "Availability"
 msgstr "Disponibilitat"
@@ -1752,13 +1809,13 @@ msgid "(copy)"
 msgstr "(còpia)"
 
 msgid "Search snippets"
-msgstr "Cerca fragments"
+msgstr "Cerca snippets"
 
 msgid "No matching snippets."
-msgstr "No hi ha fragments coincidents."
+msgstr "No hi ha snippets coincidents."
 
 msgid "Snippet variables"
-msgstr "Variables del fragment"
+msgstr "Variables del snippet"
 
 msgid "Preview command"
 msgstr "Previsualitza l'ordre"
@@ -1770,22 +1827,22 @@ msgid "Send to terminal"
 msgstr "Envia al terminal"
 
 msgid "Snippet sent to terminal."
-msgstr "Fragment enviat al terminal."
+msgstr "Snippet enviat al terminal."
 
 msgid "A snippet name is required."
-msgstr "Cal un nom de fragment."
+msgstr "Cal un nom de snippet."
 
 msgid "A snippet command is required."
-msgstr "Cal una ordre de fragment."
+msgstr "Cal una ordre de snippet."
 
 msgid "Select the server or group for this snippet."
-msgstr "Seleccioneu el servidor o grup per a aquest fragment."
+msgstr "Seleccioneu el servidor o grup per a aquest snippet."
 
 msgid "Enter a value for every snippet variable."
-msgstr "Introduïu un valor per a cada variable del fragment."
+msgstr "Introduïu un valor per a cada variable del snippet."
 
 msgid "The snippet availability is invalid."
-msgstr "La disponibilitat del fragment no és vàlida."
+msgstr "La disponibilitat del snippet no és vàlida."
 
 msgid "The selected terminal is no longer available."
 msgstr "El terminal seleccionat ja no està disponible."

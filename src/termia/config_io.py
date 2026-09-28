@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from .models import CommandSnippet, Group, LocalTerminalProfile, Server, StoreData, Workspace
 from .migrations import CURRENT_CONNECTIONS_SCHEMA_VERSION, migrate_connections_payload
-from .snippets import SnippetError, normalize_snippet, snippet_target_exists
+from .snippets import SnippetError, normalize_snippet, normalized_categories, snippet_target_exists
 from .workspace_layout import normalized_workspace_tabs
 
 CONNECTION_STORAGE_PLAIN = "plain"
@@ -46,6 +46,7 @@ def connections_payload(
     master_password: str | None = None,
     workspaces: list[Workspace] | None = None,
     snippets: list[CommandSnippet] | None = None,
+    snippet_categories: list[str] | None = None,
 ) -> dict[str, object]:
     payload = {
         "schema_version": CURRENT_CONNECTIONS_SCHEMA_VERSION,
@@ -54,6 +55,7 @@ def connections_payload(
         "local_terminals": [asdict(profile) for profile in local_terminals],
         "workspaces": [asdict(workspace) for workspace in workspaces or []],
         "snippets": [asdict(snippet) for snippet in snippets or []],
+        "snippet_categories": normalized_categories(snippet_categories, snippets or []),
     }
     raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     if storage_mode == CONNECTION_STORAGE_OBFUSCATED:
@@ -166,10 +168,14 @@ def write_connections_file(
     master_password: str | None = None,
     workspaces: list[Workspace] | None = None,
     snippets: list[CommandSnippet] | None = None,
+    snippet_categories: list[str] | None = None,
 ) -> None:
     mode = storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = connections_payload(groups, servers, local_terminals, mode, master_password, workspaces, snippets)
+    payload = connections_payload(
+        groups, servers, local_terminals, mode, master_password,
+        workspaces, snippets, snippet_categories,
+    )
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     path.chmod(0o600)
 
@@ -183,12 +189,14 @@ def load_store_data_from_json(path: Path, current: StoreData, master_password: s
     payload, _ = migrate_connections_payload(read_connections_payload(path, master_password))
     groups = [Group(**item) for item in payload.get("groups", [])]
     servers = [Server(**item) for item in payload.get("servers", [])]
+    snippets = snippets_from_payload(payload.get("snippets", []), groups, servers)
     return StoreData(
         groups=groups,
         servers=servers,
         local_terminals=[LocalTerminalProfile(**item) for item in payload.get("local_terminals", [])],
         workspaces=workspaces_from_payload(payload.get("workspaces", [])),
-        snippets=snippets_from_payload(payload.get("snippets", []), groups, servers),
+        snippets=snippets,
+        snippet_categories=normalized_categories(payload.get("snippet_categories"), snippets),
         terminal=current.terminal,
         app=current.app,
         statistics=current.statistics,

@@ -149,6 +149,7 @@ msgid "Rename"
 msgstr ""
 
 #: src/termia/i18n.py:sftp_delete
+#: src/termia/i18n.py:snippet_action_delete
 msgid "Delete"
 msgstr ""
 
@@ -1674,15 +1675,79 @@ msgid "SSH connection manager with embedded terminals"
 msgstr ""
 
 #: src/termia/i18n.py:manage_snippets
-msgid "Manage snippets…"
+msgid "Manage snippets"
 msgstr ""
 
 #: src/termia/i18n.py:run_snippet
 msgid "Run snippet…"
 msgstr ""
 
+#: src/termia/i18n.py:snippet_manage_categories
+msgid "Manage categories"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_add
+msgid "Add category"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_rename
+msgid "Rename category"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_duplicate
+msgid "Duplicate category"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_delete
+msgid "Delete category"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_delete_confirm
+msgid "Delete category \"{name}\"? Snippets in this category ({count}) will move to Uncategorized."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_exists
+msgid "A category with this name already exists."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_missing
+msgid "The selected category no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_back_to_categories
+msgid "All categories"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_select_preview
+msgid "Select a snippet to preview its command."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_preview_heading
+msgid "Command preview"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_count
+msgid "{count} snippets"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_uncategorized
+msgid "Uncategorized"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_new_category
+msgid "Create a new category"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_new_category_name
+msgid "New category name"
+msgstr ""
+
 #: src/termia/i18n.py:snippet_add
 msgid "Add snippet"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_create
+msgid "Create snippet"
 msgstr ""
 
 #: src/termia/i18n.py:snippet_edit
@@ -1697,12 +1762,24 @@ msgstr ""
 msgid "Delete snippet"
 msgstr ""
 
+#: src/termia/i18n.py:snippet_action_edit
+msgid "Edit"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_action_duplicate
+msgid "Duplicate"
+msgstr ""
+
 #: src/termia/i18n.py:snippet_delete_confirm
 msgid "Delete snippet \"{name}\"? This action cannot be undone."
 msgstr ""
 
 #: src/termia/i18n.py:snippet_category
 msgid "Category"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_category_required
+msgid "A category name is required."
 msgstr ""
 
 #: src/termia/i18n.py:snippet_scope

@@ -41,6 +41,9 @@ def migrate_connections_payload(payload: dict[str, Any]) -> tuple[dict[str, Any]
     if "snippets" not in migrated:
         migrated["snippets"] = []
         changed = True
+    if "snippet_categories" not in migrated:
+        migrated["snippet_categories"] = []
+        changed = True
     return migrated, changed
 
 

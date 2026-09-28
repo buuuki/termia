@@ -18,9 +18,13 @@ Documentació en castellà: [README.es.md](README.es.md)
   transferències, progrés, cancel·lació i operacions confirmades.
 - Cercar versions oficials i instal·lar actualitzacions verificades des de
   **Quant a**.
-- Desar fragments d'ordres reutilitzables per categoria i limitar-los a tots
+- Desar snippets d'ordres reutilitzables per categoria i limitar-los a tots
   els terminals, un grup o un servidor; previsualitzar les variables abans
-  d'enviar-los explícitament al terminal seleccionat.
+  d'enviar-los explícitament al terminal seleccionat. Gestionar-los des d'una
+  vista de tres columnes amb categories i comptadors, llista de snippets,
+  previsualització de l'ordre en només lectura i cerca global. Crear, canviar el
+  nom, duplicar i suprimir categories per separat; quan se suprimeix una
+  categoria, els seus snippets passen a Sense categoria.
 - Mantenir les dades de connexió en local amb emmagatzematge en text pla, ofuscat o xifrat opcional protegit per una contrasenya mestra.
 - Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`.
 - Desar host, usuari, port, contrasenya i ruta de clau privada de cada connexió SSH.

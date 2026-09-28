@@ -155,6 +155,7 @@ class TermiaWindow(
             lambda: self.store.data.snippets,
             lambda: self.store.data.groups,
             lambda: self.store.data.servers,
+            lambda: self.store.data.snippet_categories,
         )
         self.snippet_dialogs = SnippetDialogs(
             self,
