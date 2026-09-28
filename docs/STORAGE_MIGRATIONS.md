@@ -28,5 +28,5 @@ format is an object or event payload.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
 - `statistics.json`: object schema `1`.
-- `history.jsonl`: each event uses schema `1`; unversioned events remain
+- `connections-history.jsonl`: each event uses schema `1`; unversioned events remain
   readable and receive the current version when rewritten.

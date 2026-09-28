@@ -71,8 +71,9 @@ For the current cycle, the next development branch is
 ## Current beta baseline
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
-`0.5.0`; its historical tag and release are not renamed. The current source
-release line is `0.6.0-beta.2`.
+`0.5.0`; its historical tag and release are not renamed. The latest published
+source release is `0.6.0-beta.2`; the active development branch targets the next
+iteration, `0.6.0-beta.3`.
 
 ## Debian package versions
 
