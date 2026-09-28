@@ -203,15 +203,24 @@ class SnippetDialogTests(unittest.TestCase):
         state = dialogs.show_manager()
         dialogs.on_category_manage(Mock(), state)
         self.assertEqual(state.stack.get_visible_child_name(), "categories")
+        self.assertFalse(any(button.get_sensitive() for button in state.category_manage_actions))
+        work_tile = state.category_manage_grid.get_child_at_index(0)
+        work_content = work_tile.get_child().get_child()
+        self.assertIsInstance(work_content.get_first_child(), Gtk.Image)
+        self.assertEqual(work_content.get_last_child().get_label(), "1")
         dialogs.on_category_manage_add(Mock(), state)
         state.category_name_entry.set_text("Empty")
         dialogs.on_category_name_save(Mock(), state)
         self.assertIn("Empty", store.data.snippet_categories)
         self.assertIn("Empty", state.category_manage_keys)
+        empty_tile = state.category_manage_grid.get_child_at_index(state.category_manage_keys.index("Empty"))
+        self.assertEqual(empty_tile.get_child().get_child().get_last_child().get_label(), "0")
 
-        state.category_manage_list.select_row(
-            state.category_manage_list.get_row_at_index(state.category_manage_keys.index("Work"))
+        state.category_manage_grid.select_child(
+            state.category_manage_grid.get_child_at_index(state.category_manage_keys.index("Work"))
         )
+        self.assertEqual(state.selected_category, "Work")
+        self.assertTrue(all(button.get_sensitive() for button in state.category_manage_actions))
         dialogs.on_category_manage_rename(Mock(), state)
         state.category_name_entry.set_text("Operations")
         dialogs.on_category_name_save(Mock(), state)
@@ -223,8 +232,8 @@ class SnippetDialogTests(unittest.TestCase):
         self.assertEqual(len(store.data.snippets), 2)
         self.assertNotEqual(store.data.snippets[1].id, original.id)
 
-        state.category_manage_list.select_row(
-            state.category_manage_list.get_row_at_index(state.category_manage_keys.index("Operations"))
+        state.category_manage_grid.select_child(
+            state.category_manage_grid.get_child_at_index(state.category_manage_keys.index("Operations"))
         )
         dialogs.on_category_manage_delete(Mock(), state)
         self.assertEqual(state.stack.get_visible_child_name(), "category_delete")
@@ -238,6 +247,36 @@ class SnippetDialogTests(unittest.TestCase):
         dialogs.on_category_manage_back(Mock(), state)
         self.assertEqual(state.stack.get_visible_child_name(), "manager")
         self.assertIn("Empty", [item.key for item in dialogs.presenter.categories()])
+
+    def test_category_management_tiles_are_uniform_across_rows(self):
+        parent = self.make_parent()
+        data = SimpleNamespace(
+            snippets=[], groups=[], servers=[],
+            snippet_categories=[
+                "Category A", "Category B", "Category C", "Category D",
+                "Category E", "A very long category name that should be ellipsized",
+            ],
+        )
+        dialogs = self.make_dialogs(parent, data)
+        self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
+
+        state = dialogs.show_manager()
+        dialogs.on_category_manage(Mock(), state)
+        grid = state.category_manage_grid
+        self.assertTrue(grid.get_homogeneous())
+        self.assertEqual(grid.get_halign(), Gtk.Align.START)
+        tiles = [grid.get_child_at_index(index) for index in range(6)]
+        self.assertTrue(all(tile is not None for tile in tiles))
+        self.assertTrue(all(tile.has_css_class("termia-snippet-category-tile") for tile in tiles))
+        self.assertTrue(all(
+            tile.get_child().has_css_class("termia-snippet-category-frame") for tile in tiles
+        ))
+        self.assertEqual({tile.get_child().get_size_request() for tile in tiles}, {(170, 112)})
+        long_tile = grid.get_child_at_index(
+            state.category_manage_keys.index("A very long category name that should be ellipsized")
+        )
+        self.assertIn("A very long category name", long_tile.get_tooltip_text())
 
     def test_category_management_navigation_has_no_repeated_heading(self):
         parent = self.make_parent()

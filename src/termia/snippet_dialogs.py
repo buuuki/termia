@@ -45,7 +45,7 @@ class ManagerState:
     target: Gtk.ComboBoxText
     command: Gtk.TextView
     delete_detail: Gtk.Label
-    category_manage_list: Gtk.ListBox
+    category_manage_grid: Gtk.FlowBox
     category_name_entry: Gtk.Entry
     category_name_box: Gtk.Box
     category_manage_actions: tuple[Gtk.Button, Gtk.Button, Gtk.Button]
@@ -63,6 +63,7 @@ class ManagerState:
     category_edit_mode: str | None = None
     category_edit_original: str | None = None
     category_pending_delete: str | None = None
+    category_manage_handler_id: int | None = None
     selection_hint: Gtk.ListBoxRow | None = None
 
 
@@ -379,11 +380,18 @@ class SnippetDialogs:
         category_back = self.button(self.translate("snippet_back_to_categories"))
         category_header.append(category_back)
         category_page.append(category_header)
-        category_manage_list = Gtk.ListBox()
-        category_manage_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        category_manage_grid = Gtk.FlowBox()
+        category_manage_grid.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        category_manage_grid.set_homogeneous(True)
+        category_manage_grid.set_min_children_per_line(1)
+        category_manage_grid.set_max_children_per_line(4)
+        category_manage_grid.set_row_spacing(12)
+        category_manage_grid.set_column_spacing(12)
+        category_manage_grid.set_halign(Gtk.Align.START)
+        category_manage_grid.set_valign(Gtk.Align.START)
         category_manage_scroller = Gtk.ScrolledWindow()
         category_manage_scroller.set_vexpand(True)
-        category_manage_scroller.set_child(category_manage_list)
+        category_manage_scroller.set_child(category_manage_grid)
         category_page.append(category_manage_scroller)
         category_name_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         category_name_entry = Gtk.Entry()
@@ -431,7 +439,7 @@ class SnippetDialogs:
             (edit, duplicate, delete), name, category, new_category_button,
             new_category_entry, new_category_confirm, new_category_cancel,
             new_category_box, scope, target, command, delete_detail,
-            category_manage_list, category_name_entry, category_name_box,
+            category_manage_grid, category_name_entry, category_name_box,
             (category_rename, category_duplicate, category_delete),
             category_delete_detail,
         )
@@ -447,7 +455,9 @@ class SnippetDialogs:
         delete_cancel.connect("clicked", self.on_delete_cancel, state)
         delete_confirm.connect("clicked", self.on_delete_confirmed, state)
         manage_categories.connect("clicked", self.on_category_manage, state)
-        category_manage_list.connect("row-selected", self.on_category_manage_selected, state)
+        state.category_manage_handler_id = category_manage_grid.connect(
+            "selected-children-changed", self.on_category_manage_selected, state,
+        )
         category_add.connect("clicked", self.on_category_manage_add, state)
         category_rename.connect("clicked", self.on_category_manage_rename, state)
         category_duplicate.connect("clicked", self.on_category_manage_duplicate, state)
@@ -491,17 +501,43 @@ class SnippetDialogs:
         self.refresh_manager(state)
 
     def refresh_category_management(self, state: ManagerState, selected: str | None = None) -> None:
-        self.clear_list(state.category_manage_list)
+        grid = state.category_manage_grid
+        handler_id = state.category_manage_handler_id
+        if handler_id is not None:
+            grid.handler_block(handler_id)
         categories = [item for item in self.presenter.categories() if item.key]
-        state.category_manage_keys = [item.key for item in categories]
-        state.selected_category = None
-        for item in categories:
-            row = self.append_row(
-                state.category_manage_list,
-                f"{item.key} · {self.translate('snippet_category_count').format(count=item.count)}",
-            )
-            if item.key == selected:
-                state.category_manage_list.select_row(row)
+        try:
+            self.clear_flow_box(grid)
+            state.category_manage_keys = [item.key for item in categories]
+            state.selected_category = None
+            for item in categories:
+                tile = Gtk.FlowBoxChild()
+                tile.add_css_class("termia-snippet-category-tile")
+                tile.set_tooltip_text(f"{item.key} ({item.count})")
+                frame = Gtk.Frame()
+                frame.add_css_class("termia-snippet-category-frame")
+                frame.set_size_request(170, 112)
+                content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                content.set_halign(Gtk.Align.CENTER)
+                content.set_valign(Gtk.Align.CENTER)
+                icon = Gtk.Image.new_from_icon_name(item.icon_name)
+                icon.set_pixel_size(32)
+                name = Gtk.Label(label=item.key)
+                name.set_ellipsize(Pango.EllipsizeMode.END)
+                name.set_max_width_chars(18)
+                count = Gtk.Label(label=str(item.count))
+                count.add_css_class("dim-label")
+                for widget in (icon, name, count):
+                    content.append(widget)
+                frame.set_child(content)
+                tile.set_child(frame)
+                grid.insert(tile, -1)
+                if item.key == selected:
+                    grid.select_child(tile)
+                    state.selected_category = item.key
+        finally:
+            if handler_id is not None:
+                grid.handler_unblock(handler_id)
         self.update_category_manage_actions(state)
 
     def update_category_manage_actions(self, state: ManagerState) -> None:
@@ -512,10 +548,12 @@ class SnippetDialogs:
         self.on_category_name_cancel(_button, state)
         self.refresh_category_management(state)
         state.stack.set_visible_child_name("categories")
+
     def on_category_manage_selected(
-        self, _listing: Gtk.ListBox, row: Gtk.ListBoxRow | None, state: ManagerState,
+        self, grid: Gtk.FlowBox, state: ManagerState,
     ) -> None:
-        index = row.get_index() if row is not None else -1
+        selected = grid.get_selected_children()
+        index = selected[0].get_index() if selected else -1
         state.selected_category = (
             state.category_manage_keys[index]
             if 0 <= index < len(state.category_manage_keys) else None

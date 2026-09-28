@@ -79,7 +79,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   with new IDs, and move them to Uncategorized on confirmed deletion. The
   category-management page must have no repeated heading; All categories
   remains at the top, while Cancel sits beside Delete category and both return
-  to the three-column snippet manager.
+  to the three-column snippet manager. Category management must show uniform
+  icon tiles with names and snippet counts (including zero) across multiple
+  rows; selecting a tile enables Rename, Duplicate, and Delete. The selected
+  highlight must follow the rounded tile rather than the square outer cell,
+  while keyboard focus remains visible in light and dark themes.
 - Snippet variable values must be shell-quoted as individual arguments, and a
   group-scoped snippet must apply to servers in that group and its nested
   subgroups. Invalid or deleted scope targets must never broaden a snippet to

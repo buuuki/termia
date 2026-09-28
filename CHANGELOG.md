@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Keep category-tile selection inside the rounded card instead of highlighting
+  its square FlowBox wrapper (`#288`).
 - Fix category listing visibility and preserve category selection when creating
   snippets (`#288`).
 - Reuse persistent snippet windows and suppress selection callbacks while
@@ -30,6 +32,8 @@
 - Simplify the Manage snippets header and group its actions by purpose (`#288`).
 - Remove the redundant Manage categories heading and add a footer Cancel action
   that returns to snippet management (`#288`).
+- Show persistent categories as uniform icon tiles with snippet counts in the
+  category-management view (`#288`).
 - Keep “snippet” terminology in the Spanish and Catalan interface and docs
   (`#288`).
 - Migrate connection storage to schema 2 for command snippets, preventing older
