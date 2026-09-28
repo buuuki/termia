@@ -1,7 +1,8 @@
 # Termia
 
-Termia és un gestor de connexions SSH per a escriptoris Linux desenvolupat amb
-Python, GTK 4 i terminals VTE incrustats.
+Termia és un gestor de connexions SSH i espais de treball de terminal per a
+escriptoris Linux. Reuneix sessions locals i remotes, espais de treball desats
+i transferències de fitxers amb Python, GTK 4 i terminals VTE.
 
 Documentació principal en anglès: [../README.md](../README.md)
 Documentació en castellà: [README.es.md](README.es.md)
@@ -13,6 +14,9 @@ Documentació en castellà: [README.es.md](README.es.md)
   dividits que es poden connectar independentment a diferents servidors SSH o
   terminals locals.
 - Desar dissenys de divisió per servidor SSH o perfil de terminal local per reobrir un espai de treball preparat.
+- Desar espais de treball amb diverses pestanyes i, si s'activa l'opció
+  corresponent, restaurar la sessió anterior en iniciar. La restauració està
+  desactivada per defecte.
 - Pujar fitxers locals a servidors remots amb SCP des del menú contextual del terminal o del servidor.
 - Explorar fitxers remots mitjançant un explorador SFTP natiu amb navegació,
   transferències, progrés, cancel·lació i operacions confirmades.
@@ -32,6 +36,9 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
+Els snippets estan disponibles a la branca de codi
+`release/0.6.0-beta.3-dev`, no al paquet beta.2 publicat més avall.
+
 ## Explorador SFTP
 
 Obre **Explora fitxers (SFTP)** des del menú d'un servidor o panell SSH.
@@ -45,8 +52,8 @@ El progrés és per fitxer. Tancar la pestanya propietària o Termia tanca SFTP.
 Paramiko usa el host i la identitat desats, SSH-agent/claus predeterminades o
 contrasenya en memòria. Confirma les empremtes desconegudes; es rebutgen claus
 modificades. No s'inclouen àlies d'OpenSSH, ProxyJump, proveïdors de claus
-hardware ni MFA interactiu. SCP continua disponible. Aquesta funció encara no
-forma part del paquet beta.2 publicat.
+hardware ni MFA interactiu. SCP continua disponible. Aquesta funció s'inclou
+al paquet beta.2 publicat.
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
@@ -70,8 +77,8 @@ actualització manual. Després executa `scripts/termia-setup.sh install` per
 verificar les dependències i reinicia Termia manualment.
 
 Es poden cancel·lar consultes i baixades. Un cop iniciada la instal·lació, cal
-deixar-la acabar; tancar Termia no atura el gestor de paquets. Aquesta funció no
-és al paquet beta.2 i no actualitza revisions exclusivament Debian de la
+deixar-la acabar; tancar Termia no atura el gestor de paquets. Aquesta funció
+s'inclou al paquet beta.2 i no actualitza revisions exclusivament Debian de la
 mateixa versió de l'aplicació.
 
 ### Paquet publicat
@@ -123,7 +130,7 @@ Per provar una branca sense tancar la finestra habitual de Termia, inicia un
 perfil aïllat. Utilitza una configuració, estat i bloqueig d'escriptura propis:
 
 ```bash
-./scripts/run_test_instance.sh --copy-current-config pr-152
+./scripts/run_test_instance.sh --copy-current-config review
 ```
 
 L'opció copia les connexions, ajustos, historial de connexions, estadístiques i
@@ -162,8 +169,13 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fitxer `termia_0.6.0~beta.2-1_all.deb` es crea al directori pare. Instal·la'l
-amb:
+El fitxer `termia_0.6.0~beta.2-1_all.deb` es crea al directori pare.
+Aquest nom correspon a les metadades del `main` publicat. Les branques de
+desenvolupament poden incloure codi més recent abans d'actualitzar les
+metadades Debian per a la versió següent; no distribueixis aquest paquet com
+la beta.2 oficial.
+
+Instal·la'l amb:
 
 ```bash
 sudo apt install ../termia_0.6.0~beta.2-1_all.deb
@@ -185,7 +197,11 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
-- En tancar Termia es desa de manera segura la disposició de les pestanyes i divisions obertes. En tornar-lo a iniciar, després de desbloquejar les connexions xifrades, pregunta si les vols restaurar; no desa la sortida dels terminals, processos, PID, contrasenyes ni rutes privades.
+- Si actives la restauració de la sessió anterior a `General`, en tancar Termia
+  es desa la disposició de les pestanyes i panells oberts. En tornar-lo a
+  iniciar, després de desbloquejar les connexions xifrades si escau, pregunta
+  si les vols restaurar. Aquesta opció està desactivada per defecte; no desa la
+  sortida dels terminals, processos, PID, contrasenyes ni rutes privades.
 - Fes clic dret en un terminal o en un servidor per pujar fitxers a `/tmp/.termia/` a l'host destí.
 - El menú principal inclou historial de connexions, ubicacions de fitxers de dades i accions d'importació/exportació.
 
@@ -232,20 +248,27 @@ exposar diferents nivells de l'API de GTK.
 Les connexions, preferències i estadístiques es desen fora del repositori:
 
 ```text
-~/.config/termia/connections.json   # grups i servidors
+~/.config/termia/connections.json   # grups, servidors i snippets desats si estan disponibles
 ~/.config/termia/settings.json      # configuració de l'aplicació i del terminal
 ~/.config/termia/instance.lock      # bloqueig d'escriptor únic per al mode multiinstància
-~/.local/state/termia/recent_connections.jsonl
+~/.local/state/termia/connections-history.jsonl
 ~/.local/state/termia/statistics.json
+~/.local/state/termia/last-session.json  # només si s'activa la restauració
 ```
 
 Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla, ofuscat o xifrat amb una contrasenya mestra des de les preferències de Seguretat. Quan el xifratge està activat, Termia demana la contrasenya mestra en arrencar i no pot recuperar les dades de connexió si aquesta contrasenya es perd. Les contrasenyes importades des d'Ásbrú es desaran igual quan el YAML d'origen les exposi al camp `pass`.
 Els fitxers de connexions exportats també poden contenir credencials.
 Els comptadors locals agregats es desen per separat a `statistics.json`, venen desactivats per defecte i es poden activar o desactivar des de les preferències generals. Quan hi ha diversos processos de Termia oberts al mateix temps, només la instància que manté `instance.lock` escriu connexions, ajustos o estadístiques; les següents romanen en només lectura per evitar corrompre aquests fitxers.
-Les connexions recents es desen a part a `recent_connections.jsonl` perquè la barra lateral pugui mostrar una secció Recent petita i sense duplicats basada en les últimes connexions SSH correctes.
+L'historial es desa a part a `connections-history.jsonl`; la secció Recent de
+la barra lateral s'obté de les connexions SSH correctes d'aquest historial.
 
-Termia no desa el text escrit, el contingut de les ordres, el contingut del
-porta-retalls, comptadors d'ordres ni comptadors de pulsacions. Quan estan activades, les estadístiques només registren connexions agregades, ús per servidor i durada de sessions; s'escriuen com a màxim cada 30 segons, en finalitzar sessions i en tancar Termia. Consulta
+Termia no registra les ordres escrites o executades als terminals, la seva
+sortida, el contingut del porta-retalls ni comptadors d'ordres o pulsacions.
+Els snippets, quan estan disponibles, són plantilles d'ordres que l'usuari desa
+expressament a `connections.json`; no són un historial d'ordres executades.
+Quan estan activades, les estadístiques només registren connexions agregades,
+ús per servidor i durada de sessions; s'escriuen com a màxim cada 30 segons,
+en finalitzar sessions i en tancar Termia. Consulta
 [../SECURITY.md](../SECURITY.md).
 
 Python pot crear directoris `__pycache__/` al costat dels mòduls executats.

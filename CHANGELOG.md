@@ -362,6 +362,10 @@ Changes merged after `0.5.0-beta` (released 2026-07-20).
 
 - Split the application into focused models, stores, helpers, views, and window mixins to establish the current architecture.
 
-## Initial development - 2026-06-03 to 2026-06-13
+## Initial development (0.1.0, untagged) - 2026-06-03 to 2026-06-13
 
-- Publish the initial Termia release and establish the source-checkout launcher, dependency checks, documentation, and issue templates.
+- Introduce Termia with application version `0.1.0` and establish the
+  source-checkout launcher, dependency checks, documentation, and issue
+  templates. No `0.1.0` or `0.1.0-alpha.1` Git tag exists; the earliest tag in
+  the repository is `v0.2.0-alpha.1`, and the first GitHub release is
+  `v0.3.0-alpha.1`.
