@@ -1,7 +1,8 @@
 # Termia
 
-Termia es un gestor de conexiones SSH para escritorios Linux desarrollado con
-Python, GTK 4 y terminales VTE embebidas.
+Termia es un gestor de conexiones SSH y espacios de trabajo de terminal para
+escritorios Linux. Reúne sesiones locales y remotas, espacios de trabajo
+guardados y transferencias de archivos con Python, GTK 4 y terminales VTE.
 
 Documentación principal en inglés: [../README.md](../README.md)
 Documentación en catalán: [README.ca.md](README.ca.md)
@@ -13,17 +14,43 @@ Documentación en catalán: [README.ca.md](README.ca.md)
   divididos que pueden conectarse de forma independiente a distintos servidores
   SSH o terminales locales.
 - Guardar diseños de división por servidor SSH o perfil de terminal local para reabrir un espacio de trabajo preparado.
+- Guardar espacios de trabajo con varias pestañas y, si se activa la opción
+  correspondiente, restaurar la sesión anterior al iniciar. La restauración
+  está desactivada por defecto.
 - Subir ficheros locales a servidores remotos con SCP desde el menú contextual del terminal o del servidor.
 - Explorar archivos remotos mediante un explorador SFTP nativo con navegación,
   transferencias, progreso, cancelación y operaciones confirmadas.
 - Buscar versiones oficiales e instalar actualizaciones verificadas desde
   **Acerca de**.
+- Guardar snippets de comandos reutilizables por categoría y limitarlos a
+  todos los terminales, un grupo o un servidor; previsualizar las variables
+  antes de enviarlos explícitamente al terminal seleccionado. Gestionarlos
+  desde una vista de tres columnas con categorías y contadores, lista de
+  snippets, previsualización del comando en solo lectura y búsqueda global.
+  Crear, renombrar, duplicar y eliminar categorías por separado; al eliminar
+  una categoría, sus snippets pasan a Sin categoría.
 - Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
 - Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`.
 - Guardar host, usuario, puerto, contraseña y ruta de clave privada de cada conexión SSH.
 - Importar y exportar configuración de Termia, incluidas conexiones básicas, grupos anidados y credenciales disponibles de YAML de Asbru.
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
+
+## Novedades de 0.6.0-beta.3
+
+- Crear snippets de comandos reutilizables, organizarlos en categorías
+  persistentes y gestionar las categorías (renombrar, duplicar y eliminar).
+- Buscar snippets en todas las categorías desde una vista de tres columnas con
+  contadores, lista de snippets y previsualización de solo lectura.
+- Previsualizar los comandos con sus variables y confirmarlos antes de enviarlos
+  al terminal. Los snippets se guardan localmente en el fichero de conexiones.
+- Tratar una salida normal del shell SSH con código distinto de cero como un
+  cierre limpio, sin ofrecer por error la reconexión.
+- Aclarar la compatibilidad de la configuración y las copias de seguridad al
+  cambiar de versión.
+
+El explorador SFTP y las actualizaciones desde Acerca de ya estaban disponibles
+en 0.6.0-beta.2.
 
 ## Explorador SFTP
 
@@ -38,8 +65,8 @@ es por archivo. Cerrar la pestaña propietaria o Termia cierra la conexión SFTP
 Paramiko usa el host y la identidad guardados, SSH-agent/claves predeterminadas
 o contraseña en memoria. Confirma las huellas desconocidas; se rechazan claves
 modificadas. No se incluyen alias de OpenSSH, ProxyJump, proveedores de claves
-hardware ni MFA interactivo. SCP sigue disponible. Esta función todavía no
-forma parte del paquete beta.2 publicado.
+hardware ni MFA interactivo. SCP sigue disponible. Esta función se introdujo
+en beta.2 y sigue disponible en beta.3.
 
 ## Descargar e instalar (Ubuntu 24.04+)
 
@@ -69,11 +96,11 @@ exclusivamente Debian de la misma versión de la aplicación.
 
 ### Paquete publicado
 
-Descarga [termia_0.6.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.2/termia_0.6.0.beta.2-1_all.deb)
+Descarga [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
 e instálalo con APT, que resolverá las dependencias necesarias:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.2-1_all.deb
+sudo apt install ./termia_0.6.0.beta.3-1_all.deb
 ```
 
 ## Descargar e instalar desde el código fuente
@@ -116,12 +143,18 @@ Para probar una rama sin cerrar la ventana habitual de Termia, inicia un perfil
 aislado. Utiliza una configuración, estado y bloqueo de escritura propios:
 
 ```bash
-./scripts/run_test_instance.sh --copy-current-config pr-152
+./scripts/run_test_instance.sh --copy-current-config review
 ```
 
 La opción copia las conexiones, ajustes, historial de conexiones, estadísticas y
 el registro de depuración en el perfil de pruebas. Los cambios realizados allí
 nunca modifican los datos habituales de Termia.
+
+Termia puede migrar archivos de configuración compatibles de versiones
+anteriores. Una vez que una versión más reciente guarda una configuración, una
+versión anterior podría dejar de poder abrirla. Haz una copia de seguridad de
+la configuración antes de actualizar o alternar versiones, y utiliza perfiles
+aislados al probar ramas de desarrollo.
 
 Para obtener información de diagnóstico sobre pestañas, splits, procesos VTE,
 avisos de GTK, bloqueos de almacenamiento, cifrado y arranque en modo solo
@@ -155,11 +188,15 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fichero `termia_0.6.0~beta.2-1_all.deb` se crea en el directorio padre.
+El fichero `termia_0.6.0~beta.3-1_all.deb` se crea en el directorio padre.
+Las ramas de desarrollo pueden incluir código más reciente antes de actualizar
+los metadatos Debian para la siguiente versión; no distribuyas ese paquete
+como una versión oficial.
+
 Instálalo con:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.2-1_all.deb
+sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 El paquete Debian instala el comando `termia`, el lanzador de escritorio y el
@@ -178,7 +215,12 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
-- Al cerrar Termia se guarda de forma segura la disposición de las pestañas y splits abiertos. Al volver a iniciarlo, después de desbloquear las conexiones cifradas, pregunta si quieres restaurarlos; no guarda la salida de los terminales, procesos, PID, contraseñas ni rutas privadas.
+- Si activas la restauración de la sesión anterior en `General`, al cerrar
+  Termia se guarda la disposición de las pestañas y paneles abiertos. Al volver
+  a iniciarlo, después de desbloquear las conexiones cifradas si procede,
+  pregunta si quieres restaurarlos. Esta opción está desactivada por defecto;
+  no guarda la salida de los terminales, procesos, PID, contraseñas ni rutas
+  privadas.
 - Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
 - El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
 
@@ -225,20 +267,27 @@ exponer distintos niveles de API de GTK.
 Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 
 ```text
-~/.config/termia/connections.json   # grupos y servidores
+~/.config/termia/connections.json   # grupos, servidores y snippets guardados si están disponibles
 ~/.config/termia/settings.json      # configuración de la app y del terminal
 ~/.config/termia/instance.lock      # bloqueo de escritor único para el modo multiinstancia
-~/.local/state/termia/recent_connections.jsonl
+~/.local/state/termia/connections-history.jsonl
 ~/.local/state/termia/statistics.json
+~/.local/state/termia/last-session.json  # solo si se activa la restauración
 ```
 
 Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano, ofuscado o cifrado con una contraseña maestra desde las preferencias de Seguridad. Cuando el cifrado está activado, Termia pide la contraseña maestra al arrancar y no puede recuperar los datos de conexión si esa contraseña se pierde. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
 Los ficheros de conexiones exportados también pueden contener credenciales.
 Los contadores locales agregados se guardan por separado en `statistics.json`, vienen desactivados por defecto y se pueden activar o desactivar desde las preferencias generales. Cuando hay varios procesos de Termia abiertos al mismo tiempo, solo la instancia que mantiene `instance.lock` escribe conexiones, ajustes o estadísticas; las siguientes permanecen en solo lectura para evitar corromper esos ficheros.
-Las conexiones recientes se guardan aparte en `recent_connections.jsonl` para que la barra lateral pueda mostrar una sección Recent pequeña y sin duplicados basada en las últimas conexiones SSH correctas.
+El historial se guarda aparte en `connections-history.jsonl`; la sección Recent
+de la barra lateral se obtiene de las conexiones SSH correctas de ese historial.
 
-Termia no guarda el texto escrito, el contenido de los comandos, el contenido del
-portapapeles, contadores de comandos ni contadores de pulsaciones. Cuando están activadas, las estadísticas solo registran conexiones agregadas, uso por servidor y duración de sesiones; se escriben como máximo cada 30 segundos, al finalizar sesiones y al cerrar Termia. Consulta
+Termia no registra los comandos escritos o ejecutados en los terminales, su
+salida, el contenido del portapapeles ni contadores de comandos o pulsaciones.
+Los snippets, cuando están disponibles, son plantillas de comandos que el
+usuario guarda expresamente en `connections.json`; no son un historial de
+comandos ejecutados. Cuando están activadas, las estadísticas solo registran
+conexiones agregadas, uso por servidor y duración de sesiones; se escriben como
+máximo cada 30 segundos, al finalizar sesiones y al cerrar Termia. Consulta
 [../SECURITY.md](../SECURITY.md).
 
 Python puede crear directorios `__pycache__/` junto a los módulos ejecutados.

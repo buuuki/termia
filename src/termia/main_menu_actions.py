@@ -16,6 +16,7 @@ class MainMenuActions:
     terminal_settings: MenuAction
     keybinding_settings: MenuAction
     security_settings: MenuAction
+    manage_snippets: MenuAction
     statistics: MenuAction
     connection_history: MenuAction
     data_locations: MenuAction

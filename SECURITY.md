@@ -17,6 +17,9 @@ still not publish, commit, or share it. Prefer SSH keys where possible.
 
 Exported configuration files can also contain passwords. Treat them as sensitive
 files, even when the local connection file uses obfuscated storage.
+Connection history in `~/.local/state/termia/connections-history.jsonl` can
+contain host names, user names, and session metadata, but not terminal commands
+or output. Keep it private as well.
 
 The configured password shortcut, `Ctrl+P` by default, sends the saved SSH
 password directly to the active remote terminal process, with an optional trailing
@@ -25,11 +28,14 @@ use it only when the terminal is waiting for a password.
 
 ## Local statistics
 
-Termia stores aggregate connection, Enter-key command, keystroke, and session-duration
-counters in `~/.local/state/termia/statistics.json`. It does not store typed text,
-command contents, or clipboard contents, and it does not transmit these counters.
-Statistics are flushed at most every 30 seconds while typing, when sessions end, and
-when Termia closes.
+When enabled, Termia stores aggregate connection and session-duration statistics,
+including per-server connection counts, in
+`~/.local/state/termia/statistics.json`. It does not count commands or keystrokes,
+record terminal input or output, or store clipboard contents. Snippets, where
+available, are command templates explicitly saved by the user in
+`~/.config/termia/connections.json`, not a record of executed commands.
+Statistics are flushed at most every 30 seconds while sessions are active, when
+sessions end, and when Termia closes.
 
 ## Application updates
 

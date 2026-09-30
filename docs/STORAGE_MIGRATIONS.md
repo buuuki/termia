@@ -1,13 +1,13 @@
 # Storage schema migrations
 
 Termia stores connections, settings, statistics, and connection history in
-separate local files. Each format now carries schema version `1` where the
+separate local files. Each format carries an explicit schema version where the
 format is an object or event payload.
 
 ## Compatibility policy
 
-- Unversioned files are treated as schema `0` and are migrated to schema `1`
-  when loaded and subsequently saved.
+- Unversioned files are treated as schema `0` and are migrated to the current
+  schema when loaded and subsequently saved.
 - The oldest supported format is the unversioned legacy format shipped before
   schema versioning was introduced.
 - Schema migrations must preserve user data and remain in the code while that
@@ -20,10 +20,13 @@ format is an object or event payload.
 
 ## Current schemas
 
-- `connections.json`: object schema `1`; embedded legacy settings and
-  statistics are extracted into their dedicated files.
+- `connections.json`: object schema `2`; embedded legacy settings and
+  statistics are extracted into their dedicated files, and schema `2` adds
+  locally stored command snippets and persistent snippet categories. Existing
+  development files without the category list recover category names from
+  their snippets when loaded; empty categories are stored explicitly.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
 - `statistics.json`: object schema `1`.
-- `history.jsonl`: each event uses schema `1`; unversioned events remain
+- `connections-history.jsonl`: each event uses schema `1`; unversioned events remain
   readable and receive the current version when rewritten.

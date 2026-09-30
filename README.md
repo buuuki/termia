@@ -1,7 +1,8 @@
 # Termia
 
-Termia is a GTK 4 SSH connection manager with embedded VTE terminals for
-Linux desktops.
+Termia is a GTK 4 terminal workspace and SSH connection manager for Linux
+desktops. It brings local and remote sessions, saved workspaces, and file
+transfers together in embedded VTE terminals.
 
 ![Termia showing multiple embedded SSH terminal sessions](img/termia-screenshot.png)
 
@@ -22,12 +23,34 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Browse remote files through a native SFTP explorer with navigation, transfers,
   progress, cancellation, and confirmed file operations.
 - Check for official releases and install verified updates from `About`.
+- Save reusable command snippets by category and scope them to all terminals, a
+  server group, or one server; preview variable-expanded commands before
+  explicitly sending them to a selected terminal. Manage them through a
+  three-column view with category counts, snippet lists, a read-only command
+  preview, and global search.
+  Create, rename, duplicate, and delete categories independently; deleting a
+  category moves its snippets to Uncategorized.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
 - Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`.
 - Store host, user, port, password, and private-key settings for each SSH connection.
 - Import and export Termia configuration, including basic connections, nested groups, and available credentials from Asbru YAML.
 - Review connection history and optional local usage statistics, including durations and most-used servers.
 - Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
+
+## What's new in 0.6.0-beta.3
+
+- Create reusable command snippets, organize them in persistent categories,
+  and manage categories independently (including rename, duplicate, and delete).
+- Find snippets across all categories in a three-column manager with category
+  counts, a snippet list, and a read-only command preview.
+- Preview variable-expanded commands and explicitly confirm before sending them
+  to a terminal. Snippets are saved locally in the connections file.
+- Treat a normal SSH shell exit with a nonzero status as a clean closure instead
+  of incorrectly offering reconnection.
+- Explain configuration compatibility and backups when moving between versions.
+
+The native SFTP explorer and About-based updates were already included in
+0.6.0-beta.2.
 
 ## SFTP explorer
 
@@ -44,8 +67,8 @@ The Paramiko backend uses the saved endpoint and identity, SSH-agent/default
 keys, or a password prompt. Verify unknown host fingerprints before accepting;
 changed keys are refused. Entered passwords are held in memory only. OpenSSH
 config aliases, ProxyJump, hardware-key providers, and interactive MFA are not
-covered by this initial backend. SCP remains available. The SFTP feature is
-included in the published beta.2 package below.
+covered by this initial backend. SCP remains available. The SFTP feature was
+introduced in beta.2 and remains in beta.3.
 
 ## Download and install (Ubuntu 24.04+)
 
@@ -75,11 +98,11 @@ of the same app version.
 
 ### Published package
 
-Download [termia_0.6.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.2/termia_0.6.0.beta.2-1_all.deb)
+Download [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
 and install it with APT, which resolves the required dependencies:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.2-1_all.deb
+sudo apt install ./termia_0.6.0.beta.3-1_all.deb
 ```
 
 ## Download from source
@@ -128,12 +151,17 @@ To test a branch without closing your usual Termia window, launch an isolated
 profile. It uses separate configuration, state, and writer lock:
 
 ```bash
-./scripts/run_test_instance.sh --copy-current-config pr-152
+./scripts/run_test_instance.sh --copy-current-config review
 ```
 
 The option copies connections, settings, connection history, statistics, and
 the debug log into the test profile. Changes made there never modify your usual
 Termia data.
+
+Termia can migrate compatible configuration files from older versions. Once a
+newer version saves a configuration, an older version may no longer be able to
+open it. Back up your configuration before upgrading or switching versions, and
+use isolated profiles when testing development branches.
 
 For diagnostic information about tabs, splits, VTE process lifecycles, GTK
 warnings, storage locks, encryption, and read-only startup, enable `Debug mode`
@@ -172,11 +200,15 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-The resulting `termia_0.6.0~beta.2-1_all.deb` is created in the parent directory.
+The resulting `termia_0.6.0~beta.3-1_all.deb` is created in the parent directory.
+Development branches may contain newer source changes before Debian metadata is
+updated for the next release; do not distribute such a build as an official
+release package.
+
 Install it with:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.2-1_all.deb
+sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 The Debian package installs the `termia` command, desktop launcher, and icon;
@@ -262,17 +294,27 @@ helpers without changing the launch command.
 Termia stores connection data, settings, and statistics outside the repository:
 
 ```text
-~/.config/termia/connections.json   # groups and servers
+~/.config/termia/connections.json   # groups, servers, and saved snippets where available
 ~/.config/termia/settings.json      # app and terminal settings
 ~/.config/termia/instance.lock      # single writer lock for multi-instance mode
-~/.local/state/termia/recent_connections.jsonl
+~/.local/state/termia/connections-history.jsonl
 ~/.local/state/termia/statistics.json
+~/.local/state/termia/last-session.json  # only when session restoration is enabled
 ```
 
 Saved passwords are stored in `connections.json`; the file can be kept as plain text, obfuscated, or encrypted with a master password from Security preferences. When encryption is enabled, Termia asks for the master password on startup and cannot recover the connection data if that password is lost. Imported Ásbrú passwords are stored the same way when the source YAML exposes them in a `pass` field. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, or statistics; later instances stay read-only to avoid corrupting these files.
-Recent connections are stored separately in `recent_connections.jsonl` so the sidebar can keep a small, deduplicated Recent section based on the latest successful SSH connections.
+Connection history is stored separately in `connections-history.jsonl`; the
+sidebar derives its small, deduplicated Recent section from successful SSH
+connections in that history.
 
-Termia does not store typed text, command contents, clipboard contents, command counters, or keystroke counters. Statistics are disabled by default and can be enabled from General preferences. When enabled, they track only aggregate connections, per-server usage, and session durations; they are flushed at most every 30 seconds, when sessions end, and when Termia closes. See [SECURITY.md](SECURITY.md).
+Termia does not record commands typed or executed in terminal panes, terminal
+output, clipboard contents, command counters, or keystroke counters. Snippets,
+where available, are command templates the user explicitly saves in
+`connections.json`; they are not a history of executed commands. Statistics are
+disabled by default and can be enabled from General preferences. When enabled,
+they track only aggregate connections, per-server usage, and session durations;
+they are flushed at most every 30 seconds, when sessions end, and when Termia
+closes. See [SECURITY.md](SECURITY.md).
 
 Python may create `__pycache__/` directories next to executed modules. They only
 contain generated bytecode, are excluded by `.gitignore`, and must not be

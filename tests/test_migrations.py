@@ -5,7 +5,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from termia.constants import DEFAULT_TERMINAL_BACKGROUND, DEFAULT_TERMINAL_FOREGROUND
-from termia.migrations import CURRENT_SCHEMA_VERSION, migrate_settings_payload
+from termia.migrations import (
+    CURRENT_CONNECTIONS_SCHEMA_VERSION,
+    CURRENT_SCHEMA_VERSION,
+    migrate_connections_payload,
+    migrate_settings_payload,
+)
 from termia.stores import ConnectionStore, SettingsStore
 
 
@@ -79,10 +84,57 @@ class MigrationTests(unittest.TestCase):
             finally:
                 store.close()
 
-            self.assertEqual(json.loads(connections_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
+            self.assertEqual(
+                json.loads(connections_path.read_text())["schema_version"],
+                CURRENT_CONNECTIONS_SCHEMA_VERSION,
+            )
             self.assertEqual(json.loads(settings_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertEqual(json.loads(statistics_path.read_text())["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertTrue(SettingsStore(settings_path).app.debug_enabled)
+
+    def test_connections_schema_adds_empty_snippets_collection(self) -> None:
+        migrated, changed = migrate_connections_payload(
+            {
+                "schema_version": 1,
+                "groups": [],
+                "servers": [],
+                "local_terminals": [],
+                "workspaces": [],
+            }
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(migrated["schema_version"], CURRENT_CONNECTIONS_SCHEMA_VERSION)
+        self.assertEqual(migrated["snippets"], [])
+        self.assertEqual(migrated["snippet_categories"], [])
+
+    def test_existing_schema_two_snippets_gain_categories_without_new_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "connections.json"
+            path.write_text(
+                json.dumps({
+                    "schema_version": 2,
+                    "groups": [], "servers": [], "local_terminals": [], "workspaces": [],
+                    "snippets": [{
+                        "id": "old", "name": "Deploy", "content": "true",
+                        "category": "Release", "scope": "global", "target_id": "",
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            store = ConnectionStore(
+                path, root / "settings.json", root / "statistics.json",
+                root / "lock", root / "history",
+            )
+            try:
+                self.assertEqual(store.data.snippet_categories, ["Release"])
+            finally:
+                store.close()
+            saved = json.loads(path.read_text(encoding="utf-8"))
+
+        self.assertEqual(saved["schema_version"], 2)
+        self.assertEqual(saved["snippet_categories"], ["Release"])
 
     def test_connection_store_migrates_embedded_settings(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

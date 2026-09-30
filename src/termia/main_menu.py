@@ -70,6 +70,12 @@ class MainMenuMixin:
         self.configure_write_action(security)
         menu.append(security)
 
+        snippets = Gtk.Button(label=self.t("manage_snippets"))
+        snippets.set_halign(Gtk.Align.FILL)
+        self.connect_main_menu_action(snippets, popover, actions.manage_snippets)
+        self.configure_write_action(snippets)
+        menu.append(snippets)
+
         statistics = Gtk.Button(label=self.t("statistics"))
         statistics.set_halign(Gtk.Align.FILL)
         self.connect_main_menu_action(statistics, popover, actions.statistics)

@@ -42,6 +42,17 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             warnings.simplefilter("ignore", DeprecationWarning)
             provider.load_from_data(build_application_css("#202020", "#202020", "#008712", 1))
 
+    def test_category_selection_styles_only_the_rounded_tile(self) -> None:
+        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+
+        self.assertIn("flowboxchild.termia-snippet-category-tile:selected { ", css)
+        self.assertIn("background: transparent; box-shadow: none;", css)
+        self.assertIn(
+            "flowboxchild.termia-snippet-category-tile:selected > frame.termia-snippet-category-frame",
+            css,
+        )
+        self.assertIn("border-radius: 8px;", css)
+
 
 if __name__ == "__main__":
     unittest.main()

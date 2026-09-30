@@ -57,6 +57,40 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Local terminals must start in the user's home directory unless a future setting explicitly changes it.
 - Local terminal prompt customization must apply to newly opened and duplicated local terminals.
 - SSH sessions must not send arbitrary commands automatically to remote servers.
+- Command snippets must be stored locally and run only after explicit selection,
+  variable entry when required, and confirmation of the final preview. Their
+  command text and variable values must never be written to debug logs.
+- Snippet management must open with three visible columns: compact categories
+  with counts, a snippet list, and a read-only command preview. The preview and
+  Edit/Duplicate/Delete actions must remain empty or disabled until a snippet
+  is selected. Category rows must remain uniformly sized, including long names
+  and empty categories. Selecting a category filters the list; typing in search
+  must search across all categories, even after a category was selected.
+  Search spans the top alone; Manage categories appears above the category
+  column, Create snippet above the list, and a modest Command preview label
+  above the read-only preview. The selection hint appears beneath the list
+  until a snippet is selected, including below No matching snippets when the
+  list is empty. A category-filtered list shows snippet names only; global
+  search and the execution picker retain
+  category-qualified names. Category creation from the editor remains available.
+  Adding from a category must preselect it, and uncategorized snippets must
+  remain selectable even when other categories exist. Category management must
+  preserve empty categories, rename all contained snippets, duplicate them
+  with new IDs, and move them to Uncategorized on confirmed deletion. The
+  category-management page must have no repeated heading; All categories
+  remains at the top, while Cancel sits beside Delete category and both return
+  to the three-column snippet manager. Category management must show uniform
+  icon tiles with names and snippet counts (including zero) across multiple
+  rows; selecting a tile enables Rename, Duplicate, and Delete. The selected
+  highlight must follow the rounded tile rather than the square outer cell,
+  while keyboard focus remains visible in light and dark themes.
+- Snippet variable values must be shell-quoted as individual arguments, and a
+  group-scoped snippet must apply to servers in that group and its nested
+  subgroups. Invalid or deleted scope targets must never broaden a snippet to
+  global availability.
+- Repeatedly opening, cancelling, and reusing snippet management and execution
+  flows must reuse their existing windows and remain responsive during window
+  resizing; these flows must not accumulate top-level GTK surfaces.
 - SSH fingerprint prompts must remain visible and interactive in the terminal.
 - Known-host inspection must prefer the configured endpoint (`host` on port 22
   or `[host]:port` otherwise), then mirror OpenSSH's non-standard-port fallback
@@ -104,6 +138,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   terminal in writable and read-only instances; disabling the preference must
   open none, and a successful unlock must not create a duplicate.
 - Exiting an SSH session with `exit` must only close the tab when the relevant preference is enabled, and only after the last terminal in the tab has exited with no split panes remaining.
+- An SSH shell that exits after a failed or cancelled remote command (for
+  example, cancelling `sudo` and then running `exit`) must follow the same
+  clean-close behavior. OpenSSH transport/authentication failures (exit status
+  `255`) and signalled SSH children must instead retain the reconnect prompt.
 - Exiting a local shell must follow the configured local terminal close behavior.
 - Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
 - Every split pane must retain its own SSH or local-profile identity, process,
