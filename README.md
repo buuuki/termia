@@ -37,8 +37,20 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Review connection history and optional local usage statistics, including durations and most-used servers.
 - Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
 
-Snippets are available in the `release/0.6.0-beta.3-dev` source branch, not in
-the published beta.2 package below.
+## What's new in 0.6.0-beta.3
+
+- Create reusable command snippets, organize them in persistent categories,
+  and manage categories independently (including rename, duplicate, and delete).
+- Find snippets across all categories in a three-column manager with category
+  counts, a snippet list, and a read-only command preview.
+- Preview variable-expanded commands and explicitly confirm before sending them
+  to a terminal. Snippets are saved locally in the connections file.
+- Treat a normal SSH shell exit with a nonzero status as a clean closure instead
+  of incorrectly offering reconnection.
+- Explain configuration compatibility and backups when moving between versions.
+
+The native SFTP explorer and About-based updates were already included in
+0.6.0-beta.2.
 
 ## SFTP explorer
 
@@ -55,8 +67,8 @@ The Paramiko backend uses the saved endpoint and identity, SSH-agent/default
 keys, or a password prompt. Verify unknown host fingerprints before accepting;
 changed keys are refused. Entered passwords are held in memory only. OpenSSH
 config aliases, ProxyJump, hardware-key providers, and interactive MFA are not
-covered by this initial backend. SCP remains available. The SFTP feature is
-included in the published beta.2 package below.
+covered by this initial backend. SCP remains available. The SFTP feature was
+introduced in beta.2 and remains in beta.3.
 
 ## Download and install (Ubuntu 24.04+)
 
@@ -86,11 +98,11 @@ of the same app version.
 
 ### Published package
 
-Download [termia_0.6.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.2/termia_0.6.0.beta.2-1_all.deb)
+Download [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
 and install it with APT, which resolves the required dependencies:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.2-1_all.deb
+sudo apt install ./termia_0.6.0.beta.3-1_all.deb
 ```
 
 ## Download from source
@@ -188,15 +200,15 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-The resulting `termia_0.6.0~beta.2-1_all.deb` is created in the parent directory.
-That name reflects the published `main` package metadata. Development branches
-may contain newer source changes before Debian metadata is updated for the next
-release; do not distribute such a build as the official beta.2 package.
+The resulting `termia_0.6.0~beta.3-1_all.deb` is created in the parent directory.
+Development branches may contain newer source changes before Debian metadata is
+updated for the next release; do not distribute such a build as an official
+release package.
 
 Install it with:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.2-1_all.deb
+sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 The Debian package installs the `termia` command, desktop launcher, and icon;

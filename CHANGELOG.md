@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.6.0-beta.3 - 2026-09-30
+
+Changes merged after `0.6.0-beta.2`. This release introduces reusable command
+snippets and category management, alongside fixes and documentation updates.
+
 ### Added
 
 - Add reusable command snippets with scoped storage, category search, explicit
@@ -24,6 +29,9 @@
 
 ### Changed
 
+- Publish the 0.6.0-beta.3 application and Debian package versions, and clarify
+  the package description as a terminal workspace and SSH connection manager
+  (`#295`).
 - Document configuration compatibility across versions and recommend backups
   and isolated test profiles (`#293`).
 - Redesign snippet management as a three-column view with category counts,

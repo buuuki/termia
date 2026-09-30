@@ -36,8 +36,22 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
-Els snippets estan disponibles a la branca de codi
-`release/0.6.0-beta.3-dev`, no al paquet beta.2 publicat més avall.
+## Novetats de 0.6.0-beta.3
+
+- Crear snippets d'ordres reutilitzables, organitzar-los en categories
+  persistents i gestionar les categories (canviar-ne el nom, duplicar-les i
+  suprimir-les).
+- Cercar snippets a totes les categories des d'una vista de tres columnes amb
+  comptadors, una llista de snippets i una previsualització de només lectura.
+- Previsualitzar les ordres amb les variables i confirmar-les abans d'enviar-les
+  al terminal. Els snippets es desen localment al fitxer de connexions.
+- Tractar una sortida normal del shell SSH amb un codi diferent de zero com un
+  tancament net, sense oferir la reconnexió per error.
+- Aclarir la compatibilitat de la configuració i les còpies de seguretat en
+  canviar de versió.
+
+L'explorador SFTP i les actualitzacions des de Quant a ja estaven disponibles a
+0.6.0-beta.2.
 
 ## Explorador SFTP
 
@@ -52,8 +66,8 @@ El progrés és per fitxer. Tancar la pestanya propietària o Termia tanca SFTP.
 Paramiko usa el host i la identitat desats, SSH-agent/claus predeterminades o
 contrasenya en memòria. Confirma les empremtes desconegudes; es rebutgen claus
 modificades. No s'inclouen àlies d'OpenSSH, ProxyJump, proveïdors de claus
-hardware ni MFA interactiu. SCP continua disponible. Aquesta funció s'inclou
-al paquet beta.2 publicat.
+hardware ni MFA interactiu. SCP continua disponible. Aquesta funció es va
+introduir a beta.2 i continua disponible a beta.3.
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
@@ -83,11 +97,11 @@ mateixa versió de l'aplicació.
 
 ### Paquet publicat
 
-Descarrega [termia_0.6.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.2/termia_0.6.0.beta.2-1_all.deb)
+Descarrega [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
 i instal·la'l amb APT, que resoldrà les dependències necessàries:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.2-1_all.deb
+sudo apt install ./termia_0.6.0.beta.3-1_all.deb
 ```
 
 ## Descarregar i instal·lar des del codi font
@@ -175,16 +189,15 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fitxer `termia_0.6.0~beta.2-1_all.deb` es crea al directori pare.
-Aquest nom correspon a les metadades del `main` publicat. Les branques de
-desenvolupament poden incloure codi més recent abans d'actualitzar les
-metadades Debian per a la versió següent; no distribueixis aquest paquet com
-la beta.2 oficial.
+El fitxer `termia_0.6.0~beta.3-1_all.deb` es crea al directori pare.
+Les branques de desenvolupament poden incloure codi més recent abans
+d'actualitzar les metadades Debian per a la versió següent; no distribueixis
+aquest paquet com una versió oficial.
 
 Instal·la'l amb:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.2-1_all.deb
+sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la

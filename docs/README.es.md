@@ -36,8 +36,21 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
-Los snippets están disponibles en la rama de código
-`release/0.6.0-beta.3-dev`, no en el paquete beta.2 publicado más abajo.
+## Novedades de 0.6.0-beta.3
+
+- Crear snippets de comandos reutilizables, organizarlos en categorías
+  persistentes y gestionar las categorías (renombrar, duplicar y eliminar).
+- Buscar snippets en todas las categorías desde una vista de tres columnas con
+  contadores, lista de snippets y previsualización de solo lectura.
+- Previsualizar los comandos con sus variables y confirmarlos antes de enviarlos
+  al terminal. Los snippets se guardan localmente en el fichero de conexiones.
+- Tratar una salida normal del shell SSH con código distinto de cero como un
+  cierre limpio, sin ofrecer por error la reconexión.
+- Aclarar la compatibilidad de la configuración y las copias de seguridad al
+  cambiar de versión.
+
+El explorador SFTP y las actualizaciones desde Acerca de ya estaban disponibles
+en 0.6.0-beta.2.
 
 ## Explorador SFTP
 
@@ -52,8 +65,8 @@ es por archivo. Cerrar la pestaña propietaria o Termia cierra la conexión SFTP
 Paramiko usa el host y la identidad guardados, SSH-agent/claves predeterminadas
 o contraseña en memoria. Confirma las huellas desconocidas; se rechazan claves
 modificadas. No se incluyen alias de OpenSSH, ProxyJump, proveedores de claves
-hardware ni MFA interactivo. SCP sigue disponible. Esta función está incluida
-en el paquete beta.2 publicado.
+hardware ni MFA interactivo. SCP sigue disponible. Esta función se introdujo
+en beta.2 y sigue disponible en beta.3.
 
 ## Descargar e instalar (Ubuntu 24.04+)
 
@@ -83,11 +96,11 @@ exclusivamente Debian de la misma versión de la aplicación.
 
 ### Paquete publicado
 
-Descarga [termia_0.6.0.beta.2-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.2/termia_0.6.0.beta.2-1_all.deb)
+Descarga [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
 e instálalo con APT, que resolverá las dependencias necesarias:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.2-1_all.deb
+sudo apt install ./termia_0.6.0.beta.3-1_all.deb
 ```
 
 ## Descargar e instalar desde el código fuente
@@ -175,16 +188,15 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fichero `termia_0.6.0~beta.2-1_all.deb` se crea en el directorio padre.
-Ese nombre corresponde a los metadatos del `main` publicado. Las ramas de
-desarrollo pueden incluir código más reciente antes de actualizar los metadatos
-Debian para la siguiente versión; no distribuyas ese paquete como la beta.2
-oficial.
+El fichero `termia_0.6.0~beta.3-1_all.deb` se crea en el directorio padre.
+Las ramas de desarrollo pueden incluir código más reciente antes de actualizar
+los metadatos Debian para la siguiente versión; no distribuyas ese paquete
+como una versión oficial.
 
 Instálalo con:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.2-1_all.deb
+sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 El paquete Debian instala el comando `termia`, el lanzador de escritorio y el

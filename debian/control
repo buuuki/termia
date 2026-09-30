@@ -30,7 +30,7 @@ Depends: ${misc:Depends},
          python3-paramiko (>= 2.12),
          python3-yaml,
          sshpass
-Description: GTK SSH connection manager with embedded terminals
- Termia is a GTK 4 SSH connection manager for Linux desktops. It stores
- connection configuration locally and opens SSH and local-terminal sessions in
- embedded VTE terminals.
+Description: GTK terminal workspace and SSH connection manager
+ Termia is a GTK 4 terminal workspace and SSH connection manager for Linux
+ desktops. It opens local and SSH sessions in embedded VTE terminals, supports
+ saved workspaces and file transfers, and stores connection data locally.

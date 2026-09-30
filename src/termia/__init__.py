@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Termia SSH connection manager."""
+"""Termia terminal workspace and SSH connection manager."""
 
-__version__ = "0.6.0-beta.3-dev"
+__version__ = "0.6.0-beta.3"
