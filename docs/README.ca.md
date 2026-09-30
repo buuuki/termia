@@ -137,6 +137,12 @@ L'opció copia les connexions, ajustos, historial de connexions, estadístiques 
 el registre de depuració al perfil de proves. Els canvis fets allà mai no
 modifiquen les dades habituals de Termia.
 
+Termia pot migrar fitxers de configuració compatibles de versions anteriors.
+Quan una versió més nova desa una configuració, una versió anterior pot deixar
+de poder obrir-la. Fes una còpia de seguretat de la configuració abans
+d'actualitzar o alternar versions, i utilitza perfils aïllats quan provis
+branques de desenvolupament.
+
 Per obtenir informació de diagnòstic sobre pestanyes, splits, processos VTE,
 avisos de GTK, bloquejos d'emmagatzematge, xifratge i inici en mode només lectura,
 activa `Mode debug` a les preferències Generals. També pots activar-lo per a una

@@ -137,6 +137,12 @@ La opción copia las conexiones, ajustes, historial de conexiones, estadísticas
 el registro de depuración en el perfil de pruebas. Los cambios realizados allí
 nunca modifican los datos habituales de Termia.
 
+Termia puede migrar archivos de configuración compatibles de versiones
+anteriores. Una vez que una versión más reciente guarda una configuración, una
+versión anterior podría dejar de poder abrirla. Haz una copia de seguridad de
+la configuración antes de actualizar o alternar versiones, y utiliza perfiles
+aislados al probar ramas de desarrollo.
+
 Para obtener información de diagnóstico sobre pestañas, splits, procesos VTE,
 avisos de GTK, bloqueos de almacenamiento, cifrado y arranque en modo solo
 lectura, activa `Modo debug` en las preferencias Generales. También puedes

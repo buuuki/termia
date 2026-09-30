@@ -146,6 +146,11 @@ The option copies connections, settings, connection history, statistics, and
 the debug log into the test profile. Changes made there never modify your usual
 Termia data.
 
+Termia can migrate compatible configuration files from older versions. Once a
+newer version saves a configuration, an older version may no longer be able to
+open it. Back up your configuration before upgrading or switching versions, and
+use isolated profiles when testing development branches.
+
 For diagnostic information about tabs, splits, VTE process lifecycles, GTK
 warnings, storage locks, encryption, and read-only startup, enable `Debug mode`
 in General preferences. It can also be enabled for one run with:

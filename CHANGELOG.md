@@ -24,6 +24,8 @@
 
 ### Changed
 
+- Document configuration compatibility across versions and recommend backups
+  and isolated test profiles (`#293`).
 - Redesign snippet management as a three-column view with category counts,
   snippet lists, and a read-only command preview; place category and snippet
   creation actions above their columns, with selection guidance beneath the
