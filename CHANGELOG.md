@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Mark source checkouts on the active development line as
+  `0.6.0-beta.4-dev` (`#297`).
+
 ## 0.6.0-beta.3 - 2026-09-30
 
 Changes merged after `0.6.0-beta.2`. This release introduces reusable command
