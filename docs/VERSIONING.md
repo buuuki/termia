@@ -64,15 +64,16 @@ state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `release/<next-version>-dev` branch from the updated
 `main`.
 
-For the current cycle, `0.6.0-beta.3` follows the published `0.6.0-beta.2`.
-After publishing beta.3, create `release/0.6.0-beta.4-dev` from the updated
-`main` branch for any further source changes in the same prerelease line.
+For the current cycle, `0.6.0-beta.3` is published and
+`release/0.6.0-beta.4-dev` is the active development branch. The next published
+release containing source changes from this branch must be `0.6.0-beta.4`.
 
 ## Current beta baseline
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
-`0.5.0`; its historical tag and release are not renamed. This release is
-`0.6.0-beta.3`, following `0.6.0-beta.2` in the active 0.6.0 line.
+`0.5.0`; its historical tag and release are not renamed. The latest published
+source release is `0.6.0-beta.3`; the active development branch targets the
+next iteration, `0.6.0-beta.4`.
 
 ## Debian package versions
 
