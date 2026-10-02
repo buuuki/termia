@@ -1,8 +1,8 @@
 # Storage schema migrations
 
-Termia stores connections, settings, statistics, and connection history in
-separate local files. Each format carries an explicit schema version where the
-format is an object or event payload.
+Termia stores connections, notes, settings, statistics, and connection history
+in separate local files. Each format carries an explicit schema version where
+the format is an object or event payload.
 
 ## Compatibility policy
 
@@ -27,6 +27,10 @@ format is an object or event payload.
   their snippets when loaded; empty categories are stored explicitly.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
+- `notes.json`: object schema `1`; stores notes and persistent note categories
+  separately from connections. The notes file follows the connection storage
+  protection mode; importing a notes export replaces the file only after
+  validation and, when existing notes are present, a backup.
 - `statistics.json`: object schema `1`.
 - `connections-history.jsonl`: each event uses schema `1`; unversioned events remain
   readable and receive the current version when rewritten.

@@ -961,8 +961,8 @@ msgid "Data Locations"
 msgstr "Ubicaciones de datos"
 
 #: src/termia/i18n.py:data_locations_detail
-msgid "Termia uses these local paths for configuration, connection data, history, statistics, and the write lock."
-msgstr "Termia usa estas rutas locales para configuración, datos de conexión, historial, estadísticas y bloqueo de escritura."
+msgid "Termia uses these local paths for configuration, connection data, notes, history, statistics, and the write lock."
+msgstr "Termia usa estas rutas locales para configuración, datos de conexión, notas, historial, estadísticas y bloqueo de escritura."
 
 #: src/termia/i18n.py:config_directory
 msgid "Config directory"
@@ -1297,8 +1297,11 @@ msgid "Ásbrú: imported {groups} groups and {servers} servers"
 msgstr "Ásbrú: {groups} grupos y {servers} servidores importados"
 
 #: src/termia/i18n.py:clear_confirm
-msgid "Delete all groups, servers, local terminals, and workspaces? This action cannot be undone."
-msgstr "¿Quieres eliminar todos los grupos, servidores, terminales locales y espacios de trabajo? Esta acción no se puede deshacer."
+msgid "Delete all groups, servers, local terminals, and workspaces? Notes are stored separately and will be kept."
+msgstr "¿Quieres eliminar todos los grupos, servidores, terminales locales y espacios de trabajo? Las notas se guardan por separado y se conservarán."
+
+msgid "The selected server no longer exists."
+msgstr "El servidor seleccionado ya no existe."
 
 #: src/termia/i18n.py:rename_tab
 msgid "Rename tab"
@@ -1846,3 +1849,162 @@ msgstr "La disponibilidad del snippet no es válida."
 
 msgid "The selected terminal is no longer available."
 msgstr "El terminal seleccionado ya no está disponible."
+
+msgid "Manage notes"
+msgstr "Gestionar notas"
+
+msgid "Notes"
+msgstr "Notas"
+
+msgid "Search notes"
+msgstr "Buscar notas"
+
+msgid "Manage note categories"
+msgstr "Gestionar categorías de notas"
+
+msgid "Create note"
+msgstr "Crear nota"
+
+msgid "Export notes…"
+msgstr "Exportar notas…"
+
+msgid "Import notes…"
+msgstr "Importar notas…"
+
+msgid "Show all notes"
+msgstr "Mostrar todas las notas"
+
+msgid "All categories"
+msgstr "Todas las categorías"
+
+msgid "Uncategorized"
+msgstr "Sin categoría"
+
+msgid "Category"
+msgstr "Categoría"
+
+msgid "Server"
+msgstr "Servidor"
+
+msgid "Personal notes"
+msgstr "Notas personales"
+
+msgid "Notes for {name}"
+msgstr "Notas de {name}"
+
+msgid "Note title"
+msgstr "Título de la nota"
+
+msgid "Modified {date}"
+msgstr "Modificada {date}"
+
+msgid "No matching notes."
+msgstr "No hay notas coincidentes."
+
+msgid "Saved"
+msgstr "Guardada"
+
+msgid "Saving…"
+msgstr "Guardando…"
+
+msgid "Could not save"
+msgstr "No se pudo guardar"
+
+msgid "The note could not be saved. Your changes are still in the editor; check the storage location and try again."
+msgstr "No se pudo guardar la nota. Los cambios siguen en el editor; comprueba la ubicación de almacenamiento e inténtalo de nuevo."
+
+msgid "Select a note or create one."
+msgstr "Selecciona una nota o crea una nueva."
+
+msgid "Enter a title and note text to save."
+msgstr "Escribe un título y el texto de la nota para guardarla."
+
+msgid "A title and note text are required."
+msgstr "Se necesitan un título y el texto de la nota."
+
+msgid "Delete note"
+msgstr "Eliminar nota"
+
+msgid "Delete note “{name}”? This action cannot be undone."
+msgstr "¿Eliminar la nota «{name}»? Esta acción no se puede deshacer."
+
+msgid "Add category"
+msgstr "Añadir categoría"
+
+msgid "Rename category"
+msgstr "Cambiar nombre de categoría"
+
+msgid "Duplicate category"
+msgstr "Duplicar categoría"
+
+msgid "Delete category"
+msgstr "Eliminar categoría"
+
+msgid "Category name"
+msgstr "Nombre de categoría"
+
+msgid "{count} notes"
+msgstr "{count} notas"
+
+msgid "Delete category “{name}”? Its {count} notes will move to Uncategorized."
+msgstr "¿Eliminar la categoría «{name}»? Sus {count} notas pasarán a «Sin categoría»."
+
+msgid "Choose whether to protect the exported notes with a password."
+msgstr "Elige si quieres proteger las notas exportadas con una contraseña."
+
+msgid "Export without password"
+msgstr "Exportar sin contraseña"
+
+msgid "Export with password"
+msgstr "Exportar con contraseña"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "Password for this notes file"
+msgstr "Contraseña de este fichero de notas"
+
+msgid "Notes exported."
+msgstr "Notas exportadas."
+
+msgid "Could not export notes: {error}"
+msgstr "No se pudieron exportar las notas: {error}"
+
+msgid "Could not import notes: {error}"
+msgstr "No se pudieron importar las notas: {error}"
+
+msgid "Termia already has {notes} notes and {categories} categories."
+msgstr "Termia ya tiene {notes} notas y {categories} categorías."
+
+msgid "Replace them with the selected file after creating a backup of the current notes, or keep the existing notes?"
+msgstr "¿Quieres sustituirlas por el fichero seleccionado tras crear una copia de seguridad, o conservar las notas actuales?"
+
+msgid "Keep existing"
+msgstr "Conservar las actuales"
+
+msgid "Back up and replace"
+msgstr "Crear copia y sustituir"
+
+msgid "{count} notes were imported as personal notes because their server no longer exists."
+msgstr "Se importaron {count} notas como personales porque su servidor ya no existe."
+
+msgid "Imported {count} notes."
+msgstr "Se importaron {count} notas."
+
+msgid "View server notes"
+msgstr "Ver notas del servidor"
+
+msgid "A category name is required."
+msgstr "Se necesita un nombre para la categoría."
+
+msgid "A category with this name already exists."
+msgstr "Ya existe una categoría con este nombre."
+
+msgid "The selected category no longer exists."
+msgstr "La categoría seleccionada ya no existe."
+
+msgid "The selected note no longer exists."
+msgstr "La nota seleccionada ya no existe."
+
+msgid "Notes file"
+msgstr "Fichero de notas"

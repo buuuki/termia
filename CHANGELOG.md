@@ -7,6 +7,12 @@
 - Mark source checkouts on the active development line as
   `0.6.0-beta.4-dev` (`#297`).
 
+### Added
+
+- Add a separate notes workspace with standalone and server-linked notes,
+  categories, autosave, protected import/export, backup-before-replace
+  behavior, and isolated test-profile copying (`#289`).
+
 ## 0.6.0-beta.3 - 2026-09-30
 
 Changes merged after `0.6.0-beta.2`. This release introduces reusable command

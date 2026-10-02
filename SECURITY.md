@@ -17,6 +17,12 @@ still not publish, commit, or share it. Prefer SSH keys where possible.
 
 Exported configuration files can also contain passwords. Treat them as sensitive
 files, even when the local connection file uses obfuscated storage.
+Notes are stored separately in `~/.config/termia/notes.json` and follow the
+connection storage protection mode selected in Security preferences. Notes may
+contain sensitive information; file permissions are restricted to the current
+user. Notes exports are unprotected unless a separate export password is
+chosen, so handle exported files as sensitive data. Notes are never executed or
+sent to SSH sessions by Termia.
 Connection history in `~/.local/state/termia/connections-history.jsonl` can
 contain host names, user names, and session metadata, but not terminal commands
 or output. Keep it private as well.

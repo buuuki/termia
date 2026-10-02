@@ -959,6 +959,11 @@ class SidebarMixin:
             )
             self.add_context_menu_item(
                 menu,
+                self.t("notes_view_server"),
+                lambda: self.notes_dialogs.show_for_server_after_popover(popover, row.item_id),
+            )
+            self.add_context_menu_item(
+                menu,
                 self.t("edit_server"),
                 lambda: self.on_server_context_edit(None, popover, row.item_id),
                 enabled=not self.store.read_only,

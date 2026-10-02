@@ -76,6 +76,11 @@ class MainMenuMixin:
         self.configure_write_action(snippets)
         menu.append(snippets)
 
+        notes = Gtk.Button(label=self.t("manage_notes"))
+        notes.set_halign(Gtk.Align.FILL)
+        self.connect_main_menu_action(notes, popover, actions.manage_notes)
+        menu.append(notes)
+
         statistics = Gtk.Button(label=self.t("statistics"))
         statistics.set_halign(Gtk.Align.FILL)
         self.connect_main_menu_action(statistics, popover, actions.statistics)
