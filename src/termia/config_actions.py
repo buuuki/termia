@@ -17,6 +17,7 @@ from .constants import (
     DATA_FILE,
     HISTORY_FILE,
     INSTANCE_LOCK_FILE,
+    NOTES_FILE,
     SETTINGS_FILE,
     STATE_DIR,
     STATISTICS_FILE,
@@ -78,6 +79,7 @@ class ConfigActionsMixin:
         return [
             ("config_directory", CONFIG_DIR),
             ("connections_file_path", DATA_FILE),
+            ("notes_file_path", NOTES_FILE),
             ("settings_file_path", SETTINGS_FILE),
             ("instance_lock_file_path", INSTANCE_LOCK_FILE),
             ("state_directory", STATE_DIR / "termia"),
@@ -107,6 +109,7 @@ class ConfigActionsMixin:
         self.store.data.workspaces = []
         self.store.data.snippets = []
         self.store.data.snippet_categories = []
+        self.store.detach_orphaned_notes()
         self.store.save_connections()
         self.selected = None
         self.refresh_list()
@@ -162,6 +165,7 @@ class ConfigActionsMixin:
                 self.toast_label.set_error(self.t("import_config_failed").format(error=exc))
                 return
             self.store.data = imported
+            self.store.detach_orphaned_notes()
             self.store.save_connections()
             self.apply_app_theme()
             self.refresh_list()

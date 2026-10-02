@@ -13,7 +13,7 @@ from termia.config_io import (
     workspaces_from_payload,
     write_connections_file,
 )
-from termia.models import CommandSnippet, Group, LocalTerminalProfile, Server, StoreData, Workspace
+from termia.models import CommandSnippet, Group, LocalTerminalProfile, Note, Server, StoreData, Workspace
 
 
 class ConfigIOTests(unittest.TestCase):
@@ -73,6 +73,17 @@ class ConfigIOTests(unittest.TestCase):
 
         self.assertEqual(imported.snippet_categories, ["Empty", "Release"])
         self.assertEqual(imported.snippets[0].category, "Release")
+
+    def test_connection_import_preserves_separate_notes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "connections.json"
+            write_connections_file(path, self.groups, self.servers, self.terminals, "plain")
+            note = Note("note-1", "Runbook", "Restart", server_id="server-1")
+            current = StoreData(notes=[note], note_categories=["Ops"])
+            imported = load_store_data_from_json(path, current)
+
+        self.assertEqual(imported.notes, [note])
+        self.assertEqual(imported.note_categories, ["Ops"])
 
     def test_obfuscated_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

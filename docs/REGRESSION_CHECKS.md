@@ -229,6 +229,36 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Passwords are currently stored in the JSON file by explicit project decision; warnings and documentation must remain accurate until storage changes.
 - Security preferences must clearly warn before enabling encryption that Termia will ask for the master password on every startup and that lost master passwords cannot be recovered.
 
+### Notes
+
+- Notes and categories must persist in `notes.json`, separately from
+  `connections.json`; changing connection storage mode must protect notes using
+  the same selected mode and master password.
+- The notes workspace must be modeless and reusable: keep it open while
+  switching focus to and typing in an embedded or detached terminal.
+- Verify standalone notes and server-linked notes can be created, searched,
+  categorized, edited, and deleted. Empty categories persist; duplicate
+  categories duplicate their notes with new IDs; deleting a category moves its
+  notes to Uncategorized.
+- Edit an existing note and create a new note; confirm autosave status and
+  modified timestamp update, and that the list sorts by most recently modified.
+  Force a save failure and confirm the editor retains the unsaved text when
+  switching notes or closing the notes window.
+- Delete a server, delete a group containing servers, clear connection
+  configuration, and replace connections through import. Notes must be kept;
+  associations to removed servers become personal notes.
+- Export notes without protection and with a separate password. Import both,
+  reject wrong passwords and malformed/future schemas without changing local
+  notes, and verify orphaned server associations are detached.
+- When notes already exist, cancel import or choose Keep existing and confirm
+  the current notes remain unchanged. Choose Back up and replace and confirm a
+  protected backup exists before replacement; an unwritable backup location
+  must leave the current file unchanged.
+- Test notes in plain, obfuscated, encrypted, and read-only configurations;
+  do not expose note text in logs or terminal input.
+- `scripts/run_test_instance.sh --copy-current-config <profile>` must copy
+  `notes.json` into the isolated profile without changing the original file.
+
 ### Application Appearance and Themes
 
 - Configured application colors and theme styling must remain consistent after UI changes.

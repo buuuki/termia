@@ -48,7 +48,7 @@ if [ "${COPY_CURRENT_CONFIG}" -eq 1 ]; then
     SOURCE_STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/termia"
     TARGET_STATE_DIR="${DATA_ROOT}/state/termia"
     mkdir -p "${TARGET_CONFIG_DIR}"
-    for CONFIG_FILE in connections.json settings.json; do
+    for CONFIG_FILE in connections.json notes.json settings.json; do
         if [ -f "${SOURCE_CONFIG_DIR}/${CONFIG_FILE}" ]; then
             cp "${SOURCE_CONFIG_DIR}/${CONFIG_FILE}" "${TARGET_CONFIG_DIR}/${CONFIG_FILE}"
         fi

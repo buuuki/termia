@@ -81,7 +81,8 @@ Some mixins add transient state after construction:
   mixin.
 - Extracted component: `MainMenuActions` defines the actions supplied by the
   application composition root. The menu builder no longer discovers
-  configuration, preference, history, or statistics callbacks on the window.
+  configuration, preference, history, statistics, or notes callbacks on the
+  window.
 
 ### Preference mixins
 
@@ -132,6 +133,15 @@ keybinding dialogs have comparatively small contracts.
 - `StatisticsPresenter` owns card metrics, duration formatting, current-run
   values, and server ranking. `StatisticsDialog` owns only GTK dialog and
   widget construction.
+
+### `NotesDialogs`
+
+- Composed with the parent window, `ConnectionStore`, `NotesPresenter`, a
+  translation callback, writable guard, error callback, and toast callback.
+- Owns the reusable modeless notes/category windows and import/export flows;
+  it does not inherit `TermiaWindow` or manage terminal sessions.
+- `NotesPresenter` owns filtering, server labels, category counts, and modified
+  time ordering; `ConnectionStore` owns note persistence and category rules.
 
 ### `TerminalMenusMixin`
 
