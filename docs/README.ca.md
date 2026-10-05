@@ -222,9 +222,10 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   prèvia de la nota modificada més recentment; **Crea** o **Edita** obre l'editor.
   Des del menú principal es mostren totes les notes i s'ofereixen importació i
   exportació. Des d'un servidor només es mostren les seves notes, sense importar
-  ni exportar. Les notes admeten categories i poden ser personals o associades
-  a un servidor. En suprimir un
-  servidor, les notes es conserven com a personals. La importació substitueix
+  ni exportar. Cercar, filtrar per categoria, gestionar categories i crear notes
+  comparteixen una sola fila d'accions. Les notes admeten categories i poden ser
+  personals o associades a un servidor. En suprimir un servidor, les notes es
+  conserven com a personals. La importació substitueix
   les notes després d'oferir una còpia de seguretat; l'exportació es pot xifrar
   amb una contrasenya pròpia.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.

@@ -229,9 +229,10 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   modified note; Create or Edit opens the editor. The main-menu manager shows
   all notes and offers import/export. Opening notes from a server's sidebar
   menu shows only that server's notes and hides import/export. Notes can be
-  categorized or kept as personal notes. Deleting a server keeps its notes as
-  personal notes. Import replaces existing notes only after offering to back
-  them up; export can use its own password.
+  searched, filtered by category, managed, and created from one toolbar row.
+  They can be categorized or kept as personal notes. Deleting a server keeps
+  its notes as personal notes. Import replaces existing notes only after
+  offering to back them up; export can use its own password.
 - `Terminal` combines embedded VTE appearance and local prompt settings with one live preview. Appearance changes apply to open terminals; prompt changes apply only to new or duplicated local Bash terminals and never inject commands into running local shells or SSH sessions. New installations start with JetBrains Mono and the Polaris palette.
 - `Keybindings` shows the active shortcuts and lets you record shortcut combinations for common actions such as server filtering, sidebar visibility, opening a local terminal, focus navigation, copy, paste, tab switching, font zoom, and sending the saved password. `Ctrl+F` focuses the server filter, `Ctrl+Shift+B` toggles the server list, `F10` toggles the main menu, `Ctrl+Shift+T` opens a local terminal, and `Ctrl+F6`/`Ctrl+Shift+F6` cycle through the main interface regions. Other unmodified function keys pass through to terminal applications.
 - `Ctrl+Left`, `Ctrl+Right`, `Ctrl+Up`, and `Ctrl+Down` move focus between

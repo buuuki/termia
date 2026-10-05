@@ -10,6 +10,8 @@
   recently modified note first; reserve the editor for Create/Edit, keep
   import/export in the general manager, and size note search for useful text
   (`#289`).
+- Keep notes search, category controls, creation, and available import/export
+  actions together on one toolbar row (`#289`).
 
 ### Added
 

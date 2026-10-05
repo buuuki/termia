@@ -84,7 +84,7 @@ class NotesDialogs:
             return
         window = Gtk.Window(title=self.translate("notes_title"), transient_for=self.parent)
         window.set_modal(False)
-        window.set_default_size(1020, 660)
+        window.set_default_size(1240, 660)
         window.add_css_class("termia-notes-window")
         window.connect("close-request", self.on_close_request)
         self.window = window
@@ -105,26 +105,27 @@ class NotesDialogs:
         self.category_filter_combo.connect("changed", self.on_category_filter_changed)
         toolbar.append(self.category_filter_combo)
 
+        self.category_manage_button = Gtk.Button(label=self.translate("notes_manage_categories"))
+        self.category_manage_button.connect("clicked", lambda *_: self.show_categories())
+        toolbar.append(self.category_manage_button)
+
+        spacer = Gtk.Box()
+        spacer.set_hexpand(True)
+        toolbar.append(spacer)
+
         self.add_button = Gtk.Button(label=self.translate("notes_create"))
         self.add_button.add_css_class("suggested-action")
         self.add_button.connect("clicked", lambda *_: self.create_note())
         toolbar.append(self.add_button)
 
-        root.append(toolbar)
-
-        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self.category_manage_button = Gtk.Button(label=self.translate("notes_manage_categories"))
-        self.category_manage_button.connect("clicked", lambda *_: self.show_categories())
-        actions.append(self.category_manage_button)
-
         self.export_button = Gtk.Button(label=self.translate("notes_export"))
         self.export_button.connect("clicked", lambda *_: self.choose_export_protection())
-        actions.append(self.export_button)
+        toolbar.append(self.export_button)
 
         self.import_button = Gtk.Button(label=self.translate("notes_import"))
         self.import_button.connect("clicked", lambda *_: self.start_import())
-        actions.append(self.import_button)
-        root.append(actions)
+        toolbar.append(self.import_button)
+        root.append(toolbar)
 
         self.scope_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self.scope_label = Gtk.Label()

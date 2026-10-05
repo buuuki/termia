@@ -241,6 +241,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   the most recently modified note. The form appears only for Create/Edit.
   Server-context notes must list only that server's notes, initially preview
   its most recently modified note, and hide Import, Export, and Show all notes.
+  In both views, search, category filter, category management, and Create must
+  share one row; Import and Export appear at the far right only in the general
+  view, while Create is the rightmost button in the server view.
   Creating from that view must preselect the server. Empty views must show a
   useful message instead of a disabled editor.
 - Verify standalone notes and server-linked notes can be created, searched,

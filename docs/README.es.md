@@ -221,9 +221,10 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   previa de la nota modificada más recientemente; **Crear** o **Editar** abre el
   editor. Desde el menú principal se muestran todas las notas y se ofrecen
   importación y exportación. Desde un servidor solo se muestran sus notas, sin
-  importar ni exportar. Las notas admiten categorías y pueden ser personales o
-  asociarse a un servidor. Al eliminar un
-  servidor, sus notas se conservan como personales. La importación sustituye
+  importar ni exportar. Buscar, filtrar por categoría, gestionar categorías y
+  crear notas comparten una sola fila de acciones. Las notas admiten categorías
+  y pueden ser personales o asociarse a un servidor. Al eliminar un servidor,
+  sus notas se conservan como personales. La importación sustituye
   las notas tras ofrecer una copia de seguridad; la exportación puede cifrarse
   con una contraseña propia.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
