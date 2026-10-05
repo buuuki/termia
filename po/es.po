@@ -1865,14 +1865,20 @@ msgstr "Gestionar categorías de notas"
 msgid "Create note"
 msgstr "Crear nota"
 
+msgid "Create server note"
+msgstr "Crear nota del servidor"
+
+msgid "Edit note"
+msgstr "Editar nota"
+
+msgid "Done"
+msgstr "Terminar"
+
 msgid "Export notes…"
 msgstr "Exportar notas…"
 
 msgid "Import notes…"
 msgstr "Importar notas…"
-
-msgid "Show all notes"
-msgstr "Mostrar todas las notas"
 
 msgid "All categories"
 msgstr "Todas las categorías"
@@ -1900,6 +1906,12 @@ msgstr "Modificada {date}"
 
 msgid "No matching notes."
 msgstr "No hay notas coincidentes."
+
+msgid "No notes yet."
+msgstr "Todavía no hay notas."
+
+msgid "No notes for this server yet."
+msgstr "Todavía no hay notas para este servidor."
 
 msgid "Saved"
 msgstr "Guardada"

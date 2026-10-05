@@ -1703,16 +1703,24 @@ msgstr ""
 msgid "Create note"
 msgstr ""
 
+#: src/termia/i18n.py:notes_create_for_server
+msgid "Create server note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_edit
+msgid "Edit note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_done
+msgid "Done"
+msgstr ""
+
 #: src/termia/i18n.py:notes_export
 msgid "Export notes…"
 msgstr ""
 
 #: src/termia/i18n.py:notes_import
 msgid "Import notes…"
-msgstr ""
-
-#: src/termia/i18n.py:notes_show_all
-msgid "Show all notes"
 msgstr ""
 
 #: src/termia/i18n.py:notes_all_categories
@@ -1752,6 +1760,14 @@ msgstr ""
 
 #: src/termia/i18n.py:notes_empty
 msgid "No matching notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_all
+msgid "No notes yet."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_server
+msgid "No notes for this server yet."
 msgstr ""
 
 #: src/termia/i18n.py:notes_saved

@@ -217,8 +217,12 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
 - `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
   Las notas se guardan automáticamente en un fichero separado; también hay un
   botón **Guardar**. Una nota incompleta no se guarda y, al cerrar, se pregunta
-  antes de descartar sus cambios. Las notas admiten categorías y pueden ser
-  personales o asociarse a un servidor. Al eliminar un
+  antes de descartar sus cambios. Al abrir, se muestra una lista y la vista
+  previa de la nota modificada más recientemente; **Crear** o **Editar** abre el
+  editor. Desde el menú principal se muestran todas las notas y se ofrecen
+  importación y exportación. Desde un servidor solo se muestran sus notas, sin
+  importar ni exportar. Las notas admiten categorías y pueden ser personales o
+  asociarse a un servidor. Al eliminar un
   servidor, sus notas se conservan como personales. La importación sustituye
   las notas tras ofrecer una copia de seguridad; la exportación puede cifrarse
   con una contraseña propia.

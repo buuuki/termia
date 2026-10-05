@@ -77,7 +77,12 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.server_filter_id = None
         dialog.loading_editor = False
         dialog.loading_filters = False
+        dialog.loading_search = False
         dialog.editor_dirty = False
+        dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
+        dialog.add_button = SimpleNamespace(set_label=lambda _text: None)
+        dialog.import_button = SimpleNamespace(set_visible=lambda _visible: None)
+        dialog.export_button = SimpleNamespace(set_visible=lambda _visible: None)
         dialog.category_combo = EmittingCombo(dialog.on_editor_changed)
         dialog.server_combo = EmittingCombo(dialog.on_editor_changed)
         dialog.category_filter_combo = EmittingCombo(dialog.on_category_filter_changed)
@@ -128,6 +133,63 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.show_manager("server-id")
 
         self.assertEqual(presented, [True])
+
+    def test_entry_modes_keep_global_actions_out_of_server_view(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(encryption_locked=False)
+        dialog.translate = lambda key: key
+        dialog.ensure_window = lambda: None
+        dialog.editor_dirty = False
+        dialog.current_note_id = "previous-note"
+        dialog.category_filter = "Previous"
+        dialog.loading_search = False
+        dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
+        dialog.refresh_category_filter = lambda: None
+        dialog.refresh_server_selector = lambda: None
+        views = []
+        dialog.refresh_list = lambda: views.append(dialog.server_filter_id)
+        dialog.add_button = SimpleNamespace(set_label=lambda _label: None)
+        import_visibility = []
+        export_visibility = []
+        dialog.import_button = SimpleNamespace(set_visible=import_visibility.append)
+        dialog.export_button = SimpleNamespace(set_visible=export_visibility.append)
+        dialog.window = SimpleNamespace(present=lambda: None)
+
+        dialog.show_manager("server-id")
+        self.assertEqual(views, ["server-id"])
+        self.assertIsNone(dialog.current_note_id)
+        self.assertIsNone(dialog.category_filter)
+        self.assertEqual(import_visibility, [False])
+        self.assertEqual(export_visibility, [False])
+
+        dialog.show_manager()
+        self.assertEqual(views, ["server-id", None])
+        self.assertEqual(import_visibility, [False, True])
+        self.assertEqual(export_visibility, [False, True])
+
+    def test_note_preview_is_read_only_content_for_selected_note(self):
+        note = Note("note-id", "Runbook", "Preview content", "Ops", "server-id", "", "2026-10-05")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Web")]))
+        dialog.server_filter_id = "server-id"
+        dialog.translate = lambda key: key
+        dialog.cancel_autosave = lambda: None
+        titles = []
+        metadata = []
+        contents = []
+        visible_pages = []
+        dialog.preview_title = SimpleNamespace(set_label=titles.append)
+        dialog.preview_meta = SimpleNamespace(set_label=metadata.append)
+        dialog.preview_text = SimpleNamespace(get_buffer=lambda: SimpleNamespace(set_text=contents.append))
+        dialog.detail_stack = SimpleNamespace(set_visible_child_name=visible_pages.append)
+
+        dialog.show_note_preview(note)
+
+        self.assertEqual(dialog.current_note_id, "note-id")
+        self.assertEqual(titles, ["Runbook"])
+        self.assertEqual(contents, ["Preview content"])
+        self.assertNotIn("Web", metadata[0])
+        self.assertEqual(visible_pages, ["preview"])
 
     def test_server_context_waits_for_popover_to_close(self):
         dialog = NotesDialogs.__new__(NotesDialogs)

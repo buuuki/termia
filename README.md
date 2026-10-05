@@ -225,8 +225,11 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
 - `Manage notes` opens a reusable modeless notes workspace. Notes are saved
   automatically, and the editor also offers an explicit **Save** button. A draft
   without both a title and text remains in the editor; closing it asks before
-  discarding. Notes retain their last-modified time, can be categorized, and may
-  be linked to a server or kept as personal notes. Deleting a server keeps its notes as
+  discarding. The list opens with a read-only preview of the most recently
+  modified note; Create or Edit opens the editor. The main-menu manager shows
+  all notes and offers import/export. Opening notes from a server's sidebar
+  menu shows only that server's notes and hides import/export. Notes can be
+  categorized or kept as personal notes. Deleting a server keeps its notes as
   personal notes. Import replaces existing notes only after offering to back
   them up; export can use its own password.
 - `Terminal` combines embedded VTE appearance and local prompt settings with one live preview. Appearance changes apply to open terminals; prompt changes apply only to new or duplicated local Bash terminals and never inject commands into running local shells or SSH sessions. New installations start with JetBrains Mono and the Polaris palette.

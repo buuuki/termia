@@ -218,8 +218,12 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
 - `Gestiona les notes` obre una finestra reutilitzable que no bloqueja els
   terminals. Les notes es desen automàticament en un fitxer separat; també hi
   ha un botó **Desa**. Una nota incompleta no es desa i, en tancar, es pregunta
-  abans de descartar-ne els canvis. Les notes admeten categories i poden ser
-  personals o associades a un servidor. En suprimir un
+  abans de descartar-ne els canvis. En obrir, es mostra una llista i la vista
+  prèvia de la nota modificada més recentment; **Crea** o **Edita** obre l'editor.
+  Des del menú principal es mostren totes les notes i s'ofereixen importació i
+  exportació. Des d'un servidor només es mostren les seves notes, sense importar
+  ni exportar. Les notes admeten categories i poden ser personals o associades
+  a un servidor. En suprimir un
   servidor, les notes es conserven com a personals. La importació substitueix
   les notes després d'oferir una còpia de seguretat; l'exportació es pot xifrar
   amb una contrasenya pròpia.

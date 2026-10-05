@@ -236,6 +236,13 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   the same selected mode and master password.
 - The notes workspace must be modeless and reusable: keep it open while
   switching focus to and typing in an embedded or detached terminal.
+- Main-menu notes management must show all notes, a search field wide enough
+  for roughly 30 letters, import/export actions, and a read-only preview of
+  the most recently modified note. The form appears only for Create/Edit.
+  Server-context notes must list only that server's notes, initially preview
+  its most recently modified note, and hide Import, Export, and Show all notes.
+  Creating from that view must preselect the server. Empty views must show a
+  useful message instead of a disabled editor.
 - Verify standalone notes and server-linked notes can be created, searched,
   categorized, edited, and deleted. Empty categories persist; duplicate
   categories duplicate their notes with new IDs; deleting a category moves its

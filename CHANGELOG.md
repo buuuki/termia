@@ -6,6 +6,10 @@
 
 - Mark source checkouts on the active development line as
   `0.6.0-beta.4-dev` (`#297`).
+- Open notes in a scoped list-and-read-only-preview view, showing the most
+  recently modified note first; reserve the editor for Create/Edit, keep
+  import/export in the general manager, and size note search for useful text
+  (`#289`).
 
 ### Added
 

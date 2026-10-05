@@ -49,6 +49,7 @@ class NotesDialogs:
         self.autosave_id: int | None = None
         self.loading_editor = False
         self.loading_filters = False
+        self.loading_search = False
         self.editor_dirty = False
         self.category_selected: str | None = None
         self.category_edit_mode: str | None = None
@@ -62,8 +63,19 @@ class NotesDialogs:
             self.window.present()
             return
         self.server_filter_id = server_id
+        self.current_note_id = None
+        self.category_filter = None
+        self.loading_search = True
+        try:
+            self.search_entry.set_text("")
+        finally:
+            self.loading_search = False
+        self.last_search_query = ""
         self.refresh_category_filter()
         self.refresh_server_selector()
+        self.add_button.set_label(self.translate("notes_create_for_server") if server_id else self.translate("notes_create"))
+        self.import_button.set_visible(server_id is None)
+        self.export_button.set_visible(server_id is None)
         self.refresh_list()
         self.window.present()
 
@@ -84,7 +96,7 @@ class NotesDialogs:
 
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_hexpand(True)
+        self.search_entry.set_size_request(360, -1)
         self.search_entry.set_placeholder_text(self.translate("notes_search"))
         self.search_entry.connect("search-changed", self.on_search_changed)
         toolbar.append(self.search_entry)
@@ -93,33 +105,32 @@ class NotesDialogs:
         self.category_filter_combo.connect("changed", self.on_category_filter_changed)
         toolbar.append(self.category_filter_combo)
 
-        self.category_manage_button = Gtk.Button(label=self.translate("notes_manage_categories"))
-        self.category_manage_button.connect("clicked", lambda *_: self.show_categories())
-        toolbar.append(self.category_manage_button)
-
         self.add_button = Gtk.Button(label=self.translate("notes_create"))
         self.add_button.add_css_class("suggested-action")
         self.add_button.connect("clicked", lambda *_: self.create_note())
         toolbar.append(self.add_button)
 
+        root.append(toolbar)
+
+        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.category_manage_button = Gtk.Button(label=self.translate("notes_manage_categories"))
+        self.category_manage_button.connect("clicked", lambda *_: self.show_categories())
+        actions.append(self.category_manage_button)
+
         self.export_button = Gtk.Button(label=self.translate("notes_export"))
         self.export_button.connect("clicked", lambda *_: self.choose_export_protection())
-        toolbar.append(self.export_button)
+        actions.append(self.export_button)
 
         self.import_button = Gtk.Button(label=self.translate("notes_import"))
         self.import_button.connect("clicked", lambda *_: self.start_import())
-        toolbar.append(self.import_button)
-        root.append(toolbar)
+        actions.append(self.import_button)
+        root.append(actions)
 
         self.scope_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self.scope_label = Gtk.Label()
         self.scope_label.set_xalign(0)
         self.scope_label.set_hexpand(True)
         self.scope_bar.append(self.scope_label)
-        all_notes = Gtk.Button(label=self.translate("notes_show_all"))
-        all_notes.connect("clicked", self.on_show_all_notes)
-        self.scope_bar.append(all_notes)
-        self.scope_all_button = all_notes
         root.append(self.scope_bar)
 
         paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
@@ -135,6 +146,52 @@ class NotesDialogs:
         list_scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         list_scroller.set_child(list_box)
         paned.set_start_child(list_scroller)
+
+        self.detail_stack = Gtk.Stack()
+        self.detail_stack.set_hexpand(True)
+        self.detail_stack.set_vexpand(True)
+        paned.set_end_child(self.detail_stack)
+
+        preview = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        preview.set_margin_start(14)
+        preview_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.preview_title = Gtk.Label()
+        self.preview_title.set_xalign(0)
+        self.preview_title.set_wrap(True)
+        self.preview_title.set_hexpand(True)
+        self.preview_title.add_css_class("title-2")
+        preview_header.append(self.preview_title)
+        self.preview_edit_button = Gtk.Button(label=self.translate("notes_edit"))
+        self.preview_edit_button.connect("clicked", lambda *_: self.edit_selected_note())
+        preview_header.append(self.preview_edit_button)
+        preview.append(preview_header)
+        self.preview_meta = Gtk.Label()
+        self.preview_meta.set_xalign(0)
+        self.preview_meta.set_wrap(True)
+        self.preview_meta.add_css_class("dim-label")
+        preview.append(self.preview_meta)
+        self.preview_text = Gtk.TextView()
+        self.preview_text.set_editable(False)
+        self.preview_text.set_cursor_visible(False)
+        self.preview_text.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        preview_scroller = Gtk.ScrolledWindow()
+        preview_scroller.set_vexpand(True)
+        preview_scroller.set_child(self.preview_text)
+        preview.append(preview_scroller)
+        self.detail_stack.add_named(preview, "preview")
+
+        empty = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        empty.set_margin_start(14)
+        empty.set_valign(Gtk.Align.CENTER)
+        self.empty_label = Gtk.Label()
+        self.empty_label.add_css_class("title-3")
+        empty.append(self.empty_label)
+        empty_create = Gtk.Button(label=self.translate("notes_create"))
+        empty_create.set_halign(Gtk.Align.CENTER)
+        empty_create.connect("clicked", lambda *_: self.create_note())
+        self.empty_create_button = empty_create
+        empty.append(empty_create)
+        self.detail_stack.add_named(empty, "empty")
 
         editor = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         editor.set_margin_start(14)
@@ -185,19 +242,27 @@ class NotesDialogs:
         self.delete_button.add_css_class("destructive-action")
         self.delete_button.connect("clicked", lambda *_: self.confirm_delete_note())
         footer.append(self.delete_button)
+        self.done_button = Gtk.Button(label=self.translate("notes_done"))
+        self.done_button.connect("clicked", lambda *_: self.finish_editing())
+        footer.append(self.done_button)
+        self.cancel_editor_button = Gtk.Button(label=self.translate("cancel"))
+        self.cancel_editor_button.connect("clicked", lambda *_: self.cancel_editing())
+        footer.append(self.cancel_editor_button)
         editor.append(footer)
-        paned.set_end_child(editor)
+        self.detail_stack.add_named(editor, "editor")
 
         self.refresh_category_selector()
         self.refresh_server_selector()
         self.configure_write_controls()
         self.set_editor_enabled(False)
+        self.detail_stack.set_visible_child_name("empty")
 
     def configure_write_controls(self) -> None:
         writable = not self.store.read_only and not self.store.encryption_locked
         for widget in (
             self.category_manage_button,
             self.add_button,
+            self.empty_create_button,
             self.import_button,
             self.title_entry,
             self.category_combo,
@@ -205,9 +270,11 @@ class NotesDialogs:
             self.text_view,
             self.save_button,
             self.delete_button,
+            self.done_button,
         ):
             widget.set_sensitive(writable)
         self.export_button.set_sensitive(not self.store.encryption_locked)
+        self.preview_edit_button.set_sensitive(writable)
 
     def refresh_category_filter(self, selected: str | None = None) -> None:
         combo = self.category_filter_combo
@@ -271,17 +338,17 @@ class NotesDialogs:
         self.refresh_list()
 
     def on_search_changed(self, *_args) -> None:
+        if self.loading_search:
+            return
         query = self.search_entry.get_text()
         if self.editor_dirty and not self.save_editor():
-            self.search_entry.set_text(self.last_search_query)
+            self.loading_search = True
+            try:
+                self.search_entry.set_text(self.last_search_query)
+            finally:
+                self.loading_search = False
             return
         self.last_search_query = query
-        self.refresh_list()
-
-    def on_show_all_notes(self, _button: Gtk.Button) -> None:
-        if self.editor_dirty and not self.save_editor():
-            return
-        self.server_filter_id = None
         self.refresh_list()
 
     def refresh_list(self, selected_id: str | None = None) -> None:
@@ -300,9 +367,12 @@ class NotesDialogs:
             self.search_entry.get_text(), self.category_filter, self.server_filter_id,
         )
         selected_row = None
+        first_row = None
         for item in items:
             row = Gtk.ListBoxRow()
             row.note_id = item.note.id
+            if first_row is None:
+                first_row = row
             content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
             title = Gtk.Label(label=item.note.title)
             title.set_xalign(0)
@@ -327,13 +397,20 @@ class NotesDialogs:
             self.notes_list.append(row)
             if item.note.id == selected_id:
                 selected_row = row
+        selected_row = selected_row or first_row
         if selected_row is not None:
             self.notes_list.select_row(selected_row)
-        elif selected_id == self.current_note_id:
+            selected_note = self.find_note(selected_row.note_id)
+            if (
+                selected_note is not None
+                and self.current_note_id == selected_note.id
+                and self.detail_stack.get_visible_child_name() != "editor"
+            ):
+                self.show_note_preview(selected_note)
+        else:
             self.current_note_id = None
             self.clear_editor()
-        if not items:
-            self.status_label.set_label(self.translate("notes_empty"))
+            self.show_empty_state()
 
     def on_note_selected(self, _listbox: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
         if row is None:
@@ -354,7 +431,7 @@ class NotesDialogs:
         note = self.find_note(note_id)
         if note is None:
             return
-        self.load_editor(note)
+        self.show_note_preview(note)
 
     def iter_note_rows(self):
         row = self.notes_list.get_first_child()
@@ -364,6 +441,40 @@ class NotesDialogs:
 
     def find_note(self, note_id: str) -> Note | None:
         return next((note for note in self.store.data.notes if note.id == note_id), None)
+
+    def show_note_preview(self, note: Note) -> None:
+        self.cancel_autosave()
+        self.current_note_id = note.id
+        self.editor_dirty = False
+        self.preview_title.set_label(note.title)
+        parts = [note.category or self.translate("notes_uncategorized")]
+        if self.server_filter_id is None:
+            server = next((item for item in self.store.data.servers if item.id == note.server_id), None)
+            parts.append(server.name if server else self.translate("notes_standalone"))
+        parts.append(self.translate("notes_modified").format(date=note.modified_at))
+        self.preview_meta.set_label(" · ".join(parts))
+        self.preview_text.get_buffer().set_text(note.content)
+        self.detail_stack.set_visible_child_name("preview")
+
+    def show_empty_state(self) -> None:
+        if self.search_entry.get_text() or self.category_filter is not None:
+            message = self.translate("notes_empty")
+        elif self.server_filter_id is not None:
+            message = self.translate("notes_empty_server")
+        else:
+            message = self.translate("notes_empty_all")
+        self.empty_label.set_label(message)
+        self.empty_create_button.set_label(
+            self.translate("notes_create_for_server") if self.server_filter_id else self.translate("notes_create")
+        )
+        self.detail_stack.set_visible_child_name("empty")
+
+    def edit_selected_note(self) -> None:
+        if not self.ensure_writable() or not self.current_note_id:
+            return
+        note = self.find_note(self.current_note_id)
+        if note is not None:
+            self.load_editor(note)
 
     def load_editor(self, note: Note) -> None:
         self.cancel_autosave()
@@ -380,6 +491,7 @@ class NotesDialogs:
             )
             self.status_label.set_label(self.translate("notes_saved"))
             self.set_editor_enabled(True)
+            self.detail_stack.set_visible_child_name("editor")
         finally:
             self.loading_editor = False
 
@@ -402,7 +514,7 @@ class NotesDialogs:
 
     def set_editor_enabled(self, enabled: bool) -> None:
         writable = enabled and not self.store.read_only and not self.store.encryption_locked
-        for widget in (self.title_entry, self.category_combo, self.server_combo, self.text_view, self.save_button, self.delete_button):
+        for widget in (self.title_entry, self.category_combo, self.server_combo, self.text_view, self.save_button, self.delete_button, self.done_button):
             widget.set_sensitive(writable)
         self.delete_button.set_sensitive(writable and self.current_note_id is not None)
 
@@ -425,7 +537,25 @@ class NotesDialogs:
         finally:
             self.loading_editor = False
         self.notes_list.unselect_all()
+        self.detail_stack.set_visible_child_name("editor")
         self.title_entry.grab_focus()
+
+    def finish_editing(self) -> None:
+        if self.editor_dirty and not self.save_editor():
+            return
+        note = self.find_note(self.current_note_id) if self.current_note_id else None
+        if note is not None:
+            self.show_note_preview(note)
+        else:
+            self.refresh_list()
+
+    def cancel_editing(self) -> None:
+        if self.editor_dirty:
+            self.confirm_discard_editor(close_window=False)
+            return
+        selected_id = self.current_note_id
+        self.current_note_id = None
+        self.refresh_list(selected_id)
 
     def on_editor_changed(self, *_args) -> None:
         if self.loading_editor:
@@ -500,23 +630,27 @@ class NotesDialogs:
         self.window.set_visible(False)
         return True
 
-    def confirm_discard_editor(self) -> None:
+    def confirm_discard_editor(self, close_window: bool = True) -> None:
         dialog = Gtk.AlertDialog(message=self.translate("notes_discard_unsaved"))
         dialog.set_buttons([self.translate("notes_keep_editing"), self.translate("notes_discard")])
         dialog.set_cancel_button(0)
         dialog.set_default_button(0)
-        dialog.choose(self.window, None, self.on_discard_editor_response)
+        dialog.choose(self.window, None, self.on_discard_editor_response, close_window)
 
-    def on_discard_editor_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult) -> None:
+    def on_discard_editor_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, close_window: bool = True) -> None:
         try:
             response = dialog.choose_finish(result)
         except GLib.Error:
             return
         if response == 1:
+            selected_id = self.current_note_id
             self.editor_dirty = False
             self.current_note_id = None
             self.clear_editor()
-            self.window.set_visible(False)
+            if close_window:
+                self.window.set_visible(False)
+            else:
+                self.refresh_list(selected_id)
 
     def confirm_delete_note(self) -> None:
         if self.editor_dirty and not self.save_editor():
@@ -548,7 +682,6 @@ class NotesDialogs:
             return
         self.current_note_id = None
         self.refresh_list()
-        self.clear_editor()
 
     def show_categories(self) -> None:
         if self.editor_dirty and not self.save_editor():
@@ -878,7 +1011,6 @@ class NotesDialogs:
         self.refresh_category_selector()
         self.refresh_server_selector()
         self.refresh_list()
-        self.clear_editor()
         message = self.translate("notes_import_success").format(count=len(notes))
         if detached:
             message = f"{message} {self.translate('notes_import_detached').format(count=detached)}"

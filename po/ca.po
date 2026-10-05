@@ -1865,14 +1865,20 @@ msgstr "Gestiona les categories de notes"
 msgid "Create note"
 msgstr "Crea una nota"
 
+msgid "Create server note"
+msgstr "Crea una nota del servidor"
+
+msgid "Edit note"
+msgstr "Edita la nota"
+
+msgid "Done"
+msgstr "Fet"
+
 msgid "Export notes…"
 msgstr "Exporta les notes…"
 
 msgid "Import notes…"
 msgstr "Importa les notes…"
-
-msgid "Show all notes"
-msgstr "Mostra totes les notes"
 
 msgid "All categories"
 msgstr "Totes les categories"
@@ -1900,6 +1906,12 @@ msgstr "Modificada {date}"
 
 msgid "No matching notes."
 msgstr "No hi ha notes coincidents."
+
+msgid "No notes yet."
+msgstr "Encara no hi ha notes."
+
+msgid "No notes for this server yet."
+msgstr "Encara no hi ha notes per a aquest servidor."
 
 msgid "Saved"
 msgstr "Desada"
