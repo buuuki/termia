@@ -476,7 +476,7 @@ class ConnectionStore:
         statistics_path: Path = STATISTICS_FILE,
         lock_path: Path = INSTANCE_LOCK_FILE,
         history_path: Path = HISTORY_FILE,
-        notes_path: Path = NOTES_FILE,
+        notes_path: Path | None = None,
     ) -> None:
         self.path = path
         self.instance_lock = InstanceWriteLock(lock_path)
@@ -484,7 +484,10 @@ class ConnectionStore:
         self.settings_store = SettingsStore(settings_path, read_only=self.read_only)
         self.statistics_store = StatisticsStore(statistics_path, read_only=self.read_only)
         self.history_store = ConnectionHistoryStore(history_path, read_only=self.read_only)
-        self.notes_file_store = NotesFileStore(notes_path, read_only=self.read_only)
+        self.notes_file_store = NotesFileStore(
+            notes_path if notes_path is not None else path.with_name(NOTES_FILE.name),
+            read_only=self.read_only,
+        )
         self.recovery_messages: list[str] = [
             *self.settings_store.recovery_messages,
             *self.statistics_store.recovery_messages,

@@ -1922,6 +1922,15 @@ msgstr "Escriu un títol i el text de la nota per desar-la."
 msgid "A title and note text are required."
 msgstr "Calen un títol i el text de la nota."
 
+msgid "Discard unsaved note changes?"
+msgstr "Voleu descartar els canvis no desats de la nota?"
+
+msgid "Keep editing"
+msgstr "Continua editant"
+
+msgid "Discard changes"
+msgstr "Descarta els canvis"
+
 msgid "Delete note"
 msgstr "Suprimeix la nota"
 

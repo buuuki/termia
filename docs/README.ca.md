@@ -216,8 +216,10 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   desactivar si una aplicació del terminal necessita aquestes combinacions.
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - `Gestiona les notes` obre una finestra reutilitzable que no bloqueja els
-  terminals. Les notes es desen automàticament en un fitxer separat, admeten
-  categories i poden ser personals o associades a un servidor. En suprimir un
+  terminals. Les notes es desen automàticament en un fitxer separat; també hi
+  ha un botó **Desa**. Una nota incompleta no es desa i, en tancar, es pregunta
+  abans de descartar-ne els canvis. Les notes admeten categories i poden ser
+  personals o associades a un servidor. En suprimir un
   servidor, les notes es conserven com a personals. La importació substitueix
   les notes després d'oferir una còpia de seguretat; l'exportació es pot xifrar
   amb una contrasenya pròpia.

@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from termia.config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
@@ -93,6 +94,107 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(presented, [True])
         self.assertFalse(dialog.editor_dirty)
 
+    def test_incomplete_draft_waits_for_both_title_and_text(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.loading_editor = False
+        dialog.editor_dirty = False
+        dialog.title_entry = SimpleNamespace(get_text=lambda: "Runbook")
+        dialog.editor_content = lambda: ""
+        dialog.status_label = SimpleNamespace(set_label=lambda _text: None)
+        dialog.translate = lambda key: key
+        cancelled = []
+        scheduled = []
+        dialog.cancel_autosave = lambda: cancelled.append(True)
+        dialog.schedule_autosave = lambda: scheduled.append(True)
+
+        dialog.on_editor_changed()
+
+        self.assertTrue(dialog.editor_dirty)
+        self.assertEqual(cancelled, [True])
+        self.assertEqual(scheduled, [])
+        dialog.editor_content = lambda: "Restart the service"
+        dialog.on_editor_changed()
+        self.assertEqual(scheduled, [True])
+
+    def test_failed_save_still_presents_notes_window(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(encryption_locked=False)
+        dialog.ensure_window = lambda: None
+        dialog.editor_dirty = True
+        dialog.save_editor = lambda: False
+        presented = []
+        dialog.window = SimpleNamespace(present=lambda: presented.append(True))
+
+        dialog.show_manager("server-id")
+
+        self.assertEqual(presented, [True])
+
+    def test_server_context_waits_for_popover_to_close(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        shown = []
+        dialog._show_server_notes = lambda server_id: shown.append(server_id)
+
+        class Popover:
+            def connect(self, signal, callback):
+                self.signal = signal
+                self.callback = callback
+
+            def popdown(self):
+                self.callback(self)
+
+        popover = Popover()
+        with patch("termia.notes_dialogs.GLib.idle_add") as idle_add, patch(
+            "termia.notes_dialogs.GLib.timeout_add"
+        ) as timeout_add:
+            dialog.show_for_server_after_popover(popover, "server-id")
+            timeout_add.call_args.args[1]()
+
+        self.assertEqual(popover.signal, "closed")
+        idle_add.assert_called_once_with(dialog._show_server_notes, "server-id")
+        self.assertEqual(timeout_add.call_args.args[0], 150)
+
+    def test_server_context_opens_when_popover_was_already_closed(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog._show_server_notes = lambda _server_id: None
+
+        class ClosedPopover:
+            def connect(self, _signal, _callback):
+                pass
+
+            def popdown(self):
+                pass
+
+        with patch("termia.notes_dialogs.GLib.idle_add") as idle_add, patch(
+            "termia.notes_dialogs.GLib.timeout_add"
+        ) as timeout_add:
+            dialog.show_for_server_after_popover(ClosedPopover(), "server-id")
+            timeout_add.call_args.args[1]()
+
+        idle_add.assert_called_once_with(dialog._show_server_notes, "server-id")
+
+    def test_incomplete_draft_can_be_discarded_to_close_window(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_dirty = True
+        dialog.current_note_id = "existing-note"
+        dialog.cancel_autosave = lambda: None
+        dialog.title_entry = SimpleNamespace(get_text=lambda: "Runbook")
+        dialog.editor_content = lambda: ""
+        prompted = []
+        hidden = []
+        cleared = []
+        dialog.confirm_discard_editor = lambda: prompted.append(True)
+        dialog.clear_editor = lambda: cleared.append(True)
+        dialog.window = SimpleNamespace(set_visible=lambda visible: hidden.append(visible))
+
+        self.assertTrue(dialog.on_close_request(dialog.window))
+        self.assertEqual(prompted, [True])
+        self.assertEqual(hidden, [])
+        dialog.on_discard_editor_response(SimpleNamespace(choose_finish=lambda _result: 1), None)
+        self.assertFalse(dialog.editor_dirty)
+        self.assertIsNone(dialog.current_note_id)
+        self.assertEqual(cleared, [True])
+        self.assertEqual(hidden, [False])
+
 
 class NotesIOTests(unittest.TestCase):
     def setUp(self):
@@ -165,6 +267,20 @@ class NotesStoreTests(unittest.TestCase):
             root / "connections.json", root / "settings.json", root / "statistics.json",
             root / "lock", root / "history", root / "notes.json",
         )
+
+    def test_notes_default_to_sibling_of_custom_connections_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = ConnectionStore(
+                root / "connections.json", root / "settings.json", root / "statistics.json",
+                root / "lock", root / "history",
+            )
+            try:
+                store.add_note("Runbook", "Synthetic content")
+                self.assertEqual(store.notes_file_store.path, root / "notes.json")
+                self.assertTrue((root / "notes.json").exists())
+            finally:
+                store.close()
 
     def test_note_categories_duplicate_rename_delete_and_reload(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -240,6 +356,17 @@ class NotesStoreTests(unittest.TestCase):
                     with self.assertRaises(OSError):
                         store.add_note("Runbook", "Keep this in the editor")
                 self.assertEqual(store.data.notes, [])
+            finally:
+                store.close()
+
+    def test_invalid_notes_json_is_backed_up_without_crashing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "notes.json").write_text("{invalid", encoding="utf-8")
+            store = self.make_store(root)
+            try:
+                self.assertEqual(store.data.notes, [])
+                self.assertTrue(list(root.glob("notes.json.invalid-*")))
             finally:
                 store.close()
 

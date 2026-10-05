@@ -242,6 +242,13 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   notes to Uncategorized.
 - Edit an existing note and create a new note; confirm autosave status and
   modified timestamp update, and that the list sorts by most recently modified.
+  Confirm the explicit Save button persists server-linked notes even before the
+  autosave delay. Close an incomplete draft and confirm Keep editing preserves
+  it while Discard changes closes the window without saving it.
+  Open server notes from a sidebar context menu and confirm the notes window
+  receives focus after the popover closes and remains modeless.
+  The selected note-category highlight must stay inside the rounded tile,
+  not cover its square FlowBox cell.
   Force a save failure and confirm the editor retains the unsaved text when
   switching notes or closing the notes window.
 - Delete a server, delete a group containing servers, clear connection

@@ -1782,6 +1782,18 @@ msgstr ""
 msgid "A title and note text are required."
 msgstr ""
 
+#: src/termia/i18n.py:notes_discard_unsaved
+msgid "Discard unsaved note changes?"
+msgstr ""
+
+#: src/termia/i18n.py:notes_keep_editing
+msgid "Keep editing"
+msgstr ""
+
+#: src/termia/i18n.py:notes_discard
+msgid "Discard changes"
+msgstr ""
+
 #: src/termia/i18n.py:notes_delete
 msgid "Delete note"
 msgstr ""

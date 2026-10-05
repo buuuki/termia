@@ -59,6 +59,7 @@ class NotesDialogs:
             return
         self.ensure_window()
         if self.editor_dirty and not self.save_editor():
+            self.window.present()
             return
         self.server_filter_id = server_id
         self.refresh_category_filter()
@@ -176,6 +177,10 @@ class NotesDialogs:
         self.modified_label = Gtk.Label()
         self.modified_label.add_css_class("dim-label")
         footer.append(self.modified_label)
+        self.save_button = Gtk.Button(label=self.translate("save"))
+        self.save_button.add_css_class("suggested-action")
+        self.save_button.connect("clicked", lambda *_: self.save_editor())
+        footer.append(self.save_button)
         self.delete_button = Gtk.Button(label=self.translate("notes_delete"))
         self.delete_button.add_css_class("destructive-action")
         self.delete_button.connect("clicked", lambda *_: self.confirm_delete_note())
@@ -198,6 +203,7 @@ class NotesDialogs:
             self.category_combo,
             self.server_combo,
             self.text_view,
+            self.save_button,
             self.delete_button,
         ):
             widget.set_sensitive(writable)
@@ -396,7 +402,7 @@ class NotesDialogs:
 
     def set_editor_enabled(self, enabled: bool) -> None:
         writable = enabled and not self.store.read_only and not self.store.encryption_locked
-        for widget in (self.title_entry, self.category_combo, self.server_combo, self.text_view, self.delete_button):
+        for widget in (self.title_entry, self.category_combo, self.server_combo, self.text_view, self.save_button, self.delete_button):
             widget.set_sensitive(writable)
         self.delete_button.set_sensitive(writable and self.current_note_id is not None)
 
@@ -425,7 +431,7 @@ class NotesDialogs:
         if self.loading_editor:
             return
         self.editor_dirty = True
-        if self.current_note_id is None and not self.title_entry.get_text().strip():
+        if not self.title_entry.get_text().strip() or not self.editor_content().strip():
             self.cancel_autosave()
             self.status_label.set_label(self.translate("notes_enter_to_save"))
             return
@@ -453,6 +459,9 @@ class NotesDialogs:
         return buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True)
 
     def save_editor(self) -> bool:
+        if not self.editor_dirty and self.current_note_id is not None:
+            self.status_label.set_label(self.translate("notes_saved"))
+            return True
         title, content = self.title_entry.get_text(), self.editor_content()
         if not title.strip() or not content.strip():
             self.status_label.set_label(self.translate("notes_content_required"))
@@ -482,10 +491,32 @@ class NotesDialogs:
     def on_close_request(self, _window: Gtk.Window) -> bool:
         if self.editor_dirty:
             self.cancel_autosave()
+            if not self.title_entry.get_text().strip() or not self.editor_content().strip():
+                self.confirm_discard_editor()
+                return True
             if not self.save_editor():
+                self.confirm_discard_editor()
                 return True
         self.window.set_visible(False)
         return True
+
+    def confirm_discard_editor(self) -> None:
+        dialog = Gtk.AlertDialog(message=self.translate("notes_discard_unsaved"))
+        dialog.set_buttons([self.translate("notes_keep_editing"), self.translate("notes_discard")])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(0)
+        dialog.choose(self.window, None, self.on_discard_editor_response)
+
+    def on_discard_editor_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult) -> None:
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        if response == 1:
+            self.editor_dirty = False
+            self.current_note_id = None
+            self.clear_editor()
+            self.window.set_visible(False)
 
     def confirm_delete_note(self) -> None:
         if self.editor_dirty and not self.save_editor():
@@ -878,8 +909,18 @@ class NotesDialogs:
         entry.grab_focus()
 
     def show_for_server_after_popover(self, popover: Gtk.Popover, server_id: str) -> None:
+        presented = False
+
+        def present_once(*_args) -> bool:
+            nonlocal presented
+            if not presented:
+                presented = True
+                GLib.idle_add(self._show_server_notes, server_id)
+            return GLib.SOURCE_REMOVE
+
+        popover.connect("closed", present_once)
         popover.popdown()
-        GLib.timeout_add(100, self._show_server_notes, server_id)
+        GLib.timeout_add(150, present_once)
 
     def _show_server_notes(self, server_id: str) -> bool:
         self.show_manager(server_id)
@@ -895,4 +936,7 @@ class NotesDialogs:
         if not self.editor_dirty or self.window is None:
             return True
         self.cancel_autosave()
-        return self.save_editor()
+        if not self.save_editor():
+            self.window.present()
+            return False
+        return True

@@ -215,8 +215,10 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   desactivarse si una aplicación del terminal necesita esas combinaciones.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
-  Las notas se guardan automáticamente en un fichero separado, admiten
-  categorías y pueden ser personales o asociarse a un servidor. Al eliminar un
+  Las notas se guardan automáticamente en un fichero separado; también hay un
+  botón **Guardar**. Una nota incompleta no se guarda y, al cerrar, se pregunta
+  antes de descartar sus cambios. Las notas admiten categorías y pueden ser
+  personales o asociarse a un servidor. Al eliminar un
   servidor, sus notas se conservan como personales. La importación sustituye
   las notas tras ofrecer una copia de seguridad; la exportación puede cifrarse
   con una contraseña propia.

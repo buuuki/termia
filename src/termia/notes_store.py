@@ -3,6 +3,7 @@
 """Persistence boundary for notes and categories."""
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -64,8 +65,6 @@ class NotesFileStore:
         )
 
     def detect_storage_mode(self) -> str:
-        import json
-
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):

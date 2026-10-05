@@ -1922,6 +1922,15 @@ msgstr "Escribe un título y el texto de la nota para guardarla."
 msgid "A title and note text are required."
 msgstr "Se necesitan un título y el texto de la nota."
 
+msgid "Discard unsaved note changes?"
+msgstr "¿Descartar los cambios no guardados de la nota?"
+
+msgid "Keep editing"
+msgstr "Seguir editando"
+
+msgid "Discard changes"
+msgstr "Descartar cambios"
+
 msgid "Delete note"
 msgstr "Eliminar nota"
 

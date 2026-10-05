@@ -13,6 +13,13 @@
   categories, autosave, protected import/export, backup-before-replace
   behavior, and isolated test-profile copying (`#289`).
 
+### Fixed
+
+- Keep server-note opening responsive, add an explicit Save action and safe
+  discard for incomplete drafts, and confine note-category selection to its
+  rounded tile; keep custom/test notes files beside their connection files
+  (`#289`).
+
 ## 0.6.0-beta.3 - 2026-09-30
 
 Changes merged after `0.6.0-beta.2`. This release introduces reusable command
