@@ -1712,6 +1712,18 @@ msgstr ""
 msgid "Edit note"
 msgstr ""
 
+#: src/termia/i18n.py:notes_clone
+msgid "Clone note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_clone_suffix
+msgid " (copy)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_clone_success
+msgid "Note cloned."
+msgstr ""
+
 #: src/termia/i18n.py:notes_done
 msgid "Done"
 msgstr ""

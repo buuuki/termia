@@ -18,6 +18,8 @@
 
 ### Added
 
+- Add right-click note actions for editing, cloning, and deleting; cloning saves
+  a new note with the same content, category, and server association (`#289`).
 - Add a separate notes workspace with standalone and server-linked notes,
   categories, autosave, protected import/export, backup-before-replace
   behavior, and isolated test-profile copying (`#289`).

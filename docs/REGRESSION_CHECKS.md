@@ -250,6 +250,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   categorized, edited, and deleted. Empty categories persist; duplicate
   categories duplicate their notes with new IDs; deleting a category moves its
   notes to Uncategorized.
+- Right-click notes in the list and confirm the menu offers Edit, Clone, and
+  Delete. Clone a note and verify the copy has a new identity, a “(copy)” title
+  suffix, the same content/category/server association, and is saved immediately.
+  While editing one note, right-click another and confirm edits are saved before
+  its context menu opens and the clicked note remains selected.
 - Edit an existing note and create a new note; confirm autosave status and
   modified timestamp update, and that the list sorts by most recently modified.
   Confirm the explicit Save button persists server-linked notes even before the

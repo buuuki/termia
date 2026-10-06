@@ -1871,6 +1871,15 @@ msgstr "Crear nota del servidor"
 msgid "Edit note"
 msgstr "Editar nota"
 
+msgid "Clone note"
+msgstr "Clonar nota"
+
+msgid " (copy)"
+msgstr " (copia)"
+
+msgid "Note cloned."
+msgstr "Nota clonada."
+
 msgid "Done"
 msgstr "Terminar"
 

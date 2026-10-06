@@ -47,6 +47,38 @@ class NotesDomainTests(unittest.TestCase):
 
 
 class NotesDialogSignalTests(unittest.TestCase):
+    def test_clone_note_copies_content_category_and_server_with_new_identity(self):
+        original = Note("source", "Runbook", "Restart service", "Operations", "server-id", "created", "modified")
+        cloned = Note("copy-id", "Runbook (copy)", "Restart service", "Operations", "server-id", "created-copy", "modified-copy")
+        calls = []
+        refreshed = []
+        messages = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(
+            add_note=lambda *args: (calls.append(args), cloned)[1],
+        )
+        dialog.editor_dirty = False
+        dialog.ensure_writable = lambda: True
+        dialog.find_note = lambda note_id: original if note_id == original.id else None
+        dialog.translate = lambda key: {
+            "notes_clone_suffix": " (copy)",
+            "notes_clone_success": "Note cloned.",
+        }[key]
+        dialog.refresh_category_filter = lambda: None
+        dialog.refresh_list = lambda note_id: refreshed.append(note_id)
+        dialog.show_toast = messages.append
+        dialog.show_error = lambda _message: self.fail("clone unexpectedly failed")
+
+        dialog.clone_note(original.id)
+
+        self.assertEqual(
+            calls,
+            [("Runbook (copy)", "Restart service", "Operations", "server-id")],
+        )
+        self.assertEqual(dialog.current_note_id, cloned.id)
+        self.assertEqual(refreshed, [cloned.id])
+        self.assertEqual(messages, ["Note cloned."])
+
     def test_export_protection_choice_routes_to_plain_or_password_flow(self):
         for encrypted in (False, True):
             with self.subTest(encrypted=encrypted):

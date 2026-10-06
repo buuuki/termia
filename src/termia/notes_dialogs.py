@@ -43,6 +43,7 @@ class NotesDialogs:
         self.window: Gtk.Window | None = None
         self.category_window: Gtk.Window | None = None
         self.export_protection_window: Gtk.Window | None = None
+        self.notes_context_popover: Gtk.Popover | None = None
         self.current_note_id: str | None = None
         self.server_filter_id: str | None = None
         self.category_filter: str | None = None
@@ -356,6 +357,7 @@ class NotesDialogs:
     def refresh_list(self, selected_id: str | None = None) -> None:
         if not hasattr(self, "notes_list"):
             return
+        self.close_note_context_menu()
         selected_id = selected_id if selected_id is not None else self.current_note_id
         while child := self.notes_list.get_first_child():
             self.notes_list.remove(child)
@@ -396,6 +398,10 @@ class NotesDialogs:
             content.set_margin_start(8)
             content.set_margin_end(8)
             row.set_child(content)
+            context_click = Gtk.GestureClick()
+            context_click.set_button(3)
+            context_click.connect("pressed", self.on_note_context_pressed, row)
+            row.add_controller(context_click)
             self.notes_list.append(row)
             if item.note.id == selected_id:
                 selected_row = row
@@ -440,6 +446,105 @@ class NotesDialogs:
         while row:
             yield row
             row = row.get_next_sibling()
+
+    def on_note_context_pressed(
+        self, gesture: Gtk.GestureClick, _presses: int, _x: float, _y: float,
+        row: Gtk.ListBoxRow,
+    ) -> None:
+        note_id = getattr(row, "note_id", None)
+        self.notes_list.select_row(row)
+        if self.notes_list.get_selected_row() is not row:
+            if not note_id or self.current_note_id != note_id:
+                gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+                return
+            row = next(
+                (item for item in self.iter_note_rows() if getattr(item, "note_id", None) == note_id),
+                None,
+            )
+            if row is None:
+                gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+                return
+            self.notes_list.select_row(row)
+        if self.notes_list.get_selected_row() is not row:
+            gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+            return
+        self.show_note_context_menu(row)
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+
+    def show_note_context_menu(self, row: Gtk.ListBoxRow) -> None:
+        self.close_note_context_menu()
+        popover = Gtk.Popover()
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_note_context_menu_closed)
+        actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        for action, label_key in (
+            ("edit", "notes_edit"),
+            ("clone", "notes_clone"),
+            ("delete", "notes_delete"),
+        ):
+            button = Gtk.Button(label=self.translate(label_key))
+            button.add_css_class("flat")
+            if action == "delete":
+                button.add_css_class("destructive-action")
+            button.connect(
+                "clicked",
+                lambda _button, selected_action=action, note_id=row.note_id:
+                    self.on_note_context_action(selected_action, note_id),
+            )
+            button.set_sensitive(
+                not self.store.read_only and not self.store.encryption_locked,
+            )
+            actions.append(button)
+        popover.set_child(actions)
+        popover.set_parent(row)
+        self.notes_context_popover = popover
+        popover.popup()
+
+    def on_note_context_menu_closed(self, popover: Gtk.Popover) -> None:
+        if self.notes_context_popover is popover:
+            self.notes_context_popover = None
+        if popover.get_parent() is not None:
+            popover.unparent()
+
+    def close_note_context_menu(self) -> None:
+        popover = getattr(self, "notes_context_popover", None)
+        if popover is None:
+            return
+        self.notes_context_popover = None
+        popover.popdown()
+        if popover.get_parent() is not None:
+            popover.unparent()
+
+    def on_note_context_action(self, action: str, note_id: str) -> None:
+        self.close_note_context_menu()
+        if action == "edit":
+            self.edit_selected_note()
+        elif action == "clone":
+            self.clone_note(note_id)
+        elif action == "delete":
+            self.confirm_delete_note()
+
+    def clone_note(self, note_id: str) -> None:
+        if not self.ensure_writable():
+            return
+        if self.editor_dirty and not self.save_editor():
+            return
+        note = self.find_note(note_id)
+        if note is None:
+            return
+        title = note.title + self.translate("notes_clone_suffix")
+        try:
+            cloned = self.store.add_note(
+                title, note.content, note.category, note.server_id,
+            )
+        except (NoteError, OSError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return
+        self.current_note_id = cloned.id
+        self.editor_dirty = False
+        self.refresh_category_filter()
+        self.refresh_list(cloned.id)
+        self.show_toast(self.translate("notes_clone_success"))
 
     def find_note(self, note_id: str) -> Note | None:
         return next((note for note in self.store.data.notes if note.id == note_id), None)
@@ -621,6 +726,7 @@ class NotesDialogs:
             return False
 
     def on_close_request(self, _window: Gtk.Window) -> bool:
+        self.close_note_context_menu()
         if self.editor_dirty:
             self.cancel_autosave()
             if not self.title_entry.get_text().strip() or not self.editor_content().strip():

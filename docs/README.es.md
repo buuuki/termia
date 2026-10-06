@@ -228,7 +228,9 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   tras ofrecer una copia de seguridad. Antes de exportar, Termia explica que
   elegir «Sin contraseña» crea un fichero de texto plano legible, mientras que
   elegir una contraseña cifra la exportación y esa contraseña es necesaria para
-  importarla.
+  importarla. Haz clic derecho en una nota para editarla, clonarla o eliminarla.
+  Al clonar, se guarda una copia con identidad nueva y el mismo contenido y
+  asociaciones.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
 - Si activas la restauración de la sesión anterior en `General`, al cerrar

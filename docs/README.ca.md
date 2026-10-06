@@ -229,6 +229,8 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   d'oferir una còpia de seguretat. Abans d'exportar, Termia explica que triar
   «Sense contrasenya» crea un fitxer de text pla llegible, mentre que triar una
   contrasenya xifra l'exportació i caldrà introduir-la per importar les notes.
+  Fes clic dret en una nota per editar-la, clonar-la o suprimir-la. En clonar,
+  es desa una còpia amb una identitat nova i el mateix contingut i associacions.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
 - Si actives la restauració de la sessió anterior a `General`, en tancar Termia

@@ -235,6 +235,8 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   offering to back them up. Before export, Termia explains that choosing no
   password creates a readable plain-text file, while choosing a password
   encrypts the export and requires that password for import.
+  Right-click a note in the list to edit, clone, or delete it; cloning saves a
+  copy with a new identity and the same content and associations.
 - `Terminal` combines embedded VTE appearance and local prompt settings with one live preview. Appearance changes apply to open terminals; prompt changes apply only to new or duplicated local Bash terminals and never inject commands into running local shells or SSH sessions. New installations start with JetBrains Mono and the Polaris palette.
 - `Keybindings` shows the active shortcuts and lets you record shortcut combinations for common actions such as server filtering, sidebar visibility, opening a local terminal, focus navigation, copy, paste, tab switching, font zoom, and sending the saved password. `Ctrl+F` focuses the server filter, `Ctrl+Shift+B` toggles the server list, `F10` toggles the main menu, `Ctrl+Shift+T` opens a local terminal, and `Ctrl+F6`/`Ctrl+Shift+F6` cycle through the main interface regions. Other unmodified function keys pass through to terminal applications.
 - `Ctrl+Left`, `Ctrl+Right`, `Ctrl+Up`, and `Ctrl+Down` move focus between
