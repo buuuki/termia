@@ -270,6 +270,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   The export choice must explain that no password means readable, unencrypted
   JSON, while an export password encrypts the file and is required for import.
   Confirm this password is independent of the local master password.
+  Choosing password protection must open a masked password prompt and then the
+  file-save chooser; importing a protected file must show the same password
+  prompt without a GTK error.
 - When notes already exist, cancel import or choose Keep existing and confirm
   the current notes remain unchanged. Choose Back up and replace and confirm a
   protected backup exists before replacement; an unwritable backup location

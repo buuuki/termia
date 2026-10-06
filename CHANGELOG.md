@@ -24,6 +24,8 @@
 
 ### Fixed
 
+- Show the export/import password prompt correctly with GTK 4 password fields
+  instead of calling an unsupported placeholder method (`#289`).
 - Keep server-note opening responsive, add an explicit Save action and safe
   discard for incomplete drafts, and confine note-category selection to its
   rounded tile; keep custom/test notes files beside their connection files
