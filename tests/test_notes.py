@@ -47,6 +47,33 @@ class NotesDomainTests(unittest.TestCase):
 
 
 class NotesDialogSignalTests(unittest.TestCase):
+    def test_export_protection_choice_routes_to_plain_or_password_flow(self):
+        for encrypted in (False, True):
+            with self.subTest(encrypted=encrypted):
+                dialog = NotesDialogs.__new__(NotesDialogs)
+                destroyed = []
+                dialog.export_protection_window = SimpleNamespace(
+                    destroy=lambda: destroyed.append(True),
+                )
+                dialog.export_password_choice = SimpleNamespace(
+                    get_active=lambda: encrypted,
+                )
+                dialog.translate = lambda key: key
+                password_prompts = []
+                file_choices = []
+                dialog.ask_password = lambda *args: password_prompts.append(args)
+                dialog.choose_export_file = lambda password: file_choices.append(password)
+
+                dialog.on_export_protection_continue()
+
+                self.assertEqual(destroyed, [True])
+                if encrypted:
+                    self.assertEqual(password_prompts, [("notes_export_password", dialog.on_export_password)])
+                    self.assertEqual(file_choices, [])
+                else:
+                    self.assertEqual(password_prompts, [])
+                    self.assertEqual(file_choices, [None])
+
     def test_initial_selector_signals_do_not_prevent_window_opening(self):
         class EmittingCombo:
             def __init__(self, callback):

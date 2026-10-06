@@ -267,6 +267,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Export notes without protection and with a separate password. Import both,
   reject wrong passwords and malformed/future schemas without changing local
   notes, and verify orphaned server associations are detached.
+  The export choice must explain that no password means readable, unencrypted
+  JSON, while an export password encrypts the file and is required for import.
+  Confirm this password is independent of the local master password.
 - When notes already exist, cancel import or choose Keep existing and confirm
   the current notes remain unchanged. Choose Back up and replace and confirm a
   protected backup exists before replacement; an unwritable backup location

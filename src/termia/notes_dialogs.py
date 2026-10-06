@@ -42,6 +42,7 @@ class NotesDialogs:
         self.show_toast = show_toast
         self.window: Gtk.Window | None = None
         self.category_window: Gtk.Window | None = None
+        self.export_protection_window: Gtk.Window | None = None
         self.current_note_id: str | None = None
         self.server_filter_id: str | None = None
         self.category_filter: str | None = None
@@ -885,25 +886,104 @@ class NotesDialogs:
     def choose_export_protection(self) -> None:
         if self.editor_dirty and not self.save_editor():
             return
-        dialog = Gtk.AlertDialog(message=self.translate("notes_export_protection"))
-        dialog.set_buttons([
-            self.translate("cancel"),
-            self.translate("notes_export_plain"),
-            self.translate("notes_export_password"),
-        ])
-        dialog.set_cancel_button(0)
-        dialog.set_default_button(2)
-        dialog.choose(self.window, None, self.on_export_protection_response)
-
-    def on_export_protection_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, _data=None) -> None:
-        try:
-            response = dialog.choose_finish(result)
-        except GLib.Error:
+        if self.export_protection_window is not None:
+            self.export_protection_window.present()
             return
-        if response == 1:
-            self.choose_export_file(None)
-        elif response == 2:
+
+        window = Gtk.Window(
+            title=self.translate("notes_export"), transient_for=self.window,
+        )
+        window.set_modal(True)
+        window.set_resizable(False)
+        window.set_default_size(500, -1)
+        window.connect("close-request", self.on_export_protection_close)
+        self.export_protection_window = window
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(root, f"set_margin_{side}")(18)
+        window.set_child(root)
+
+        explanation = Gtk.Label(label=self.translate("notes_export_protection"))
+        explanation.set_xalign(0)
+        explanation.set_wrap(True)
+        explanation.add_css_class("title-3")
+        root.append(explanation)
+
+        options = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        root.append(options)
+        self.export_plain_choice = self.export_protection_option(
+            "notes_export_plain", "notes_export_plain_detail",
+        )
+        self.export_password_choice = self.export_protection_option(
+            "notes_export_password", "notes_export_password_detail",
+        )
+        self.export_password_choice.set_group(self.export_plain_choice)
+        options.append(self.export_plain_choice)
+        options.append(self.export_password_choice)
+
+        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        actions.set_halign(Gtk.Align.END)
+        root.append(actions)
+        cancel = Gtk.Button(label=self.translate("cancel"))
+        cancel.connect("clicked", lambda *_: window.close())
+        actions.append(cancel)
+        self.export_continue_button = Gtk.Button(
+            label=self.translate("notes_export_continue"),
+        )
+        self.export_continue_button.add_css_class("suggested-action")
+        self.export_continue_button.set_sensitive(False)
+        self.export_continue_button.connect(
+            "clicked", self.on_export_protection_continue,
+        )
+        actions.append(self.export_continue_button)
+        self.export_plain_choice.connect(
+            "toggled", self.on_export_protection_choice_changed,
+        )
+        self.export_password_choice.connect(
+            "toggled", self.on_export_protection_choice_changed,
+        )
+        window.present()
+
+    def export_protection_option(self, title_key: str, detail_key: str) -> Gtk.CheckButton:
+        choice = Gtk.CheckButton()
+        choice.set_hexpand(True)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        title = Gtk.Label(label=self.translate(title_key))
+        title.set_xalign(0)
+        title.set_wrap(True)
+        title.add_css_class("heading")
+        content.append(title)
+        detail = Gtk.Label(label=self.translate(detail_key))
+        detail.set_xalign(0)
+        detail.set_wrap(True)
+        detail.add_css_class("dim-label")
+        content.append(detail)
+        choice.set_child(content)
+        return choice
+
+    def on_export_protection_choice_changed(self, *_args) -> None:
+        selected = (
+            self.export_plain_choice.get_active()
+            or self.export_password_choice.get_active()
+        )
+        self.export_continue_button.set_sensitive(selected)
+
+    def on_export_protection_close(self, window: Gtk.Window) -> bool:
+        if self.export_protection_window is window:
+            self.export_protection_window = None
+        return False
+
+    def on_export_protection_continue(self, *_args) -> None:
+        encrypted = self.export_password_choice.get_active()
+        window = self.export_protection_window
+        self.export_protection_window = None
+        if window is not None:
+            window.destroy()
+        if encrypted:
             self.ask_password(self.translate("notes_export_password"), self.on_export_password)
+        else:
+            self.choose_export_file(None)
 
     def on_export_password(self, password: str | None) -> None:
         if password:

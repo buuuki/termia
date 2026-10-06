@@ -1970,14 +1970,23 @@ msgstr "{count} notes"
 msgid "Delete category “{name}”? Its {count} notes will move to Uncategorized."
 msgstr "Vols suprimir la categoria «{name}»? Les {count} notes passaran a «Sense categoria»."
 
-msgid "Choose whether to protect the exported notes with a password."
-msgstr "Tria si vols protegir les notes exportades amb una contrasenya."
+msgid "Choose how the exported notes file will be protected."
+msgstr "Tria com es protegirà el fitxer de notes exportat."
 
-msgid "Export without password"
-msgstr "Exporta sense contrasenya"
+msgid "Export without a password (plain text)"
+msgstr "Exporta sense contrasenya (text pla)"
 
-msgid "Export with password"
-msgstr "Exporta amb contrasenya"
+msgid "The file will not be encrypted. Anyone who can access it can read the notes."
+msgstr "El fitxer no es xifrarà. Qualsevol persona que hi tingui accés podrà llegir les notes."
+
+msgid "Encrypt export with a password"
+msgstr "Xifra l'exportació amb una contrasenya"
+
+msgid "The file will be encrypted. You will need this password to import it."
+msgstr "El fitxer es xifrarà. Necessitaràs aquesta contrasenya per importar-lo."
+
+msgid "Continue"
+msgstr "Continua"
 
 msgid "Password"
 msgstr "Contrasenya"

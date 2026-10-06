@@ -225,9 +225,10 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   ni exportar. Cercar, filtrar per categoria, gestionar categories i crear notes
   comparteixen una sola fila d'accions. Les notes admeten categories i poden ser
   personals o associades a un servidor. En suprimir un servidor, les notes es
-  conserven com a personals. La importació substitueix
-  les notes després d'oferir una còpia de seguretat; l'exportació es pot xifrar
-  amb una contrasenya pròpia.
+  conserven com a personals. La importació substitueix les notes després
+  d'oferir una còpia de seguretat. Abans d'exportar, Termia explica que triar
+  «Sense contrasenya» crea un fitxer de text pla llegible, mentre que triar una
+  contrasenya xifra l'exportació i caldrà introduir-la per importar les notes.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
 - Si actives la restauració de la sessió anterior a `General`, en tancar Termia
@@ -290,7 +291,7 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 ~/.local/state/termia/last-session.json  # només si s'activa la restauració
 ```
 
-Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla, ofuscat o xifrat amb una contrasenya mestra des de les preferències de Seguretat. Quan el xifratge està activat, Termia demana la contrasenya mestra en arrencar i no pot recuperar les dades de connexió si aquesta contrasenya es perd. Les notes es desen a part a `notes.json` i segueixen el mateix mode de protecció local; no s'inclouen en importar o exportar connexions. Les notes exportades no estan protegides per defecte, però es poden protegir amb una contrasenya pròpia. Tracta els fitxers exportats com a dades sensibles. Les contrasenyes importades des d'Ásbrú es desaran igual quan el YAML d'origen les exposi al camp `pass`.
+Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla, ofuscat o xifrat amb una contrasenya mestra des de les preferències de Seguretat. Quan el xifratge està activat, Termia demana la contrasenya mestra en arrencar i no pot recuperar les dades de connexió si aquesta contrasenya es perd. Les notes es desen a part a `notes.json` i segueixen el mateix mode de protecció local; no s'inclouen en importar o exportar connexions. Les notes exportades sense contrasenya són JSON sense xifrar i llegible; si tries una contrasenya per a l'exportació, el fitxer es xifra i aquesta contrasenya cal per importar-lo. Aquesta contrasenya d'exportació és independent de la contrasenya mestra. Tracta els fitxers exportats com a dades sensibles. Les contrasenyes importades des d'Ásbrú es desaran igual quan el YAML d'origen les exposi al camp `pass`.
 Els fitxers de connexions exportats també poden contenir credencials.
 Els comptadors locals agregats es desen per separat a `statistics.json`, venen desactivats per defecte i es poden activar o desactivar des de les preferències generals. Quan hi ha diversos processos de Termia oberts al mateix temps, només la instància que manté `instance.lock` escriu connexions, ajustos o estadístiques; les següents romanen en només lectura per evitar corrompre aquests fitxers.
 L'historial es desa a part a `connections-history.jsonl`; la secció Recent de

@@ -1970,14 +1970,23 @@ msgstr "{count} notas"
 msgid "Delete category “{name}”? Its {count} notes will move to Uncategorized."
 msgstr "¿Eliminar la categoría «{name}»? Sus {count} notas pasarán a «Sin categoría»."
 
-msgid "Choose whether to protect the exported notes with a password."
-msgstr "Elige si quieres proteger las notas exportadas con una contraseña."
+msgid "Choose how the exported notes file will be protected."
+msgstr "Elige cómo se protegerá el fichero de notas exportado."
 
-msgid "Export without password"
-msgstr "Exportar sin contraseña"
+msgid "Export without a password (plain text)"
+msgstr "Exportar sin contraseña (texto plano)"
 
-msgid "Export with password"
-msgstr "Exportar con contraseña"
+msgid "The file will not be encrypted. Anyone who can access it can read the notes."
+msgstr "El fichero no se cifrará. Cualquiera que tenga acceso podrá leer las notas."
+
+msgid "Encrypt export with a password"
+msgstr "Cifrar la exportación con una contraseña"
+
+msgid "The file will be encrypted. You will need this password to import it."
+msgstr "El fichero se cifrará. Necesitarás esta contraseña para importarlo."
+
+msgid "Continue"
+msgstr "Continuar"
 
 msgid "Password"
 msgstr "Contraseña"

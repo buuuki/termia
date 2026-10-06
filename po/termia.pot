@@ -204,6 +204,7 @@ msgstr ""
 #: src/termia/i18n.py:sftp_continue
 #: src/termia/i18n.py:continue
 #: src/termia/i18n.py:send_files_to_server_password_confirm
+#: src/termia/i18n.py:notes_export_continue
 msgid "Continue"
 msgstr ""
 
@@ -1851,15 +1852,23 @@ msgid "Delete category “{name}”? Its {count} notes will move to Uncategorize
 msgstr ""
 
 #: src/termia/i18n.py:notes_export_protection
-msgid "Choose whether to protect the exported notes with a password."
+msgid "Choose how the exported notes file will be protected."
 msgstr ""
 
 #: src/termia/i18n.py:notes_export_plain
-msgid "Export without password"
+msgid "Export without a password (plain text)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_plain_detail
+msgid "The file will not be encrypted. Anyone who can access it can read the notes."
 msgstr ""
 
 #: src/termia/i18n.py:notes_export_password
-msgid "Export with password"
+msgid "Encrypt export with a password"
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_password_detail
+msgid "The file will be encrypted. You will need this password to import it."
 msgstr ""
 
 #: src/termia/i18n.py:notes_import_password

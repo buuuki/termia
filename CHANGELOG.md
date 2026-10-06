@@ -12,6 +12,9 @@
   (`#289`).
 - Keep notes search, category controls, creation, and available import/export
   actions together on one toolbar row (`#289`).
+- Explain plain-text and password-encrypted note exports directly in the export
+  choice, and clarify that the export password is separate from local storage
+  protection (`#289`).
 
 ### Added
 
