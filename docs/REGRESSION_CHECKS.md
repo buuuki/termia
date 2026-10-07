@@ -236,30 +236,92 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   the same selected mode and master password.
 - The notes workspace must be modeless and reusable: keep it open while
   switching focus to and typing in an embedded or detached terminal.
+- The notes window must provide normal minimize, maximize, and close controls.
+- Notes must autosave non-empty text changes without a separate autosave
+  preference. A completely empty draft must not be persisted. If an existing
+  note is emptied, its prior saved content must remain intact until an explicit
+  non-empty edit is saved or the note is deleted.
+- Keep the notes-list toggle and category-management gear together in the
+  top-left toolbar, outside the collapsible pane. Hiding the list must remove
+  the pane entirely, and restoring it must return it to its previous width.
+  Place global search above the category-grouped note tree in the sidebar; it
+  must search across all categories, and there must be no category filter
+  dropdown. Keep Create and the Import/Export menu in the top toolbar, with the
+  overflow menu at the far right and hidden for server-scoped notes. The server
+  server associations must remain intact when editing saved notes.
+- Category groups in the note list must be expandable/collapsible folder rows
+  and valid drag-and-drop targets for notes. Dropping a note onto a category
+  must update its stored category and any open editor tabs for that note; the
+  Uncategorized group must support dropping notes out of a named category.
+  Show persistent empty categories in the general view and an Uncategorized
+  group when needed; show only groups containing matches during search. New
+  notes must be named “New note” without an identifier; existing
+  note titles and category/server associations must be preserved. Keep the tab
+  bar and editor aligned when the sidebar is hidden. Tab close icons must appear
+  inside the tab card and remain independently clickable.
+- Note editors must support multiple open tabs. New notes must be named exactly
+  “New note” without a generated identifier. The active tab must have the
+  same visible focus highlight as a terminal tab; tabs must be reorderable by
+  dragging without changing note content or saved associations. Right-click an
+  open tab and a note in the sidebar; each menu must offer Rename, and renaming
+  must persist while updating all open tabs for the same note. Opening a note
+  already in a tab
+  must activate that tab rather than opening a duplicate. Switching tabs must
+  preserve each note's title, content, category, server association, and dirty
+  state; autosave and explicit Save must only affect the intended note. Closing
+  an incomplete unsaved draft must require confirmation. Closing a clean tab
+  using its close icon must close only that tab, including immediately after
+  saving; closing a dirty tab must offer Save and close,
+  Close without saving, and Keep editing. Switching between unsaved draft tabs
+  when the persisted note list is empty must keep the newly selected editor
+  visible without requiring a second click.
 - Main-menu notes management must show all notes, a search field wide enough
   for roughly 30 letters, import/export actions, and a read-only preview of
   the most recently modified note. The form appears only for Create/Edit.
   Server-context notes must list only that server's notes, initially preview
   its most recently modified note, and hide Import, Export, and Show all notes.
-  In both views, search, category filter, category management, and Create must
-  share one row; Import and Export appear at the far right only in the general
-  view, while Create is the rightmost button in the server view.
+  Search belongs above the note tree in the sidebar. Category management stays
+  beside the list toggle, while Create and the far-right overflow menu remain
+  in the top toolbar; the overflow menu is visible only in the general view.
   Creating from that view must preselect the server. Empty views must show a
   useful message instead of a disabled editor.
 - Verify standalone notes and server-linked notes can be created, searched,
-  categorized, edited, and deleted. Empty categories persist; duplicate
+  edited, and deleted. Existing categories persist; duplicate
   categories duplicate their notes with new IDs; deleting a category moves its
   notes to Uncategorized.
 - Right-click notes in the list and confirm the menu offers Edit, Clone, and
   Delete. Clone a note and verify the copy has a new identity, a “(copy)” title
   suffix, the same content/category/server association, and is saved immediately.
+- Toggle the notes list off and on; verify the toggle and gear remain available
+  while hidden, the list pane disappears completely, and restoring it returns
+  the previous list width. Confirm the overflow menu is at the far right,
+  contains Import and Export in the general view, and is hidden in server-scoped
+  notes. Confirm the gear opens category management. With several notes, verify the
+  list fills the panel height and shows multiple rows before scrolling. Open
+  two existing notes and one draft in tabs; verify the close icon is visually
+  inside each tab and works independently. Switch among the tabs while editing,
+  reorder them by dragging, and verify each retains its own content. Confirm
+  opening an already open note activates its existing tab, and Save/autosave
+  affect only that note. Closing a clean tab must close only that tab. Close a
+  dirty tab and test Save and close, Close without saving, and Keep editing.
+  Confirm the active tab highlight follows the selected note. With no saved
+  notes, switch between multiple unsaved drafts and verify each editor appears
+  on the first click. Hide the sidebar and verify the tab row and text editor
+  share the same left edge.
   While editing one note, right-click another and confirm edits are saved before
   its context menu opens and the clicked note remains selected.
 - Edit an existing note and create a new note; confirm autosave status and
   modified timestamp update, and that the list sorts by most recently modified.
+  Confirm new notes are named “New note”, and there are no title,
+  category, server, or autosave-toggle controls in the editor. Start typing and
+  verify content saves automatically. Leave a new draft empty and verify no
+  record is created. Empty an existing note and verify its previous saved text
+  remains until explicitly deleted or non-empty content is restored.
+  Drag a note onto another category and onto Uncategorized; verify list grouping
+  updates and an already-open editor keeps the new category after autosaving.
   Confirm the explicit Save button persists server-linked notes even before the
-  autosave delay. Close an incomplete draft and confirm Keep editing preserves
-  it while Discard changes closes the window without saving it.
+  autosave delay. Close an incomplete draft tab and confirm Keep editing
+  preserves it while Close without saving removes only that draft.
   Open server notes from a sidebar context menu and confirm the notes window
   receives focus after the popover closes and remains modeless.
   The selected note-category highlight must stay inside the rounded tile,

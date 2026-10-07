@@ -6,12 +6,35 @@
 
 - Mark source checkouts on the active development line as
   `0.6.0-beta.4-dev` (`#297`).
+- Allow the notes list to collapse, keep multiple note editors open in tabs,
+  preserve the active editor when its note list is empty, retain server
+  associations, and let the list fill the available vertical space (`#289`).
 - Open notes in a scoped list-and-read-only-preview view, showing the most
   recently modified note first; reserve the editor for Create/Edit, keep
   import/export in the general manager, and size note search for useful text
   (`#289`).
-- Keep notes search, category controls, creation, and available import/export
-  actions together on one toolbar row (`#289`).
+- Put note search above the sidebar's category groups and keep the management
+  gear beside the list toggle; keep Create and the Import/Export overflow menu
+  in the top toolbar, with the overflow menu at the far right (`#289`).
+- Move the notes-list toggle outside the collapsible pane so hiding the list
+  removes it completely while leaving the toggle and management gear accessible
+  (`#289`).
+- Group notes under expandable category folders, search across all categories,
+  and align the note-tab bar with its editor when the list is hidden (`#289`).
+- Replace note titles and metadata selectors in the editor with an automatically
+  named draft and a plain text area; save non-empty edits automatically, while
+  leaving empty drafts unpersisted (`#289`).
+- Highlight the active note tab and allow open note tabs to be reordered by
+  dragging, matching terminal-tab behavior (`#289`).
+- Name new notes “New note” without an identifier; allow renaming from note
+  tabs and list context menus, and move notes between categories by dragging
+  them onto category folders (`#289`).
+- Integrate note-tab close icons into the tab card, matching terminal tabs
+  (`#289`).
+- Always autosave non-empty note edits; close saved note tabs immediately, and
+  ask whether to save or discard when closing a modified tab.
+  Remove the Done action and give the modeless notes window normal window
+  controls (`#289`).
 - Explain plain-text and password-encrypted note exports directly in the export
   choice, and clarify that the export password is separate from local storage
   protection (`#289`).
@@ -28,6 +51,8 @@
 
 - Show the export/import password prompt correctly with GTK 4 password fields
   instead of calling an unsupported placeholder method (`#289`).
+- Keep note-tab close controls independently clickable after saving by avoiding
+  nested GTK buttons (`#289`).
 - Keep server-note opening responsive, add an explicit Save action and safe
   discard for incomplete drafts, and confine note-category selection to its
   rounded tile; keep custom/test notes files beside their connection files

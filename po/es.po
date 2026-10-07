@@ -1856,6 +1856,21 @@ msgstr "Gestionar notas"
 msgid "Notes"
 msgstr "Notas"
 
+msgid "Hide note list"
+msgstr "Ocultar lista de notas"
+
+msgid "Show note list"
+msgstr "Mostrar lista de notas"
+
+msgid "New note"
+msgstr "Nota nueva"
+
+msgid "Close note tab"
+msgstr "Cerrar pestaña de nota"
+
+msgid "Import or export notes"
+msgstr "Importar o exportar notas"
+
 msgid "Search notes"
 msgstr "Buscar notas"
 
@@ -1871,6 +1886,18 @@ msgstr "Crear nota del servidor"
 msgid "Edit note"
 msgstr "Editar nota"
 
+msgid "Rename note"
+msgstr "Renombrar nota"
+
+msgid "The note name cannot be empty."
+msgstr "El nombre de la nota no puede estar vacío."
+
+msgid "Note renamed."
+msgstr "Nota renombrada."
+
+msgid "Moved note to {category}."
+msgstr "Nota movida a {category}."
+
 msgid "Clone note"
 msgstr "Clonar nota"
 
@@ -1880,8 +1907,14 @@ msgstr " (copia)"
 msgid "Note cloned."
 msgstr "Nota clonada."
 
-msgid "Done"
-msgstr "Terminar"
+msgid "This note has unsaved changes. What would you like to do?"
+msgstr "Esta nota tiene cambios sin guardar. ¿Qué quieres hacer?"
+
+msgid "Save and close"
+msgstr "Guardar y cerrar"
+
+msgid "Close without saving"
+msgstr "Cerrar sin guardar"
 
 msgid "Export notes…"
 msgstr "Exportar notas…"
@@ -1906,9 +1939,6 @@ msgstr "Notas personales"
 
 msgid "Notes for {name}"
 msgstr "Notas de {name}"
-
-msgid "Note title"
-msgstr "Título de la nota"
 
 msgid "Modified {date}"
 msgstr "Modificada {date}"
@@ -1937,11 +1967,11 @@ msgstr "No se pudo guardar la nota. Los cambios siguen en el editor; comprueba l
 msgid "Select a note or create one."
 msgstr "Selecciona una nota o crea una nueva."
 
-msgid "Enter a title and note text to save."
-msgstr "Escribe un título y el texto de la nota para guardarla."
+msgid "Start typing. Changes are saved automatically."
+msgstr "Empieza a escribir. Los cambios se guardan automáticamente."
 
-msgid "A title and note text are required."
-msgstr "Se necesitan un título y el texto de la nota."
+msgid "Empty notes are not saved."
+msgstr "Las notas vacías no se guardan."
 
 msgid "Discard unsaved note changes?"
 msgstr "¿Descartar los cambios no guardados de la nota?"

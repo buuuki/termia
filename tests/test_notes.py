@@ -13,7 +13,7 @@ from termia.config_io import (
 )
 from termia.models import Note
 from termia.notes import NoteError, normalize_note, note_matches_query
-from termia.notes_dialogs import NotesDialogs
+from termia.notes_dialogs import Gtk, NoteEditorTab, NotesDialogs
 from termia.notes_io import (
     export_notes_file,
     import_notes_file,
@@ -47,6 +47,512 @@ class NotesDomainTests(unittest.TestCase):
 
 
 class NotesDialogSignalTests(unittest.TestCase):
+    def test_closing_clean_editor_tab_removes_only_that_tab(self):
+        tab = NoteEditorTab("note-id", "note-id", "Runbook", "", None, "Saved")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_tabs = {tab.key: tab}
+        removed = []
+        dialog.remove_editor_tab = removed.append
+
+        dialog.close_editor_tab(tab.key)
+
+        self.assertEqual(removed, [tab.key])
+
+    def test_remove_editor_tab_removes_its_outer_tab_container(self):
+        tab = NoteEditorTab("note-id", "note-id", "Runbook", "", None, "Saved")
+        removed = []
+
+        class Container:
+            parent = None
+
+            def get_parent(self):
+                return self.parent
+
+        container = Container()
+
+        class TabBar:
+            def remove(self, widget):
+                removed.append(widget)
+                widget.parent = None
+
+        tab.container_widget = container
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.active_editor_tab_key = "another-tab"
+        dialog.editor_tabs_bar = TabBar()
+        container.parent = dialog.editor_tabs_bar
+
+        dialog.remove_editor_tab(tab.key)
+
+        self.assertEqual(removed, [container])
+        self.assertEqual(dialog.editor_tabs, {})
+
+    def test_closing_dirty_editor_tab_offers_save_discard_or_keep(self):
+        tab = NoteEditorTab("draft-1", None, "Draft", "", None, "Unsaved", dirty=True)
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.active_editor_tab_key = None
+        dialog.translate = lambda key: key
+        dialog.window = object()
+        selected = []
+
+        class Alert:
+            def __init__(self, message):
+                selected.append(("message", message))
+
+            def set_buttons(self, buttons):
+                selected.append(("buttons", buttons))
+
+            def set_cancel_button(self, index):
+                selected.append(("cancel", index))
+
+            def set_default_button(self, index):
+                selected.append(("default", index))
+
+            def choose(self, parent, _cancellable, callback, key):
+                selected.append(("choose", parent, callback, key))
+
+        with patch("termia.notes_dialogs.Gtk.AlertDialog", Alert):
+            dialog.close_editor_tab(tab.key)
+
+        self.assertEqual(selected[0], ("message", "notes_close_unsaved_message"))
+        self.assertEqual(selected[1], (
+            "buttons", ["notes_save_and_close", "notes_close_without_saving", "notes_keep_editing"]
+        ))
+        self.assertEqual(selected[2], ("cancel", 2))
+        self.assertEqual(selected[3], ("default", 2))
+        self.assertEqual(selected[4][0], "choose")
+        self.assertIs(selected[4][2].__func__, NotesDialogs.on_close_editor_tab_response)
+        self.assertEqual(selected[4][3], tab.key)
+
+    def test_close_tab_responses_route_to_save_discard_or_keep(self):
+        for response, expected in ((0, "save"), (1, "discard"), (2, "keep")):
+            with self.subTest(response=response):
+                dialog = NotesDialogs.__new__(NotesDialogs)
+                calls = []
+
+                class Alert:
+                    def choose_finish(self, _result):
+                        return response
+
+                dialog.save_editor_tab_and_close = lambda key: calls.append(("save", key))
+                dialog.remove_editor_tab = lambda key: calls.append(("discard", key))
+                dialog.on_close_editor_tab_response(Alert(), None, "note-id")
+
+                self.assertEqual(calls, [] if expected == "keep" else [(expected, "note-id")])
+
+    def test_save_and_close_persists_inactive_draft_before_removing_tab(self):
+        note = Note("saved-id", "Draft", "Content", "Ops", "server-id", "created", "modified")
+        tab = NoteEditorTab("draft-1", None, "Draft", "Ops", "server-id", "Content", dirty=True)
+        added = []
+        removed = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.active_editor_tab_key = None
+        dialog.current_note_id = None
+        dialog.editor_dirty = False
+        dialog.selected_note_id = None
+        dialog.store = SimpleNamespace(add_note=lambda *args: (added.append(args), note)[1])
+        dialog.translate = lambda key: key
+        dialog.find_note = lambda note_id: note if note_id == note.id else None
+        dialog.update_editor_tab_label = lambda _tab: None
+        dialog.refresh_list = lambda note_id: None
+        dialog.remove_editor_tab = removed.append
+
+        dialog.save_editor_tab_and_close(tab.key)
+
+        self.assertEqual(added, [("Draft", "Content", "Ops", "server-id")])
+        self.assertEqual(tab.note_id, note.id)
+        self.assertFalse(tab.dirty)
+        self.assertEqual(dialog.selected_note_id, note.id)
+        self.assertEqual(removed, [tab.key])
+
+    def test_editor_autosaves_nonempty_content_without_a_title_field(self):
+        calls = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.loading_editor = False
+        dialog.editor_dirty = False
+        dialog.editor_content = lambda: "Some note text"
+        dialog.status_label = SimpleNamespace(set_label=lambda _value: None)
+        dialog.translate = lambda key: key
+        dialog.cancel_autosave = lambda: calls.append("cancel")
+        dialog.schedule_autosave = lambda: calls.append("schedule")
+        dialog.capture_active_editor_tab = lambda: calls.append("capture")
+
+        dialog.on_editor_changed()
+
+        self.assertEqual(calls, ["schedule", "capture"])
+        self.assertTrue(dialog.editor_dirty)
+
+    def test_empty_editor_is_not_saved(self):
+        calls = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.loading_editor = False
+        dialog.editor_dirty = False
+        dialog.editor_content = lambda: "   "
+        dialog.status_label = SimpleNamespace(set_label=calls.append)
+        dialog.translate = lambda key: key
+        dialog.cancel_autosave = lambda: calls.append("cancel")
+        dialog.schedule_autosave = lambda: calls.append("schedule")
+        dialog.capture_active_editor_tab = lambda: calls.append("capture")
+
+        dialog.on_editor_changed()
+
+        self.assertEqual(calls, ["cancel", "notes_empty_not_saved", "capture"])
+        self.assertTrue(dialog.editor_dirty)
+
+    def test_notes_list_toggle_updates_icon_and_tooltip(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        calls = []
+        dialog.notes_list_visible = True
+        dialog.translate = lambda key: key
+        dialog.toggle_notes_list_button = SimpleNamespace(
+            set_icon_name=lambda name: calls.append(("icon", name)),
+            set_tooltip_text=lambda text: calls.append(("tooltip", text)),
+        )
+
+        dialog.update_notes_list_toggle()
+        dialog.notes_list_visible = False
+        dialog.update_notes_list_toggle()
+
+        self.assertEqual(calls, [
+            ("icon", "sidebar-hide-symbolic"), ("tooltip", "notes_hide_list"),
+            ("icon", "sidebar-show-symbolic"), ("tooltip", "notes_show_list"),
+        ])
+
+    def test_notes_list_toggle_removes_start_pane_completely_and_restores_it(self):
+        children = []
+
+        class Paned:
+            position = 352
+
+            def get_position(self):
+                return self.position
+
+            def set_start_child(self, child):
+                children.append(child)
+
+            def set_position(self, position):
+                self.position = position
+
+        panel = object()
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = True
+        dialog.notes_list_width = 330
+        dialog.notes_list_paned = Paned()
+        dialog.notes_list_panel = panel
+        dialog.update_notes_list_toggle = lambda: None
+
+        dialog.toggle_notes_list()
+        self.assertEqual(children, [None])
+        self.assertFalse(dialog.notes_list_visible)
+        self.assertEqual(dialog.notes_list_width, 352)
+
+        dialog.toggle_notes_list()
+        self.assertEqual(children, [None, panel])
+        self.assertTrue(dialog.notes_list_visible)
+        self.assertEqual(dialog.notes_list_paned.position, 352)
+
+    def test_import_export_menu_is_hidden_for_server_scoped_notes(self):
+        visibility = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.import_button = SimpleNamespace(set_visible=lambda value: visibility.append(("import", value)))
+        dialog.export_button = SimpleNamespace(set_visible=lambda value: visibility.append(("export", value)))
+        dialog.import_export_menu_button = SimpleNamespace(
+            set_visible=lambda value: visibility.append(("menu", value))
+        )
+
+        dialog.set_import_export_actions_visible(False)
+        dialog.set_import_export_actions_visible(True)
+
+        self.assertEqual(visibility, [
+            ("import", False), ("export", False), ("menu", False),
+            ("import", True), ("export", True), ("menu", True),
+        ])
+
+    def test_import_export_action_closes_popover_before_dispatch(self):
+        calls = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.import_export_popover = SimpleNamespace(popdown=lambda: calls.append("closed"))
+        action = lambda: calls.append("action")
+
+        with patch("termia.notes_dialogs.GLib.idle_add", side_effect=lambda callback: calls.append(callback)):
+            dialog.run_import_export_action(action)
+
+        self.assertEqual(calls, ["closed", action])
+
+    def test_capture_active_editor_tab_preserves_generated_metadata(self):
+        tab = NoteEditorTab("draft-1", None, "New note 12345678", "", None, "")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.active_editor_tab_key = "draft-1"
+        dialog.editor_tabs = {"draft-1": tab}
+        dialog.current_note_id = "saved-id"
+        dialog.editor_dirty = True
+        dialog.editor_content = lambda: "Restart service"
+        dialog.status_label = SimpleNamespace(get_label=lambda: "Saving…")
+        dialog.update_editor_tab_label = lambda _tab: None
+
+        dialog.capture_active_editor_tab()
+
+        self.assertEqual(
+            (tab.note_id, tab.title, tab.category, tab.server_id, tab.content, tab.dirty, tab.status),
+            ("saved-id", "New note 12345678", "", None, "Restart service", True, "Saving…"),
+        )
+
+    def test_active_note_tab_gets_terminal_style_highlight(self):
+        class TabContainer:
+            def __init__(self):
+                self.classes = set()
+
+            def add_css_class(self, name):
+                self.classes.add(name)
+
+            def remove_css_class(self, name):
+                self.classes.discard(name)
+
+        class Label:
+            def set_label(self, _value):
+                pass
+
+        first = NoteEditorTab("one", "one", "First", "", None, "")
+        second = NoteEditorTab("two", "two", "Second", "", None, "")
+        first.container_widget = TabContainer()
+        second.container_widget = TabContainer()
+        first.label_widget = Label()
+        second.label_widget = Label()
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.active_editor_tab_key = "two"
+        dialog.translate = lambda key: key
+
+        dialog.update_editor_tab_label(first)
+        dialog.update_editor_tab_label(second)
+
+        self.assertNotIn("active", first.container_widget.classes)
+        self.assertIn("active", second.container_widget.classes)
+
+    def test_new_note_uses_plain_name_and_inherits_server_scope(self):
+        created = []
+        activated = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.translate = lambda _key: "New note"
+        dialog.server_filter_id = "server-id"
+        dialog.add_editor_tab = created.append
+        dialog.activate_editor_tab = activated.append
+        dialog.notes_list = SimpleNamespace(unselect_all=lambda: None)
+
+        dialog.create_editor_tab()
+
+        self.assertEqual(len(created), 1)
+        self.assertEqual(created[0].title, "New note")
+        self.assertEqual(created[0].category, "")
+        self.assertEqual(created[0].server_id, "server-id")
+        self.assertEqual(activated, [created[0].key])
+
+    def test_moving_note_updates_category_and_open_tabs(self):
+        note = normalize_note("note-id", "Runbook", "Restart", "Ops", "server-id")
+        moved = []
+        refreshed = []
+        toasts = []
+        tabs = [
+            NoteEditorTab("tab-one", note.id, note.title, note.category, note.server_id, note.content),
+            NoteEditorTab("tab-two", note.id, note.title, note.category, note.server_id, note.content),
+        ]
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.ensure_writable = lambda: True
+        dialog.save_active_editor_if_valid = lambda: True
+        dialog.editor_dirty = False
+        dialog.store = SimpleNamespace(
+            data=SimpleNamespace(note_categories=["Ops", "Personal"]),
+            update_note=lambda *args: (
+                moved.append(args), setattr(note, "category", args[3])
+            ),
+        )
+        dialog.find_note = lambda note_id: note if note_id == note.id else None
+        dialog.editor_tabs = {tab.key: tab for tab in tabs}
+        dialog.current_note_id = None
+        dialog.refresh_list = refreshed.append
+        dialog.translate = lambda key: key
+        dialog.show_toast = toasts.append
+        dialog.show_error = lambda message: self.fail(message)
+
+        self.assertTrue(dialog.move_note_to_category(note.id, "Personal"))
+
+        self.assertEqual(moved, [(note.id, "Runbook", "Restart", "Personal", "server-id")])
+        self.assertEqual([tab.category for tab in tabs], ["Personal", "Personal"])
+        self.assertEqual(refreshed, [note.id])
+        self.assertEqual(toasts, ["notes_moved_to_category"])
+
+    def test_persisting_note_rename_updates_open_tabs_and_list(self):
+        note = normalize_note("note-id", "Old title", "Body", "Ops", "server-id")
+        updates = []
+        refreshed = []
+        tabs = [
+            NoteEditorTab("tab-one", note.id, note.title, note.category, note.server_id, note.content),
+            NoteEditorTab("tab-two", note.id, note.title, note.category, note.server_id, note.content),
+        ]
+        labels = []
+        toasts = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(
+            update_note=lambda *args: (
+                updates.append(args), setattr(note, "title", args[1])
+            ),
+        )
+        dialog.find_note = lambda note_id: note if note_id == note.id else None
+        dialog.editor_tabs = {tab.key: tab for tab in tabs}
+        dialog.update_editor_tab_label = lambda tab: labels.append((tab.key, tab.title))
+        dialog.refresh_list = refreshed.append
+        dialog.detail_stack = SimpleNamespace(get_visible_child_name=lambda: "editor")
+        dialog.selected_note_id = note.id
+        dialog.translate = lambda key: key
+        dialog.show_toast = toasts.append
+        dialog.show_error = lambda message: self.fail(message)
+
+        dialog.persist_note_title(note, "New title")
+
+        self.assertEqual(updates, [(note.id, "New title", "Body", "Ops", "server-id")])
+        self.assertEqual([tab.title for tab in tabs], ["New title", "New title"])
+        self.assertEqual(len(labels), 2)
+        self.assertEqual(refreshed, [note.id])
+        self.assertEqual(toasts, ["notes_renamed"])
+
+    def test_renaming_a_draft_with_text_schedules_autosave(self):
+        tab = NoteEditorTab("draft-one", None, "New note", "", None, "Text")
+        calls = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.active_editor_tab_key = tab.key
+        dialog.ensure_writable = lambda: True
+        dialog.schedule_autosave = lambda: calls.append("schedule")
+        dialog.update_editor_tab_label = lambda _tab: calls.append("label")
+        dialog.show_error = lambda message: self.fail(message)
+
+        class Entry:
+            def get_text(self):
+                return "Runbook"
+
+        class RenameDialog:
+            def destroy(self):
+                pass
+
+        dialog.on_editor_tab_rename_response(
+            RenameDialog(), Gtk.ResponseType.OK, Entry(), tab.key
+        )
+
+        self.assertEqual(tab.title, "Runbook")
+        self.assertTrue(tab.dirty)
+        self.assertEqual(calls, ["schedule", "label"])
+
+    def test_editor_tab_order_tracks_visual_order(self):
+        first = NoteEditorTab("one", "one", "First", "", None, "")
+        second = NoteEditorTab("two", "two", "Second", "", None, "")
+
+        class Child:
+            def __init__(self, next_child=None):
+                self.next_child = next_child
+
+            def get_next_sibling(self):
+                return self.next_child
+
+        visual_first, visual_second = Child(), Child()
+        visual_first.next_child = visual_second
+        first.container_widget = visual_second
+        second.container_widget = visual_first
+
+        class TabBar:
+            def get_first_child(self):
+                return visual_first
+
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_tabs = {first.key: first, second.key: second}
+        dialog.editor_tabs_bar = TabBar()
+
+        dialog.sync_editor_tab_order()
+
+        self.assertEqual(list(dialog.editor_tabs), ["two", "one"])
+
+    def test_empty_existing_note_is_not_written_over(self):
+        calls = []
+        tab = NoteEditorTab("note-id", "note-id", "Saved title", "Ops", "server", "")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.active_editor_tab_key = tab.key
+        dialog.current_note_id = tab.note_id
+        dialog.editor_dirty = True
+        dialog.autosave_id = None
+        dialog.editor_content = lambda: "  "
+        dialog.status_label = SimpleNamespace(set_label=calls.append)
+        dialog.translate = lambda key: key
+        dialog.store = SimpleNamespace(update_note=lambda *_args: self.fail("empty note was saved"))
+
+        self.assertTrue(dialog.save_editor())
+        self.assertEqual(calls, ["notes_empty_not_saved"])
+
+    def test_opening_a_note_already_in_a_tab_activates_it_without_duplicating(self):
+        note = Note("note-id", "Runbook", "Restart service", "Ops", "server-id", "created", "modified")
+        tab = NoteEditorTab("note-id", "note-id", "Runbook", "Ops", "server-id", "Restart service")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.ensure_writable = lambda: True
+        dialog.editor_tabs = {"note-id": tab}
+        activated = []
+        dialog.activate_editor_tab = activated.append
+
+        dialog.load_editor(note)
+
+        self.assertEqual(activated, ["note-id"])
+        self.assertEqual(len(dialog.editor_tabs), 1)
+
+    def test_empty_list_refresh_does_not_hide_active_editor_tab(self):
+        empty_state_calls = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list = SimpleNamespace(
+            get_first_child=lambda: None,
+        )
+        dialog.scope_bar = SimpleNamespace(set_visible=lambda _visible: None)
+        dialog.server_filter_id = None
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+        dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=[], servers=[]))
+        dialog.collapsed_note_categories = set()
+        dialog.presenter = SimpleNamespace(items=lambda *_args: [])
+        dialog.detail_stack = SimpleNamespace(get_visible_child_name=lambda: "editor")
+        dialog.selected_note_id = None
+        dialog.close_note_context_menu = lambda: None
+        dialog.show_empty_state = lambda: empty_state_calls.append(True)
+
+        dialog.refresh_list()
+
+        self.assertEqual(empty_state_calls, [])
+
+    def test_note_groups_include_empty_categories_and_uncategorized_notes(self):
+        notes = [
+            normalize_note("one", "Runbook", "Restart", "Operations"),
+            normalize_note("two", "Ideas", "Draft", "Personal"),
+            normalize_note("three", "Loose note", "Remember this"),
+        ]
+        items = [SimpleNamespace(note=note) for note in notes]
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(
+            data=SimpleNamespace(note_categories=["Personal", "Empty", "Operations"])
+        )
+
+        groups = dialog.group_note_items(items, include_empty_categories=True)
+
+        self.assertEqual([name for name, _items in groups], ["Empty", "Operations", "Personal", ""])
+        self.assertEqual([len(group_items) for _name, group_items in groups], [0, 1, 1, 1])
+
+    def test_note_search_grouping_only_keeps_categories_with_matches(self):
+        note = normalize_note("one", "Runbook", "Restart", "Operations")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(
+            data=SimpleNamespace(note_categories=["Operations", "Empty"])
+        )
+
+        groups = dialog.group_note_items(
+            [SimpleNamespace(note=note)], include_empty_categories=False
+        )
+
+        self.assertEqual([name for name, _items in groups], ["Operations"])
+
     def test_clone_note_copies_content_category_and_server_with_new_identity(self):
         original = Note("source", "Runbook", "Restart service", "Operations", "server-id", "created", "modified")
         cloned = Note("copy-id", "Runbook (copy)", "Restart service", "Operations", "server-id", "created-copy", "modified-copy")
@@ -64,8 +570,8 @@ class NotesDialogSignalTests(unittest.TestCase):
             "notes_clone_suffix": " (copy)",
             "notes_clone_success": "Note cloned.",
         }[key]
-        dialog.refresh_category_filter = lambda: None
         dialog.refresh_list = lambda note_id: refreshed.append(note_id)
+        dialog.show_note_preview = lambda _note: None
         dialog.show_toast = messages.append
         dialog.show_error = lambda _message: self.fail("clone unexpectedly failed")
 
@@ -75,7 +581,7 @@ class NotesDialogSignalTests(unittest.TestCase):
             calls,
             [("Runbook (copy)", "Restart service", "Operations", "server-id")],
         )
-        self.assertEqual(dialog.current_note_id, cloned.id)
+        self.assertEqual(dialog.selected_note_id, cloned.id)
         self.assertEqual(refreshed, [cloned.id])
         self.assertEqual(messages, ["Note cloned."])
 
@@ -132,37 +638,30 @@ class NotesDialogSignalTests(unittest.TestCase):
         )
         dialog.translate = lambda key: key
         dialog.current_note_id = None
-        dialog.category_filter = None
         dialog.server_filter_id = None
         dialog.loading_editor = False
-        dialog.loading_filters = False
         dialog.loading_search = False
         dialog.editor_dirty = False
         dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
         dialog.add_button = SimpleNamespace(set_label=lambda _text: None)
         dialog.import_button = SimpleNamespace(set_visible=lambda _visible: None)
         dialog.export_button = SimpleNamespace(set_visible=lambda _visible: None)
-        dialog.category_combo = EmittingCombo(dialog.on_editor_changed)
-        dialog.server_combo = EmittingCombo(dialog.on_editor_changed)
-        dialog.category_filter_combo = EmittingCombo(dialog.on_category_filter_changed)
+        dialog.import_export_menu_button = SimpleNamespace(set_visible=lambda _visible: None)
         dialog.refresh_list = lambda *_args: None
         dialog.save_editor = lambda: False
         presented = []
         dialog.window = SimpleNamespace(present=lambda: presented.append(True))
-        dialog.ensure_window = lambda: (
-            dialog.refresh_category_selector(), dialog.refresh_server_selector()
-        )
+        dialog.ensure_window = lambda: None
 
         dialog.show_manager()
 
         self.assertEqual(presented, [True])
         self.assertFalse(dialog.editor_dirty)
 
-    def test_incomplete_draft_waits_for_both_title_and_text(self):
+    def test_empty_draft_waits_until_text_exists_before_autosaving(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.loading_editor = False
         dialog.editor_dirty = False
-        dialog.title_entry = SimpleNamespace(get_text=lambda: "Runbook")
         dialog.editor_content = lambda: ""
         dialog.status_label = SimpleNamespace(set_label=lambda _text: None)
         dialog.translate = lambda key: key
@@ -200,31 +699,31 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.ensure_window = lambda: None
         dialog.editor_dirty = False
         dialog.current_note_id = "previous-note"
-        dialog.category_filter = "Previous"
         dialog.loading_search = False
         dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
-        dialog.refresh_category_filter = lambda: None
-        dialog.refresh_server_selector = lambda: None
         views = []
         dialog.refresh_list = lambda: views.append(dialog.server_filter_id)
         dialog.add_button = SimpleNamespace(set_label=lambda _label: None)
         import_visibility = []
         export_visibility = []
+        menu_visibility = []
         dialog.import_button = SimpleNamespace(set_visible=import_visibility.append)
         dialog.export_button = SimpleNamespace(set_visible=export_visibility.append)
+        dialog.import_export_menu_button = SimpleNamespace(set_visible=menu_visibility.append)
         dialog.window = SimpleNamespace(present=lambda: None)
 
         dialog.show_manager("server-id")
         self.assertEqual(views, ["server-id"])
         self.assertIsNone(dialog.current_note_id)
-        self.assertIsNone(dialog.category_filter)
         self.assertEqual(import_visibility, [False])
         self.assertEqual(export_visibility, [False])
+        self.assertEqual(menu_visibility, [False])
 
         dialog.show_manager()
         self.assertEqual(views, ["server-id", None])
         self.assertEqual(import_visibility, [False, True])
         self.assertEqual(export_visibility, [False, True])
+        self.assertEqual(menu_visibility, [False, True])
 
     def test_note_preview_is_read_only_content_for_selected_note(self):
         note = Note("note-id", "Runbook", "Preview content", "Ops", "server-id", "", "2026-10-05")
@@ -244,7 +743,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         dialog.show_note_preview(note)
 
-        self.assertEqual(dialog.current_note_id, "note-id")
+        self.assertEqual(dialog.selected_note_id, "note-id")
         self.assertEqual(titles, ["Runbook"])
         self.assertEqual(contents, ["Preview content"])
         self.assertNotIn("Web", metadata[0])
@@ -293,13 +792,14 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         idle_add.assert_called_once_with(dialog._show_server_notes, "server-id")
 
-    def test_incomplete_draft_can_be_discarded_to_close_window(self):
+    def test_incomplete_draft_is_kept_when_hiding_reusable_notes_window(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.editor_dirty = True
         dialog.current_note_id = "existing-note"
         dialog.cancel_autosave = lambda: None
-        dialog.title_entry = SimpleNamespace(get_text=lambda: "Runbook")
+        dialog.text_view = object()
         dialog.editor_content = lambda: ""
+        dialog.capture_active_editor_tab = lambda: None
         prompted = []
         hidden = []
         cleared = []
@@ -308,12 +808,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.window = SimpleNamespace(set_visible=lambda visible: hidden.append(visible))
 
         self.assertTrue(dialog.on_close_request(dialog.window))
-        self.assertEqual(prompted, [True])
-        self.assertEqual(hidden, [])
-        dialog.on_discard_editor_response(SimpleNamespace(choose_finish=lambda _result: 1), None)
-        self.assertFalse(dialog.editor_dirty)
-        self.assertIsNone(dialog.current_note_id)
-        self.assertEqual(cleared, [True])
+        self.assertEqual(prompted, [])
+        self.assertTrue(dialog.editor_dirty)
+        self.assertEqual(cleared, [])
         self.assertEqual(hidden, [False])
 
 

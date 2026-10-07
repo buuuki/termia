@@ -1856,6 +1856,21 @@ msgstr "Gestiona les notes"
 msgid "Notes"
 msgstr "Notes"
 
+msgid "Hide note list"
+msgstr "Amaga la llista de notes"
+
+msgid "Show note list"
+msgstr "Mostra la llista de notes"
+
+msgid "New note"
+msgstr "Nota nova"
+
+msgid "Close note tab"
+msgstr "Tanca la pestanya de la nota"
+
+msgid "Import or export notes"
+msgstr "Importa o exporta les notes"
+
 msgid "Search notes"
 msgstr "Cerca notes"
 
@@ -1871,6 +1886,18 @@ msgstr "Crea una nota del servidor"
 msgid "Edit note"
 msgstr "Edita la nota"
 
+msgid "Rename note"
+msgstr "Canvia el nom de la nota"
+
+msgid "The note name cannot be empty."
+msgstr "El nom de la nota no pot estar buit."
+
+msgid "Note renamed."
+msgstr "S'ha canviat el nom de la nota."
+
+msgid "Moved note to {category}."
+msgstr "Nota moguda a {category}."
+
 msgid "Clone note"
 msgstr "Clona la nota"
 
@@ -1880,8 +1907,14 @@ msgstr " (còpia)"
 msgid "Note cloned."
 msgstr "Nota clonada."
 
-msgid "Done"
-msgstr "Fet"
+msgid "This note has unsaved changes. What would you like to do?"
+msgstr "Aquesta nota té canvis sense desar. Què vols fer?"
+
+msgid "Save and close"
+msgstr "Desa i tanca"
+
+msgid "Close without saving"
+msgstr "Tanca sense desar"
 
 msgid "Export notes…"
 msgstr "Exporta les notes…"
@@ -1906,9 +1939,6 @@ msgstr "Notes personals"
 
 msgid "Notes for {name}"
 msgstr "Notes de {name}"
-
-msgid "Note title"
-msgstr "Títol de la nota"
 
 msgid "Modified {date}"
 msgstr "Modificada {date}"
@@ -1937,11 +1967,11 @@ msgstr "No s'ha pogut desar la nota. Els canvis continuen a l'editor; comprova l
 msgid "Select a note or create one."
 msgstr "Selecciona una nota o crea'n una."
 
-msgid "Enter a title and note text to save."
-msgstr "Escriu un títol i el text de la nota per desar-la."
+msgid "Start typing. Changes are saved automatically."
+msgstr "Comença a escriure. Els canvis es desen automàticament."
 
-msgid "A title and note text are required."
-msgstr "Calen un títol i el text de la nota."
+msgid "Empty notes are not saved."
+msgstr "Les notes buides no es desen."
 
 msgid "Discard unsaved note changes?"
 msgstr "Voleu descartar els canvis no desats de la nota?"

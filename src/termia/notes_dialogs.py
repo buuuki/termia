@@ -2,20 +2,38 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import gi
 
 gi.require_version("Gio", "2.0")
+gi.require_version("Gdk", "4.0")
+gi.require_version("Graphene", "1.0")
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gio, GLib, Gtk
+from gi.repository import Gdk, Gio, GLib, Graphene, Gtk
 
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .models import Note
 from .notes import NoteError
 from .notes_io import export_notes_file, import_notes_file
 from .notes_presenter import NotesPresenter
+
+
+@dataclass
+class NoteEditorTab:
+    key: str
+    note_id: str | None
+    title: str
+    category: str
+    server_id: str | None
+    content: str
+    dirty: bool = False
+    status: str = ""
+    label_widget: Gtk.Label | None = None
+    container_widget: Gtk.Widget | None = None
 
 
 class NotesDialogs:
@@ -44,47 +62,53 @@ class NotesDialogs:
         self.category_window: Gtk.Window | None = None
         self.export_protection_window: Gtk.Window | None = None
         self.notes_context_popover: Gtk.Popover | None = None
+        self.tab_context_popover: Gtk.Popover | None = None
         self.current_note_id: str | None = None
+        self.selected_note_id: str | None = None
         self.server_filter_id: str | None = None
-        self.category_filter: str | None = None
         self.last_search_query = ""
         self.autosave_id: int | None = None
         self.loading_editor = False
-        self.loading_filters = False
         self.loading_search = False
         self.editor_dirty = False
         self.category_selected: str | None = None
         self.category_edit_mode: str | None = None
+        self.editor_tabs: dict[str, NoteEditorTab] = {}
+        self.active_editor_tab_key: str | None = None
+        self.loading_note_list = False
+        self.notes_list_visible = True
+        self.collapsed_note_categories: set[str] = set()
 
     def show_manager(self, server_id: str | None = None) -> None:
         if self.store.encryption_locked:
             self.ensure_writable()
             return
         self.ensure_window()
-        if self.editor_dirty and not self.save_editor():
+        if not self.save_active_editor_if_valid():
             self.window.present()
             return
         self.server_filter_id = server_id
-        self.current_note_id = None
-        self.category_filter = None
+        self.selected_note_id = None
+        if getattr(self, "active_editor_tab_key", None) is None:
+            self.current_note_id = None
         self.loading_search = True
         try:
             self.search_entry.set_text("")
         finally:
             self.loading_search = False
         self.last_search_query = ""
-        self.refresh_category_filter()
-        self.refresh_server_selector()
         self.add_button.set_label(self.translate("notes_create_for_server") if server_id else self.translate("notes_create"))
-        self.import_button.set_visible(server_id is None)
-        self.export_button.set_visible(server_id is None)
+        self.set_import_export_actions_visible(server_id is None)
         self.refresh_list()
         self.window.present()
 
     def ensure_window(self) -> None:
         if self.window is not None:
             return
-        window = Gtk.Window(title=self.translate("notes_title"), transient_for=self.parent)
+        window = Gtk.Window(
+            title=self.translate("notes_title"),
+            application=self.parent.get_application(),
+        )
         window.set_modal(False)
         window.set_default_size(1240, 660)
         window.add_css_class("termia-notes-window")
@@ -97,17 +121,12 @@ class NotesDialogs:
         window.set_child(root)
 
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_size_request(360, -1)
-        self.search_entry.set_placeholder_text(self.translate("notes_search"))
-        self.search_entry.connect("search-changed", self.on_search_changed)
-        toolbar.append(self.search_entry)
+        self.toggle_notes_list_button = Gtk.Button()
+        self.toggle_notes_list_button.connect("clicked", lambda *_: self.toggle_notes_list())
+        toolbar.append(self.toggle_notes_list_button)
 
-        self.category_filter_combo = Gtk.ComboBoxText()
-        self.category_filter_combo.connect("changed", self.on_category_filter_changed)
-        toolbar.append(self.category_filter_combo)
-
-        self.category_manage_button = Gtk.Button(label=self.translate("notes_manage_categories"))
+        self.category_manage_button = Gtk.Button(icon_name="emblem-system-symbolic")
+        self.category_manage_button.set_tooltip_text(self.translate("notes_manage_categories"))
         self.category_manage_button.connect("clicked", lambda *_: self.show_categories())
         toolbar.append(self.category_manage_button)
 
@@ -120,13 +139,27 @@ class NotesDialogs:
         self.add_button.connect("clicked", lambda *_: self.create_note())
         toolbar.append(self.add_button)
 
+        self.import_export_popover = Gtk.Popover()
+        import_export_actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.export_button = Gtk.Button(label=self.translate("notes_export"))
-        self.export_button.connect("clicked", lambda *_: self.choose_export_protection())
-        toolbar.append(self.export_button)
-
+        self.export_button.connect(
+            "clicked",
+            lambda *_: self.run_import_export_action(self.choose_export_protection),
+        )
+        import_export_actions.append(self.export_button)
         self.import_button = Gtk.Button(label=self.translate("notes_import"))
-        self.import_button.connect("clicked", lambda *_: self.start_import())
-        toolbar.append(self.import_button)
+        self.import_button.connect(
+            "clicked",
+            lambda *_: self.run_import_export_action(self.start_import),
+        )
+        import_export_actions.append(self.import_button)
+        self.import_export_popover.set_child(import_export_actions)
+        self.import_export_menu_button = Gtk.MenuButton(icon_name="view-more-symbolic")
+        self.import_export_menu_button.set_tooltip_text(
+            self.translate("notes_import_export_options")
+        )
+        self.import_export_menu_button.set_popover(self.import_export_popover)
+        toolbar.append(self.import_export_menu_button)
         root.append(toolbar)
 
         self.scope_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -141,19 +174,51 @@ class NotesDialogs:
         paned.set_vexpand(True)
         root.append(paned)
 
+        list_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        list_panel.set_vexpand(True)
         list_box = Gtk.ListBox()
         list_box.set_selection_mode(Gtk.SelectionMode.SINGLE)
         list_box.connect("row-selected", self.on_note_selected)
         self.notes_list = list_box
+        self.search_entry = Gtk.SearchEntry()
+        self.search_entry.set_size_request(300, -1)
+        self.search_entry.set_placeholder_text(self.translate("notes_search"))
+        self.search_entry.connect("search-changed", self.on_search_changed)
+        list_panel.append(self.search_entry)
+
         list_scroller = Gtk.ScrolledWindow()
+        list_scroller.set_vexpand(True)
         list_scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         list_scroller.set_child(list_box)
-        paned.set_start_child(list_scroller)
+        self.notes_list_scroller = list_scroller
+        list_panel.append(list_scroller)
+        paned.set_start_child(list_panel)
+        self.notes_list_panel = list_panel
+        self.notes_list_paned = paned
+        self.notes_list_width = 330
+        self.update_notes_list_toggle()
+
+        detail_area = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.editor_tabs_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        self.editor_tabs_bar.set_halign(Gtk.Align.START)
+        tabs_scroller = Gtk.ScrolledWindow()
+        tabs_scroller.set_hexpand(True)
+        tabs_scroller.set_margin_start(14)
+        tabs_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        tabs_scroller.set_child(self.editor_tabs_bar)
+        detail_area.append(tabs_scroller)
+        tab_drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
+        tab_drop_target.set_preload(True)
+        tab_drop_target.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        tab_drop_target.connect("motion", self.on_editor_tab_drop_motion)
+        tab_drop_target.connect("drop", self.on_editor_tab_drop)
+        self.editor_tabs_bar.add_controller(tab_drop_target)
 
         self.detail_stack = Gtk.Stack()
         self.detail_stack.set_hexpand(True)
         self.detail_stack.set_vexpand(True)
-        paned.set_end_child(self.detail_stack)
+        detail_area.append(self.detail_stack)
+        paned.set_end_child(detail_area)
 
         preview = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         preview.set_margin_start(14)
@@ -196,28 +261,9 @@ class NotesDialogs:
         empty.append(empty_create)
         self.detail_stack.add_named(empty, "empty")
 
+        editor_workspace = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         editor = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         editor.set_margin_start(14)
-        self.title_entry = Gtk.Entry()
-        self.title_entry.set_placeholder_text(self.translate("notes_title_placeholder"))
-        self.title_entry.add_css_class("title-3")
-        self.title_entry.connect("changed", self.on_editor_changed)
-        editor.append(self.title_entry)
-
-        selectors = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        category_label = Gtk.Label(label=self.translate("notes_category"))
-        selectors.append(category_label)
-        self.category_combo = Gtk.ComboBoxText()
-        self.category_combo.connect("changed", self.on_editor_changed)
-        selectors.append(self.category_combo)
-        server_label = Gtk.Label(label=self.translate("notes_association"))
-        selectors.append(server_label)
-        self.server_combo = Gtk.ComboBoxText()
-        self.server_combo.set_hexpand(True)
-        self.server_combo.connect("changed", self.on_editor_changed)
-        selectors.append(self.server_combo)
-        editor.append(selectors)
-
         text_view = Gtk.TextView()
         text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         text_view.set_monospace(False)
@@ -245,17 +291,13 @@ class NotesDialogs:
         self.delete_button.add_css_class("destructive-action")
         self.delete_button.connect("clicked", lambda *_: self.confirm_delete_note())
         footer.append(self.delete_button)
-        self.done_button = Gtk.Button(label=self.translate("notes_done"))
-        self.done_button.connect("clicked", lambda *_: self.finish_editing())
-        footer.append(self.done_button)
         self.cancel_editor_button = Gtk.Button(label=self.translate("cancel"))
         self.cancel_editor_button.connect("clicked", lambda *_: self.cancel_editing())
         footer.append(self.cancel_editor_button)
         editor.append(footer)
-        self.detail_stack.add_named(editor, "editor")
+        editor_workspace.append(editor)
+        self.detail_stack.add_named(editor_workspace, "editor")
 
-        self.refresh_category_selector()
-        self.refresh_server_selector()
         self.configure_write_controls()
         self.set_editor_enabled(False)
         self.detail_stack.set_visible_child_name("empty")
@@ -267,84 +309,62 @@ class NotesDialogs:
             self.add_button,
             self.empty_create_button,
             self.import_button,
-            self.title_entry,
-            self.category_combo,
-            self.server_combo,
             self.text_view,
             self.save_button,
             self.delete_button,
-            self.done_button,
         ):
             widget.set_sensitive(writable)
         self.export_button.set_sensitive(not self.store.encryption_locked)
         self.preview_edit_button.set_sensitive(writable)
 
-    def refresh_category_filter(self, selected: str | None = None) -> None:
-        combo = self.category_filter_combo
-        current = self.category_filter if selected is None else selected
-        self.loading_filters = True
-        try:
-            combo.remove_all()
-            combo.append("__all__", self.translate("notes_all_categories"))
-            combo.append("", self.translate("notes_uncategorized"))
-            for category in self.store.data.note_categories:
-                combo.append(category, category)
-            if current is None or current not in {"", *self.store.data.note_categories}:
-                current = "__all__"
-            combo.set_active_id(current)
-        finally:
-            self.loading_filters = False
-        self.category_filter = None if current == "__all__" else current
+    def set_import_export_actions_visible(self, visible: bool) -> None:
+        self.import_button.set_visible(visible)
+        self.export_button.set_visible(visible)
+        self.import_export_menu_button.set_visible(visible)
 
-    def refresh_category_selector(self, selected: str | None = None) -> None:
-        if not hasattr(self, "category_combo"):
-            return
-        was_loading = self.loading_editor
-        self.loading_editor = True
-        try:
-            self.category_combo.remove_all()
-            self.category_combo.append("", self.translate("notes_uncategorized"))
-            for category in self.store.data.note_categories:
-                self.category_combo.append(category, category)
-            self.category_combo.set_active_id(selected or "")
-        finally:
-            self.loading_editor = was_loading
+    def run_import_export_action(self, callback) -> None:
+        self.import_export_popover.popdown()
+        GLib.idle_add(callback)
 
-    def refresh_server_selector(self, selected: str | None = None) -> None:
-        if not hasattr(self, "server_combo"):
+    def update_notes_list_toggle(self) -> None:
+        if not hasattr(self, "toggle_notes_list_button"):
             return
-        current = selected
-        if current is None and self.current_note_id:
-            note = self.find_note(self.current_note_id)
-            current = note.server_id if note else None
-        was_loading = self.loading_editor
-        self.loading_editor = True
-        try:
-            self.server_combo.remove_all()
-            self.server_combo.append("", self.translate("notes_standalone"))
-            for server in sorted(self.store.data.servers, key=lambda item: item.name.casefold()):
-                self.server_combo.append(server.id, server.name)
-            self.server_combo.set_active_id(current or "")
-        finally:
-            self.loading_editor = was_loading
+        self.toggle_notes_list_button.set_icon_name(
+            "sidebar-hide-symbolic" if self.notes_list_visible else "sidebar-show-symbolic"
+        )
+        self.toggle_notes_list_button.set_tooltip_text(self.translate(
+            "notes_hide_list" if self.notes_list_visible else "notes_show_list"
+        ))
 
-    def on_category_filter_changed(self, combo: Gtk.ComboBoxText) -> None:
-        if self.loading_filters:
-            return
-        active = combo.get_active_id()
-        previous = self.category_filter
-        next_filter = None if active in (None, "__all__") else active
-        if self.editor_dirty and not self.save_editor():
-            self.refresh_category_filter(previous)
-            return
-        self.category_filter = next_filter
-        self.refresh_list()
+    def save_active_editor_if_valid(self) -> bool:
+        if not self.editor_dirty:
+            return True
+        if not hasattr(self, "text_view"):
+            return self.save_editor()
+        if self.editor_content().strip():
+            return self.save_editor()
+        self.cancel_autosave()
+        self.capture_active_editor_tab()
+        return True
+
+    def toggle_notes_list(self) -> None:
+        if self.notes_list_visible:
+            position = self.notes_list_paned.get_position()
+            if position > 64:
+                self.notes_list_width = position
+            self.notes_list_visible = False
+            self.notes_list_paned.set_start_child(None)
+        else:
+            self.notes_list_visible = True
+            self.notes_list_paned.set_start_child(self.notes_list_panel)
+            self.notes_list_paned.set_position(self.notes_list_width)
+        self.update_notes_list_toggle()
 
     def on_search_changed(self, *_args) -> None:
         if self.loading_search:
             return
         query = self.search_entry.get_text()
-        if self.editor_dirty and not self.save_editor():
+        if not self.save_active_editor_if_valid():
             self.loading_search = True
             try:
                 self.search_entry.set_text(self.last_search_query)
@@ -358,7 +378,7 @@ class NotesDialogs:
         if not hasattr(self, "notes_list"):
             return
         self.close_note_context_menu()
-        selected_id = selected_id if selected_id is not None else self.current_note_id
+        selected_id = selected_id if selected_id is not None else self.selected_note_id
         while child := self.notes_list.get_first_child():
             self.notes_list.remove(child)
         self.scope_bar.set_visible(self.server_filter_id is not None)
@@ -367,68 +387,228 @@ class NotesDialogs:
             self.scope_label.set_label(
                 self.translate("notes_for_server").format(name=server.name if server else self.translate("notes_standalone"))
             )
-        items = self.presenter.items(
-            self.search_entry.get_text(), self.category_filter, self.server_filter_id,
+        query = self.search_entry.get_text().strip()
+        items = self.presenter.items(query, None, self.server_filter_id)
+        grouped_items = self.group_note_items(
+            items,
+            include_empty_categories=not query and self.server_filter_id is None,
         )
+        valid_categories = set(self.store.data.note_categories) | {""}
+        self.collapsed_note_categories.intersection_update(valid_categories)
         selected_row = None
         first_row = None
-        for item in items:
-            row = Gtk.ListBoxRow()
-            row.note_id = item.note.id
-            if first_row is None:
-                first_row = row
-            content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-            title = Gtk.Label(label=item.note.title)
-            title.set_xalign(0)
-            title.set_ellipsize(3)
-            title.add_css_class("heading")
-            detail = " · ".join(part for part in (
-                item.note.category or self.translate("notes_uncategorized"),
-                item.server_name or self.translate("notes_standalone"),
-                item.note.modified_at,
-            ) if part)
-            subtitle = Gtk.Label(label=detail)
-            subtitle.set_xalign(0)
-            subtitle.set_ellipsize(3)
-            subtitle.add_css_class("dim-label")
-            content.append(title)
-            content.append(subtitle)
-            content.set_margin_top(8)
-            content.set_margin_bottom(8)
-            content.set_margin_start(8)
-            content.set_margin_end(8)
-            row.set_child(content)
-            context_click = Gtk.GestureClick()
-            context_click.set_button(3)
-            context_click.connect("pressed", self.on_note_context_pressed, row)
-            row.add_controller(context_click)
-            self.notes_list.append(row)
-            if item.note.id == selected_id:
-                selected_row = row
+        for category, category_items in grouped_items:
+            collapsed = category in self.collapsed_note_categories and not query
+            self.append_note_category_header(category, len(category_items), collapsed)
+            if collapsed:
+                continue
+            for item in category_items:
+                row = Gtk.ListBoxRow()
+                row.note_id = item.note.id
+                if first_row is None:
+                    first_row = row
+                content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                title = Gtk.Label(label=item.note.title)
+                title.set_xalign(0)
+                title.set_ellipsize(3)
+                title.add_css_class("heading")
+                detail = " · ".join(part for part in (
+                    item.server_name or self.translate("notes_standalone"),
+                    item.note.modified_at,
+                ) if part)
+                subtitle = Gtk.Label(label=detail)
+                subtitle.set_xalign(0)
+                subtitle.set_ellipsize(3)
+                subtitle.add_css_class("dim-label")
+                content.append(title)
+                content.append(subtitle)
+                content.set_margin_top(8)
+                content.set_margin_bottom(8)
+                content.set_margin_start(28)
+                content.set_margin_end(8)
+                row.set_child(content)
+                context_click = Gtk.GestureClick()
+                context_click.set_button(3)
+                context_click.connect("pressed", self.on_note_context_pressed, row)
+                row.add_controller(context_click)
+                drag_source = Gtk.DragSource.new()
+                drag_source.set_actions(Gdk.DragAction.MOVE)
+                drag_source.connect("prepare", self.on_note_drag_prepare, item.note.id)
+                drag_source.connect("drag-begin", self.on_note_drag_begin, row)
+                drag_source.connect("drag-end", self.on_note_drag_end, row)
+                row.add_controller(drag_source)
+                self.notes_list.append(row)
+                if item.note.id == selected_id:
+                    selected_row = row
         selected_row = selected_row or first_row
         if selected_row is not None:
-            self.notes_list.select_row(selected_row)
+            self.loading_note_list = True
+            try:
+                self.notes_list.select_row(selected_row)
+            finally:
+                self.loading_note_list = False
             selected_note = self.find_note(selected_row.note_id)
             if (
                 selected_note is not None
-                and self.current_note_id == selected_note.id
+                and self.selected_note_id == selected_note.id
                 and self.detail_stack.get_visible_child_name() != "editor"
             ):
                 self.show_note_preview(selected_note)
         else:
-            self.current_note_id = None
-            self.clear_editor()
-            self.show_empty_state()
+            self.selected_note_id = None
+            if self.detail_stack.get_visible_child_name() != "editor":
+                self.show_empty_state()
+
+    def group_note_items(self, items, *, include_empty_categories: bool) -> list[tuple[str, list[Any]]]:
+        grouped: dict[str, list[Any]] = {}
+        for item in items:
+            grouped.setdefault(item.note.category, []).append(item)
+        categories = set(grouped)
+        if include_empty_categories:
+            categories.update(self.store.data.note_categories)
+        ordered = sorted(categories, key=lambda category: (category == "", category.casefold()))
+        return [(category, grouped.get(category, [])) for category in ordered]
+
+    def append_note_category_header(self, category: str, count: int, collapsed: bool) -> None:
+        row = Gtk.ListBoxRow()
+        row.set_selectable(False)
+        row.set_activatable(False)
+        button = Gtk.Button()
+        button.add_css_class("flat")
+        button.set_hexpand(True)
+        button.set_halign(Gtk.Align.FILL)
+        button.connect(
+            "clicked",
+            lambda _button, name=category: self.toggle_note_category(name),
+        )
+        drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
+        drop_target.set_preload(True)
+        drop_target.connect("motion", self.on_note_category_drop_motion, button)
+        drop_target.connect("leave", self.on_note_category_drop_leave, button)
+        drop_target.connect("drop", self.on_note_category_drop, category)
+        button.add_controller(drop_target)
+        contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        disclosure = Gtk.Image.new_from_icon_name(
+            "pan-end-symbolic" if collapsed else "pan-down-symbolic"
+        )
+        contents.append(disclosure)
+        contents.append(Gtk.Image.new_from_icon_name("folder-symbolic"))
+        name = category or self.translate("notes_uncategorized")
+        label = Gtk.Label(label=name)
+        label.set_xalign(0)
+        label.set_ellipsize(3)
+        label.set_hexpand(True)
+        label.add_css_class("heading")
+        contents.append(label)
+        count_label = Gtk.Label(
+            label=self.translate("notes_category_count").format(count=count)
+        )
+        count_label.add_css_class("dim-label")
+        contents.append(count_label)
+        contents.set_margin_start(4)
+        contents.set_margin_end(4)
+        contents.set_margin_top(4)
+        contents.set_margin_bottom(4)
+        button.set_child(contents)
+        row.set_child(button)
+        button.add_css_class("termia-note-category")
+        self.notes_list.append(row)
+
+    def on_note_drag_prepare(
+        self, _source: Gtk.DragSource, _x: float, _y: float, note_id: str
+    ) -> Gdk.ContentProvider | None:
+        if self.find_note(note_id) is None:
+            return None
+        return Gdk.ContentProvider.new_for_value(note_id)
+
+    def on_note_drag_begin(
+        self, source: Gtk.DragSource, _drag: Gdk.Drag, row: Gtk.ListBoxRow
+    ) -> None:
+        row.add_css_class("dragging")
+        source.set_icon(
+            Gtk.WidgetPaintable.new(row),
+            row.get_allocated_width() // 2,
+            row.get_allocated_height() // 2,
+        )
+
+    def on_note_drag_end(
+        self, _source: Gtk.DragSource, _drag: Gdk.Drag,
+        _delete_data: bool, row: Gtk.ListBoxRow,
+    ) -> None:
+        row.remove_css_class("dragging")
+
+    def on_note_category_drop_motion(
+        self, _target: Gtk.DropTarget, _x: float, _y: float, button: Gtk.Button
+    ) -> Gdk.DragAction:
+        button.add_css_class("drop-target")
+        return Gdk.DragAction.MOVE
+
+    def on_note_category_drop_leave(
+        self, _target: Gtk.DropTarget, button: Gtk.Button
+    ) -> None:
+        button.remove_css_class("drop-target")
+
+    def on_note_category_drop(
+        self, _target: Gtk.DropTarget, note_id: str, _x: float, _y: float,
+        category: str,
+    ) -> bool:
+        return self.move_note_to_category(note_id, category)
+
+    def move_note_to_category(self, note_id: str, category: str) -> bool:
+        if not self.ensure_writable():
+            return False
+        if category and category not in self.store.data.note_categories:
+            return False
+        if self.editor_dirty:
+            if self.editor_content().strip():
+                if not self.save_editor(refresh=False):
+                    return False
+            else:
+                self.cancel_autosave()
+                self.capture_active_editor_tab()
+        note = self.find_note(note_id)
+        if note is None:
+            return False
+        if note.category == category:
+            return True
+        try:
+            self.store.update_note(
+                note.id, note.title, note.content, category, note.server_id
+            )
+        except (NoteError, OSError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return False
+        updated_note = self.find_note(note.id)
+        for tab in self.editor_tabs.values():
+            if tab.note_id == note.id:
+                tab.category = category
+        if updated_note is not None and self.current_note_id == note.id:
+            self.modified_label.set_label(
+                self.translate("notes_modified").format(date=updated_note.modified_at)
+            )
+        self.refresh_list(note.id)
+        display_category = category or self.translate("notes_uncategorized")
+        self.show_toast(
+            self.translate("notes_moved_to_category").format(category=display_category)
+        )
+        return True
+
+    def toggle_note_category(self, category: str) -> None:
+        if category in self.collapsed_note_categories:
+            self.collapsed_note_categories.remove(category)
+        else:
+            self.collapsed_note_categories.add(category)
+        self.refresh_list(self.selected_note_id)
 
     def on_note_selected(self, _listbox: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
         if row is None:
             return
         note_id = getattr(row, "note_id", None)
-        if not note_id or note_id == self.current_note_id:
+        if self.loading_note_list or not note_id or note_id == self.selected_note_id:
             return
-        if self.editor_dirty and not self.save_editor():
+        if not self.save_active_editor_if_valid():
             previous = next(
-                (item for item in self.iter_note_rows() if getattr(item, "note_id", None) == self.current_note_id),
+                (item for item in self.iter_note_rows() if getattr(item, "note_id", None) == self.selected_note_id),
                 None,
             )
             if previous is not None:
@@ -439,6 +619,8 @@ class NotesDialogs:
         note = self.find_note(note_id)
         if note is None:
             return
+        self.selected_note_id = note.id
+        self.suspend_active_editor_for_preview()
         self.show_note_preview(note)
 
     def iter_note_rows(self):
@@ -454,7 +636,7 @@ class NotesDialogs:
         note_id = getattr(row, "note_id", None)
         self.notes_list.select_row(row)
         if self.notes_list.get_selected_row() is not row:
-            if not note_id or self.current_note_id != note_id:
+            if not note_id or self.selected_note_id != note_id:
                 gesture.set_state(Gtk.EventSequenceState.CLAIMED)
                 return
             row = next(
@@ -479,6 +661,7 @@ class NotesDialogs:
         actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         for action, label_key in (
             ("edit", "notes_edit"),
+            ("rename", "notes_rename"),
             ("clone", "notes_clone"),
             ("delete", "notes_delete"),
         ):
@@ -518,16 +701,170 @@ class NotesDialogs:
     def on_note_context_action(self, action: str, note_id: str) -> None:
         self.close_note_context_menu()
         if action == "edit":
-            self.edit_selected_note()
+            note = self.find_note(note_id)
+            if note is not None:
+                self.load_editor(note)
         elif action == "clone":
             self.clone_note(note_id)
+        elif action == "rename":
+            GLib.idle_add(self.prompt_note_rename, note_id)
         elif action == "delete":
-            self.confirm_delete_note()
+            self.confirm_delete_note(note_id)
+
+    def on_note_tab_context_pressed(
+        self, gesture: Gtk.GestureClick, _presses: int, _x: float, _y: float,
+        key: str,
+    ) -> None:
+        self.show_note_tab_context_menu(key)
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+
+    def show_note_tab_context_menu(self, key: str) -> None:
+        tab = self.editor_tabs.get(key)
+        if tab is None or tab.container_widget is None:
+            return
+        self.close_note_tab_context_menu()
+        popover = Gtk.Popover()
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_note_tab_context_menu_closed)
+        rename = Gtk.Button(label=self.translate("notes_rename"))
+        rename.add_css_class("flat")
+        rename.set_sensitive(not self.store.read_only and not self.store.encryption_locked)
+        rename.connect(
+            "clicked",
+            lambda *_args, selected_key=key: self.on_note_tab_rename_action(selected_key),
+        )
+        popover.set_child(rename)
+        popover.set_parent(tab.container_widget)
+        self.tab_context_popover = popover
+        popover.popup()
+
+    def on_note_tab_rename_action(self, key: str) -> None:
+        self.close_note_tab_context_menu()
+        GLib.idle_add(self.prompt_editor_tab_rename, key)
+
+    def on_note_tab_context_menu_closed(self, popover: Gtk.Popover) -> None:
+        if self.tab_context_popover is popover:
+            self.tab_context_popover = None
+        if popover.get_parent() is not None:
+            popover.unparent()
+
+    def close_note_tab_context_menu(self) -> None:
+        popover = getattr(self, "tab_context_popover", None)
+        if popover is None:
+            return
+        self.tab_context_popover = None
+        popover.popdown()
+        if popover.get_parent() is not None:
+            popover.unparent()
+
+    def show_note_rename_dialog(self, title: str, response_callback, *callback_args) -> None:
+        dialog = Gtk.Dialog(
+            title=self.translate("notes_rename"), transient_for=self.window, modal=True
+        )
+        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(self.translate("save"), Gtk.ResponseType.OK)
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        content = dialog.get_content_area()
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+        entry = Gtk.Entry()
+        entry.set_text(title)
+        entry.set_activates_default(True)
+        content.append(entry)
+        dialog.connect("response", response_callback, entry, *callback_args)
+        dialog.present()
+        entry.grab_focus()
+        entry.set_position(-1)
+
+    def prompt_note_rename(self, note_id: str) -> None:
+        if not self.ensure_writable() or not self.save_active_editor_if_valid():
+            return
+        note = self.find_note(note_id)
+        if note is not None:
+            self.show_note_rename_dialog(
+                note.title, self.on_note_rename_response, note.id
+            )
+
+    def on_note_rename_response(
+        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry, note_id: str
+    ) -> None:
+        title = entry.get_text().strip()
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK:
+            return
+        if not title:
+            self.show_error(self.translate("notes_title_required"))
+            return
+        if not self.save_active_editor_if_valid():
+            return
+        note = self.find_note(note_id)
+        if note is None:
+            return
+        self.persist_note_title(note, title)
+
+    def prompt_editor_tab_rename(self, key: str) -> None:
+        if not self.ensure_writable():
+            return
+        tab = self.editor_tabs.get(key)
+        if tab is not None:
+            self.show_note_rename_dialog(
+                tab.title, self.on_editor_tab_rename_response, tab.key
+            )
+
+    def on_editor_tab_rename_response(
+        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry, key: str
+    ) -> None:
+        title = entry.get_text().strip()
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK:
+            return
+        if not title:
+            self.show_error(self.translate("notes_title_required"))
+            return
+        tab = self.editor_tabs.get(key)
+        if tab is None:
+            return
+        if tab.note_id is not None:
+            if not self.save_active_editor_if_valid():
+                return
+            note = self.find_note(tab.note_id)
+            if note is not None:
+                self.persist_note_title(note, title)
+            return
+        tab.title = title
+        if tab.content.strip():
+            tab.dirty = True
+            if key == self.active_editor_tab_key:
+                self.editor_dirty = True
+                self.schedule_autosave()
+        self.update_editor_tab_label(tab)
+
+    def persist_note_title(self, note: Note, title: str) -> None:
+        try:
+            self.store.update_note(
+                note.id, title, note.content, note.category, note.server_id
+            )
+        except (NoteError, OSError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return
+        updated = self.find_note(note.id)
+        if updated is None:
+            return
+        for tab in self.editor_tabs.values():
+            if tab.note_id == updated.id:
+                tab.title = updated.title
+                self.update_editor_tab_label(tab)
+        self.refresh_list(updated.id)
+        if self.detail_stack.get_visible_child_name() == "preview" and self.selected_note_id == updated.id:
+            self.show_note_preview(updated)
+        self.show_toast(self.translate("notes_renamed"))
 
     def clone_note(self, note_id: str) -> None:
         if not self.ensure_writable():
             return
-        if self.editor_dirty and not self.save_editor():
+        if not self.save_active_editor_if_valid():
             return
         note = self.find_note(note_id)
         if note is None:
@@ -540,19 +877,16 @@ class NotesDialogs:
         except (NoteError, OSError, RuntimeError, ValueError):
             self.show_error(self.translate("notes_save_failed_detail"))
             return
-        self.current_note_id = cloned.id
-        self.editor_dirty = False
-        self.refresh_category_filter()
+        self.selected_note_id = cloned.id
         self.refresh_list(cloned.id)
+        self.show_note_preview(cloned)
         self.show_toast(self.translate("notes_clone_success"))
 
     def find_note(self, note_id: str) -> Note | None:
         return next((note for note in self.store.data.notes if note.id == note_id), None)
 
     def show_note_preview(self, note: Note) -> None:
-        self.cancel_autosave()
-        self.current_note_id = note.id
-        self.editor_dirty = False
+        self.selected_note_id = note.id
         self.preview_title.set_label(note.title)
         parts = [note.category or self.translate("notes_uncategorized")]
         if self.server_filter_id is None:
@@ -564,7 +898,7 @@ class NotesDialogs:
         self.detail_stack.set_visible_child_name("preview")
 
     def show_empty_state(self) -> None:
-        if self.search_entry.get_text() or self.category_filter is not None:
+        if self.search_entry.get_text():
             message = self.translate("notes_empty")
         elif self.server_filter_id is not None:
             message = self.translate("notes_empty_server")
@@ -577,102 +911,428 @@ class NotesDialogs:
         self.detail_stack.set_visible_child_name("empty")
 
     def edit_selected_note(self) -> None:
-        if not self.ensure_writable() or not self.current_note_id:
+        if not self.ensure_writable() or not self.selected_note_id:
             return
-        note = self.find_note(self.current_note_id)
+        note = self.find_note(self.selected_note_id)
         if note is not None:
             self.load_editor(note)
 
     def load_editor(self, note: Note) -> None:
-        self.cancel_autosave()
+        if not self.ensure_writable():
+            return
+        existing = next((tab for tab in self.editor_tabs.values() if tab.note_id == note.id), None)
+        if existing is not None:
+            self.activate_editor_tab(existing.key)
+            return
+        tab = NoteEditorTab(
+            key=note.id,
+            note_id=note.id,
+            title=note.title,
+            category=note.category,
+            server_id=note.server_id,
+            content=note.content,
+            status=self.translate("notes_saved"),
+        )
+        self.add_editor_tab(tab)
+        self.activate_editor_tab(tab.key)
+
+    def create_editor_tab(self) -> None:
+        key = f"draft-{uuid4().hex}"
+        tab = NoteEditorTab(
+            key=key,
+            note_id=None,
+            title=self.translate("notes_new_tab"),
+            category="",
+            server_id=self.server_filter_id,
+            content="",
+            status=self.translate("notes_start_typing"),
+        )
+        self.add_editor_tab(tab)
+        self.activate_editor_tab(tab.key)
+        self.loading_note_list = True
+        try:
+            self.notes_list.unselect_all()
+        finally:
+            self.loading_note_list = False
+
+    def add_editor_tab(self, tab: NoteEditorTab) -> None:
+        self.editor_tabs[tab.key] = tab
+        tab_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        tab_box.add_css_class("termia-tab-label")
+        tab_box.set_hexpand(False)
+        tab_box.set_size_request(150, -1)
+        label = Gtk.Label()
+        label.add_css_class("termia-tab-title")
+        label.set_hexpand(True)
+        label.set_ellipsize(3)
+        label.set_width_chars(10)
+        label.set_max_width_chars(14)
+        label.set_can_target(False)
+        close_button = Gtk.Button(icon_name="window-close-symbolic")
+        close_button.add_css_class("termia-tab-close")
+        close_button.set_has_frame(False)
+        close_button.set_tooltip_text(self.translate("notes_close_tab"))
+        close_button.connect("clicked", lambda _button, key=tab.key: self.close_editor_tab(key))
+        click = Gtk.GestureClick.new()
+        click.set_button(1)
+        click.connect("pressed", lambda _gesture, _presses, _x, _y, key=tab.key: self.activate_editor_tab(key))
+        tab_box.add_controller(click)
+        right_click = Gtk.GestureClick.new()
+        right_click.set_button(3)
+        right_click.connect("pressed", self.on_note_tab_context_pressed, tab.key)
+        tab_box.add_controller(right_click)
+        tab_box.append(label)
+        tab_box.append(close_button)
+        tab.label_widget = label
+        tab.container_widget = tab_box
+        self.update_editor_tab_label(tab)
+        self.editor_tabs_bar.append(tab_box)
+
+        drag_source = Gtk.DragSource.new()
+        drag_source.set_actions(Gdk.DragAction.MOVE)
+        drag_source.connect("prepare", self.on_editor_tab_drag_prepare, tab.key)
+        drag_source.connect("drag-begin", self.on_editor_tab_drag_begin, tab.key, tab_box)
+        drag_source.connect("drag-end", self.on_editor_tab_drag_end, tab.key, tab_box)
+        tab_box.add_controller(drag_source)
+
+    def update_editor_tab_label(self, tab: NoteEditorTab) -> None:
+        if tab.label_widget is None:
+            return
+        title = tab.title.strip() or self.translate("notes_new_tab")
+        tab.label_widget.set_label(f"{title}{' •' if tab.dirty else ''}")
+        if tab.container_widget is not None:
+            if tab.key == self.active_editor_tab_key:
+                tab.container_widget.add_css_class("active")
+            else:
+                tab.container_widget.remove_css_class("active")
+
+    def on_editor_tab_drag_prepare(
+        self, _source: Gtk.DragSource, _x: float, _y: float, key: str
+    ) -> Gdk.ContentProvider | None:
+        if key not in self.editor_tabs:
+            return None
+        return Gdk.ContentProvider.new_for_value(key)
+
+    def on_editor_tab_drag_begin(
+        self, source: Gtk.DragSource, _drag: Gdk.Drag, key: str, tab_box: Gtk.Widget
+    ) -> None:
+        self.activate_editor_tab(key)
+        self.editor_tab_drag_key = key
+        tab_box.add_css_class("dragging")
+        source.set_icon(
+            Gtk.WidgetPaintable.new(tab_box),
+            tab_box.get_allocated_width() // 2,
+            tab_box.get_allocated_height() // 2,
+        )
+
+    def on_editor_tab_drag_end(
+        self, _source: Gtk.DragSource, _drag: Gdk.Drag, _delete_data: bool,
+        _key: str, tab_box: Gtk.Widget,
+    ) -> None:
+        tab_box.remove_css_class("dragging")
+        self.editor_tab_drag_key = None
+
+    def on_editor_tab_drop_motion(
+        self, target: Gtk.DropTarget, x: float, _y: float
+    ) -> Gdk.DragAction:
+        self.reorder_editor_tab_at_bar_x(target, x)
+        return Gdk.DragAction.MOVE
+
+    def on_editor_tab_drop(
+        self, target: Gtk.DropTarget, key: str, x: float, _y: float
+    ) -> bool:
+        self.reorder_editor_tab_at_bar_x(target, x, key)
+        if key in self.editor_tabs:
+            self.activate_editor_tab(key)
+        return True
+
+    def reorder_editor_tab_at_bar_x(
+        self, target: Gtk.DropTarget, pointer_x: float, dragged_key: str | None = None
+    ) -> None:
+        dragged_key = dragged_key or getattr(self, "editor_tab_drag_key", None) or target.get_value()
+        if not isinstance(dragged_key, str):
+            return
+        dragged = self.editor_tabs.get(dragged_key)
+        if dragged is None or dragged.container_widget is None:
+            return
+        ordered = [
+            tab for tab in self.editor_tabs.values()
+            if tab.container_widget is not None
+        ]
+        if len(ordered) <= 1:
+            return
+        try:
+            dragged_index = ordered.index(dragged)
+        except ValueError:
+            return
+
+        previous_sibling = dragged.container_widget.get_prev_sibling()
+        for index, tab in enumerate(ordered):
+            if tab.key == dragged_key:
+                continue
+            widget = tab.container_widget
+            width = widget.get_allocated_width()
+            ok, start = widget.compute_point(
+                self.editor_tabs_bar, Graphene.Point().init(0, 0)
+            )
+            if not ok or pointer_x < start.x or pointer_x > start.x + width:
+                continue
+            if index < dragged_index:
+                previous_sibling = (
+                    widget.get_prev_sibling()
+                    if pointer_x < start.x + width * 0.8 else widget
+                )
+            else:
+                previous_sibling = (
+                    widget if pointer_x > start.x + width * 0.2
+                    else widget.get_prev_sibling()
+                )
+            break
+
+        if dragged.container_widget.get_prev_sibling() is previous_sibling:
+            return
+        self.editor_tabs_bar.reorder_child_after(
+            dragged.container_widget, previous_sibling
+        )
+        self.sync_editor_tab_order()
+
+    def sync_editor_tab_order(self) -> None:
+        ordered: dict[str, NoteEditorTab] = {}
+        child = self.editor_tabs_bar.get_first_child()
+        while child is not None:
+            tab = next(
+                (item for item in self.editor_tabs.values() if item.container_widget is child),
+                None,
+            )
+            if tab is not None:
+                ordered[tab.key] = tab
+            child = child.get_next_sibling()
+        ordered.update(
+            (key, tab) for key, tab in self.editor_tabs.items() if key not in ordered
+        )
+        self.editor_tabs = ordered
+
+    def capture_active_editor_tab(self) -> None:
+        key = getattr(self, "active_editor_tab_key", None)
+        if key is None or key not in self.editor_tabs:
+            return
+        tab = self.editor_tabs[key]
+        tab.note_id = self.current_note_id
+        tab.content = self.editor_content()
+        tab.dirty = self.editor_dirty
+        tab.status = self.status_label.get_label()
+        self.update_editor_tab_label(tab)
+
+    def activate_editor_tab(self, key: str, save_previous: bool = True) -> None:
+        tab = self.editor_tabs.get(key)
+        if tab is None:
+            return
+        if key == getattr(self, "active_editor_tab_key", None):
+            for current_tab in self.editor_tabs.values():
+                self.update_editor_tab_label(current_tab)
+            self.detail_stack.set_visible_child_name("editor")
+            return
+        if self.active_editor_tab_key is not None:
+            if (
+                save_previous
+                and self.editor_dirty
+                and self.editor_content().strip()
+            ):
+                if not self.save_editor():
+                    for current_tab in self.editor_tabs.values():
+                        self.update_editor_tab_label(current_tab)
+                    return
+            self.cancel_autosave()
+            self.capture_active_editor_tab()
+        self.active_editor_tab_key = key
+        for current_tab in self.editor_tabs.values():
+            self.update_editor_tab_label(current_tab)
+        note = self.find_note(tab.note_id) if tab.note_id else None
+        if note is not None and not tab.dirty:
+            tab.title = note.title
+            tab.category = note.category
+            tab.server_id = note.server_id
+            tab.content = note.content
+            tab.status = self.translate("notes_saved")
         self.loading_editor = True
         try:
-            self.current_note_id = note.id
-            self.editor_dirty = False
-            self.title_entry.set_text(note.title)
-            self.refresh_category_selector(note.category)
-            self.refresh_server_selector(note.server_id)
-            self.text_view.get_buffer().set_text(note.content)
+            self.current_note_id = tab.note_id
+            self.selected_note_id = tab.note_id
+            self.editor_dirty = tab.dirty
+            self.text_view.get_buffer().set_text(tab.content)
             self.modified_label.set_label(
-                self.translate("notes_modified").format(date=note.modified_at)
+                self.translate("notes_modified").format(date=note.modified_at) if note else ""
             )
-            self.status_label.set_label(self.translate("notes_saved"))
+            self.status_label.set_label(tab.status)
             self.set_editor_enabled(True)
             self.detail_stack.set_visible_child_name("editor")
         finally:
             self.loading_editor = False
+        self.capture_active_editor_tab()
+        self.refresh_list(tab.note_id)
+        if tab.note_id is None:
+            self.loading_note_list = True
+            try:
+                self.notes_list.unselect_all()
+            finally:
+                self.loading_note_list = False
+        if self.editor_dirty and self.editor_content().strip():
+            self.schedule_autosave()
+
+    def suspend_active_editor_for_preview(self) -> None:
+        if self.active_editor_tab_key is None:
+            return
+        if (
+            self.editor_dirty
+            and self.editor_content().strip()
+        ):
+            if not self.save_editor():
+                return
+        self.cancel_autosave()
+        self.capture_active_editor_tab()
+
+    def close_editor_tab(self, key: str) -> None:
+        tab = self.editor_tabs.get(key)
+        if tab is None:
+            return
+        if key == getattr(self, "active_editor_tab_key", None):
+            self.cancel_autosave()
+            self.capture_active_editor_tab()
+        if tab.dirty:
+            dialog = Gtk.AlertDialog(message=self.translate("notes_close_unsaved_message"))
+            dialog.set_buttons([
+                self.translate("notes_save_and_close"),
+                self.translate("notes_close_without_saving"),
+                self.translate("notes_keep_editing"),
+            ])
+            dialog.set_cancel_button(2)
+            dialog.set_default_button(2)
+            dialog.choose(self.window, None, self.on_close_editor_tab_response, key)
+            return
+        self.remove_editor_tab(key)
+
+    def on_close_editor_tab_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, key: str) -> None:
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        if response == 0:
+            self.save_editor_tab_and_close(key)
+        elif response == 1:
+            self.remove_editor_tab(key)
+
+    def save_editor_tab_and_close(self, key: str) -> None:
+        tab = self.editor_tabs.get(key)
+        if tab is None:
+            return
+        if key == self.active_editor_tab_key:
+            self.capture_active_editor_tab()
+        if not tab.content.strip():
+            # Empty drafts are intentionally not persisted. Emptying an existing
+            # note must not erase its previous saved content.
+            self.remove_editor_tab(key)
+            return
+        try:
+            if tab.note_id is None:
+                note = self.store.add_note(
+                    tab.title, tab.content, tab.category, tab.server_id
+                )
+                tab.note_id = note.id
+            else:
+                self.store.update_note(
+                    tab.note_id, tab.title, tab.content, tab.category, tab.server_id
+                )
+                note = self.find_note(tab.note_id)
+            if note is None:
+                raise NoteError("The note no longer exists.")
+        except (OSError, NoteError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return
+        tab.dirty = False
+        tab.status = self.translate("notes_saved")
+        self.selected_note_id = note.id
+        self.update_editor_tab_label(tab)
+        self.refresh_list(note.id)
+        if key == self.active_editor_tab_key:
+            self.current_note_id = note.id
+            self.editor_dirty = False
+        self.remove_editor_tab(key)
+
+    def remove_editor_tab(self, key: str) -> None:
+        tab = self.editor_tabs.pop(key, None)
+        if tab is None:
+            return
+        self.close_note_tab_context_menu()
+        was_active = key == self.active_editor_tab_key
+        if was_active:
+            self.cancel_autosave()
+            self.active_editor_tab_key = None
+            self.current_note_id = None
+            self.editor_dirty = False
+        if (
+            tab.container_widget is not None
+            and tab.container_widget.get_parent() is self.editor_tabs_bar
+        ):
+            self.editor_tabs_bar.remove(tab.container_widget)
+        if not was_active:
+            return
+        next_tab = next(reversed(self.editor_tabs.values()), None)
+        if next_tab is not None:
+            self.activate_editor_tab(next_tab.key, save_previous=False)
+        else:
+            self.clear_editor()
+            note = self.find_note(self.selected_note_id) if self.selected_note_id else None
+            if note is not None:
+                self.show_note_preview(note)
+            else:
+                self.show_empty_state()
 
     def clear_editor(self) -> None:
-        if not hasattr(self, "title_entry"):
+        if not hasattr(self, "text_view"):
             return
         self.cancel_autosave()
         self.loading_editor = True
         try:
             self.editor_dirty = False
-            self.title_entry.set_text("")
-            self.refresh_category_selector()
-            self.refresh_server_selector(self.server_filter_id)
             self.text_view.get_buffer().set_text("")
             self.modified_label.set_label("")
             self.status_label.set_label(self.translate("notes_select_or_create"))
             self.set_editor_enabled(False)
+            self.detail_stack.set_visible_child_name("preview" if self.selected_note_id else "empty")
         finally:
             self.loading_editor = False
 
     def set_editor_enabled(self, enabled: bool) -> None:
         writable = enabled and not self.store.read_only and not self.store.encryption_locked
-        for widget in (self.title_entry, self.category_combo, self.server_combo, self.text_view, self.save_button, self.delete_button, self.done_button):
+        for widget in (self.text_view, self.save_button, self.delete_button):
             widget.set_sensitive(writable)
         self.delete_button.set_sensitive(writable and self.current_note_id is not None)
 
     def create_note(self) -> None:
         if not self.ensure_writable():
             return
-        if self.editor_dirty and not self.save_editor():
-            return
-        self.current_note_id = None
-        self.loading_editor = True
-        try:
-            self.editor_dirty = False
-            self.title_entry.set_text("")
-            self.refresh_category_selector()
-            self.refresh_server_selector(self.server_filter_id)
-            self.text_view.get_buffer().set_text("")
-            self.modified_label.set_label("")
-            self.status_label.set_label(self.translate("notes_enter_to_save"))
-            self.set_editor_enabled(True)
-        finally:
-            self.loading_editor = False
-        self.notes_list.unselect_all()
-        self.detail_stack.set_visible_child_name("editor")
-        self.title_entry.grab_focus()
-
-    def finish_editing(self) -> None:
-        if self.editor_dirty and not self.save_editor():
-            return
-        note = self.find_note(self.current_note_id) if self.current_note_id else None
-        if note is not None:
-            self.show_note_preview(note)
-        else:
-            self.refresh_list()
+        self.create_editor_tab()
+        self.text_view.grab_focus()
 
     def cancel_editing(self) -> None:
         if self.editor_dirty:
             self.confirm_discard_editor(close_window=False)
             return
-        selected_id = self.current_note_id
-        self.current_note_id = None
-        self.refresh_list(selected_id)
+        if self.active_editor_tab_key is not None:
+            self.remove_editor_tab(self.active_editor_tab_key)
+        self.refresh_list(self.selected_note_id)
 
     def on_editor_changed(self, *_args) -> None:
         if self.loading_editor:
             return
         self.editor_dirty = True
-        if not self.title_entry.get_text().strip() or not self.editor_content().strip():
+        if not self.editor_content().strip():
             self.cancel_autosave()
-            self.status_label.set_label(self.translate("notes_enter_to_save"))
+            self.status_label.set_label(self.translate("notes_empty_not_saved"))
+            self.capture_active_editor_tab()
             return
         self.schedule_autosave()
+        self.capture_active_editor_tab()
 
     def schedule_autosave(self) -> None:
         if self.store.read_only or self.store.encryption_locked:
@@ -695,29 +1355,40 @@ class NotesDialogs:
         buffer = self.text_view.get_buffer()
         return buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True)
 
-    def save_editor(self) -> bool:
+    def save_editor(self, *, refresh: bool = True) -> bool:
+        self.cancel_autosave()
         if not self.editor_dirty and self.current_note_id is not None:
             self.status_label.set_label(self.translate("notes_saved"))
             return True
-        title, content = self.title_entry.get_text(), self.editor_content()
-        if not title.strip() or not content.strip():
-            self.status_label.set_label(self.translate("notes_content_required"))
+        content = self.editor_content()
+        tab = self.editor_tabs.get(self.active_editor_tab_key)
+        if tab is None:
             return False
-        category = self.category_combo.get_active_id() or ""
-        server_id = self.server_combo.get_active_id() or None
+        if not content.strip():
+            self.status_label.set_label(self.translate("notes_empty_not_saved"))
+            return True
         try:
             if self.current_note_id is None:
-                note = self.store.add_note(title, content, category, server_id)
+                note = self.store.add_note(
+                    tab.title, content, tab.category, tab.server_id
+                )
                 self.current_note_id = note.id
             else:
-                self.store.update_note(self.current_note_id, title, content, category, server_id)
+                self.store.update_note(
+                    self.current_note_id, tab.title, content,
+                    tab.category, tab.server_id,
+                )
                 note = self.find_note(self.current_note_id)
             self.status_label.set_label(self.translate("notes_saved"))
             self.editor_dirty = False
+            self.selected_note_id = self.current_note_id
+            if note is not None:
+                tab.title = note.title
+            self.capture_active_editor_tab()
             if note is not None:
                 self.modified_label.set_label(self.translate("notes_modified").format(date=note.modified_at))
-            self.refresh_category_filter()
-            self.refresh_list(self.current_note_id)
+            if refresh:
+                self.refresh_list(self.current_note_id)
             self.set_editor_enabled(True)
             return True
         except (OSError, NoteError, RuntimeError, ValueError):
@@ -727,14 +1398,12 @@ class NotesDialogs:
 
     def on_close_request(self, _window: Gtk.Window) -> bool:
         self.close_note_context_menu()
-        if self.editor_dirty:
-            self.cancel_autosave()
-            if not self.title_entry.get_text().strip() or not self.editor_content().strip():
-                self.confirm_discard_editor()
-                return True
-            if not self.save_editor():
-                self.confirm_discard_editor()
-                return True
+        self.close_note_tab_context_menu()
+        if not self.save_active_editor_if_valid():
+            self.window.present()
+            return True
+        self.cancel_autosave()
+        self.capture_active_editor_tab()
         self.window.set_visible(False)
         return True
 
@@ -751,21 +1420,20 @@ class NotesDialogs:
         except GLib.Error:
             return
         if response == 1:
-            selected_id = self.current_note_id
-            self.editor_dirty = False
-            self.current_note_id = None
-            self.clear_editor()
-            if close_window:
+            if self.active_editor_tab_key is not None:
+                self.remove_editor_tab(self.active_editor_tab_key)
+            if close_window and not self.editor_tabs:
                 self.window.set_visible(False)
             else:
-                self.refresh_list(selected_id)
+                self.refresh_list(self.selected_note_id)
 
-    def confirm_delete_note(self) -> None:
-        if self.editor_dirty and not self.save_editor():
+    def confirm_delete_note(self, note_id: str | None = None) -> None:
+        if not self.save_active_editor_if_valid():
             return
-        if not self.current_note_id or not self.ensure_writable():
+        note_id = note_id or self.current_note_id or self.selected_note_id
+        if not note_id or not self.ensure_writable():
             return
-        note = self.find_note(self.current_note_id)
+        note = self.find_note(note_id)
         if note is None:
             return
         dialog = Gtk.AlertDialog(
@@ -788,11 +1456,14 @@ class NotesDialogs:
         except (OSError, RuntimeError):
             self.show_error(self.translate("notes_save_failed_detail"))
             return
-        self.current_note_id = None
+        for tab in tuple(self.editor_tabs.values()):
+            if tab.note_id == note_id:
+                self.remove_editor_tab(tab.key)
+        self.selected_note_id = None
         self.refresh_list()
 
     def show_categories(self) -> None:
-        if self.editor_dirty and not self.save_editor():
+        if not self.save_active_editor_if_valid():
             return
         if not self.ensure_writable():
             return
@@ -934,15 +1605,12 @@ class NotesDialogs:
             )
             return
         self.cancel_category_edit()
-        self.refresh_category_filter()
         self.refresh_current_editor_metadata()
         self.refresh_list()
         self.refresh_category_grid(name.strip())
 
     def refresh_current_editor_metadata(self) -> None:
         note = self.find_note(self.current_note_id) if self.current_note_id else None
-        self.refresh_category_selector(note.category if note else None)
-        self.refresh_server_selector(note.server_id if note else self.server_filter_id)
         if note:
             self.modified_label.set_label(
                 self.translate("notes_modified").format(date=note.modified_at)
@@ -983,14 +1651,12 @@ class NotesDialogs:
                 else self.translate("notes_save_failed_detail")
             )
             return
-        self.category_filter = None
-        self.refresh_category_filter()
         self.refresh_current_editor_metadata()
         self.refresh_list()
         self.refresh_category_grid()
 
     def choose_export_protection(self) -> None:
-        if self.editor_dirty and not self.save_editor():
+        if not self.save_active_editor_if_valid():
             return
         if self.export_protection_window is not None:
             self.export_protection_window.present()
@@ -1116,7 +1782,7 @@ class NotesDialogs:
     def start_import(self) -> None:
         if not self.ensure_writable():
             return
-        if self.editor_dirty and not self.save_editor():
+        if not self.save_active_editor_if_valid():
             return
         dialog = Gtk.FileDialog(title=self.translate("notes_import"))
         dialog.open(self.window, None, self.on_import_file_selected)
@@ -1191,12 +1857,10 @@ class NotesDialogs:
             self.show_error(self.translate("notes_import_failed").format(error=exc))
             return
         self.server_filter_id = None
-        self.category_filter = None
-        self.current_note_id = None
-        self.editor_dirty = False
-        self.refresh_category_filter()
-        self.refresh_category_selector()
-        self.refresh_server_selector()
+        self.selected_note_id = None
+        for tab in tuple(self.editor_tabs.values()):
+            if tab.note_id is not None:
+                self.remove_editor_tab(tab.key)
         self.refresh_list()
         message = self.translate("notes_import_success").format(count=len(notes))
         if detached:
@@ -1249,15 +1913,30 @@ class NotesDialogs:
 
     def shutdown(self) -> None:
         self.cancel_autosave()
+        self.close_note_context_menu()
+        self.close_note_tab_context_menu()
         for window in (self.category_window, self.window):
             if window is not None:
                 window.destroy()
 
     def prepare_shutdown(self) -> bool:
-        if not self.editor_dirty or self.window is None:
+        if self.window is None:
             return True
-        self.cancel_autosave()
-        if not self.save_editor():
-            self.window.present()
-            return False
+        if self.editor_dirty:
+            self.cancel_autosave()
+            if self.editor_content().strip():
+                if not self.save_editor():
+                    self.window.present()
+                    return False
+        for tab in tuple(self.editor_tabs.values()):
+            if tab.dirty and tab.key != self.active_editor_tab_key:
+                if tab.content.strip():
+                    self.save_editor_tab_and_close(tab.key)
+                    if tab.key in self.editor_tabs:
+                        self.window.present()
+                        return False
+                else:
+                    self.remove_editor_tab(tab.key)
+            elif tab.dirty and not tab.content.strip():
+                self.remove_editor_tab(tab.key)
         return True
