@@ -217,17 +217,21 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - `Gestiona les notes` obre una finestra reutilitzable que no bloqueja els
   terminals. Les notes es desen automàticament en un fitxer separat; també hi
-  ha un botó **Desa**. Els esborranys buits no s'emmagatzemen; en tancar-ne un
-  amb canvis sense desar, es pregunta què cal fer. Les notes personals apareixen
+  ha un botó **Desa**. En obrir la finestra es crea un esborrany nou o es reprèn
+  un de pendent del mateix context; en mode de només lectura no es creen esborranys.
+  Els esborranys buits no s'emmagatzemen; en tancar-ne un amb canvis sense desar,
+  es pregunta què cal fer. Les notes personals apareixen
   en carpetes de categories i les vinculades a servidors, a «Notes de servidor»,
   amb el nom del servidor al costat del títol. La llista té cerca global i files
-  compactes; el menú contextual mostra les Propietats, inclosa la categoria
-  desada de cada nota. Un clic selecciona la nota i un doble clic l'obre en una
+  compactes; el diàleg compacte de Propietats mostra, entre altres dades, la
+  categoria desada de cada nota. Un clic selecciona la nota i un doble clic l'obre en una
   pestanya d'edició. Els controls a l'esquerra
-  de la barra de títol amaguen la llista, gestionen les categories, creen notes
-  i obren el menú d'importació/exportació. Des del menú principal es mostren
-  totes les notes i s'ofereixen importació i
-  exportació. Des d'un servidor només es mostren les seves notes, sense importar
+  de la barra de títol amaguen la llista i obren el menú d'importació/exportació.
+  Sobre el cercador, el botó de l'esquerra crea una categoria i el del costat
+  crea una nota. Amb un clic dret sobre una categoria pots canviar-ne el nom,
+  duplicar-la amb les seves notes o suprimir-la. Des del menú principal es
+  mostren totes les notes i s'ofereixen importació i exportació. Des d'un
+  servidor només es mostren les seves notes, sense importar
   ni exportar. Les notes poden ser personals o associades a un servidor. En
   suprimir un servidor, les notes es conserven com a personals. La importació
   substitueix les notes després d'oferir una còpia de seguretat. Abans

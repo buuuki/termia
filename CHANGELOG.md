@@ -4,6 +4,13 @@
 
 ### Changed
 
+- Replace the separate note-category manager with Add category and New note
+  buttons together above search, plus folder-row actions for renaming,
+  duplicating, and deleting categories; align Add category with the title-bar
+  list toggle (`#289`).
+- Start or resume an unsaved note draft when opening the notes workspace and
+  size note properties to their content; make the notes tab scrollbar slim and
+  translucent (`#289`).
 - Mark source checkouts on the active development line as
   `0.6.0-beta.4-dev` (`#297`).
 - Allow the notes list to collapse, keep multiple note editors open in tabs,
@@ -11,9 +18,9 @@
   associations, and let the list fill the available vertical space (`#289`).
 - Open notes in a scoped list-and-editor view; keep import/export in the general
   manager and size note search for useful text (`#289`).
-- Put note search above the sidebar's category groups and group the list toggle,
-  category gear, icon-only New tab action, and Import/Export overflow menu on
-  the left of the notes window title bar (`#289`).
+- Put note search above the sidebar's category groups and group the list toggle
+  with the Import/Export overflow menu on the left of the notes window title
+  bar (`#289`).
 - Move the notes-list toggle outside the collapsible pane so hiding the list
   removes it completely and align the tab and editor left edges when the list
   is hidden (`#289`).
@@ -60,8 +67,8 @@
 - Keep note-tab close controls independently clickable after saving by avoiding
   nested GTK buttons (`#289`).
 - Keep server-note opening responsive, add an explicit Save action and safe
-  discard for incomplete drafts, and confine note-category selection to its
-  rounded tile; keep custom/test notes files beside their connection files
+  discard for incomplete drafts, and keep custom/test notes files beside their
+  connection files
   (`#289`).
 
 ## 0.6.0-beta.3 - 2026-09-30

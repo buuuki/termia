@@ -216,16 +216,20 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
   Las notas se guardan automáticamente en un fichero separado; también hay un
-  botón **Guardar**. Los borradores vacíos no se almacenan; al cerrar uno con
-  cambios sin guardar, se pregunta qué hacer. Las notas personales aparecen en
+  botón **Guardar**. Al abrir la ventana se crea un borrador nuevo o se recupera
+  uno pendiente del mismo contexto; en modo solo lectura no se crean borradores.
+  Los borradores vacíos no se almacenan; al cerrar uno con cambios sin guardar,
+  se pregunta qué hacer. Las notas personales aparecen en
   carpetas de categorías y las asociadas a servidores, en «Notas de servidor»,
   con el nombre del servidor junto al título. La lista tiene búsqueda global
-  y filas compactas; el menú contextual muestra sus Propiedades, incluida la
-  categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
+  y filas compactas; el diálogo compacto de Propiedades muestra, entre otros
+  datos, la categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
   la abre en una pestaña de edición. Los controles
-  a la izquierda de la barra de título ocultan la lista, gestionan categorías,
-  crean notas y abren el menú de importación/exportación. Desde el menú
-  principal se muestran todas las notas y se ofrecen importación y
+  a la izquierda de la barra de título ocultan la lista y abren el menú de
+  importación/exportación. Sobre el buscador, el botón de la izquierda crea
+  una categoría y el de al lado crea una nota. Con clic derecho sobre una
+  categoría puedes renombrarla, duplicarla con sus notas o eliminarla. Desde
+  el menú principal se muestran todas las notas y se ofrecen importación y
   exportación. Desde un servidor solo se muestran sus notas, sin importar ni
   exportar. Las notas pueden ser personales o asociarse a un servidor. Al
   eliminar un servidor, sus notas se conservan como personales. La importación

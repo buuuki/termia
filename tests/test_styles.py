@@ -42,16 +42,23 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             warnings.simplefilter("ignore", DeprecationWarning)
             provider.load_from_data(build_application_css("#202020", "#202020", "#008712", 1))
 
-    def test_category_selection_styles_only_the_rounded_tile(self) -> None:
+    def test_notes_tab_scrollbar_is_compact_and_translucent(self) -> None:
         css = build_application_css("#202020", "#202020", "#008712", 1).decode()
 
-        self.assertIn("flowboxchild.termia-snippet-category-tile:selected { ", css)
-        self.assertIn("background: transparent; box-shadow: none;", css)
         self.assertIn(
-            "flowboxchild.termia-snippet-category-tile:selected > frame.termia-snippet-category-frame",
+            ".termia-notes-tab-scroller scrollbar.horizontal { min-height: 5px; margin: 0 2px; padding: 0; }",
             css,
         )
-        self.assertIn("border-radius: 8px;", css)
+        self.assertIn(
+            ".termia-notes-tab-scroller scrollbar.horizontal slider { min-height: 3px; min-width: 24px; "
+            "background-color: alpha(@theme_fg_color, 0.35); }",
+            css,
+        )
+        self.assertIn(
+            ".termia-notes-tab-scroller scrollbar.horizontal slider:hover { "
+            "background-color: alpha(@theme_fg_color, 0.6); }",
+            css,
+        )
 
 
 if __name__ == "__main__":

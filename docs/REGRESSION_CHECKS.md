@@ -241,13 +241,17 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   preference. A completely empty draft must not be persisted. If an existing
   note is emptied, its prior saved content must remain intact until an explicit
   non-empty edit is saved or the note is deleted.
-- Keep the notes-list toggle, category-management gear, icon-only New tab
-  action, and Import/Export overflow menu in that order on the left side of
-  the notes window title bar. Hiding the list must remove the pane entirely and
-  align the tab and editor left edges; restoring it must return the list to its
+- Keep the notes-list toggle and Import/Export overflow menu, in that order,
+  on the left side of the notes window title bar. Hiding the list must remove
+  the pane and its creation buttons entirely and align the tab and editor left
+  edges; restoring it must return the list to its
   previous width and restore a small, visible inset beside the divider (about 6 px).
-  Place global search above the category-grouped note tree in the sidebar; it
-  must search across all categories, and there must be no category filter
+  Place Add category and New note icons together in a left-aligned row above
+  global search and the category-grouped note tree in the sidebar, with Add
+  category first. When the list is visible, the Add category and Hide list
+  buttons must share the same horizontal center. Both creation buttons must
+  remain usable when no categories exist.
+  Search must span all categories, and there must be no category filter
   dropdown. Hide Import/Export for server-scoped notes. Server associations
   must remain intact when editing saved notes. In a read-only instance, opening
   a note must still allow reading
@@ -285,36 +289,50 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Main-menu notes management must show all notes, a search field wide enough
   for roughly 30 letters, and import/export actions. Server-context notes must
   list only that server's notes and hide Import, Export, and Show all notes.
-  Search belongs above the note tree in the sidebar. Category management and
-  the icon-only New tab action stay together on the left of the title bar; the
-  Import/Export overflow menu follows them and is visible only in
-  the general view. Creating from that view must preselect the server. Empty
+  Opening the hidden notes window must focus a new empty draft for the selected
+  scope, or resume an existing draft for that scope without adding a duplicate.
+  Re-presenting an already visible window must not add a draft; read-only
+  instances must not create drafts. Empty drafts must remain unpersisted.
+  Search belongs above the note tree in the sidebar, below the two creation
+  buttons. The Import/Export overflow menu stays in the title bar and is
+  visible only in the general view. Creating from that view must preselect the
+  server. Empty
   views must show a useful message instead of a disabled editor. Single-clicking
   a note must only select it; double-clicking opens its editor in a tab,
   activating an existing tab instead of duplicating it. Selecting another note
   must not replace or visually disagree with the active editor. Verify the idle
   workspace explains that double-click opens a note.
 - Verify standalone notes and server-linked notes can be created, searched,
-  edited, and deleted. Existing categories persist; duplicate
-  categories duplicate their notes with new IDs; deleting a category moves its
-  notes to Uncategorized.
+  edited, and deleted. Create a category with the button above search, then
+  right-click its folder row to rename, duplicate, or delete it. The context
+  menu must also open with Menu or Shift+F10 while the row button has focus.
+  Uncategorized and Server notes must not have category-management menus.
+  Existing categories persist; duplicating a category duplicates its notes
+  with new IDs; deleting a category moves its notes to Uncategorized. Renaming
+  or deleting a category must update already-open note tabs without restoring
+  the old category on the next autosave.
 - Right-click notes in the list and confirm the menu offers Edit, Rename,
   Clone, Properties, and Delete. Properties must remain available in read-only
   mode and show title, category, associated server or Personal notes, creation
   and modification dates in local time without fractional seconds, line and
-  character counts, and UTF-8 content size. Clone a note and verify the copy
+  character counts, and UTF-8 content size. The Properties window must fit its
+  contents without a large blank area below Close. Clone a note and verify the copy
   has a new identity, a “(copy)” title suffix, the same content/category/server
   association, and is saved immediately.
 - Toggle the notes list off and on; verify the toggle stays at the far left of
-  the title bar, the gear and New tab button remain beside it, and the list pane
-  disappears completely. While hidden, the left edges of the note tabs and
-  editor must align; restoring the list returns its previous width and the
-  normal content inset. Confirm the overflow menu follows the New tab button,
+  the title bar, the list pane and its creation buttons disappear completely,
+  and both buttons return above search when the list is restored. While hidden,
+  the left edges of the note tabs and editor must align; restoring the list
+  returns its previous width and the
+  normal content inset. Confirm the overflow menu follows the list toggle,
   contains Import and Export in the general view, and is hidden in server-scoped
-  notes. Confirm the gear opens category management. With several notes, verify the
-  list fills the panel height and shows multiple rows before scrolling. Open
-  two existing notes and one draft in tabs; verify the close icon is visually
-  inside each tab and works independently. Switch among the tabs while editing,
+  notes. With several notes, verify the list fills the panel height and shows
+  multiple rows before scrolling. Open
+  enough note tabs to overflow and confirm that their horizontal scrollbar is
+  slim and translucent, does not obscure tab titles, and remains usable with
+  the mouse in light and dark themes. Open two existing notes and one draft in
+  tabs; verify the close icon is visually inside each tab and works
+  independently. Switch among the tabs while editing,
   reorder them by dragging, and verify each retains its own content without a
   colored outline around the entire tab bar. Confirm
   opening an already open note activates its existing tab, and Save/autosave
@@ -343,8 +361,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   preserves it while Close without saving removes only that draft.
   Open server notes from a sidebar context menu and confirm the notes window
   receives focus after the popover closes and remains modeless.
-  The selected note-category highlight must stay inside the rounded tile,
-  not cover its square FlowBox cell.
+  Confirm a long category name stays within its folder row and does not widen
+  the notes sidebar.
   Force a save failure and confirm the editor retains the unsaved text when
   switching notes or closing the notes window.
 - Delete a server, delete a group containing servers, clear connection

@@ -223,17 +223,21 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
 
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
 - `Manage notes` opens a reusable modeless notes workspace. Notes are saved
-  automatically, and the editor also offers an explicit **Save** button. Empty
-  drafts are not stored; closing a draft with unsaved changes asks what to do.
+  automatically, and the editor also offers an explicit **Save** button. Opening
+  the window starts a new note draft, or resumes an existing draft for the same
+  scope; read-only instances do not start drafts. Empty drafts are not stored;
+  closing a draft with unsaved changes asks what to do.
   Personal notes appear under category folders in a searchable list; linked
   notes appear in Server notes with the server name beside each title. Rows
   are compact and show further details, including a linked note's saved
-  category, in the right-click Properties dialog. A single click selects a note;
-  a double click opens it in an editor tab. The
-  title bar's left-side controls hide the list, manage categories, create a note,
-  and open the Import/Export menu. The main-menu manager shows all notes and
-  offers import/export. Opening notes from a
-  server's sidebar shows only that server's notes and hides import/export.
+  category, in the compact right-click Properties dialog. A single click selects
+  a note; a double click opens it in an editor tab. The
+  title bar's left-side controls hide the list and open the Import/Export menu.
+  Above search, the left button creates a category and the button beside it
+  creates a note. Right-click a category to rename, duplicate it with its
+  notes, or delete it. The main-menu manager shows all notes and offers
+  import/export. Opening notes from a server's sidebar shows only that server's
+  notes and hides import/export.
   Notes can be categorized or kept as personal notes. Deleting a server keeps
   its notes as personal notes. Import replaces existing notes only after
   offering to back them up. Before export, Termia explains that choosing no

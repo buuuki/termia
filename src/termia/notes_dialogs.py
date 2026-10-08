@@ -49,7 +49,7 @@ class NoteEditorTab:
 
 
 class NotesDialogs:
-    """Reusable modeless notes manager and category-management window."""
+    """Reusable modeless notes workspace and its dialogs."""
 
     AUTOSAVE_DELAY_MS = 700
 
@@ -71,9 +71,9 @@ class NotesDialogs:
         self.show_error = show_error
         self.show_toast = show_toast
         self.window: Gtk.Window | None = None
-        self.category_window: Gtk.Window | None = None
         self.export_protection_window: Gtk.Window | None = None
         self.notes_context_popover: Gtk.Popover | None = None
+        self.category_context_popover: Gtk.Popover | None = None
         self.tab_context_popover: Gtk.Popover | None = None
         self.current_note_id: str | None = None
         self.selected_note_id: str | None = None
@@ -83,8 +83,6 @@ class NotesDialogs:
         self.loading_editor = False
         self.loading_search = False
         self.editor_dirty = False
-        self.category_selected: str | None = None
-        self.category_edit_mode: str | None = None
         self.editor_tabs: dict[str, NoteEditorTab] = {}
         self.active_editor_tab_key: str | None = None
         self.loading_note_list = False
@@ -95,6 +93,7 @@ class NotesDialogs:
         if self.store.encryption_locked:
             self.ensure_writable()
             return
+        opening_window = self.window is None or not self.window.get_visible()
         self.ensure_window()
         if not self.save_active_editor_if_valid():
             self.window.present()
@@ -116,6 +115,17 @@ class NotesDialogs:
         self.set_import_export_actions_visible(server_id is None)
         self.refresh_list()
         self.window.present()
+        if opening_window and not self.store.read_only:
+            draft = next(
+                (tab for tab in self.editor_tabs.values()
+                 if tab.note_id is None and tab.server_id == server_id),
+                None,
+            )
+            if draft is not None:
+                self.activate_editor_tab(draft.key)
+                self.text_view.grab_focus()
+            else:
+                self.create_note()
 
     def ensure_window(self) -> None:
         if self.window is not None:
@@ -134,6 +144,8 @@ class NotesDialogs:
         header.set_show_title_buttons(True)
         window.set_titlebar(header)
         header_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        # Match the sidebar's first button inside the window's content inset.
+        header_actions.set_margin_start(8)
         header.pack_start(header_actions)
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -144,20 +156,6 @@ class NotesDialogs:
         self.toggle_notes_list_button = Gtk.Button()
         self.toggle_notes_list_button.connect("clicked", lambda *_: self.toggle_notes_list())
         header_actions.append(self.toggle_notes_list_button)
-
-        self.category_manage_button = Gtk.Button(icon_name="emblem-system-symbolic")
-        self.category_manage_button.set_tooltip_text(self.translate("notes_manage_categories"))
-        self.category_manage_button.connect("clicked", lambda *_: self.show_categories())
-        header_actions.append(self.category_manage_button)
-
-        self.add_button = Gtk.Button(icon_name="tab-new-symbolic")
-        self.add_button.set_tooltip_text(
-            self.translate("notes_create_for_server")
-            if self.server_filter_id else self.translate("notes_create")
-        )
-        self.add_button.add_css_class("suggested-action")
-        self.add_button.connect("clicked", lambda *_: self.create_note())
-        header_actions.append(self.add_button)
 
         self.import_export_popover = Gtk.Popover()
         import_export_actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -200,6 +198,7 @@ class NotesDialogs:
         list_box.connect("row-selected", self.on_note_selected)
         list_box.connect("row-activated", self.on_note_row_activated)
         self.notes_list = list_box
+        list_panel.append(self.build_creation_controls())
         self.search_entry = Gtk.SearchEntry()
         self.search_entry.set_size_request(300, -1)
         self.search_entry.set_placeholder_text(self.translate("notes_search"))
@@ -223,6 +222,7 @@ class NotesDialogs:
         self.editor_tabs_bar.set_halign(Gtk.Align.START)
         self.editor_tabs_bar.add_css_class("termia-notes-tab-bar")
         tabs_scroller = Gtk.ScrolledWindow()
+        tabs_scroller.add_css_class("termia-notes-tab-scroller")
         tabs_scroller.set_hexpand(True)
         tabs_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
         tabs_scroller.set_child(self.editor_tabs_bar)
@@ -289,10 +289,29 @@ class NotesDialogs:
         self.set_editor_enabled(False)
         self.detail_stack.set_visible_child_name("empty")
 
+    def build_creation_controls(self) -> Gtk.Box:
+        controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        controls.set_halign(Gtk.Align.START)
+        self.category_add_button = Gtk.Button(icon_name="list-add-symbolic")
+        self.category_add_button.set_tooltip_text(self.translate("notes_category_add"))
+        self.category_add_button.connect(
+            "clicked", lambda *_: self.prompt_category_edit("add")
+        )
+        controls.append(self.category_add_button)
+        self.add_button = Gtk.Button(icon_name="tab-new-symbolic")
+        self.add_button.set_tooltip_text(
+            self.translate("notes_create_for_server")
+            if self.server_filter_id else self.translate("notes_create")
+        )
+        self.add_button.add_css_class("suggested-action")
+        self.add_button.connect("clicked", lambda *_: self.create_note())
+        controls.append(self.add_button)
+        return controls
+
     def configure_write_controls(self) -> None:
         writable = not self.store.read_only and not self.store.encryption_locked
         for widget in (
-            self.category_manage_button,
+            self.category_add_button,
             self.add_button,
             self.import_button,
             self.text_view,
@@ -369,6 +388,7 @@ class NotesDialogs:
         if not hasattr(self, "notes_list"):
             return
         self.close_note_context_menu()
+        self.close_category_context_menu()
         selected_id = selected_id if selected_id is not None else self.selected_note_id
         while child := self.notes_list.get_first_child():
             self.notes_list.remove(child)
@@ -505,6 +525,7 @@ class NotesDialogs:
         label.set_xalign(0)
         label.set_ellipsize(3)
         label.set_hexpand(True)
+        label.set_tooltip_text(name)
         label.add_css_class("heading")
         contents.append(label)
         count_label = Gtk.Label(
@@ -519,6 +540,19 @@ class NotesDialogs:
         button.set_child(contents)
         row.set_child(button)
         button.add_css_class("termia-note-category")
+        if category:
+            context_click = Gtk.GestureClick()
+            context_click.set_button(3)
+            context_click.connect(
+                "pressed", self.on_category_context_pressed, category, button
+            )
+            button.add_controller(context_click)
+            context_key = Gtk.EventControllerKey.new()
+            context_key.connect(
+                "key-pressed", self.on_category_context_key_pressed,
+                category, button,
+            )
+            button.add_controller(context_key)
         self.notes_list.append(row)
 
     def on_note_drag_prepare(
@@ -608,6 +642,75 @@ class NotesDialogs:
         else:
             self.collapsed_note_categories.add(category)
         self.refresh_list(self.selected_note_id)
+
+    def on_category_context_pressed(
+        self, gesture: Gtk.GestureClick, _presses: int, _x: float, _y: float,
+        category: str, button: Gtk.Button,
+    ) -> None:
+        self.show_category_context_menu(category, button)
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+
+    def on_category_context_key_pressed(
+        self, _controller: Gtk.EventControllerKey, keyval: int, _keycode: int,
+        state: Gdk.ModifierType, category: str, button: Gtk.Button,
+    ) -> bool:
+        if keyval == Gdk.KEY_Menu or (
+            keyval == Gdk.KEY_F10 and state & Gdk.ModifierType.SHIFT_MASK
+        ):
+            self.show_category_context_menu(category, button)
+            return True
+        return False
+
+    def show_category_context_menu(self, category: str, button: Gtk.Button) -> None:
+        if category not in self.store.data.note_categories:
+            return
+        self.close_category_context_menu()
+        popover = Gtk.Popover()
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_category_context_menu_closed)
+        actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        for action, label_key in (
+            ("rename", "notes_category_rename"),
+            ("duplicate", "notes_category_duplicate"),
+            ("delete", "notes_category_delete"),
+        ):
+            item = Gtk.Button(label=self.translate(label_key))
+            item.add_css_class("flat")
+            if action == "delete":
+                item.add_css_class("destructive-action")
+            item.set_sensitive(not self.store.read_only and not self.store.encryption_locked)
+            item.connect(
+                "clicked",
+                lambda _button, selected_action=action, name=category:
+                    self.on_category_context_action(selected_action, name),
+            )
+            actions.append(item)
+        popover.set_child(actions)
+        popover.set_parent(button)
+        self.category_context_popover = popover
+        popover.popup()
+
+    def on_category_context_menu_closed(self, popover: Gtk.Popover) -> None:
+        if self.category_context_popover is popover:
+            self.category_context_popover = None
+        if popover.get_parent() is not None:
+            popover.unparent()
+
+    def close_category_context_menu(self) -> None:
+        popover = getattr(self, "category_context_popover", None)
+        if popover is None:
+            return
+        self.category_context_popover = None
+        popover.popdown()
+        if popover.get_parent() is not None:
+            popover.unparent()
+
+    def on_category_context_action(self, action: str, category: str) -> None:
+        self.close_category_context_menu()
+        if action in ("rename", "duplicate"):
+            GLib.idle_add(self.prompt_category_edit, action, category)
+        elif action == "delete":
+            GLib.idle_add(self.confirm_delete_category, category)
 
     def on_note_selected(self, _listbox: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
         if row is None:
@@ -762,6 +865,8 @@ class NotesDialogs:
             transient_for=self.window,
             modal=False,
         )
+        dialog.set_resizable(False)
+        dialog.set_default_size(460, -1)
         dialog.add_button(self.translate("close"), Gtk.ResponseType.CLOSE)
         dialog.connect("response", lambda window, _response: window.destroy())
         content = dialog.get_content_area()
@@ -1445,6 +1550,7 @@ class NotesDialogs:
 
     def on_close_request(self, _window: Gtk.Window) -> bool:
         self.close_note_context_menu()
+        self.close_category_context_menu()
         self.close_note_tab_context_menu()
         if not self.save_active_editor_if_valid():
             self.window.present()
@@ -1509,139 +1615,59 @@ class NotesDialogs:
         self.selected_note_id = None
         self.refresh_list()
 
-    def show_categories(self) -> None:
-        if not self.save_active_editor_if_valid():
+    def prompt_category_edit(self, mode: str, original: str | None = None) -> None:
+        if mode not in ("add", "rename", "duplicate"):
             return
-        if not self.ensure_writable():
+        if mode != "add" and original not in self.store.data.note_categories:
             return
-        if self.category_window is None:
-            self.build_category_window()
-        self.refresh_category_grid()
-        self.category_window.present()
-
-    def build_category_window(self) -> None:
-        window = Gtk.Window(title=self.translate("notes_manage_categories"), transient_for=self.window)
-        window.set_modal(False)
-        window.set_default_size(640, 480)
-        window.connect("close-request", lambda source: (source.set_visible(False), True)[1])
-        self.category_window = window
-        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        if not self.ensure_writable() or not self.save_active_editor_if_valid():
+            return
+        title_key = {
+            "add": "notes_category_add",
+            "rename": "notes_category_rename",
+            "duplicate": "notes_category_duplicate",
+        }[mode]
+        dialog = Gtk.Dialog(
+            title=self.translate(title_key), transient_for=self.window, modal=True
+        )
+        dialog.set_default_size(360, -1)
+        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(self.translate("save"), Gtk.ResponseType.OK)
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        content = dialog.get_content_area()
         for side in ("top", "bottom", "start", "end"):
-            getattr(root, f"set_margin_{side}")(12)
-        window.set_child(root)
-        self.category_grid = Gtk.FlowBox()
-        self.category_grid.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self.category_grid.set_max_children_per_line(3)
-        self.category_grid.set_row_spacing(8)
-        self.category_grid.set_column_spacing(8)
-        self.category_grid.connect("selected-children-changed", self.on_category_selected)
-        scroll = Gtk.ScrolledWindow()
-        scroll.set_vexpand(True)
-        scroll.set_child(self.category_grid)
-        root.append(scroll)
-        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self.category_add = Gtk.Button(label=self.translate("notes_category_add"))
-        self.category_rename = Gtk.Button(label=self.translate("notes_category_rename"))
-        self.category_duplicate = Gtk.Button(label=self.translate("notes_category_duplicate"))
-        self.category_delete = Gtk.Button(label=self.translate("notes_category_delete"))
-        self.category_delete.add_css_class("destructive-action")
-        for button in (self.category_add, self.category_rename, self.category_duplicate, self.category_delete):
-            actions.append(button)
-        root.append(actions)
-        self.category_name_entry = Gtk.Entry()
-        self.category_name_entry.set_placeholder_text(self.translate("notes_category_name"))
-        self.category_name_entry.set_visible(False)
-        root.append(self.category_name_entry)
-        edit_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self.category_name_save = Gtk.Button(label=self.translate("save"))
-        self.category_name_cancel = Gtk.Button(label=self.translate("cancel"))
-        self.category_name_save.set_visible(False)
-        self.category_name_cancel.set_visible(False)
-        edit_actions.append(self.category_name_save)
-        edit_actions.append(self.category_name_cancel)
-        root.append(edit_actions)
-        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        footer.set_halign(Gtk.Align.END)
-        close = Gtk.Button(label=self.translate("close"))
-        close.connect("clicked", lambda *_: window.set_visible(False))
-        footer.append(close)
-        root.append(footer)
-        self.category_add.connect("clicked", lambda *_: self.begin_category_edit("add"))
-        self.category_rename.connect("clicked", lambda *_: self.begin_category_edit("rename"))
-        self.category_duplicate.connect("clicked", lambda *_: self.begin_category_edit("duplicate"))
-        self.category_delete.connect("clicked", lambda *_: self.confirm_delete_category())
-        self.category_name_save.connect("clicked", lambda *_: self.save_category_edit())
-        self.category_name_entry.connect("activate", lambda *_: self.save_category_edit())
-        self.category_name_cancel.connect("clicked", lambda *_: self.cancel_category_edit())
-
-    def refresh_category_grid(self, selected: str | None = None) -> None:
-        self.category_grid.unselect_all()
-        while child := self.category_grid.get_first_child():
-            self.category_grid.remove(child)
-        self.category_keys = []
-        counts = dict(self.presenter.categories())
-        for category in self.store.data.note_categories:
-            tile = Gtk.FlowBoxChild()
-            tile.add_css_class("termia-note-category-tile")
-            frame = Gtk.Frame()
-            frame.add_css_class("termia-note-category-frame")
-            frame.set_size_request(170, 112)
-            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-            box.set_halign(Gtk.Align.CENTER)
-            box.set_valign(Gtk.Align.CENTER)
-            icon = Gtk.Image.new_from_icon_name("folder-symbolic")
-            icon.set_pixel_size(30)
-            name = Gtk.Label(label=category)
-            name.set_ellipsize(3)
-            count = Gtk.Label(label=self.translate("notes_category_count").format(count=counts.get(category, 0)))
-            count.add_css_class("dim-label")
-            for child in (icon, name, count):
-                box.append(child)
-            frame.set_child(box)
-            tile.set_child(frame)
-            self.category_grid.insert(tile, -1)
-            self.category_keys.append(category)
-            if category == selected:
-                self.category_grid.select_child(tile)
-        self.category_selected = selected if selected in self.category_keys else None
-        self.update_category_buttons()
-
-    def on_category_selected(self, grid: Gtk.FlowBox) -> None:
-        selected = grid.get_selected_children()
-        index = selected[0].get_index() if selected else -1
-        self.category_selected = self.category_keys[index] if 0 <= index < len(self.category_keys) else None
-        self.update_category_buttons()
-
-    def update_category_buttons(self) -> None:
-        selected = self.category_selected is not None
-        self.category_rename.set_sensitive(selected)
-        self.category_duplicate.set_sensitive(selected)
-        self.category_delete.set_sensitive(selected)
-
-    def begin_category_edit(self, mode: str) -> None:
-        if mode != "add" and self.category_selected is None:
-            return
-        self.category_edit_mode = mode
+            getattr(content, f"set_margin_{side}")(12)
+        entry = Gtk.Entry()
+        entry.set_placeholder_text(self.translate("notes_category_name"))
         if mode == "rename":
-            value = self.category_selected or ""
+            entry.set_text(original)
         elif mode == "duplicate":
-            value = f"{self.category_selected} {self.translate('snippet_copy_suffix')}"
-        else:
-            value = ""
-        self.category_name_entry.set_text(value)
-        self.category_name_entry.set_visible(True)
-        self.category_name_save.set_visible(True)
-        self.category_name_cancel.set_visible(True)
-        self.category_name_entry.grab_focus()
+            entry.set_text(f"{original} {self.translate('snippet_copy_suffix')}")
+        entry.set_activates_default(True)
+        content.append(entry)
+        dialog.connect("response", self.on_category_edit_response, entry, mode, original)
+        dialog.present()
+        entry.grab_focus()
+        entry.set_position(-1)
 
-    def save_category_edit(self) -> None:
-        name, mode, original = self.category_name_entry.get_text(), self.category_edit_mode, self.category_selected
+    def on_category_edit_response(
+        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry,
+        mode: str, original: str | None,
+    ) -> None:
+        name = entry.get_text()
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK:
+            return
+        if not self.ensure_writable() or not self.save_active_editor_if_valid():
+            return
+        if mode != "add" and original not in self.store.data.note_categories:
+            return
         try:
             if mode == "add":
                 self.store.add_note_category(name)
-            elif mode == "rename" and original:
+            elif mode == "rename":
                 self.store.rename_note_category(original, name)
-            elif mode == "duplicate" and original:
+            elif mode == "duplicate":
                 self.store.duplicate_note_category(original, name)
             else:
                 return
@@ -1651,10 +1677,16 @@ class NotesDialogs:
                 else self.translate("notes_save_failed_detail")
             )
             return
-        self.cancel_category_edit()
+        self.sync_open_note_categories()
         self.refresh_current_editor_metadata()
         self.refresh_list()
-        self.refresh_category_grid(name.strip())
+
+    def sync_open_note_categories(self) -> None:
+        for tab in self.editor_tabs.values():
+            if tab.note_id:
+                note = self.find_note(tab.note_id)
+                if note is not None:
+                    tab.category = note.category
 
     def refresh_current_editor_metadata(self) -> None:
         note = self.find_note(self.current_note_id) if self.current_note_id else None
@@ -1665,17 +1697,11 @@ class NotesDialogs:
                 )
             )
 
-    def cancel_category_edit(self) -> None:
-        self.category_edit_mode = None
-        self.category_name_entry.set_text("")
-        self.category_name_entry.set_visible(False)
-        self.category_name_save.set_visible(False)
-        self.category_name_cancel.set_visible(False)
-
-    def confirm_delete_category(self) -> None:
-        if not self.category_selected:
+    def confirm_delete_category(self, name: str) -> None:
+        if name not in self.store.data.note_categories:
             return
-        name = self.category_selected
+        if not self.ensure_writable() or not self.save_active_editor_if_valid():
+            return
         count = sum(note.category == name for note in self.store.data.notes)
         dialog = Gtk.AlertDialog(
             message=self.translate("notes_category_delete_confirm").format(name=name, count=count),
@@ -1683,7 +1709,7 @@ class NotesDialogs:
         dialog.set_buttons([self.translate("cancel"), self.translate("notes_category_delete")])
         dialog.set_cancel_button(0)
         dialog.set_default_button(0)
-        dialog.choose(self.category_window, None, self.on_delete_category_response, name)
+        dialog.choose(self.window, None, self.on_delete_category_response, name)
 
     def on_delete_category_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, name: str) -> None:
         try:
@@ -1691,6 +1717,8 @@ class NotesDialogs:
         except GLib.Error:
             return
         if response != 1:
+            return
+        if not self.ensure_writable():
             return
         try:
             self.store.delete_note_category(name)
@@ -1700,9 +1728,9 @@ class NotesDialogs:
                 else self.translate("notes_save_failed_detail")
             )
             return
+        self.sync_open_note_categories()
         self.refresh_current_editor_metadata()
         self.refresh_list()
-        self.refresh_category_grid()
 
     def choose_export_protection(self) -> None:
         if not self.save_active_editor_if_valid():
@@ -1963,10 +1991,10 @@ class NotesDialogs:
     def shutdown(self) -> None:
         self.cancel_autosave()
         self.close_note_context_menu()
+        self.close_category_context_menu()
         self.close_note_tab_context_menu()
-        for window in (self.category_window, self.window):
-            if window is not None:
-                window.destroy()
+        if self.window is not None:
+            self.window.destroy()
 
     def prepare_shutdown(self) -> bool:
         if self.window is None:

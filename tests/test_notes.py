@@ -4,7 +4,7 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from termia.config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
@@ -14,7 +14,7 @@ from termia.config_io import (
 )
 from termia.models import Note
 from termia.notes import NoteError, normalize_note, note_matches_query
-from termia.notes_dialogs import Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp
+from termia.notes_dialogs import Gdk, Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp
 from termia.notes_io import (
     export_notes_file,
     import_notes_file,
@@ -84,6 +84,205 @@ class NotesDomainTests(unittest.TestCase):
 
 
 class NotesDialogSignalTests(unittest.TestCase):
+    def test_notes_header_controls_use_sidebar_alignment_inset(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.window = None
+        dialog.parent = MagicMock()
+        dialog.server_filter_id = None
+        dialog.translate = lambda key: key
+        dialog.build_creation_controls = MagicMock()
+        dialog.update_notes_list_toggle = MagicMock()
+        dialog.update_note_detail_inset = MagicMock()
+        dialog.configure_write_controls = MagicMock()
+        dialog.set_editor_enabled = MagicMock()
+        boxes = []
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            def make_box(**_kwargs):
+                box = MagicMock()
+                boxes.append(box)
+                return box
+
+            gtk.Box.side_effect = make_box
+            dialog.ensure_window()
+
+        boxes[0].set_margin_start.assert_called_once_with(8)
+        gtk.HeaderBar.return_value.pack_start.assert_called_once_with(boxes[0])
+
+    def test_creation_buttons_share_a_left_aligned_row_in_category_first_order(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.server_filter_id = None
+        dialog.translate = lambda key: key
+        category_button = MagicMock()
+        note_button = MagicMock()
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            gtk.Button.side_effect = [category_button, note_button]
+            controls = dialog.build_creation_controls()
+
+        controls.set_halign.assert_called_once_with(gtk.Align.START)
+        self.assertEqual(
+            [call.args[0] for call in controls.append.call_args_list],
+            [category_button, note_button],
+        )
+        category_button.set_tooltip_text.assert_called_once_with("notes_category_add")
+        note_button.set_tooltip_text.assert_called_once_with("notes_create")
+        note_button.add_css_class.assert_called_once_with("suggested-action")
+
+    def test_only_named_category_rows_get_context_menu_controls(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list = MagicMock()
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            dialog.append_note_category_header("Ops", 2, False)
+            dialog.append_note_category_header("", 0, False)
+            dialog.append_note_category_header(None, 1, False)
+
+        self.assertEqual(gtk.GestureClick.call_count, 1)
+        self.assertEqual(gtk.EventControllerKey.new.call_count, 1)
+        self.assertEqual(dialog.notes_list.append.call_count, 3)
+
+    def test_category_context_menu_has_three_translated_actions(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(
+            read_only=False, encryption_locked=False,
+            data=SimpleNamespace(note_categories=["Ops"]),
+        )
+        dialog.translate = lambda key: key
+        dialog.category_context_popover = None
+        button = MagicMock()
+        actions = [MagicMock() for _ in range(3)]
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            gtk.Button.side_effect = actions
+            dialog.show_category_context_menu("Ops", button)
+
+        self.assertEqual(
+            [call.kwargs["label"] for call in gtk.Button.call_args_list],
+            ["notes_category_rename", "notes_category_duplicate", "notes_category_delete"],
+        )
+        gtk.Popover.return_value.set_parent.assert_called_once_with(button)
+        gtk.Popover.return_value.popup.assert_called_once()
+        actions[2].add_css_class.assert_any_call("destructive-action")
+        for action in actions:
+            action.set_sensitive.assert_called_once_with(True)
+
+    def test_category_context_menu_has_keyboard_shortcuts(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.show_category_context_menu = MagicMock()
+        button = MagicMock()
+
+        self.assertTrue(dialog.on_category_context_key_pressed(
+            None, Gdk.KEY_Menu, 0, Gdk.ModifierType(0), "Ops", button,
+        ))
+        self.assertTrue(dialog.on_category_context_key_pressed(
+            None, Gdk.KEY_F10, 0, Gdk.ModifierType.SHIFT_MASK, "Ops", button,
+        ))
+        self.assertFalse(dialog.on_category_context_key_pressed(
+            None, Gdk.KEY_F10, 0, Gdk.ModifierType(0), "Ops", button,
+        ))
+        self.assertEqual(dialog.show_category_context_menu.call_count, 2)
+
+    def test_category_context_action_waits_until_popover_is_closed(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.close_category_context_menu = MagicMock()
+        dialog.prompt_category_edit = MagicMock()
+        dialog.confirm_delete_category = MagicMock()
+
+        with patch("termia.notes_dialogs.GLib.idle_add") as idle_add:
+            dialog.on_category_context_action("rename", "Ops")
+            idle_add.assert_called_with(dialog.prompt_category_edit, "rename", "Ops")
+            dialog.on_category_context_action("delete", "Ops")
+            idle_add.assert_called_with(dialog.confirm_delete_category, "Ops")
+
+        self.assertEqual(dialog.close_category_context_menu.call_count, 2)
+
+    def test_category_prompt_preselects_name_for_rename_and_duplicate(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=["Ops"]))
+        dialog.translate = lambda key: "copy" if key == "snippet_copy_suffix" else key
+        dialog.ensure_writable = lambda: True
+        dialog.save_active_editor_if_valid = lambda: True
+        dialog.window = MagicMock()
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            dialog.prompt_category_edit("rename", "Ops")
+            gtk.Entry.return_value.set_text.assert_called_with("Ops")
+            dialog.prompt_category_edit("duplicate", "Ops")
+            gtk.Entry.return_value.set_text.assert_called_with("Ops copy")
+            dialog.prompt_category_edit("add")
+            gtk.Dialog.assert_called_with(
+                title="notes_category_add", transient_for=dialog.window, modal=True,
+            )
+            gtk.Entry.return_value.set_placeholder_text.assert_called_with("notes_category_name")
+
+    def test_confirmed_category_delete_updates_open_tabs_and_list(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = MagicMock()
+        dialog.store.data.note_categories = ["Ops"]
+        dialog.store.data.notes = [SimpleNamespace(category="Ops")]
+        dialog.translate = lambda key: "{name}: {count}" if key == "notes_category_delete_confirm" else key
+        dialog.ensure_writable = lambda: True
+        dialog.save_active_editor_if_valid = lambda: True
+        dialog.window = MagicMock()
+        dialog.sync_open_note_categories = MagicMock()
+        dialog.refresh_current_editor_metadata = MagicMock()
+        dialog.refresh_list = MagicMock()
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            dialog.confirm_delete_category("Ops")
+            gtk.AlertDialog.assert_called_once_with(message="Ops: 1")
+            gtk.AlertDialog.return_value.choose.assert_called_once_with(
+                dialog.window, None, dialog.on_delete_category_response, "Ops",
+            )
+
+        result = MagicMock()
+        result.choose_finish.return_value = 1
+        dialog.on_delete_category_response(result, None, "Ops")
+
+        dialog.store.delete_note_category.assert_called_once_with("Ops")
+        dialog.sync_open_note_categories.assert_called_once()
+        dialog.refresh_list.assert_called_once()
+
+    def test_category_name_response_uses_the_matching_store_operation(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = MagicMock()
+        dialog.store.data.note_categories = ["Ops"]
+        dialog.ensure_writable = lambda: True
+        dialog.save_active_editor_if_valid = lambda: True
+        dialog.sync_open_note_categories = MagicMock()
+        dialog.refresh_current_editor_metadata = MagicMock()
+        dialog.refresh_list = MagicMock()
+        source = MagicMock()
+
+        for mode, original, name, operation in (
+            ("add", None, "New", "add_note_category"),
+            ("rename", "Ops", "Runbooks", "rename_note_category"),
+            ("duplicate", "Ops", "Ops copy", "duplicate_note_category"),
+        ):
+            with self.subTest(mode=mode):
+                entry = SimpleNamespace(get_text=lambda value=name: value)
+                dialog.on_category_edit_response(
+                    source, Gtk.ResponseType.OK, entry, mode, original,
+                )
+                args = (name,) if mode == "add" else (original, name)
+                getattr(dialog.store, operation).assert_called_once_with(*args)
+                dialog.store.reset_mock()
+
+        self.assertEqual(dialog.refresh_list.call_count, 3)
+        self.assertEqual(dialog.sync_open_note_categories.call_count, 3)
+
+    def test_category_rename_updates_open_tab_category(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        tab = NoteEditorTab("note-id", "note-id", "Runbook", "Ops", None, "Saved")
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.find_note = lambda note_id: SimpleNamespace(category="Runbooks")
+
+        dialog.sync_open_note_categories()
+
+        self.assertEqual(tab.category, "Runbooks")
+
     def test_closing_clean_editor_tab_removes_only_that_tab(self):
         tab = NoteEditorTab("note-id", "note-id", "Runbook", "", None, "Saved")
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -720,7 +919,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.store = SimpleNamespace(
-            encryption_locked=False,
+            encryption_locked=False, read_only=True,
             data=SimpleNamespace(note_categories=[], servers=[]),
         )
         dialog.translate = lambda key: key
@@ -737,7 +936,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.refresh_list = lambda *_args: None
         dialog.save_editor = lambda: False
         presented = []
-        dialog.window = SimpleNamespace(present=lambda: presented.append(True))
+        dialog.window = SimpleNamespace(
+            get_visible=lambda: True, present=lambda: presented.append(True),
+        )
         dialog.ensure_window = lambda: None
 
         dialog.show_manager()
@@ -773,7 +974,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.editor_dirty = True
         dialog.save_editor = lambda: False
         presented = []
-        dialog.window = SimpleNamespace(present=lambda: presented.append(True))
+        dialog.window = SimpleNamespace(
+            get_visible=lambda: True, present=lambda: presented.append(True),
+        )
 
         dialog.show_manager("server-id")
 
@@ -797,7 +1000,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.import_button = SimpleNamespace(set_visible=import_visibility.append)
         dialog.export_button = SimpleNamespace(set_visible=export_visibility.append)
         dialog.import_export_menu_button = SimpleNamespace(set_visible=menu_visibility.append)
-        dialog.window = SimpleNamespace(present=lambda: None)
+        dialog.window = SimpleNamespace(get_visible=lambda: True, present=lambda: None)
 
         dialog.show_manager("server-id")
         self.assertEqual(views, ["server-id"])
@@ -811,6 +1014,66 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(import_visibility, [False, True])
         self.assertEqual(export_visibility, [False, True])
         self.assertEqual(menu_visibility, [False, True])
+
+    def test_opening_hidden_notes_window_starts_a_draft_in_the_current_scope(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(encryption_locked=False, read_only=False)
+        dialog.translate = lambda key: key
+        dialog.editor_tabs = {}
+        dialog.active_editor_tab_key = None
+        dialog.editor_dirty = False
+        dialog.loading_search = False
+        dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
+        dialog.add_button = SimpleNamespace(set_tooltip_text=lambda _text: None)
+        dialog.set_import_export_actions_visible = lambda _visible: None
+        dialog.refresh_list = lambda: None
+        dialog.ensure_window = lambda: None
+        visible = False
+        dialog.window = SimpleNamespace(get_visible=lambda: visible, present=lambda: None)
+        created = []
+        dialog.create_note = lambda: created.append(dialog.server_filter_id)
+
+        dialog.show_manager()
+        self.assertEqual(created, [None])
+
+        visible = True
+        dialog.show_manager()
+        self.assertEqual(created, [None])
+
+        visible = False
+        dialog.show_manager("server-id")
+        self.assertEqual(created, [None, "server-id"])
+
+        dialog.store.read_only = True
+        dialog.show_manager()
+        self.assertEqual(created, [None, "server-id"])
+
+    def test_reopening_notes_reuses_a_draft_for_the_same_scope(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(encryption_locked=False, read_only=False)
+        dialog.translate = lambda key: key
+        dialog.editor_tabs = {
+            "draft": NoteEditorTab("draft", None, "New note", "", "server-id", ""),
+        }
+        dialog.active_editor_tab_key = None
+        dialog.editor_dirty = False
+        dialog.loading_search = False
+        dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
+        dialog.add_button = SimpleNamespace(set_tooltip_text=lambda _text: None)
+        dialog.set_import_export_actions_visible = lambda _visible: None
+        dialog.refresh_list = lambda: None
+        dialog.ensure_window = lambda: None
+        dialog.window = SimpleNamespace(get_visible=lambda: False, present=lambda: None)
+        activated = []
+        dialog.activate_editor_tab = activated.append
+        focused = []
+        dialog.text_view = SimpleNamespace(grab_focus=lambda: focused.append(True))
+        dialog.create_note = lambda: self.fail("duplicate draft created")
+
+        dialog.show_manager("server-id")
+
+        self.assertEqual(activated, ["draft"])
+        self.assertEqual(focused, [True])
 
     def test_selecting_another_note_does_not_replace_an_open_editor(self):
         note = Note("other-note", "Runbook", "Content", "Ops", "server-id", "", "2026-10-05")
