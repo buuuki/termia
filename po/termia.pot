@@ -1736,6 +1736,10 @@ msgstr ""
 msgid "Rename note"
 msgstr ""
 
+#: src/termia/i18n.py:notes_properties
+msgid "Properties"
+msgstr ""
+
 #: src/termia/i18n.py:notes_title_required
 msgid "The note name cannot be empty."
 msgstr ""
@@ -1786,12 +1790,44 @@ msgstr ""
 msgid "Personal notes"
 msgstr ""
 
+#: src/termia/i18n.py:notes_server_group
+msgid "Server notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_unknown_server
+msgid "Unavailable server"
+msgstr ""
+
 #: src/termia/i18n.py:notes_for_server
 msgid "Notes for {name}"
 msgstr ""
 
 #: src/termia/i18n.py:notes_modified
 msgid "Modified {date}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_created
+msgid "Created"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_modified
+msgid "Last modified"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_lines
+msgid "Lines"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_characters
+msgid "Characters"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_size
+msgid "Content size (UTF-8)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_bytes
+msgid "{count} bytes"
 msgstr ""
 
 #: src/termia/i18n.py:notes_empty
@@ -1804,6 +1840,10 @@ msgstr ""
 
 #: src/termia/i18n.py:notes_empty_server
 msgid "No notes for this server yet."
+msgstr ""
+
+#: src/termia/i18n.py:notes_double_click_to_open
+msgid "Double-click a note to open it in a tab."
 msgstr ""
 
 #: src/termia/i18n.py:notes_saved

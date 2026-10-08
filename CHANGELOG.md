@@ -9,18 +9,24 @@
 - Allow the notes list to collapse, keep multiple note editors open in tabs,
   preserve the active editor when its note list is empty, retain server
   associations, and let the list fill the available vertical space (`#289`).
-- Open notes in a scoped list-and-read-only-preview view, showing the most
-  recently modified note first; reserve the editor for Create/Edit, keep
-  import/export in the general manager, and size note search for useful text
-  (`#289`).
-- Put note search above the sidebar's category groups and keep the management
-  gear beside the list toggle; keep Create and the Import/Export overflow menu
-  in the top toolbar, with the overflow menu at the far right (`#289`).
+- Open notes in a scoped list-and-editor view; keep import/export in the general
+  manager and size note search for useful text (`#289`).
+- Put note search above the sidebar's category groups and group the list toggle,
+  category gear, icon-only New tab action, and Import/Export overflow menu on
+  the left of the notes window title bar (`#289`).
 - Move the notes-list toggle outside the collapsible pane so hiding the list
-  removes it completely while leaving the toggle and management gear accessible
-  (`#289`).
-- Group notes under expandable category folders, search across all categories,
-  and align the note-tab bar with its editor when the list is hidden (`#289`).
+  removes it completely and align the tab and editor left edges when the list
+  is hidden (`#289`).
+- Group personal notes under expandable category folders and linked notes in a
+  virtual Server notes folder; search across all groups and align the note-tab
+  bar with its editor when the list is hidden (`#289`).
+- Compact note rows to one line, show server names beside linked note titles,
+  add a read-only Properties dialog with metadata and content counts, reduce the
+  list/editor gap, and suppress the tab bar's drag target outline (`#289`).
+- Remove the separate note preview: selecting a note leaves the editor intact,
+  and double-clicking opens or activates its editor tab (`#289`).
+- Display note timestamps in local time without fractional seconds while
+  retaining the full stored timestamp precision (`#289`).
 - Replace note titles and metadata selectors in the editor with an automatically
   named draft and a plain text area; save non-empty edits automatically, while
   leaving empty drafts unpersisted (`#289`).

@@ -223,20 +223,24 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
 
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
 - `Manage notes` opens a reusable modeless notes workspace. Notes are saved
-  automatically, and the editor also offers an explicit **Save** button. A draft
-  without both a title and text remains in the editor; closing it asks before
-  discarding. The list opens with a read-only preview of the most recently
-  modified note; Create or Edit opens the editor. The main-menu manager shows
-  all notes and offers import/export. Opening notes from a server's sidebar
-  menu shows only that server's notes and hides import/export. Notes can be
-  searched, filtered by category, managed, and created from one toolbar row.
-  They can be categorized or kept as personal notes. Deleting a server keeps
+  automatically, and the editor also offers an explicit **Save** button. Empty
+  drafts are not stored; closing a draft with unsaved changes asks what to do.
+  Personal notes appear under category folders in a searchable list; linked
+  notes appear in Server notes with the server name beside each title. Rows
+  are compact and show further details, including a linked note's saved
+  category, in the right-click Properties dialog. A single click selects a note;
+  a double click opens it in an editor tab. The
+  title bar's left-side controls hide the list, manage categories, create a note,
+  and open the Import/Export menu. The main-menu manager shows all notes and
+  offers import/export. Opening notes from a
+  server's sidebar shows only that server's notes and hides import/export.
+  Notes can be categorized or kept as personal notes. Deleting a server keeps
   its notes as personal notes. Import replaces existing notes only after
   offering to back them up. Before export, Termia explains that choosing no
   password creates a readable plain-text file, while choosing a password
-  encrypts the export and requires that password for import.
-  Right-click a note in the list to edit, clone, or delete it; cloning saves a
-  copy with a new identity and the same content and associations.
+  encrypts the export and requires that password for import. Right-click a
+  note in the list to edit, rename, clone, view properties, or delete it;
+  cloning saves a copy with a new identity and the same content and associations.
 - `Terminal` combines embedded VTE appearance and local prompt settings with one live preview. Appearance changes apply to open terminals; prompt changes apply only to new or duplicated local Bash terminals and never inject commands into running local shells or SSH sessions. New installations start with JetBrains Mono and the Polaris palette.
 - `Keybindings` shows the active shortcuts and lets you record shortcut combinations for common actions such as server filtering, sidebar visibility, opening a local terminal, focus navigation, copy, paste, tab switching, font zoom, and sending the saved password. `Ctrl+F` focuses the server filter, `Ctrl+Shift+B` toggles the server list, `F10` toggles the main menu, `Ctrl+Shift+T` opens a local terminal, and `Ctrl+F6`/`Ctrl+Shift+F6` cycle through the main interface regions. Other unmodified function keys pass through to terminal applications.
 - `Ctrl+Left`, `Ctrl+Right`, `Ctrl+Up`, and `Ctrl+Down` move focus between

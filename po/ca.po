@@ -1889,6 +1889,9 @@ msgstr "Edita la nota"
 msgid "Rename note"
 msgstr "Canvia el nom de la nota"
 
+msgid "Properties"
+msgstr "Propietats"
+
 msgid "The note name cannot be empty."
 msgstr "El nom de la nota no pot estar buit."
 
@@ -1937,11 +1940,35 @@ msgstr "Servidor"
 msgid "Personal notes"
 msgstr "Notes personals"
 
+msgid "Server notes"
+msgstr "Notes de servidor"
+
+msgid "Unavailable server"
+msgstr "Servidor no disponible"
+
 msgid "Notes for {name}"
 msgstr "Notes de {name}"
 
 msgid "Modified {date}"
 msgstr "Modificada {date}"
+
+msgid "Created"
+msgstr "Creada"
+
+msgid "Last modified"
+msgstr "Última modificació"
+
+msgid "Lines"
+msgstr "Línies"
+
+msgid "Characters"
+msgstr "Caràcters"
+
+msgid "Content size (UTF-8)"
+msgstr "Mida del contingut (UTF-8)"
+
+msgid "{count} bytes"
+msgstr "{count} bytes"
 
 msgid "No matching notes."
 msgstr "No hi ha notes coincidents."
@@ -1951,6 +1978,9 @@ msgstr "Encara no hi ha notes."
 
 msgid "No notes for this server yet."
 msgstr "Encara no hi ha notes per a aquest servidor."
+
+msgid "Double-click a note to open it in a tab."
+msgstr "Fes doble clic en una nota per obrir-la en una pestanya."
 
 msgid "Saved"
 msgstr "Desada"

@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -13,7 +14,7 @@ from termia.config_io import (
 )
 from termia.models import Note
 from termia.notes import NoteError, normalize_note, note_matches_query
-from termia.notes_dialogs import Gtk, NoteEditorTab, NotesDialogs
+from termia.notes_dialogs import Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp
 from termia.notes_io import (
     export_notes_file,
     import_notes_file,
@@ -36,6 +37,42 @@ class NotesDomainTests(unittest.TestCase):
             normalize_note("two", " ", "text")
         with self.assertRaises(NoteError):
             normalize_note("two", "Title", " ")
+
+    def test_note_timestamp_display_omits_fractional_seconds(self):
+        value = "2026-10-05T12:34:56.123456+00:00"
+        expected = datetime.fromisoformat(value).astimezone().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        self.assertEqual(format_note_timestamp(value), expected)
+        self.assertNotIn("T", format_note_timestamp(value))
+        self.assertNotIn(".", format_note_timestamp(value))
+        self.assertEqual(format_note_timestamp("unrecognized"), "unrecognized")
+
+    def test_read_only_note_editor_remains_readable_without_enabling_edits(self):
+        states = {}
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(read_only=True, encryption_locked=False)
+        dialog.text_view = SimpleNamespace(
+            set_sensitive=lambda value: states.update(sensitive=value),
+            set_editable=lambda value: states.update(editable=value),
+            set_cursor_visible=lambda value: states.update(cursor=value),
+        )
+        dialog.save_button = SimpleNamespace(
+            set_sensitive=lambda value: states.update(save=value)
+        )
+        dialog.delete_button = SimpleNamespace(
+            set_sensitive=lambda value: states.update(delete=value)
+        )
+        dialog.current_note_id = "note-id"
+
+        dialog.set_editor_enabled(True)
+
+        self.assertEqual(
+            states,
+            {"sensitive": True, "editable": False, "cursor": False,
+             "save": False, "delete": False},
+        )
 
     def test_presenter_search_filters_and_sorts_by_modified_time(self):
         first = normalize_note("old", "Runbook", "Restart", now="2026-10-01T10:00:00+00:00")
@@ -222,6 +259,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_notes_list_toggle_removes_start_pane_completely_and_restores_it(self):
         children = []
+        insets = []
 
         class Paned:
             position = 352
@@ -241,17 +279,23 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.notes_list_width = 330
         dialog.notes_list_paned = Paned()
         dialog.notes_list_panel = panel
+        dialog.note_detail_inset_widgets = tuple(
+            SimpleNamespace(set_margin_start=lambda value, index=index: insets.append((index, value)))
+            for index in range(3)
+        )
         dialog.update_notes_list_toggle = lambda: None
 
         dialog.toggle_notes_list()
         self.assertEqual(children, [None])
         self.assertFalse(dialog.notes_list_visible)
         self.assertEqual(dialog.notes_list_width, 352)
+        self.assertEqual(insets, [(0, 0), (1, 0), (2, 0)])
 
         dialog.toggle_notes_list()
         self.assertEqual(children, [None, panel])
         self.assertTrue(dialog.notes_list_visible)
         self.assertEqual(dialog.notes_list_paned.position, 352)
+        self.assertEqual(insets[3:], [(0, 6), (1, 6), (2, 6)])
 
     def test_import_export_menu_is_hidden_for_server_scoped_notes(self):
         visibility = []
@@ -492,6 +536,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         note = Note("note-id", "Runbook", "Restart service", "Ops", "server-id", "created", "modified")
         tab = NoteEditorTab("note-id", "note-id", "Runbook", "Ops", "server-id", "Restart service")
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(encryption_locked=False)
         dialog.ensure_writable = lambda: True
         dialog.editor_tabs = {"note-id": tab}
         activated = []
@@ -515,6 +560,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.collapsed_note_categories = set()
         dialog.presenter = SimpleNamespace(items=lambda *_args: [])
         dialog.detail_stack = SimpleNamespace(get_visible_child_name=lambda: "editor")
+        dialog.active_editor_tab_key = "draft-active"
         dialog.selected_note_id = None
         dialog.close_note_context_menu = lambda: None
         dialog.show_empty_state = lambda: empty_state_calls.append(True)
@@ -553,6 +599,48 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         self.assertEqual([name for name, _items in groups], ["Operations"])
 
+    def test_general_list_places_only_linked_notes_in_virtual_server_group(self):
+        personal = normalize_note("personal", "Checklist", "Inspect", "Ops")
+        linked = normalize_note("linked", "Restart", "Restart service", "Ops", "server-id")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.server_filter_id = None
+        dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=["Ops"]))
+        items = [SimpleNamespace(note=personal), SimpleNamespace(note=linked)]
+
+        groups = dialog.group_note_items(items, include_empty_categories=True)
+
+        self.assertEqual([key for key, _notes in groups], ["Ops", None])
+        self.assertEqual([[item.note.id for item in notes] for _key, notes in groups], [
+            ["personal"], ["linked"],
+        ])
+
+        dialog.server_filter_id = "server-id"
+        scoped = dialog.group_note_items([items[1]], include_empty_categories=False)
+        self.assertEqual([key for key, _notes in scoped], ["Ops"])
+
+    def test_note_properties_include_server_dates_and_content_counts(self):
+        note = Note(
+            "note-id", "Restart", "é\nnext", "Ops", "server-id",
+            "2026-10-05T12:34:56.123456+00:00",
+            "2026-10-06T12:34:56.654321+00:00",
+        )
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(
+            servers=[SimpleNamespace(id="server-id", name="Web")],
+        ))
+        dialog.translate = lambda key: {"notes_property_bytes": "{count} bytes"}.get(key, key)
+
+        properties = dict(dialog.note_property_rows(note))
+
+        self.assertEqual(properties["name"], "Restart")
+        self.assertEqual(properties["notes_category"], "Ops")
+        self.assertEqual(properties["notes_association"], "Web")
+        self.assertNotIn(".", properties["notes_property_created"])
+        self.assertNotIn("T", properties["notes_property_modified"])
+        self.assertEqual(properties["notes_property_lines"], "2")
+        self.assertEqual(properties["notes_property_characters"], "6")
+        self.assertEqual(properties["notes_property_size"], "7 bytes")
+
     def test_clone_note_copies_content_category_and_server_with_new_identity(self):
         original = Note("source", "Runbook", "Restart service", "Operations", "server-id", "created", "modified")
         cloned = Note("copy-id", "Runbook (copy)", "Restart service", "Operations", "server-id", "created-copy", "modified-copy")
@@ -571,7 +659,6 @@ class NotesDialogSignalTests(unittest.TestCase):
             "notes_clone_success": "Note cloned.",
         }[key]
         dialog.refresh_list = lambda note_id: refreshed.append(note_id)
-        dialog.show_note_preview = lambda _note: None
         dialog.show_toast = messages.append
         dialog.show_error = lambda _message: self.fail("clone unexpectedly failed")
 
@@ -643,7 +730,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.loading_search = False
         dialog.editor_dirty = False
         dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
-        dialog.add_button = SimpleNamespace(set_label=lambda _text: None)
+        dialog.add_button = SimpleNamespace(set_tooltip_text=lambda _text: None)
         dialog.import_button = SimpleNamespace(set_visible=lambda _visible: None)
         dialog.export_button = SimpleNamespace(set_visible=lambda _visible: None)
         dialog.import_export_menu_button = SimpleNamespace(set_visible=lambda _visible: None)
@@ -703,7 +790,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
         views = []
         dialog.refresh_list = lambda: views.append(dialog.server_filter_id)
-        dialog.add_button = SimpleNamespace(set_label=lambda _label: None)
+        dialog.add_button = SimpleNamespace(set_tooltip_text=lambda _label: None)
         import_visibility = []
         export_visibility = []
         menu_visibility = []
@@ -725,29 +812,29 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(export_visibility, [False, True])
         self.assertEqual(menu_visibility, [False, True])
 
-    def test_note_preview_is_read_only_content_for_selected_note(self):
-        note = Note("note-id", "Runbook", "Preview content", "Ops", "server-id", "", "2026-10-05")
+    def test_selecting_another_note_does_not_replace_an_open_editor(self):
+        note = Note("other-note", "Runbook", "Content", "Ops", "server-id", "", "2026-10-05")
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Web")]))
-        dialog.server_filter_id = "server-id"
-        dialog.translate = lambda key: key
-        dialog.cancel_autosave = lambda: None
-        titles = []
-        metadata = []
-        contents = []
-        visible_pages = []
-        dialog.preview_title = SimpleNamespace(set_label=titles.append)
-        dialog.preview_meta = SimpleNamespace(set_label=metadata.append)
-        dialog.preview_text = SimpleNamespace(get_buffer=lambda: SimpleNamespace(set_text=contents.append))
-        dialog.detail_stack = SimpleNamespace(set_visible_child_name=visible_pages.append)
+        dialog.selected_note_id = "active-note"
+        dialog.active_editor_tab_key = "active-tab"
+        dialog.loading_note_list = False
+        dialog.find_note = lambda note_id: note if note_id == note.id else None
 
-        dialog.show_note_preview(note)
+        dialog.on_note_selected(None, SimpleNamespace(note_id=note.id))
 
-        self.assertEqual(dialog.selected_note_id, "note-id")
-        self.assertEqual(titles, ["Runbook"])
-        self.assertEqual(contents, ["Preview content"])
-        self.assertNotIn("Web", metadata[0])
-        self.assertEqual(visible_pages, ["preview"])
+        self.assertEqual(dialog.selected_note_id, note.id)
+        self.assertEqual(dialog.active_editor_tab_key, "active-tab")
+
+    def test_activating_a_note_row_opens_its_editor_tab(self):
+        note = Note("note-id", "Runbook", "Content", "Ops", "server-id", "", "2026-10-05")
+        opened = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.find_note = lambda note_id: note if note_id == note.id else None
+        dialog.load_editor = opened.append
+
+        dialog.on_note_row_activated(None, SimpleNamespace(note_id=note.id))
+
+        self.assertEqual(opened, [note])
 
     def test_server_context_waits_for_popover_to_close(self):
         dialog = NotesDialogs.__new__(NotesDialogs)

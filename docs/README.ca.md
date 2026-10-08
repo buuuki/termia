@@ -217,20 +217,26 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
 - `Seguretat` controla el mode d'emmagatzematge de connexions.
 - `Gestiona les notes` obre una finestra reutilitzable que no bloqueja els
   terminals. Les notes es desen automàticament en un fitxer separat; també hi
-  ha un botó **Desa**. Una nota incompleta no es desa i, en tancar, es pregunta
-  abans de descartar-ne els canvis. En obrir, es mostra una llista i la vista
-  prèvia de la nota modificada més recentment; **Crea** o **Edita** obre l'editor.
-  Des del menú principal es mostren totes les notes i s'ofereixen importació i
+  ha un botó **Desa**. Els esborranys buits no s'emmagatzemen; en tancar-ne un
+  amb canvis sense desar, es pregunta què cal fer. Les notes personals apareixen
+  en carpetes de categories i les vinculades a servidors, a «Notes de servidor»,
+  amb el nom del servidor al costat del títol. La llista té cerca global i files
+  compactes; el menú contextual mostra les Propietats, inclosa la categoria
+  desada de cada nota. Un clic selecciona la nota i un doble clic l'obre en una
+  pestanya d'edició. Els controls a l'esquerra
+  de la barra de títol amaguen la llista, gestionen les categories, creen notes
+  i obren el menú d'importació/exportació. Des del menú principal es mostren
+  totes les notes i s'ofereixen importació i
   exportació. Des d'un servidor només es mostren les seves notes, sense importar
-  ni exportar. Cercar, filtrar per categoria, gestionar categories i crear notes
-  comparteixen una sola fila d'accions. Les notes admeten categories i poden ser
-  personals o associades a un servidor. En suprimir un servidor, les notes es
-  conserven com a personals. La importació substitueix les notes després
-  d'oferir una còpia de seguretat. Abans d'exportar, Termia explica que triar
-  «Sense contrasenya» crea un fitxer de text pla llegible, mentre que triar una
-  contrasenya xifra l'exportació i caldrà introduir-la per importar les notes.
-  Fes clic dret en una nota per editar-la, clonar-la o suprimir-la. En clonar,
-  es desa una còpia amb una identitat nova i el mateix contingut i associacions.
+  ni exportar. Les notes poden ser personals o associades a un servidor. En
+  suprimir un servidor, les notes es conserven com a personals. La importació
+  substitueix les notes després d'oferir una còpia de seguretat. Abans
+  d'exportar, Termia explica que triar «Sense contrasenya» crea un fitxer de
+  text pla llegible, mentre que triar una contrasenya xifra l'exportació i
+  caldrà introduir-la per importar les notes. Fes clic dret en una nota per
+  editar-la, canviar-ne el nom, clonar-la, veure'n les propietats o suprimir-la.
+  En clonar, es desa una còpia amb una identitat nova i el mateix contingut i
+  associacions.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
 - Si actives la restauració de la sessió anterior a `General`, en tancar Termia

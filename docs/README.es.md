@@ -216,21 +216,25 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
 - `Seguridad` controla el modo de almacenamiento de conexiones.
 - `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
   Las notas se guardan automáticamente en un fichero separado; también hay un
-  botón **Guardar**. Una nota incompleta no se guarda y, al cerrar, se pregunta
-  antes de descartar sus cambios. Al abrir, se muestra una lista y la vista
-  previa de la nota modificada más recientemente; **Crear** o **Editar** abre el
-  editor. Desde el menú principal se muestran todas las notas y se ofrecen
-  importación y exportación. Desde un servidor solo se muestran sus notas, sin
-  importar ni exportar. Buscar, filtrar por categoría, gestionar categorías y
-  crear notas comparten una sola fila de acciones. Las notas admiten categorías
-  y pueden ser personales o asociarse a un servidor. Al eliminar un servidor,
-  sus notas se conservan como personales. La importación sustituye las notas
-  tras ofrecer una copia de seguridad. Antes de exportar, Termia explica que
-  elegir «Sin contraseña» crea un fichero de texto plano legible, mientras que
-  elegir una contraseña cifra la exportación y esa contraseña es necesaria para
-  importarla. Haz clic derecho en una nota para editarla, clonarla o eliminarla.
-  Al clonar, se guarda una copia con identidad nueva y el mismo contenido y
-  asociaciones.
+  botón **Guardar**. Los borradores vacíos no se almacenan; al cerrar uno con
+  cambios sin guardar, se pregunta qué hacer. Las notas personales aparecen en
+  carpetas de categorías y las asociadas a servidores, en «Notas de servidor»,
+  con el nombre del servidor junto al título. La lista tiene búsqueda global
+  y filas compactas; el menú contextual muestra sus Propiedades, incluida la
+  categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
+  la abre en una pestaña de edición. Los controles
+  a la izquierda de la barra de título ocultan la lista, gestionan categorías,
+  crean notas y abren el menú de importación/exportación. Desde el menú
+  principal se muestran todas las notas y se ofrecen importación y
+  exportación. Desde un servidor solo se muestran sus notas, sin importar ni
+  exportar. Las notas pueden ser personales o asociarse a un servidor. Al
+  eliminar un servidor, sus notas se conservan como personales. La importación
+  sustituye las notas tras ofrecer una copia de seguridad. Antes de exportar,
+  Termia explica que elegir «Sin contraseña» crea un fichero de texto plano
+  legible, mientras que elegir una contraseña cifra la exportación y esa
+  contraseña es necesaria para importarla. Haz clic derecho en una nota para
+  editarla, renombrarla, clonarla, ver sus propiedades o eliminarla. Al clonar,
+  se guarda una copia con identidad nueva y el mismo contenido y asociaciones.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
 - Si activas la restauración de la sesión anterior en `General`, al cerrar

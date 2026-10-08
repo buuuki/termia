@@ -1889,6 +1889,9 @@ msgstr "Editar nota"
 msgid "Rename note"
 msgstr "Renombrar nota"
 
+msgid "Properties"
+msgstr "Propiedades"
+
 msgid "The note name cannot be empty."
 msgstr "El nombre de la nota no puede estar vacío."
 
@@ -1937,11 +1940,35 @@ msgstr "Servidor"
 msgid "Personal notes"
 msgstr "Notas personales"
 
+msgid "Server notes"
+msgstr "Notas de servidor"
+
+msgid "Unavailable server"
+msgstr "Servidor no disponible"
+
 msgid "Notes for {name}"
 msgstr "Notas de {name}"
 
 msgid "Modified {date}"
 msgstr "Modificada {date}"
+
+msgid "Created"
+msgstr "Creada"
+
+msgid "Last modified"
+msgstr "Última modificación"
+
+msgid "Lines"
+msgstr "Líneas"
+
+msgid "Characters"
+msgstr "Caracteres"
+
+msgid "Content size (UTF-8)"
+msgstr "Tamaño del contenido (UTF-8)"
+
+msgid "{count} bytes"
+msgstr "{count} bytes"
 
 msgid "No matching notes."
 msgstr "No hay notas coincidentes."
@@ -1951,6 +1978,9 @@ msgstr "Todavía no hay notas."
 
 msgid "No notes for this server yet."
 msgstr "Todavía no hay notas para este servidor."
+
+msgid "Double-click a note to open it in a tab."
+msgstr "Haz doble clic en una nota para abrirla en una pestaña."
 
 msgid "Saved"
 msgstr "Guardada"

@@ -48,6 +48,8 @@ def build_application_css(
         ".termia-tab-label:hover { background: alpha(@theme_fg_color, 0.06); } "
         ".termia-tab-label.active { background: alpha(@theme_fg_color, 0.13); } "
         ".termia-tab-label.dragging { background: alpha(@theme_selected_bg_color, 0.25); opacity: 0.72; } "
+        ".termia-notes-tab-bar:drop(active) { background: transparent; border: 0; "
+        "box-shadow: none; outline: none; } "
         ".termia-note-category.drop-target { background: alpha(@theme_selected_bg_color, 0.24); "
         "border-radius: 8px; } "
         ".termia-tab-title { font-size: 1.05em; } "
