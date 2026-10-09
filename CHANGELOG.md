@@ -74,6 +74,8 @@
 
 ### Added
 
+- Move saved servers between sidebar groups, nested groups, and Ungrouped by
+  dragging, without changing their identities or open sessions (`#299`).
 - Add restart-applied switch controls for the bundled Statistics and SFTP add-ons.
   Disabled add-ons are omitted from their menus without deleting stored data
   (`#304`).

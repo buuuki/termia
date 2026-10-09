@@ -160,6 +160,7 @@ class TermiaWindow(
         self.group_expanded_state: dict[str, bool] = {}
         self.collapse_groups_on_startup = True
         self.tree_widgets: dict[tuple[str, str], Gtk.Widget] = {}
+        self.sidebar_drag_server_id: str | None = None
         self.active_context_popover: Gtk.Popover | None = None
         self.session_registry = SessionRegistry()
         self.statistics_dialog = None

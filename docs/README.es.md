@@ -30,7 +30,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
   Crear, renombrar, duplicar y eliminar categorías por separado; al eliminar
   una categoría, sus snippets pasan a Sin categoría.
 - Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
-- Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`.
+- Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`. Arrastrar un servidor guardado a un grupo, subgrupo o Sin grupo para moverlo.
 - Guardar host, usuario, puerto, contraseña y ruta de clave privada de cada conexión SSH.
 - Importar y exportar configuración de Termia, incluidas conexiones básicas, grupos anidados y credenciales disponibles de YAML de Asbru.
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.

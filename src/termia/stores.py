@@ -1106,6 +1106,28 @@ class ConnectionStore:
                 break
         self.save_connections()
 
+    def can_move_server_to_group(self, server_id: str, group_id: str | None) -> bool:
+        if self.read_only or self.encryption_locked:
+            return False
+        server = next((item for item in self.data.servers if item.id == server_id), None)
+        if server is None or server.group_id == group_id:
+            return False
+        return group_id is None or any(group.id == group_id for group in self.data.groups)
+
+    def move_server_to_group(self, server_id: str, group_id: str | None) -> bool:
+        self.ensure_writable()
+        if not self.can_move_server_to_group(server_id, group_id):
+            return False
+        server = next(item for item in self.data.servers if item.id == server_id)
+        previous_group_id = server.group_id
+        server.group_id = group_id
+        try:
+            self.save_connections()
+        except Exception:
+            server.group_id = previous_group_id
+            raise
+        return True
+
     def delete_server(self, server_id: str) -> None:
         self.ensure_writable()
         self.data.servers = [server for server in self.data.servers if server.id != server_id]

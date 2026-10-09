@@ -180,6 +180,13 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   and confirm its key combination reaches the terminal instead.
 - After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. Keyboard navigation must scroll just enough to keep the selected item visible. These keys must still reach the VTE while a terminal has focus.
 - The selected group, subgroup, or server must use a single consistent sidebar selection highlight; selecting a new item must clear the previous highlight. Starting navigation from the server filter must focus the selected row, GTK expander focus must not create a second selector, and `Up` must never leave the list for the sidebar action buttons while an earlier visible row exists. GTK must automatically scroll the focused row into view, while terminal focus must keep sidebar navigation disabled.
+- Dragging a saved server from its regular sidebar row onto a group, subgroup,
+  or Ungrouped must change only its saved group assignment. Ungrouped remains
+  visible as a drop target when empty. Reject invalid, unchanged, external,
+  read-only, and locked drops; do not launch a connection or disturb open
+  sessions, favorites, history, workspace references, keyboard navigation,
+  existing click/context-menu behavior, group expansion, or sidebar scroll.
+  Group-scoped snippet availability follows the server's new group.
 
 ### Context Menus and Popovers
 
@@ -665,6 +672,12 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Open an SSH session, a local terminal, and a split pane; close Termia and confirm their local child processes do not remain after a brief grace period.
 - Right-click a server/group in the tree and open the context menu.
 - Edit a server and confirm collapsed groups stay collapsed.
+- Drag a saved server between root groups, a nested group, and Ungrouped while
+  that section is empty; confirm counts, saved assignment after restart, and
+  group-scoped snippets. Try the current group, a filtered sidebar, a collapsed
+  destination, and read-only/locked instances. Verify regular clicks,
+  double-click connection launch, right-click menus, keyboard navigation,
+  expanded groups, scroll position, and open sessions still behave correctly.
 - Search for a group, subgroup, and server in the sidebar filter.
 - Confirm the Recent section appears above Favorites, shows the 10 most recently connected servers without duplicates, and updates after new SSH connections.
 - Open connection history, search for an SSH server, toggle local-terminal entries, and confirm row contents remain unchanged.

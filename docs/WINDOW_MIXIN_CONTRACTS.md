@@ -45,7 +45,7 @@ the mixins:
   `tab_lifecycle_actions`.
 - Sidebar selection: `selected`, `selected_tree_widget`,
   `group_expanded_state`, `collapse_groups_on_startup`, `tree_widgets`, and
-  `active_context_popover`.
+  `sidebar_drag_server_id`, and `active_context_popover`.
 - Main UI widgets: `body`, `sidebar`, `search_entry`, `server_list`,
   `server_scroller`, `summary_label`, `title_label`, `info_label`,
   `session_tab_bar`, and `terminal_stack`.

@@ -30,7 +30,7 @@ Documentació en castellà: [README.es.md](README.es.md)
   nom, duplicar i suprimir categories per separat; quan se suprimeix una
   categoria, els seus snippets passen a Sense categoria.
 - Mantenir les dades de connexió en local amb emmagatzematge en text pla, ofuscat o xifrat opcional protegit per una contrasenya mestra.
-- Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`.
+- Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`. Arrossegar un servidor desat a un grup, subgrup o Sense grup per moure'l.
 - Desar host, usuari, port, contrasenya i ruta de clau privada de cada connexió SSH.
 - Importar i exportar configuració de Termia, incloses connexions bàsiques, grups imbricats i credencials disponibles de YAML d'Asbru.
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
