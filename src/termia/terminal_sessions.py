@@ -319,9 +319,9 @@ class TerminalSessionsMixin:
     def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         self.mark_terminal_inactive(terminal, session)
         pane = self.pane_state(session, terminal)
+        self.session_observer.pane_finished(session)
         self.clear_terminal_process_state(session, terminal, pane)
-        self.record_session_duration(session)
-        self.save_statistics_now()
+        self.session_observer.flush()
         result = "disconnected" if pane.disconnect_requested else (
             "closed" if self.child_status_successful(_status) else "failed"
         )
@@ -721,7 +721,7 @@ class TerminalSessionsMixin:
         self.sync_root_pane_state(session)
         session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_terminal_exited, server, session)
-        self.record_connection(server.id)
+        self.session_observer.connection_started(server.id)
         session.status_label.set_label(f"{server.name} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, server=server)
         self.toast_label.set_label(self.t("session_opened").format(title=session.title))
@@ -852,67 +852,6 @@ class TerminalSessionsMixin:
             return os.WIFEXITED(status) and os.WEXITSTATUS(status) < 255
         except ValueError:
             return False
-
-    def schedule_statistics_save(self) -> None:
-        if self.store.data.app.statistics_enabled and self.stats_save_id is None:
-            self.stats_save_id = GLib.timeout_add_seconds(30, self.flush_statistics)
-
-    def save_statistics_before_close(self) -> None:
-        if not self.store.data.app.statistics_enabled:
-            if self.stats_save_id is not None:
-                GLib.source_remove(self.stats_save_id)
-                self.stats_save_id = None
-            return
-        for session in self.session_registry.sessions():
-            self.record_session_duration(session)
-            for pane in session.panes.values():
-                if pane.terminal is not session.terminal:
-                    self.record_pane_duration(pane)
-        if self.stats_save_id is not None:
-            GLib.source_remove(self.stats_save_id)
-            self.stats_save_id = None
-        self.store.save_statistics()
-
-    def flush_statistics(self) -> bool:
-        self.stats_save_id = None
-        if not self.store.data.app.statistics_enabled:
-            return GLib.SOURCE_REMOVE
-        self.store.save_statistics()
-        return GLib.SOURCE_REMOVE
-
-    def save_statistics_now(self) -> None:
-        if self.stats_save_id is not None:
-            GLib.source_remove(self.stats_save_id)
-            self.stats_save_id = None
-        if not self.store.data.app.statistics_enabled:
-            return
-        self.store.save_statistics()
-
-    def record_connection(self, server_id: str) -> None:
-        if not self.store.data.app.statistics_enabled:
-            return
-        stats = self.store.data.statistics
-        stats.connections += 1
-        stats.server_connections[server_id] = stats.server_connections.get(server_id, 0) + 1
-        self.run_connections += 1
-        self.schedule_statistics_save()
-
-    def record_session_duration(self, session: TerminalSession) -> None:
-        self.record_pane_duration(session)
-
-    def record_pane_duration(self, pane: TerminalSession | TerminalPane) -> None:
-        if not self.store.data.app.statistics_enabled:
-            return
-        if pane.duration_recorded or pane.child_pid is None:
-            return
-        pane.duration_recorded = True
-        duration = max(0.0, time.monotonic() - pane.started_at)
-        stats = self.store.data.statistics
-        stats.completed_sessions += 1
-        stats.duration_total += duration
-        stats.duration_min = duration if stats.duration_min is None else min(stats.duration_min, duration)
-        stats.duration_max = max(stats.duration_max, duration)
-        self.schedule_statistics_save()
 
     def save_history_before_close(self) -> None:
         for session in self.session_registry.sessions():
@@ -1724,7 +1663,7 @@ class TerminalSessionsMixin:
         session.split_child_pids[id(terminal)] = child_process.pid
         session.split_processes[id(terminal)] = child_process
         terminal.connect("child-exited", self.on_split_terminal_exited, session)
-        self.record_connection(server.id)
+        self.session_observer.connection_started(server.id)
         if announce:
             self.toast_label.set_label(self.t("session_opened").format(title=server.name))
 
@@ -1746,8 +1685,8 @@ class TerminalSessionsMixin:
         pane = session.pane_for_terminal(terminal)
         self.mark_terminal_inactive(terminal, session)
         if pane is not None:
+            self.session_observer.pane_finished(pane)
             self.clear_terminal_process_state(session, terminal, pane)
-            self.record_pane_duration(pane)
             clean_exit = (
                 self.ssh_status_is_clean_exit(_status)
                 if pane.server_id is not None
@@ -1766,7 +1705,7 @@ class TerminalSessionsMixin:
             )
             self.store.record_history_end(pane, result)
             pane.connected = False
-        self.save_statistics_now()
+        self.session_observer.flush()
         if getattr(self, "shutdown_in_progress", False):
             return
         if pane is not None:
@@ -1968,35 +1907,6 @@ class TerminalSessionsMixin:
         popover.popdown()
         self.on_terminal_settings(None, self.window_for_session(session))
 
-    def show_session_statistics(
-        self,
-        popover: Gtk.Popover,
-        session: TerminalSession,
-        terminal: Vte.Terminal,
-    ) -> None:
-        popover.popdown()
-        pane = self.pane_state(session, terminal)
-        server_connections = 0
-        if pane.server_id is not None:
-            server_connections = self.store.data.statistics.server_connections.get(pane.server_id, 0)
-        dialog = Gtk.Dialog(
-            title=self.t("session_statistics"),
-            transient_for=self.window_for_session(session),
-            modal=True,
-        )
-        dialog.set_resizable(False)
-        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
-        label = Gtk.Label(label=f"{self.t('server_connections')}: {server_connections}")
-        label.set_xalign(0)
-        label.set_selectable(True)
-        label.set_margin_top(12)
-        label.set_margin_bottom(12)
-        label.set_margin_start(12)
-        label.set_margin_end(12)
-        dialog.get_content_area().append(label)
-        dialog.connect("response", lambda current, _response: current.destroy())
-        dialog.present()
-
     def on_send_files_to_server(
         self,
         popover: Gtk.Popover,
@@ -2020,28 +1930,6 @@ class TerminalSessionsMixin:
             self.file_transfer_controllers = controllers
         controllers.add(controller)
         controller.open_file_selection(server)
-
-    def on_browse_sftp(self, popover, session, server) -> None:
-        from .sftp_service import Endpoint
-        from .sftp_view import SFTPWindow
-
-        popover.popdown()
-        parent = self if session is None else self.window_for_session(session)
-        endpoint = Endpoint(server.host, server.port, server.user, server.public_key, server.password)
-
-        def open_window():
-            if self.shutdown_in_progress:
-                return GLib.SOURCE_REMOVE
-            if session is not None and not self.session_registry.contains(session.id):
-                return GLib.SOURCE_REMOVE
-            window = SFTPWindow(parent, endpoint, server.name, self.t,
-                                self.unregister_file_transfer,
-                                session.id if session is not None else None)
-            self.file_transfer_controllers.add(window)
-            window.present()
-            return GLib.SOURCE_REMOVE
-
-        GLib.idle_add(open_window)
 
     def unregister_file_transfer(self, controller: ManagedTransfer) -> None:
         controllers = getattr(self, "file_transfer_controllers", None)
@@ -2274,8 +2162,8 @@ class TerminalSessionsMixin:
             self.toast_label.set_error(message)
             return
         self.terminate_split_processes(session)
-        self.record_session_duration(session)
-        self.save_statistics_now()
+        self.session_observer.pane_finished(session)
+        self.session_observer.flush()
         session.connected = False
         session.disconnect_button.set_sensitive(False)
         session.status_label.set_label(self.t("session_disconnected_status").format(title=session.title))
@@ -2331,9 +2219,9 @@ class TerminalSessionsMixin:
     ) -> None:
         self.mark_terminal_inactive(terminal, session)
         pane = self.pane_state(session, terminal)
+        self.session_observer.pane_finished(session)
         self.clear_terminal_process_state(session, terminal, pane)
-        self.record_session_duration(session)
-        self.save_statistics_now()
+        self.session_observer.flush()
         clean_exit = self.ssh_status_is_clean_exit(_status)
         result = "disconnected" if pane.disconnect_requested else (
             "closed" if clean_exit else "failed"

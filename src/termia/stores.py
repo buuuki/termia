@@ -1373,10 +1373,17 @@ class ConnectionStore:
             send_password_shortcut=app.send_password_shortcut,
             send_password_enter=app.send_password_enter,
             connection_storage_mode=current.connection_storage_mode,
-            statistics_enabled=app.statistics_enabled,
+            statistics_enabled=current.statistics_enabled,
+            sftp_enabled=current.sftp_enabled,
             debug_enabled=app.debug_enabled,
             keybindings=normalize_keybindings(current.keybindings),
         )
+        self.save_settings()
+
+    def update_optional_tools(self, *, statistics_enabled: bool, sftp_enabled: bool) -> None:
+        self.ensure_writable()
+        self.data.app.statistics_enabled = statistics_enabled
+        self.data.app.sftp_enabled = sftp_enabled
         self.save_settings()
 
     def update_keybindings(self, keybindings: dict[str, str]) -> None:

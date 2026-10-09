@@ -13,6 +13,8 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 from .config_actions import ConfigActionsMixin
 from .connection_history_presenter import ConnectionHistoryPresenter
 from .connection_history_view import ConnectionHistoryDialog
+from .builtin_sftp import SFTPTool
+from .builtin_tools import BuiltInTools
 from .file_transfer import FileTransferController
 from .transfer_lifecycle import ManagedTransfer
 from .connection_dialogs import ConnectionDialogsMixin
@@ -32,14 +34,17 @@ from .main_menu_actions import MainMenuActions
 from .notifications import NOTIFICATION_ICONS, GroupedNotificationLabel, NotificationSeverity
 from .preferences import PreferencesMixin
 from .session_registry import SessionRegistry
+from .session_observer import NoOpSessionObserver
 from .session_snapshot import SessionSnapshotStore
 from .snippet_dialogs import SnippetDialogs
 from .snippet_presenter import SnippetPresenter
 from .notes_dialogs import NotesDialogs
 from .notes_presenter import NotesPresenter
+from .optional_tools_dialog import OptionalToolsDialog
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
 from .statistics_presenter import StatisticsPresenter
+from .statistics_collector import StatisticsCollector
 from .statistics_view import StatisticsDialog
 from .styles import build_application_css
 from .tab_lifecycle_actions import TabLifecycleActions
@@ -86,6 +91,15 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
+        self.builtin_tools = BuiltInTools.from_settings(self.store.data.app)
+        self.session_observer = (
+            StatisticsCollector(
+                lambda: self.store.data.statistics,
+                self.store.save_statistics,
+            )
+            if self.builtin_tools.statistics
+            else NoOpSessionObserver()
+        )
         self.session_snapshot_store = SessionSnapshotStore(
             SESSION_SNAPSHOT_FILE,
             read_only=self.store.read_only,
@@ -112,6 +126,9 @@ class TermiaWindow(
         self.toast_label.set_margin_top(10)
         self.toast_label.set_margin_bottom(10)
         self.toast_hide_id: int | None = None
+        self.optional_tools_dialog = OptionalToolsDialog(
+            self, self.store, self.t, self.toast_label.set_label
+        )
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
             self.t,
@@ -145,14 +162,25 @@ class TermiaWindow(
         self.tree_widgets: dict[tuple[str, str], Gtk.Widget] = {}
         self.active_context_popover: Gtk.Popover | None = None
         self.session_registry = SessionRegistry()
-        self.run_connections = 0
-        self.statistics_presenter = StatisticsPresenter(
-            lambda: self.store.data.statistics,
-            lambda: self.store.data.servers,
-            lambda: self.run_connections,
-            self.t,
-        )
-        self.statistics_dialog = StatisticsDialog(self, self.statistics_presenter, self.t)
+        self.statistics_dialog = None
+        if self.builtin_tools.statistics:
+            statistics_presenter = StatisticsPresenter(
+                lambda: self.store.data.statistics,
+                lambda: self.store.data.servers,
+                lambda: self.session_observer.run_connections,
+                self.t,
+            )
+            self.statistics_dialog = StatisticsDialog(self, statistics_presenter, self.t)
+        self.sftp_tool = None
+        if self.builtin_tools.sftp:
+            self.sftp_tool = SFTPTool(
+                lambda session: self if session is None else self.window_for_session(session),
+                self.session_registry.contains,
+                lambda: self.shutdown_in_progress,
+                self.register_file_transfer,
+                self.unregister_file_transfer,
+                self.t,
+            )
         self.snippet_presenter = SnippetPresenter(
             lambda: self.store.data.snippets,
             lambda: self.store.data.groups,
@@ -193,9 +221,10 @@ class TermiaWindow(
             terminal_settings=lambda: self.on_terminal_settings(None),
             keybinding_settings=lambda: self.on_keybindings_settings(None),
             security_settings=lambda: self.on_security_settings(None),
+            optional_tools=self.optional_tools_dialog.show,
             manage_snippets=self.snippet_dialogs.show_manager,
             manage_notes=self.notes_dialogs.show_manager,
-            statistics=self.statistics_dialog.show,
+            statistics=self.statistics_dialog.show if self.statistics_dialog is not None else None,
             connection_history=self.connection_history_dialog.show,
             data_locations=self.on_data_locations,
             export_config=self.on_export_config,
@@ -211,9 +240,9 @@ class TermiaWindow(
             copy=self.copy_terminal_selection,
             paste=self.paste_terminal_clipboard,
             send_files=self.on_send_files_to_server,
-            browse_files=self.on_browse_sftp,
+            browse_files=self.sftp_tool.browse if self.sftp_tool is not None else None,
             configure=self.configure_terminal_from_menu,
-            session_statistics=self.show_session_statistics,
+            session_statistics=self.show_enabled_session_statistics if self.statistics_dialog is not None else None,
             split=self.split_terminal_from_menu,
             split_connection=self.show_split_connection_dialog,
             rename_tab=self.show_rename_tab_dialog,
@@ -223,7 +252,6 @@ class TermiaWindow(
             close_tab=self.close_tab_from_terminal_menu,
             run_snippet=self.snippet_dialogs.show_picker,
         )
-        self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.shutdown_in_progress = False
         self.file_transfer_controllers: set[ManagedTransfer] = set()
@@ -456,10 +484,27 @@ class TermiaWindow(
         self.cancel_file_transfers(close_dialog=True)
         self.save_session_snapshot_before_close()
         self.save_history_before_close()
-        self.save_statistics_before_close()
+        self.session_observer.shutdown(self.session_registry.sessions())
         self.prepare_terminal_sessions_for_shutdown()
         self.terminate_open_terminal_processes()
         GLib.timeout_add(500, self.finish_main_window_shutdown)
+
+    def register_file_transfer(self, transfer: ManagedTransfer) -> None:
+        self.file_transfer_controllers.add(transfer)
+
+    def show_enabled_session_statistics(self, popover, session, terminal) -> None:
+        if self.statistics_dialog is None:
+            return
+        popover.popdown()
+        pane = self.pane_state(session, terminal)
+        server_connections = (
+            self.store.data.statistics.server_connections.get(pane.server_id, 0)
+            if pane.server_id is not None
+            else 0
+        )
+        self.statistics_dialog.show_session(
+            self.window_for_session(session), server_connections
+        )
 
     def save_session_snapshot_before_close(self) -> None:
         if self.store.read_only or not self.store.data.app.restore_sessions_on_startup:

@@ -33,7 +33,9 @@ receive only the services they use.
 the mixins:
 
 - Persistence and feedback: `store`, `toast_label`.
-- Session state: `session_registry`, `run_connections`, `stats_save_id`.
+- Session state: `session_registry` and an injected `session_observer` for
+  optional lifecycle consumers. The Statistics observer owns its run counter
+  and pending save timer.
 - Explicit actions: `main_menu_actions`, `terminal_menu_actions`, and
   `tab_lifecycle_actions`.
 - Sidebar selection: `selected`, `selected_tree_widget`,
@@ -159,8 +161,7 @@ keybinding dialogs have comparatively small contracts.
 
 - Reads: `store`, `session_registry`, `terminal_stack`, `toast_label`, terminal-menu
   callbacks, and terminal-font resolution.
-- Writes: `run_connections` and `stats_save_id`; it also mutates
-  `TerminalSession` objects held in `session_registry`. Each session owns
+- Writes: `TerminalSession` objects held in `session_registry`. Each session owns
   explicit `TerminalPane` state for every VTE pane, including its connection
   identity, managed process, status widgets, reconnect state, history, and
   statistics timing.
@@ -168,6 +169,10 @@ keybinding dialogs have comparatively small contracts.
   closing, terminal menus, and terminal preferences. Tab-triggered duplication,
   disconnection, confirmation, and split cleanup are exposed through the
   explicitly composed `TabLifecycleActions` contract.
+- Optional-tool boundary: connection start, pane finish, immediate flush, and
+  shutdown are delivered to `session_observer`; the disabled implementation is
+  a no-op. SFTP launch is delegated to the bundled SFTP tool through optional
+  menu actions rather than implemented in this mixin.
 - Architectural note: process launching, terminal views, split panes, and file
   transfer are already delegated to focused modules, but lifecycle
   orchestration still depends directly on tab and window state. Terminal

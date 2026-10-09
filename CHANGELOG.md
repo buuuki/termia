@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Refactored
+
+- Move aggregate statistics recording behind a narrow session observer and
+  isolate SFTP launching from terminal-session orchestration (`#304`).
+
 ### Changed
 
 - Show the selected server in the notes window title instead of a small in-view
@@ -64,6 +69,9 @@
 
 ### Added
 
+- Add restart-applied switch controls for the bundled Statistics and SFTP add-ons.
+  Disabled add-ons are omitted from their menus without deleting stored data
+  (`#304`).
 - Add right-click note actions for editing, cloning, and deleting; cloning saves
   a new note with the same content, category, and server association (`#289`).
 - Add a separate notes workspace with standalone and server-linked notes,

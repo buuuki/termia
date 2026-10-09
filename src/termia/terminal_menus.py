@@ -99,11 +99,12 @@ class TerminalMenusMixin:
             self.t("configure_terminal"),
             lambda: actions.configure(popover, session),
         )
-        self.add_context_menu_item(
-            menu,
-            self.t("session_statistics"),
-            lambda: actions.session_statistics(popover, session, terminal),
-        )
+        if actions.session_statistics is not None:
+            self.add_context_menu_item(
+                menu,
+                self.t("session_statistics"),
+                lambda: actions.session_statistics(popover, session, terminal),
+            )
         self.add_context_menu_separator(menu)
         self.add_terminal_split_menu(menu, popover, session, terminal, active_submenu, actions)
         self.add_terminal_tab_menu(menu, popover, session, active_submenu, actions)

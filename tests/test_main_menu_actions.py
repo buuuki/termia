@@ -16,6 +16,7 @@ class MainMenuActionsTests(unittest.TestCase):
             terminal_settings=action("terminal_settings"),
             keybinding_settings=action("keybinding_settings"),
             security_settings=action("security_settings"),
+            optional_tools=action("optional_tools"),
             manage_snippets=action("manage_snippets"),
             manage_notes=action("manage_notes"),
             statistics=action("statistics"),

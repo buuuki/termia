@@ -72,6 +72,27 @@ class StatisticsDialog:
         dialog.connect("response", lambda current, _response: current.destroy())
         dialog.present()
 
+    def show_session(self, parent: Gtk.Window, server_connections: int) -> None:
+        dialog = Gtk.Dialog(
+            title=self.translate("session_statistics"),
+            transient_for=parent,
+            modal=True,
+        )
+        dialog.set_resizable(False)
+        close_button = dialog.add_button(self.translate("close"), Gtk.ResponseType.CLOSE)
+        close_button.set_margin_end(12)
+        close_button.set_margin_bottom(12)
+        label = Gtk.Label(
+            label=f"{self.translate('server_connections')}: {server_connections}"
+        )
+        label.set_xalign(0)
+        label.set_selectable(True)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(label, f"set_margin_{side}")(12)
+        dialog.get_content_area().append(label)
+        dialog.connect("response", lambda current, _response: current.destroy())
+        dialog.present()
+
     def build_stat_card(self, presentation: StatisticCard) -> Gtk.Widget:
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         card.add_css_class("stat-card")

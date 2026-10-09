@@ -123,6 +123,7 @@ class AppSettings:
     send_password_enter: bool = False
     connection_storage_mode: str = "plain"
     statistics_enabled: bool = False
+    sftp_enabled: bool = True
     debug_enabled: bool = False
     keybindings: dict[str, str] = field(default_factory=lambda: DEFAULT_KEYBINDINGS.copy())
 

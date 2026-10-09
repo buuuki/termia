@@ -217,6 +217,7 @@ class TerminalProcessTests(unittest.TestCase):
             def __init__(self) -> None:
                 self.shutdown_in_progress = False
                 self.store = SimpleNamespace(record_history_end=Mock())
+                self.session_observer = Mock()
                 self.toast_label = Mock()
                 self.closed = []
                 self.reconnect_requested = False
@@ -228,12 +229,6 @@ class TerminalProcessTests(unittest.TestCase):
                 return pane
 
             def clear_terminal_process_state(self, *_args) -> None:
-                pass
-
-            def record_session_duration(self, _session) -> None:
-                pass
-
-            def save_statistics_now(self) -> None:
                 pass
 
             def should_close_tab_after_terminal_exit(self, _session) -> bool:
@@ -284,6 +279,7 @@ class TerminalProcessTests(unittest.TestCase):
             def __init__(self) -> None:
                 self.shutdown_in_progress = False
                 self.store = SimpleNamespace(record_history_end=Mock())
+                self.session_observer = Mock()
                 self.closed = []
                 self.reconnect_requested = False
 
@@ -291,12 +287,6 @@ class TerminalProcessTests(unittest.TestCase):
                 pass
 
             def clear_terminal_process_state(self, *_args) -> None:
-                pass
-
-            def record_pane_duration(self, _pane) -> None:
-                pass
-
-            def save_statistics_now(self) -> None:
                 pass
 
             def should_close_tab_after_terminal_exit(self, _session) -> bool:
@@ -349,6 +339,7 @@ class TerminalProcessTests(unittest.TestCase):
                 self.shutdown_in_progress = True
                 self.session_registry = SessionRegistry([session])
                 self.store = SimpleNamespace(record_history_end=Mock())
+                self.session_observer = Mock()
                 self.toast_label = Mock()
                 self.reconnect_requested = False
 
@@ -357,12 +348,6 @@ class TerminalProcessTests(unittest.TestCase):
 
             def pane_state(self, _session, _terminal):
                 return pane
-
-            def record_session_duration(self, _session) -> None:
-                pass
-
-            def save_statistics_now(self) -> None:
-                pass
 
             def mark_session_for_reconnect(self, *_args) -> None:
                 self.reconnect_requested = True
@@ -408,6 +393,7 @@ class TerminalProcessTests(unittest.TestCase):
             def __init__(self) -> None:
                 self.shutdown_in_progress = False
                 self.store = SimpleNamespace(record_history_end=Mock())
+                self.session_observer = Mock()
                 self.toast_label = Mock()
 
             def mark_terminal_inactive(self, _terminal, _session) -> None:
@@ -415,12 +401,6 @@ class TerminalProcessTests(unittest.TestCase):
 
             def pane_state(self, _session, _terminal):
                 return pane
-
-            def record_session_duration(self, _session) -> None:
-                pass
-
-            def save_statistics_now(self) -> None:
-                pass
 
             def t(self, key):
                 return {
@@ -469,15 +449,10 @@ class TerminalProcessTests(unittest.TestCase):
                 self.shutdown_in_progress = True
                 self.session_registry = SessionRegistry([session])
                 self.store = SimpleNamespace(record_history_end=Mock())
+                self.session_observer = Mock()
                 self.reconnect_requested = False
 
             def mark_terminal_inactive(self, _terminal, _session) -> None:
-                pass
-
-            def record_pane_duration(self, _pane) -> None:
-                pass
-
-            def save_statistics_now(self) -> None:
                 pass
 
             def mark_pane_for_reconnect(self, *_args) -> None:

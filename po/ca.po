@@ -2101,3 +2101,12 @@ msgstr "La nota seleccionada ja no existeix."
 
 msgid "Notes file"
 msgstr "Fitxer de notes"
+
+msgid "Add-ons"
+msgstr "Complements"
+
+msgid "Restart Termia to apply add-on changes. Disabling an add-on does not delete its data."
+msgstr "Reinicia Termia per aplicar els canvis als complements. Desactivar un complement no n'esborra les dades."
+
+msgid "SFTP browser"
+msgstr "Explorador SFTP"
