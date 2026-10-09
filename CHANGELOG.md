@@ -69,8 +69,9 @@
 
 ### Added
 
-- Add restart-applied controls for the bundled Statistics and SFTP tools. Disabled
-  tools are omitted from their menus without deleting stored data (`#304`).
+- Add restart-applied switch controls for the bundled Statistics and SFTP add-ons.
+  Disabled add-ons are omitted from their menus without deleting stored data
+  (`#304`).
 - Add right-click note actions for editing, cloning, and deleting; cloning saves
   a new note with the same content, category, and server association (`#289`).
 - Add a separate notes workspace with standalone and server-linked notes,

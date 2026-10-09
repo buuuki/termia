@@ -2102,11 +2102,11 @@ msgstr "La nota seleccionada ya no existe."
 msgid "Notes file"
 msgstr "Fichero de notas"
 
-msgid "Optional tools"
-msgstr "Herramientas opcionales"
+msgid "Add-ons"
+msgstr "Complementos"
 
-msgid "Restart Termia to apply tool changes. Disabling a tool does not delete its data."
-msgstr "Reinicia Termia para aplicar los cambios en las herramientas. Desactivar una herramienta no borra sus datos."
+msgid "Restart Termia to apply add-on changes. Disabling an add-on does not delete its data."
+msgstr "Reinicia Termia para aplicar los cambios en los complementos. Desactivar un complemento no borra sus datos."
 
 msgid "SFTP browser"
 msgstr "Explorador SFTP"

@@ -44,13 +44,12 @@ class OptionalToolsDialog:
         for side in ("top", "bottom", "start", "end"):
             getattr(content, f"set_margin_{side}")(16)
 
-        statistics = Gtk.CheckButton(label=self.translate("statistics_enabled"))
-        statistics.set_active(self.store.data.app.statistics_enabled)
-        content.append(statistics)
-
-        sftp = Gtk.CheckButton(label=self.translate("sftp_tool"))
-        sftp.set_active(self.store.data.app.sftp_enabled)
-        content.append(sftp)
+        statistics = self.add_switch_row(
+            content, self.translate("statistics"), self.store.data.app.statistics_enabled
+        )
+        sftp = self.add_switch_row(
+            content, self.translate("sftp_tool"), self.store.data.app.sftp_enabled
+        )
 
         hint = Gtk.Label(label=self.translate("optional_tools_restart"), xalign=0)
         hint.add_css_class("dim-label")
@@ -72,3 +71,18 @@ class OptionalToolsDialog:
 
         dialog.connect("response", on_response)
         dialog.present()
+
+    @staticmethod
+    def add_switch_row(content: Gtk.Box, title: str, active: bool) -> Gtk.Switch:
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        label = Gtk.Label(label=title, xalign=0)
+        label.set_hexpand(True)
+        switch = Gtk.Switch()
+        switch.set_active(active)
+        switch.set_valign(Gtk.Align.CENTER)
+        switch.set_tooltip_text(title)
+        label.set_mnemonic_widget(switch)
+        row.append(label)
+        row.append(switch)
+        content.append(row)
+        return switch

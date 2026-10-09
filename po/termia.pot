@@ -1689,11 +1689,11 @@ msgid "Manage notes"
 msgstr ""
 
 #: src/termia/i18n.py:optional_tools
-msgid "Optional tools"
+msgid "Add-ons"
 msgstr ""
 
 #: src/termia/i18n.py:optional_tools_restart
-msgid "Restart Termia to apply tool changes. Disabling a tool does not delete its data."
+msgid "Restart Termia to apply add-on changes. Disabling an add-on does not delete its data."
 msgstr ""
 
 #: src/termia/i18n.py:sftp_tool

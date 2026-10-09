@@ -22,9 +22,9 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Upload local files to remote servers with SCP from the terminal or server context menu.
 - Browse remote files through a native SFTP explorer with navigation, transfers,
   progress, cancellation, and confirmed file operations.
-- Enable or disable the bundled Statistics and SFTP tools from **Optional tools**
-  in the main menu. Changes take effect after restarting Termia; disabling a
-  tool hides its actions but keeps its saved data.
+- Enable or disable the bundled Statistics and SFTP add-ons from **Add-ons**
+  in the main menu. Changes take effect after restarting Termia; disabling an
+  add-on hides its actions but keeps its saved data.
 - Check for official releases and install verified updates from `About`.
 - Save reusable command snippets by category and scope them to all terminals, a
   server group, or one server; preview variable-expanded commands before
@@ -344,7 +344,7 @@ Termia does not record commands typed or executed in terminal panes, terminal
 output, clipboard contents, command counters, or keystroke counters. Snippets,
 where available, are command templates the user explicitly saves in
 `connections.json`; they are not a history of executed commands. Statistics are
-disabled by default and can be enabled from **Optional tools**. When enabled,
+disabled by default and can be enabled from **Add-ons**. When enabled,
 they track only aggregate connections, per-server usage, and session durations;
 they are flushed at most every 30 seconds, when sessions end, and when Termia
 closes. See [SECURITY.md](SECURITY.md).

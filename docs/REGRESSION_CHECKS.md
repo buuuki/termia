@@ -474,7 +474,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Optional built-in tools
 
-- In an isolated test profile, toggle Statistics and SFTP in Optional tools,
+- In an isolated test profile, toggle Statistics and SFTP in Add-ons,
   restart Termia, and verify the main, server, and terminal menus reflect each
   choice. Re-enable both, restart, and verify their previous data remains.
 - With Statistics enabled, open and close local, SSH, and split panes; verify
