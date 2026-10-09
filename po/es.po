@@ -2003,14 +2003,8 @@ msgstr "Empieza a escribir. Los cambios se guardan automáticamente."
 msgid "Empty notes are not saved."
 msgstr "Las notas vacías no se guardan."
 
-msgid "Discard unsaved note changes?"
-msgstr "¿Descartar los cambios no guardados de la nota?"
-
 msgid "Keep editing"
 msgstr "Seguir editando"
-
-msgid "Discard changes"
-msgstr "Descartar cambios"
 
 msgid "Delete note"
 msgstr "Eliminar nota"

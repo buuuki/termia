@@ -219,12 +219,16 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   botón **Guardar**. Al abrir la ventana se crea un borrador nuevo o se recupera
   uno pendiente del mismo contexto; en modo solo lectura no se crean borradores.
   Los borradores vacíos no se almacenan; al cerrar uno con cambios sin guardar,
-  se pregunta qué hacer. Las notas personales aparecen en
+  se pregunta qué hacer. El botón **Cerrar pestaña** del editor sigue el mismo
+  diálogo de guardar, descartar o seguir editando que la X de la pestaña. Las
+  notas personales aparecen en
   carpetas de categorías y las asociadas a servidores, en «Notas de servidor»,
   con el nombre del servidor junto al título. La lista tiene búsqueda global
   y filas compactas; el diálogo compacto de Propiedades muestra, entre otros
   datos, la categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
-  la abre en una pestaña de edición. Los controles
+  la abre en una pestaña de edición. La pestaña activa tiene un subrayado azul
+  oscuro y fino de ancho completo. El área de escritura tiene un fondo y un borde
+  diferenciados que se adaptan al tema. Los controles
   a la izquierda de la barra de título ocultan la lista y abren el menú de
   importación/exportación. Sobre el buscador, el botón de la izquierda crea
   una categoría y el de al lado crea una nota. Con clic derecho sobre una

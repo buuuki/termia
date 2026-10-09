@@ -237,6 +237,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - The notes workspace must be modeless and reusable: keep it open while
   switching focus to and typing in an embedded or detached terminal.
 - The notes window must provide normal minimize, maximize, and close controls.
+- The notes writing area must remain visibly distinct from the surrounding
+  workspace, with a readable background and border in both light and dark
+  themes; text must not sit directly against the edge.
 - Notes must autosave non-empty text changes without a separate autosave
   preference. A completely empty draft must not be persisted. If an existing
   note is emptied, its prior saved content must remain intact until an explicit
@@ -252,8 +255,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   buttons must share the same horizontal center. Both creation buttons must
   remain usable when no categories exist.
   Search must span all categories, and there must be no category filter
-  dropdown. Hide Import/Export for server-scoped notes. Server associations
-  must remain intact when editing saved notes. In a read-only instance, opening
+  dropdown. Align the top of search with the top of the notes writing area,
+  and keep the same 6 px inset on both sides of the list divider at the default
+  and resized sidebar widths. Hide Import/Export for server-scoped notes.
+  Server associations must remain intact when editing saved notes. In a
+  read-only instance, opening
   a note must still allow reading
   and selecting its text without enabling edits.
 - Personal note categories in the list must be expandable/collapsible folder
@@ -272,7 +278,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   independently clickable.
 - Note editors must support multiple open tabs. New notes must be named exactly
   “New note” without a generated identifier. The active tab must have the
-  same visible focus highlight as a terminal tab; tabs must be reorderable by
+  same visible focus highlight as a terminal tab plus a thin, full-width
+  dark-blue underline with no side glow; inactive note tabs must not show that
+  underline. Tabs must be reorderable by
   dragging without changing note content or saved associations. Right-click an
   open tab and a note in the sidebar; each menu must offer Rename, and renaming
   must persist while updating all open tabs for the same note. Opening a note
@@ -338,6 +346,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   opening an already open note activates its existing tab, and Save/autosave
   affect only that note. Closing a clean tab must close only that tab. Close a
   dirty tab and test Save and close, Close without saving, and Keep editing.
+  The editor's Close tab button must follow the same behavior as the tab's X;
+  neither can undo changes that were already saved automatically.
   Confirm the active tab highlight follows the selected note. With no saved
   notes, switch between multiple unsaved drafts and verify each editor appears
   on the first click. Hide the sidebar and verify the tab row and text editor

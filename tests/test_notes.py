@@ -84,6 +84,38 @@ class NotesDomainTests(unittest.TestCase):
 
 
 class NotesDialogSignalTests(unittest.TestCase):
+    def test_notes_window_title_reflects_server_scope(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        titles = []
+        dialog.window = SimpleNamespace(set_title=titles.append)
+        dialog.store = SimpleNamespace(
+            data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")])
+        )
+        dialog.translate = lambda key: {
+            "notes_title": "Notes",
+            "notes_for_server": "Notes for {name}",
+            "notes_unknown_server": "Unavailable server",
+        }[key]
+
+        dialog.update_window_title("server-id")
+        dialog.update_window_title(None)
+
+        self.assertEqual(titles, ["Notes for Build host", "Notes"])
+
+    def test_notes_window_title_handles_missing_server(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        titles = []
+        dialog.window = SimpleNamespace(set_title=titles.append)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(servers=[]))
+        dialog.translate = lambda key: {
+            "notes_for_server": "Notes for {name}",
+            "notes_unknown_server": "Unavailable server",
+        }[key]
+
+        dialog.update_window_title("missing-server")
+
+        self.assertEqual(titles, ["Notes for Unavailable server"])
+
     def test_notes_header_controls_use_sidebar_alignment_inset(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.window = None
@@ -293,6 +325,18 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.close_editor_tab(tab.key)
 
         self.assertEqual(removed, [tab.key])
+
+    def test_footer_close_uses_active_tab_close_flow(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        closed = []
+        dialog.close_editor_tab = closed.append
+        dialog.active_editor_tab_key = "note-id"
+
+        dialog.close_active_editor_tab()
+        dialog.active_editor_tab_key = None
+        dialog.close_active_editor_tab()
+
+        self.assertEqual(closed, ["note-id"])
 
     def test_remove_editor_tab_removes_its_outer_tab_container(self):
         tab = NoteEditorTab("note-id", "note-id", "Runbook", "", None, "Saved")
@@ -752,7 +796,6 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.notes_list = SimpleNamespace(
             get_first_child=lambda: None,
         )
-        dialog.scope_bar = SimpleNamespace(set_visible=lambda _visible: None)
         dialog.server_filter_id = None
         dialog.search_entry = SimpleNamespace(get_text=lambda: "")
         dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=[], servers=[]))
@@ -938,6 +981,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         presented = []
         dialog.window = SimpleNamespace(
             get_visible=lambda: True, present=lambda: presented.append(True),
+            set_title=lambda _title: None,
         )
         dialog.ensure_window = lambda: None
 
@@ -969,7 +1013,10 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_failed_save_still_presents_notes_window(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(encryption_locked=False)
+        dialog.store = SimpleNamespace(
+            encryption_locked=False,
+            data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),
+        )
         dialog.ensure_window = lambda: None
         dialog.editor_dirty = True
         dialog.save_editor = lambda: False
@@ -1000,7 +1047,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.import_button = SimpleNamespace(set_visible=import_visibility.append)
         dialog.export_button = SimpleNamespace(set_visible=export_visibility.append)
         dialog.import_export_menu_button = SimpleNamespace(set_visible=menu_visibility.append)
-        dialog.window = SimpleNamespace(get_visible=lambda: True, present=lambda: None)
+        dialog.window = SimpleNamespace(
+            get_visible=lambda: True, present=lambda: None, set_title=lambda _title: None,
+        )
 
         dialog.show_manager("server-id")
         self.assertEqual(views, ["server-id"])
@@ -1017,7 +1066,10 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_opening_hidden_notes_window_starts_a_draft_in_the_current_scope(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(encryption_locked=False, read_only=False)
+        dialog.store = SimpleNamespace(
+            encryption_locked=False, read_only=False,
+            data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),
+        )
         dialog.translate = lambda key: key
         dialog.editor_tabs = {}
         dialog.active_editor_tab_key = None
@@ -1029,7 +1081,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.refresh_list = lambda: None
         dialog.ensure_window = lambda: None
         visible = False
-        dialog.window = SimpleNamespace(get_visible=lambda: visible, present=lambda: None)
+        dialog.window = SimpleNamespace(
+            get_visible=lambda: visible, present=lambda: None, set_title=lambda _title: None,
+        )
         created = []
         dialog.create_note = lambda: created.append(dialog.server_filter_id)
 
@@ -1050,7 +1104,10 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_reopening_notes_reuses_a_draft_for_the_same_scope(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(encryption_locked=False, read_only=False)
+        dialog.store = SimpleNamespace(
+            encryption_locked=False, read_only=False,
+            data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),
+        )
         dialog.translate = lambda key: key
         dialog.editor_tabs = {
             "draft": NoteEditorTab("draft", None, "New note", "", "server-id", ""),
@@ -1063,7 +1120,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.set_import_export_actions_visible = lambda _visible: None
         dialog.refresh_list = lambda: None
         dialog.ensure_window = lambda: None
-        dialog.window = SimpleNamespace(get_visible=lambda: False, present=lambda: None)
+        dialog.window = SimpleNamespace(
+            get_visible=lambda: False, present=lambda: None, set_title=lambda _title: None,
+        )
         activated = []
         dialog.activate_editor_tab = activated.append
         focused = []
@@ -1150,15 +1209,12 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.text_view = object()
         dialog.editor_content = lambda: ""
         dialog.capture_active_editor_tab = lambda: None
-        prompted = []
         hidden = []
         cleared = []
-        dialog.confirm_discard_editor = lambda: prompted.append(True)
         dialog.clear_editor = lambda: cleared.append(True)
         dialog.window = SimpleNamespace(set_visible=lambda visible: hidden.append(visible))
 
         self.assertTrue(dialog.on_close_request(dialog.window))
-        self.assertEqual(prompted, [])
         self.assertTrue(dialog.editor_dirty)
         self.assertEqual(cleared, [])
         self.assertEqual(hidden, [False])

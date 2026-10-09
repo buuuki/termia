@@ -60,6 +60,32 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             css,
         )
 
+    def test_notes_editor_has_theme_aware_background_and_border(self) -> None:
+        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+
+        self.assertIn(
+            ".termia-notes-editor { border: 1px solid @borders; border-radius: 8px; "
+            "background-color: @theme_base_color; }",
+            css,
+        )
+        self.assertIn(
+            ".termia-notes-editor textview, .termia-notes-editor textview text { "
+            "background-color: @theme_base_color; }",
+            css,
+        )
+
+    def test_only_active_note_tab_gets_thin_full_width_blue_underline(self) -> None:
+        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+
+        self.assertIn(
+            ".termia-note-tab { border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; }",
+            css,
+        )
+        self.assertIn(
+            ".termia-note-tab.active { border-bottom-color: #0066cc; }",
+            css,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2003,14 +2003,8 @@ msgstr "Comença a escriure. Els canvis es desen automàticament."
 msgid "Empty notes are not saved."
 msgstr "Les notes buides no es desen."
 
-msgid "Discard unsaved note changes?"
-msgstr "Voleu descartar els canvis no desats de la nota?"
-
 msgid "Keep editing"
 msgstr "Continua editant"
-
-msgid "Discard changes"
-msgstr "Descarta els canvis"
 
 msgid "Delete note"
 msgstr "Suprimeix la nota"

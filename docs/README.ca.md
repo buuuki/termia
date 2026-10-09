@@ -220,13 +220,17 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   ha un botó **Desa**. En obrir la finestra es crea un esborrany nou o es reprèn
   un de pendent del mateix context; en mode de només lectura no es creen esborranys.
   Els esborranys buits no s'emmagatzemen; en tancar-ne un amb canvis sense desar,
-  es pregunta què cal fer. Les notes personals apareixen
+  es pregunta què cal fer. El botó **Tanca la pestanya** de l'editor segueix el
+  mateix diàleg de desar, descartar o continuar editant que la X de la pestanya.
+  Les notes personals apareixen
   en carpetes de categories i les vinculades a servidors, a «Notes de servidor»,
   amb el nom del servidor al costat del títol. La llista té cerca global i files
   compactes; el diàleg compacte de Propietats mostra, entre altres dades, la
   categoria desada de cada nota. Un clic selecciona la nota i un doble clic l'obre en una
-  pestanya d'edició. Els controls a l'esquerra
-  de la barra de títol amaguen la llista i obren el menú d'importació/exportació.
+  pestanya d'edició. La pestanya activa té un subratllat blau fosc i fi de
+  banda a banda. L'àrea d'escriptura té un fons i una vora diferenciats que
+  s'adapten al tema. Els controls a l'esquerra de la barra de títol amaguen la
+  llista i obren el menú d'importació/exportació.
   Sobre el cercador, el botó de l'esquerra crea una categoria i el del costat
   crea una nota. Amb un clic dret sobre una categoria pots canviar-ne el nom,
   duplicar-la amb les seves notes o suprimir-la. Des del menú principal es

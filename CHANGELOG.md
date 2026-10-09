@@ -4,6 +4,16 @@
 
 ### Changed
 
+- Show the selected server in the notes window title instead of a small in-view
+  scope label, and keep the general notes title for the unscoped workspace
+  (`#289`).
+- Replace the note editor's misleading Cancel button with Close tab, using the
+  same save, discard, or keep-editing flow as the tab close icon (`#289`).
+- Mark the active notes tab with a thin, full-width dark-blue underline without
+  side glow; align notes search with the writing area and balance their divider
+  insets (`#289`).
+- Delineate the notes writing area with a theme-aware background, border, and
+  comfortable text insets (`#289`).
 - Replace the separate note-category manager with Add category and New note
   buttons together above search, plus folder-row actions for renaming,
   duplicating, and deleting categories; align Add category with the title-bar

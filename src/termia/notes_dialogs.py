@@ -112,6 +112,7 @@ class NotesDialogs:
             self.translate("notes_create_for_server")
             if server_id else self.translate("notes_create")
         )
+        self.update_window_title(server_id)
         self.set_import_export_actions_visible(server_id is None)
         self.refresh_list()
         self.window.present()
@@ -179,13 +180,6 @@ class NotesDialogs:
         self.import_export_menu_button.set_popover(self.import_export_popover)
         header_actions.append(self.import_export_menu_button)
 
-        self.scope_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self.scope_label = Gtk.Label()
-        self.scope_label.set_xalign(0)
-        self.scope_label.set_hexpand(True)
-        self.scope_bar.append(self.scope_label)
-        root.append(self.scope_bar)
-
         paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         paned.set_position(330)
         paned.set_vexpand(True)
@@ -198,9 +192,11 @@ class NotesDialogs:
         list_box.connect("row-selected", self.on_note_selected)
         list_box.connect("row-activated", self.on_note_row_activated)
         self.notes_list = list_box
-        list_panel.append(self.build_creation_controls())
+        creation_controls = self.build_creation_controls()
+        list_panel.append(creation_controls)
         self.search_entry = Gtk.SearchEntry()
         self.search_entry.set_size_request(300, -1)
+        self.search_entry.set_margin_end(6)
         self.search_entry.set_placeholder_text(self.translate("notes_search"))
         self.search_entry.connect("search-changed", self.on_search_changed)
         list_panel.append(self.search_entry)
@@ -227,6 +223,9 @@ class NotesDialogs:
         tabs_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
         tabs_scroller.set_child(self.editor_tabs_bar)
         detail_area.append(tabs_scroller)
+        self.notes_top_row_size_group = Gtk.SizeGroup.new(Gtk.SizeGroupMode.VERTICAL)
+        self.notes_top_row_size_group.add_widget(creation_controls)
+        self.notes_top_row_size_group.add_widget(tabs_scroller)
         tab_drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
         tab_drop_target.set_preload(True)
         tab_drop_target.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
@@ -252,9 +251,14 @@ class NotesDialogs:
         text_view = Gtk.TextView()
         text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         text_view.set_monospace(False)
+        text_view.set_left_margin(12)
+        text_view.set_right_margin(12)
+        text_view.set_top_margin(12)
+        text_view.set_bottom_margin(12)
         text_view.get_buffer().connect("changed", self.on_editor_changed)
         self.text_view = text_view
         text_scroller = Gtk.ScrolledWindow()
+        text_scroller.add_css_class("termia-notes-editor")
         text_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         text_scroller.set_vexpand(True)
         text_scroller.set_child(text_view)
@@ -276,9 +280,9 @@ class NotesDialogs:
         self.delete_button.add_css_class("destructive-action")
         self.delete_button.connect("clicked", lambda *_: self.confirm_delete_note())
         footer.append(self.delete_button)
-        self.cancel_editor_button = Gtk.Button(label=self.translate("cancel"))
-        self.cancel_editor_button.connect("clicked", lambda *_: self.cancel_editing())
-        footer.append(self.cancel_editor_button)
+        self.close_editor_button = Gtk.Button(label=self.translate("close_tab"))
+        self.close_editor_button.connect("clicked", lambda *_: self.close_active_editor_tab())
+        footer.append(self.close_editor_button)
         editor.append(footer)
         editor_workspace.append(editor)
         self.detail_stack.add_named(editor_workspace, "editor")
@@ -384,6 +388,19 @@ class NotesDialogs:
         self.last_search_query = query
         self.refresh_list()
 
+    def update_window_title(self, server_id: str | None) -> None:
+        if server_id is None:
+            title = self.translate("notes_title")
+        else:
+            servers = getattr(getattr(self.store, "data", None), "servers", ())
+            server = next(
+                (item for item in servers if item.id == server_id),
+                None,
+            )
+            server_name = server.name if server else self.translate("notes_unknown_server")
+            title = self.translate("notes_for_server").format(name=server_name)
+        self.window.set_title(title)
+
     def refresh_list(self, selected_id: str | None = None) -> None:
         if not hasattr(self, "notes_list"):
             return
@@ -392,12 +409,6 @@ class NotesDialogs:
         selected_id = selected_id if selected_id is not None else self.selected_note_id
         while child := self.notes_list.get_first_child():
             self.notes_list.remove(child)
-        self.scope_bar.set_visible(self.server_filter_id is not None)
-        if self.server_filter_id:
-            server = next((item for item in self.store.data.servers if item.id == self.server_filter_id), None)
-            self.scope_label.set_label(
-                self.translate("notes_for_server").format(name=server.name if server else self.translate("notes_standalone"))
-            )
         query = self.search_entry.get_text().strip()
         items = self.presenter.items(query, None, self.server_filter_id)
         grouped_items = self.group_note_items(
@@ -1116,6 +1127,7 @@ class NotesDialogs:
         self.editor_tabs[tab.key] = tab
         tab_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         tab_box.add_css_class("termia-tab-label")
+        tab_box.add_css_class("termia-note-tab")
         tab_box.set_hexpand(False)
         tab_box.set_size_request(150, -1)
         label = Gtk.Label()
@@ -1358,6 +1370,10 @@ class NotesDialogs:
             return
         self.remove_editor_tab(key)
 
+    def close_active_editor_tab(self) -> None:
+        if self.active_editor_tab_key is not None:
+            self.close_editor_tab(self.active_editor_tab_key)
+
     def on_close_editor_tab_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, key: str) -> None:
         try:
             response = dialog.choose_finish(result)
@@ -1462,14 +1478,6 @@ class NotesDialogs:
         self.create_editor_tab()
         self.text_view.grab_focus()
 
-    def cancel_editing(self) -> None:
-        if self.editor_dirty:
-            self.confirm_discard_editor(close_window=False)
-            return
-        if self.active_editor_tab_key is not None:
-            self.remove_editor_tab(self.active_editor_tab_key)
-        self.refresh_list(self.selected_note_id)
-
     def on_editor_changed(self, *_args) -> None:
         if self.loading_editor:
             return
@@ -1559,26 +1567,6 @@ class NotesDialogs:
         self.capture_active_editor_tab()
         self.window.set_visible(False)
         return True
-
-    def confirm_discard_editor(self, close_window: bool = True) -> None:
-        dialog = Gtk.AlertDialog(message=self.translate("notes_discard_unsaved"))
-        dialog.set_buttons([self.translate("notes_keep_editing"), self.translate("notes_discard")])
-        dialog.set_cancel_button(0)
-        dialog.set_default_button(0)
-        dialog.choose(self.window, None, self.on_discard_editor_response, close_window)
-
-    def on_discard_editor_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, close_window: bool = True) -> None:
-        try:
-            response = dialog.choose_finish(result)
-        except GLib.Error:
-            return
-        if response == 1:
-            if self.active_editor_tab_key is not None:
-                self.remove_editor_tab(self.active_editor_tab_key)
-            if close_window and not self.editor_tabs:
-                self.window.set_visible(False)
-            else:
-                self.refresh_list(self.selected_note_id)
 
     def confirm_delete_note(self, note_id: str | None = None) -> None:
         if not self.save_active_editor_if_valid():
