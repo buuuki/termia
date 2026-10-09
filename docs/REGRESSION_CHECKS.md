@@ -462,7 +462,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 - Statistics collection must remain lightweight and should not continuously write to disk on every keypress.
 - Statistics must be disabled by default and must not record command or keystroke counters, even when enabled.
-- Disabling statistics from General preferences must stop new aggregate connection and duration counters from being recorded or flushed.
+- Disabling Statistics from **Add-ons** must stop new aggregate connection
+  and duration counters from being recorded or flushed after the next restart.
 - Global and current-run connection counters must remain separate.
 - Per-session statistics must correspond to the selected terminal pane.
 - Statistics remains disabled by default. When it is off, its main and terminal

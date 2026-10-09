@@ -7,6 +7,11 @@ new components inherit from the window.
 The purpose of the inventory is to make dependencies visible before mixins are
 replaced gradually with explicit controllers and services.
 
+For the broader Core/add-on direction and approved dependency rules, see the
+[architecture overview](architecture/overview.md). This document remains the
+detailed reference for current window and mixin contracts; documented current
+couplings are observations, not automatic exceptions to those rules.
+
 ## Shared window services
 
 Most mixins expect the window to provide some combination of these services:
