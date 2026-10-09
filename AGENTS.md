@@ -48,6 +48,10 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 - Apply these boundaries to every task, including unrelated bug fixes. If the
   affected code currently crosses a boundary, report the coupling and preserve
   behavior; do not expand the coupling or perform an unrequested refactor.
+- Before modifying code, identify the affected responsibilities and whether the
+  change touches Core, an add-on, or their integration boundary; consider likely
+  regressions. If the requested change conflicts with an architectural boundary,
+  explain the conflict and propose an approach before proceeding.
 - Before changing code that touches a shared contract or optional behavior,
   review `docs/architecture/overview.md` and `docs/architecture/addons.md`;
   check `docs/WINDOW_MIXIN_CONTRACTS.md` before moving window/mixin behavior.
@@ -130,3 +134,6 @@ Before opening or merging a PR, confirm:
 - Validation commands were run, or any skipped checks are explicitly noted.
 - `CHANGELOG.md` was updated under `Unreleased`.
 - The PR description includes a concise summary, test notes, and `Closes #<issue>` when applicable.
+- For changes to Core/add-on boundaries, the PR describes the architectural
+  impact, affected components or contracts, regression coverage, and known
+  risks.
