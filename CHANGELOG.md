@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Document the initial Core and built-in add-on boundaries, their known pilot
+  couplings, and the `app.py` composition-root exception (`#306`).
+
 ### Refactored
 
 - Move aggregate statistics recording behind a narrow session observer and

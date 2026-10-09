@@ -34,6 +34,33 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 - Update the README and localized documentation when documented user-facing behavior changes.
 - When UI text changes, update English, Spanish, and Catalan catalogs unless the string is intentionally language-specific.
 
+## Architecture Boundaries
+
+- Evolve Termia incrementally around a cohesive Core and trusted, built-in
+  optional add-ons. This is an internal architecture, not a public plugin API.
+- `src/termia/app.py` is the composition root and the only approved place for
+  importing and assembling concrete add-on implementations. Other Core modules
+  must not depend directly on those implementations; pass narrow, explicit
+  contracts or callbacks instead.
+- Add-ons should receive only the host capabilities and data they need. Prefer
+  focused protocols and immutable data over passing `TermiaWindow`, complete
+  terminal sessions, connection stores, or other broad internal objects.
+- Apply these boundaries to every task, including unrelated bug fixes. If the
+  affected code currently crosses a boundary, report the coupling and preserve
+  behavior; do not expand the coupling or perform an unrequested refactor.
+- Before changing code that touches a shared contract or optional behavior,
+  review `docs/architecture/overview.md` and `docs/architecture/addons.md`;
+  check `docs/WINDOW_MIXIN_CONTRACTS.md` before moving window/mixin behavior.
+- Preserve behavior and stored data when an add-on is disabled. Do not
+  introduce external plugins, hot reload, sandboxing, marketplaces, or a
+  general plugin manager without an explicitly reviewed issue.
+- Keep architecture documentation aligned with the implementation. Distinguish
+  approved rules from observed implementation and unresolved questions; a
+  documented current dependency is not automatically an approved exception.
+- Changes to Core/add-on boundaries must include regression coverage for the
+  affected Core behavior and the add-on enabled and disabled. Consult the
+  architecture and regression documents before changing a shared contract.
+
 ## Changelog
 
 - Every code change must update `CHANGELOG.md` under `Unreleased`, including internal refactors, tests, build changes, and maintenance work.
