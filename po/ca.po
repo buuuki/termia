@@ -2101,3 +2101,12 @@ msgstr "La nota seleccionada ja no existeix."
 
 msgid "Notes file"
 msgstr "Fitxer de notes"
+
+msgid "Optional tools"
+msgstr "Eines opcionals"
+
+msgid "Restart Termia to apply tool changes. Disabling a tool does not delete its data."
+msgstr "Reinicia Termia per aplicar els canvis a les eines. Desactivar una eina no n'esborra les dades."
+
+msgid "SFTP browser"
+msgstr "Explorador SFTP"

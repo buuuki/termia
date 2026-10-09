@@ -513,18 +513,13 @@ class TerminalPaneStateTests(unittest.TestCase):
                             record_history_end=Mock(),
                         )
                         self.removed = []
+                        self.session_observer = Mock()
                         self.terminated = []
                         self.toast_label = FakeControl()
 
                     def terminate_terminal_process(self, process, *, force=False):
                         self.terminated.append((process, force))
                         return True
-
-                    def record_session_duration(self, _session):
-                        pass
-
-                    def save_statistics_now(self):
-                        pass
 
                     def remove_terminal_pane_if_split(self, terminal, current_session):
                         self.removed.append((terminal, current_session))

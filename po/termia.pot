@@ -1688,6 +1688,18 @@ msgstr ""
 msgid "Manage notes"
 msgstr ""
 
+#: src/termia/i18n.py:optional_tools
+msgid "Optional tools"
+msgstr ""
+
+#: src/termia/i18n.py:optional_tools_restart
+msgid "Restart Termia to apply tool changes. Disabling a tool does not delete its data."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_tool
+msgid "SFTP browser"
+msgstr ""
+
 #: src/termia/i18n.py:notes_title
 msgid "Notes"
 msgstr ""

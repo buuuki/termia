@@ -465,6 +465,25 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Disabling statistics from General preferences must stop new aggregate connection and duration counters from being recorded or flushed.
 - Global and current-run connection counters must remain separate.
 - Per-session statistics must correspond to the selected terminal pane.
+- Statistics remains disabled by default. When it is off, its main and terminal
+  menu actions must be absent, and no aggregate statistics writes may occur.
+- The SFTP browser remains on by default. Disabling it must hide both sidebar
+  and terminal-menu actions without disabling SCP or changing saved credentials.
+- Optional-tool changes take effect only after restart and must never delete
+  statistics data or interrupt existing SFTP transfers.
+
+### Optional built-in tools
+
+- In an isolated test profile, toggle Statistics and SFTP in Optional tools,
+  restart Termia, and verify the main, server, and terminal menus reflect each
+  choice. Re-enable both, restart, and verify their previous data remains.
+- With Statistics enabled, open and close local, SSH, and split panes; verify
+  connection counts, duration counts, current-run counts, and shutdown flushes
+  without duplicate records. Repeat with Statistics disabled and verify no
+  counters change.
+- With SFTP enabled, open it from both server and terminal context menus;
+  closing the owner session must still cancel its transfer. Disabling it must
+  not affect SCP or terminal operation.
 
 ## Manual Regression Checklist
 

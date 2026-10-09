@@ -30,7 +30,7 @@ class TerminalMenuActions:
     paste: Callable[[MenuPopover, TerminalWidget], None]
     send_files: Callable[[MenuPopover, TerminalSession, Server], None]
     configure: Callable[[MenuPopover, TerminalSession], None]
-    session_statistics: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
+    session_statistics: Callable[[MenuPopover, TerminalSession, TerminalWidget], None] | None
     split: Callable[[MenuPopover, TerminalSession, TerminalWidget, str], None]
     split_connection: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
     rename_tab: Callable[[MenuPopover, TerminalSession], None]

@@ -197,6 +197,7 @@ class SFTPServiceTests(unittest.TestCase):
 
 class SFTPIntegrationTests(unittest.TestCase):
     def test_terminal_owner_is_registered_and_cancelled_independently(self):
+        from termia.builtin_sftp import SFTPTool
         from termia.terminal_sessions import TerminalSessionsMixin
         from termia.models import Server
         class Host(TerminalSessionsMixin):
@@ -212,27 +213,37 @@ class SFTPIntegrationTests(unittest.TestCase):
         window = Mock(owner_session_id="owner")
         other = Mock(owner_session_id=None)
         host.file_transfer_controllers.add(other)
+        tool = SFTPTool(
+            lambda current: host.window_for_session(current),
+            host.session_registry.contains,
+            lambda: host.shutdown_in_progress,
+            host.file_transfer_controllers.add,
+            host.unregister_file_transfer,
+            host.t,
+        )
         with patch("termia.sftp_view.SFTPWindow", return_value=window), patch(
-            "termia.terminal_sessions.GLib.idle_add", side_effect=lambda callback: callback()
+            "termia.builtin_sftp.GLib.idle_add", side_effect=lambda callback: callback()
         ):
-            host.on_browse_sftp(Mock(), session, server)
+            tool.browse(Mock(), session, server)
         self.assertIn(window, host.file_transfer_controllers)
         host.cancel_file_transfers("owner", close_dialog=True)
         window.cancel_active_transfer.assert_called_once_with(close_dialog=True)
         other.cancel_active_transfer.assert_not_called()
 
     def test_closed_session_does_not_open_a_delayed_explorer(self):
-        from termia.terminal_sessions import TerminalSessionsMixin
+        from termia.builtin_sftp import SFTPTool
         from termia.models import Server
-        class Host(TerminalSessionsMixin):
-            shutdown_in_progress = False
-        host = Host()
-        host.session_registry = Mock()
-        host.session_registry.contains.return_value = False
-        host.window_for_session = Mock()
+        tool = SFTPTool(
+            lambda _session: object(),
+            lambda _session_id: False,
+            lambda: False,
+            Mock(),
+            Mock(),
+            lambda key: key,
+        )
         with patch("termia.sftp_view.SFTPWindow") as window, patch(
-            "termia.terminal_sessions.GLib.idle_add", side_effect=lambda callback: callback()
+            "termia.builtin_sftp.GLib.idle_add", side_effect=lambda callback: callback()
         ):
-            host.on_browse_sftp(Mock(), SimpleNamespace(id="closed"),
-                                Server("saved", "Synthetic", "example.test", "test"))
+            tool.browse(Mock(), SimpleNamespace(id="closed"),
+                        Server("saved", "Synthetic", "example.test", "test"))
         window.assert_not_called()

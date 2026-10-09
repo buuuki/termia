@@ -70,6 +70,11 @@ class MainMenuMixin:
         self.configure_write_action(security)
         menu.append(security)
 
+        optional_tools = Gtk.Button(label=self.t("optional_tools"))
+        optional_tools.set_halign(Gtk.Align.FILL)
+        self.connect_main_menu_action(optional_tools, popover, actions.optional_tools)
+        menu.append(optional_tools)
+
         snippets = Gtk.Button(label=self.t("manage_snippets"))
         snippets.set_halign(Gtk.Align.FILL)
         self.connect_main_menu_action(snippets, popover, actions.manage_snippets)
@@ -81,10 +86,11 @@ class MainMenuMixin:
         self.connect_main_menu_action(notes, popover, actions.manage_notes)
         menu.append(notes)
 
-        statistics = Gtk.Button(label=self.t("statistics"))
-        statistics.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(statistics, popover, actions.statistics)
-        menu.append(statistics)
+        if actions.statistics is not None:
+            statistics = Gtk.Button(label=self.t("statistics"))
+            statistics.set_halign(Gtk.Align.FILL)
+            self.connect_main_menu_action(statistics, popover, actions.statistics)
+            menu.append(statistics)
 
         history = Gtk.Button(label=self.t("connection_history"))
         history.set_halign(Gtk.Align.FILL)
