@@ -197,6 +197,8 @@ def load_store_data_from_json(path: Path, current: StoreData, master_password: s
         workspaces=workspaces_from_payload(payload.get("workspaces", [])),
         snippets=snippets,
         snippet_categories=normalized_categories(payload.get("snippet_categories"), snippets),
+        notes=current.notes,
+        note_categories=current.note_categories,
         terminal=current.terminal,
         app=current.app,
         statistics=current.statistics,

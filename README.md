@@ -35,6 +35,9 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Store host, user, port, password, and private-key settings for each SSH connection.
 - Import and export Termia configuration, including basic connections, nested groups, and available credentials from Asbru YAML.
 - Review connection history and optional local usage statistics, including durations and most-used servers.
+- Keep personal notes or associate notes with servers; organize them with
+  categories, edit them alongside terminal sessions, and import/export them
+  separately from connection configuration.
 - Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
 
 ## What's new in 0.6.0-beta.3
@@ -154,9 +157,9 @@ profile. It uses separate configuration, state, and writer lock:
 ./scripts/run_test_instance.sh --copy-current-config review
 ```
 
-The option copies connections, settings, connection history, statistics, and
-the debug log into the test profile. Changes made there never modify your usual
-Termia data.
+The option copies connections, notes, settings, connection history, statistics,
+and the debug log into the test profile. Changes made there never modify your
+usual Termia data.
 
 Termia can migrate compatible configuration files from older versions. Once a
 newer version saves a configuration, an older version may no longer be able to
@@ -219,6 +222,32 @@ APT installs its GTK, VTE, Python, SSH, and encryption dependencies.
 The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and `Security`:
 
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
+- `Manage notes` opens a reusable modeless notes workspace. Notes are saved
+  automatically, and the editor also offers an explicit **Save** button. Opening
+  the window starts a new note draft, or resumes an existing draft for the same
+  scope; read-only instances do not start drafts. Empty drafts are not stored;
+  closing a draft with unsaved changes asks what to do. The editor's **Close tab**
+  button follows the same save, discard, or keep-editing flow as the tab's X.
+  Personal notes appear under category folders in a searchable list; linked
+  notes appear in Server notes with the server name beside each title. Rows
+  are compact and show further details, including a linked note's saved
+  category, in the compact right-click Properties dialog. A single click selects
+  a note; a double click opens it in an editor tab. The active tab has a
+  thin, full-width blue underline, and the writing area has a distinct,
+  theme-aware background and border. The title bar's left-side controls hide
+  the list and open the Import/Export menu.
+  Above search, the left button creates a category and the button beside it
+  creates a note. Right-click a category to rename, duplicate it with its
+  notes, or delete it. The main-menu manager shows all notes and offers
+  import/export. Opening notes from a server's sidebar shows only that server's
+  notes and hides import/export.
+  Notes can be categorized or kept as personal notes. Deleting a server keeps
+  its notes as personal notes. Import replaces existing notes only after
+  offering to back them up. Before export, Termia explains that choosing no
+  password creates a readable plain-text file, while choosing a password
+  encrypts the export and requires that password for import. Right-click a
+  note in the list to edit, rename, clone, view properties, or delete it;
+  cloning saves a copy with a new identity and the same content and associations.
 - `Terminal` combines embedded VTE appearance and local prompt settings with one live preview. Appearance changes apply to open terminals; prompt changes apply only to new or duplicated local Bash terminals and never inject commands into running local shells or SSH sessions. New installations start with JetBrains Mono and the Polaris palette.
 - `Keybindings` shows the active shortcuts and lets you record shortcut combinations for common actions such as server filtering, sidebar visibility, opening a local terminal, focus navigation, copy, paste, tab switching, font zoom, and sending the saved password. `Ctrl+F` focuses the server filter, `Ctrl+Shift+B` toggles the server list, `F10` toggles the main menu, `Ctrl+Shift+T` opens a local terminal, and `Ctrl+F6`/`Ctrl+Shift+F6` cycle through the main interface regions. Other unmodified function keys pass through to terminal applications.
 - `Ctrl+Left`, `Ctrl+Right`, `Ctrl+Up`, and `Ctrl+Down` move focus between
@@ -295,6 +324,7 @@ Termia stores connection data, settings, and statistics outside the repository:
 
 ```text
 ~/.config/termia/connections.json   # groups, servers, and saved snippets where available
+~/.config/termia/notes.json        # notes and categories
 ~/.config/termia/settings.json      # app and terminal settings
 ~/.config/termia/instance.lock      # single writer lock for multi-instance mode
 ~/.local/state/termia/connections-history.jsonl
@@ -302,7 +332,7 @@ Termia stores connection data, settings, and statistics outside the repository:
 ~/.local/state/termia/last-session.json  # only when session restoration is enabled
 ```
 
-Saved passwords are stored in `connections.json`; the file can be kept as plain text, obfuscated, or encrypted with a master password from Security preferences. When encryption is enabled, Termia asks for the master password on startup and cannot recover the connection data if that password is lost. Imported Ásbrú passwords are stored the same way when the source YAML exposes them in a `pass` field. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, or statistics; later instances stay read-only to avoid corrupting these files.
+Saved passwords are stored in `connections.json`; the file can be kept as plain text, obfuscated, or encrypted with a master password from Security preferences. When encryption is enabled, Termia asks for the master password on startup and cannot recover the connection data if that password is lost. `notes.json` is a separate file, uses the same local protection mode, and is deliberately not included in connection imports or exports. Notes have their own import/export actions. Notes exports without a password are unencrypted JSON; a password selected during export encrypts the file and is required to import it. This export password is separate from the master password protecting local Termia data. Replacing existing notes creates a backup first. Imported Ásbrú passwords are stored the same way when the source YAML exposes them in a `pass` field. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, notes, or statistics; later instances stay read-only to avoid corrupting these files.
 Connection history is stored separately in `connections-history.jsonl`; the
 sidebar derives its small, deduplicated Recent section from successful SSH
 connections in that history.

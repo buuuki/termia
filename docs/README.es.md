@@ -34,6 +34,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Guardar host, usuario, puerto, contraseña y ruta de clave privada de cada conexión SSH.
 - Importar y exportar configuración de Termia, incluidas conexiones básicas, grupos anidados y credenciales disponibles de YAML de Asbru.
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
+- Crear notas personales o asociadas a servidores, organizarlas por categorías y editarlas mientras se usan los terminales. Las notas tienen guardado automático e importación/exportación independientes.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
 ## Novedades de 0.6.0-beta.3
@@ -146,9 +147,9 @@ aislado. Utiliza una configuración, estado y bloqueo de escritura propios:
 ./scripts/run_test_instance.sh --copy-current-config review
 ```
 
-La opción copia las conexiones, ajustes, historial de conexiones, estadísticas y
-el registro de depuración en el perfil de pruebas. Los cambios realizados allí
-nunca modifican los datos habituales de Termia.
+La opción copia las conexiones, notas, ajustes, historial de conexiones,
+estadísticas y el registro de depuración en el perfil de pruebas. Los cambios
+realizados allí nunca modifican los datos habituales de Termia.
 
 Termia puede migrar archivos de configuración compatibles de versiones
 anteriores. Una vez que una versión más reciente guarda una configuración, una
@@ -213,6 +214,35 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   foco entre paneles divididos según su dirección visual. Pueden reasignarse o
   desactivarse si una aplicación del terminal necesita esas combinaciones.
 - `Seguridad` controla el modo de almacenamiento de conexiones.
+- `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
+  Las notas se guardan automáticamente en un fichero separado; también hay un
+  botón **Guardar**. Al abrir la ventana se crea un borrador nuevo o se recupera
+  uno pendiente del mismo contexto; en modo solo lectura no se crean borradores.
+  Los borradores vacíos no se almacenan; al cerrar uno con cambios sin guardar,
+  se pregunta qué hacer. El botón **Cerrar pestaña** del editor sigue el mismo
+  diálogo de guardar, descartar o seguir editando que la X de la pestaña. Las
+  notas personales aparecen en
+  carpetas de categorías y las asociadas a servidores, en «Notas de servidor»,
+  con el nombre del servidor junto al título. La lista tiene búsqueda global
+  y filas compactas; el diálogo compacto de Propiedades muestra, entre otros
+  datos, la categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
+  la abre en una pestaña de edición. La pestaña activa tiene un subrayado azul
+  oscuro y fino de ancho completo. El área de escritura tiene un fondo y un borde
+  diferenciados que se adaptan al tema. Los controles
+  a la izquierda de la barra de título ocultan la lista y abren el menú de
+  importación/exportación. Sobre el buscador, el botón de la izquierda crea
+  una categoría y el de al lado crea una nota. Con clic derecho sobre una
+  categoría puedes renombrarla, duplicarla con sus notas o eliminarla. Desde
+  el menú principal se muestran todas las notas y se ofrecen importación y
+  exportación. Desde un servidor solo se muestran sus notas, sin importar ni
+  exportar. Las notas pueden ser personales o asociarse a un servidor. Al
+  eliminar un servidor, sus notas se conservan como personales. La importación
+  sustituye las notas tras ofrecer una copia de seguridad. Antes de exportar,
+  Termia explica que elegir «Sin contraseña» crea un fichero de texto plano
+  legible, mientras que elegir una contraseña cifra la exportación y esa
+  contraseña es necesaria para importarla. Haz clic derecho en una nota para
+  editarla, renombrarla, clonarla, ver sus propiedades o eliminarla. Al clonar,
+  se guarda una copia con identidad nueva y el mismo contenido y asociaciones.
 - Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
 - Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
 - Si activas la restauración de la sesión anterior en `General`, al cerrar
@@ -268,6 +298,7 @@ Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 
 ```text
 ~/.config/termia/connections.json   # grupos, servidores y snippets guardados si están disponibles
+~/.config/termia/notes.json        # notas y categorías
 ~/.config/termia/settings.json      # configuración de la app y del terminal
 ~/.config/termia/instance.lock      # bloqueo de escritor único para el modo multiinstancia
 ~/.local/state/termia/connections-history.jsonl
@@ -275,7 +306,7 @@ Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 ~/.local/state/termia/last-session.json  # solo si se activa la restauración
 ```
 
-Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano, ofuscado o cifrado con una contraseña maestra desde las preferencias de Seguridad. Cuando el cifrado está activado, Termia pide la contraseña maestra al arrancar y no puede recuperar los datos de conexión si esa contraseña se pierde. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
+Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano, ofuscado o cifrado con una contraseña maestra desde las preferencias de Seguridad. Cuando el cifrado está activado, Termia pide la contraseña maestra al arrancar y no puede recuperar los datos de conexión si esa contraseña se pierde. Las notas se guardan por separado en `notes.json` y siguen el mismo modo de protección local; no se incluyen al importar o exportar conexiones. Las notas exportadas sin contraseña son JSON sin cifrar y legible; al elegir una contraseña para la exportación, el fichero se cifra y esa contraseña es necesaria para importarlo. Esta contraseña de exportación es independiente de la contraseña maestra. Trata los ficheros exportados como datos sensibles. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
 Los ficheros de conexiones exportados también pueden contener credenciales.
 Los contadores locales agregados se guardan por separado en `statistics.json`, vienen desactivados por defecto y se pueden activar o desactivar desde las preferencias generales. Cuando hay varios procesos de Termia abiertos al mismo tiempo, solo la instancia que mantiene `instance.lock` escribe conexiones, ajustes o estadísticas; las siguientes permanecen en solo lectura para evitar corromper esos ficheros.
 El historial se guarda aparte en `connections-history.jsonl`; la sección Recent

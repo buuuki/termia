@@ -961,8 +961,8 @@ msgid "Data Locations"
 msgstr "Ubicacions de dades"
 
 #: src/termia/i18n.py:data_locations_detail
-msgid "Termia uses these local paths for configuration, connection data, history, statistics, and the write lock."
-msgstr "Termia usa aquestes rutes locals per a configuració, dades de connexió, historial, estadístiques i bloqueig d'escriptura."
+msgid "Termia uses these local paths for configuration, connection data, notes, history, statistics, and the write lock."
+msgstr "Termia usa aquestes rutes locals per a configuració, dades de connexió, notes, historial, estadístiques i bloqueig d'escriptura."
 
 #: src/termia/i18n.py:config_directory
 msgid "Config directory"
@@ -1297,8 +1297,11 @@ msgid "Ásbrú: imported {groups} groups and {servers} servers"
 msgstr "Ásbrú: {groups} grups i {servers} servidors importats"
 
 #: src/termia/i18n.py:clear_confirm
-msgid "Delete all groups, servers, local terminals, and workspaces? This action cannot be undone."
-msgstr "Voleu eliminar tots els grups, servidors, terminals locals i espais de treball? Aquesta acció no es pot desfer."
+msgid "Delete all groups, servers, local terminals, and workspaces? Notes are stored separately and will be kept."
+msgstr "Vols eliminar tots els grups, servidors, terminals locals i espais de treball? Les notes es desen per separat i es conservaran."
+
+msgid "The selected server no longer exists."
+msgstr "El servidor seleccionat ja no existeix."
 
 #: src/termia/i18n.py:rename_tab
 msgid "Rename tab"
@@ -1846,3 +1849,255 @@ msgstr "La disponibilitat del snippet no és vàlida."
 
 msgid "The selected terminal is no longer available."
 msgstr "El terminal seleccionat ja no està disponible."
+
+msgid "Manage notes"
+msgstr "Gestiona les notes"
+
+msgid "Notes"
+msgstr "Notes"
+
+msgid "Hide note list"
+msgstr "Amaga la llista de notes"
+
+msgid "Show note list"
+msgstr "Mostra la llista de notes"
+
+msgid "New note"
+msgstr "Nota nova"
+
+msgid "Close note tab"
+msgstr "Tanca la pestanya de la nota"
+
+msgid "Import or export notes"
+msgstr "Importa o exporta les notes"
+
+msgid "Search notes"
+msgstr "Cerca notes"
+
+msgid "Manage note categories"
+msgstr "Gestiona les categories de notes"
+
+msgid "Create note"
+msgstr "Crea una nota"
+
+msgid "Create server note"
+msgstr "Crea una nota del servidor"
+
+msgid "Edit note"
+msgstr "Edita la nota"
+
+msgid "Rename note"
+msgstr "Canvia el nom de la nota"
+
+msgid "Properties"
+msgstr "Propietats"
+
+msgid "The note name cannot be empty."
+msgstr "El nom de la nota no pot estar buit."
+
+msgid "Note renamed."
+msgstr "S'ha canviat el nom de la nota."
+
+msgid "Moved note to {category}."
+msgstr "Nota moguda a {category}."
+
+msgid "Clone note"
+msgstr "Clona la nota"
+
+msgid " (copy)"
+msgstr " (còpia)"
+
+msgid "Note cloned."
+msgstr "Nota clonada."
+
+msgid "This note has unsaved changes. What would you like to do?"
+msgstr "Aquesta nota té canvis sense desar. Què vols fer?"
+
+msgid "Save and close"
+msgstr "Desa i tanca"
+
+msgid "Close without saving"
+msgstr "Tanca sense desar"
+
+msgid "Export notes…"
+msgstr "Exporta les notes…"
+
+msgid "Import notes…"
+msgstr "Importa les notes…"
+
+msgid "All categories"
+msgstr "Totes les categories"
+
+msgid "Uncategorized"
+msgstr "Sense categoria"
+
+msgid "Category"
+msgstr "Categoria"
+
+msgid "Server"
+msgstr "Servidor"
+
+msgid "Personal notes"
+msgstr "Notes personals"
+
+msgid "Server notes"
+msgstr "Notes de servidor"
+
+msgid "Unavailable server"
+msgstr "Servidor no disponible"
+
+msgid "Notes for {name}"
+msgstr "Notes de {name}"
+
+msgid "Modified {date}"
+msgstr "Modificada {date}"
+
+msgid "Created"
+msgstr "Creada"
+
+msgid "Last modified"
+msgstr "Última modificació"
+
+msgid "Lines"
+msgstr "Línies"
+
+msgid "Characters"
+msgstr "Caràcters"
+
+msgid "Content size (UTF-8)"
+msgstr "Mida del contingut (UTF-8)"
+
+msgid "{count} bytes"
+msgstr "{count} bytes"
+
+msgid "No matching notes."
+msgstr "No hi ha notes coincidents."
+
+msgid "No notes yet."
+msgstr "Encara no hi ha notes."
+
+msgid "No notes for this server yet."
+msgstr "Encara no hi ha notes per a aquest servidor."
+
+msgid "Double-click a note to open it in a tab."
+msgstr "Fes doble clic en una nota per obrir-la en una pestanya."
+
+msgid "Saved"
+msgstr "Desada"
+
+msgid "Saving…"
+msgstr "Desant…"
+
+msgid "Could not save"
+msgstr "No s'ha pogut desar"
+
+msgid "The note could not be saved. Your changes are still in the editor; check the storage location and try again."
+msgstr "No s'ha pogut desar la nota. Els canvis continuen a l'editor; comprova la ubicació d'emmagatzematge i torna-ho a provar."
+
+msgid "Select a note or create one."
+msgstr "Selecciona una nota o crea'n una."
+
+msgid "Start typing. Changes are saved automatically."
+msgstr "Comença a escriure. Els canvis es desen automàticament."
+
+msgid "Empty notes are not saved."
+msgstr "Les notes buides no es desen."
+
+msgid "Keep editing"
+msgstr "Continua editant"
+
+msgid "Delete note"
+msgstr "Suprimeix la nota"
+
+msgid "Delete note “{name}”? This action cannot be undone."
+msgstr "Vols suprimir la nota «{name}»? Aquesta acció no es pot desfer."
+
+msgid "Add category"
+msgstr "Afegeix una categoria"
+
+msgid "Rename category"
+msgstr "Canvia el nom de la categoria"
+
+msgid "Duplicate category"
+msgstr "Duplica la categoria"
+
+msgid "Delete category"
+msgstr "Suprimeix la categoria"
+
+msgid "Category name"
+msgstr "Nom de la categoria"
+
+msgid "{count} notes"
+msgstr "{count} notes"
+
+msgid "Delete category “{name}”? Its {count} notes will move to Uncategorized."
+msgstr "Vols suprimir la categoria «{name}»? Les {count} notes passaran a «Sense categoria»."
+
+msgid "Choose how the exported notes file will be protected."
+msgstr "Tria com es protegirà el fitxer de notes exportat."
+
+msgid "Export without a password (plain text)"
+msgstr "Exporta sense contrasenya (text pla)"
+
+msgid "The file will not be encrypted. Anyone who can access it can read the notes."
+msgstr "El fitxer no es xifrarà. Qualsevol persona que hi tingui accés podrà llegir les notes."
+
+msgid "Encrypt export with a password"
+msgstr "Xifra l'exportació amb una contrasenya"
+
+msgid "The file will be encrypted. You will need this password to import it."
+msgstr "El fitxer es xifrarà. Necessitaràs aquesta contrasenya per importar-lo."
+
+msgid "Continue"
+msgstr "Continua"
+
+msgid "Password"
+msgstr "Contrasenya"
+
+msgid "Password for this notes file"
+msgstr "Contrasenya d'aquest fitxer de notes"
+
+msgid "Notes exported."
+msgstr "S'han exportat les notes."
+
+msgid "Could not export notes: {error}"
+msgstr "No s'han pogut exportar les notes: {error}"
+
+msgid "Could not import notes: {error}"
+msgstr "No s'han pogut importar les notes: {error}"
+
+msgid "Termia already has {notes} notes and {categories} categories."
+msgstr "Termia ja té {notes} notes i {categories} categories."
+
+msgid "Replace them with the selected file after creating a backup of the current notes, or keep the existing notes?"
+msgstr "Vols substituir-les pel fitxer seleccionat després de crear una còpia de seguretat, o conservar les notes actuals?"
+
+msgid "Keep existing"
+msgstr "Conserva les actuals"
+
+msgid "Back up and replace"
+msgstr "Fes una còpia i substitueix"
+
+msgid "{count} notes were imported as personal notes because their server no longer exists."
+msgstr "S'han importat {count} notes com a personals perquè el servidor ja no existeix."
+
+msgid "Imported {count} notes."
+msgstr "S'han importat {count} notes."
+
+msgid "View server notes"
+msgstr "Mostra les notes del servidor"
+
+msgid "A category name is required."
+msgstr "Cal un nom per a la categoria."
+
+msgid "A category with this name already exists."
+msgstr "Ja existeix una categoria amb aquest nom."
+
+msgid "The selected category no longer exists."
+msgstr "La categoria seleccionada ja no existeix."
+
+msgid "The selected note no longer exists."
+msgstr "La nota seleccionada ja no existeix."
+
+msgid "Notes file"
+msgstr "Fitxer de notes"

@@ -35,6 +35,8 @@ from .session_registry import SessionRegistry
 from .session_snapshot import SessionSnapshotStore
 from .snippet_dialogs import SnippetDialogs
 from .snippet_presenter import SnippetPresenter
+from .notes_dialogs import NotesDialogs
+from .notes_presenter import NotesPresenter
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
 from .statistics_presenter import StatisticsPresenter
@@ -166,6 +168,20 @@ class TermiaWindow(
             self.toast_label.set_error,
             self.toast_label.set_label,
         )
+        self.notes_presenter = NotesPresenter(
+            lambda: self.store.data.notes,
+            lambda: self.store.data.note_categories,
+            lambda: self.store.data.servers,
+        )
+        self.notes_dialogs = NotesDialogs(
+            self,
+            self.store,
+            self.notes_presenter,
+            self.t,
+            self.ensure_writable,
+            self.toast_label.set_error,
+            self.toast_label.set_label,
+        )
         self.tab_lifecycle_actions = TabLifecycleActions(
             duplicate_session=self.duplicate_session,
             disconnect_session=self.disconnect_session,
@@ -178,6 +194,7 @@ class TermiaWindow(
             keybinding_settings=lambda: self.on_keybindings_settings(None),
             security_settings=lambda: self.on_security_settings(None),
             manage_snippets=self.snippet_dialogs.show_manager,
+            manage_notes=self.notes_dialogs.show_manager,
             statistics=self.statistics_dialog.show,
             connection_history=self.connection_history_dialog.show,
             data_locations=self.on_data_locations,
@@ -430,9 +447,12 @@ class TermiaWindow(
     def begin_main_window_shutdown(self) -> None:
         if self.shutdown_in_progress:
             return
+        if not self.notes_dialogs.prepare_shutdown():
+            return
         self.shutdown_in_progress = True
         log_event("application.shutdown_started", sessions=len(self.session_registry.sessions()))
         self.snippet_dialogs.shutdown()
+        self.notes_dialogs.shutdown()
         self.cancel_file_transfers(close_dialog=True)
         self.save_session_snapshot_before_close()
         self.save_history_before_close()

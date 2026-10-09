@@ -81,6 +81,17 @@ class CommandSnippet:
 
 
 @dataclass
+class Note:
+    id: str
+    title: str
+    content: str
+    category: str = ""
+    server_id: str | None = None
+    created_at: str = ""
+    modified_at: str = ""
+
+
+@dataclass
 class TerminalSettings:
     font_family: str = DEFAULT_TERMINAL_FONT_FAMILY
     font_size: int = 13
@@ -172,6 +183,8 @@ class StoreData:
     workspaces: list[Workspace] = field(default_factory=list)
     snippets: list[CommandSnippet] = field(default_factory=list)
     snippet_categories: list[str] = field(default_factory=list)
+    notes: list[Note] = field(default_factory=list)
+    note_categories: list[str] = field(default_factory=list)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     app: AppSettings = field(default_factory=AppSettings)
     statistics: StatisticsSettings = field(default_factory=StatisticsSettings)

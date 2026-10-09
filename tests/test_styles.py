@@ -42,16 +42,49 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             warnings.simplefilter("ignore", DeprecationWarning)
             provider.load_from_data(build_application_css("#202020", "#202020", "#008712", 1))
 
-    def test_category_selection_styles_only_the_rounded_tile(self) -> None:
+    def test_notes_tab_scrollbar_is_compact_and_translucent(self) -> None:
         css = build_application_css("#202020", "#202020", "#008712", 1).decode()
 
-        self.assertIn("flowboxchild.termia-snippet-category-tile:selected { ", css)
-        self.assertIn("background: transparent; box-shadow: none;", css)
         self.assertIn(
-            "flowboxchild.termia-snippet-category-tile:selected > frame.termia-snippet-category-frame",
+            ".termia-notes-tab-scroller scrollbar.horizontal { min-height: 5px; margin: 0 2px; padding: 0; }",
             css,
         )
-        self.assertIn("border-radius: 8px;", css)
+        self.assertIn(
+            ".termia-notes-tab-scroller scrollbar.horizontal slider { min-height: 3px; min-width: 24px; "
+            "background-color: alpha(@theme_fg_color, 0.35); }",
+            css,
+        )
+        self.assertIn(
+            ".termia-notes-tab-scroller scrollbar.horizontal slider:hover { "
+            "background-color: alpha(@theme_fg_color, 0.6); }",
+            css,
+        )
+
+    def test_notes_editor_has_theme_aware_background_and_border(self) -> None:
+        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+
+        self.assertIn(
+            ".termia-notes-editor { border: 1px solid @borders; border-radius: 8px; "
+            "background-color: @theme_base_color; }",
+            css,
+        )
+        self.assertIn(
+            ".termia-notes-editor textview, .termia-notes-editor textview text { "
+            "background-color: @theme_base_color; }",
+            css,
+        )
+
+    def test_only_active_note_tab_gets_thin_full_width_blue_underline(self) -> None:
+        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+
+        self.assertIn(
+            ".termia-note-tab { border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; }",
+            css,
+        )
+        self.assertIn(
+            ".termia-note-tab.active { border-bottom-color: #0066cc; }",
+            css,
+        )
 
 
 if __name__ == "__main__":

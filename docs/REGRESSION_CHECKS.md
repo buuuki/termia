@@ -229,6 +229,173 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Passwords are currently stored in the JSON file by explicit project decision; warnings and documentation must remain accurate until storage changes.
 - Security preferences must clearly warn before enabling encryption that Termia will ask for the master password on every startup and that lost master passwords cannot be recovered.
 
+### Notes
+
+- Notes and categories must persist in `notes.json`, separately from
+  `connections.json`; changing connection storage mode must protect notes using
+  the same selected mode and master password.
+- The notes workspace must be modeless and reusable: keep it open while
+  switching focus to and typing in an embedded or detached terminal.
+- The notes window must provide normal minimize, maximize, and close controls.
+- The notes writing area must remain visibly distinct from the surrounding
+  workspace, with a readable background and border in both light and dark
+  themes; text must not sit directly against the edge.
+- Notes must autosave non-empty text changes without a separate autosave
+  preference. A completely empty draft must not be persisted. If an existing
+  note is emptied, its prior saved content must remain intact until an explicit
+  non-empty edit is saved or the note is deleted.
+- Keep the notes-list toggle and Import/Export overflow menu, in that order,
+  on the left side of the notes window title bar. Hiding the list must remove
+  the pane and its creation buttons entirely and align the tab and editor left
+  edges; restoring it must return the list to its
+  previous width and restore a small, visible inset beside the divider (about 6 px).
+  Place Add category and New note icons together in a left-aligned row above
+  global search and the category-grouped note tree in the sidebar, with Add
+  category first. When the list is visible, the Add category and Hide list
+  buttons must share the same horizontal center. Both creation buttons must
+  remain usable when no categories exist.
+  Search must span all categories, and there must be no category filter
+  dropdown. Align the top of search with the top of the notes writing area,
+  and keep the same 6 px inset on both sides of the list divider at the default
+  and resized sidebar widths. Hide Import/Export for server-scoped notes.
+  Server associations must remain intact when editing saved notes. In a
+  read-only instance, opening
+  a note must still allow reading
+  and selecting its text without enabling edits.
+- Personal note categories in the list must be expandable/collapsible folder
+  rows and valid drag-and-drop targets. Dropping a note onto a category must
+  update its stored category and any open editor tabs; Uncategorized must
+  support removing a category. Show persistent empty categories in the general
+  view and an Uncategorized group when needed. Show server-linked notes once,
+  in a virtual Server notes group containing note rows, never server subfolders;
+  omit the group when it has no notes. Each note row must fit on one line:
+  personal notes show only their title, server notes show title and server name.
+  Search shows only groups containing matches. In a server-scoped view, continue
+  grouping that server's notes by their actual categories. New notes must be
+  named “New note” without an identifier; titles and category/server
+  associations must be preserved. Keep the tab bar and editor aligned when the
+  sidebar is hidden. Tab close icons must appear inside the tab card and remain
+  independently clickable.
+- Note editors must support multiple open tabs. New notes must be named exactly
+  “New note” without a generated identifier. The active tab must have the
+  same visible focus highlight as a terminal tab plus a thin, full-width
+  dark-blue underline with no side glow; inactive note tabs must not show that
+  underline. Tabs must be reorderable by
+  dragging without changing note content or saved associations. Right-click an
+  open tab and a note in the sidebar; each menu must offer Rename, and renaming
+  must persist while updating all open tabs for the same note. Opening a note
+  already in a tab
+  must activate that tab rather than opening a duplicate. Switching tabs must
+  preserve each note's title, content, category, server association, and dirty
+  state; autosave and explicit Save must only affect the intended note. Closing
+  an incomplete unsaved draft must require confirmation. Closing a clean tab
+  using its close icon must close only that tab, including immediately after
+  saving; closing a dirty tab must offer Save and close,
+  Close without saving, and Keep editing. Switching between unsaved draft tabs
+  when the persisted note list is empty must keep the newly selected editor
+  visible without requiring a second click.
+- Main-menu notes management must show all notes, a search field wide enough
+  for roughly 30 letters, and import/export actions. Server-context notes must
+  list only that server's notes and hide Import, Export, and Show all notes.
+  Opening the hidden notes window must focus a new empty draft for the selected
+  scope, or resume an existing draft for that scope without adding a duplicate.
+  Re-presenting an already visible window must not add a draft; read-only
+  instances must not create drafts. Empty drafts must remain unpersisted.
+  Search belongs above the note tree in the sidebar, below the two creation
+  buttons. The Import/Export overflow menu stays in the title bar and is
+  visible only in the general view. Creating from that view must preselect the
+  server. Empty
+  views must show a useful message instead of a disabled editor. Single-clicking
+  a note must only select it; double-clicking opens its editor in a tab,
+  activating an existing tab instead of duplicating it. Selecting another note
+  must not replace or visually disagree with the active editor. Verify the idle
+  workspace explains that double-click opens a note.
+- Verify standalone notes and server-linked notes can be created, searched,
+  edited, and deleted. Create a category with the button above search, then
+  right-click its folder row to rename, duplicate, or delete it. The context
+  menu must also open with Menu or Shift+F10 while the row button has focus.
+  Uncategorized and Server notes must not have category-management menus.
+  Existing categories persist; duplicating a category duplicates its notes
+  with new IDs; deleting a category moves its notes to Uncategorized. Renaming
+  or deleting a category must update already-open note tabs without restoring
+  the old category on the next autosave.
+- Right-click notes in the list and confirm the menu offers Edit, Rename,
+  Clone, Properties, and Delete. Properties must remain available in read-only
+  mode and show title, category, associated server or Personal notes, creation
+  and modification dates in local time without fractional seconds, line and
+  character counts, and UTF-8 content size. The Properties window must fit its
+  contents without a large blank area below Close. Clone a note and verify the copy
+  has a new identity, a “(copy)” title suffix, the same content/category/server
+  association, and is saved immediately.
+- Toggle the notes list off and on; verify the toggle stays at the far left of
+  the title bar, the list pane and its creation buttons disappear completely,
+  and both buttons return above search when the list is restored. While hidden,
+  the left edges of the note tabs and editor must align; restoring the list
+  returns its previous width and the
+  normal content inset. Confirm the overflow menu follows the list toggle,
+  contains Import and Export in the general view, and is hidden in server-scoped
+  notes. With several notes, verify the list fills the panel height and shows
+  multiple rows before scrolling. Open
+  enough note tabs to overflow and confirm that their horizontal scrollbar is
+  slim and translucent, does not obscure tab titles, and remains usable with
+  the mouse in light and dark themes. Open two existing notes and one draft in
+  tabs; verify the close icon is visually inside each tab and works
+  independently. Switch among the tabs while editing,
+  reorder them by dragging, and verify each retains its own content without a
+  colored outline around the entire tab bar. Confirm
+  opening an already open note activates its existing tab, and Save/autosave
+  affect only that note. Closing a clean tab must close only that tab. Close a
+  dirty tab and test Save and close, Close without saving, and Keep editing.
+  The editor's Close tab button must follow the same behavior as the tab's X;
+  neither can undo changes that were already saved automatically.
+  Confirm the active tab highlight follows the selected note. With no saved
+  notes, switch between multiple unsaved drafts and verify each editor appears
+  on the first click. Hide the sidebar and verify the tab row and text editor
+  share the same left edge.
+  While editing one note, right-click another and confirm edits are saved before
+  its context menu opens and the clicked note remains selected.
+- Edit an existing note and create a new note; confirm autosave status and
+  modified timestamp update, and that the list sorts by most recently modified.
+  Displayed dates must use local `YYYY-MM-DD HH:MM:SS` format without the `T`
+  separator or fractional seconds; stored timestamps must retain their original
+  precision.
+  Confirm new notes are named “New note”, and there are no title,
+  category, server, or autosave-toggle controls in the editor. Start typing and
+  verify content saves automatically. Leave a new draft empty and verify no
+  record is created. Empty an existing note and verify its previous saved text
+  remains until explicitly deleted or non-empty content is restored.
+  Drag a note onto another category and onto Uncategorized; verify list grouping
+  updates and an already-open editor keeps the new category after autosaving.
+  Confirm the explicit Save button persists server-linked notes even before the
+  autosave delay. Close an incomplete draft tab and confirm Keep editing
+  preserves it while Close without saving removes only that draft.
+  Open server notes from a sidebar context menu and confirm the notes window
+  receives focus after the popover closes and remains modeless.
+  Confirm a long category name stays within its folder row and does not widen
+  the notes sidebar.
+  Force a save failure and confirm the editor retains the unsaved text when
+  switching notes or closing the notes window.
+- Delete a server, delete a group containing servers, clear connection
+  configuration, and replace connections through import. Notes must be kept;
+  associations to removed servers become personal notes.
+- Export notes without protection and with a separate password. Import both,
+  reject wrong passwords and malformed/future schemas without changing local
+  notes, and verify orphaned server associations are detached.
+  The export choice must explain that no password means readable, unencrypted
+  JSON, while an export password encrypts the file and is required for import.
+  Confirm this password is independent of the local master password.
+  Choosing password protection must open a masked password prompt and then the
+  file-save chooser; importing a protected file must show the same password
+  prompt without a GTK error.
+- When notes already exist, cancel import or choose Keep existing and confirm
+  the current notes remain unchanged. Choose Back up and replace and confirm a
+  protected backup exists before replacement; an unwritable backup location
+  must leave the current file unchanged.
+- Test notes in plain, obfuscated, encrypted, and read-only configurations;
+  do not expose note text in logs or terminal input.
+- `scripts/run_test_instance.sh --copy-current-config <profile>` must copy
+  `notes.json` into the isolated profile without changing the original file.
+
 ### Application Appearance and Themes
 
 - Configured application colors and theme styling must remain consistent after UI changes.

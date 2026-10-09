@@ -204,6 +204,7 @@ msgstr ""
 #: src/termia/i18n.py:sftp_continue
 #: src/termia/i18n.py:continue
 #: src/termia/i18n.py:send_files_to_server_password_confirm
+#: src/termia/i18n.py:notes_export_continue
 msgid "Continue"
 msgstr ""
 
@@ -443,6 +444,7 @@ msgid "Group"
 msgstr ""
 
 #: src/termia/i18n.py:password
+#: src/termia/i18n.py:notes_password
 msgid "Password"
 msgstr ""
 
@@ -1115,7 +1117,7 @@ msgid "Data Locations"
 msgstr ""
 
 #: src/termia/i18n.py:data_locations_detail
-msgid "Termia uses these local paths for configuration, connection data, history, statistics, and the write lock."
+msgid "Termia uses these local paths for configuration, connection data, notes, history, statistics, and the write lock."
 msgstr ""
 
 #: src/termia/i18n.py:config_directory
@@ -1124,6 +1126,10 @@ msgstr ""
 
 #: src/termia/i18n.py:connections_file_path
 msgid "Connections file"
+msgstr ""
+
+#: src/termia/i18n.py:notes_file_path
+msgid "Notes file"
 msgstr ""
 
 #: src/termia/i18n.py:settings_file_path
@@ -1602,7 +1608,7 @@ msgid "Ásbrú: imported {groups} groups and {servers} servers"
 msgstr ""
 
 #: src/termia/i18n.py:clear_confirm
-msgid "Delete all groups, servers, local terminals, and workspaces? This action cannot be undone."
+msgid "Delete all groups, servers, local terminals, and workspaces? Notes are stored separately and will be kept."
 msgstr ""
 
 #: src/termia/i18n.py:rename_tab
@@ -1678,6 +1684,339 @@ msgstr ""
 msgid "Manage snippets"
 msgstr ""
 
+#: src/termia/i18n.py:manage_notes
+msgid "Manage notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_title
+msgid "Notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_hide_list
+msgid "Hide note list"
+msgstr ""
+
+#: src/termia/i18n.py:notes_show_list
+msgid "Show note list"
+msgstr ""
+
+#: src/termia/i18n.py:notes_new_tab
+msgid "New note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_close_tab
+msgid "Close note tab"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_export_options
+msgid "Import or export notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_search
+msgid "Search notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_manage_categories
+msgid "Manage note categories"
+msgstr ""
+
+#: src/termia/i18n.py:notes_create
+msgid "Create note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_create_for_server
+msgid "Create server note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_edit
+msgid "Edit note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_rename
+msgid "Rename note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_properties
+msgid "Properties"
+msgstr ""
+
+#: src/termia/i18n.py:notes_title_required
+msgid "The note name cannot be empty."
+msgstr ""
+
+#: src/termia/i18n.py:notes_renamed
+msgid "Note renamed."
+msgstr ""
+
+#: src/termia/i18n.py:notes_moved_to_category
+msgid "Moved note to {category}."
+msgstr ""
+
+#: src/termia/i18n.py:notes_clone
+msgid "Clone note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_clone_suffix
+msgid " (copy)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_clone_success
+msgid "Note cloned."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export
+msgid "Export notes…"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import
+msgid "Import notes…"
+msgstr ""
+
+#: src/termia/i18n.py:notes_uncategorized
+#: src/termia/i18n.py:snippet_uncategorized
+msgid "Uncategorized"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category
+#: src/termia/i18n.py:snippet_category
+msgid "Category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_association
+msgid "Server"
+msgstr ""
+
+#: src/termia/i18n.py:notes_standalone
+msgid "Personal notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_server_group
+msgid "Server notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_unknown_server
+msgid "Unavailable server"
+msgstr ""
+
+#: src/termia/i18n.py:notes_for_server
+msgid "Notes for {name}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_modified
+msgid "Modified {date}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_created
+msgid "Created"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_modified
+msgid "Last modified"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_lines
+msgid "Lines"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_characters
+msgid "Characters"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_size
+msgid "Content size (UTF-8)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_bytes
+msgid "{count} bytes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty
+msgid "No matching notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_all
+msgid "No notes yet."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_server
+msgid "No notes for this server yet."
+msgstr ""
+
+#: src/termia/i18n.py:notes_double_click_to_open
+msgid "Double-click a note to open it in a tab."
+msgstr ""
+
+#: src/termia/i18n.py:notes_saved
+msgid "Saved"
+msgstr ""
+
+#: src/termia/i18n.py:notes_saving
+msgid "Saving…"
+msgstr ""
+
+#: src/termia/i18n.py:notes_save_failed
+msgid "Could not save"
+msgstr ""
+
+#: src/termia/i18n.py:notes_save_failed_detail
+msgid "The note could not be saved. Your changes are still in the editor; check the storage location and try again."
+msgstr ""
+
+#: src/termia/i18n.py:notes_select_or_create
+msgid "Select a note or create one."
+msgstr ""
+
+#: src/termia/i18n.py:notes_start_typing
+msgid "Start typing. Changes are saved automatically."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_not_saved
+msgid "Empty notes are not saved."
+msgstr ""
+
+#: src/termia/i18n.py:notes_close_unsaved_message
+msgid "This note has unsaved changes. What would you like to do?"
+msgstr ""
+
+#: src/termia/i18n.py:notes_save_and_close
+msgid "Save and close"
+msgstr ""
+
+#: src/termia/i18n.py:notes_close_without_saving
+msgid "Close without saving"
+msgstr ""
+
+#: src/termia/i18n.py:notes_keep_editing
+msgid "Keep editing"
+msgstr ""
+
+#: src/termia/i18n.py:notes_delete
+msgid "Delete note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_delete_confirm
+msgid "Delete note “{name}”? This action cannot be undone."
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_add
+#: src/termia/i18n.py:snippet_category_add
+msgid "Add category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_rename
+#: src/termia/i18n.py:snippet_category_rename
+msgid "Rename category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_duplicate
+#: src/termia/i18n.py:snippet_category_duplicate
+msgid "Duplicate category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_delete
+#: src/termia/i18n.py:snippet_category_delete
+msgid "Delete category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_name
+msgid "Category name"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_count
+msgid "{count} notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_delete_confirm
+msgid "Delete category “{name}”? Its {count} notes will move to Uncategorized."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_protection
+msgid "Choose how the exported notes file will be protected."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_plain
+msgid "Export without a password (plain text)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_plain_detail
+msgid "The file will not be encrypted. Anyone who can access it can read the notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_password
+msgid "Encrypt export with a password"
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_password_detail
+msgid "The file will be encrypted. You will need this password to import it."
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_password
+msgid "Password for this notes file"
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_success
+msgid "Notes exported."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_failed
+msgid "Could not export notes: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_failed
+msgid "Could not import notes: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_existing
+msgid "Termia already has {notes} notes and {categories} categories."
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_backup_detail
+msgid "Replace them with the selected file after creating a backup of the current notes, or keep the existing notes?"
+msgstr ""
+
+#: src/termia/i18n.py:notes_keep_existing
+msgid "Keep existing"
+msgstr ""
+
+#: src/termia/i18n.py:notes_backup_replace
+msgid "Back up and replace"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_detached
+msgid "{count} notes were imported as personal notes because their server no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_success
+msgid "Imported {count} notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_view_server
+msgid "View server notes"
+msgstr ""
+
+#: src/termia/i18n.py:note_category_required
+#: src/termia/i18n.py:snippet_category_required
+msgid "A category name is required."
+msgstr ""
+
+#: src/termia/i18n.py:note_category_exists
+#: src/termia/i18n.py:snippet_category_exists
+msgid "A category with this name already exists."
+msgstr ""
+
+#: src/termia/i18n.py:note_category_missing
+#: src/termia/i18n.py:snippet_category_missing
+msgid "The selected category no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:note_missing
+msgid "The selected note no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:note_server_missing
+msgid "The selected server no longer exists."
+msgstr ""
+
 #: src/termia/i18n.py:run_snippet
 msgid "Run snippet…"
 msgstr ""
@@ -1686,32 +2025,8 @@ msgstr ""
 msgid "Manage categories"
 msgstr ""
 
-#: src/termia/i18n.py:snippet_category_add
-msgid "Add category"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_rename
-msgid "Rename category"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_duplicate
-msgid "Duplicate category"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_delete
-msgid "Delete category"
-msgstr ""
-
 #: src/termia/i18n.py:snippet_category_delete_confirm
 msgid "Delete category \"{name}\"? Snippets in this category ({count}) will move to Uncategorized."
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_exists
-msgid "A category with this name already exists."
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_missing
-msgid "The selected category no longer exists."
 msgstr ""
 
 #: src/termia/i18n.py:snippet_back_to_categories
@@ -1728,10 +2043,6 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_category_count
 msgid "{count} snippets"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_uncategorized
-msgid "Uncategorized"
 msgstr ""
 
 #: src/termia/i18n.py:snippet_new_category
@@ -1772,14 +2083,6 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_delete_confirm
 msgid "Delete snippet \"{name}\"? This action cannot be undone."
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category
-msgid "Category"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_required
-msgid "A category name is required."
 msgstr ""
 
 #: src/termia/i18n.py:snippet_scope
