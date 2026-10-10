@@ -423,6 +423,8 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   do not expose note text in logs or terminal input.
 - `scripts/run_test_instance.sh --copy-current-config <profile>` must copy
   `notes.json` into the isolated profile without changing the original file.
+  The test profile must redirect only Termia data, preserving the desktop GTK
+  configuration and appearance.
 
 ### Application Appearance and Themes
 
