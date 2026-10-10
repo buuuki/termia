@@ -4,30 +4,13 @@ from __future__ import annotations
 
 
 def build_application_css(
-    menu_background: str | None,
     terminal_background: str,
     split_separator_color: str,
     split_separator_thickness: int,
 ) -> bytes:
     thickness = max(1, split_separator_thickness)
     handle_size = max(5, thickness)
-    menu_styles = ""
-    if menu_background is not None:
-        menu_styles = (
-            f"@define-color termia_menu_bg {menu_background}; "
-            "popover.termia-menu-popover > contents { background: @termia_menu_bg; "
-            "background-color: @termia_menu_bg; background-image: none; opacity: 1; } "
-            ".termia-menu-panel { background: @termia_menu_bg; "
-            "background-color: @termia_menu_bg; background-image: none; opacity: 1; } "
-            ".termia-menu-panel list { background: transparent; background-color: transparent; } "
-            "window.termia-note-properties { background-color: @termia_menu_bg; } "
-            "window.termia-note-properties headerbar { background: @termia_menu_bg; "
-            "background-color: @termia_menu_bg; background-image: none; box-shadow: none; } "
-            ".termia-note-properties-content { background-color: @theme_bg_color; "
-            "background-image: none; border-radius: 8px; padding: 8px 12px; } "
-        )
     return (
-        menu_styles +
         ".termia-tree-item { border-radius: 4px; } "
         ".termia-server-item, .termia-group-item { padding-top: 2px; padding-bottom: 2px; } "
         ".prompt-preset-button { padding: 1px 6px; min-height: 24px; } "
@@ -59,7 +42,7 @@ def build_application_css(
         ".termia-tab-label.active { background: alpha(@theme_fg_color, 0.13); } "
         ".termia-tab-label.dragging { background: alpha(@theme_selected_bg_color, 0.25); opacity: 0.72; } "
         ".termia-note-tab { border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; } "
-        ".termia-note-tab.active { border-bottom-color: #0066cc; } "
+        ".termia-note-tab.active { border-bottom-color: @theme_selected_bg_color; } "
         ".termia-notes-tab-scroller scrollbar.horizontal { min-height: 5px; margin: 0 2px; padding: 0; } "
         ".termia-notes-tab-scroller scrollbar.horizontal slider { min-height: 3px; min-width: 24px; "
         "background-color: alpha(@theme_fg_color, 0.35); } "
@@ -97,5 +80,7 @@ def build_application_css(
         ".termia-tree-item.selected { "
         "background-color: @theme_selected_bg_color; "
         "color: @theme_selected_fg_color; } "
+        ".termia-required-marker { color: @error_color; font-size: 1.2em; font-weight: 700; } "
+        ".termia-required-hint { color: @error_color; font-size: 1em; font-weight: 700; } "
         ".termia-tree-item:focus { outline: none; box-shadow: none; }"
     ).encode()

@@ -13,6 +13,10 @@
 
 ### Changed
 
+- Let built-in System, Light, and Dark appearance inherit GTK colors for
+  menus, dialogs, buttons, text, selection, and error feedback. Keep only
+  Termia layout rules and terminal-specific colors (`#302`).
+
 - Replace the Personal/Servers selector and server dropdown with a hierarchical
   notes tree: Personal categories, then servers with notes and their categories.
   Keep categories scoped to their owner, omit empty Uncategorized groups, and

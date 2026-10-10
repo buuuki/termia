@@ -80,22 +80,20 @@ class ConnectionDialogsMixin:
             self.refresh_list()
         dialog.destroy()
 
-    def build_form_label(self, label_text: str, required: bool = False) -> Gtk.Label:
-        label = Gtk.Label()
-        label.set_xalign(0)
-        if required:
-            escaped = GLib.markup_escape_text(label_text)
-            label.set_markup(f"{escaped} <span foreground='#ff5f57' size='large'><b>*</b></span>")
-        else:
-            label.set_text(label_text)
-        return label
+    def build_form_label(self, label_text: str, required: bool = False) -> Gtk.Widget:
+        label = Gtk.Label(label=label_text, xalign=0)
+        if not required:
+            return label
+        container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        container.append(label)
+        marker = Gtk.Label(label="*")
+        marker.add_css_class("termia-required-marker")
+        container.append(marker)
+        return container
 
     def build_required_hint(self) -> Gtk.Label:
-        label = Gtk.Label()
-        label.set_xalign(0)
-        label.set_markup(
-            f"<span size='medium' foreground='#ff5f57'><b>{GLib.markup_escape_text(self.t('required_field'))}</b></span>"
-        )
+        label = Gtk.Label(label=self.t("required_field"), xalign=0)
+        label.add_css_class("termia-required-hint")
         return label
 
     def build_split_layout_combo(self, selected_layout: str = "none") -> Gtk.ComboBoxText:

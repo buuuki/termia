@@ -585,15 +585,10 @@ class TermiaWindow(
         display = Gdk.Display.get_default()
         if display is None:
             return
-        menu_bg = {
-            "dark": "#3a3a3a",
-            "light": "#f6f6f6",
-        }.get(self.store.data.app.theme)
         terminal_settings = self.store.data.terminal
         provider = Gtk.CssProvider()
         provider.load_from_data(
             build_application_css(
-                menu_bg,
                 terminal_settings.background,
                 terminal_settings.split_separator_color,
                 terminal_settings.split_separator_thickness,

@@ -146,7 +146,7 @@ class AppThemeTests(unittest.TestCase):
     @patch("termia.app.Gtk.StyleContext.remove_provider_for_display")
     @patch("termia.app.Gtk.CssProvider")
     @patch("termia.app.Gdk.Display.get_default")
-    def test_system_theme_replaces_previous_explicit_menu_css(
+    def test_application_styles_replace_the_previous_provider(
         self,
         get_display: Mock,
         css_provider: Mock,

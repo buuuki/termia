@@ -192,8 +192,11 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.configure_write_controls = MagicMock()
         dialog.set_editor_enabled = MagicMock()
         boxes = []
+        buttons = [MagicMock() for _ in range(7)]
 
         with patch("termia.notes_dialogs.Gtk") as gtk:
+            gtk.Button.side_effect = buttons
+
             def make_box(**_kwargs):
                 box = MagicMock()
                 boxes.append(box)
@@ -206,6 +209,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         gtk.HeaderBar.return_value.pack_start.assert_called_once_with(boxes[0])
         self.assertEqual(boxes[0].append.call_args_list[1], call(dialog.add_button))
         self.assertEqual(boxes[0].append.call_args_list[2], call(dialog.import_export_menu_button))
+        buttons[1].add_css_class.assert_not_called()
+        buttons[4].add_css_class.assert_not_called()
 
     def test_category_button_is_the_only_creation_control_above_search(self):
         dialog = NotesDialogs.__new__(NotesDialogs)

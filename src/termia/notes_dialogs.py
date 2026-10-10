@@ -150,7 +150,6 @@ class NotesDialogs:
         header_actions.append(self.toggle_notes_list_button)
 
         self.add_button = Gtk.Button(icon_name="tab-new-symbolic")
-        self.add_button.add_css_class("suggested-action")
         self.add_button.connect("clicked", lambda *_: self.create_note())
         header_actions.append(self.add_button)
 
@@ -272,7 +271,6 @@ class NotesDialogs:
         self.modified_label.add_css_class("dim-label")
         footer.append(self.modified_label)
         self.save_button = Gtk.Button(label=self.translate("save"))
-        self.save_button.add_css_class("suggested-action")
         self.save_button.connect("clicked", lambda *_: self.save_editor())
         footer.append(self.save_button)
         self.delete_button = Gtk.Button(label=self.translate("notes_delete"))

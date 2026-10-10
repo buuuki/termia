@@ -98,6 +98,7 @@ Record a concrete proposal and review it before changing a boundary.
 
 - [Internal add-on policy and current pilot](addons.md)
 - [Initial architecture decision](decisions/ADR-0001-built-in-addons.md)
+- [Current UI styling inventory](../UI_STYLING.md)
 - [Window and mixin contracts](../WINDOW_MIXIN_CONTRACTS.md)
 - [Storage schemas and migration policy](../STORAGE_MIGRATIONS.md)
 - [Protected behaviors and regression checks](../REGRESSION_CHECKS.md)
