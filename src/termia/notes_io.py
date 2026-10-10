@@ -28,20 +28,25 @@ from .config_io import (
     MissingMasterPasswordError,
     derive_connections_key,
 )
-from .models import Note
+from .models import Note, NoteCategory
 from .notes import normalize_note, normalized_note_categories
 
-CURRENT_NOTES_SCHEMA_VERSION = 1
+CURRENT_NOTES_SCHEMA_VERSION = 2
 NOTES_OBFUSCATED_FORMAT = "termia-notes-obfuscated-v1"
 NOTES_ENCRYPTED_FORMAT = "termia-notes-encrypted-v1"
 NOTES_EXPORT_FORMAT = "termia-notes-export-v1"
 NOTES_EXPORT_ENCRYPTED_FORMAT = "termia-notes-export-encrypted-v1"
 
 
-def notes_payload(notes: list[Note], categories: list[str]) -> dict[str, Any]:
+def notes_payload(
+    notes: list[Note], categories: list[NoteCategory],
+) -> dict[str, Any]:
     return {
         "schema_version": CURRENT_NOTES_SCHEMA_VERSION,
-        "categories": normalized_note_categories(categories, notes),
+        "categories": [
+            asdict(category)
+            for category in normalized_note_categories(categories, notes)
+        ],
         "notes": [asdict(note) for note in notes],
     }
 
@@ -63,7 +68,7 @@ def encode_notes_payload(
 
 
 def encode_notes_export(
-    notes: list[Note], categories: list[str], password: str | None = None,
+    notes: list[Note], categories: list[NoteCategory], password: str | None = None,
 ) -> dict[str, Any]:
     payload = notes_payload(notes, categories)
     raw = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
@@ -167,23 +172,54 @@ def validate_notes_payload(payload: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("Notes file contains duplicate note IDs.")
         ids.add(note.id)
         notes.append(note)
+    if version < 2:
+        if any(not isinstance(item, str) for item in raw_categories):
+            raise ValueError("Legacy note categories must be names.")
+        legacy_keys = [item.strip().casefold() for item in raw_categories]
+        if any(not item for item in legacy_keys) or len(set(legacy_keys)) != len(legacy_keys):
+            raise ValueError("Notes file contains invalid or duplicate categories.")
     categories = normalized_note_categories(raw_categories, notes)
-    if len(categories) != len(raw_categories):
-        raise ValueError("Notes file contains invalid or duplicate categories.")
-    canonical = {category.casefold(): category for category in categories}
+    if version >= 2:
+        if any(
+            not isinstance(item, dict)
+            or not isinstance(item.get("name"), str)
+            or (item.get("server_id") is not None and not isinstance(item.get("server_id"), str))
+            for item in raw_categories
+        ):
+            raise ValueError("Scoped note categories are invalid.")
+        raw_keys = [
+            (
+                (item.get("server_id") or None), item["name"].strip().casefold(),
+            )
+            for item in raw_categories
+        ]
+        if any(not name for _scope, name in raw_keys) or len(set(raw_keys)) != len(raw_keys):
+            raise ValueError("Notes file contains invalid or duplicate categories.")
+    canonical = {
+        (category.server_id, category.name.casefold()): category.name
+        for category in categories
+    }
     for note in notes:
         if note.category:
-            note.category = canonical[note.category.casefold()]
-    return {"schema_version": CURRENT_NOTES_SCHEMA_VERSION, "categories": categories, "notes": [asdict(note) for note in notes]}
+            note.category = canonical[(note.server_id, note.category.casefold())]
+    return {
+        "schema_version": CURRENT_NOTES_SCHEMA_VERSION,
+        "categories": [asdict(category) for category in categories],
+        "notes": [asdict(note) for note in notes],
+    }
 
 
-def notes_from_payload(payload: dict[str, Any]) -> tuple[list[Note], list[str]]:
+def notes_from_payload(
+    payload: dict[str, Any],
+) -> tuple[list[Note], list[NoteCategory]]:
     validated = validate_notes_payload(payload)
     notes = [Note(**item) for item in validated["notes"]]
-    return notes, list(validated["categories"])
+    return notes, [NoteCategory(**item) for item in validated["categories"]]
 
 
-def read_notes_file(path: Path, password: str | None = None) -> tuple[list[Note], list[str]]:
+def read_notes_file(
+    path: Path, password: str | None = None,
+) -> tuple[list[Note], list[NoteCategory]]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("Notes file must contain a JSON object.")
@@ -193,7 +229,7 @@ def read_notes_file(path: Path, password: str | None = None) -> tuple[list[Note]
 def write_notes_file(
     path: Path,
     notes: list[Note],
-    categories: list[str],
+    categories: list[NoteCategory],
     storage_mode: str,
     password: str | None = None,
 ) -> None:
@@ -201,12 +237,17 @@ def write_notes_file(
     atomic_write(path, json.dumps(encoded, indent=2, ensure_ascii=False).encode("utf-8"))
 
 
-def export_notes_file(path: Path, notes: list[Note], categories: list[str], password: str | None = None) -> None:
+def export_notes_file(
+    path: Path, notes: list[Note], categories: list[NoteCategory],
+    password: str | None = None,
+) -> None:
     encoded = encode_notes_export(notes, categories, password)
     atomic_write(path, json.dumps(encoded, indent=2, ensure_ascii=False).encode("utf-8"))
 
 
-def import_notes_file(path: Path, password: str | None = None) -> tuple[list[Note], list[str]]:
+def import_notes_file(
+    path: Path, password: str | None = None,
+) -> tuple[list[Note], list[NoteCategory]]:
     return read_notes_file(path, password)
 
 

@@ -4,7 +4,7 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from termia.config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
@@ -12,8 +12,8 @@ from termia.config_io import (
     InvalidMasterPasswordError,
     MissingMasterPasswordError,
 )
-from termia.models import Note
-from termia.notes import NoteError, normalize_note, note_matches_query
+from termia.models import Note, NoteCategory
+from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories
 from termia.notes_dialogs import Gdk, Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp
 from termia.notes_io import (
     export_notes_file,
@@ -26,6 +26,20 @@ from termia.stores import ConnectionStore
 
 
 class NotesDomainTests(unittest.TestCase):
+    def test_legacy_categories_migrate_to_scopes_that_use_them(self):
+        notes = [
+            normalize_note("personal", "Personal", "Body", "Ops"),
+            normalize_note("server-a", "Server A", "Body", "Ops", "server-a"),
+            normalize_note("server-b", "Server B", "Body", "Ops", "server-b"),
+        ]
+
+        categories = normalized_note_categories(["Ops", "Unused"], notes)
+
+        self.assertEqual(categories, [
+            NoteCategory("Ops"), NoteCategory("Ops", "server-a"),
+            NoteCategory("Ops", "server-b"), NoteCategory("Unused"),
+        ])
+
     def test_note_validation_timestamps_and_search(self):
         note = normalize_note("one", "  Runbook ", " Restart service ", "Ops", now="2026-10-02T12:00:00+00:00")
         self.assertEqual(note.title, "Runbook")
@@ -77,10 +91,52 @@ class NotesDomainTests(unittest.TestCase):
     def test_presenter_search_filters_and_sorts_by_modified_time(self):
         first = normalize_note("old", "Runbook", "Restart", now="2026-10-01T10:00:00+00:00")
         second = normalize_note("new", "Database", "Backup", now="2026-10-02T10:00:00+00:00")
-        presenter = NotesPresenter(lambda: [first, second], lambda: ["Ops"], lambda: [])
+        presenter = NotesPresenter(
+            lambda: [first, second], lambda: [NoteCategory("Ops")], lambda: [],
+        )
 
         self.assertEqual([item.note.id for item in presenter.items()], ["new", "old"])
         self.assertEqual([item.note.id for item in presenter.items("backup")], ["new"])
+
+    def test_presenter_tree_nests_personal_categories_and_only_servers_with_notes(self):
+        personal = normalize_note("personal", "Checklist", "Inspect", "Ops")
+        server_note = normalize_note("server-note", "Runbook", "Restart", "Ops", "server-a")
+        presenter = NotesPresenter(
+            lambda: [personal, server_note],
+            lambda: [NoteCategory("Ops"), NoteCategory("Empty"), NoteCategory("Ops", "server-a")],
+            lambda: [
+                SimpleNamespace(id="server-a", name="Build host"),
+                SimpleNamespace(id="server-empty", name="Empty host"),
+            ],
+        )
+
+        tree = presenter.tree()
+
+        self.assertEqual(
+            [(category.name, len(category.items)) for category in tree.personal_categories],
+            [("Empty", 0), ("Ops", 1)],
+        )
+        self.assertEqual(
+            [(server.id, server.name) for server in tree.servers],
+            [("server-a", "Build host")],
+        )
+        self.assertEqual(
+            [(category.name, len(category.items)) for category in tree.servers[0].categories],
+            [("Ops", 1)],
+        )
+
+    def test_presenter_tree_search_hides_empty_categories(self):
+        note = normalize_note("note", "Restart", "Restart service", "Ops", "server-a")
+        presenter = NotesPresenter(
+            lambda: [note], lambda: [NoteCategory("Ops", "server-a"), NoteCategory("Empty")],
+            lambda: [SimpleNamespace(id="server-a", name="Build host")],
+        )
+
+        tree = presenter.tree("build host")
+
+        self.assertEqual(tree.personal_categories, ())
+        self.assertEqual([server.id for server in tree.servers], ["server-a"])
+        self.assertEqual([category.name for category in tree.servers[0].categories], ["Ops"])
 
 
 class NotesDialogSignalTests(unittest.TestCase):
@@ -97,7 +153,9 @@ class NotesDialogSignalTests(unittest.TestCase):
             "notes_unknown_server": "Unavailable server",
         }[key]
 
+        dialog.scope_mode = "server"
         dialog.update_window_title("server-id")
+        dialog.scope_mode = "personal"
         dialog.update_window_title(None)
 
         self.assertEqual(titles, ["Notes for Build host", "Notes"])
@@ -107,7 +165,10 @@ class NotesDialogSignalTests(unittest.TestCase):
         titles = []
         dialog.window = SimpleNamespace(set_title=titles.append)
         dialog.store = SimpleNamespace(data=SimpleNamespace(servers=[]))
+        dialog.scope_mode = "server"
         dialog.translate = lambda key: {
+            "notes_title": "Notes",
+            "notes_server_scope": "Servers",
             "notes_for_server": "Notes for {name}",
             "notes_unknown_server": "Unavailable server",
         }[key]
@@ -120,7 +181,10 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.window = None
         dialog.parent = MagicMock()
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False, data=SimpleNamespace(servers=[]))
+        dialog.scope_mode = "personal"
         dialog.server_filter_id = None
+        dialog.scope_mode = "personal"
         dialog.translate = lambda key: key
         dialog.build_creation_controls = MagicMock()
         dialog.update_notes_list_toggle = MagicMock()
@@ -140,26 +204,27 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         boxes[0].set_margin_start.assert_called_once_with(8)
         gtk.HeaderBar.return_value.pack_start.assert_called_once_with(boxes[0])
+        self.assertEqual(boxes[0].append.call_args_list[1], call(dialog.add_button))
+        self.assertEqual(boxes[0].append.call_args_list[2], call(dialog.import_export_menu_button))
 
-    def test_creation_buttons_share_a_left_aligned_row_in_category_first_order(self):
+    def test_category_button_is_the_only_creation_control_above_search(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.server_filter_id = None
+        dialog.scope_mode = "personal"
+        dialog.add_button = None
         dialog.translate = lambda key: key
         category_button = MagicMock()
-        note_button = MagicMock()
 
         with patch("termia.notes_dialogs.Gtk") as gtk:
-            gtk.Button.side_effect = [category_button, note_button]
+            gtk.Button.return_value = category_button
             controls = dialog.build_creation_controls()
 
         controls.set_halign.assert_called_once_with(gtk.Align.START)
         self.assertEqual(
             [call.args[0] for call in controls.append.call_args_list],
-            [category_button, note_button],
+            [category_button],
         )
         category_button.set_tooltip_text.assert_called_once_with("notes_category_add")
-        note_button.set_tooltip_text.assert_called_once_with("notes_create")
-        note_button.add_css_class.assert_called_once_with("suggested-action")
 
     def test_only_named_category_rows_get_context_menu_controls(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -167,19 +232,19 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
 
         with patch("termia.notes_dialogs.Gtk") as gtk:
-            dialog.append_note_category_header("Ops", 2, False)
-            dialog.append_note_category_header("", 0, False)
-            dialog.append_note_category_header(None, 1, False)
+            dialog.append_note_category_header("Ops", 2, False, server_id=None, level=1)
+            dialog.append_note_category_header("", 0, False, server_id=None, level=1)
 
         self.assertEqual(gtk.GestureClick.call_count, 1)
         self.assertEqual(gtk.EventControllerKey.new.call_count, 1)
-        self.assertEqual(dialog.notes_list.append.call_count, 3)
+        self.assertEqual(dialog.notes_list.append.call_count, 2)
 
     def test_category_context_menu_has_three_translated_actions(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.store = SimpleNamespace(
             read_only=False, encryption_locked=False,
-            data=SimpleNamespace(note_categories=["Ops"]),
+            data=SimpleNamespace(note_categories=[NoteCategory("Ops")]),
+            has_note_category=lambda name, server_id=None: name == "Ops" and server_id is None,
         )
         dialog.translate = lambda key: key
         dialog.category_context_popover = None
@@ -224,15 +289,75 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         with patch("termia.notes_dialogs.GLib.idle_add") as idle_add:
             dialog.on_category_context_action("rename", "Ops")
-            idle_add.assert_called_with(dialog.prompt_category_edit, "rename", "Ops")
+            idle_add.assert_called_with(dialog.prompt_category_edit, "rename", "Ops", None)
             dialog.on_category_context_action("delete", "Ops")
-            idle_add.assert_called_with(dialog.confirm_delete_category, "Ops")
+            idle_add.assert_called_with(dialog.confirm_delete_category, "Ops", None)
 
         self.assertEqual(dialog.close_category_context_menu.call_count, 2)
 
+    def test_servers_tree_root_selects_server_scope_without_a_picker(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.scope_mode = "personal"
+        dialog.expanded_note_sections = {"personal"}
+        dialog.expanded_server_groups = set()
+        dialog.set_notes_scope = MagicMock()
+
+        dialog.on_note_section_clicked("servers")
+
+        dialog.set_notes_scope.assert_called_once_with("server", None)
+
+    def test_server_tree_node_selects_its_server_scope(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.scope_mode = "personal"
+        dialog.server_filter_id = None
+        dialog.expanded_server_groups = set()
+        dialog.set_notes_scope = MagicMock()
+
+        dialog.on_server_tree_node_clicked("server-id")
+
+        self.assertEqual(dialog.expanded_server_groups, {"server-id"})
+        dialog.set_notes_scope.assert_called_once_with("server", "server-id")
+
+    def test_notes_context_surfaces_reuse_main_menu_style(self):
+        popover, panel = MagicMock(), MagicMock()
+
+        NotesDialogs.style_notes_menu(popover, panel)
+
+        popover.add_css_class.assert_called_once_with("termia-menu-popover")
+        popover.set_has_arrow.assert_called_once_with(False)
+        panel.add_css_class.assert_called_once_with("termia-menu-panel")
+        self.assertEqual(
+            [getattr(panel, f"set_margin_{side}").call_args.args[0]
+             for side in ("top", "bottom", "start", "end")],
+            [6, 6, 6, 6],
+        )
+
+    def test_creation_controls_enable_only_after_a_server_is_selected(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.scope_mode = "server"
+        dialog.server_filter_id = None
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
+        dialog.add_button = MagicMock()
+        dialog.category_add_button = MagicMock()
+        dialog.translate = lambda key: key
+
+        dialog.update_creation_controls()
+
+        dialog.add_button.set_sensitive.assert_called_with(False)
+        dialog.category_add_button.set_sensitive.assert_called_with(False)
+
+        dialog.server_filter_id = "server-id"
+        dialog.update_creation_controls()
+
+        dialog.add_button.set_sensitive.assert_called_with(True)
+        dialog.category_add_button.set_sensitive.assert_called_with(True)
+
     def test_category_prompt_preselects_name_for_rename_and_duplicate(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=["Ops"]))
+        dialog.store = SimpleNamespace(
+            data=SimpleNamespace(note_categories=[NoteCategory("Ops")]),
+            has_note_category=lambda name, server_id=None: name == "Ops" and server_id is None,
+        )
         dialog.translate = lambda key: "copy" if key == "snippet_copy_suffix" else key
         dialog.ensure_writable = lambda: True
         dialog.save_active_editor_if_valid = lambda: True
@@ -252,8 +377,9 @@ class NotesDialogSignalTests(unittest.TestCase):
     def test_confirmed_category_delete_updates_open_tabs_and_list(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.store = MagicMock()
-        dialog.store.data.note_categories = ["Ops"]
-        dialog.store.data.notes = [SimpleNamespace(category="Ops")]
+        dialog.store.data.note_categories = [NoteCategory("Ops")]
+        dialog.store.data.notes = [SimpleNamespace(category="Ops", server_id=None)]
+        dialog.store.has_note_category.return_value = True
         dialog.translate = lambda key: "{name}: {count}" if key == "notes_category_delete_confirm" else key
         dialog.ensure_writable = lambda: True
         dialog.save_active_editor_if_valid = lambda: True
@@ -266,21 +392,22 @@ class NotesDialogSignalTests(unittest.TestCase):
             dialog.confirm_delete_category("Ops")
             gtk.AlertDialog.assert_called_once_with(message="Ops: 1")
             gtk.AlertDialog.return_value.choose.assert_called_once_with(
-                dialog.window, None, dialog.on_delete_category_response, "Ops",
+                dialog.window, None, dialog.on_delete_category_response, "Ops", None,
             )
 
         result = MagicMock()
         result.choose_finish.return_value = 1
         dialog.on_delete_category_response(result, None, "Ops")
 
-        dialog.store.delete_note_category.assert_called_once_with("Ops")
+        dialog.store.delete_note_category.assert_called_once_with("Ops", None)
         dialog.sync_open_note_categories.assert_called_once()
         dialog.refresh_list.assert_called_once()
 
     def test_category_name_response_uses_the_matching_store_operation(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.store = MagicMock()
-        dialog.store.data.note_categories = ["Ops"]
+        dialog.store.data.note_categories = [NoteCategory("Ops")]
+        dialog.store.has_note_category.return_value = True
         dialog.ensure_writable = lambda: True
         dialog.save_active_editor_if_valid = lambda: True
         dialog.sync_open_note_categories = MagicMock()
@@ -298,7 +425,7 @@ class NotesDialogSignalTests(unittest.TestCase):
                 dialog.on_category_edit_response(
                     source, Gtk.ResponseType.OK, entry, mode, original,
                 )
-                args = (name,) if mode == "add" else (original, name)
+                args = (name, None) if mode == "add" else (original, name, None)
                 getattr(dialog.store, operation).assert_called_once_with(*args)
                 dialog.store.reset_mock()
 
@@ -622,10 +749,18 @@ class NotesDialogSignalTests(unittest.TestCase):
         activated = []
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.translate = lambda _key: "New note"
+        dialog.store = SimpleNamespace(data=SimpleNamespace(notes=[]))
+        dialog.editor_tabs = {}
+        dialog.scope_mode = "server"
         dialog.server_filter_id = "server-id"
         dialog.add_editor_tab = created.append
         dialog.activate_editor_tab = activated.append
         dialog.notes_list = SimpleNamespace(unselect_all=lambda: None)
+        dialog.refresh_list = MagicMock()
+        dialog.selected_note_id = None
+        dialog.selected_draft_key = None
+        dialog.expanded_note_sections = {"personal"}
+        dialog.expanded_server_groups = set()
 
         dialog.create_editor_tab()
 
@@ -634,6 +769,23 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(created[0].category, "")
         self.assertEqual(created[0].server_id, "server-id")
         self.assertEqual(activated, [created[0].key])
+        dialog.refresh_list.assert_called_once_with()
+
+    def test_new_note_titles_increment_independently_per_scope(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.translate = lambda _key: "New note"
+        dialog.store = SimpleNamespace(data=SimpleNamespace(notes=[
+            normalize_note("personal-1", "New note", "Body"),
+            normalize_note("server-1", "New note", "Body", server_id="server-a"),
+            normalize_note("personal-3", "New note 3", "Body"),
+        ]))
+        dialog.editor_tabs = {
+            "draft": NoteEditorTab("draft", None, "New note 2", "", None, ""),
+        }
+
+        self.assertEqual(dialog.next_note_title(None), "New note 4")
+        self.assertEqual(dialog.next_note_title("server-a"), "New note 2")
+        self.assertEqual(dialog.next_note_title("server-b"), "New note")
 
     def test_moving_note_updates_category_and_open_tabs(self):
         note = normalize_note("note-id", "Runbook", "Restart", "Ops", "server-id")
@@ -649,7 +801,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.save_active_editor_if_valid = lambda: True
         dialog.editor_dirty = False
         dialog.store = SimpleNamespace(
-            data=SimpleNamespace(note_categories=["Ops", "Personal"]),
+            data=SimpleNamespace(note_categories=[NoteCategory("Ops", "server-id"), NoteCategory("Personal", "server-id")]),
+            has_note_category=lambda name, server_id=None: name in ("Ops", "Personal") and server_id == "server-id",
             update_note=lambda *args: (
                 moved.append(args), setattr(note, "category", args[3])
             ),
@@ -730,6 +883,18 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertTrue(tab.dirty)
         self.assertEqual(calls, ["schedule", "label"])
 
+    def test_note_rename_dialog_selects_existing_title(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.translate = lambda key: key
+        dialog.window = MagicMock()
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            entry = gtk.Entry.return_value
+            dialog.show_note_rename_dialog("Existing title", lambda *_args: None)
+
+        entry.grab_focus.assert_called_once_with()
+        entry.select_region.assert_called_once_with(0, -1)
+
     def test_editor_tab_order_tracks_visual_order(self):
         first = NoteEditorTab("one", "one", "First", "", None, "")
         second = NoteEditorTab("two", "two", "Second", "", None, "")
@@ -780,6 +945,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         tab = NoteEditorTab("note-id", "note-id", "Runbook", "Ops", "server-id", "Restart service")
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.store = SimpleNamespace(encryption_locked=False)
+        dialog.store.data = SimpleNamespace(servers=[], notes=[], note_categories=[])
+        dialog.store.read_only = False
+        dialog.editor_tabs = {}
         dialog.ensure_writable = lambda: True
         dialog.editor_tabs = {"note-id": tab}
         activated = []
@@ -795,12 +963,19 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.notes_list = SimpleNamespace(
             get_first_child=lambda: None,
+            unselect_all=lambda: None,
         )
         dialog.server_filter_id = None
         dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+        dialog.translate = lambda key: key
         dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=[], servers=[]))
         dialog.collapsed_note_categories = set()
-        dialog.presenter = SimpleNamespace(items=lambda *_args: [])
+        dialog.presenter = SimpleNamespace(
+            tree=lambda *_args: SimpleNamespace(personal_categories=(), servers=()),
+        )
+        dialog.expanded_note_sections = {"personal", "servers"}
+        dialog.expanded_server_groups = set()
+        dialog.append_note_tree_header = lambda *_args, **_kwargs: None
         dialog.detail_stack = SimpleNamespace(get_visible_child_name=lambda: "editor")
         dialog.active_editor_tab_key = "draft-active"
         dialog.selected_note_id = None
@@ -811,54 +986,106 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         self.assertEqual(empty_state_calls, [])
 
-    def test_note_groups_include_empty_categories_and_uncategorized_notes(self):
-        notes = [
-            normalize_note("one", "Runbook", "Restart", "Operations"),
-            normalize_note("two", "Ideas", "Draft", "Personal"),
-            normalize_note("three", "Loose note", "Remember this"),
-        ]
-        items = [SimpleNamespace(note=note) for note in notes]
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(
-            data=SimpleNamespace(note_categories=["Personal", "Empty", "Operations"])
+    def test_server_tree_shows_uncategorized_with_unsaved_draft(self):
+        tab = NoteEditorTab(
+            "draft-server", None, "New note", "", "server-id", "",
         )
-
-        groups = dialog.group_note_items(items, include_empty_categories=True)
-
-        self.assertEqual([name for name, _items in groups], ["Empty", "Operations", "Personal", ""])
-        self.assertEqual([len(group_items) for _name, group_items in groups], [0, 1, 1, 1])
-
-    def test_note_search_grouping_only_keeps_categories_with_matches(self):
-        note = normalize_note("one", "Runbook", "Restart", "Operations")
+        draft_row = SimpleNamespace(draft_key=tab.key, note_id=None)
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(
-            data=SimpleNamespace(note_categories=["Operations", "Empty"])
-        )
-
-        groups = dialog.group_note_items(
-            [SimpleNamespace(note=note)], include_empty_categories=False
-        )
-
-        self.assertEqual([name for name, _items in groups], ["Operations"])
-
-    def test_general_list_places_only_linked_notes_in_virtual_server_group(self):
-        personal = normalize_note("personal", "Checklist", "Inspect", "Ops")
-        linked = normalize_note("linked", "Restart", "Restart service", "Ops", "server-id")
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.server_filter_id = None
-        dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=["Ops"]))
-        items = [SimpleNamespace(note=personal), SimpleNamespace(note=linked)]
-
-        groups = dialog.group_note_items(items, include_empty_categories=True)
-
-        self.assertEqual([key for key, _notes in groups], ["Ops", None])
-        self.assertEqual([[item.note.id for item in notes] for _key, notes in groups], [
-            ["personal"], ["linked"],
-        ])
-
+        dialog.notes_list = MagicMock()
+        dialog.notes_list.get_first_child.return_value = None
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+        dialog.store = SimpleNamespace(data=SimpleNamespace(
+            servers=[SimpleNamespace(id="server-id", name="Build host")],
+        ))
+        dialog.presenter = SimpleNamespace(tree=lambda query, server_ids: (
+            self.assertEqual(query, ""),
+            self.assertEqual(server_ids, {"server-id"}),
+            SimpleNamespace(personal_categories=(), servers=(SimpleNamespace(
+                id="server-id", name="Build host", categories=(),
+            ),)),
+        )[2])
+        dialog.scope_mode = "server"
         dialog.server_filter_id = "server-id"
-        scoped = dialog.group_note_items([items[1]], include_empty_categories=False)
-        self.assertEqual([key for key, _notes in scoped], ["Ops"])
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.selected_note_id = None
+        dialog.selected_draft_key = tab.key
+        dialog.active_editor_tab_key = tab.key
+        dialog.loading_note_list = False
+        dialog.expanded_note_sections = {"servers"}
+        dialog.expanded_server_groups = {"server-id"}
+        dialog.collapsed_note_categories = set()
+        dialog.translate = lambda key: key
+        dialog.close_note_context_menu = MagicMock()
+        dialog.close_category_context_menu = MagicMock()
+        dialog.append_note_tree_header = MagicMock()
+        dialog.append_note_category_header = MagicMock()
+        dialog.append_note_draft_row = MagicMock(return_value=draft_row)
+
+        dialog.refresh_list()
+
+        dialog.append_note_category_header.assert_called_once_with(
+            "", 1, False, server_id="server-id", level=2,
+        )
+        dialog.append_note_draft_row.assert_called_once_with(tab, 3)
+        dialog.notes_list.select_row.assert_called_once_with(draft_row)
+
+    def test_presenter_includes_servers_with_empty_categories_and_active_scope(self):
+        presenter = NotesPresenter(
+            lambda: [],
+            lambda: [NoteCategory("Maintenance", "server-category")],
+            lambda: [
+                SimpleNamespace(id="server-category", name="Category host"),
+                SimpleNamespace(id="server-active", name="Active host"),
+            ],
+        )
+
+        tree = presenter.tree()
+        active_tree = presenter.tree("", {"server-active"})
+
+        self.assertEqual(
+            [(server.id, [category.name for category in server.categories])
+             for server in tree.servers],
+            [("server-category", ["Maintenance"])],
+        )
+        self.assertEqual(
+            [server.id for server in active_tree.servers],
+            ["server-active", "server-category"],
+        )
+
+    def test_refresh_does_not_auto_select_first_note(self):
+        note = Note("personal-note", "Personal", "Body")
+        item = SimpleNamespace(note=note)
+        row = SimpleNamespace(note_id=note.id)
+        notes_list = MagicMock()
+        notes_list.get_first_child.return_value = None
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list = notes_list
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+        dialog.translate = lambda key: key
+        dialog.store = SimpleNamespace(data=SimpleNamespace(servers=[]))
+        dialog.presenter = SimpleNamespace(tree=lambda *_args: SimpleNamespace(
+            personal_categories=(SimpleNamespace(name="Ops", items=(item,)),),
+            servers=(),
+        ))
+        dialog.collapsed_note_categories = set()
+        dialog.expanded_note_sections = {"personal", "servers"}
+        dialog.expanded_server_groups = set()
+        dialog.append_note_tree_header = MagicMock()
+        dialog.append_note_category_header = MagicMock()
+        dialog.append_note_row = MagicMock(return_value=row)
+        dialog.close_note_context_menu = MagicMock()
+        dialog.close_category_context_menu = MagicMock()
+        dialog.selected_note_id = None
+        dialog.loading_note_list = False
+        dialog.active_editor_tab_key = None
+        dialog.show_empty_state = MagicMock()
+
+        dialog.refresh_list()
+
+        notes_list.select_row.assert_not_called()
+        self.assertIsNone(dialog.selected_note_id)
+        dialog.show_empty_state.assert_called_once_with()
 
     def test_note_properties_include_server_dates_and_content_counts(self):
         note = Note(
@@ -882,6 +1109,50 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(properties["notes_property_lines"], "2")
         self.assertEqual(properties["notes_property_characters"], "6")
         self.assertEqual(properties["notes_property_size"], "7 bytes")
+
+    def test_note_properties_window_uses_natural_height_and_insets_close(self):
+        note = Note("note-id", "Restart", "Body", "Ops", "server-id")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.find_note = lambda _note_id: note
+        dialog.window = MagicMock()
+        dialog.translate = lambda key: key
+        dialog.note_property_rows = lambda _note: [("Name", "Restart")]
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            content, details, actions = MagicMock(), MagicMock(), MagicMock()
+            gtk.Box.side_effect = [content, details, actions]
+            grid = gtk.Grid.return_value
+            close_button = gtk.Button.return_value
+
+            dialog.show_note_properties(note.id)
+
+        gtk.Window.assert_called_once_with(
+            title="notes_properties", transient_for=dialog.window, modal=False,
+        )
+        gtk.Window.return_value.add_css_class.assert_called_once_with(
+            "termia-note-properties",
+        )
+        details.add_css_class.assert_called_once_with(
+            "termia-note-properties-content",
+        )
+        details.set_margin_top.assert_not_called()
+        details.set_margin_bottom.assert_not_called()
+        content.set_margin_top.assert_called_once_with(6)
+        content.set_margin_bottom.assert_called_once_with(6)
+        content.set_margin_start.assert_called_once_with(10)
+        content.set_margin_end.assert_called_once_with(10)
+        gtk.Grid.assert_called_once_with(column_spacing=12, row_spacing=4)
+        details.append.assert_called_once_with(grid)
+        content.append.assert_has_calls([call(details), call(actions)])
+        content.measure.assert_not_called()
+        gtk.Window.return_value.set_default_size.assert_not_called()
+        gtk.Window.return_value.set_size_request.assert_called_once_with(440, -1)
+        gtk.Label.return_value.set_selectable.assert_not_called()
+        actions.append.assert_called_once_with(close_button)
+        close_button.set_margin_bottom.assert_not_called()
+        close_button.set_margin_end.assert_called_once_with(2)
+        close_button.set_margin_start.assert_not_called()
+        close_button.connect.assert_called_once()
 
     def test_clone_note_copies_content_category_and_server_with_new_identity(self):
         original = Note("source", "Runbook", "Restart service", "Operations", "server-id", "created", "modified")
@@ -963,8 +1234,10 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=True,
-            data=SimpleNamespace(note_categories=[], servers=[]),
+            data=SimpleNamespace(note_categories=[], servers=[], notes=[]),
         )
+        dialog.editor_tabs = {}
+        dialog.scope_mode = "personal"
         dialog.translate = lambda key: key
         dialog.current_note_id = None
         dialog.server_filter_id = None
@@ -1031,7 +1304,12 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_entry_modes_keep_global_actions_out_of_server_view(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(encryption_locked=False)
+        dialog.store = SimpleNamespace(
+            encryption_locked=False, read_only=True,
+            data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")], notes=[], note_categories=[]),
+        )
+        dialog.editor_tabs = {}
+        dialog.scope_mode = "personal"
         dialog.translate = lambda key: key
         dialog.ensure_window = lambda: None
         dialog.editor_dirty = False
@@ -1078,6 +1356,16 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
         dialog.add_button = SimpleNamespace(set_tooltip_text=lambda _text: None)
         dialog.set_import_export_actions_visible = lambda _visible: None
+        dialog.save_active_editor_if_valid = lambda: True
+        dialog.capture_active_editor_tab = lambda: None
+        dialog.update_window_title = lambda _server_id: None
+        dialog.set_import_export_actions_visible = lambda _visible: None
+        dialog.editor_tabs = {}
+        dialog.server_filter_id = None
+        dialog.scope_mode = "personal"
+        dialog.selected_note_id = None
+        dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
+        dialog.loading_search = False
         dialog.refresh_list = lambda: None
         dialog.ensure_window = lambda: None
         visible = False
@@ -1124,7 +1412,10 @@ class NotesDialogSignalTests(unittest.TestCase):
             get_visible=lambda: False, present=lambda: None, set_title=lambda _title: None,
         )
         activated = []
-        dialog.activate_editor_tab = activated.append
+        def activate(key):
+            activated.append(key)
+            dialog.active_editor_tab_key = key
+        dialog.activate_editor_tab = activate
         focused = []
         dialog.text_view = SimpleNamespace(grab_focus=lambda: focused.append(True))
         dialog.create_note = lambda: self.fail("duplicate draft created")
@@ -1139,6 +1430,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.selected_note_id = "active-note"
         dialog.active_editor_tab_key = "active-tab"
+        dialog.scope_mode = "server"
+        dialog.server_filter_id = "server-id"
         dialog.loading_note_list = False
         dialog.find_note = lambda note_id: note if note_id == note.id else None
 
@@ -1226,7 +1519,7 @@ class NotesIOTests(unittest.TestCase):
             "note-1", "Production runbook", "Restart the service.", "Operations",
             "server-1", "2026-10-01T09:00:00+00:00", "2026-10-02T12:00:00+00:00",
         )]
-        self.categories = ["Empty", "Operations"]
+        self.categories = [NoteCategory("Empty"), NoteCategory("Operations", "server-1")]
 
     def test_plain_and_obfuscated_storage_round_trip(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1284,6 +1577,37 @@ class NotesIOTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 read_notes_file(path)
 
+    def test_schema_one_categories_migrate_to_scope_specific_schema_two(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes.json"
+            path.write_text(json.dumps({
+                "schema_version": 1,
+                "categories": ["Ops"],
+                "notes": [
+                    {"id": "personal", "title": "Personal", "content": "Body", "category": "Ops"},
+                    {"id": "server", "title": "Server", "content": "Body", "category": "Ops", "server_id": "server-a"},
+                ],
+            }), encoding="utf-8")
+
+            notes, categories = read_notes_file(path)
+
+        self.assertEqual({note.server_id for note in notes}, {None, "server-a"})
+        self.assertEqual(categories, [NoteCategory("Ops"), NoteCategory("Ops", "server-a")])
+
+    def test_schema_two_round_trip_allows_same_category_name_in_scopes(self):
+        notes = [
+            normalize_note("personal", "Personal", "Body", "Ops"),
+            normalize_note("server", "Server", "Body", "Ops", "server-a"),
+        ]
+        categories = [NoteCategory("Ops"), NoteCategory("Ops", "server-a")]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes.json"
+            write_notes_file(path, notes, categories, "plain")
+            restored_notes, restored_categories = read_notes_file(path)
+
+        self.assertEqual(restored_notes, notes)
+        self.assertEqual(restored_categories, categories)
+
 
 class NotesStoreTests(unittest.TestCase):
     def make_store(self, root):
@@ -1320,15 +1644,34 @@ class NotesStoreTests(unittest.TestCase):
                 self.assertEqual(copied.content, first.content)
                 store.delete_note_category("Operations")
                 self.assertEqual(next(note for note in store.data.notes if note.id == first.id).category, "")
-                self.assertIn("Empty", store.data.note_categories)
+                self.assertIn(NoteCategory("Empty"), store.data.note_categories)
             finally:
                 store.close()
             restored = self.make_store(root)
             try:
-                self.assertEqual(restored.data.note_categories, ["Empty", "Operations copy"])
+                self.assertEqual(restored.data.note_categories, [NoteCategory("Empty"), NoteCategory("Operations copy")])
                 self.assertEqual(len(restored.data.notes), 2)
             finally:
                 restored.close()
+
+    def test_same_category_name_isolated_between_personal_and_server_scopes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = self.make_store(Path(directory))
+            try:
+                server = store.add_server("Web", "web.test", "admin", 22, None)
+                store.add_note_category("Ops")
+                store.add_note_category("Ops", server.id)
+                store.add_note("Personal runbook", "Personal body", "Ops")
+                store.add_note("Server runbook", "Server body", "Ops", server.id)
+
+                store.rename_note_category("Ops", "Personal Ops")
+
+                categories = {(item.name, item.server_id) for item in store.data.note_categories}
+                notes = {(item.title, item.category) for item in store.data.notes}
+                self.assertEqual(categories, {("Personal Ops", None), ("Ops", server.id)})
+                self.assertEqual(notes, {("Personal runbook", "Personal Ops"), ("Server runbook", "Ops")})
+            finally:
+                store.close()
 
     def test_deleting_server_detaches_notes_and_preserves_content(self):
         with tempfile.TemporaryDirectory() as directory:

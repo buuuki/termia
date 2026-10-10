@@ -63,6 +63,7 @@ from .models import (
     Group,
     LocalTerminalProfile,
     Note,
+    NoteCategory,
     Server,
     StatisticsSettings,
     StoreData,
@@ -70,7 +71,13 @@ from .models import (
     Workspace,
 )
 from .snippets import SnippetError, normalize_snippet, normalized_categories, snippet_target_exists
-from .notes import NoteError, normalize_note, normalized_note_categories, timestamp_now
+from .notes import (
+    NoteError,
+    normalize_note,
+    normalized_note_categories,
+    note_category_name,
+    timestamp_now,
+)
 from .notes_store import NotesFileStore
 from .terminal_config import normalize_split_layout
 from .ui_state import TerminalPane, TerminalSession
@@ -729,10 +736,12 @@ class ConnectionStore:
             self.master_password,
         )
 
-    def _snapshot_notes(self) -> tuple[list[Note], list[str]]:
+    def _snapshot_notes(self) -> tuple[list[Note], list[NoteCategory]]:
         return list(self.data.notes), list(self.data.note_categories)
 
-    def _restore_notes(self, snapshot: tuple[list[Note], list[str]]) -> None:
+    def _restore_notes(
+        self, snapshot: tuple[list[Note], list[NoteCategory]],
+    ) -> None:
         self.data.notes, self.data.note_categories = snapshot
         self.notes_file_store.replace_data(self.data.notes, self.data.note_categories)
 
@@ -745,17 +754,19 @@ class ConnectionStore:
     ) -> Note:
         self.ensure_writable()
         category = category.strip()
-        category = next(
-            (item for item in self.data.note_categories if item.casefold() == category.casefold()),
-            category,
-        )
+        category = note_category_name(
+            self.data.note_categories, category, server_id,
+        ) or category
         note = normalize_note(str(uuid4()), title, content, category, server_id)
         if note.server_id and not any(server.id == note.server_id for server in self.data.servers):
             raise NoteError("note_server_missing")
         snapshot = self._snapshot_notes()
-        if category and category not in self.data.note_categories:
+        if category and note_category_name(
+            self.data.note_categories, category, server_id,
+        ) is None:
             self.data.note_categories = normalized_note_categories(
-                [*self.data.note_categories, category], self.data.notes,
+                [*self.data.note_categories, NoteCategory(category, server_id)],
+                self.data.notes,
             )
         self.data.notes.append(note)
         try:
@@ -775,10 +786,9 @@ class ConnectionStore:
     ) -> None:
         self.ensure_writable()
         category = category.strip()
-        category = next(
-            (item for item in self.data.note_categories if item.casefold() == category.casefold()),
-            category,
-        )
+        category = note_category_name(
+            self.data.note_categories, category, server_id,
+        ) or category
         snapshot = self._snapshot_notes()
         for index, existing in enumerate(self.data.notes):
             if existing.id != note_id:
@@ -790,9 +800,12 @@ class ConnectionStore:
             if updated.server_id and not any(server.id == updated.server_id for server in self.data.servers):
                 raise NoteError("note_server_missing")
             self.data.notes[index] = updated
-            if category:
+            if category and note_category_name(
+                self.data.note_categories, category, server_id,
+            ) is None:
                 self.data.note_categories = normalized_note_categories(
-                    [*self.data.note_categories, category], self.data.notes,
+                    [*self.data.note_categories, NoteCategory(category, server_id)],
+                    self.data.notes,
                 )
             try:
                 self.save_notes()
@@ -821,47 +834,71 @@ class ConnectionStore:
                 note = replace(note, server_id=None, modified_at=timestamp_now())
                 detached += 1
             updated.append(note)
-        if detached:
+        categories = normalized_note_categories(
+            [
+                NoteCategory(category.name, None)
+                if category.server_id and category.server_id not in server_ids
+                else category
+                for category in self.data.note_categories
+            ],
+            updated,
+        )
+        if detached or categories != self.data.note_categories:
             self.data.notes = updated
+            self.data.note_categories = categories
             self.save_notes()
         return detached
 
-    def add_note_category(self, name: str) -> None:
+    def add_note_category(self, name: str, server_id: str | None = None) -> None:
         self.ensure_writable()
         name = name.strip()
         if not name:
             raise NoteError("note_category_required")
-        if any(item.casefold() == name.casefold() for item in self.data.note_categories):
+        if server_id and not any(server.id == server_id for server in self.data.servers):
+            raise NoteError("note_server_missing")
+        if note_category_name(self.data.note_categories, name, server_id) is not None:
             raise NoteError("note_category_exists")
         snapshot = self._snapshot_notes()
-        self.data.note_categories.append(name)
+        self.data.note_categories.append(NoteCategory(name, server_id))
         try:
             self.save_notes()
         except Exception:
             self._restore_notes(snapshot)
             raise
 
-    def rename_note_category(self, old_name: str, new_name: str) -> None:
+    def has_note_category(self, name: str, server_id: str | None = None) -> bool:
+        return note_category_name(self.data.note_categories, name, server_id) is not None
+
+    def rename_note_category(
+        self, old_name: str, new_name: str, server_id: str | None = None,
+    ) -> None:
         self.ensure_writable()
-        if old_name not in self.data.note_categories:
+        canonical_old = note_category_name(
+            self.data.note_categories, old_name, server_id,
+        )
+        if canonical_old is None:
             raise NoteError("note_category_missing")
         new_name = new_name.strip()
         if not new_name:
             raise NoteError("note_category_required")
-        if any(
-            item.casefold() == new_name.casefold() and item != old_name
-            for item in self.data.note_categories
-        ):
+        existing_new = note_category_name(
+            self.data.note_categories, new_name, server_id,
+        )
+        if existing_new is not None and existing_new != canonical_old:
             raise NoteError("note_category_exists")
-        if old_name == new_name:
+        if canonical_old == new_name:
             return
         snapshot = self._snapshot_notes()
         self.data.note_categories = [
-            new_name if item == old_name else item for item in self.data.note_categories
+            NoteCategory(new_name, item.server_id)
+            if item.server_id == (server_id or None) and item.name == canonical_old
+            else item
+            for item in self.data.note_categories
         ]
         self.data.notes = [
             replace(note, category=new_name, modified_at=timestamp_now())
-            if note.category == old_name else note
+            if note.category == canonical_old and note.server_id == (server_id or None)
+            else note
             for note in self.data.notes
         ]
         try:
@@ -870,22 +907,28 @@ class ConnectionStore:
             self._restore_notes(snapshot)
             raise
 
-    def duplicate_note_category(self, name: str, new_name: str) -> None:
+    def duplicate_note_category(
+        self, name: str, new_name: str, server_id: str | None = None,
+    ) -> None:
         self.ensure_writable()
-        if name not in self.data.note_categories:
+        canonical_name = note_category_name(
+            self.data.note_categories, name, server_id,
+        )
+        if canonical_name is None:
             raise NoteError("note_category_missing")
         new_name = new_name.strip()
         if not new_name:
             raise NoteError("note_category_required")
-        if any(item.casefold() == new_name.casefold() for item in self.data.note_categories):
+        if note_category_name(self.data.note_categories, new_name, server_id) is not None:
             raise NoteError("note_category_exists")
         snapshot = self._snapshot_notes()
         stamp = timestamp_now()
         copies = [
             replace(note, id=str(uuid4()), category=new_name, created_at=stamp, modified_at=stamp)
-            for note in self.data.notes if note.category == name
+            for note in self.data.notes
+            if note.category == canonical_name and note.server_id == (server_id or None)
         ]
-        self.data.note_categories.append(new_name)
+        self.data.note_categories.append(NoteCategory(new_name, server_id))
         self.data.notes.extend(copies)
         try:
             self.save_notes()
@@ -893,15 +936,27 @@ class ConnectionStore:
             self._restore_notes(snapshot)
             raise
 
-    def delete_note_category(self, name: str) -> None:
+    def delete_note_category(
+        self, name: str, server_id: str | None = None,
+    ) -> None:
         self.ensure_writable()
-        if name not in self.data.note_categories:
+        canonical_name = note_category_name(
+            self.data.note_categories, name, server_id,
+        )
+        if canonical_name is None:
             raise NoteError("note_category_missing")
         snapshot = self._snapshot_notes()
-        self.data.note_categories.remove(name)
+        self.data.note_categories = [
+            category for category in self.data.note_categories
+            if not (
+                category.name == canonical_name
+                and category.server_id == (server_id or None)
+            )
+        ]
         self.data.notes = [
             replace(note, category="", modified_at=timestamp_now())
-            if note.category == name else note
+            if note.category == canonical_name and note.server_id == (server_id or None)
+            else note
             for note in self.data.notes
         ]
         try:
@@ -1118,6 +1173,14 @@ class ConnectionStore:
             if note.server_id == server_id else note
             for note in self.data.notes
         ]
+        self.data.note_categories = normalized_note_categories(
+            [
+                NoteCategory(category.name, None)
+                if category.server_id == server_id else category
+                for category in self.data.note_categories
+            ],
+            self.data.notes,
+        )
         self.save_connections()
         self.save_notes()
 

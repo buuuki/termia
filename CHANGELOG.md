@@ -4,6 +4,25 @@
 
 ### Changed
 
+- Replace the Personal/Servers selector and server dropdown with a hierarchical
+  notes tree: Personal categories, then servers with notes and their categories.
+  Keep categories scoped to their owner, omit empty Uncategorized groups, and
+  identify note ownership in tabs. Number new note titles independently by
+  scope. Select the existing title when renaming, keep the new-note action in
+  the header while the list is hidden, and compact the note Properties window
+  (`#309`). Eliminate excess Properties spacing and do not auto-select the first
+  note when navigating the tree. Enable server
+  creation controls only after a server is selected. Keep servers with saved
+  empty categories and the active server scope in the tree, showing unsaved
+  drafts under Uncategorized without persisting them. Match notes menus and
+  Properties to the main menu's theme-aware surface (`#309`). Size the
+  Properties window to its natural content height and inset the bottom Close
+  button to eliminate excess blank space; prevent automatic selection of the
+  title value. Reduce the outer vertical spacing and pad the details text
+  inside its contrasting panel (`#309`).
+
+### Changed
+
 - Document the initial Core and built-in add-on boundaries, their known pilot
   couplings, and the `app.py` composition-root exception (`#306`).
 

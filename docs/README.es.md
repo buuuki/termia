@@ -220,22 +220,34 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   uno pendiente del mismo contexto; en modo solo lectura no se crean borradores.
   Los borradores vacíos no se almacenan; al cerrar uno con cambios sin guardar,
   se pregunta qué hacer. El botón **Cerrar pestaña** del editor sigue el mismo
-  diálogo de guardar, descartar o seguir editando que la X de la pestaña. Las
-  notas personales aparecen en
-  carpetas de categorías y las asociadas a servidores, en «Notas de servidor»,
-  con el nombre del servidor junto al título. La lista tiene búsqueda global
+  diálogo de guardar, descartar o seguir editando que la X de la pestaña. La
+  lista organiza las notas en un árbol: **Personales** contiene las categorías
+  personales y **Servidores** contiene los servidores con notas o categorías
+  guardadas, además del servidor en el que se está trabajando. Al desplegarlo
+  aparecen sus notas y categorías; las categorías vacías guardadas también se
+  muestran. Un borrador «Nota nueva» aparece temporalmente bajo «Sin categoría»
+  y solo se guarda al escribir contenido. Las
+  categorías pertenecen a su ámbito y pueden repetirse entre notas personales
+  y servidores. «Sin categoría» aparece si hay notas sin categoría o un
+  borrador activo en ese ámbito. La lista tiene búsqueda global
   y filas compactas; el diálogo compacto de Propiedades muestra, entre otros
   datos, la categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
   la abre en una pestaña de edición. La pestaña activa tiene un subrayado azul
   oscuro y fino de ancho completo. El área de escritura tiene un fondo y un borde
-  diferenciados que se adaptan al tema. Los controles
+  diferenciados que se adaptan al tema. Los menús contextuales de notas y
+  Propiedades comparten la superficie y el estilo del menú principal de Termia.
+  Los controles
   a la izquierda de la barra de título ocultan la lista y abren el menú de
-  importación/exportación. Sobre el buscador, el botón de la izquierda crea
-  una categoría y el de al lado crea una nota. Con clic derecho sobre una
-  categoría puedes renombrarla, duplicarla con sus notas o eliminarla. Desde
-  el menú principal se muestran todas las notas y se ofrecen importación y
-  exportación. Desde un servidor solo se muestran sus notas, sin importar ni
-  exportar. Las notas pueden ser personales o asociarse a un servidor. Al
+  importación/exportación. El botón de nueva nota permanece en la barra
+  superior junto al control de la lista, incluso al ocultarla. Sobre el
+  buscador, un botón crea categorías. Con clic derecho sobre una
+  categoría puedes renombrarla, duplicarla con sus notas o eliminarla. El
+  gestor del menú principal muestra el árbol completo y ofrece importar y
+  exportar. Abrir notas desde un servidor expande ese servidor y oculta
+  importar/exportar. Las pestañas muestran un icono de ámbito y, al
+  pasar el cursor por una nota de servidor, su nombre. Los títulos nuevos se
+  numeran por ámbito (Nota nueva, Nota nueva 2, etc.). Las notas pueden ser
+  personales o asociarse a un servidor. Al
   eliminar un servidor, sus notas se conservan como personales. La importación
   sustituye las notas tras ofrecer una copia de seguridad. Antes de exportar,
   Termia explica que elegir «Sin contraseña» crea un fichero de texto plano
