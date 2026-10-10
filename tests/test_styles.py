@@ -92,6 +92,14 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             css,
         )
 
+    def test_system_theme_leaves_menu_and_properties_surfaces_to_gtk(self) -> None:
+        css = build_application_css(None, "#202020", "#008712", 1).decode()
+
+        self.assertNotIn("termia_menu_bg", css)
+        self.assertNotIn("termia-menu-popover > contents", css)
+        self.assertNotIn("termia-menu-panel {", css)
+        self.assertNotIn("window.termia-note-properties", css)
+
     def test_only_active_note_tab_gets_thin_full_width_blue_underline(self) -> None:
         css = build_application_css("#202020", "#202020", "#008712", 1).decode()
 

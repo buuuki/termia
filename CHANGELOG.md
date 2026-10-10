@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Fixed
+
+- Let System appearance inherit GTK menu, popover, and note-properties surfaces
+  instead of combining a forced light Termia menu with dark desktop controls.
+  Derive GTK's dark variant from GNOME's actual system scheme instead of a
+  fixed false preference, and update it when GNOME changes while Termia is
+  open. Keep isolated test profiles from overriding GTK and GNOME
+  configuration (`#311`).
+
 ### Changed
 
 - Replace the Personal/Servers selector and server dropdown with a hierarchical

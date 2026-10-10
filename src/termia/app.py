@@ -57,6 +57,33 @@ from .ui_state import RowObject
 TOAST_VISIBLE_SECONDS = 5
 
 
+def gnome_interface_settings() -> Gio.Settings | None:
+    source = Gio.SettingsSchemaSource.get_default()
+    if source is None:
+        return None
+    schema = source.lookup("org.gnome.desktop.interface", True)
+    if schema is None or not schema.has_key("color-scheme"):
+        return None
+    try:
+        return Gio.Settings.new_full(schema, None, None)
+    except GLib.Error:
+        return None
+
+
+def system_prefers_dark_theme(settings: Gio.Settings | None = None) -> bool | None:
+    settings = settings or gnome_interface_settings()
+    if settings is None:
+        return None
+    try:
+        color_scheme = settings.get_string("color-scheme")
+    except GLib.Error:
+        return None
+    return {
+        "prefer-dark": True,
+        "prefer-light": False,
+    }.get(color_scheme)
+
+
 def build_add_badged_icon(icon_name: str) -> Gtk.Overlay:
     overlay = Gtk.Overlay()
 
@@ -91,6 +118,7 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
+        self.connect_system_theme_changes()
         self.builtin_tools = BuiltInTools.from_settings(self.store.data.app)
         self.session_observer = (
             StatisticsCollector(
@@ -154,7 +182,6 @@ class TermiaWindow(
         if self.store.read_only:
             self.set_title(f"Termia ({self.t('read_only_badge')})")
         self.apply_app_theme()
-        self.install_tree_styles()
         self.selected: RowObject | None = None
         self.selected_tree_widget: Gtk.Widget | None = None
         self.group_expanded_state: dict[str, bool] = {}
@@ -528,20 +555,40 @@ class TermiaWindow(
 
     def apply_app_theme(self) -> None:
         settings = Gtk.Settings.get_default()
-        if settings is None:
-            return
-        theme = self.store.data.app.theme
-        settings.set_property("gtk-application-prefer-dark-theme", theme == "dark")
+        if settings is not None:
+            theme = self.store.data.app.theme
+            if theme == "system":
+                prefers_dark = system_prefers_dark_theme(
+                    getattr(self, "_gnome_interface_settings", None)
+                )
+                if prefers_dark is None:
+                    settings.reset_property("gtk-application-prefer-dark-theme")
+                else:
+                    settings.set_property("gtk-application-prefer-dark-theme", prefers_dark)
+            else:
+                settings.set_property("gtk-application-prefer-dark-theme", theme == "dark")
+        self.install_tree_styles()
+
+    def connect_system_theme_changes(self) -> None:
+        self._gnome_interface_settings = gnome_interface_settings()
+        if self._gnome_interface_settings is not None:
+            self._gnome_interface_settings.connect(
+                "changed::color-scheme",
+                self.on_system_color_scheme_changed,
+            )
+
+    def on_system_color_scheme_changed(self, *_args: object) -> None:
+        if self.store.data.app.theme == "system":
+            self.apply_app_theme()
 
     def install_tree_styles(self) -> None:
         display = Gdk.Display.get_default()
         if display is None:
             return
-        gtk_settings = Gtk.Settings.get_default()
-        prefer_dark = bool(
-            gtk_settings.get_property("gtk-application-prefer-dark-theme")
-        ) if gtk_settings is not None else False
-        menu_bg = "#3a3a3a" if self.store.data.app.theme == "dark" or prefer_dark else "#f6f6f6"
+        menu_bg = {
+            "dark": "#3a3a3a",
+            "light": "#f6f6f6",
+        }.get(self.store.data.app.theme)
         terminal_settings = self.store.data.terminal
         provider = Gtk.CssProvider()
         provider.load_from_data(
@@ -552,9 +599,13 @@ class TermiaWindow(
                 terminal_settings.split_separator_thickness,
             )
         )
+        previous_provider = getattr(self, "_application_css_provider", None)
+        if previous_provider is not None:
+            Gtk.StyleContext.remove_provider_for_display(display, previous_provider)
         Gtk.StyleContext.add_provider_for_display(
             display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
+        self._application_css_provider = provider
 
     def _build_ui(self) -> None:
         window_overlay = Gtk.Overlay()

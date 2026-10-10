@@ -187,7 +187,6 @@ class GeneralPreferencesMixin:
                     self.pending_session_snapshot = []
                     self.session_snapshot_store.clear()
             self.apply_app_theme()
-            self.install_tree_styles()
             if previous_values["audible_bell"] != self.store.data.app.audible_bell:
                 self.apply_terminal_settings_to_open_tabs()
             self.apply_session_status_bar_visibility_to_open_tabs()
