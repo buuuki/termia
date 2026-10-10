@@ -1856,6 +1856,27 @@ msgstr "Gestiona les notes"
 msgid "Notes"
 msgstr "Notes"
 
+msgid "Personal"
+msgstr "Personals"
+
+msgid "Servers"
+msgstr "Servidors"
+
+msgid "Choose a server"
+msgstr "Tria un servidor"
+
+msgid "Choose a server to see its notes."
+msgstr "Tria un servidor per veure'n les notes."
+
+msgid "No personal notes yet."
+msgstr "Encara no hi ha notes personals."
+
+msgid "Personal note: {title}"
+msgstr "Nota personal: {title}"
+
+msgid "Server: {server} · {title}"
+msgstr "Servidor: {server} · {title}"
+
 msgid "Hide note list"
 msgstr "Amaga la llista de notes"
 

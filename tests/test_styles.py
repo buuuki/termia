@@ -74,6 +74,24 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             css,
         )
 
+    def test_note_properties_inverts_the_outer_and_inner_surfaces(self) -> None:
+        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+
+        self.assertIn(
+            "window.termia-note-properties { background-color: @termia_menu_bg; }",
+            css,
+        )
+        self.assertIn(
+            "window.termia-note-properties headerbar { background: @termia_menu_bg; "
+            "background-color: @termia_menu_bg; background-image: none; box-shadow: none; }",
+            css,
+        )
+        self.assertIn(
+            ".termia-note-properties-content { background-color: @theme_bg_color; "
+            "background-image: none; border-radius: 8px; padding: 8px 12px; }",
+            css,
+        )
+
     def test_only_active_note_tab_gets_thin_full_width_blue_underline(self) -> None:
         css = build_application_css("#202020", "#202020", "#008712", 1).decode()
 

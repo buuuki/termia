@@ -1704,6 +1704,34 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
+#: src/termia/i18n.py:notes_personal_scope
+msgid "Personal"
+msgstr ""
+
+#: src/termia/i18n.py:notes_server_scope
+msgid "Servers"
+msgstr ""
+
+#: src/termia/i18n.py:notes_choose_server
+msgid "Choose a server"
+msgstr ""
+
+#: src/termia/i18n.py:notes_choose_server_empty
+msgid "Choose a server to see its notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_personal
+msgid "No personal notes yet."
+msgstr ""
+
+#: src/termia/i18n.py:notes_tab_personal_tooltip
+msgid "Personal note: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_tab_server_tooltip
+msgid "Server: {server} · {title}"
+msgstr ""
+
 #: src/termia/i18n.py:notes_hide_list
 msgid "Hide note list"
 msgstr ""

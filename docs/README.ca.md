@@ -222,21 +222,32 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   Els esborranys buits no s'emmagatzemen; en tancar-ne un amb canvis sense desar,
   es pregunta què cal fer. El botó **Tanca la pestanya** de l'editor segueix el
   mateix diàleg de desar, descartar o continuar editant que la X de la pestanya.
-  Les notes personals apareixen
-  en carpetes de categories i les vinculades a servidors, a «Notes de servidor»,
-  amb el nom del servidor al costat del títol. La llista té cerca global i files
+  La llista organitza les notes en un arbre: **Personals** conté les categories
+  personals i **Servidors** conté els servidors amb notes o categories desades,
+  a més del servidor en què s'està treballant. En desplegar-lo se'n mostren les
+  notes i categories; les categories buides desades també són visibles. Un
+  esborrany «Nota nova» apareix temporalment a «Sense categoria» i només es desa
+  quan s'hi escriu contingut. Les categories pertanyen al seu àmbit i es poden
+  repetir entre notes personals i servidors. «Sense categoria» apareix si hi ha
+  notes sense categoria o un esborrany actiu en aquell àmbit. La llista té
+  cerca global i files
   compactes; el diàleg compacte de Propietats mostra, entre altres dades, la
   categoria desada de cada nota. Un clic selecciona la nota i un doble clic l'obre en una
   pestanya d'edició. La pestanya activa té un subratllat blau fosc i fi de
   banda a banda. L'àrea d'escriptura té un fons i una vora diferenciats que
-  s'adapten al tema. Els controls a l'esquerra de la barra de títol amaguen la
-  llista i obren el menú d'importació/exportació.
-  Sobre el cercador, el botó de l'esquerra crea una categoria i el del costat
-  crea una nota. Amb un clic dret sobre una categoria pots canviar-ne el nom,
-  duplicar-la amb les seves notes o suprimir-la. Des del menú principal es
-  mostren totes les notes i s'ofereixen importació i exportació. Des d'un
-  servidor només es mostren les seves notes, sense importar
-  ni exportar. Les notes poden ser personals o associades a un servidor. En
+  s'adapten al tema. Els menús contextuals de notes i Propietats comparteixen
+  la superfície i l'estil del menú principal de Termia. Els controls a
+  l'esquerra de la barra de títol amaguen la
+  llista i obren el menú d'importació/exportació. El botó de nota nova es manté
+  a la barra superior al costat del control de la llista, fins i tot quan
+  s'amaga. Sobre el cercador, un botó crea categories. Amb un clic dret sobre
+  una categoria pots canviar-ne el nom,
+  duplicar-la amb les seves notes o suprimir-la. El gestor del menú principal
+  mostra l'arbre complet i ofereix importar i exportar. Obrir les
+  notes des d'un servidor el desplega i amaga importar/exportar.
+  Les pestanyes mostren una icona de l'àmbit i, en passar el cursor per una nota
+  de servidor, se'n veu el nom. Els títols nous es numeren per àmbit (Nota nova,
+  Nota nova 2, etc.). Les notes poden ser personals o associades a un servidor. En
   suprimir un servidor, les notes es conserven com a personals. La importació
   substitueix les notes després d'oferir una còpia de seguretat. Abans
   d'exportar, Termia explica que triar «Sense contrasenya» crea un fitxer de

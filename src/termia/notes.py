@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from .models import Note
+from .models import Note, NoteCategory
 
 
 class NoteError(ValueError):
@@ -16,20 +16,68 @@ def timestamp_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="microseconds")
 
 
-def normalized_note_categories(categories: object, notes: list[Note]) -> list[str]:
-    result: list[str] = []
+def normalized_note_categories(
+    categories: object, notes: list[Note],
+) -> list[NoteCategory]:
+    """Normalize scoped categories and migrate legacy shared name lists."""
+    result: list[NoteCategory] = []
+    seen: set[tuple[str | None, str]] = set()
+
+    def add(name: object, server_id: object) -> None:
+        if not isinstance(name, str):
+            return
+        clean_name = name.strip()
+        clean_server_id = server_id.strip() if isinstance(server_id, str) else None
+        if not clean_name:
+            return
+        key = (clean_server_id or None, clean_name.casefold())
+        if key in seen:
+            return
+        seen.add(key)
+        result.append(NoteCategory(clean_name, key[0]))
+
     if isinstance(categories, list):
-        for raw_name in categories:
-            if not isinstance(raw_name, str):
-                continue
-            name = raw_name.strip()
-            if name and name.casefold() not in {item.casefold() for item in result}:
-                result.append(name)
+        legacy_names = all(isinstance(item, str) for item in categories)
+        if legacy_names:
+            used_scopes: dict[str, list[str | None]] = {}
+            for note in notes:
+                name = note.category.strip()
+                if not name:
+                    continue
+                scopes = used_scopes.setdefault(name.casefold(), [])
+                scope = note.server_id or None
+                if scope not in scopes:
+                    scopes.append(scope)
+            for name in categories:
+                scopes = used_scopes.get(name.strip().casefold()) or [None]
+                for scope in scopes:
+                    add(name, scope)
+        else:
+            for item in categories:
+                if isinstance(item, NoteCategory):
+                    add(item.name, item.server_id)
+                elif isinstance(item, dict):
+                    add(item.get("name"), item.get("server_id"))
+
     for note in notes:
-        name = note.category.strip()
-        if name and name.casefold() not in {item.casefold() for item in result}:
-            result.append(name)
+        add(note.category, note.server_id)
     return result
+
+
+def note_category_name(
+    categories: list[NoteCategory], name: str, server_id: str | None,
+) -> str | None:
+    key = name.strip().casefold()
+    if not key:
+        return ""
+    return next(
+        (
+            category.name for category in categories
+            if category.server_id == (server_id or None)
+            and category.name.casefold() == key
+        ),
+        None,
+    )
 
 
 def normalize_note(
