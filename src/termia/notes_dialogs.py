@@ -17,6 +17,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Graphene, Gtk
 
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
+from .dialog_actions import add_dialog_action_button, configure_action_area
 from .models import Note, NoteCategory
 from .notes import NoteError, normalized_note_categories
 from .notes_io import export_notes_file, import_notes_file
@@ -262,7 +263,8 @@ class NotesDialogs:
         text_scroller.set_child(text_view)
         editor.append(text_scroller)
 
-        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        configure_action_area(footer)
         self.status_label = Gtk.Label()
         self.status_label.set_xalign(0)
         self.status_label.set_hexpand(True)
@@ -1203,13 +1205,11 @@ class NotesDialogs:
         details.append(grid)
         content.append(details)
         actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        actions.set_hexpand(True)
+        actions.set_halign(Gtk.Align.END)
         close_button = Gtk.Button(label=self.translate("close"))
-        close_button.set_hexpand(True)
-        close_button.set_halign(Gtk.Align.END)
-        close_button.set_margin_end(2)
         close_button.connect("clicked", lambda *_: dialog.destroy())
         actions.append(close_button)
+        configure_action_area(actions)
         content.append(actions)
         dialog.set_child(content)
         dialog.set_size_request(440, -1)
@@ -1268,8 +1268,12 @@ class NotesDialogs:
         dialog = Gtk.Dialog(
             title=self.translate("notes_rename"), transient_for=self.window, modal=True
         )
-        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.translate("save"), Gtk.ResponseType.OK)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("save"), Gtk.ResponseType.OK, last=True,
+        )
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
         content.set_margin_top(12)
@@ -2021,8 +2025,12 @@ class NotesDialogs:
             title=self.translate(title_key), transient_for=self.window, modal=True
         )
         dialog.set_default_size(360, -1)
-        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.translate("save"), Gtk.ResponseType.OK)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("save"), Gtk.ResponseType.OK, last=True,
+        )
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
         for side in ("top", "bottom", "start", "end"):
@@ -2189,6 +2197,7 @@ class NotesDialogs:
             "clicked", self.on_export_protection_continue,
         )
         actions.append(self.export_continue_button)
+        configure_action_area(actions)
         self.export_plain_choice.connect(
             "toggled", self.on_export_protection_choice_changed,
         )
@@ -2371,8 +2380,12 @@ class NotesDialogs:
         entry = Gtk.PasswordEntry()
         entry.set_show_peek_icon(True)
         content.append(entry)
-        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.translate("continue"), Gtk.ResponseType.ACCEPT)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("continue"), Gtk.ResponseType.ACCEPT, last=True,
+        )
 
         def response(source: Gtk.Dialog, result: int) -> None:
             password = entry.get_text() if result == Gtk.ResponseType.ACCEPT else None

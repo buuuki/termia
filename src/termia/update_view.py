@@ -8,6 +8,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
 from . import __version__
+from .dialog_actions import add_dialog_action_button, configure_action_area
 from .update_controller import CheckResult, UpdateController
 
 
@@ -45,6 +46,7 @@ class UpdateDialog(Gtk.Window):
         self.close_button = Gtk.Button(label=self.t("close"))
         self.close_button.connect("clicked", self.close_or_cancel)
         actions.append(self.close_button)
+        configure_action_area(actions)
         self.connect("close-request", self.close_requested)
         self.connect("unrealize", lambda *_: self.controller.close())
 
@@ -104,8 +106,12 @@ class UpdateDialog(Gtk.Window):
             return
         confirmation = Gtk.Dialog(title=self.t("update_install"), transient_for=self, modal=True)
         confirmation.set_destroy_with_parent(True)
-        confirmation.add_button(self.t("cancel"), Gtk.ResponseType.CANCEL)
-        confirmation.add_button(self.t("update_install"), Gtk.ResponseType.OK)
+        add_dialog_action_button(
+            confirmation, self.t("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            confirmation, self.t("update_install"), Gtk.ResponseType.OK, last=True,
+        )
         confirmation.set_default_response(Gtk.ResponseType.CANCEL)
         label = Gtk.Label(label=self.t("update_confirm").format(version=self.result.release.label), wrap=True)
         label.set_max_width_chars(55)

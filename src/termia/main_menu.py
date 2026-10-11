@@ -12,6 +12,7 @@ from gi.repository import Gdk, GLib, Gtk
 
 from .constants import ABOUT_IMAGE, ISSUES_URL
 from . import __version__
+from .dialog_actions import add_dialog_action_button as add_shared_dialog_action_button
 from .main_menu_actions import MainMenuActions
 
 
@@ -218,10 +219,9 @@ class MainMenuMixin:
     def add_dialog_action_button(
         self, dialog: Gtk.Dialog, label: str, response: Gtk.ResponseType, *, last: bool = False
     ) -> Gtk.Button:
-        button = dialog.add_button(label, response)
-        button.set_margin_end(12 if last else 6)
-        button.set_margin_bottom(12)
-        return button
+        return add_shared_dialog_action_button(
+            dialog, label, response, last=last,
+        )
 
     def add_dialog_action_buttons(
         self, dialog: Gtk.Dialog, confirm_label: str, confirm_response: Gtk.ResponseType = Gtk.ResponseType.OK

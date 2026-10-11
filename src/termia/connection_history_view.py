@@ -11,6 +11,7 @@ gi.require_version("Pango", "1.0")
 from gi.repository import Gio, Gtk, Pango
 
 from .connection_history_presenter import ConnectionHistoryPresenter
+from .dialog_actions import add_dialog_action_button
 from .models import ConnectionHistoryEntry
 
 
@@ -38,18 +39,17 @@ class ConnectionHistoryDialog:
         dialog.set_resizable(True)
         dialog.set_default_size(760, 520)
         state = {"show_local_terminals": True}
-        clear_button = dialog.add_button(self.translate("clear_history"), Gtk.ResponseType.REJECT)
-        clear_button.set_margin_end(6)
-        clear_button.set_margin_bottom(12)
-        clear_button.add_css_class("destructive-action")
+        clear_button = add_dialog_action_button(
+            dialog, self.translate("clear_history"), Gtk.ResponseType.REJECT,
+        )
         self.configure_write_action(clear_button)
-        close_button = dialog.add_button(self.translate("close"), Gtk.ResponseType.CLOSE)
-        close_button.set_margin_end(12)
-        close_button.set_margin_bottom(12)
+        add_dialog_action_button(
+            dialog, self.translate("close"), Gtk.ResponseType.CLOSE, last=True,
+        )
 
         content = dialog.get_content_area()
         content.set_margin_top(16)
-        content.set_margin_bottom(16)
+        content.set_margin_bottom(8)
         content.set_margin_start(16)
         content.set_margin_end(16)
         content.set_spacing(12)

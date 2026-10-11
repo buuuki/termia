@@ -84,8 +84,14 @@ class KeybindingPreferencesMixin:
         dialog = Gtk.Dialog(title=self.t("keybindings"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(520, -1)
-        self.add_dialog_action_buttons(dialog, self.t("save"))
-        self.add_dialog_action_button(dialog, self.t("keybindings_restore_defaults"), Gtk.ResponseType.APPLY)
+        self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        self.add_dialog_action_button(dialog, self.t("save"), Gtk.ResponseType.OK)
+        self.add_dialog_action_button(
+            dialog,
+            self.t("keybindings_restore_defaults"),
+            Gtk.ResponseType.APPLY,
+            last=True,
+        )
         content = dialog.get_content_area()
         content.set_margin_top(16)
         content.set_margin_bottom(16)

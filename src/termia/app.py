@@ -27,6 +27,7 @@ from .constants import (
     STATE_DIR,
 )
 from .debug import configure_debug_logging, log_event, log_startup_context, log_store_state
+from .dialog_actions import configure_action_area
 from .i18n import translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
@@ -866,6 +867,7 @@ class TermiaWindow(
         unlock_button.add_css_class("suggested-action")
         unlock_button.connect("clicked", self.on_unlock_connections_requested)
         unlock_actions.append(unlock_button)
+        configure_action_area(unlock_actions)
         unlock_content.append(unlock_actions)
         window_overlay.add_overlay(unlock_panel)
 

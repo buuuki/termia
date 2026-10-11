@@ -9,6 +9,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
+from .dialog_actions import add_dialog_action_button
 from .statistics_presenter import StatisticCard, StatisticsDashboard
 
 
@@ -29,9 +30,9 @@ class StatisticsDialog:
         dialog = Gtk.Dialog(title=self.translate("statistics_title"), transient_for=self.parent, modal=True)
         dialog.set_resizable(True)
         dialog.set_default_size(620, 520)
-        close_button = dialog.add_button(self.translate("close"), Gtk.ResponseType.CLOSE)
-        close_button.set_margin_end(12)
-        close_button.set_margin_bottom(12)
+        add_dialog_action_button(
+            dialog, self.translate("close"), Gtk.ResponseType.CLOSE, last=True,
+        )
 
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -79,9 +80,9 @@ class StatisticsDialog:
             modal=True,
         )
         dialog.set_resizable(False)
-        close_button = dialog.add_button(self.translate("close"), Gtk.ResponseType.CLOSE)
-        close_button.set_margin_end(12)
-        close_button.set_margin_bottom(12)
+        add_dialog_action_button(
+            dialog, self.translate("close"), Gtk.ResponseType.CLOSE, last=True,
+        )
         label = Gtk.Label(
             label=f"{self.translate('server_connections')}: {server_connections}"
         )
