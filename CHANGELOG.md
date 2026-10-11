@@ -17,6 +17,10 @@
   menus, dialogs, buttons, text, selection, and error feedback. Keep only
   Termia layout rules and terminal-specific colors (`#302`).
 
+- Render note, category, and tab context actions as standard GTK menu rows
+  rather than custom framed buttons, with a uniform GTK foreground and no
+  unintended initial focus outline (`#302`).
+
 - Use shared eight-pixel spacing and sixteen-pixel insets around dialog action
   areas through the shared dialog-actions helper, including Save workspace
   (`#302`).
