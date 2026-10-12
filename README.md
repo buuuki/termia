@@ -34,7 +34,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
   Create, rename, duplicate, and delete categories independently; deleting a
   category moves its snippets to Uncategorized.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
-- Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`.
+- Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`. Drag a saved server onto a group, subgroup, or Ungrouped to move it.
 - Store host, user, port, password, and private-key settings for each SSH connection.
 - Import and export Termia configuration, including basic connections, nested groups, and available credentials from Asbru YAML.
 - Review connection history and optional local usage statistics, including durations and most-used servers.

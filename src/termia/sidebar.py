@@ -35,6 +35,7 @@ from .workspace_layout import (
 )
 
 GROUP_START_CONFIRMATION_THRESHOLD = 10
+SERVER_GROUP_DND_MIME_TYPE = "application/x-termia-server-id"
 
 
 class SidebarMixin:
@@ -312,8 +313,7 @@ class SidebarMixin:
             if widget is not None:
                 self.server_list.append(widget)
 
-        if projection.ungrouped_servers:
-            self.server_list.append(self.build_ungrouped_widget(projection.ungrouped_servers, query))
+        self.server_list.append(self.build_ungrouped_widget(projection.ungrouped_servers, query))
 
         root_groups = len([group for group in self.store.data.groups if group.parent_id is None])
         subgroups = len(self.store.data.groups) - root_groups
@@ -526,6 +526,7 @@ class SidebarMixin:
         right_click.set_button(3)
         right_click.connect("pressed", self.on_group_widget_right_click, group_row, group_label)
         group_label.add_controller(right_click)
+        self.add_server_group_drop_target(group_label, group.id)
 
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         for widget in child_widgets:
@@ -540,6 +541,7 @@ class SidebarMixin:
         label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         label_box.set_hexpand(True)
         label_box.set_halign(Gtk.Align.FILL)
+        label_box.add_css_class("termia-group-drop-target")
         label_box.append(Gtk.Image.new_from_icon_name("folder-symbolic"))
         label = Gtk.Label(label=text)
         label.add_css_class("heading")
@@ -549,7 +551,9 @@ class SidebarMixin:
     def build_ungrouped_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
         expander = Gtk.Expander()
         expander.set_focusable(False)
-        expander.set_label_widget(self.build_group_label(f"{self.t('no_group')} ({len(servers)})"))
+        group_label = self.build_group_label(f"{self.t('no_group')} ({len(servers)})")
+        expander.set_label_widget(group_label)
+        self.add_server_group_drop_target(group_label, None)
         self.group_expanders.append(expander)
         expander.group_id = "__ungrouped__"
         expander.set_expanded(self.get_group_expanded("__ungrouped__", query))
@@ -593,7 +597,164 @@ class SidebarMixin:
         right_click.set_button(3)
         right_click.connect("pressed", self.on_server_widget_right_click, row_obj, row)
         row.add_controller(right_click)
+        if row_kind == "server":
+            drag_source = Gtk.DragSource.new()
+            drag_source.set_actions(Gdk.DragAction.MOVE)
+            drag_source.connect("prepare", self.on_server_drag_prepare, server.id)
+            drag_source.connect("drag-begin", self.on_server_drag_begin, server.id, row)
+            drag_source.connect("drag-end", self.on_server_drag_end, server.id, row)
+            row.add_controller(drag_source)
         return row
+
+    def on_server_drag_prepare(
+        self, _source: Gtk.DragSource, _x: float, _y: float, server_id: str,
+    ) -> Gdk.ContentProvider | None:
+        if (
+            self.store.read_only
+            or self.store.encryption_locked
+            or getattr(self, "sidebar_pending_group_drop", None) is not None
+        ):
+            return None
+        if find_server(self.store.data.servers, server_id) is None:
+            return None
+        return Gdk.ContentProvider.new_for_bytes(
+            SERVER_GROUP_DND_MIME_TYPE,
+            GLib.Bytes.new(server_id.encode("utf-8")),
+        )
+
+    def on_server_drag_begin(
+        self, source: Gtk.DragSource, _drag: Gdk.Drag, server_id: str, row: Gtk.Widget,
+    ) -> None:
+        self.sidebar_drag_server_id = server_id
+        row.add_css_class("dragging")
+        source.set_icon(
+            Gtk.WidgetPaintable.new(row),
+            row.get_allocated_width() // 2,
+            row.get_allocated_height() // 2,
+        )
+
+    def on_server_drag_end(
+        self, _source: Gtk.DragSource, _drag: Gdk.Drag, _delete_data: bool,
+        server_id: str, row: Gtk.Widget,
+    ) -> None:
+        if self.sidebar_drag_server_id == server_id:
+            self.sidebar_drag_server_id = None
+        row.remove_css_class("dragging")
+
+    def add_server_group_drop_target(self, label: Gtk.Widget, group_id: str | None) -> None:
+        formats = Gdk.ContentFormats.new([SERVER_GROUP_DND_MIME_TYPE])
+        target = Gtk.DropTargetAsync.new(formats, Gdk.DragAction.MOVE)
+        target.connect("accept", self.on_server_group_drop_accept)
+        target.connect("drag-motion", self.on_server_group_drop_motion, group_id, label)
+        target.connect("drag-leave", self.on_server_group_drop_leave, label)
+        target.connect("drop", self.on_server_group_drop, group_id, label)
+        label.add_controller(target)
+
+    def on_server_group_drop_accept(
+        self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop,
+    ) -> bool:
+        formats = drop.get_formats()
+        return (
+            self.sidebar_drag_server_id is not None
+            and formats is not None
+            and formats.contain_mime_type(SERVER_GROUP_DND_MIME_TYPE)
+        )
+
+    def on_server_group_drop_motion(
+        self, _target: Gtk.DropTargetAsync, _drop: Gdk.Drop, _x: float, _y: float,
+        group_id: str | None, label: Gtk.Widget,
+    ) -> Gdk.DragAction:
+        server_id = self.sidebar_drag_server_id
+        if server_id is not None and self.store.can_move_server_to_group(server_id, group_id):
+            label.add_css_class("drop-target")
+            return Gdk.DragAction.MOVE
+        label.remove_css_class("drop-target")
+        return Gdk.DragAction(0)
+
+    def on_server_group_drop_leave(
+        self, _target: Gtk.DropTargetAsync, _drop: Gdk.Drop, label: Gtk.Widget,
+    ) -> None:
+        label.remove_css_class("drop-target")
+
+    def on_server_group_drop(
+        self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop, _x: float, _y: float,
+        group_id: str | None, label: Gtk.Widget,
+    ) -> bool:
+        label.remove_css_class("drop-target")
+        server_id = self.sidebar_drag_server_id
+        if server_id is None or not self.on_server_group_drop_accept(_target, drop):
+            return False
+        if not self.store.can_move_server_to_group(server_id, group_id):
+            return False
+        drop_token = object()
+        self.sidebar_pending_group_drop = drop_token
+        drop.read_async(
+            [SERVER_GROUP_DND_MIME_TYPE],
+            GLib.PRIORITY_DEFAULT,
+            None,
+            self.on_server_group_drop_read,
+            (drop, server_id, group_id, label, drop_token),
+        )
+        return True
+
+    def on_server_group_drop_read(
+        self, _source: Gdk.Drop, result: Gio.AsyncResult, user_data,
+    ) -> None:
+        drop, server_id, group_id, label, drop_token = user_data
+        try:
+            stream, mime_type = drop.read_finish(result)
+        except GLib.Error:
+            self.clear_pending_server_group_drop(drop_token)
+            drop.finish(Gdk.DragAction(0))
+            return
+        if stream is None or mime_type != SERVER_GROUP_DND_MIME_TYPE:
+            self.clear_pending_server_group_drop(drop_token)
+            drop.finish(Gdk.DragAction(0))
+            return
+        stream.read_bytes_async(
+            256,
+            GLib.PRIORITY_DEFAULT,
+            None,
+            self.on_server_group_drop_bytes_read,
+            (drop, server_id, group_id, label, drop_token),
+        )
+
+    def on_server_group_drop_bytes_read(
+        self, stream: Gio.InputStream, result: Gio.AsyncResult, user_data,
+    ) -> None:
+        drop, expected_server_id, group_id, label, drop_token = user_data
+        try:
+            server_id = stream.read_bytes_finish(result).get_data().decode("utf-8")
+        except (GLib.Error, UnicodeDecodeError):
+            server_id = ""
+        moved = (
+            getattr(self, "sidebar_pending_group_drop", None) is drop_token
+            and server_id == expected_server_id
+            and self.apply_server_group_drop(server_id, group_id, label, require_active_drag=False)
+        )
+        self.clear_pending_server_group_drop(drop_token)
+        drop.finish(Gdk.DragAction.MOVE if moved else Gdk.DragAction(0))
+
+    def clear_pending_server_group_drop(self, drop_token: object) -> None:
+        if getattr(self, "sidebar_pending_group_drop", None) is drop_token:
+            self.sidebar_pending_group_drop = None
+
+    def apply_server_group_drop(
+        self, server_id: str, group_id: str | None, label: Gtk.Widget,
+        *, require_active_drag: bool = True,
+    ) -> bool:
+        if require_active_drag and server_id != self.sidebar_drag_server_id:
+            return False
+        if not self.store.can_move_server_to_group(server_id, group_id):
+            return False
+        scroll_values = self.get_sidebar_scroll_values()
+        if not self.store.move_server_to_group(server_id, group_id):
+            return False
+        self.sidebar_drag_server_id = None
+        self.refresh_list()
+        self.render_detail()
+        self.preserve_sidebar_scroll(*scroll_values)
+        return True
 
     def register_tree_widget(self, row: RowObject, widget: Gtk.Widget) -> None:
         widget.add_css_class("termia-tree-item")
