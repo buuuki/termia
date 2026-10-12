@@ -25,6 +25,9 @@
 
 ### Changed
 
+- Document separate prerelease and stable patch workflows, including the
+  criteria for declaring a stable release (`#322`).
+
 - Let built-in System, Light, and Dark appearance inherit GTK colors for
   menus, dialogs, buttons, text, selection, and error feedback. Keep only
   Termia layout rules and terminal-specific colors (`#302`).
