@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Add a dedicated Disconnect action to the SFTP browser, keep Cancel and
+  Reconnect SFTP separate, and align all three actions to the right (`#315`).
+
 ### Fixed
 
 - Prevent dragging a saved server onto the sidebar search field from inserting

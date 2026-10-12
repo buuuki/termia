@@ -66,9 +66,11 @@ class SFTPWindow(Gtk.Window):
         box.append(self.status)
         controls = Gtk.Box()
         configure_action_area(controls)
+        controls.set_halign(Gtk.Align.END)
         box.append(controls)
         self.cancel_button = self.button("cancel", self.cancel, controls)
         self.reconnect_button = self.button("sftp_reconnect", self.connect_backend, controls)
+        self.disconnect_button = self.button("disconnect", self.disconnect, controls)
         self.connect("close-request", self.close_requested)
         self.connect_backend()
 
@@ -280,6 +282,10 @@ class SFTPWindow(Gtk.Window):
     def cancel(self):
         self.service.cancel()
         self.status.set_text(self.t("sftp_cancelled"))
+
+    def disconnect(self):
+        self.close_requested()
+        self.destroy()
 
     def cancel_active_transfer(self, *, close_dialog=False):
         if close_dialog:

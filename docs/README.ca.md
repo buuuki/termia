@@ -61,8 +61,11 @@ Instal·la les dependències amb `scripts/termia-setup.sh install`. La finestra
 independent permet navegar, pujar fitxers/carpetes, baixar, crear carpetes,
 canviar noms i suprimir fitxers o carpetes buides. No sobreescriu destinacions
 existents ni transfereix enllaços simbòlics. Cancel·lar desconnecta SFTP;
-reconnecta per continuar. Poden quedar fitxers remots o carpetes incomplets.
-El progrés és per fitxer. Tancar la pestanya propietària o Termia tanca SFTP.
+fes servir **Reconnecta SFTP** per continuar. **Desconnectar** tanca la finestra
+i la seva connexió SFTP independent, fins i tot durant una transferència.
+Cancel·lar, Reconnecta SFTP i Desconnectar apareixen a la dreta. Poden quedar
+fitxers remots o carpetes incomplets. El progrés és per fitxer. Tancar la
+pestanya propietària o Termia tanca SFTP.
 
 Paramiko usa el host i la identitat desats, SSH-agent/claus predeterminades o
 contrasenya en memòria. Confirma les empremtes desconegudes; es rebutgen claus
