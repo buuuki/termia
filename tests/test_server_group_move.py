@@ -14,7 +14,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gtk
 
 from termia.models import CommandSnippet, Group, Server
-from termia.sidebar import SidebarMixin
+from termia.sidebar import SERVER_GROUP_DND_MIME_TYPE, SidebarMixin
 from termia.snippets import available_snippets
 from termia.stores import ConnectionStore, ReadOnlyStoreError
 
@@ -127,21 +127,25 @@ class ServerGroupMoveTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            SidebarMixin.on_server_group_drop_motion(host, None, 0, 0, self.second.id, label),
+            SidebarMixin.on_server_group_drop_motion(host, None, None, 0, 0, self.second.id, label),
             Gdk.DragAction.MOVE,
         )
         self.assertIn("drop-target", label.classes)
         self.assertEqual(
-            SidebarMixin.on_server_group_drop_motion(host, None, 0, 0, self.first.id, label),
+            SidebarMixin.on_server_group_drop_motion(host, None, None, 0, 0, self.first.id, label),
             Gdk.DragAction(0),
         )
         self.assertNotIn("drop-target", label.classes)
         self.assertFalse(
-            SidebarMixin.on_server_group_drop(host, None, "external", 0, 0, self.second.id, label),
+            SidebarMixin.apply_server_group_drop(
+                host, "external", self.second.id, label,
+            ),
         )
         host.refresh_list.assert_not_called()
         self.assertTrue(
-            SidebarMixin.on_server_group_drop(host, None, self.server.id, 0, 0, self.second.id, label),
+            SidebarMixin.apply_server_group_drop(
+                host, self.server.id, self.second.id, label,
+            ),
         )
         self.assertEqual(self.server.group_id, self.second.id)
         self.assertIsNone(host.sidebar_drag_server_id)
@@ -149,6 +153,17 @@ class ServerGroupMoveTests(unittest.TestCase):
         host.refresh_list.assert_called_once_with()
         host.render_detail.assert_called_once_with()
         host.preserve_sidebar_scroll.assert_called_once_with(12.0, 0.0)
+
+    def test_server_drag_provider_uses_private_non_text_format(self) -> None:
+        host = SimpleNamespace(store=self.store)
+        provider = SidebarMixin.on_server_drag_prepare(
+            host, None, 0, 0, self.server.id,
+        )
+
+        self.assertIsNotNone(provider)
+        formats = provider.ref_formats()
+        self.assertTrue(formats.contain_mime_type(SERVER_GROUP_DND_MIME_TYPE))
+        self.assertFalse(formats.contain_mime_type("text/plain"))
 
 
 @unittest.skipUnless(
@@ -177,7 +192,7 @@ class ServerGroupWidgetTests(unittest.TestCase):
 
         self.assertEqual(label.get_last_child().get_text(), "no_group (0)")
         self.assertTrue(any(
-            isinstance(controllers.get_item(index), Gtk.DropTarget)
+            isinstance(controllers.get_item(index), Gtk.DropTargetAsync)
             for index in range(controllers.get_n_items())
         ))
 
@@ -188,9 +203,18 @@ class ServerGroupWidgetTests(unittest.TestCase):
         controllers = label.observe_controllers()
 
         self.assertTrue(any(
-            isinstance(controllers.get_item(index), Gtk.DropTarget)
+            isinstance(controllers.get_item(index), Gtk.DropTargetAsync)
             for index in range(controllers.get_n_items())
         ))
+
+        target = next(
+            controllers.get_item(index)
+            for index in range(controllers.get_n_items())
+            if isinstance(controllers.get_item(index), Gtk.DropTargetAsync)
+        )
+        formats = target.get_formats()
+        self.assertTrue(formats.contain_mime_type(SERVER_GROUP_DND_MIME_TYPE))
+        self.assertFalse(formats.contain_mime_type("text/plain"))
 
     def test_only_regular_server_rows_are_drag_sources(self) -> None:
         server = Server("server", "Web", "web.example.test", "admin")

@@ -183,9 +183,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Dragging a saved server from its regular sidebar row onto a group, subgroup,
   or Ungrouped must change only its saved group assignment. Ungrouped remains
   visible as a drop target when empty. Reject invalid, unchanged, external,
-  read-only, and locked drops; do not launch a connection or disturb open
-  sessions, favorites, history, workspace references, keyboard navigation,
-  existing click/context-menu behavior, group expansion, or sidebar scroll.
+  read-only, and locked drops. The server filter must reject these drags
+  without inserting the server ID as search text. Do not launch a connection or
+  disturb open sessions, favorites, history, workspace references, keyboard
+  navigation, existing click/context-menu behavior, group expansion, or scroll.
   Group-scoped snippet availability follows the server's new group.
 
 ### Context Menus and Popovers

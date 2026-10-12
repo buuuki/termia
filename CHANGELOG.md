@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Prevent dragging a saved server onto the sidebar search field from inserting
+  its internal ID as search text (`#299`).
+
 ### Changed
 
 - Document the initial Core and built-in add-on boundaries, their known pilot

@@ -35,6 +35,7 @@ from .workspace_layout import (
 )
 
 GROUP_START_CONFIRMATION_THRESHOLD = 10
+SERVER_GROUP_DND_MIME_TYPE = "application/x-termia-server-id"
 
 
 class SidebarMixin:
@@ -608,11 +609,18 @@ class SidebarMixin:
     def on_server_drag_prepare(
         self, _source: Gtk.DragSource, _x: float, _y: float, server_id: str,
     ) -> Gdk.ContentProvider | None:
-        if self.store.read_only or self.store.encryption_locked:
+        if (
+            self.store.read_only
+            or self.store.encryption_locked
+            or getattr(self, "sidebar_pending_group_drop", None) is not None
+        ):
             return None
         if find_server(self.store.data.servers, server_id) is None:
             return None
-        return Gdk.ContentProvider.new_for_value(server_id)
+        return Gdk.ContentProvider.new_for_bytes(
+            SERVER_GROUP_DND_MIME_TYPE,
+            GLib.Bytes.new(server_id.encode("utf-8")),
+        )
 
     def on_server_drag_begin(
         self, source: Gtk.DragSource, _drag: Gdk.Drag, server_id: str, row: Gtk.Widget,
@@ -634,15 +642,26 @@ class SidebarMixin:
         row.remove_css_class("dragging")
 
     def add_server_group_drop_target(self, label: Gtk.Widget, group_id: str | None) -> None:
-        target = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
-        target.set_preload(True)
-        target.connect("motion", self.on_server_group_drop_motion, group_id, label)
-        target.connect("leave", self.on_server_group_drop_leave, label)
+        formats = Gdk.ContentFormats.new([SERVER_GROUP_DND_MIME_TYPE])
+        target = Gtk.DropTargetAsync.new(formats, Gdk.DragAction.MOVE)
+        target.connect("accept", self.on_server_group_drop_accept)
+        target.connect("drag-motion", self.on_server_group_drop_motion, group_id, label)
+        target.connect("drag-leave", self.on_server_group_drop_leave, label)
         target.connect("drop", self.on_server_group_drop, group_id, label)
         label.add_controller(target)
 
+    def on_server_group_drop_accept(
+        self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop,
+    ) -> bool:
+        formats = drop.get_formats()
+        return (
+            self.sidebar_drag_server_id is not None
+            and formats is not None
+            and formats.contain_mime_type(SERVER_GROUP_DND_MIME_TYPE)
+        )
+
     def on_server_group_drop_motion(
-        self, _target: Gtk.DropTarget, _x: float, _y: float,
+        self, _target: Gtk.DropTargetAsync, _drop: Gdk.Drop, _x: float, _y: float,
         group_id: str | None, label: Gtk.Widget,
     ) -> Gdk.DragAction:
         server_id = self.sidebar_drag_server_id
@@ -653,16 +672,78 @@ class SidebarMixin:
         return Gdk.DragAction(0)
 
     def on_server_group_drop_leave(
-        self, _target: Gtk.DropTarget, label: Gtk.Widget,
+        self, _target: Gtk.DropTargetAsync, _drop: Gdk.Drop, label: Gtk.Widget,
     ) -> None:
         label.remove_css_class("drop-target")
 
     def on_server_group_drop(
-        self, _target: Gtk.DropTarget, server_id: str, _x: float, _y: float,
+        self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop, _x: float, _y: float,
         group_id: str | None, label: Gtk.Widget,
     ) -> bool:
         label.remove_css_class("drop-target")
-        if server_id != self.sidebar_drag_server_id:
+        server_id = self.sidebar_drag_server_id
+        if server_id is None or not self.on_server_group_drop_accept(_target, drop):
+            return False
+        if not self.store.can_move_server_to_group(server_id, group_id):
+            return False
+        drop_token = object()
+        self.sidebar_pending_group_drop = drop_token
+        drop.read_async(
+            [SERVER_GROUP_DND_MIME_TYPE],
+            GLib.PRIORITY_DEFAULT,
+            None,
+            self.on_server_group_drop_read,
+            (drop, server_id, group_id, label, drop_token),
+        )
+        return True
+
+    def on_server_group_drop_read(
+        self, _source: Gdk.Drop, result: Gio.AsyncResult, user_data,
+    ) -> None:
+        drop, server_id, group_id, label, drop_token = user_data
+        try:
+            stream, mime_type = drop.read_finish(result)
+        except GLib.Error:
+            self.clear_pending_server_group_drop(drop_token)
+            drop.finish(Gdk.DragAction(0))
+            return
+        if stream is None or mime_type != SERVER_GROUP_DND_MIME_TYPE:
+            self.clear_pending_server_group_drop(drop_token)
+            drop.finish(Gdk.DragAction(0))
+            return
+        stream.read_bytes_async(
+            256,
+            GLib.PRIORITY_DEFAULT,
+            None,
+            self.on_server_group_drop_bytes_read,
+            (drop, server_id, group_id, label, drop_token),
+        )
+
+    def on_server_group_drop_bytes_read(
+        self, stream: Gio.InputStream, result: Gio.AsyncResult, user_data,
+    ) -> None:
+        drop, expected_server_id, group_id, label, drop_token = user_data
+        try:
+            server_id = stream.read_bytes_finish(result).get_data().decode("utf-8")
+        except (GLib.Error, UnicodeDecodeError):
+            server_id = ""
+        moved = (
+            getattr(self, "sidebar_pending_group_drop", None) is drop_token
+            and server_id == expected_server_id
+            and self.apply_server_group_drop(server_id, group_id, label, require_active_drag=False)
+        )
+        self.clear_pending_server_group_drop(drop_token)
+        drop.finish(Gdk.DragAction.MOVE if moved else Gdk.DragAction(0))
+
+    def clear_pending_server_group_drop(self, drop_token: object) -> None:
+        if getattr(self, "sidebar_pending_group_drop", None) is drop_token:
+            self.sidebar_pending_group_drop = None
+
+    def apply_server_group_drop(
+        self, server_id: str, group_id: str | None, label: Gtk.Widget,
+        *, require_active_drag: bool = True,
+    ) -> bool:
+        if require_active_drag and server_id != self.sidebar_drag_server_id:
             return False
         if not self.store.can_move_server_to_group(server_id, group_id):
             return False
