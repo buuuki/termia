@@ -270,7 +270,9 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
 - `Ctrl+Left`, `Ctrl+Right`, `Ctrl+Up`, and `Ctrl+Down` move focus between
   split panes by visual direction. These shortcuts can be reassigned or
   disabled if terminal applications need to receive those combinations.
-- `Security` controls connection storage mode.
+- `Security` controls connection storage mode. For encrypted profiles, it also
+  lets you change the master password; Termia verifies the current password and
+  re-encrypts connections and notes with the new one.
 - Use the terminal-shaped button in the sidebar to create a new local terminal profile; it appears in the sidebar list like a connection and opens an embedded terminal when activated.
 - When another Termia instance is already running with the write lock, a new window opens in read-only mode, shows a header badge, disables write-capable actions, and still allows browsing, connecting, and exporting configuration.
 - Right-click a terminal or a server to upload files to `/tmp/.termia/` on the target host.
@@ -349,7 +351,7 @@ Termia stores connection data, settings, and statistics outside the repository:
 ~/.local/state/termia/last-session.json  # only when session restoration is enabled
 ```
 
-Saved passwords are stored in `connections.json`; the file can be kept as plain text, obfuscated, or encrypted with a master password from Security preferences. When encryption is enabled, Termia asks for the master password on startup and cannot recover the connection data if that password is lost. `notes.json` is a separate file, uses the same local protection mode, and is deliberately not included in connection imports or exports. Notes have their own import/export actions. Notes exports without a password are unencrypted JSON; a password selected during export encrypts the file and is required to import it. This export password is separate from the master password protecting local Termia data. Replacing existing notes creates a backup first. Imported Ásbrú passwords are stored the same way when the source YAML exposes them in a `pass` field. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, notes, or statistics; later instances stay read-only to avoid corrupting these files.
+Saved passwords are stored in `connections.json`; the file can be kept as plain text, obfuscated, or encrypted with a master password from Security preferences. When encryption is enabled, Termia asks for the master password on startup and cannot recover the connection data if that password is lost. Change the master password from Security preferences; Termia verifies the current password and re-encrypts connections and notes. `notes.json` is a separate file, uses the same local protection mode, and is deliberately not included in connection imports or exports. Notes have their own import/export actions. Notes exports without a password are unencrypted JSON; a password selected during export encrypts the file and is required to import it. This export password is separate from the master password protecting local Termia data. Replacing existing notes creates a backup first. Imported Ásbrú passwords are stored the same way when the source YAML exposes them in a `pass` field. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, notes, or statistics; later instances stay read-only to avoid corrupting these files.
 Connection history is stored separately in `connections-history.jsonl`; the
 sidebar derives its small, deduplicated Recent section from successful SSH
 connections in that history.

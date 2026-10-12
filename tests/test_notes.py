@@ -11,6 +11,7 @@ from termia.config_io import (
     CONNECTION_STORAGE_OBFUSCATED,
     InvalidMasterPasswordError,
     MissingMasterPasswordError,
+    read_connections_payload,
 )
 from termia.models import Note, NoteCategory
 from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories
@@ -22,7 +23,7 @@ from termia.notes_io import (
     write_notes_file,
 )
 from termia.notes_presenter import NotesPresenter
-from termia.stores import ConnectionStore
+from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPasswordError
 
 
 class NotesDomainTests(unittest.TestCase):
@@ -1749,6 +1750,108 @@ class NotesStoreTests(unittest.TestCase):
                 self.assertNotIn("Private note", raw)
                 notes, _categories = read_notes_file(root / "notes.json", "master")
                 self.assertEqual(notes[0].content, "Private note")
+            finally:
+                store.close()
+
+    def test_change_master_password_reencrypts_connections_and_notes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = self.make_store(root)
+            try:
+                server = store.add_server(
+                    "Web", "web.test", "admin", 22, None, password="saved password",
+                )
+                store.add_note("Runbook", "Private note", server_id=server.id)
+                store.update_connection_storage_mode(CONNECTION_STORAGE_ENCRYPTED, "old master")
+                connections_before = read_connections_payload(root / "connections.json", "old master")
+                notes_before = read_notes_file(root / "notes.json", "old master")
+                paths = (root / "connections.json", root / "notes.json", root / "settings.json")
+                raw_before = {path: path.read_bytes() for path in paths}
+
+                with self.assertRaises(UnchangedMasterPasswordError):
+                    store.change_master_password("old master", "old master")
+                self.assertEqual({path: path.read_bytes() for path in paths}, raw_before)
+
+                store.change_master_password("old master", "new master")
+
+                self.assertEqual(store.master_password, "new master")
+                self.assertEqual(
+                    read_connections_payload(root / "connections.json", "new master"),
+                    connections_before,
+                )
+                self.assertEqual(
+                    read_notes_file(root / "notes.json", "new master"), notes_before,
+                )
+                with self.assertRaises(InvalidMasterPasswordError):
+                    read_connections_payload(root / "connections.json", "old master")
+                with self.assertRaises(InvalidMasterPasswordError):
+                    read_notes_file(root / "notes.json", "old master")
+            finally:
+                store.close()
+
+    def test_wrong_current_master_password_leaves_all_files_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = self.make_store(root)
+            try:
+                store.add_note("Runbook", "Private note")
+                store.update_connection_storage_mode(CONNECTION_STORAGE_ENCRYPTED, "old master")
+                paths = (root / "connections.json", root / "notes.json", root / "settings.json")
+                before = {path: path.read_bytes() for path in paths}
+
+                with self.assertRaises(InvalidMasterPasswordError):
+                    store.change_master_password("wrong password", "new master")
+
+                self.assertEqual({path: path.read_bytes() for path in paths}, before)
+                self.assertEqual(store.master_password, "old master")
+            finally:
+                store.close()
+
+    def test_failed_reencryption_restores_connections_and_notes(self):
+        from termia.notes_io import atomic_write
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = self.make_store(root)
+            try:
+                store.add_note("Runbook", "Private note")
+                store.update_connection_storage_mode(CONNECTION_STORAGE_ENCRYPTED, "old master")
+                paths = (root / "connections.json", root / "notes.json", root / "settings.json")
+                before = {path: path.read_bytes() for path in paths}
+                calls = 0
+
+                def fail_notes_write(path, contents):
+                    nonlocal calls
+                    calls += 1
+                    if calls == 2:
+                        raise OSError("disk full")
+                    return atomic_write(path, contents)
+
+                with patch("termia.notes_io.atomic_write", side_effect=fail_notes_write):
+                    with self.assertRaises(OSError):
+                        store.change_master_password("old master", "new master")
+
+                self.assertEqual({path: path.read_bytes() for path in paths}, before)
+                self.assertEqual(store.master_password, "old master")
+                self.assertEqual(
+                    read_notes_file(root / "notes.json", "old master")[0][0].content,
+                    "Private note",
+                )
+            finally:
+                store.close()
+
+    def test_change_master_password_is_rejected_in_read_only_mode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = self.make_store(root)
+            try:
+                store.update_connection_storage_mode(CONNECTION_STORAGE_ENCRYPTED, "old master")
+                paths = (root / "connections.json", root / "notes.json", root / "settings.json")
+                before = {path: path.read_bytes() for path in paths}
+                store.read_only = True
+                with self.assertRaises(ReadOnlyStoreError):
+                    store.change_master_password("old master", "new master")
+                self.assertEqual({path: path.read_bytes() for path in paths}, before)
             finally:
                 store.close()
 

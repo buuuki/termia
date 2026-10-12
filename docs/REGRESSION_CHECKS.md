@@ -223,6 +223,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - New plain `connections.json` writes must contain only groups and servers; app and terminal preferences must be written to `settings.json`.
 - Obfuscated connection storage must decode back to the same groups, servers, passwords, and private key paths, and switching modes must rewrite the file immediately.
 - Encrypted connection storage must require a master password on startup, preserve groups, servers, passwords, and private key paths after unlock, allow canceling activation before setting a password, and never silently recover data if the master password is lost.
+- Changing an encrypted profile's master password must verify the current
+  password and re-encrypt both connections and notes. The new password must
+  unlock both files and the old password must unlock neither. Cancelling,
+  entering a wrong current password, or failing either file write must preserve
+  both original files; read-only instances must reject the action.
 - The startup master-password prompt must be an in-window modal layer rather
   than a separate desktop window, so it always stays inside Termia on single-
   and multi-monitor desktops and blocks the underlying controls until it is

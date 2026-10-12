@@ -912,6 +912,43 @@ msgstr "Contraseña maestra"
 msgid "Confirm master password"
 msgstr "Confirmar contraseña maestra"
 
+#: src/termia/i18n.py:change_master_password
+#: src/termia/i18n.py:change_master_password_title
+msgid "Change master password"
+msgstr "Cambiar contraseña maestra"
+
+#: src/termia/i18n.py:change_master_password_detail
+msgid "Enter the current master password, then choose a new one. Termia will re-encrypt your connections and notes."
+msgstr "Introduce la contraseña maestra actual y elige una nueva. Termia volverá a cifrar las conexiones y las notas."
+
+#: src/termia/i18n.py:current_master_password
+msgid "Current master password"
+msgstr "Contraseña maestra actual"
+
+#: src/termia/i18n.py:new_master_password
+msgid "New master password"
+msgstr "Nueva contraseña maestra"
+
+#: src/termia/i18n.py:change_master_password_same
+msgid "Choose a new password that differs from the current one."
+msgstr "Elige una contraseña nueva distinta de la actual."
+
+#: src/termia/i18n.py:change_master_password_current_required
+msgid "Enter the current master password."
+msgstr "Introduce la contraseña maestra actual."
+
+#: src/termia/i18n.py:change_master_password_wrong_current
+msgid "The current master password is incorrect."
+msgstr "La contraseña maestra actual es incorrecta."
+
+#: src/termia/i18n.py:change_master_password_failed
+msgid "Could not change the master password. Check storage permissions and available disk space, then try again."
+msgstr "No se pudo cambiar la contraseña maestra. Comprueba los permisos de almacenamiento y el espacio disponible, e inténtalo de nuevo."
+
+#: src/termia/i18n.py:change_master_password_rollback_failed
+msgid "The password change failed and Termia could not restore every previous data file. Stop using this profile and recover its files from a backup."
+msgstr "El cambio ha fallado y Termia no pudo restaurar todos los archivos de datos anteriores. Deja de usar este perfil y recupera los archivos desde una copia de seguridad."
+
 #: src/termia/i18n.py:enable_encryption
 msgid "Enable encryption"
 msgstr "Activar cifrado"
