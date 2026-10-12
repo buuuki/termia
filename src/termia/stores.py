@@ -33,6 +33,7 @@ from .config_io import (
     CONNECTION_STORAGE_PLAIN,
     InvalidMasterPasswordError,
     MissingMasterPasswordError,
+    connections_payload,
     connection_storage_mode_from_payload,
     decoded_connections_payload,
     read_raw_connections_payload,
@@ -84,6 +85,14 @@ from .ui_state import TerminalPane, TerminalSession
 
 
 class ReadOnlyStoreError(RuntimeError):
+    pass
+
+
+class MasterPasswordRollbackError(RuntimeError):
+    pass
+
+
+class UnchangedMasterPasswordError(ValueError):
     pass
 
 
@@ -1044,6 +1053,86 @@ class ConnectionStore:
                     atomic_write(path, contents)
             self.settings_store.app = self.data.app
             raise
+
+    def change_master_password(
+        self, current_password: str, new_password: str,
+    ) -> None:
+        """Re-encrypt connections and notes with a verified replacement password."""
+        self.ensure_writable()
+        if self.data.app.connection_storage_mode != CONNECTION_STORAGE_ENCRYPTED:
+            raise ValueError("The connection store is not encrypted.")
+        if len(new_password) < 8:
+            raise ValueError("Master passwords must contain at least 8 characters.")
+
+        raw_connections = read_raw_connections_payload(self.path)
+        if connection_storage_mode_from_payload(raw_connections) != CONNECTION_STORAGE_ENCRYPTED:
+            raise ValueError("Connections are not stored in encrypted format.")
+        decoded_connections_payload(raw_connections, current_password)
+        if current_password == new_password:
+            raise UnchangedMasterPasswordError(
+                "The new master password must differ from the current password."
+            )
+
+        from .notes_io import (
+            atomic_write,
+            encode_notes_payload,
+            notes_payload,
+            read_notes_file,
+        )
+
+        notes_path = self.notes_file_store.path
+        notes_exist = notes_path.exists()
+        if notes_exist:
+            read_notes_file(notes_path, current_password)
+
+        connection_bytes = json.dumps(
+            connections_payload(
+                self.data.groups,
+                self.data.servers,
+                self.data.local_terminals,
+                CONNECTION_STORAGE_ENCRYPTED,
+                new_password,
+                self.data.workspaces,
+                self.data.snippets,
+                self.data.snippet_categories,
+            ),
+            indent=2,
+        ).encode("utf-8")
+        notes_bytes = None
+        if notes_exist:
+            notes_bytes = json.dumps(
+                encode_notes_payload(
+                    notes_payload(self.data.notes, self.data.note_categories),
+                    CONNECTION_STORAGE_ENCRYPTED,
+                    new_password,
+                ),
+                indent=2,
+                ensure_ascii=False,
+            ).encode("utf-8")
+
+        paths = [self.path]
+        if notes_exist:
+            paths.append(notes_path)
+        snapshots = {path: path.read_bytes() for path in paths}
+        previous_password = self.master_password
+        try:
+            atomic_write(self.path, connection_bytes)
+            if notes_bytes is not None:
+                atomic_write(notes_path, notes_bytes)
+        except Exception as error:
+            self.master_password = previous_password
+            rollback_errors = []
+            for path, contents in snapshots.items():
+                try:
+                    atomic_write(path, contents)
+                except Exception as rollback_error:
+                    rollback_errors.append(rollback_error)
+            if rollback_errors:
+                raise MasterPasswordRollbackError(
+                    "Master password change failed and storage rollback was incomplete."
+                ) from error
+            raise
+        self.master_password = new_password
 
     def add_group(self, name: str, parent_id: str | None = None) -> Group:
         self.ensure_writable()

@@ -7,9 +7,18 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, Gtk
 
-from .config_io import CONNECTION_STORAGE_ENCRYPTED, CONNECTION_STORAGE_OBFUSCATED, CONNECTION_STORAGE_PLAIN
+from .config_io import (
+    CONNECTION_STORAGE_ENCRYPTED,
+    CONNECTION_STORAGE_OBFUSCATED,
+    CONNECTION_STORAGE_PLAIN,
+    InvalidMasterPasswordError,
+)
 from .dialog_actions import add_dialog_action_button
-from .stores import ReadOnlyStoreError
+from .stores import (
+    MasterPasswordRollbackError,
+    ReadOnlyStoreError,
+    UnchangedMasterPasswordError,
+)
 
 
 class SecurityPreferencesMixin:
@@ -43,8 +52,137 @@ class SecurityPreferencesMixin:
         warning.set_wrap(True)
         warning.add_css_class("dim-label")
         content.append(warning)
+        if self.store.data.app.connection_storage_mode == CONNECTION_STORAGE_ENCRYPTED:
+            change_password = Gtk.Button(label=self.t("change_master_password"))
+            change_password.set_halign(Gtk.Align.START)
+            change_password.connect(
+                "clicked", self.on_change_master_password_clicked, dialog,
+            )
+            content.append(change_password)
         dialog.connect("response", self.on_security_settings_response, storage_combo)
         dialog.present()
+
+    def on_change_master_password_clicked(
+        self, _button: Gtk.Button, settings_dialog: Gtk.Dialog,
+    ) -> None:
+        if not self.ensure_writable():
+            return
+        settings_dialog.destroy()
+        self.present_change_master_password_dialog()
+
+    def present_change_master_password_dialog(self) -> None:
+        dialog = Gtk.Dialog(
+            title=self.t("change_master_password_title"),
+            transient_for=self,
+            modal=True,
+        )
+        dialog.set_resizable(False)
+        dialog.set_default_size(460, -1)
+        add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        add_dialog_action_button(
+            dialog, self.t("change_master_password"), Gtk.ResponseType.OK, last=True,
+        )
+        content = dialog.get_content_area()
+        for side in ("top", "bottom", "start", "end"):
+            getattr(content, f"set_margin_{side}")(16)
+        content.set_spacing(12)
+        detail = Gtk.Label(label=self.t("change_master_password_detail"), xalign=0, wrap=True)
+        content.append(detail)
+
+        grid = Gtk.Grid(column_spacing=12, row_spacing=12)
+        current_entry = Gtk.PasswordEntry(show_peek_icon=True)
+        new_entry = Gtk.PasswordEntry(show_peek_icon=True)
+        confirm_entry = Gtk.PasswordEntry(show_peek_icon=True)
+        for row, (key, entry) in enumerate((
+            ("current_master_password", current_entry),
+            ("new_master_password", new_entry),
+            ("confirm_master_password", confirm_entry),
+        )):
+            label = Gtk.Label(label=self.t(key), xalign=0)
+            grid.attach(label, 0, row, 1, 1)
+            grid.attach(entry, 1, row, 1, 1)
+            entry.set_hexpand(True)
+            entry.connect("activate", lambda _entry: dialog.response(Gtk.ResponseType.OK))
+        content.append(grid)
+
+        error = Gtk.Label(xalign=0, wrap=True)
+        error.add_css_class("error")
+        content.append(error)
+        dialog.connect(
+            "response", self.on_change_master_password_response,
+            current_entry, new_entry, confirm_entry, error,
+        )
+        dialog.present()
+        current_entry.grab_focus()
+
+    def on_change_master_password_response(
+        self,
+        dialog: Gtk.Dialog,
+        response: Gtk.ResponseType,
+        current_entry: Gtk.PasswordEntry,
+        new_entry: Gtk.PasswordEntry,
+        confirm_entry: Gtk.PasswordEntry,
+        error: Gtk.Label,
+    ) -> None:
+        if response != Gtk.ResponseType.OK:
+            for entry in (current_entry, new_entry, confirm_entry):
+                entry.set_text("")
+            dialog.destroy()
+            return
+
+        current_password = current_entry.get_text()
+        new_password = new_entry.get_text()
+        if not current_password:
+            error.set_label(self.t("change_master_password_current_required"))
+            current_entry.grab_focus()
+            return
+        if len(new_password) < 8:
+            error.set_label(self.t("master_password_too_short"))
+            new_entry.set_text("")
+            confirm_entry.set_text("")
+            new_entry.grab_focus()
+            return
+        if new_password != confirm_entry.get_text():
+            error.set_label(self.t("master_password_mismatch"))
+            new_entry.set_text("")
+            confirm_entry.set_text("")
+            new_entry.grab_focus()
+            return
+
+        try:
+            self.store.change_master_password(current_password, new_password)
+        except InvalidMasterPasswordError:
+            error.set_label(self.t("change_master_password_wrong_current"))
+            for entry in (current_entry, new_entry, confirm_entry):
+                entry.set_text("")
+            current_entry.grab_focus()
+            return
+        except MasterPasswordRollbackError:
+            error.set_label(self.t("change_master_password_rollback_failed"))
+            for entry in (current_entry, new_entry, confirm_entry):
+                entry.set_text("")
+            return
+        except UnchangedMasterPasswordError:
+            error.set_label(self.t("change_master_password_same"))
+            new_entry.set_text("")
+            confirm_entry.set_text("")
+            new_entry.grab_focus()
+            return
+        except ReadOnlyStoreError:
+            self.toast_label.set_label(self.t("read_only_mode_enabled"))
+            dialog.destroy()
+            return
+        except (OSError, ValueError):
+            error.set_label(self.t("change_master_password_failed"))
+            for entry in (current_entry, new_entry, confirm_entry):
+                entry.set_text("")
+            current_entry.grab_focus()
+            return
+
+        for entry in (current_entry, new_entry, confirm_entry):
+            entry.set_text("")
+        dialog.destroy()
+        self.toast_label.set_label(self.t("security_settings_saved"))
 
     def on_security_settings_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType,
                                       storage_combo: Gtk.ComboBoxText) -> None:

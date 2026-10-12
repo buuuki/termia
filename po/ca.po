@@ -912,6 +912,43 @@ msgstr "Contrasenya mestra"
 msgid "Confirm master password"
 msgstr "Confirma la contrasenya mestra"
 
+#: src/termia/i18n.py:change_master_password
+#: src/termia/i18n.py:change_master_password_title
+msgid "Change master password"
+msgstr "Canviar la contrasenya mestra"
+
+#: src/termia/i18n.py:change_master_password_detail
+msgid "Enter the current master password, then choose a new one. Termia will re-encrypt your connections and notes."
+msgstr "Introdueix la contrasenya mestra actual i tria'n una de nova. Termia tornarà a xifrar les connexions i les notes."
+
+#: src/termia/i18n.py:current_master_password
+msgid "Current master password"
+msgstr "Contrasenya mestra actual"
+
+#: src/termia/i18n.py:new_master_password
+msgid "New master password"
+msgstr "Contrasenya mestra nova"
+
+#: src/termia/i18n.py:change_master_password_same
+msgid "Choose a new password that differs from the current one."
+msgstr "Tria una contrasenya nova diferent de l'actual."
+
+#: src/termia/i18n.py:change_master_password_current_required
+msgid "Enter the current master password."
+msgstr "Introdueix la contrasenya mestra actual."
+
+#: src/termia/i18n.py:change_master_password_wrong_current
+msgid "The current master password is incorrect."
+msgstr "La contrasenya mestra actual és incorrecta."
+
+#: src/termia/i18n.py:change_master_password_failed
+msgid "Could not change the master password. Check storage permissions and available disk space, then try again."
+msgstr "No s'ha pogut canviar la contrasenya mestra. Comprova els permisos d'emmagatzematge i l'espai disponible, i torna-ho a provar."
+
+#: src/termia/i18n.py:change_master_password_rollback_failed
+msgid "The password change failed and Termia could not restore every previous data file. Stop using this profile and recover its files from a backup."
+msgstr "El canvi ha fallat i Termia no ha pogut restaurar tots els fitxers de dades anteriors. Deixa d'utilitzar aquest perfil i recupera els fitxers des d'una còpia de seguretat."
+
 #: src/termia/i18n.py:enable_encryption
 msgid "Enable encryption"
 msgstr "Activar xifratge"

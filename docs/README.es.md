@@ -216,7 +216,9 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
 - `Ctrl+Izquierda`, `Ctrl+Derecha`, `Ctrl+Arriba` y `Ctrl+Abajo` mueven el
   foco entre paneles divididos según su dirección visual. Pueden reasignarse o
   desactivarse si una aplicación del terminal necesita esas combinaciones.
-- `Seguridad` controla el modo de almacenamiento de conexiones.
+- `Seguridad` controla el modo de almacenamiento de conexiones. En perfiles
+  cifrados también permite cambiar la contraseña maestra; Termia verifica la
+  contraseña actual y vuelve a cifrar las conexiones y las notas.
 - `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
   Las notas se guardan automáticamente en un fichero separado; también hay un
   botón **Guardar**. Al abrir la ventana se crea un borrador nuevo o se recupera
@@ -321,7 +323,7 @@ Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 ~/.local/state/termia/last-session.json  # solo si se activa la restauración
 ```
 
-Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano, ofuscado o cifrado con una contraseña maestra desde las preferencias de Seguridad. Cuando el cifrado está activado, Termia pide la contraseña maestra al arrancar y no puede recuperar los datos de conexión si esa contraseña se pierde. Las notas se guardan por separado en `notes.json` y siguen el mismo modo de protección local; no se incluyen al importar o exportar conexiones. Las notas exportadas sin contraseña son JSON sin cifrar y legible; al elegir una contraseña para la exportación, el fichero se cifra y esa contraseña es necesaria para importarlo. Esta contraseña de exportación es independiente de la contraseña maestra. Trata los ficheros exportados como datos sensibles. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
+Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano, ofuscado o cifrado con una contraseña maestra desde las preferencias de Seguridad. Cuando el cifrado está activado, Termia pide la contraseña maestra al arrancar y no puede recuperar los datos de conexión si esa contraseña se pierde. En Seguridad puedes cambiarla; Termia verifica la contraseña actual y vuelve a cifrar las conexiones y las notas. Las notas se guardan por separado en `notes.json` y siguen el mismo modo de protección local; no se incluyen al importar o exportar conexiones. Las notas exportadas sin contraseña son JSON sin cifrar y legible; al elegir una contraseña para la exportación, el fichero se cifra y esa contraseña es necesaria para importarlo. Esta contraseña de exportación es independiente de la contraseña maestra. Trata los ficheros exportados como datos sensibles. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
 Los ficheros de conexiones exportados también pueden contener credenciales.
 Los contadores locales agregados se guardan por separado en `statistics.json` y vienen desactivados por defecto. Desde **Complementos** en el menú principal puedes activar o desactivar Estadísticas y el explorador SFTP. Los cambios se aplican al reiniciar Termia; desactivar un complemento oculta sus acciones, pero no borra sus datos. Cuando hay varios procesos de Termia abiertos al mismo tiempo, solo la instancia que mantiene `instance.lock` escribe conexiones, ajustes o estadísticas; las siguientes permanecen en solo lectura para evitar corromper esos ficheros.
 El historial se guarda aparte en `connections-history.jsonl`; la sección Recent

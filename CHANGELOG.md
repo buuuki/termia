@@ -7,6 +7,10 @@
 - Add a dedicated Disconnect action to the SFTP browser, keep Cancel and
   Reconnect SFTP separate, and align all three actions to the right (`#315`).
 
+- Allow changing the master password for encrypted connections and notes,
+  verifying the current password and restoring original files if re-encryption
+  fails (`#314`).
+
 ### Fixed
 
 - Prevent dragging a saved server onto the sidebar search field from inserting

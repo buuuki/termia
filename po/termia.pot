@@ -1068,6 +1068,43 @@ msgstr ""
 msgid "Confirm master password"
 msgstr ""
 
+#: src/termia/i18n.py:change_master_password
+#: src/termia/i18n.py:change_master_password_title
+msgid "Change master password"
+msgstr ""
+
+#: src/termia/i18n.py:change_master_password_detail
+msgid "Enter the current master password, then choose a new one. Termia will re-encrypt your connections and notes."
+msgstr ""
+
+#: src/termia/i18n.py:current_master_password
+msgid "Current master password"
+msgstr ""
+
+#: src/termia/i18n.py:new_master_password
+msgid "New master password"
+msgstr ""
+
+#: src/termia/i18n.py:change_master_password_same
+msgid "Choose a new password that differs from the current one."
+msgstr ""
+
+#: src/termia/i18n.py:change_master_password_current_required
+msgid "Enter the current master password."
+msgstr ""
+
+#: src/termia/i18n.py:change_master_password_wrong_current
+msgid "The current master password is incorrect."
+msgstr ""
+
+#: src/termia/i18n.py:change_master_password_failed
+msgid "Could not change the master password. Check storage permissions and available disk space, then try again."
+msgstr ""
+
+#: src/termia/i18n.py:change_master_password_rollback_failed
+msgid "The password change failed and Termia could not restore every previous data file. Stop using this profile and recover its files from a backup."
+msgstr ""
+
 #: src/termia/i18n.py:enable_encryption
 msgid "Enable encryption"
 msgstr ""
