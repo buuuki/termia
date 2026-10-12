@@ -65,9 +65,11 @@ an independent file window. Install dependencies using
 `scripts/termia-setup.sh install`. Browse, upload files/folders, download into a
 local folder, create directories, rename, and delete files or empty directories.
 Existing destination paths and symbolic links are refused. Cancellation closes
-SFTP; reconnect to continue. Partial remote files and newly created directories
-may remain after cancellation or failure. Progress is per file. Closing the
-owning tab or Termia closes its SFTP connections.
+SFTP; use **Reconnect SFTP** to continue. **Disconnect** closes the independent
+SFTP window and connection, including during a transfer. Cancel, Reconnect SFTP,
+and Disconnect appear on the right. Partial remote files and newly created
+directories may remain after cancellation or failure. Progress is per file.
+Closing the owning tab or Termia closes its SFTP connections.
 
 The Paramiko backend uses the saved endpoint and identity, SSH-agent/default
 keys, or a password prompt. Verify unknown host fingerprints before accepting;

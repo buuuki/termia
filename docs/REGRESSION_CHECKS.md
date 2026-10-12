@@ -573,6 +573,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Cancel during connection and transfer. Reconnect explicitly and repeat the
   operation; no old callbacks may affect the new session. Partial remote files
   or newly created directories may remain, as explained by the status message.
+- Confirm Cancel, Reconnect SFTP, and Disconnect appear in that order on the
+  right. Cancel is available only while busy; Reconnect SFTP is available when
+  idle; Disconnect remains available in both states. Disconnect while idle and
+  during a transfer; each must close the SFTP window and transport, suppress
+  late callbacks, and leave unrelated SSH sessions usable.
 - Close the explorer, its owning tab (also after detaching), and Termia during
   a transfer. Confirm the SFTP transport closes and no worker remains after the
   bounded network timeout. Unrelated terminals and sidebar-owned explorers must

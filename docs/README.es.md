@@ -60,8 +60,11 @@ Instala las dependencias con `scripts/termia-setup.sh install`. La ventana
 independiente permite navegar, subir archivos/carpetas, descargar, crear
 carpetas, renombrar y borrar archivos o carpetas vacías. No sobrescribe destinos
 existentes ni transfiere enlaces simbólicos. Cancelar desconecta SFTP; reconecta
-para continuar. Pueden quedar archivos remotos o carpetas incompletos. El progreso
-es por archivo. Cerrar la pestaña propietaria o Termia cierra la conexión SFTP.
+con **Reconectar SFTP** para continuar. **Desconectar** cierra la ventana y su
+conexión SFTP independiente, incluso durante una transferencia. Cancelar,
+Reconectar SFTP y Desconectar aparecen a la derecha. Pueden quedar archivos
+remotos o carpetas incompletos. El progreso es por archivo. Cerrar la pestaña
+propietaria o Termia cierra la conexión SFTP.
 
 Paramiko usa el host y la identidad guardados, SSH-agent/claves predeterminadas
 o contraseña en memoria. Confirma las huellas desconocidas; se rechazan claves
