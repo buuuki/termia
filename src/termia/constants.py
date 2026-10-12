@@ -9,12 +9,18 @@ from gi.repository import GLib
 
 APP_ID = "local.termia"
 APP_DIR = Path(__file__).resolve().parent
-CONFIG_DIR = Path(GLib.get_user_config_dir()) / "termia"
+CONFIG_DIR = Path(
+    os.environ.get("TERMIA_CONFIG_DIR")
+    or Path(GLib.get_user_config_dir()) / "termia"
+)
 DATA_FILE = CONFIG_DIR / "connections.json"
 NOTES_FILE = CONFIG_DIR / "notes.json"
 SETTINGS_FILE = CONFIG_DIR / "settings.json"
 INSTANCE_LOCK_FILE = CONFIG_DIR / "instance.lock"
-STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state")))
+STATE_DIR = Path(
+    os.environ.get("TERMIA_STATE_DIR")
+    or os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state"))
+)
 STATISTICS_FILE = STATE_DIR / "termia" / "statistics.json"
 HISTORY_FILE = STATE_DIR / "termia" / "connections-history.jsonl"
 DEBUG_LOG_FILE = STATE_DIR / "termia" / "debug.log"

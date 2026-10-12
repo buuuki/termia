@@ -7,6 +7,69 @@
 - Prevent dragging a saved server onto the sidebar search field from inserting
   its internal ID as search text (`#299`).
 
+- Let System appearance inherit GTK menu, popover, and note-properties surfaces
+  instead of combining a forced light Termia menu with dark desktop controls.
+  Derive GTK's dark variant from GNOME's actual system scheme instead of a
+  fixed false preference, and update it when GNOME changes while Termia is
+  open. Keep isolated test profiles from overriding GTK and GNOME
+  configuration (`#311`).
+
+### Changed
+
+- Let built-in System, Light, and Dark appearance inherit GTK colors for
+  menus, dialogs, buttons, text, selection, and error feedback. Keep only
+  Termia layout rules and terminal-specific colors (`#302`).
+
+- Render note, category, and tab context actions as standard GTK menu rows
+  rather than custom framed buttons, with a uniform GTK foreground and no
+  unintended initial focus outline (`#302`).
+
+- Use shared eight-pixel spacing and sixteen-pixel insets around dialog action
+  areas through the shared dialog-actions helper, including Save workspace
+  (`#302`).
+
+- Reuse the shared action-area layout in the independent Notes workspace
+  footer (`#302`).
+
+- Apply the shared dialog action layout to note renaming, category editing, and
+  password prompts (`#302`).
+
+- Apply the shared action layout to SFTP file selection, prompts, confirmations,
+  and the Cancel/Reconnect row (`#302`).
+
+- Apply the shared dialog action layout to Connection History and both
+  Statistics dialogs (`#302`).
+
+- Apply the shared action-area spacing and insets to the master-password
+  unlock panel, note properties and export-protection windows, and update
+  window (`#302`).
+
+- Use standard GTK styling for the Clear history action instead of the
+  destructive-action emphasis (`#302`).
+
+- Reduce the bottom inset below the connection-history list while preserving
+  the shared dialog action layout (`#302`).
+
+- Apply the shared dialog action layout to the encryption-activation and
+  update-install confirmation dialogs (`#302`).
+
+- Replace the Personal/Servers selector and server dropdown with a hierarchical
+  notes tree: Personal categories, then servers with notes and their categories.
+  Keep categories scoped to their owner, omit empty Uncategorized groups, and
+  identify note ownership in tabs. Number new note titles independently by
+  scope. Select the existing title when renaming, keep the new-note action in
+  the header while the list is hidden, and compact the note Properties window
+  (`#309`). Eliminate excess Properties spacing and do not auto-select the first
+  note when navigating the tree. Enable server
+  creation controls only after a server is selected. Keep servers with saved
+  empty categories and the active server scope in the tree, showing unsaved
+  drafts under Uncategorized without persisting them. Match notes menus and
+  Properties to the main menu's theme-aware surface (`#309`). Size the
+  Properties window to its natural content height and inset the bottom Close
+  button to eliminate excess blank space; prevent automatic selection of the
+  title value. Reduce the outer vertical spacing and pad the details text
+  inside its contrasting panel (`#309`).
+
 ### Changed
 
 - Document the initial Core and built-in add-on boundaries, their known pilot

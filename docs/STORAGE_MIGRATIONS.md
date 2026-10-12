@@ -27,8 +27,10 @@ the format is an object or event payload.
   their snippets when loaded; empty categories are stored explicitly.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
-- `notes.json`: object schema `1`; stores notes and persistent note categories
-  separately from connections. The notes file follows the connection storage
+- `notes.json`: object schema `2`; stores notes and persistent note categories
+  separately from connections. Categories now carry an optional `server_id`.
+  Schema 1 shared category names migrate to each scope that uses them; unused
+  legacy categories remain personal. The notes file follows the connection storage
   protection mode; importing a notes export replaces the file only after
   validation and, when existing notes are present, a backup.
 - `statistics.json`: object schema `1`.

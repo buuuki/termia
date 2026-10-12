@@ -8,6 +8,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, Gtk
 
 from .config_io import CONNECTION_STORAGE_ENCRYPTED, CONNECTION_STORAGE_OBFUSCATED, CONNECTION_STORAGE_PLAIN
+from .dialog_actions import add_dialog_action_button
 from .stores import ReadOnlyStoreError
 
 
@@ -81,8 +82,10 @@ class SecurityPreferencesMixin:
         dialog = Gtk.Dialog(title=self.t("master_password_title"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
-        dialog.add_button(self.t("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.t("enable_encryption"), Gtk.ResponseType.OK)
+        add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        add_dialog_action_button(
+            dialog, self.t("enable_encryption"), Gtk.ResponseType.OK, last=True,
+        )
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
         content.set_margin_top(16)

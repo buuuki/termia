@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .config_io import CONNECTION_STORAGE_ENCRYPTED
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
-from .models import Note
+from .models import Note, NoteCategory
 from .notes_io import (
     atomic_write,
     read_notes_file,
@@ -23,7 +23,7 @@ class NotesFileStore:
         self.path = path
         self.read_only = read_only
         self.notes: list[Note] = []
-        self.categories: list[str] = []
+        self.categories: list[NoteCategory] = []
         self.recovery_messages: list[str] = []
         self.encryption_locked = False
         self.encryption_error = ""
@@ -103,6 +103,8 @@ class NotesFileStore:
         atomic_write(backup, self.path.read_bytes())
         return backup
 
-    def replace_data(self, notes: list[Note], categories: list[str]) -> None:
+    def replace_data(
+        self, notes: list[Note], categories: list[NoteCategory],
+    ) -> None:
         self.notes = list(notes)
         self.categories = normalized_note_categories(categories, self.notes)

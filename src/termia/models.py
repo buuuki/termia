@@ -91,6 +91,14 @@ class Note:
     modified_at: str = ""
 
 
+@dataclass(frozen=True)
+class NoteCategory:
+    """A note category owned by personal notes or one saved server."""
+
+    name: str
+    server_id: str | None = None
+
+
 @dataclass
 class TerminalSettings:
     font_family: str = DEFAULT_TERMINAL_FONT_FAMILY
@@ -185,7 +193,7 @@ class StoreData:
     snippets: list[CommandSnippet] = field(default_factory=list)
     snippet_categories: list[str] = field(default_factory=list)
     notes: list[Note] = field(default_factory=list)
-    note_categories: list[str] = field(default_factory=list)
+    note_categories: list[NoteCategory] = field(default_factory=list)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     app: AppSettings = field(default_factory=AppSettings)
     statistics: StatisticsSettings = field(default_factory=StatisticsSettings)

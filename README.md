@@ -231,19 +231,31 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   scope; read-only instances do not start drafts. Empty drafts are not stored;
   closing a draft with unsaved changes asks what to do. The editor's **Close tab**
   button follows the same save, discard, or keep-editing flow as the tab's X.
-  Personal notes appear under category folders in a searchable list; linked
-  notes appear in Server notes with the server name beside each title. Rows
+  The sidebar organizes notes as a tree: Personal contains personal categories;
+  Servers contains servers with notes or saved categories, plus the server
+  currently being worked on. Expand a server to browse its notes and categories.
+  Saved empty categories remain visible. An unsaved “New note” draft appears
+  under Uncategorized in its scope and is stored only after text is entered.
+  Categories belong to their scope, so
+  names can be reused across personal notes and different servers.
+  Uncategorized appears when that scope has uncategorized notes or an active
+  draft. Rows
   are compact and show further details, including a linked note's saved
   category, in the compact right-click Properties dialog. A single click selects
   a note; a double click opens it in an editor tab. The active tab has a
   thin, full-width blue underline, and the writing area has a distinct,
-  theme-aware background and border. The title bar's left-side controls hide
+  theme-aware background and border. Notes context menus and the Properties
+  window use the same theme-aware surface as Termia's main menu. The title bar's left-side controls hide
   the list and open the Import/Export menu.
-  Above search, the left button creates a category and the button beside it
-  creates a note. Right-click a category to rename, duplicate it with its
-  notes, or delete it. The main-menu manager shows all notes and offers
-  import/export. Opening notes from a server's sidebar shows only that server's
-  notes and hides import/export.
+  The header keeps the new-note button beside the list toggle, even when the
+  list is hidden. Above search, a button creates a category. Right-click a
+  category to rename, duplicate it with its notes, or delete it. The main-menu
+  manager opens with the full tree visible
+  and Personal as the active creation scope; it offers import/export. Opening
+  notes from a server's sidebar expands that server and
+  hides import/export. Tabs use a scope icon; hovering over a server-note
+  tab identifies its server. New note titles are numbered per scope (New note,
+  New note 2, and so on).
   Notes can be categorized or kept as personal notes. Deleting a server keeps
   its notes as personal notes. Import replaces existing notes only after
   offering to back them up. Before export, Termia explains that choosing no
