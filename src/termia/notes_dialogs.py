@@ -17,6 +17,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Graphene, Gtk
 
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
+from .dialog_actions import add_dialog_action_button, configure_action_area
 from .models import Note, NoteCategory
 from .notes import NoteError, normalized_note_categories
 from .notes_io import export_notes_file, import_notes_file
@@ -150,7 +151,6 @@ class NotesDialogs:
         header_actions.append(self.toggle_notes_list_button)
 
         self.add_button = Gtk.Button(icon_name="tab-new-symbolic")
-        self.add_button.add_css_class("suggested-action")
         self.add_button.connect("clicked", lambda *_: self.create_note())
         header_actions.append(self.add_button)
 
@@ -263,7 +263,8 @@ class NotesDialogs:
         text_scroller.set_child(text_view)
         editor.append(text_scroller)
 
-        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        configure_action_area(footer)
         self.status_label = Gtk.Label()
         self.status_label.set_xalign(0)
         self.status_label.set_hexpand(True)
@@ -272,7 +273,6 @@ class NotesDialogs:
         self.modified_label.add_css_class("dim-label")
         footer.append(self.modified_label)
         self.save_button = Gtk.Button(label=self.translate("save"))
-        self.save_button.add_css_class("suggested-action")
         self.save_button.connect("clicked", lambda *_: self.save_editor())
         footer.append(self.save_button)
         self.delete_button = Gtk.Button(label=self.translate("notes_delete"))
@@ -385,6 +385,37 @@ class NotesDialogs:
         panel.add_css_class("termia-menu-panel")
         for side in ("top", "bottom", "start", "end"):
             getattr(panel, f"set_margin_{side}")(6)
+
+    def build_notes_context_menu(self, popover: Gtk.Popover) -> Gtk.ListBox:
+        menu = Gtk.ListBox()
+        menu.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.style_notes_menu(popover, menu)
+        return menu
+
+    @staticmethod
+    def append_notes_context_menu_item(
+        menu: Gtk.ListBox,
+        label_text: str,
+        callback,
+        *,
+        enabled: bool = True,
+    ) -> None:
+        row = Gtk.ListBoxRow()
+        row.set_focusable(False)
+        label = Gtk.Label(label=label_text)
+        label.set_xalign(0)
+        label.set_margin_top(8)
+        label.set_margin_bottom(8)
+        label.set_margin_start(12)
+        label.set_margin_end(36)
+        row.set_child(label)
+        row.set_sensitive(enabled)
+        if enabled:
+            click = Gtk.GestureClick.new()
+            click.set_button(1)
+            click.connect("released", lambda *_args: callback())
+            row.add_controller(click)
+        menu.append(row)
 
     def update_creation_controls(self) -> None:
         add_button = getattr(self, "add_button", None)
@@ -954,8 +985,7 @@ class NotesDialogs:
             return
         self.close_category_context_menu()
         popover = Gtk.Popover()
-        actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        self.style_notes_menu(popover, actions)
+        actions = self.build_notes_context_menu(popover)
         popover.set_position(Gtk.PositionType.BOTTOM)
         popover.connect("closed", self.on_category_context_menu_closed)
         for action, label_key in (
@@ -963,17 +993,13 @@ class NotesDialogs:
             ("duplicate", "notes_category_duplicate"),
             ("delete", "notes_category_delete"),
         ):
-            item = Gtk.Button(label=self.translate(label_key))
-            item.set_halign(Gtk.Align.FILL)
-            if action == "delete":
-                item.add_css_class("destructive-action")
-            item.set_sensitive(not self.store.read_only and not self.store.encryption_locked)
-            item.connect(
-                "clicked",
-                lambda _button, selected_action=action, name=category, scope=server_id:
+            self.append_notes_context_menu_item(
+                actions,
+                self.translate(label_key),
+                lambda selected_action=action, name=category, scope=server_id:
                     self.on_category_context_action(selected_action, name, scope),
+                enabled=not self.store.read_only and not self.store.encryption_locked,
             )
-            actions.append(item)
         popover.set_child(actions)
         popover.set_parent(button)
         self.category_context_popover = popover
@@ -1078,8 +1104,7 @@ class NotesDialogs:
     def show_note_context_menu(self, row: Gtk.ListBoxRow) -> None:
         self.close_note_context_menu()
         popover = Gtk.Popover()
-        actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        self.style_notes_menu(popover, actions)
+        actions = self.build_notes_context_menu(popover)
         popover.set_position(Gtk.PositionType.BOTTOM)
         popover.connect("closed", self.on_note_context_menu_closed)
         for action, label_key in (
@@ -1089,20 +1114,16 @@ class NotesDialogs:
             ("properties", "notes_properties"),
             ("delete", "notes_delete"),
         ):
-            button = Gtk.Button(label=self.translate(label_key))
-            button.set_halign(Gtk.Align.FILL)
-            if action == "delete":
-                button.add_css_class("destructive-action")
-            button.connect(
-                "clicked",
-                lambda _button, selected_action=action, note_id=row.note_id:
+            self.append_notes_context_menu_item(
+                actions,
+                self.translate(label_key),
+                lambda selected_action=action, note_id=row.note_id:
                     self.on_note_context_action(selected_action, note_id),
+                enabled=(
+                    not self.store.encryption_locked
+                    and (action == "properties" or not self.store.read_only)
+                ),
             )
-            button.set_sensitive(
-                not self.store.encryption_locked
-                and (action == "properties" or not self.store.read_only),
-            )
-            actions.append(button)
         popover.set_child(actions)
         popover.set_parent(row)
         self.notes_context_popover = popover
@@ -1205,13 +1226,11 @@ class NotesDialogs:
         details.append(grid)
         content.append(details)
         actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        actions.set_hexpand(True)
+        actions.set_halign(Gtk.Align.END)
         close_button = Gtk.Button(label=self.translate("close"))
-        close_button.set_hexpand(True)
-        close_button.set_halign(Gtk.Align.END)
-        close_button.set_margin_end(2)
         close_button.connect("clicked", lambda *_: dialog.destroy())
         actions.append(close_button)
+        configure_action_area(actions)
         content.append(actions)
         dialog.set_child(content)
         dialog.set_size_request(440, -1)
@@ -1230,18 +1249,15 @@ class NotesDialogs:
             return
         self.close_note_tab_context_menu()
         popover = Gtk.Popover()
-        actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        self.style_notes_menu(popover, actions)
+        actions = self.build_notes_context_menu(popover)
         popover.set_position(Gtk.PositionType.BOTTOM)
         popover.connect("closed", self.on_note_tab_context_menu_closed)
-        rename = Gtk.Button(label=self.translate("notes_rename"))
-        rename.set_halign(Gtk.Align.FILL)
-        rename.set_sensitive(not self.store.read_only and not self.store.encryption_locked)
-        rename.connect(
-            "clicked",
-            lambda *_args, selected_key=key: self.on_note_tab_rename_action(selected_key),
+        self.append_notes_context_menu_item(
+            actions,
+            self.translate("notes_rename"),
+            lambda selected_key=key: self.on_note_tab_rename_action(selected_key),
+            enabled=not self.store.read_only and not self.store.encryption_locked,
         )
-        actions.append(rename)
         popover.set_child(actions)
         popover.set_parent(tab.container_widget)
         self.tab_context_popover = popover
@@ -1270,8 +1286,12 @@ class NotesDialogs:
         dialog = Gtk.Dialog(
             title=self.translate("notes_rename"), transient_for=self.window, modal=True
         )
-        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.translate("save"), Gtk.ResponseType.OK)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("save"), Gtk.ResponseType.OK, last=True,
+        )
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
         content.set_margin_top(12)
@@ -2023,8 +2043,12 @@ class NotesDialogs:
             title=self.translate(title_key), transient_for=self.window, modal=True
         )
         dialog.set_default_size(360, -1)
-        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.translate("save"), Gtk.ResponseType.OK)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("save"), Gtk.ResponseType.OK, last=True,
+        )
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
         for side in ("top", "bottom", "start", "end"):
@@ -2191,6 +2215,7 @@ class NotesDialogs:
             "clicked", self.on_export_protection_continue,
         )
         actions.append(self.export_continue_button)
+        configure_action_area(actions)
         self.export_plain_choice.connect(
             "toggled", self.on_export_protection_choice_changed,
         )
@@ -2373,8 +2398,12 @@ class NotesDialogs:
         entry = Gtk.PasswordEntry()
         entry.set_show_peek_icon(True)
         content.append(entry)
-        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.translate("continue"), Gtk.ResponseType.ACCEPT)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("continue"), Gtk.ResponseType.ACCEPT, last=True,
+        )
 
         def response(source: Gtk.Dialog, result: int) -> None:
             password = entry.get_text() if result == Gtk.ResponseType.ACCEPT else None

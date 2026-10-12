@@ -1184,8 +1184,7 @@ class SidebarMixin:
         workspace_id: str | None = None,
     ) -> None:
         dialog = Gtk.Dialog(title=title, transient_for=self, modal=True)
-        dialog.add_button(self.t("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.t("save"), Gtk.ResponseType.OK)
+        self.add_dialog_action_buttons(dialog, self.t("save"))
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
         content.set_spacing(12)

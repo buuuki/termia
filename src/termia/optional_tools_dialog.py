@@ -11,6 +11,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
+from .dialog_actions import add_dialog_action_button
 from .stores import ConnectionStore, ReadOnlyStoreError
 
 
@@ -35,8 +36,12 @@ class OptionalToolsDialog:
         )
         dialog.set_resizable(False)
         dialog.set_default_size(420, -1)
-        dialog.add_button(self.translate("cancel"), Gtk.ResponseType.CANCEL)
-        save = dialog.add_button(self.translate("save"), Gtk.ResponseType.OK)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        save = add_dialog_action_button(
+            dialog, self.translate("save"), Gtk.ResponseType.OK, last=True,
+        )
         save.set_sensitive(not self.store.read_only and not self.store.encryption_locked)
 
         content = dialog.get_content_area()

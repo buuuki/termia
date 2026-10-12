@@ -192,8 +192,11 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.configure_write_controls = MagicMock()
         dialog.set_editor_enabled = MagicMock()
         boxes = []
+        buttons = [MagicMock() for _ in range(7)]
 
         with patch("termia.notes_dialogs.Gtk") as gtk:
+            gtk.Button.side_effect = buttons
+
             def make_box(**_kwargs):
                 box = MagicMock()
                 boxes.append(box)
@@ -206,6 +209,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         gtk.HeaderBar.return_value.pack_start.assert_called_once_with(boxes[0])
         self.assertEqual(boxes[0].append.call_args_list[1], call(dialog.add_button))
         self.assertEqual(boxes[0].append.call_args_list[2], call(dialog.import_export_menu_button))
+        buttons[1].add_css_class.assert_not_called()
+        buttons[4].add_css_class.assert_not_called()
 
     def test_category_button_is_the_only_creation_control_above_search(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -249,21 +254,49 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.translate = lambda key: key
         dialog.category_context_popover = None
         button = MagicMock()
-        actions = [MagicMock() for _ in range(3)]
+        dialog.append_notes_context_menu_item = MagicMock()
 
         with patch("termia.notes_dialogs.Gtk") as gtk:
-            gtk.Button.side_effect = actions
             dialog.show_category_context_menu("Ops", button)
 
         self.assertEqual(
-            [call.kwargs["label"] for call in gtk.Button.call_args_list],
+            [call.args[1] for call in dialog.append_notes_context_menu_item.call_args_list],
             ["notes_category_rename", "notes_category_duplicate", "notes_category_delete"],
         )
         gtk.Popover.return_value.set_parent.assert_called_once_with(button)
         gtk.Popover.return_value.popup.assert_called_once()
-        actions[2].add_css_class.assert_any_call("destructive-action")
-        for action in actions:
-            action.set_sensitive.assert_called_once_with(True)
+        for action in dialog.append_notes_context_menu_item.call_args_list:
+            self.assertTrue(action.kwargs["enabled"])
+
+    def test_note_context_menu_uses_list_actions(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
+        dialog.translate = lambda key: key
+        dialog.close_note_context_menu = MagicMock()
+        dialog.append_notes_context_menu_item = MagicMock()
+        row = SimpleNamespace(note_id="note-id")
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            dialog.show_note_context_menu(row)
+
+        self.assertEqual(
+            [call.args[1] for call in dialog.append_notes_context_menu_item.call_args_list],
+            ["notes_edit", "notes_rename", "notes_clone", "notes_properties", "notes_delete"],
+        )
+
+    def test_note_context_menu_rows_use_gtk_selection_states(self):
+        menu = MagicMock()
+
+        with patch("termia.notes_dialogs.Gtk") as gtk:
+            NotesDialogs.append_notes_context_menu_item(
+                menu, "Delete note", lambda: None,
+            )
+
+        gtk.ListBoxRow.return_value.set_child.assert_called_once_with(gtk.Label.return_value)
+        gtk.ListBoxRow.return_value.set_focusable.assert_called_once_with(False)
+        gtk.Label.return_value.add_css_class.assert_not_called()
+        gtk.GestureClick.new.return_value.set_button.assert_called_once_with(1)
+        menu.append.assert_called_once_with(gtk.ListBoxRow.return_value)
 
     def test_category_context_menu_has_keyboard_shortcuts(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -1149,8 +1182,14 @@ class NotesDialogSignalTests(unittest.TestCase):
         gtk.Window.return_value.set_size_request.assert_called_once_with(440, -1)
         gtk.Label.return_value.set_selectable.assert_not_called()
         actions.append.assert_called_once_with(close_button)
+        actions.set_halign.assert_called_once_with(gtk.Align.END)
+        actions.set_spacing.assert_called_once_with(8)
+        actions.set_margin_top.assert_called_once_with(16)
+        actions.set_margin_bottom.assert_called_once_with(16)
+        actions.set_margin_start.assert_called_once_with(16)
+        actions.set_margin_end.assert_called_once_with(16)
         close_button.set_margin_bottom.assert_not_called()
-        close_button.set_margin_end.assert_called_once_with(2)
+        close_button.set_margin_end.assert_not_called()
         close_button.set_margin_start.assert_not_called()
         close_button.connect.assert_called_once()
 

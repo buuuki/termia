@@ -13,6 +13,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
+from .dialog_actions import add_dialog_action_button, configure_action_area
 from .known_hosts import ScannedHostKey, append_scanned_host_key
 from .sftp_backend import ParamikoBackend
 from .sftp_service import (
@@ -63,7 +64,8 @@ class SFTPWindow(Gtk.Window):
         box.append(self.progress)
         self.status = Gtk.Label(xalign=0, wrap=True)
         box.append(self.status)
-        controls = Gtk.Box(spacing=6)
+        controls = Gtk.Box()
+        configure_action_area(controls)
         box.append(controls)
         self.cancel_button = self.button("cancel", self.cancel, controls)
         self.reconnect_button = self.button("sftp_reconnect", self.connect_backend, controls)
@@ -225,8 +227,10 @@ class SFTPWindow(Gtk.Window):
     def choose_local(self, directory, callback):
         action = Gtk.FileChooserAction.SELECT_FOLDER if directory else Gtk.FileChooserAction.OPEN
         dialog = Gtk.FileChooserDialog(title=self.t("sftp_select"), transient_for=self, modal=True, action=action)
-        dialog.add_button(self.t("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.t("sftp_select"), Gtk.ResponseType.OK)
+        add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        add_dialog_action_button(
+            dialog, self.t("sftp_select"), Gtk.ResponseType.OK, last=True,
+        )
         dialog.set_select_multiple(not directory)
         self.dialogs.add(dialog)
         def response(current, result):
@@ -251,8 +255,10 @@ class SFTPWindow(Gtk.Window):
 
     def dialog(self, message, callback, entry=None):
         dialog = Gtk.Dialog(transient_for=self, modal=True, title="SFTP")
-        dialog.add_button(self.t("cancel"), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self.t("sftp_continue"), Gtk.ResponseType.OK)
+        add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        add_dialog_action_button(
+            dialog, self.t("sftp_continue"), Gtk.ResponseType.OK, last=True,
+        )
         content = dialog.get_content_area()
         content.append(Gtk.Label(label=message, wrap=True, selectable=True))
         if entry is not None:

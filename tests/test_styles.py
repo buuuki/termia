@@ -11,7 +11,7 @@ from termia.styles import build_application_css
 
 class SplitSeparatorStyleTests(unittest.TestCase):
     def test_visual_line_is_independent_from_the_drag_handle(self) -> None:
-        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+        css = build_application_css("#202020", "#008712", 1).decode()
 
         self.assertIn(".termia-split-pane.horizontal > separator", css)
         self.assertIn("min-width: 5px", css)
@@ -28,7 +28,7 @@ class SplitSeparatorStyleTests(unittest.TestCase):
         )
 
     def test_configured_thickness_expands_the_handle_when_needed(self) -> None:
-        css = build_application_css("#202020", "#202020", "#008712", 8).decode()
+        css = build_application_css("#202020", "#008712", 8).decode()
 
         self.assertIn("min-width: 8px", css)
         self.assertIn("min-height: 8px", css)
@@ -40,10 +40,10 @@ class SplitSeparatorStyleTests(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            provider.load_from_data(build_application_css("#202020", "#202020", "#008712", 1))
+            provider.load_from_data(build_application_css("#202020", "#008712", 1))
 
     def test_notes_tab_scrollbar_is_compact_and_translucent(self) -> None:
-        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+        css = build_application_css("#202020", "#008712", 1).decode()
 
         self.assertIn(
             ".termia-notes-tab-scroller scrollbar.horizontal { min-height: 5px; margin: 0 2px; padding: 0; }",
@@ -61,7 +61,7 @@ class SplitSeparatorStyleTests(unittest.TestCase):
         )
 
     def test_notes_editor_has_theme_aware_background_and_border(self) -> None:
-        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+        css = build_application_css("#202020", "#008712", 1).decode()
 
         self.assertIn(
             ".termia-notes-editor { border: 1px solid @borders; border-radius: 8px; "
@@ -74,26 +74,8 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             css,
         )
 
-    def test_note_properties_inverts_the_outer_and_inner_surfaces(self) -> None:
-        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
-
-        self.assertIn(
-            "window.termia-note-properties { background-color: @termia_menu_bg; }",
-            css,
-        )
-        self.assertIn(
-            "window.termia-note-properties headerbar { background: @termia_menu_bg; "
-            "background-color: @termia_menu_bg; background-image: none; box-shadow: none; }",
-            css,
-        )
-        self.assertIn(
-            ".termia-note-properties-content { background-color: @theme_bg_color; "
-            "background-image: none; border-radius: 8px; padding: 8px 12px; }",
-            css,
-        )
-
-    def test_system_theme_leaves_menu_and_properties_surfaces_to_gtk(self) -> None:
-        css = build_application_css(None, "#202020", "#008712", 1).decode()
+    def test_application_modes_leave_menu_and_properties_surfaces_to_gtk(self) -> None:
+        css = build_application_css("#202020", "#008712", 1).decode()
 
         self.assertNotIn("termia_menu_bg", css)
         self.assertNotIn("termia-menu-popover > contents", css)
@@ -101,14 +83,18 @@ class SplitSeparatorStyleTests(unittest.TestCase):
         self.assertNotIn("window.termia-note-properties", css)
 
     def test_only_active_note_tab_gets_thin_full_width_blue_underline(self) -> None:
-        css = build_application_css("#202020", "#202020", "#008712", 1).decode()
+        css = build_application_css("#202020", "#008712", 1).decode()
 
         self.assertIn(
             ".termia-note-tab { border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; }",
             css,
         )
         self.assertIn(
-            ".termia-note-tab.active { border-bottom-color: #0066cc; }",
+            ".termia-note-tab.active { border-bottom-color: @theme_selected_bg_color; }",
+            css,
+        )
+        self.assertIn(
+            ".termia-required-marker { color: @error_color; font-size: 1.2em; font-weight: 700; }",
             css,
         )
 

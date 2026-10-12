@@ -429,6 +429,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 ### Application Appearance and Themes
 
 - Configured application colors and theme styling must remain consistent after UI changes.
+- System follows GNOME's active appearance, while Light and Dark request the
+  corresponding GTK variant. None of these built-in modes may impose a
+  Termia-specific menu, dialog, button, text, selection, or error color.
 - Header bar, main menu, configuration menu, statistics menu, popovers, sidebars, tabs, buttons, selected rows, warning text, and dialogs must remain readable in light, dark, system, and any custom app themes.
 - Tab colors, borders, spacing, close button contrast, selected tab state, and hover/active states must remain visually clear.
 - Context menus and popovers must use readable foreground/background colors and must not inherit terminal colors.

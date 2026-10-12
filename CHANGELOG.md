@@ -13,6 +13,43 @@
 
 ### Changed
 
+- Let built-in System, Light, and Dark appearance inherit GTK colors for
+  menus, dialogs, buttons, text, selection, and error feedback. Keep only
+  Termia layout rules and terminal-specific colors (`#302`).
+
+- Render note, category, and tab context actions as standard GTK menu rows
+  rather than custom framed buttons, with a uniform GTK foreground and no
+  unintended initial focus outline (`#302`).
+
+- Use shared eight-pixel spacing and sixteen-pixel insets around dialog action
+  areas through the shared dialog-actions helper, including Save workspace
+  (`#302`).
+
+- Reuse the shared action-area layout in the independent Notes workspace
+  footer (`#302`).
+
+- Apply the shared dialog action layout to note renaming, category editing, and
+  password prompts (`#302`).
+
+- Apply the shared action layout to SFTP file selection, prompts, confirmations,
+  and the Cancel/Reconnect row (`#302`).
+
+- Apply the shared dialog action layout to Connection History and both
+  Statistics dialogs (`#302`).
+
+- Apply the shared action-area spacing and insets to the master-password
+  unlock panel, note properties and export-protection windows, and update
+  window (`#302`).
+
+- Use standard GTK styling for the Clear history action instead of the
+  destructive-action emphasis (`#302`).
+
+- Reduce the bottom inset below the connection-history list while preserving
+  the shared dialog action layout (`#302`).
+
+- Apply the shared dialog action layout to the encryption-activation and
+  update-install confirmation dialogs (`#302`).
+
 - Replace the Personal/Servers selector and server dropdown with a hierarchical
   notes tree: Personal categories, then servers with notes and their categories.
   Keep categories scoped to their owner, omit empty Uncategorized groups, and
