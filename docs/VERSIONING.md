@@ -43,6 +43,10 @@ Before `1.0.0`:
 Alpha, beta, and release-candidate versions are prereleases. GitHub releases
 for them must be marked as prereleases.
 
+A release candidate is optional. A beta may become the stable release directly
+once it meets the release criteria. Publish an `rc` when an additional round
+of public validation would be useful.
+
 Version numbers are updated when preparing a release, not in every feature or
 bug-fix pull request. The release version must describe all changes accumulated
 since the previous release.
@@ -67,6 +71,72 @@ then create the next `release/<next-version>-dev` branch from the updated
 For the current cycle, `0.6.0-beta.3` is published and
 `release/0.6.0-beta.4-dev` is the active development branch. The next published
 release containing source changes from this branch must be `0.6.0-beta.4`.
+
+## Release workflow before the first stable version
+
+Until Termia publishes its first stable version, development continues on the
+current prerelease line. For example, while `0.6.0` is still in beta, publish
+successive iterations as `0.6.0-beta.4`, `0.6.0-beta.5`, and so on. Bug fixes
+and other changes intended for that release are included in the next beta
+iteration.
+
+Do not start a `0.6.1` patch line while `0.6.0` is still a prerelease. When
+`0.6.0` meets the release criteria, publish it without a prerelease suffix.
+Only then does `0.6.1` become the next patch version for maintenance.
+
+## Stable release criteria
+
+A stable release is ready for regular use on Termia's documented supported
+platforms when all of these conditions are met:
+
+- The feature scope is frozen. If application source changes during final
+  validation, publish another beta or release candidate and repeat the
+  affected checks.
+- No release-blocking issue remains open or unassessed. A release blocker is a
+  known defect that can cause data loss or corruption, expose credentials or
+  create a security risk, prevent installation, upgrade, or startup on a
+  supported platform, or make a core workflow unusable for a meaningful group
+  of users without a safe workaround. An unassessed issue with plausible
+  blocker impact remains blocking until its impact is understood.
+- The complete automated test suite passes, and the relevant manual checks in
+  [Regression Checks](REGRESSION_CHECKS.md) pass.
+- A clean installation and an upgrade from the previous release are tested on
+  every documented supported Ubuntu version. Verify that Termia launches and
+  existing user data is preserved.
+- Feedback from the prerelease cycle has been reviewed and triaged. There is no
+  minimum waiting period; the release can proceed once the criteria are met.
+- The [release consistency](#release-consistency) checks below pass for the
+  application version, Debian package, changelog, tag, GitHub release, and
+  download links.
+
+Known non-blocking issues must be documented, along with a safe workaround
+when one is available.
+
+## Patch releases after a stable version
+
+After a stable release, keep its maintenance work separate from development
+for the next feature release. For example, after publishing stable `0.6.0`:
+
+- `main` represents the latest stable release.
+- `release/0.6.1-dev` is for fixes that will be published as the next patch
+  release. It must not accumulate new features intended for `0.7.0`.
+- `release/0.7.0-dev` is for the next feature release.
+
+When `release/0.6.1-dev` is validated, merge its release-ready state into
+`main` and publish `0.6.1`. If another patch is needed, start
+`release/0.6.2-dev` from the updated `main`. Keep `release/0.7.0-dev` separate;
+do not merge the entire feature-development branch into `main` to publish a
+patch.
+
+Apply a bug fix to the newest development line first when it affects both that
+line and the stable release, then backport the fix to the patch line. If a bug
+affects only the stable release, fix it on the patch line first and carry the
+fix forward to the development line. This keeps both versions corrected while
+preserving the separate release scopes.
+
+A patch can be published directly as `0.6.1` after validation. If a public
+testing candidate is useful, publish one or more prereleases such as
+`0.6.1-beta.1` first; prereleases are optional for patch releases.
 
 ## Current beta baseline
 
