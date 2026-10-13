@@ -7,7 +7,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .workspace_layout import MAX_WORKSPACE_PANES, workspace_tab_layouts, workspace_total_pane_count
+from .workspace_layout import (
+    MAX_WORKSPACE_PANES,
+    normalized_workspace_tabs,
+    workspace_total_pane_count,
+)
 
 SESSION_SNAPSHOT_SCHEMA_VERSION = 1
 
@@ -31,18 +35,18 @@ class SessionSnapshotStore:
         tabs = payload.get("tabs")
         if workspace_total_pane_count(tabs) > MAX_WORKSPACE_PANES:
             return []
-        return [{"layout": layout} for layout in workspace_tab_layouts(tabs)]
+        return normalized_workspace_tabs(tabs)
 
     def save(self, tabs: object) -> None:
         if self.read_only:
             return
-        layouts = workspace_tab_layouts(tabs)
-        if not layouts:
+        normalized_tabs = normalized_workspace_tabs(tabs)
+        if not normalized_tabs:
             self.clear()
             return
         payload = {
             "schema_version": SESSION_SNAPSHOT_SCHEMA_VERSION,
-            "tabs": [{"layout": layout} for layout in layouts],
+            "tabs": normalized_tabs,
         }
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_name(f".{self.path.name}.tmp")
