@@ -744,6 +744,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   appears (after unlocking encrypted connections when enabled), restoring the
   tab order, saved identities, split directions, and divider positions as new
   processes. Confirm terminal output and the old processes are not restored.
+- Rename one of those tabs before closing Termia and confirm its custom title
+  appears on the matching tab after choosing `Restore session`.
 - In a fresh profile, confirm `Restore the previous session when Termia starts`
   is disabled in `General`; create and close sessions, reopen Termia, and
   confirm no restoration prompt appears. Enable it, repeat the close/reopen

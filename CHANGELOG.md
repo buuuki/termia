@@ -13,6 +13,8 @@
 
 ### Fixed
 
+- Preserve custom tab titles when saving and restoring the previous session (`#324`).
+
 - Prevent dragging a saved server onto the sidebar search field from inserting
   its internal ID as search text (`#299`).
 
