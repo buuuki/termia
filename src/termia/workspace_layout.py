@@ -63,7 +63,7 @@ def capture_workspace_tab(
     if layout is None:
         return None
     tab: dict[str, WorkspaceNode | str] = {"layout": layout}
-    if include_local_context and session.title_locked and session.title.strip():
+    if session.title_locked and session.title.strip():
         tab["title"] = session.title.strip()
     return tab
 

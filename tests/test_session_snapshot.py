@@ -25,7 +25,8 @@ class SessionSnapshotStoreTests(unittest.TestCase):
                         "connection_id": "server-1",
                         "extra_field": "discarded-field",
                         "pid": 1234,
-                    }
+                    },
+                    "title": "Project shell",
                 }
             ]
         )
@@ -38,7 +39,8 @@ class SessionSnapshotStoreTests(unittest.TestCase):
                         "type": "pane",
                         "connection_type": "server",
                         "connection_id": "server-1",
-                    }
+                    },
+                    "title": "Project shell",
                 }
             ],
         )
@@ -46,6 +48,32 @@ class SessionSnapshotStoreTests(unittest.TestCase):
         content = self.path.read_text(encoding="utf-8")
         self.assertNotIn("discarded-field", content)
         self.assertNotIn("1234", content)
+
+    def test_loads_legacy_snapshot_without_custom_title(self) -> None:
+        self.path.write_text(
+            json.dumps({
+                "schema_version": 1,
+                "tabs": [{
+                    "layout": {
+                        "type": "pane",
+                        "connection_type": "local",
+                        "connection_id": "profile-1",
+                    }
+                }],
+            }),
+            encoding="utf-8",
+        )
+
+        self.assertEqual(
+            SessionSnapshotStore(self.path).load(),
+            [{
+                "layout": {
+                    "type": "pane",
+                    "connection_type": "local",
+                    "connection_id": "profile-1",
+                }
+            }],
+        )
 
     def test_read_only_store_never_writes_or_removes_snapshot(self) -> None:
         self.path.write_text(
