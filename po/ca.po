@@ -2168,3 +2168,52 @@ msgstr "Reinicia Termia per aplicar els canvis als complements. Desactivar un co
 
 msgid "SFTP browser"
 msgstr "Explorador SFTP"
+
+msgid "Show or hide the notes toolbar"
+msgstr "Mostra o amaga la barra de notes"
+
+
+msgid "Bold"
+msgstr "Negreta"
+
+
+msgid "Italic"
+msgstr "Cursiva"
+
+
+msgid "Heading"
+msgstr "Encapçalament"
+
+
+msgid "Bullet list"
+msgstr "Llista amb vinyetes"
+
+
+msgid "Numbered list"
+msgstr "Llista numerada"
+
+
+msgid "Code block"
+msgstr "Bloc de codi"
+
+
+msgid "Editor appearance (not stored in Markdown)"
+msgstr "Aparença de l'editor (no es desa al Markdown)"
+
+msgid "Visual"
+msgstr "Visual"
+
+msgid "Markdown"
+msgstr "Markdown"
+
+msgid "Switch between visual and Markdown editing"
+msgstr "Alterna entre edició visual i Markdown"
+
+msgid "Minimize notes window"
+msgstr "Minimitza la finestra de notes"
+
+msgid "Maximize notes window"
+msgstr "Maximitza la finestra de notes"
+
+msgid "Restore notes window size"
+msgstr "Restaura la mida de la finestra de notes"

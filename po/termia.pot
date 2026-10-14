@@ -1741,6 +1741,62 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
+#: src/termia/i18n.py:notes_toolbar
+msgid "Show or hide the notes toolbar"
+msgstr ""
+
+#: src/termia/i18n.py:notes_minimize_window
+msgid "Minimize notes window"
+msgstr ""
+
+#: src/termia/i18n.py:notes_maximize_window
+msgid "Maximize notes window"
+msgstr ""
+
+#: src/termia/i18n.py:notes_restore_window
+msgid "Restore notes window size"
+msgstr ""
+
+#: src/termia/i18n.py:notes_visual_mode
+msgid "Visual"
+msgstr ""
+
+#: src/termia/i18n.py:notes_markdown_mode
+msgid "Markdown"
+msgstr ""
+
+#: src/termia/i18n.py:notes_edit_mode
+msgid "Switch between visual and Markdown editing"
+msgstr ""
+
+#: src/termia/i18n.py:notes_bold
+msgid "Bold"
+msgstr ""
+
+#: src/termia/i18n.py:notes_italic
+msgid "Italic"
+msgstr ""
+
+#: src/termia/i18n.py:notes_heading
+msgid "Heading"
+msgstr ""
+
+#: src/termia/i18n.py:notes_bullet
+msgid "Bullet list"
+msgstr ""
+
+#: src/termia/i18n.py:notes_numbered
+msgid "Numbered list"
+msgstr ""
+
+#: src/termia/i18n.py:notes_code
+msgid "Code block"
+msgstr ""
+
+#: src/termia/i18n.py:notes_editor_appearance
+msgid "Editor appearance (not stored in Markdown)"
+msgstr ""
+
 #: src/termia/i18n.py:notes_personal_scope
 msgid "Personal"
 msgstr ""

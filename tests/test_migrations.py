@@ -12,9 +12,36 @@ from termia.migrations import (
     migrate_settings_payload,
 )
 from termia.stores import ConnectionStore, SettingsStore
+from termia.models import AppSettings
 
 
 class MigrationTests(unittest.TestCase):
+    def test_notes_editor_preferences_survive_general_preferences_and_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = ConnectionStore(root / "connections.json", root / "settings.json",
+                                    root / "statistics.json", root / "instance.lock")
+            try:
+                store.update_notes_editor({"font": "Monospace", "size": 18,
+                                           "foreground": "#123456", "background": "#abcdef",
+                                           "visible": False})
+                expected = store.data.app.notes_editor.copy()
+                store.update_app_settings(AppSettings(language="es"))
+                self.assertEqual(store.data.app.notes_editor, expected)
+                self.assertEqual(SettingsStore(root / "settings.json").app.notes_editor, expected)
+            finally:
+                store.close()
+
+    def test_notes_editor_invalid_preferences_fall_back_safely(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            path.write_text(json.dumps({"app": {"notes_editor": {
+                "font": 42, "size": "huge", "foreground": "invalid", "visible": "false",
+            }}}), encoding="utf-8")
+            values = SettingsStore(path).app.notes_editor
+            self.assertEqual(values, {"font": "", "size": 12, "foreground": "",
+                                      "background": "", "visible": True, "visual": True})
+
     def test_legacy_password_shortcut_names_are_migrated(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"

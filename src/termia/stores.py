@@ -456,6 +456,16 @@ def backup_invalid_file(path: Path, read_only: bool = False) -> Path | None:
 
 def normalize_app_settings(app: AppSettings) -> AppSettings:
     app.keybindings = normalize_keybindings(app.keybindings)
+    values = app.notes_editor if isinstance(app.notes_editor, dict) else {}
+    size = values.get("size", 12)
+    app.notes_editor = {
+        "font": values.get("font") if isinstance(values.get("font"), str) else "",
+        "size": max(6, min(size, 72)) if isinstance(size, int) and not isinstance(size, bool) else 12,
+        "foreground": normalize_css_color(values.get("foreground", ""), "") if isinstance(values.get("foreground", ""), str) else "",
+        "background": normalize_css_color(values.get("background", ""), "") if isinstance(values.get("background", ""), str) else "",
+        "visible": values.get("visible") if isinstance(values.get("visible"), bool) else True,
+        "visual": values.get("visual") if isinstance(values.get("visual"), bool) else True,
+    }
     return app
 
 
@@ -1550,8 +1560,15 @@ class ConnectionStore:
             statistics_enabled=current.statistics_enabled,
             sftp_enabled=current.sftp_enabled,
             debug_enabled=app.debug_enabled,
+            notes_editor=current.notes_editor.copy(),
             keybindings=normalize_keybindings(current.keybindings),
         )
+        self.save_settings()
+
+    def update_notes_editor(self, values: dict[str, Any]) -> None:
+        self.ensure_writable()
+        candidate = replace(self.data.app, notes_editor={**self.data.app.notes_editor, **values})
+        self.data.app = normalize_app_settings(candidate)
         self.save_settings()
 
     def update_optional_tools(self, *, statistics_enabled: bool, sftp_enabled: bool) -> None:

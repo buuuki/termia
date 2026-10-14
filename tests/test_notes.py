@@ -15,7 +15,7 @@ from termia.config_io import (
 )
 from termia.models import Note, NoteCategory
 from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories
-from termia.notes_dialogs import Gdk, Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp
+from termia.notes_dialogs import Gdk, Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp, markdown_edit
 from termia.notes_io import (
     export_notes_file,
     import_notes_file,
@@ -24,9 +24,109 @@ from termia.notes_io import (
 )
 from termia.notes_presenter import NotesPresenter
 from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPasswordError
+from termia.notes_markdown import markdown_spans
 
 
 class NotesDomainTests(unittest.TestCase):
+    def test_heading_levels_replace_previous_heading(self):
+        for level in range(1, 7):
+            self.assertEqual(markdown_edit("## café", 4, 7, f"heading{level}"),
+                             (0, 7, "#" * level + " café"))
+
+    def test_visual_spans_preserve_source_and_do_not_format_code_as_markdown(self):
+        source = "# Title\n**bold** and *italic*\n```sh\n# literal **text**\n```\n"
+        spans = markdown_spans(source)
+        styles = [name for name, _, _ in spans]
+        self.assertEqual(styles.count("heading1"), 1)
+        self.assertEqual(styles.count("bold"), 1)
+        self.assertEqual(styles.count("italic"), 1)
+        code = next((start, end) for name, start, end in spans if name == "code")
+        self.assertEqual(source[code[0]:code[1]], "# literal **text**\n")
+        hidden = {index for name, start, end in spans if name == "hide" for index in range(start, end)}
+        visible = "".join(char for index, char in enumerate(source) if index not in hidden)
+        self.assertEqual(visible, "Title\nbold and italic\n# literal **text**\n\n")
+
+    def test_code_fences_preserve_embedded_backticks(self):
+        _, _, source = markdown_edit("```nested```", 0, 12, "code")
+        self.assertTrue(source.startswith("````\n"))
+        spans = markdown_spans(source)
+        code = next((left, right) for name, left, right in spans if name == "code")
+        self.assertEqual(source[code[0]:code[1]], "```nested```\n")
+
+    def test_visual_spans_keep_escaped_and_unrecognized_syntax_visible(self):
+        self.assertEqual(markdown_spans(r"\**literal** [link](example)"), [])
+        self.assertEqual(markdown_spans("### literal"), [("hide", 0, 4), ("heading3", 4, 11)])
+
+    def test_markdown_wraps_only_selected_unicode_text(self):
+        text = "Antes café después"
+        start, end, replacement = markdown_edit(text, 6, 10, "bold")
+        self.assertEqual(text[:start] + replacement + text[end:], "Antes **café** después")
+        self.assertEqual(markdown_edit("abc", 1, 1, "italic"), (1, 1, "**"))
+
+    def test_markdown_lists_apply_to_complete_selected_lines(self):
+        text = "keep\nfirst\nsecond\nlast"
+        start, end, replacement = markdown_edit(text, 7, 18, "numbered")
+        self.assertEqual(text[:start] + replacement + text[end:], "keep\n1. first\n2. second\nlast")
+        self.assertEqual(markdown_edit("text", 2, 2, "heading"), (0, 4, "# text"))
+        self.assertEqual(markdown_edit("", 0, 0, "bullet"), (0, 0, "- "))
+
+    def test_code_block_has_its_own_lines_inside_a_paragraph(self):
+        start, end, replacement = markdown_edit("before code after", 7, 11, "code")
+        self.assertEqual("before code after"[:start] + replacement + "before code after"[end:],
+                         "before \n```\ncode\n```\n after")
+        with self.assertRaises(ValueError):
+            markdown_edit("text", 0, 4, "unknown")
+
+    def test_markdown_cannot_modify_a_read_only_editor(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(read_only=True, encryption_locked=False)
+        dialog.active_editor_tab_key = "note"
+        dialog.text_view = MagicMock()
+        dialog.apply_markdown("bold")
+        dialog.text_view.get_buffer.assert_not_called()
+
+    def test_read_only_appearance_changes_do_not_write_settings(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(
+            read_only=True, encryption_locked=False,
+            data=SimpleNamespace(app=SimpleNamespace(notes_editor={"size": 12})),
+            update_notes_editor=MagicMock(),
+        )
+        dialog.apply_editor_appearance = MagicMock()
+        dialog.update_editor_appearance({"size": 18})
+        dialog.store.update_notes_editor.assert_not_called()
+        dialog.apply_editor_appearance.assert_called_once_with({"size": 18})
+
+    def test_toolbar_visibility_does_not_toggle_the_notes_sidebar(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_toolbar = MagicMock()
+        dialog.notes_list_paned = MagicMock()
+        dialog.notes_list_visible = True
+        dialog.update_editor_appearance = MagicMock()
+        button = SimpleNamespace(get_active=lambda: False)
+        dialog.on_toolbar_toggled(button)
+        dialog.editor_toolbar.set_visible.assert_called_once_with(False)
+        dialog.notes_list_paned.set_start_child.assert_not_called()
+        self.assertTrue(dialog.notes_list_visible)
+
+    def test_window_maximize_controls_follow_the_current_window_state(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.window = MagicMock()
+        dialog.notes_maximize_button = MagicMock()
+        dialog.translate = lambda key: key
+        dialog.window.is_maximized.return_value = False
+        dialog.toggle_notes_maximized()
+        dialog.window.maximize.assert_called_once_with()
+        dialog.window.unmaximize.assert_not_called()
+        dialog.update_notes_maximize_button(dialog.window)
+        dialog.notes_maximize_button.set_icon_name.assert_called_with("window-maximize-symbolic")
+        dialog.window.is_maximized.return_value = True
+        dialog.toggle_notes_maximized()
+        dialog.window.unmaximize.assert_called_once_with()
+        dialog.update_notes_maximize_button(dialog.window)
+        dialog.notes_maximize_button.set_icon_name.assert_called_with("window-restore-symbolic")
+
+
     def test_legacy_categories_migrate_to_scopes_that_use_them(self):
         notes = [
             normalize_note("personal", "Personal", "Body", "Ops"),
@@ -188,6 +288,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.scope_mode = "personal"
         dialog.translate = lambda key: key
         dialog.build_creation_controls = MagicMock()
+        dialog.build_editor_toolbar = MagicMock()
+        dialog.build_notes_window_controls = MagicMock()
         dialog.update_notes_list_toggle = MagicMock()
         dialog.update_note_detail_inset = MagicMock()
         dialog.configure_write_controls = MagicMock()
@@ -207,6 +309,9 @@ class NotesDialogSignalTests(unittest.TestCase):
             dialog.ensure_window()
 
         boxes[0].set_margin_start.assert_called_once_with(8)
+        gtk.Window.assert_called_once_with(title="notes_title", application=dialog.parent.get_application(),
+                                          transient_for=dialog.parent)
+        gtk.Window.return_value.set_modal.assert_called_once_with(False)
         gtk.HeaderBar.return_value.pack_start.assert_called_once_with(boxes[0])
         self.assertEqual(boxes[0].append.call_args_list[1], call(dialog.add_button))
         self.assertEqual(boxes[0].append.call_args_list[2], call(dialog.import_export_menu_button))

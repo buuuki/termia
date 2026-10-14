@@ -14,7 +14,8 @@ gi.require_version("Gio", "2.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Graphene", "1.0")
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gdk, Gio, GLib, Graphene, Gtk
+gi.require_version("Pango", "1.0")
+from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango
 
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .dialog_actions import add_dialog_action_button, configure_action_area
@@ -22,6 +23,7 @@ from .models import Note, NoteCategory
 from .notes import NoteError, normalized_note_categories
 from .notes_io import export_notes_file, import_notes_file
 from .notes_presenter import NoteTreeCategory, NotesPresenter
+from .notes_markdown import markdown_edit, markdown_spans
 
 
 def format_note_timestamp(value: str) -> str:
@@ -126,6 +128,7 @@ class NotesDialogs:
         window = Gtk.Window(
             title=self.translate("notes_title"),
             application=self.parent.get_application(),
+            transient_for=self.parent,
         )
         window.set_modal(False)
         window.set_default_size(1240, 660)
@@ -135,6 +138,7 @@ class NotesDialogs:
 
         header = Gtk.HeaderBar()
         header.set_show_title_buttons(True)
+        self.build_notes_window_controls(header, window)
         window.set_titlebar(header)
         header_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         # Match the sidebar's first button inside the window's content inset.
@@ -191,6 +195,7 @@ class NotesDialogs:
         list_box.connect("row-selected", self.on_note_selected)
         list_box.connect("row-activated", self.on_note_row_activated)
         self.notes_list = list_box
+        list_box.add_css_class("termia-notes-list")
         creation_controls = self.build_creation_controls()
         list_panel.append(creation_controls)
         self.search_entry = Gtk.SearchEntry()
@@ -221,7 +226,12 @@ class NotesDialogs:
         tabs_scroller.set_hexpand(True)
         tabs_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
         tabs_scroller.set_child(self.editor_tabs_bar)
-        detail_area.append(tabs_scroller)
+        tab_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        tab_row.append(tabs_scroller)
+        self.toolbar_toggle = Gtk.ToggleButton(icon_name="view-reveal-symbolic")
+        self.toolbar_toggle.set_tooltip_text(self.translate("notes_toolbar"))
+        tab_row.append(self.toolbar_toggle)
+        detail_area.append(tab_row)
         self.notes_top_row_size_group = Gtk.SizeGroup.new(Gtk.SizeGroupMode.VERTICAL)
         self.notes_top_row_size_group.add_widget(creation_controls)
         self.notes_top_row_size_group.add_widget(tabs_scroller)
@@ -256,6 +266,7 @@ class NotesDialogs:
         text_view.set_bottom_margin(12)
         text_view.get_buffer().connect("changed", self.on_editor_changed)
         self.text_view = text_view
+        self.build_editor_toolbar(editor)
         text_scroller = Gtk.ScrolledWindow()
         text_scroller.add_css_class("termia-notes-editor")
         text_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
@@ -291,6 +302,206 @@ class NotesDialogs:
         self.configure_write_controls()
         self.set_editor_enabled(False)
         self.detail_stack.set_visible_child_name("empty")
+
+    def build_notes_window_controls(self, header: Gtk.HeaderBar, window: Gtk.Window) -> None:
+        # GTK suppresses native minimize/maximize buttons for transient windows.
+        controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        self.notes_minimize_button = Gtk.Button(icon_name="window-minimize-symbolic")
+        self.notes_minimize_button.add_css_class("titlebutton")
+        self.notes_minimize_button.set_tooltip_text(self.translate("notes_minimize_window"))
+        self.notes_minimize_button.connect("clicked", lambda *_: window.minimize())
+        controls.append(self.notes_minimize_button)
+        self.notes_maximize_button = Gtk.Button(icon_name="window-maximize-symbolic")
+        self.notes_maximize_button.add_css_class("titlebutton")
+        self.notes_maximize_button.connect("clicked", lambda *_: self.toggle_notes_maximized())
+        controls.append(self.notes_maximize_button)
+        header.pack_end(controls)
+        window.connect("notify::maximized", self.update_notes_maximize_button)
+        self.update_notes_maximize_button(window)
+
+    def toggle_notes_maximized(self) -> None:
+        if self.window.is_maximized():
+            self.window.unmaximize()
+        else:
+            self.window.maximize()
+
+    def update_notes_maximize_button(self, window: Gtk.Window, *_args) -> None:
+        maximized = window.is_maximized()
+        self.notes_maximize_button.set_icon_name("window-restore-symbolic" if maximized else "window-maximize-symbolic")
+        self.notes_maximize_button.set_tooltip_text(self.translate("notes_restore_window" if maximized else "notes_maximize_window"))
+
+    def build_editor_toolbar(self, editor: Gtk.Box) -> None:
+        settings = self.store.data.app.notes_editor
+        toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        toolbar.add_css_class("termia-notes-toolbar")
+        self.visual_mode_button = Gtk.ToggleButton()
+        self.visual_mode_button.set_tooltip_text(self.translate("notes_edit_mode"))
+        self.visual_mode_button.set_active(settings.get("visual", True))
+        self.visual_mode_button.set_focus_on_click(False)
+        self.visual_mode_button.connect("toggled", self.on_editor_mode_toggled)
+        toolbar.append(self.visual_mode_button)
+        self.markdown_buttons = []
+        for action, label in (("bold", "B"), ("italic", "I"),
+                              ("bullet", "•"), ("numbered", "1."), ("code", "</>")):
+            button = Gtk.Button(label=label)
+            button.set_focus_on_click(False)
+            button.set_tooltip_text(self.translate("notes_" + action))
+            button.connect("clicked", lambda _button, name=action: self.apply_markdown(name))
+            toolbar.append(button)
+            self.markdown_buttons.append(button)
+        heading_menu = Gtk.MenuButton(label="H1–H6")
+        heading_menu.set_tooltip_text(self.translate("notes_heading"))
+        heading_popover = Gtk.Popover()
+        heading_choices = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        for level in range(1, 7):
+            button = Gtk.Button(label=f"H{level}")
+            button.set_focus_on_click(False)
+            button.set_tooltip_text(self.translate("notes_heading") + f" {level}")
+            def apply_heading(_button, value=level):
+                heading_popover.popdown()
+                self.apply_markdown(f"heading{value}")
+            button.connect("clicked", apply_heading)
+            heading_choices.append(button)
+            self.markdown_buttons.append(button)
+        heading_popover.set_child(heading_choices)
+        heading_menu.set_popover(heading_popover)
+        toolbar.append(heading_menu)
+        self.markdown_buttons.append(heading_menu)
+        toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+        font = Gtk.ComboBoxText()
+        font.set_tooltip_text(self.translate("font_size"))
+        font.append("", self.translate("theme_system"))
+        names = sorted({family.get_name() for family in self.text_view.get_pango_context().list_families()})
+        if settings.get("font") and settings["font"] not in names:
+            names.append(settings["font"])
+        for name in names:
+            font.append(name, name)
+        for cell in font.get_cells():
+            cell.set_property("ellipsize", Pango.EllipsizeMode.END)
+            cell.set_property("width-chars", 12)
+            cell.set_property("max-width-chars", 14)
+        font.set_active_id(settings.get("font", ""))
+        font.connect("changed", lambda widget: self.update_editor_appearance({"font": widget.get_active_id() or ""}))
+        toolbar.append(font)
+        size = Gtk.SpinButton.new_with_range(6, 72, 1)
+        size.set_value(settings.get("size", 12))
+        size.set_width_chars(3)
+        size.set_tooltip_text(self.translate("font_size"))
+        size.connect("value-changed", lambda widget: self.update_editor_appearance({"size": widget.get_value_as_int()}))
+        toolbar.append(size)
+        for key, fallback in (("foreground", "#202020"), ("background", "#ffffff")):
+            color = Gtk.ColorButton()
+            rgba = Gdk.RGBA()
+            rgba.parse(settings.get(key) or fallback)
+            color.set_rgba(rgba)
+            color.set_title(self.translate(key))
+            color.set_tooltip_text(self.translate(key) + " · " + self.translate("notes_editor_appearance"))
+            color.connect("color-set", lambda widget, name=key: self.update_editor_appearance({name: widget.get_rgba().to_string()}))
+            toolbar.append(color)
+        self.editor_toolbar = Gtk.ScrolledWindow()
+        self.editor_toolbar.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        self.editor_toolbar.set_overlay_scrolling(False)
+        self.editor_toolbar.set_propagate_natural_height(True)
+        self.editor_toolbar.set_child(toolbar)
+        editor.append(self.editor_toolbar)
+        self.toolbar_toggle.set_active(settings.get("visible", True))
+        self.editor_toolbar.set_visible(self.toolbar_toggle.get_active())
+        self.toolbar_toggle.connect("toggled", self.on_toolbar_toggled)
+        self.editor_css_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            self.text_view.get_display(), self.editor_css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+        )
+        self.apply_editor_appearance(settings)
+        self.visual_refresh_id = None
+        buffer = self.text_view.get_buffer()
+        self.visual_tags = {
+            "hide": buffer.create_tag(None, invisible=True, editable=False),
+            "bold": buffer.create_tag(None, weight=700),
+            "italic": buffer.create_tag(None, style=Pango.Style.ITALIC),
+            "code": buffer.create_tag(None, family="Monospace", foreground="#eeeeee", background="#252525"),
+        }
+        for level, scale in enumerate((2.0, 1.7, 1.5, 1.3, 1.15, 1.0), 1):
+            self.visual_tags[f"heading{level}"] = buffer.create_tag(None, weight=700, scale=scale)
+        self.refresh_visual_editor()
+
+    def on_editor_mode_toggled(self, button: Gtk.ToggleButton) -> None:
+        self.update_editor_appearance({"visual": button.get_active()})
+        self.refresh_visual_editor()
+        self.text_view.grab_focus()
+
+    def schedule_visual_refresh(self) -> None:
+        if hasattr(self, "visual_tags") and self.visual_refresh_id is None:
+            self.visual_refresh_id = GLib.idle_add(self.refresh_visual_editor)
+
+    def refresh_visual_editor(self) -> bool:
+        self.visual_refresh_id = None
+        buffer = self.text_view.get_buffer()
+        for tag in self.visual_tags.values():
+            buffer.remove_tag(tag, buffer.get_start_iter(), buffer.get_end_iter())
+        visual = self.visual_mode_button.get_active()
+        self.visual_mode_button.set_label(self.translate("notes_visual_mode" if visual else "notes_markdown_mode"))
+        if visual:
+            for style, start, end in markdown_spans(self.editor_content()):
+                buffer.apply_tag(self.visual_tags[style], buffer.get_iter_at_offset(start), buffer.get_iter_at_offset(end))
+        return GLib.SOURCE_REMOVE
+
+    def on_toolbar_toggled(self, button: Gtk.ToggleButton) -> None:
+        visible = button.get_active()
+        self.editor_toolbar.set_visible(visible)
+        self.update_editor_appearance({"visible": visible})
+
+    def update_editor_appearance(self, values: dict[str, Any]) -> None:
+        settings = {**self.store.data.app.notes_editor, **values}
+        # Read-only instances may customize their view without writing settings.
+        if not self.store.read_only and not self.store.encryption_locked:
+            self.store.update_notes_editor(values)
+            settings = self.store.data.app.notes_editor
+        else:
+            self.store.data.app.notes_editor = settings
+        self.apply_editor_appearance(settings)
+
+    def apply_editor_appearance(self, settings: dict[str, Any]) -> None:
+        font = settings.get("font", "").replace("\\", "\\\\").replace('"', '\\"')
+        rules = [f"font-size: {settings.get('size', 12)}pt;"]
+        if font:
+            rules.append(f'font-family: "{font}";')
+        if settings.get("foreground"):
+            rules.append(f"color: {settings['foreground']};")
+        css = ".termia-notes-editor textview {" + "".join(rules) + "}"
+        css += (
+            ".termia-notes-toolbar button {padding: 2px 5px; min-width: 20px; min-height: 22px;}"
+            ".termia-notes-toolbar spinbutton {min-height: 26px;}"
+            ".termia-notes-toolbar spinbutton button {padding: 2px; min-width: 14px;}"
+            ".termia-notes-list label {font-size: 0.9em;}"
+        )
+        if settings.get("background"):
+            css += ".termia-notes-editor, .termia-notes-editor textview, .termia-notes-editor textview text {background-color: " + settings["background"] + ";}"
+        self.editor_css_provider.load_from_data(css.encode())
+
+    def apply_markdown(self, action: str) -> None:
+        if self.active_editor_tab_key is None or self.store.read_only or self.store.encryption_locked:
+            return
+        buffer = self.text_view.get_buffer()
+        selection = buffer.get_selection_bounds()
+        if selection:
+            start, end = (iterator.get_offset() for iterator in selection)
+        else:
+            start = end = buffer.get_iter_at_mark(buffer.get_insert()).get_offset()
+        left, right, text = markdown_edit(self.editor_content(), start, end, action)
+        buffer.begin_user_action()
+        try:
+            buffer.delete(buffer.get_iter_at_offset(left), buffer.get_iter_at_offset(right))
+            buffer.insert(buffer.get_iter_at_offset(left), text)
+            if start == end:
+                offset = left + (2 if action == "bold" else 1 if action == "italic" else len(text))
+                if action == "code":
+                    offset = left + text.index("\n", len(text) - len(text.lstrip("\n"))) + 1
+                buffer.place_cursor(buffer.get_iter_at_offset(offset))
+            else:
+                buffer.select_range(buffer.get_iter_at_offset(left), buffer.get_iter_at_offset(left + len(text)))
+        finally:
+            buffer.end_user_action()
+        self.text_view.grab_focus()
 
     def set_notes_scope(self, mode: str, server_id: str | None = None) -> bool:
         if mode not in ("personal", "server"):
@@ -1884,6 +2095,8 @@ class NotesDialogs:
 
     def set_editor_enabled(self, enabled: bool) -> None:
         writable = enabled and not self.store.read_only and not self.store.encryption_locked
+        for button in getattr(self, "markdown_buttons", ()):
+            button.set_sensitive(writable)
         self.text_view.set_sensitive(enabled)
         self.text_view.set_editable(writable)
         self.text_view.set_cursor_visible(writable)
@@ -1900,6 +2113,7 @@ class NotesDialogs:
         self.text_view.grab_focus()
 
     def on_editor_changed(self, *_args) -> None:
+        self.schedule_visual_refresh()
         if self.loading_editor:
             return
         self.editor_dirty = True

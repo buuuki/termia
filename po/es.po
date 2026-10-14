@@ -2168,3 +2168,52 @@ msgstr "Reinicia Termia para aplicar los cambios en los complementos. Desactivar
 
 msgid "SFTP browser"
 msgstr "Explorador SFTP"
+
+msgid "Show or hide the notes toolbar"
+msgstr "Mostrar u ocultar la barra de notas"
+
+
+msgid "Bold"
+msgstr "Negrita"
+
+
+msgid "Italic"
+msgstr "Cursiva"
+
+
+msgid "Heading"
+msgstr "Encabezado"
+
+
+msgid "Bullet list"
+msgstr "Lista con viñetas"
+
+
+msgid "Numbered list"
+msgstr "Lista numerada"
+
+
+msgid "Code block"
+msgstr "Bloque de código"
+
+
+msgid "Editor appearance (not stored in Markdown)"
+msgstr "Apariencia del editor (no se guarda en Markdown)"
+
+msgid "Visual"
+msgstr "Visual"
+
+msgid "Markdown"
+msgstr "Markdown"
+
+msgid "Switch between visual and Markdown editing"
+msgstr "Alternar entre edición visual y Markdown"
+
+msgid "Minimize notes window"
+msgstr "Minimizar la ventana de notas"
+
+msgid "Maximize notes window"
+msgstr "Maximizar la ventana de notas"
+
+msgid "Restore notes window size"
+msgstr "Restaurar el tamaño de la ventana de notas"

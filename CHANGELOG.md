@@ -4,6 +4,12 @@
 
 ### Added
 
+- Add a hideable notes toolbar with editable Visual/Markdown modes, H1–H6,
+  styled code blocks, and persistent font, size, and color preferences. Open
+  the modeless notes window in front of its parent while retaining minimize and
+  maximize controls. Keep the compact toolbar's scrollbar clear of its buttons
+  and its visibility independent of the smaller-font notes list (`#328`).
+
 - Add a dedicated Disconnect action to the SFTP browser, keep Cancel and
   Reconnect SFTP separate, and align all three actions to the right (`#315`).
 

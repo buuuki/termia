@@ -244,6 +244,32 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Notes
 
+- The notes toolbar must sit below note tabs and remain restorable from the
+  tab-row toggle when hidden. Toolbar visibility must not move the notes list
+  or search entry. Their vertical position stays fixed independently of the editor.
+  When horizontal scrolling is needed, reserve space below the controls instead
+  of covering them. Keep toolbar controls compact and list text slightly smaller.
+- Visual/Markdown mode switching must preserve the exact Markdown source,
+  autosave state, and active note. In visual mode, recognized formatting markers
+  are hidden and protected while the text remains editable. Verify typing and
+  deletion inside formatted text and switching tabs in both modes. Code blocks
+  must show literal content with monospace text and a contrasting background.
+- H1–H6 must apply to complete paragraphs and replace an existing heading level.
+  The notes window must be transient for its parent, appear in front when opened,
+  and remain modeless so the parent is usable. It must retain minimize, maximize,
+  restore, and close controls even though GTK suppresses native minimize/maximize
+  controls for transient windows.
+- Markdown actions must affect only the active note's selection or insertion
+  point, use standard syntax, and preserve surrounding content and autosave.
+- Font, size, foreground, background, and toolbar visibility must survive
+  restart and changes to General preferences without modifying note content.
+  Read-only instances may customize appearance for the session, but must not
+  persist preferences or enable Markdown editing.
+- Test all toolbar actions on Unicode selections, empty drafts, multiple tabs,
+  and multiline selections. Hide/restore the toolbar; change appearance; restart
+  and confirm persistence. Verify keyboard navigation, narrow windows, light/dark
+  themes, encrypted storage, and notes export/import with Markdown content.
+
 - Notes and categories must persist in `notes.json`, separately from
   `connections.json`; changing connection storage mode must protect notes using
   the same selected mode and master password.
@@ -268,7 +294,7 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   tree in the sidebar. Keep it aligned with the list toggle. Both New note and
   Add category must remain usable when no categories exist.
   Search must span all categories, and there must be no category filter
-  dropdown. Align the top of search with the top of the notes writing area,
+  dropdown. Keep search at a stable vertical position when toggling the toolbar,
   and keep the same 6 px inset on both sides of the list divider at the default
   and resized sidebar widths. Hide Import/Export for server-scoped notes.
   Selecting the Servers root or expanding a category must not automatically

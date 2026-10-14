@@ -228,7 +228,17 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
 
 - `General` controls the application theme, language, confirmations, startup behavior, password shortcut behavior, and the session status bar, which starts hidden by default.
 - `Manage notes` opens a reusable modeless notes workspace. Notes are saved
-  automatically, and the editor also offers an explicit **Save** button. Opening
+  as Markdown text. A toolbar below the note tabs inserts bold, italic,
+  headings H1–H6, lists, and code blocks. The Visual/Markdown button switches
+  between editable visual formatting and Markdown source, keeping the same
+  Markdown content. Visual mode styles headings, bold, italic, and code; other
+  syntax remains visible for source editing. The notes window opens in front
+  of its parent without blocking it and retains minimize/maximize controls.
+  Its toggle beside the tabs hides or restores the compact toolbar while the
+  smaller-text notes list stays in place. Font, size, text color, background, and toolbar visibility are
+  persistent editor preferences shared by all notes; appearance is not embedded
+  in Markdown. In read-only instances, appearance changes apply for that session.
+  Notes are saved automatically, and the editor also offers an explicit **Save** button. Opening
   the window starts a new note draft, or resumes an existing draft for the same
   scope; read-only instances do not start drafts. Empty drafts are not stored;
   closing a draft with unsaved changes asks what to do. The editor's **Close tab**

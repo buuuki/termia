@@ -220,6 +220,16 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   cifrados también permite cambiar la contraseña maestra; Termia verifica la
   contraseña actual y vuelve a cifrar las conexiones y las notas.
 - `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
+  La barra bajo las pestañas inserta Markdown estándar: negrita, cursiva,
+  encabezados H1–H6, listas y bloques de código. El botón Visual/Markdown alterna
+  entre edición visual y código Markdown sin cambiar el contenido guardado.
+  El modo visual representa encabezados, negrita, cursiva y código; las demás
+  marcas siguen visibles para editarlas como Markdown. La ventana se abre delante
+  de su ventana principal sin bloquearla y conserva los controles de minimizar y
+  maximizar. El botón junto a las pestañas muestra u oculta la barra compacta;
+  la lista, con texto más pequeño, mantiene su posición. Fuente, tamaño, colores y visibilidad se recuerdan entre
+  sesiones y se comparten entre todas las notas; la apariencia no se incluye
+  en el contenido Markdown. En modo solo lectura, estos ajustes duran esa sesión.
   Las notas se guardan automáticamente en un fichero separado; también hay un
   botón **Guardar**. Al abrir la ventana se crea un borrador nuevo o se recupera
   uno pendiente del mismo contexto; en modo solo lectura no se crean borradores.
