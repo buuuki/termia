@@ -24,7 +24,7 @@ class MigrationTests(unittest.TestCase):
             try:
                 store.update_notes_editor({"font": "Monospace", "size": 18,
                                            "foreground": "#123456", "background": "#abcdef",
-                                           "visible": False})
+                                           "visible": False, "line_numbers": False})
                 expected = store.data.app.notes_editor.copy()
                 store.update_app_settings(AppSettings(language="es"))
                 self.assertEqual(store.data.app.notes_editor, expected)
@@ -37,10 +37,13 @@ class MigrationTests(unittest.TestCase):
             path = Path(directory) / "settings.json"
             path.write_text(json.dumps({"app": {"notes_editor": {
                 "font": 42, "size": "huge", "foreground": "invalid", "visible": "false",
+                "visual": False, "line_numbers": "false",
             }}}), encoding="utf-8")
             values = SettingsStore(path).app.notes_editor
-            self.assertEqual(values, {"font": "", "size": 12, "foreground": "",
-                                      "background": "", "visible": True, "visual": True})
+            self.assertEqual(values, {
+                "font": "", "size": 12, "foreground": "#ffffff",
+                "background": "#001b33", "visible": True, "line_numbers": True,
+            })
 
     def test_legacy_password_shortcut_names_are_migrated(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

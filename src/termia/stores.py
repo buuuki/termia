@@ -14,6 +14,8 @@ from uuid import uuid4
 
 from .constants import (
     APP_THEMES,
+    DEFAULT_NOTES_EDITOR_BACKGROUND,
+    DEFAULT_NOTES_EDITOR_FOREGROUND,
     DEFAULT_PROMPT_COLOR,
     DEFAULT_TERMINAL_BACKGROUND,
     DEFAULT_TERMINAL_FONT_FAMILY,
@@ -461,10 +463,14 @@ def normalize_app_settings(app: AppSettings) -> AppSettings:
     app.notes_editor = {
         "font": values.get("font") if isinstance(values.get("font"), str) else "",
         "size": max(6, min(size, 72)) if isinstance(size, int) and not isinstance(size, bool) else 12,
-        "foreground": normalize_css_color(values.get("foreground", ""), "") if isinstance(values.get("foreground", ""), str) else "",
-        "background": normalize_css_color(values.get("background", ""), "") if isinstance(values.get("background", ""), str) else "",
+        "foreground": normalize_css_color(
+            values.get("foreground", ""), DEFAULT_NOTES_EDITOR_FOREGROUND
+        ) if isinstance(values.get("foreground", ""), str) else DEFAULT_NOTES_EDITOR_FOREGROUND,
+        "background": normalize_css_color(
+            values.get("background", ""), DEFAULT_NOTES_EDITOR_BACKGROUND
+        ) if isinstance(values.get("background", ""), str) else DEFAULT_NOTES_EDITOR_BACKGROUND,
         "visible": values.get("visible") if isinstance(values.get("visible"), bool) else True,
-        "visual": values.get("visual") if isinstance(values.get("visual"), bool) else True,
+        "line_numbers": values.get("line_numbers") if isinstance(values.get("line_numbers"), bool) else True,
     }
     return app
 

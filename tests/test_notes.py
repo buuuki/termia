@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
+from gi.repository import GLib
 
 from termia.config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
@@ -15,7 +16,7 @@ from termia.config_io import (
 )
 from termia.models import Note, NoteCategory
 from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories
-from termia.notes_dialogs import Gdk, Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp, markdown_edit
+from termia.notes_dialogs import Gdk, Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp
 from termia.notes_io import (
     export_notes_file,
     import_notes_file,
@@ -24,66 +25,60 @@ from termia.notes_io import (
 )
 from termia.notes_presenter import NotesPresenter
 from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPasswordError
-from termia.notes_markdown import markdown_spans
 
 
 class NotesDomainTests(unittest.TestCase):
-    def test_heading_levels_replace_previous_heading(self):
-        for level in range(1, 7):
-            self.assertEqual(markdown_edit("## café", 4, 7, f"heading{level}"),
-                             (0, 7, "#" * level + " café"))
-
-    def test_visual_spans_preserve_source_and_do_not_format_code_as_markdown(self):
-        source = "# Title\n**bold** and *italic*\n```sh\n# literal **text**\n```\n"
-        spans = markdown_spans(source)
-        styles = [name for name, _, _ in spans]
-        self.assertEqual(styles.count("heading1"), 1)
-        self.assertEqual(styles.count("bold"), 1)
-        self.assertEqual(styles.count("italic"), 1)
-        code = next((start, end) for name, start, end in spans if name == "code")
-        self.assertEqual(source[code[0]:code[1]], "# literal **text**\n")
-        hidden = {index for name, start, end in spans if name == "hide" for index in range(start, end)}
-        visible = "".join(char for index, char in enumerate(source) if index not in hidden)
-        self.assertEqual(visible, "Title\nbold and italic\n# literal **text**\n\n")
-
-    def test_code_fences_preserve_embedded_backticks(self):
-        _, _, source = markdown_edit("```nested```", 0, 12, "code")
-        self.assertTrue(source.startswith("````\n"))
-        spans = markdown_spans(source)
-        code = next((left, right) for name, left, right in spans if name == "code")
-        self.assertEqual(source[code[0]:code[1]], "```nested```\n")
-
-    def test_visual_spans_keep_escaped_and_unrecognized_syntax_visible(self):
-        self.assertEqual(markdown_spans(r"\**literal** [link](example)"), [])
-        self.assertEqual(markdown_spans("### literal"), [("hide", 0, 4), ("heading3", 4, 11)])
-
-    def test_markdown_wraps_only_selected_unicode_text(self):
-        text = "Antes café después"
-        start, end, replacement = markdown_edit(text, 6, 10, "bold")
-        self.assertEqual(text[:start] + replacement + text[end:], "Antes **café** después")
-        self.assertEqual(markdown_edit("abc", 1, 1, "italic"), (1, 1, "**"))
-
-    def test_markdown_lists_apply_to_complete_selected_lines(self):
-        text = "keep\nfirst\nsecond\nlast"
-        start, end, replacement = markdown_edit(text, 7, 18, "numbered")
-        self.assertEqual(text[:start] + replacement + text[end:], "keep\n1. first\n2. second\nlast")
-        self.assertEqual(markdown_edit("text", 2, 2, "heading"), (0, 4, "# text"))
-        self.assertEqual(markdown_edit("", 0, 0, "bullet"), (0, 0, "- "))
-
-    def test_code_block_has_its_own_lines_inside_a_paragraph(self):
-        start, end, replacement = markdown_edit("before code after", 7, 11, "code")
-        self.assertEqual("before code after"[:start] + replacement + "before code after"[end:],
-                         "before \n```\ncode\n```\n after")
-        with self.assertRaises(ValueError):
-            markdown_edit("text", 0, 4, "unknown")
-
-    def test_markdown_cannot_modify_a_read_only_editor(self):
+    def test_focus_active_editor_waits_for_an_editable_active_tab(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(read_only=True, encryption_locked=False)
-        dialog.active_editor_tab_key = "note"
-        dialog.text_view = MagicMock()
-        dialog.apply_markdown("bold")
-        dialog.text_view.get_buffer.assert_not_called()
+        dialog.window = SimpleNamespace(
+            get_visible=lambda: True, is_active=lambda: True,
+        )
+        dialog.active_editor_tab_key = "draft"
+        dialog.text_view = SimpleNamespace(
+            get_editable=lambda: True,
+            grab_focus=MagicMock(),
+        )
+
+        dialog.window.is_active = lambda: False
+        dialog.focus_active_editor()
+        dialog.text_view.grab_focus.assert_not_called()
+
+        dialog.window.is_active = lambda: True
+        self.assertEqual(dialog.focus_active_editor(), GLib.SOURCE_REMOVE)
+        dialog.text_view.grab_focus.assert_called_once_with()
+
+        dialog.active_editor_tab_key = None
+        dialog.text_view.grab_focus.reset_mock()
+        dialog.focus_active_editor()
+        dialog.text_view.grab_focus.assert_not_called()
+
+    def test_editor_saves_plain_text_without_rewriting_markdown_punctuation(self):
+        content = "**bold **\n# literal café `code`"
+        tab = NoteEditorTab("draft", None, "Draft", "", None, "")
+        saved = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.cancel_autosave = MagicMock()
+        dialog.editor_dirty = True
+        dialog.current_note_id = None
+        dialog.editor_content = lambda: content
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.active_editor_tab_key = tab.key
+        dialog.store = SimpleNamespace(
+            add_note=lambda title, note_content, category, server_id: (
+                saved.append(note_content), SimpleNamespace(
+                    id="saved", title=title, modified_at="",
+                ),
+            )[1],
+        )
+        dialog.translate = lambda key: key
+        dialog.status_label = MagicMock()
+        dialog.modified_label = MagicMock()
+        dialog.capture_active_editor_tab = MagicMock()
+        dialog.refresh_list = MagicMock()
+        dialog.set_editor_enabled = MagicMock()
+
+        self.assertTrue(dialog.save_editor())
+        self.assertEqual(saved, [content])
 
     def test_read_only_appearance_changes_do_not_write_settings(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -96,6 +91,31 @@ class NotesDomainTests(unittest.TestCase):
         dialog.update_editor_appearance({"size": 18})
         dialog.store.update_notes_editor.assert_not_called()
         dialog.apply_editor_appearance.assert_called_once_with({"size": 18})
+
+    def test_line_number_toggle_attaches_gutter_and_persists_visibility(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.text_view = MagicMock()
+        dialog.line_number_gutter = MagicMock()
+        dialog.update_editor_appearance = MagicMock()
+        button = SimpleNamespace(get_active=lambda: False)
+
+        dialog.on_line_numbers_toggled(button)
+
+        dialog.text_view.set_gutter.assert_called_once_with(
+            Gtk.TextWindowType.LEFT, None,
+        )
+        dialog.update_editor_appearance.assert_called_once_with({"line_numbers": False})
+
+        dialog.text_view.set_gutter.reset_mock()
+        dialog.update_editor_appearance.reset_mock()
+        button.get_active = lambda: True
+
+        dialog.on_line_numbers_toggled(button)
+
+        dialog.text_view.set_gutter.assert_called_once_with(
+            Gtk.TextWindowType.LEFT, dialog.line_number_gutter,
+        )
+        dialog.update_editor_appearance.assert_called_once_with({"line_numbers": True})
 
     def test_toolbar_visibility_does_not_toggle_the_notes_sidebar(self):
         dialog = NotesDialogs.__new__(NotesDialogs)

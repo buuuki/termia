@@ -221,17 +221,18 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   xifrats també permet canviar la contrasenya mestra; Termia verifica la
   contrasenya actual i torna a xifrar les connexions i les notes.
 - `Gestiona les notes` obre una finestra reutilitzable que no bloqueja els
-  terminals. Les notes es desen automàticament en un fitxer separat; també hi
-  ha una barra sota les pestanyes per inserir Markdown estàndard: negreta,
-  cursiva, encapçalaments H1–H6, llistes i blocs de codi. El botó Visual/Markdown
-  alterna entre edició visual i codi Markdown sense canviar el contingut desat.
-  El mode visual representa encapçalaments, negreta, cursiva i codi; les altres
-  marques continuen visibles per editar-les com a Markdown. La finestra s'obre
-  davant de la principal sense bloquejar-la i conserva els controls de minimitzar
-  i maximitzar. El botó al costat de les pestanyes mostra o amaga la barra compacta;
-  la llista, amb text més petit, manté la posició. Font, mida, colors i visibilitat es
-  recorden entre sessions i es comparteixen entre totes les notes; l'aparença
-  no s'inclou al Markdown. En mode de només lectura, els ajustos duren aquella sessió.
+  terminals. Les notes es desen com a text pla; caràcters com `**`, `#` i les
+  cometes inverses es conserven literalment. La barra només ofereix controls
+  d'aparença: lletra, mida, color del text, fons i un commutador persistent per
+  a la numeració de línies, activada per defecte. L'editor fa servir el fons
+  `#001B33` i text blanc; el marge mostra números `#0065BF` sobre `#000D1A`.
+  Aquests ajustos i la visibilitat de la barra es desen com a preferències
+  independents del contingut.
+  La finestra s'obre davant de la principal sense bloquejar-la i conserva els
+  controls de minimitzar i maximitzar. El botó al costat de les pestanyes mostra
+  o amaga la barra compacta;
+  la llista, amb text més petit, manté la posició. En mode de només lectura, els
+  ajustos duren aquella sessió.
   També hi ha un botó **Desa**. En obrir la finestra es crea un esborrany nou o es reprèn
   un de pendent del mateix context; en mode de només lectura no es creen esborranys.
   Els esborranys buits no s'emmagatzemen; en tancar-ne un amb canvis sense desar,

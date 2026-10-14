@@ -15,15 +15,21 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Graphene", "1.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
-from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango
+gi.require_version("PangoCairo", "1.0")
+from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango, PangoCairo
 
+from .constants import (
+    DEFAULT_NOTES_EDITOR_BACKGROUND,
+    DEFAULT_NOTES_EDITOR_FOREGROUND,
+    NOTES_LINE_NUMBER_BACKGROUND,
+    NOTES_LINE_NUMBER_FOREGROUND,
+)
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .dialog_actions import add_dialog_action_button, configure_action_area
 from .models import Note, NoteCategory
 from .notes import NoteError, normalized_note_categories
 from .notes_io import export_notes_file, import_notes_file
 from .notes_presenter import NoteTreeCategory, NotesPresenter
-from .notes_markdown import markdown_edit, markdown_spans
 
 
 def format_note_timestamp(value: str) -> str:
@@ -121,6 +127,23 @@ class NotesDialogs:
                 self.text_view.grab_focus()
             else:
                 self.create_note()
+        if opening_window:
+            GLib.idle_add(self.focus_active_editor)
+
+    def focus_active_editor(self) -> bool:
+        if (
+            self.window is not None
+            and self.window.get_visible()
+            and self.window.is_active()
+            and self.active_editor_tab_key is not None
+            and self.text_view.get_editable()
+        ):
+            self.text_view.grab_focus()
+        return GLib.SOURCE_REMOVE
+
+    def on_notes_window_active(self, window: Gtk.Window, *_args) -> None:
+        if window.is_active():
+            GLib.idle_add(self.focus_active_editor)
 
     def ensure_window(self) -> None:
         if self.window is not None:
@@ -134,6 +157,7 @@ class NotesDialogs:
         window.set_default_size(1240, 660)
         window.add_css_class("termia-notes-window")
         window.connect("close-request", self.on_close_request)
+        window.connect("notify::is-active", self.on_notes_window_active)
         self.window = window
 
         header = Gtk.HeaderBar()
@@ -264,7 +288,8 @@ class NotesDialogs:
         text_view.set_right_margin(12)
         text_view.set_top_margin(12)
         text_view.set_bottom_margin(12)
-        text_view.get_buffer().connect("changed", self.on_editor_changed)
+        buffer = text_view.get_buffer()
+        buffer.connect("changed", self.on_editor_changed)
         self.text_view = text_view
         self.build_editor_toolbar(editor)
         text_scroller = Gtk.ScrolledWindow()
@@ -272,6 +297,12 @@ class NotesDialogs:
         text_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         text_scroller.set_vexpand(True)
         text_scroller.set_child(text_view)
+        text_scroller.get_vadjustment().connect(
+            "value-changed", self.queue_line_number_redraw,
+        )
+        text_scroller.get_vadjustment().connect(
+            "changed", self.queue_line_number_redraw,
+        )
         editor.append(text_scroller)
 
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -308,11 +339,13 @@ class NotesDialogs:
         controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.notes_minimize_button = Gtk.Button(icon_name="window-minimize-symbolic")
         self.notes_minimize_button.add_css_class("titlebutton")
+        self.notes_minimize_button.add_css_class("circular")
         self.notes_minimize_button.set_tooltip_text(self.translate("notes_minimize_window"))
         self.notes_minimize_button.connect("clicked", lambda *_: window.minimize())
         controls.append(self.notes_minimize_button)
         self.notes_maximize_button = Gtk.Button(icon_name="window-maximize-symbolic")
         self.notes_maximize_button.add_css_class("titlebutton")
+        self.notes_maximize_button.add_css_class("circular")
         self.notes_maximize_button.connect("clicked", lambda *_: self.toggle_notes_maximized())
         controls.append(self.notes_maximize_button)
         header.pack_end(controls)
@@ -334,40 +367,18 @@ class NotesDialogs:
         settings = self.store.data.app.notes_editor
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         toolbar.add_css_class("termia-notes-toolbar")
-        self.visual_mode_button = Gtk.ToggleButton()
-        self.visual_mode_button.set_tooltip_text(self.translate("notes_edit_mode"))
-        self.visual_mode_button.set_active(settings.get("visual", True))
-        self.visual_mode_button.set_focus_on_click(False)
-        self.visual_mode_button.connect("toggled", self.on_editor_mode_toggled)
-        toolbar.append(self.visual_mode_button)
-        self.markdown_buttons = []
-        for action, label in (("bold", "B"), ("italic", "I"),
-                              ("bullet", "•"), ("numbered", "1."), ("code", "</>")):
-            button = Gtk.Button(label=label)
-            button.set_focus_on_click(False)
-            button.set_tooltip_text(self.translate("notes_" + action))
-            button.connect("clicked", lambda _button, name=action: self.apply_markdown(name))
-            toolbar.append(button)
-            self.markdown_buttons.append(button)
-        heading_menu = Gtk.MenuButton(label="H1–H6")
-        heading_menu.set_tooltip_text(self.translate("notes_heading"))
-        heading_popover = Gtk.Popover()
-        heading_choices = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        for level in range(1, 7):
-            button = Gtk.Button(label=f"H{level}")
-            button.set_focus_on_click(False)
-            button.set_tooltip_text(self.translate("notes_heading") + f" {level}")
-            def apply_heading(_button, value=level):
-                heading_popover.popdown()
-                self.apply_markdown(f"heading{value}")
-            button.connect("clicked", apply_heading)
-            heading_choices.append(button)
-            self.markdown_buttons.append(button)
-        heading_popover.set_child(heading_choices)
-        heading_menu.set_popover(heading_popover)
-        toolbar.append(heading_menu)
-        self.markdown_buttons.append(heading_menu)
-        toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+        self.line_numbers_button = Gtk.ToggleButton(label="123")
+        self.line_numbers_button.set_focus_on_click(False)
+        self.line_numbers_button.set_tooltip_text(self.translate("notes_line_numbers"))
+        self.line_numbers_button.set_active(settings.get("line_numbers", True))
+        self.line_numbers_button.connect("toggled", self.on_line_numbers_toggled)
+        toolbar.append(self.line_numbers_button)
+        self.line_number_gutter = Gtk.DrawingArea()
+        self.line_number_gutter.add_css_class("termia-notes-line-number-gutter")
+        self.line_number_gutter.set_draw_func(self.draw_line_numbers)
+        self.update_line_number_gutter_width()
+        if settings.get("line_numbers", True):
+            self.text_view.set_gutter(Gtk.TextWindowType.LEFT, self.line_number_gutter)
         font = Gtk.ComboBoxText()
         font.set_tooltip_text(self.translate("font_size"))
         font.append("", self.translate("theme_system"))
@@ -389,7 +400,10 @@ class NotesDialogs:
         size.set_tooltip_text(self.translate("font_size"))
         size.connect("value-changed", lambda widget: self.update_editor_appearance({"size": widget.get_value_as_int()}))
         toolbar.append(size)
-        for key, fallback in (("foreground", "#202020"), ("background", "#ffffff")):
+        for key, fallback in (
+            ("foreground", DEFAULT_NOTES_EDITOR_FOREGROUND),
+            ("background", DEFAULT_NOTES_EDITOR_BACKGROUND),
+        ):
             color = Gtk.ColorButton()
             rgba = Gdk.RGBA()
             rgba.parse(settings.get(key) or fallback)
@@ -412,38 +426,69 @@ class NotesDialogs:
             self.text_view.get_display(), self.editor_css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
         )
         self.apply_editor_appearance(settings)
-        self.visual_refresh_id = None
-        buffer = self.text_view.get_buffer()
-        self.visual_tags = {
-            "hide": buffer.create_tag(None, invisible=True, editable=False),
-            "bold": buffer.create_tag(None, weight=700),
-            "italic": buffer.create_tag(None, style=Pango.Style.ITALIC),
-            "code": buffer.create_tag(None, family="Monospace", foreground="#eeeeee", background="#252525"),
-        }
-        for level, scale in enumerate((2.0, 1.7, 1.5, 1.3, 1.15, 1.0), 1):
-            self.visual_tags[f"heading{level}"] = buffer.create_tag(None, weight=700, scale=scale)
-        self.refresh_visual_editor()
 
-    def on_editor_mode_toggled(self, button: Gtk.ToggleButton) -> None:
-        self.update_editor_appearance({"visual": button.get_active()})
-        self.refresh_visual_editor()
-        self.text_view.grab_focus()
+    def on_line_numbers_toggled(self, button: Gtk.ToggleButton) -> None:
+        enabled = button.get_active()
+        self.text_view.set_gutter(
+            Gtk.TextWindowType.LEFT,
+            self.line_number_gutter if enabled else None,
+        )
+        self.update_editor_appearance({"line_numbers": enabled})
 
-    def schedule_visual_refresh(self) -> None:
-        if hasattr(self, "visual_tags") and self.visual_refresh_id is None:
-            self.visual_refresh_id = GLib.idle_add(self.refresh_visual_editor)
+    def update_line_number_gutter_width(self) -> None:
+        if not hasattr(self, "line_number_gutter"):
+            return
+        line_count = self.text_view.get_buffer().get_line_count()
+        layout = self.line_number_gutter.create_pango_layout(str(max(1, line_count)))
+        layout.set_font_description(
+            self.text_view.get_pango_context().get_font_description(),
+        )
+        text_width, _text_height = layout.get_pixel_size()
+        width = max(36, text_width + 16)
+        self.line_number_gutter.set_content_width(width)
+        self.line_number_gutter.set_size_request(width, -1)
+        self.line_number_gutter.queue_draw()
 
-    def refresh_visual_editor(self) -> bool:
-        self.visual_refresh_id = None
-        buffer = self.text_view.get_buffer()
-        for tag in self.visual_tags.values():
-            buffer.remove_tag(tag, buffer.get_start_iter(), buffer.get_end_iter())
-        visual = self.visual_mode_button.get_active()
-        self.visual_mode_button.set_label(self.translate("notes_visual_mode" if visual else "notes_markdown_mode"))
-        if visual:
-            for style, start, end in markdown_spans(self.editor_content()):
-                buffer.apply_tag(self.visual_tags[style], buffer.get_iter_at_offset(start), buffer.get_iter_at_offset(end))
-        return GLib.SOURCE_REMOVE
+    def draw_line_numbers(
+        self, area: Gtk.DrawingArea, context, width: int, _height: int,
+    ) -> None:
+        background = Gdk.RGBA()
+        background.parse(NOTES_LINE_NUMBER_BACKGROUND)
+        context.set_source_rgba(
+            background.red, background.green, background.blue, background.alpha,
+        )
+        context.paint()
+
+        foreground = Gdk.RGBA()
+        foreground.parse(NOTES_LINE_NUMBER_FOREGROUND)
+        context.set_source_rgba(
+            foreground.red, foreground.green, foreground.blue, foreground.alpha,
+        )
+        visible = self.text_view.get_visible_rect()
+        iterator, _line_top = self.text_view.get_line_at_y(visible.y)
+        bottom = visible.y + visible.height
+        font_description = self.text_view.get_pango_context().get_font_description()
+        while iterator.get_line() < self.text_view.get_buffer().get_line_count():
+            line_y, line_height = self.text_view.get_line_yrange(iterator)
+            if line_y > bottom:
+                break
+            _window_x, window_y = self.text_view.buffer_to_window_coords(
+                Gtk.TextWindowType.LEFT, 0, line_y,
+            )
+            layout = area.create_pango_layout(str(iterator.get_line() + 1))
+            layout.set_font_description(font_description)
+            text_width, text_height = layout.get_pixel_size()
+            context.move_to(
+                width - text_width - 8,
+                window_y + max(0, (line_height - text_height) / 2),
+            )
+            PangoCairo.show_layout(context, layout)
+            if not iterator.forward_line():
+                break
+
+    def queue_line_number_redraw(self, *_args) -> None:
+        if hasattr(self, "line_number_gutter"):
+            self.line_number_gutter.queue_draw()
 
     def on_toolbar_toggled(self, button: Gtk.ToggleButton) -> None:
         visible = button.get_active()
@@ -477,31 +522,8 @@ class NotesDialogs:
         if settings.get("background"):
             css += ".termia-notes-editor, .termia-notes-editor textview, .termia-notes-editor textview text {background-color: " + settings["background"] + ";}"
         self.editor_css_provider.load_from_data(css.encode())
-
-    def apply_markdown(self, action: str) -> None:
-        if self.active_editor_tab_key is None or self.store.read_only or self.store.encryption_locked:
-            return
-        buffer = self.text_view.get_buffer()
-        selection = buffer.get_selection_bounds()
-        if selection:
-            start, end = (iterator.get_offset() for iterator in selection)
-        else:
-            start = end = buffer.get_iter_at_mark(buffer.get_insert()).get_offset()
-        left, right, text = markdown_edit(self.editor_content(), start, end, action)
-        buffer.begin_user_action()
-        try:
-            buffer.delete(buffer.get_iter_at_offset(left), buffer.get_iter_at_offset(right))
-            buffer.insert(buffer.get_iter_at_offset(left), text)
-            if start == end:
-                offset = left + (2 if action == "bold" else 1 if action == "italic" else len(text))
-                if action == "code":
-                    offset = left + text.index("\n", len(text) - len(text.lstrip("\n"))) + 1
-                buffer.place_cursor(buffer.get_iter_at_offset(offset))
-            else:
-                buffer.select_range(buffer.get_iter_at_offset(left), buffer.get_iter_at_offset(left + len(text)))
-        finally:
-            buffer.end_user_action()
-        self.text_view.grab_focus()
+        self.update_line_number_gutter_width()
+        self.queue_line_number_redraw()
 
     def set_notes_scope(self, mode: str, server_id: str | None = None) -> bool:
         if mode not in ("personal", "server"):
@@ -914,7 +936,6 @@ class NotesDialogs:
         title.set_xalign(0)
         title.set_ellipsize(3)
         title.set_hexpand(True)
-        title.add_css_class("heading")
         content.append(title)
         content.set_margin_top(4)
         content.set_margin_bottom(4)
@@ -2095,8 +2116,6 @@ class NotesDialogs:
 
     def set_editor_enabled(self, enabled: bool) -> None:
         writable = enabled and not self.store.read_only and not self.store.encryption_locked
-        for button in getattr(self, "markdown_buttons", ()):
-            button.set_sensitive(writable)
         self.text_view.set_sensitive(enabled)
         self.text_view.set_editable(writable)
         self.text_view.set_cursor_visible(writable)
@@ -2113,7 +2132,7 @@ class NotesDialogs:
         self.text_view.grab_focus()
 
     def on_editor_changed(self, *_args) -> None:
-        self.schedule_visual_refresh()
+        self.update_line_number_gutter_width()
         if self.loading_editor:
             return
         self.editor_dirty = True

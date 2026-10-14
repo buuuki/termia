@@ -249,26 +249,27 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   or search entry. Their vertical position stays fixed independently of the editor.
   When horizontal scrolling is needed, reserve space below the controls instead
   of covering them. Keep toolbar controls compact and list text slightly smaller.
-- Visual/Markdown mode switching must preserve the exact Markdown source,
-  autosave state, and active note. In visual mode, recognized formatting markers
-  are hidden and protected while the text remains editable. Verify typing and
-  deletion inside formatted text and switching tabs in both modes. Code blocks
-  must show literal content with monospace text and a contrasting background.
-- H1–H6 must apply to complete paragraphs and replace an existing heading level.
-  The notes window must be transient for its parent, appear in front when opened,
-  and remain modeless so the parent is usable. It must retain minimize, maximize,
-  restore, and close controls even though GTK suppresses native minimize/maximize
-  controls for transient windows.
-- Markdown actions must affect only the active note's selection or insertion
-  point, use standard syntax, and preserve surrounding content and autosave.
-- Font, size, foreground, background, and toolbar visibility must survive
-  restart and changes to General preferences without modifying note content.
-  Read-only instances may customize appearance for the session, but must not
-  persist preferences or enable Markdown editing.
-- Test all toolbar actions on Unicode selections, empty drafts, multiple tabs,
-  and multiline selections. Hide/restore the toolbar; change appearance; restart
-  and confirm persistence. Verify keyboard navigation, narrow windows, light/dark
-  themes, encrypted storage, and notes export/import with Markdown content.
+- Notes are plain text. Verify that typing and saving preserves Markdown-looking
+  punctuation such as `**`, `#`, and backticks, along with Unicode, spaces, and
+  line breaks. Existing note content must remain unchanged when opened and saved.
+  Opening Notes must focus the active editor after the window is presented.
+- The notes toolbar must contain only appearance controls and must not alter
+  note text. Font family, size, foreground, background, line-number visibility,
+  and toolbar visibility must remain persistent preferences across restart and
+  unrelated preference changes. The editor defaults to a white foreground on
+  `#001B33`; line numbers default on and use `#0065BF` on `#000D1A`. Existing
+  custom editor colors must remain unchanged. In read-only instances, appearance
+  changes may apply for that session but must not persist.
+  The notes window must be transient for its parent, appear in front when
+  opened, and remain modeless so the parent is usable. It must retain minimize,
+  maximize, restore, and close controls even though GTK suppresses native
+  minimize/maximize controls for transient windows; their buttons must be round
+  like GTK's close control. Note-list titles must use normal font weight. Verify
+  that line numbers align with logical lines while editing, wrapping, and
+  scrolling, and that the toggle persists. Hide/restore the toolbar, restart and
+  confirm preferences persist, and check keyboard navigation, narrow windows,
+  light/dark themes, encrypted storage, and notes export/import with punctuation
+  preserved literally.
 
 - Notes and categories must persist in `notes.json`, separately from
   `connections.json`; changing connection storage mode must protect notes using

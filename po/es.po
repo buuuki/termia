@@ -2173,41 +2173,11 @@ msgid "Show or hide the notes toolbar"
 msgstr "Mostrar u ocultar la barra de notas"
 
 
-msgid "Bold"
-msgstr "Negrita"
+msgid "Editor appearance (not stored in note text)"
+msgstr "Apariencia del editor (no se guarda en el texto de la nota)"
 
-
-msgid "Italic"
-msgstr "Cursiva"
-
-
-msgid "Heading"
-msgstr "Encabezado"
-
-
-msgid "Bullet list"
-msgstr "Lista con viñetas"
-
-
-msgid "Numbered list"
-msgstr "Lista numerada"
-
-
-msgid "Code block"
-msgstr "Bloque de código"
-
-
-msgid "Editor appearance (not stored in Markdown)"
-msgstr "Apariencia del editor (no se guarda en Markdown)"
-
-msgid "Visual"
-msgstr "Visual"
-
-msgid "Markdown"
-msgstr "Markdown"
-
-msgid "Switch between visual and Markdown editing"
-msgstr "Alternar entre edición visual y Markdown"
+msgid "Show or hide line numbers"
+msgstr "Mostrar u ocultar los números de línea"
 
 msgid "Minimize notes window"
 msgstr "Minimizar la ventana de notas"

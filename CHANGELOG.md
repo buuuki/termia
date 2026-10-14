@@ -4,8 +4,9 @@
 
 ### Added
 
-- Add a hideable notes toolbar with editable Visual/Markdown modes, H1–H6,
-  styled code blocks, and persistent font, size, and color preferences. Open
+- Add a hideable notes toolbar with persistent font, size, text color, and
+  background preferences and optional line numbers for the plain-text editor.
+  Use the requested dark editor and gutter colors. Open
   the modeless notes window in front of its parent while retaining minimize and
   maximize controls. Keep the compact toolbar's scrollbar clear of its buttons
   and its visibility independent of the smaller-font notes list (`#328`).
@@ -18,6 +19,8 @@
   fails (`#314`).
 
 ### Fixed
+
+- Focus the notes editor after the Notes window opens (`#328`).
 
 - Preserve custom tab titles when saving and restoring the previous session (`#324`).
 
@@ -32,6 +35,10 @@
   configuration (`#311`).
 
 ### Changed
+
+- Store notes as plain text and retain only appearance controls in the notes
+  toolbar. Preserve existing note content literally, including Markdown-looking
+  characters; use round GTK window controls and normal-weight note titles (`#328`).
 
 - Document separate prerelease and stable patch workflows, including the
   criteria for declaring a stable release (`#322`).
