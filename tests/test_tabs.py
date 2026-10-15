@@ -98,6 +98,8 @@ class PrivateTabDragTests(unittest.TestCase):
         self.assertEqual(self.host.reorder_dragged_tab_at_bar_x.call_count, 1)
 
     def test_real_async_stream_reorders_widgets_and_preserves_visual_order(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
         bar = Gtk.Box()
         sessions = []
         for session_id in ("first", "second", "third"):

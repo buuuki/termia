@@ -158,6 +158,8 @@ class PrivateNoteDragTests(unittest.TestCase):
                     stream.read_bytes_async.assert_not_called()
 
     def test_real_async_stream_reorders_note_widgets_and_keeps_draft_content(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
         bar = Gtk.Box()
         self.dialog.editor_tabs = {}
         for key in ("saved-one", "draft:one", "saved-two"):
