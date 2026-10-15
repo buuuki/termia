@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- Show a line number on a newly created empty note line immediately after
+  pressing Enter, and apply the dark editor background on a fresh profile
+  (`#328`).
+
 ### Added
 
 - Add a hideable notes toolbar with persistent font, size, text color, and

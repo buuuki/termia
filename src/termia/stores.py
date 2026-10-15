@@ -405,7 +405,7 @@ class SettingsStore:
     def __init__(self, path: Path, *, read_only: bool = False) -> None:
         self.path = path
         self.read_only = read_only
-        self.app = AppSettings()
+        self.app = normalize_app_settings(AppSettings())
         self.terminal = TerminalSettings()
         self.recovery_messages: list[str] = []
         self.load()

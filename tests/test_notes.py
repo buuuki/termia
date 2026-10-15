@@ -117,6 +117,39 @@ class NotesDomainTests(unittest.TestCase):
         )
         dialog.update_editor_appearance.assert_called_once_with({"line_numbers": True})
 
+    def test_line_number_draw_includes_empty_final_line(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        buffer = Gtk.TextBuffer()
+        buffer.set_text("first line\n")
+        dialog.text_view = MagicMock()
+        dialog.text_view.get_buffer.return_value = buffer
+        dialog.text_view.get_visible_rect.return_value = SimpleNamespace(y=0, height=100)
+        dialog.text_view.get_line_at_y.return_value = (buffer.get_start_iter(), 0)
+        dialog.text_view.get_line_yrange.side_effect = lambda iterator: (iterator.get_line() * 16, 16)
+        dialog.text_view.buffer_to_window_coords.side_effect = lambda _window, _x, y: (0, y)
+        area = MagicMock()
+        area.create_pango_layout.return_value.get_pixel_size.return_value = (8, 12)
+
+        with patch("termia.notes_dialogs.PangoCairo.show_layout"):
+            dialog.draw_line_numbers(area, MagicMock(), 36, 100)
+
+        self.assertEqual(
+            [call.args[0] for call in area.create_pango_layout.call_args_list],
+            ["1", "2"],
+        )
+
+    def test_editor_appearance_uses_dark_defaults_when_settings_are_empty(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_css_provider = MagicMock()
+        dialog.update_line_number_gutter_width = MagicMock()
+        dialog.queue_line_number_redraw = MagicMock()
+
+        dialog.apply_editor_appearance({"size": 12})
+
+        css = dialog.editor_css_provider.load_from_data.call_args.args[0].decode()
+        self.assertIn("color: #ffffff;", css)
+        self.assertIn("background-color: #001b33;", css)
+
     def test_toolbar_visibility_does_not_toggle_the_notes_sidebar(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.editor_toolbar = MagicMock()

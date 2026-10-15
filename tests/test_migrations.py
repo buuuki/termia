@@ -16,6 +16,16 @@ from termia.models import AppSettings
 
 
 class MigrationTests(unittest.TestCase):
+    def test_new_settings_store_initializes_notes_editor_defaults(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            values = SettingsStore(path).app.notes_editor
+
+            self.assertEqual(values["foreground"], "#ffffff")
+            self.assertEqual(values["background"], "#001b33")
+            self.assertTrue(values["line_numbers"])
+            self.assertFalse(path.exists())
+
     def test_notes_editor_preferences_survive_general_preferences_and_restart(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

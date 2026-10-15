@@ -466,16 +466,20 @@ class NotesDialogs:
         )
         visible = self.text_view.get_visible_rect()
         iterator, _line_top = self.text_view.get_line_at_y(visible.y)
+        buffer = self.text_view.get_buffer()
         bottom = visible.y + visible.height
         font_description = self.text_view.get_pango_context().get_font_description()
-        while iterator.get_line() < self.text_view.get_buffer().get_line_count():
+        for line_number in range(iterator.get_line(), buffer.get_line_count()):
+            valid, iterator = buffer.get_iter_at_line(line_number)
+            if not valid:
+                break
             line_y, line_height = self.text_view.get_line_yrange(iterator)
             if line_y > bottom:
                 break
             _window_x, window_y = self.text_view.buffer_to_window_coords(
                 Gtk.TextWindowType.LEFT, 0, line_y,
             )
-            layout = area.create_pango_layout(str(iterator.get_line() + 1))
+            layout = area.create_pango_layout(str(line_number + 1))
             layout.set_font_description(font_description)
             text_width, text_height = layout.get_pixel_size()
             context.move_to(
@@ -483,8 +487,6 @@ class NotesDialogs:
                 window_y + max(0, (line_height - text_height) / 2),
             )
             PangoCairo.show_layout(context, layout)
-            if not iterator.forward_line():
-                break
 
     def queue_line_number_redraw(self, *_args) -> None:
         if hasattr(self, "line_number_gutter"):
@@ -510,8 +512,8 @@ class NotesDialogs:
         rules = [f"font-size: {settings.get('size', 12)}pt;"]
         if font:
             rules.append(f'font-family: "{font}";')
-        if settings.get("foreground"):
-            rules.append(f"color: {settings['foreground']};")
+        foreground = settings.get("foreground") or DEFAULT_NOTES_EDITOR_FOREGROUND
+        rules.append(f"color: {foreground};")
         css = ".termia-notes-editor textview {" + "".join(rules) + "}"
         css += (
             ".termia-notes-toolbar button {padding: 2px 5px; min-width: 20px; min-height: 22px;}"
@@ -519,8 +521,8 @@ class NotesDialogs:
             ".termia-notes-toolbar spinbutton button {padding: 2px; min-width: 14px;}"
             ".termia-notes-list label {font-size: 0.9em;}"
         )
-        if settings.get("background"):
-            css += ".termia-notes-editor, .termia-notes-editor textview, .termia-notes-editor textview text {background-color: " + settings["background"] + ";}"
+        background = settings.get("background") or DEFAULT_NOTES_EDITOR_BACKGROUND
+        css += ".termia-notes-editor, .termia-notes-editor textview, .termia-notes-editor textview text {background-color: " + background + ";}"
         self.editor_css_provider.load_from_data(css.encode())
         self.update_line_number_gutter_width()
         self.queue_line_number_redraw()

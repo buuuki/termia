@@ -258,16 +258,20 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   and toolbar visibility must remain persistent preferences across restart and
   unrelated preference changes. The editor defaults to a white foreground on
   `#001B33`; line numbers default on and use `#0065BF` on `#000D1A`. Existing
-  custom editor colors must remain unchanged. In read-only instances, appearance
-  changes may apply for that session but must not persist.
+  custom editor colors must remain unchanged. Check the default colors with a
+  fresh isolated profile before any appearance setting has been saved. In
+  read-only instances, appearance changes may apply for that session but must
+  not persist.
   The notes window must be transient for its parent, appear in front when
   opened, and remain modeless so the parent is usable. It must retain minimize,
   maximize, restore, and close controls even though GTK suppresses native
   minimize/maximize controls for transient windows; their buttons must be round
   like GTK's close control. Note-list titles must use normal font weight. Verify
   that line numbers align with logical lines while editing, wrapping, and
-  scrolling, and that the toggle persists. Hide/restore the toolbar, restart and
-  confirm preferences persist, and check keyboard navigation, narrow windows,
+  scrolling; after pressing Enter, the new empty line must be numbered before
+  any text is entered. Verify that the toggle persists. Hide/restore the
+  toolbar, restart and confirm preferences persist, and check keyboard
+  navigation, narrow windows,
   light/dark themes, encrypted storage, and notes export/import with punctuation
   preserved literally.
 
