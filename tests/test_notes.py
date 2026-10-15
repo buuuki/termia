@@ -324,23 +324,18 @@ class NotesDomainTests(unittest.TestCase):
         dialog.notes_list_paned.set_start_child.assert_not_called()
         self.assertTrue(dialog.notes_list_visible)
 
-    def test_window_maximize_controls_follow_the_current_window_state(self):
+    def test_opening_notes_restores_window_before_presenting(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.window = MagicMock()
-        dialog.notes_maximize_button = MagicMock()
-        dialog.translate = lambda key: key
-        dialog.window.is_maximized.return_value = False
-        dialog.toggle_notes_maximized()
-        dialog.window.maximize.assert_called_once_with()
-        dialog.window.unmaximize.assert_not_called()
-        dialog.update_notes_maximize_button(dialog.window)
-        dialog.notes_maximize_button.set_icon_name.assert_called_with("window-maximize-symbolic")
-        dialog.window.is_maximized.return_value = True
-        dialog.toggle_notes_maximized()
-        dialog.window.unmaximize.assert_called_once_with()
-        dialog.update_notes_maximize_button(dialog.window)
-        dialog.notes_maximize_button.set_icon_name.assert_called_with("window-restore-symbolic")
-
+        dialog.store = SimpleNamespace(encryption_locked=False, read_only=True)
+        dialog.ensure_window = MagicMock()
+        dialog.set_notes_scope = MagicMock(return_value=True)
+        dialog.show_manager()
+        self.assertEqual(dialog.window.method_calls, [call.get_visible(), call.unminimize(), call.present()])
+        dialog.set_notes_scope.return_value = False
+        dialog.window.reset_mock()
+        dialog.show_manager()
+        self.assertEqual(dialog.window.method_calls, [call.get_visible(), call.unminimize(), call.present()])
 
     def test_legacy_categories_migrate_to_scopes_that_use_them(self):
         notes = [
@@ -504,7 +499,6 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.translate = lambda key: key
         dialog.build_creation_controls = MagicMock()
         dialog.build_editor_toolbar = MagicMock()
-        dialog.build_notes_window_controls = MagicMock()
         dialog.update_notes_list_toggle = MagicMock()
         dialog.update_note_detail_inset = MagicMock()
         dialog.configure_write_controls = MagicMock()
@@ -524,9 +518,9 @@ class NotesDialogSignalTests(unittest.TestCase):
             dialog.ensure_window()
 
         boxes[0].set_margin_start.assert_called_once_with(8)
-        gtk.Window.assert_called_once_with(title="notes_title", application=dialog.parent.get_application(),
-                                          transient_for=dialog.parent)
+        gtk.Window.assert_called_once_with(title="notes_title", application=dialog.parent.get_application())
         gtk.Window.return_value.set_modal.assert_called_once_with(False)
+        gtk.HeaderBar.return_value.set_show_title_buttons.assert_called_once_with(True)
         gtk.HeaderBar.return_value.pack_start.assert_called_once_with(boxes[0])
         self.assertEqual(boxes[0].append.call_args_list[1], call(dialog.add_button))
         self.assertEqual(boxes[0].append.call_args_list[2], call(dialog.import_export_menu_button))
@@ -1615,6 +1609,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.window = SimpleNamespace(
             get_visible=lambda: True, present=lambda: presented.append(True),
             set_title=lambda _title: None,
+            unminimize=lambda: None,
         )
         dialog.ensure_window = lambda: None
 
@@ -1656,6 +1651,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         presented = []
         dialog.window = SimpleNamespace(
             get_visible=lambda: True, present=lambda: presented.append(True),
+            unminimize=lambda: None,
         )
 
         dialog.show_manager("server-id")
@@ -1687,6 +1683,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.import_export_menu_button = SimpleNamespace(set_visible=menu_visibility.append)
         dialog.window = SimpleNamespace(
             get_visible=lambda: True, present=lambda: None, set_title=lambda _title: None,
+            unminimize=lambda: None,
         )
 
         dialog.show_manager("server-id")
@@ -1731,6 +1728,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         visible = False
         dialog.window = SimpleNamespace(
             get_visible=lambda: visible, present=lambda: None, set_title=lambda _title: None,
+            unminimize=lambda: None,
         )
         created = []
         dialog.create_note = lambda: created.append(dialog.server_filter_id)
@@ -1770,6 +1768,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.ensure_window = lambda: None
         dialog.window = SimpleNamespace(
             get_visible=lambda: False, present=lambda: None, set_title=lambda _title: None,
+            unminimize=lambda: None,
         )
         activated = []
         def activate(key):
@@ -1832,8 +1831,11 @@ class NotesDialogSignalTests(unittest.TestCase):
             timeout_add.call_args.args[1]()
 
         self.assertEqual(popover.signal, "closed")
-        idle_add.assert_called_once_with(dialog._show_server_notes, "server-id")
-        self.assertEqual(timeout_add.call_args.args[0], 150)
+        idle_add.assert_not_called()
+        self.assertEqual(timeout_add.call_args_list, [
+            call(100, dialog._show_server_notes, "server-id"),
+            call(150, popover.callback),
+        ])
 
     def test_server_context_opens_when_popover_was_already_closed(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -1852,7 +1854,8 @@ class NotesDialogSignalTests(unittest.TestCase):
             dialog.show_for_server_after_popover(ClosedPopover(), "server-id")
             timeout_add.call_args.args[1]()
 
-        idle_add.assert_called_once_with(dialog._show_server_notes, "server-id")
+        idle_add.assert_not_called()
+        self.assertEqual(timeout_add.call_args.args, (100, dialog._show_server_notes, "server-id"))
 
     def test_incomplete_draft_is_kept_when_hiding_reusable_notes_window(self):
         dialog = NotesDialogs.__new__(NotesDialogs)

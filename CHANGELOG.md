@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Use standard GTK controls in the independent Notes window, restore it before
+  presenting, and defer server-menu activation until after popover focus settles
+  on Wayland. Preserve reusable notes and application shutdown (`#339`).
+
 - Keep terminal tabs, note tabs, and saved-note rows private during drag-and-drop
   so text fields cannot insert their internal IDs. Preserve tab reordering and
   moving saved notes between categories. Skip the two widget integration checks

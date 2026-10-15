@@ -112,6 +112,7 @@ class NotesDialogs:
             return
         opening_window = self.window is None or not self.window.get_visible()
         self.ensure_window()
+        self.window.unminimize()
         if not self.set_notes_scope(
             "server" if server_id else "personal", server_id,
         ):
@@ -154,7 +155,6 @@ class NotesDialogs:
         window = Gtk.Window(
             title=self.translate("notes_title"),
             application=self.parent.get_application(),
-            transient_for=self.parent,
         )
         window.set_modal(False)
         window.set_default_size(1240, 660)
@@ -165,7 +165,6 @@ class NotesDialogs:
 
         header = Gtk.HeaderBar()
         header.set_show_title_buttons(True)
-        self.build_notes_window_controls(header, window)
         window.set_titlebar(header)
         header_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         # Match the sidebar's first button inside the window's content inset.
@@ -338,35 +337,6 @@ class NotesDialogs:
         self.configure_write_controls()
         self.set_editor_enabled(False)
         self.detail_stack.set_visible_child_name("empty")
-
-    def build_notes_window_controls(self, header: Gtk.HeaderBar, window: Gtk.Window) -> None:
-        # GTK suppresses native minimize/maximize buttons for transient windows.
-        controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        self.notes_minimize_button = Gtk.Button(icon_name="window-minimize-symbolic")
-        self.notes_minimize_button.add_css_class("titlebutton")
-        self.notes_minimize_button.add_css_class("circular")
-        self.notes_minimize_button.set_tooltip_text(self.translate("notes_minimize_window"))
-        self.notes_minimize_button.connect("clicked", lambda *_: window.minimize())
-        controls.append(self.notes_minimize_button)
-        self.notes_maximize_button = Gtk.Button(icon_name="window-maximize-symbolic")
-        self.notes_maximize_button.add_css_class("titlebutton")
-        self.notes_maximize_button.add_css_class("circular")
-        self.notes_maximize_button.connect("clicked", lambda *_: self.toggle_notes_maximized())
-        controls.append(self.notes_maximize_button)
-        header.pack_end(controls)
-        window.connect("notify::maximized", self.update_notes_maximize_button)
-        self.update_notes_maximize_button(window)
-
-    def toggle_notes_maximized(self) -> None:
-        if self.window.is_maximized():
-            self.window.unmaximize()
-        else:
-            self.window.maximize()
-
-    def update_notes_maximize_button(self, window: Gtk.Window, *_args) -> None:
-        maximized = window.is_maximized()
-        self.notes_maximize_button.set_icon_name("window-restore-symbolic" if maximized else "window-maximize-symbolic")
-        self.notes_maximize_button.set_tooltip_text(self.translate("notes_restore_window" if maximized else "notes_maximize_window"))
 
     def build_editor_toolbar(self, editor: Gtk.Box) -> None:
         settings = self.store.data.app.notes_editor
@@ -2766,7 +2736,9 @@ class NotesDialogs:
             nonlocal presented
             if not presented:
                 presented = True
-                GLib.idle_add(self._show_server_notes, server_id)
+                # Allow the compositor to finish returning focus from the
+                # closing popover before requesting activation of Notes.
+                GLib.timeout_add(100, self._show_server_notes, server_id)
             return GLib.SOURCE_REMOVE
 
         popover.connect("closed", present_once)

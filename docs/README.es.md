@@ -226,8 +226,10 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   para la numeración de líneas, activada por defecto. El editor usa el fondo
   `#001B33` y texto blanco; la regleta usa números `#0065BF` sobre `#000D1A`.
   Estos ajustes y la visibilidad de la barra se guardan como preferencias
-  independientes del contenido. La ventana se abre delante de su ventana principal sin bloquearla
-  y conserva los controles de minimizar y maximizar. El botón junto a las
+  independientes del contenido. Notas utiliza una ventana independiente y no modal,
+  con los mismos controles GTK que la principal. Al abrirla se restaura y se presenta;
+  puedes llevar cualquiera de las dos al frente. Cerrar Notas oculta su espacio para
+  reutilizarlo; salir de Termia guarda los cambios y cierra ambas ventanas. El botón junto a las
   pestañas muestra u oculta la barra compacta;
   la lista, con texto más pequeño, mantiene su posición. En modo solo lectura,
   estos ajustes duran esa sesión.
