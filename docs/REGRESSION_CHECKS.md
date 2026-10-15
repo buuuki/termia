@@ -810,11 +810,32 @@ module or case with `-v` when its detailed output helps diagnose the failure.
 After a code implementation is stable and before opening the PR, run at minimum:
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests
-python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/*.py tests/*.py
+python3 scripts/run_sandbox_tests.py
+python3 -m py_compile run_termia.py scripts/compile_translations.py scripts/run_sandbox_tests.py src/termia/*.py tests/*.py
 bash -n scripts/termia-setup.sh
 scripts/compile_translations.py --check
 ```
+
+Run the test command from the repository root inside the Codex `termia_tests`
+workspace sandbox. That profile needs local TCP socket access for the synthetic
+SFTP transport, Xvfb, and D-Bus. The runner requires `Xvfb`, `xauth`, and
+`dbus-daemon`; it creates temporary home, Xauthority, display, and session-bus
+files, then removes them after the test process exits. It uses its own X11 and
+D-Bus services, not the developer's desktop session. It selects software
+rendering because the virtual display has no DRI3 device. To run a specific
+module, pass its name after the script, for example:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_sftp_protocol tests.test_optional_tools_ui
+```
+
+The usual `dbus-run-session -- xvfb-run` wrappers require Unix sockets and may
+fail with `EPERM` in this sandbox. A plain `PYTHONPATH=src python3 -m unittest
+discover -s tests` remains the standard command on unrestricted developer
+systems and in GitHub Actions; the CI workflow is unchanged. If the runner
+reports missing commands, install the corresponding system packages before
+retrying. If it cannot start a local display or bus, confirm that the active
+Codex profile permits loopback TCP sockets before changing the tests.
 
 If translations changed, run `scripts/compile_translations.py` before its
 `--check` mode. Do not repeat an unchanged successful command. If subsequent

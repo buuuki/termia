@@ -400,14 +400,17 @@ Use `scripts/compile_translations.py --check` to verify that `MESSAGES`, the
 POT template, both PO catalogs, and the compiled MO files are synchronized.
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/*.py tests/*.py
+python3 scripts/run_sandbox_tests.py
+python3 -m py_compile run_termia.py scripts/compile_translations.py scripts/run_sandbox_tests.py src/termia/*.py tests/*.py
 bash -n scripts/termia-setup.sh
 ```
 
+The test runner uses a private GTK display and D-Bus session for restricted
+Codex sandboxes; see [Regression Checks](docs/REGRESSION_CHECKS.md#automated-checks)
+for prerequisites and focused runs. On an unrestricted system, the direct
+`PYTHONPATH=src python3 -m unittest discover -s tests` command also works.
 The same unit tests, translation checks, and Python syntax checks run
-automatically in GitHub Actions for every pull request and every push to
-`main`.
+automatically in GitHub Actions for every pull request and every push to `main`.
 
 Review the files included in the first commit:
 

@@ -64,11 +64,20 @@ publish the release, and create the next development branch from the updated
 At minimum, run syntax checks for touched Python and shell files. For a broad validation pass, run:
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/*.py tests/*.py
+python3 scripts/run_sandbox_tests.py
+python3 -m py_compile run_termia.py scripts/compile_translations.py scripts/run_sandbox_tests.py src/termia/*.py tests/*.py
 bash -n scripts/termia-setup.sh
 scripts/compile_translations.py --check
 ```
+
+When working inside a restricted Codex sandbox, use the runner above for the
+complete local suite. It creates a private GTK display and D-Bus session over
+loopback TCP and accepts unittest module names after the script for focused
+runs. The `termia_tests` permission profile must allow local TCP sockets, and
+`Xvfb`, `xauth`, and `dbus-daemon` must be installed. See
+[Regression Checks](docs/REGRESSION_CHECKS.md#automated-checks) for details.
+Outside that sandbox, `PYTHONPATH=src python3 -m unittest discover -s tests`
+also works. GitHub Actions retains its existing command.
 
 When changing English UI text, regenerate `po/termia.pot` with
 `scripts/compile_translations.py --extract`, update both `.po` catalogs, then

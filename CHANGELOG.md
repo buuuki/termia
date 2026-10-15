@@ -42,6 +42,10 @@
 
 ### Changed
 
+- Add a local sandbox test runner with private Xvfb and D-Bus services so the
+  complete GTK and SFTP suite can run without a desktop session. Use software
+  rendering to avoid DRI3 warnings from the virtual display (`#300`).
+
 - Store notes as plain text and retain only appearance controls in the notes
   toolbar. Preserve existing note content literally, including Markdown-looking
   characters; use round GTK window controls and normal-weight note titles (`#328`).
