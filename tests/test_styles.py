@@ -60,17 +60,21 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             css,
         )
 
-    def test_notes_editor_has_theme_aware_background_and_border(self) -> None:
+    def test_notes_editor_has_dark_default_background_and_border(self) -> None:
         css = build_application_css("#202020", "#008712", 1).decode()
 
         self.assertIn(
             ".termia-notes-editor { border: 1px solid @borders; border-radius: 8px; "
-            "background-color: @theme_base_color; }",
+            "background-color: #001b33; }",
             css,
         )
         self.assertIn(
-            ".termia-notes-editor textview, .termia-notes-editor textview text { "
-            "background-color: @theme_base_color; }",
+            ".termia-notes-editor textview { color: #ffffff; "
+            "background-color: #001b33; }",
+            css,
+        )
+        self.assertIn(
+            ".termia-notes-editor textview text { background-color: #001b33; }",
             css,
         )
 

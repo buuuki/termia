@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
+from gi.repository import GLib
 
 from termia.config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
@@ -27,6 +28,158 @@ from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPa
 
 
 class NotesDomainTests(unittest.TestCase):
+    def test_focus_active_editor_waits_for_an_editable_active_tab(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.window = SimpleNamespace(
+            get_visible=lambda: True, is_active=lambda: True,
+        )
+        dialog.active_editor_tab_key = "draft"
+        dialog.text_view = SimpleNamespace(
+            get_editable=lambda: True,
+            grab_focus=MagicMock(),
+        )
+
+        dialog.window.is_active = lambda: False
+        dialog.focus_active_editor()
+        dialog.text_view.grab_focus.assert_not_called()
+
+        dialog.window.is_active = lambda: True
+        self.assertEqual(dialog.focus_active_editor(), GLib.SOURCE_REMOVE)
+        dialog.text_view.grab_focus.assert_called_once_with()
+
+        dialog.active_editor_tab_key = None
+        dialog.text_view.grab_focus.reset_mock()
+        dialog.focus_active_editor()
+        dialog.text_view.grab_focus.assert_not_called()
+
+    def test_editor_saves_plain_text_without_rewriting_markdown_punctuation(self):
+        content = "**bold **\n# literal café `code`"
+        tab = NoteEditorTab("draft", None, "Draft", "", None, "")
+        saved = []
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.cancel_autosave = MagicMock()
+        dialog.editor_dirty = True
+        dialog.current_note_id = None
+        dialog.editor_content = lambda: content
+        dialog.editor_tabs = {tab.key: tab}
+        dialog.active_editor_tab_key = tab.key
+        dialog.store = SimpleNamespace(
+            add_note=lambda title, note_content, category, server_id: (
+                saved.append(note_content), SimpleNamespace(
+                    id="saved", title=title, modified_at="",
+                ),
+            )[1],
+        )
+        dialog.translate = lambda key: key
+        dialog.status_label = MagicMock()
+        dialog.modified_label = MagicMock()
+        dialog.capture_active_editor_tab = MagicMock()
+        dialog.refresh_list = MagicMock()
+        dialog.set_editor_enabled = MagicMock()
+
+        self.assertTrue(dialog.save_editor())
+        self.assertEqual(saved, [content])
+
+    def test_read_only_appearance_changes_do_not_write_settings(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(
+            read_only=True, encryption_locked=False,
+            data=SimpleNamespace(app=SimpleNamespace(notes_editor={"size": 12})),
+            update_notes_editor=MagicMock(),
+        )
+        dialog.apply_editor_appearance = MagicMock()
+        dialog.update_editor_appearance({"size": 18})
+        dialog.store.update_notes_editor.assert_not_called()
+        dialog.apply_editor_appearance.assert_called_once_with({"size": 18})
+
+    def test_line_number_toggle_attaches_gutter_and_persists_visibility(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.text_view = MagicMock()
+        dialog.line_number_gutter = MagicMock()
+        dialog.update_editor_appearance = MagicMock()
+        button = SimpleNamespace(get_active=lambda: False)
+
+        dialog.on_line_numbers_toggled(button)
+
+        dialog.text_view.set_gutter.assert_called_once_with(
+            Gtk.TextWindowType.LEFT, None,
+        )
+        dialog.update_editor_appearance.assert_called_once_with({"line_numbers": False})
+
+        dialog.text_view.set_gutter.reset_mock()
+        dialog.update_editor_appearance.reset_mock()
+        button.get_active = lambda: True
+
+        dialog.on_line_numbers_toggled(button)
+
+        dialog.text_view.set_gutter.assert_called_once_with(
+            Gtk.TextWindowType.LEFT, dialog.line_number_gutter,
+        )
+        dialog.update_editor_appearance.assert_called_once_with({"line_numbers": True})
+
+    def test_line_number_draw_includes_empty_final_line(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        buffer = Gtk.TextBuffer()
+        buffer.set_text("first line\n")
+        dialog.text_view = MagicMock()
+        dialog.text_view.get_buffer.return_value = buffer
+        dialog.text_view.get_visible_rect.return_value = SimpleNamespace(y=0, height=100)
+        dialog.text_view.get_line_at_y.return_value = (buffer.get_start_iter(), 0)
+        dialog.text_view.get_line_yrange.side_effect = lambda iterator: (iterator.get_line() * 16, 16)
+        dialog.text_view.buffer_to_window_coords.side_effect = lambda _window, _x, y: (0, y)
+        area = MagicMock()
+        area.create_pango_layout.return_value.get_pixel_size.return_value = (8, 12)
+
+        with patch("termia.notes_dialogs.PangoCairo.show_layout"):
+            dialog.draw_line_numbers(area, MagicMock(), 36, 100)
+
+        self.assertEqual(
+            [call.args[0] for call in area.create_pango_layout.call_args_list],
+            ["1", "2"],
+        )
+
+    def test_editor_appearance_uses_dark_defaults_when_settings_are_empty(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_css_provider = MagicMock()
+        dialog.update_line_number_gutter_width = MagicMock()
+        dialog.queue_line_number_redraw = MagicMock()
+
+        dialog.apply_editor_appearance({"size": 12})
+
+        css = dialog.editor_css_provider.load_from_data.call_args.args[0].decode()
+        self.assertIn("color: #ffffff;", css)
+        self.assertIn("background-color: #001b33;", css)
+
+    def test_toolbar_visibility_does_not_toggle_the_notes_sidebar(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_toolbar = MagicMock()
+        dialog.notes_list_paned = MagicMock()
+        dialog.notes_list_visible = True
+        dialog.update_editor_appearance = MagicMock()
+        button = SimpleNamespace(get_active=lambda: False)
+        dialog.on_toolbar_toggled(button)
+        dialog.editor_toolbar.set_visible.assert_called_once_with(False)
+        dialog.notes_list_paned.set_start_child.assert_not_called()
+        self.assertTrue(dialog.notes_list_visible)
+
+    def test_window_maximize_controls_follow_the_current_window_state(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.window = MagicMock()
+        dialog.notes_maximize_button = MagicMock()
+        dialog.translate = lambda key: key
+        dialog.window.is_maximized.return_value = False
+        dialog.toggle_notes_maximized()
+        dialog.window.maximize.assert_called_once_with()
+        dialog.window.unmaximize.assert_not_called()
+        dialog.update_notes_maximize_button(dialog.window)
+        dialog.notes_maximize_button.set_icon_name.assert_called_with("window-maximize-symbolic")
+        dialog.window.is_maximized.return_value = True
+        dialog.toggle_notes_maximized()
+        dialog.window.unmaximize.assert_called_once_with()
+        dialog.update_notes_maximize_button(dialog.window)
+        dialog.notes_maximize_button.set_icon_name.assert_called_with("window-restore-symbolic")
+
+
     def test_legacy_categories_migrate_to_scopes_that_use_them(self):
         notes = [
             normalize_note("personal", "Personal", "Body", "Ops"),
@@ -188,6 +341,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.scope_mode = "personal"
         dialog.translate = lambda key: key
         dialog.build_creation_controls = MagicMock()
+        dialog.build_editor_toolbar = MagicMock()
+        dialog.build_notes_window_controls = MagicMock()
         dialog.update_notes_list_toggle = MagicMock()
         dialog.update_note_detail_inset = MagicMock()
         dialog.configure_write_controls = MagicMock()
@@ -207,6 +362,9 @@ class NotesDialogSignalTests(unittest.TestCase):
             dialog.ensure_window()
 
         boxes[0].set_margin_start.assert_called_once_with(8)
+        gtk.Window.assert_called_once_with(title="notes_title", application=dialog.parent.get_application(),
+                                          transient_for=dialog.parent)
+        gtk.Window.return_value.set_modal.assert_called_once_with(False)
         gtk.HeaderBar.return_value.pack_start.assert_called_once_with(boxes[0])
         self.assertEqual(boxes[0].append.call_args_list[1], call(dialog.add_button))
         self.assertEqual(boxes[0].append.call_args_list[2], call(dialog.import_export_menu_button))

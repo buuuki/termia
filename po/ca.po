@@ -2168,3 +2168,22 @@ msgstr "Reinicia Termia per aplicar els canvis als complements. Desactivar un co
 
 msgid "SFTP browser"
 msgstr "Explorador SFTP"
+
+msgid "Show or hide the notes toolbar"
+msgstr "Mostra o amaga la barra de notes"
+
+
+msgid "Editor appearance (not stored in note text)"
+msgstr "Aparença de l’editor (no es desa al text de la nota)"
+
+msgid "Show or hide line numbers"
+msgstr "Mostra o amaga els números de línia"
+
+msgid "Minimize notes window"
+msgstr "Minimitza la finestra de notes"
+
+msgid "Maximize notes window"
+msgstr "Maximitza la finestra de notes"
+
+msgid "Restore notes window size"
+msgstr "Restaura la mida de la finestra de notes"

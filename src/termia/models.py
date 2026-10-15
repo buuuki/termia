@@ -133,6 +133,7 @@ class AppSettings:
     statistics_enabled: bool = False
     sftp_enabled: bool = True
     debug_enabled: bool = False
+    notes_editor: dict[str, Any] = field(default_factory=dict)
     keybindings: dict[str, str] = field(default_factory=lambda: DEFAULT_KEYBINDINGS.copy())
 
 

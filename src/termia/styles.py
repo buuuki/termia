@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+from .constants import DEFAULT_NOTES_EDITOR_BACKGROUND, DEFAULT_NOTES_EDITOR_FOREGROUND
+
 
 def build_application_css(
     terminal_background: str,
@@ -54,9 +56,11 @@ def build_application_css(
         ".termia-notes-tab-bar:drop(active) { background: transparent; border: 0; "
         "box-shadow: none; outline: none; } "
         ".termia-notes-editor { border: 1px solid @borders; border-radius: 8px; "
-        "background-color: @theme_base_color; } "
-        ".termia-notes-editor textview, .termia-notes-editor textview text { "
-        "background-color: @theme_base_color; } "
+        f"background-color: {DEFAULT_NOTES_EDITOR_BACKGROUND}; }} "
+        f".termia-notes-editor textview {{ color: {DEFAULT_NOTES_EDITOR_FOREGROUND}; "
+        f"background-color: {DEFAULT_NOTES_EDITOR_BACKGROUND}; }} "
+        ".termia-notes-editor textview text { "
+        f"background-color: {DEFAULT_NOTES_EDITOR_BACKGROUND}; }} "
         ".termia-note-category.drop-target { background: alpha(@theme_selected_bg_color, 0.24); "
         "border-radius: 8px; } "
         ".termia-tab-title { font-size: 1.05em; } "

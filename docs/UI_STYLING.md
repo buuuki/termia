@@ -35,7 +35,7 @@ literal colors. The shared CSS currently consumes:
 | Token | Current use |
 |---|---|
 | `@theme_bg_color` | General backgrounds, cards, and note-properties content |
-| `@theme_base_color` | Note editor and text surface |
+| `@theme_base_color` | Note-properties content and text surfaces outside the Notes editor |
 | `@theme_fg_color` | Tab and scrollbar interaction feedback |
 | `@theme_selected_bg_color` / `@theme_selected_fg_color` | Sidebar selection, category drop target, and active-pane feedback |
 | `@headerbar_backdrop_color` | Header and session-tab background |
@@ -51,6 +51,8 @@ focus rendering unless Termia adds a narrowly scoped component rule.
 | `@theme_selected_bg_color` | Active note-tab underline | Inherited from GTK |
 | `@error_color` | Required-field marker and hint | Inherited from GTK |
 | `alpha(...)` GTK expressions | Hover, active, dragging, selected, and scrollbar feedback | Derived from the active GTK theme |
+| `#001B33` and white text defaults | Notes writing surface | User may override these through saved Notes appearance preferences |
+| `#0065BF` on `#000D1A` | Notes line-number gutter | Scoped to the Notes editor |
 
 Termia also defines component dimensions, padding, margins, border radii, and
 separator treatment in `src/termia/styles.py`.
@@ -70,7 +72,7 @@ application-theme tokens.
 | Main and context menus | GTK | `styles.py`, menu classes |
 | Dialogs | GTK | Individual dialog builders |
 | Header and session tabs | GTK tokens with Termia spacing rules | `styles.py` |
-| Note tabs and editor | GTK tokens with Termia underline, borders, and spacing | `styles.py` |
+| Note tabs and editor | GTK chrome with saved Notes appearance preferences, a scoped line-number gutter, and Termia underline, borders, and spacing | `notes_dialogs.py`, `styles.py`, and settings |
 | Sidebar selection and category drop target | GTK selection tokens | `styles.py` |
 | Split panes | Terminal preferences | `styles.py` and terminal settings |
 | Required-field marker | GTK `@error_color` token | `connection_dialogs.py` and `styles.py` |

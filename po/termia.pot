@@ -1741,6 +1741,30 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
+#: src/termia/i18n.py:notes_toolbar
+msgid "Show or hide the notes toolbar"
+msgstr ""
+
+#: src/termia/i18n.py:notes_minimize_window
+msgid "Minimize notes window"
+msgstr ""
+
+#: src/termia/i18n.py:notes_maximize_window
+msgid "Maximize notes window"
+msgstr ""
+
+#: src/termia/i18n.py:notes_restore_window
+msgid "Restore notes window size"
+msgstr ""
+
+#: src/termia/i18n.py:notes_line_numbers
+msgid "Show or hide line numbers"
+msgstr ""
+
+#: src/termia/i18n.py:notes_editor_appearance
+msgid "Editor appearance (not stored in note text)"
+msgstr ""
+
 #: src/termia/i18n.py:notes_personal_scope
 msgid "Personal"
 msgstr ""

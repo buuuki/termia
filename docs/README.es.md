@@ -220,6 +220,17 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   cifrados también permite cambiar la contraseña maestra; Termia verifica la
   contraseña actual y vuelve a cifrar las conexiones y las notas.
 - `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
+  Las notas se guardan como texto plano; caracteres como `**`, `#` y las comillas
+  invertidas se conservan literalmente. La barra solo ofrece controles de
+  apariencia: fuente, tamaño, color del texto, fondo y un conmutador persistente
+  para la numeración de líneas, activada por defecto. El editor usa el fondo
+  `#001B33` y texto blanco; la regleta usa números `#0065BF` sobre `#000D1A`.
+  Estos ajustes y la visibilidad de la barra se guardan como preferencias
+  independientes del contenido. La ventana se abre delante de su ventana principal sin bloquearla
+  y conserva los controles de minimizar y maximizar. El botón junto a las
+  pestañas muestra u oculta la barra compacta;
+  la lista, con texto más pequeño, mantiene su posición. En modo solo lectura,
+  estos ajustes duran esa sesión.
   Las notas se guardan automáticamente en un fichero separado; también hay un
   botón **Guardar**. Al abrir la ventana se crea un borrador nuevo o se recupera
   uno pendiente del mismo contexto; en modo solo lectura no se crean borradores.

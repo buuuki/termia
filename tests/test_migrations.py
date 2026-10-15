@@ -12,9 +12,49 @@ from termia.migrations import (
     migrate_settings_payload,
 )
 from termia.stores import ConnectionStore, SettingsStore
+from termia.models import AppSettings
 
 
 class MigrationTests(unittest.TestCase):
+    def test_new_settings_store_initializes_notes_editor_defaults(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            values = SettingsStore(path).app.notes_editor
+
+            self.assertEqual(values["foreground"], "#ffffff")
+            self.assertEqual(values["background"], "#001b33")
+            self.assertTrue(values["line_numbers"])
+            self.assertFalse(path.exists())
+
+    def test_notes_editor_preferences_survive_general_preferences_and_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = ConnectionStore(root / "connections.json", root / "settings.json",
+                                    root / "statistics.json", root / "instance.lock")
+            try:
+                store.update_notes_editor({"font": "Monospace", "size": 18,
+                                           "foreground": "#123456", "background": "#abcdef",
+                                           "visible": False, "line_numbers": False})
+                expected = store.data.app.notes_editor.copy()
+                store.update_app_settings(AppSettings(language="es"))
+                self.assertEqual(store.data.app.notes_editor, expected)
+                self.assertEqual(SettingsStore(root / "settings.json").app.notes_editor, expected)
+            finally:
+                store.close()
+
+    def test_notes_editor_invalid_preferences_fall_back_safely(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            path.write_text(json.dumps({"app": {"notes_editor": {
+                "font": 42, "size": "huge", "foreground": "invalid", "visible": "false",
+                "visual": False, "line_numbers": "false",
+            }}}), encoding="utf-8")
+            values = SettingsStore(path).app.notes_editor
+            self.assertEqual(values, {
+                "font": "", "size": 12, "foreground": "#ffffff",
+                "background": "#001b33", "visible": True, "line_numbers": True,
+            })
+
     def test_legacy_password_shortcut_names_are_migrated(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"
