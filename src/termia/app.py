@@ -49,7 +49,7 @@ from .statistics_collector import StatisticsCollector
 from .statistics_view import StatisticsDialog
 from .styles import build_application_css
 from .tab_lifecycle_actions import TabLifecycleActions
-from .tabs import TabsMixin
+from .tabs import TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
 from .terminal_menus import TerminalMenusMixin
 from .terminal_menu_actions import TerminalMenuActions
 from .terminal_sessions import TerminalSessionsMixin
@@ -764,10 +764,12 @@ class TermiaWindow(
         self.session_tab_bar.set_homogeneous(True)
         self.session_tab_bar.add_css_class("termia-session-tabs")
         self.session_tab_bar.set_hexpand(True)
-        tab_bar_drop = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
-        tab_bar_drop.set_preload(True)
+        tab_bar_drop = Gtk.DropTargetAsync.new(
+            Gdk.ContentFormats.new([TERMINAL_TAB_DND_MIME_TYPE]), Gdk.DragAction.MOVE
+        )
         tab_bar_drop.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-        tab_bar_drop.connect("motion", self.on_tab_bar_drop_motion)
+        tab_bar_drop.connect("accept", self.on_tab_bar_drop_accept)
+        tab_bar_drop.connect("drag-motion", self.on_tab_bar_drop_motion)
         tab_bar_drop.connect("drop", self.on_tab_bar_drop)
         self.session_tab_bar.add_controller(tab_bar_drop)
 

@@ -1,11 +1,12 @@
 import json
 import tempfile
+import time
 import unittest
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
-from gi.repository import GLib
+from gi.repository import Gio, GLib, GObject
 
 from termia.config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
@@ -16,7 +17,10 @@ from termia.config_io import (
 )
 from termia.models import Note, NoteCategory
 from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories
-from termia.notes_dialogs import Gdk, Gtk, NoteEditorTab, NotesDialogs, format_note_timestamp
+from termia.notes_dialogs import (
+    Gdk, Gtk, NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE,
+    NoteEditorTab, NotesDialogs, format_note_timestamp,
+)
 from termia.notes_io import (
     export_notes_file,
     import_notes_file,
@@ -25,6 +29,162 @@ from termia.notes_io import (
 )
 from termia.notes_presenter import NotesPresenter
 from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPasswordError
+
+
+class PrivateNoteDragTests(unittest.TestCase):
+    def setUp(self):
+        self.dialog = NotesDialogs.__new__(NotesDialogs)
+        self.dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
+        self.dialog.window = MagicMock()
+        self.dialog.window.get_visible.return_value = True
+        self.dialog.find_note = MagicMock(return_value=SimpleNamespace(id="note-one"))
+        self.dialog.editor_tabs = {"draft:one": SimpleNamespace(container_widget=object())}
+        self.dialog.move_note_to_category = MagicMock(return_value=True)
+        self.dialog.reorder_editor_tab_at_bar_x = MagicMock()
+        self.dialog.activate_editor_tab = MagicMock()
+        self.dialog.note_row_drag_id = "note-one"
+        self.dialog.note_row_drag = object()
+        self.dialog.editor_tab_drag_key = "draft:one"
+        self.dialog.editor_tab_drag = object()
+
+    def make_drop(self, mime_type):
+        drop = MagicMock()
+        drop.get_formats.return_value = Gdk.ContentFormats.new([mime_type])
+        drop.get_drag.return_value = (
+            self.dialog.note_row_drag if mime_type == NOTE_ROW_DND_MIME_TYPE
+            else self.dialog.editor_tab_drag
+        )
+        return drop
+
+    def test_sources_offer_distinct_private_formats_without_text(self):
+        for mime_type, provider in (
+            (NOTE_ROW_DND_MIME_TYPE, self.dialog.on_note_drag_prepare(None, 0, 0, "note-one")),
+            (NOTE_TAB_DND_MIME_TYPE, self.dialog.on_editor_tab_drag_prepare(None, 0, 0, "draft:one")),
+        ):
+            with self.subTest(mime_type=mime_type):
+                formats = provider.ref_formats()
+                self.assertTrue(formats.contain_mime_type(mime_type))
+                self.assertFalse(formats.contain_gtype(GObject.TYPE_STRING))
+                self.assertFalse(formats.match(Gdk.ContentProvider.new_for_value("normal text").ref_formats()))
+        self.assertIsNone(self.dialog.on_editor_tab_drag_prepare(None, 0, 0, "missing"))
+        self.dialog.find_note.return_value = None
+        self.assertIsNone(self.dialog.on_note_drag_prepare(None, 0, 0, "missing"))
+
+    def test_receivers_reject_text_other_kinds_and_foreign_drags(self):
+        for mime_type, accept in (
+            (NOTE_ROW_DND_MIME_TYPE, self.dialog.on_note_category_drop_accept),
+            (NOTE_TAB_DND_MIME_TYPE, self.dialog.on_editor_tab_drop_accept),
+        ):
+            drop = self.make_drop(mime_type)
+            self.assertTrue(accept(None, drop))
+            drop.get_drag.return_value = object()
+            self.assertFalse(accept(None, drop))
+            drop = self.make_drop(mime_type)
+            for other_type in ("text/plain", "application/x-termia-terminal-tab-id",
+                               NOTE_TAB_DND_MIME_TYPE if mime_type == NOTE_ROW_DND_MIME_TYPE else NOTE_ROW_DND_MIME_TYPE):
+                drop.get_formats.return_value = Gdk.ContentFormats.new([other_type])
+                self.assertFalse(accept(None, drop))
+
+    def test_note_rows_respect_locked_and_read_only_storage(self):
+        drop = self.make_drop(NOTE_ROW_DND_MIME_TYPE)
+        for flag in ("read_only", "encryption_locked"):
+            with patch.object(self.dialog.store, flag, True):
+                self.assertIsNone(self.dialog.on_note_drag_prepare(None, 0, 0, "note-one"))
+                self.assertFalse(self.dialog.on_note_category_drop(None, drop, 0, 0, "Work"))
+        drop.read_async.assert_not_called()
+
+    def test_async_drop_only_applies_live_matching_payload(self):
+        for mime_type in (NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE):
+            for condition in ("valid", "wrong-id", "invalid-utf8", "stale", "deleted", "hidden",
+                              "replaced-window", "locked", "read-only", "read-error"):
+                with self.subTest(mime_type=mime_type, condition=condition):
+                    self.setUp()
+                    drop = self.make_drop(mime_type)
+                    is_row = mime_type == NOTE_ROW_DND_MIME_TYPE
+                    expected = "note-one" if is_row else "draft:one"
+                    handler = self.dialog.on_note_category_drop if is_row else self.dialog.on_editor_tab_drop
+                    args = (None, drop, 15, 0, "Work") if is_row else (None, drop, 15, 0)
+                    self.assertTrue(handler(*args))
+                    context = drop.read_async.call_args.args[-1]
+                    self.dialog.note_row_drag_id = self.dialog.editor_tab_drag_key = None
+                    self.dialog.note_row_drag = self.dialog.editor_tab_drag = None
+                    stream = MagicMock()
+                    payload = b"wrong" if condition == "wrong-id" else b"\xff" if condition == "invalid-utf8" else expected.encode()
+                    stream.read_bytes_finish.return_value = GLib.Bytes.new(payload)
+                    if condition == "stale":
+                        self.dialog.pending_note_drop = object()
+                    elif condition == "deleted":
+                        self.dialog.editor_tabs.clear()
+                        self.dialog.find_note.return_value = None
+                    elif condition == "hidden":
+                        self.dialog.window.get_visible.return_value = False
+                    elif condition == "replaced-window":
+                        self.dialog.window = MagicMock()
+                    elif condition == "locked":
+                        self.dialog.store.encryption_locked = True
+                    elif condition == "read-only":
+                        self.dialog.store.read_only = True
+                    elif condition == "read-error":
+                        stream.read_bytes_finish.side_effect = GLib.Error("read failed")
+                    self.dialog.on_private_note_drop_bytes_read(stream, None, context)
+                    accepted = condition == "valid" or condition == "read-only" and not is_row
+                    drop.finish.assert_called_once_with(Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0))
+                    self.assertEqual(self.dialog.move_note_to_category.call_count, int(accepted and is_row))
+                    self.assertEqual(self.dialog.activate_editor_tab.call_count, int(accepted and not is_row))
+                    if accepted and is_row:
+                        self.dialog.move_note_to_category.assert_called_once_with("note-one", "Work")
+                    stream.close_async.assert_called_once()
+
+    def test_async_reader_validates_mime_and_handles_io_failures(self):
+        for condition in ("valid", "wrong-mime", "no-stream", "error"):
+            with self.subTest(condition=condition):
+                self.setUp()
+                drop = self.make_drop(NOTE_ROW_DND_MIME_TYPE)
+                self.dialog.on_note_category_drop(None, drop, 0, 0, "Work")
+                context = drop.read_async.call_args.args[-1]
+                stream = MagicMock()
+                drop.read_finish.return_value = (
+                    None if condition == "no-stream" else stream,
+                    NOTE_ROW_DND_MIME_TYPE if condition == "valid" else "text/plain",
+                )
+                if condition == "error":
+                    drop.read_finish.side_effect = GLib.Error("read failed")
+                self.dialog.on_private_note_drop_read(drop, None, context)
+                if condition == "valid":
+                    self.assertEqual(stream.read_bytes_async.call_args.args[0], 256)
+                    drop.finish.assert_not_called()
+                else:
+                    drop.finish.assert_called_once_with(Gdk.DragAction(0))
+                    stream.read_bytes_async.assert_not_called()
+
+    def test_real_async_stream_reorders_note_widgets_and_keeps_draft_content(self):
+        bar = Gtk.Box()
+        self.dialog.editor_tabs = {}
+        for key in ("saved-one", "draft:one", "saved-two"):
+            label = Gtk.Label(label=key)
+            label.set_size_request(100, 30)
+            bar.append(label)
+            self.dialog.editor_tabs[key] = NoteEditorTab(
+                key, None if key == "draft:one" else key, key, "", None,
+                "content for " + key, container_widget=label,
+            )
+        bar.allocate(300, 30, -1, None)
+        self.dialog.editor_tabs_bar = bar
+        self.dialog.reorder_editor_tab_at_bar_x = NotesDialogs.reorder_editor_tab_at_bar_x.__get__(self.dialog)
+        drop = self.make_drop(NOTE_TAB_DND_MIME_TYPE)
+        self.dialog.on_editor_tab_drop(None, drop, 10, 0)
+        context = drop.read_async.call_args.args[-1]
+        stream = Gio.MemoryInputStream.new_from_bytes(GLib.Bytes.new(b"draft:one"))
+        drop.read_finish.return_value = (stream, NOTE_TAB_DND_MIME_TYPE)
+        self.dialog.on_private_note_drop_read(drop, None, context)
+        deadline = time.monotonic() + 2
+        while not drop.finish.called and time.monotonic() < deadline:
+            GLib.MainContext.default().iteration(False)
+            time.sleep(0.001)
+        drop.finish.assert_called_once_with(Gdk.DragAction.MOVE)
+        self.assertEqual(list(self.dialog.editor_tabs), ["draft:one", "saved-one", "saved-two"])
+        self.assertEqual(self.dialog.editor_tabs["draft:one"].content, "content for draft:one")
+        self.dialog.activate_editor_tab.assert_called_once_with("draft:one")
 
 
 class NotesDomainTests(unittest.TestCase):

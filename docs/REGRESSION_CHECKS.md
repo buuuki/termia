@@ -34,6 +34,15 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Tabs
 
+- Terminal tabs, note tabs (including drafts), and saved-note rows must offer
+  only their distinct private drag formats. Drag each onto the server filter,
+  notes search, note editor, and another application's text field: no internal
+  ID may be inserted. Ordinary typing, paste, and dragging real selected text
+  into editable fields must still work. Reject foreign drags, wrong formats,
+  deleted objects, and stale asynchronous drops without moving other objects.
+- Reorder terminal and note tabs after these rejected drops, and move saved
+  notes between categories and Uncategorized. Retain active selection, content,
+  server associations, keyboard order, and read-only/locked-storage guards.
 - Connection and local terminal tabs must remain visibly and reliably reorderable with left-button drag in the custom tab bar.
 - Left-clicking a tab title must select that session without stealing focus from the terminal after selection.
 - Drag logic must keep tab order, Ctrl+PageUp/Ctrl+PageDown navigation, and close-next-focus behavior aligned with the visual tab order.

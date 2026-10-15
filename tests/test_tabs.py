@@ -1,10 +1,129 @@
 import unittest
+import time
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+
+from gi.repository import Gio, GObject
 
 from termia.session_registry import SessionRegistry
 from termia.tab_lifecycle_actions import TabLifecycleActions
-from termia.tabs import TabsMixin
+from termia.tabs import Gdk, GLib, Gtk, TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
+
+
+class PrivateTabDragTests(unittest.TestCase):
+    def setUp(self):
+        self.host = TabsMixin()
+        self.session = SimpleNamespace(id="session-one", detached_window=None)
+        self.host.session_registry = SessionRegistry([self.session])
+        self.host.tab_drag_session_id = self.session.id
+        self.host.tab_drag = object()
+        self.host.reorder_dragged_tab_at_bar_x = MagicMock()
+        self.host.set_active_session = MagicMock()
+        self.drop = MagicMock()
+        self.drop.get_drag.return_value = self.host.tab_drag
+        self.drop.get_formats.return_value = Gdk.ContentFormats.new([TERMINAL_TAB_DND_MIME_TYPE])
+
+    def test_source_is_private_and_not_convertible_to_text(self):
+        provider = self.host.on_tab_drag_prepare(None, 0, 0, self.session.id, None)
+        formats = provider.ref_formats()
+        self.assertTrue(formats.contain_mime_type(TERMINAL_TAB_DND_MIME_TYPE))
+        self.assertFalse(formats.contain_gtype(GObject.TYPE_STRING))
+        self.assertFalse(formats.match(Gdk.ContentProvider.new_for_value("ordinary text").ref_formats()))
+        self.session.detached_window = object()
+        self.assertIsNone(self.host.on_tab_drag_prepare(None, 0, 0, self.session.id, None))
+
+    def test_accept_rejects_foreign_text_missing_and_detached_sessions(self):
+        self.assertTrue(self.host.on_tab_bar_drop_accept(None, self.drop))
+        for condition in ("foreign", "text", "deleted", "detached", "shutdown"):
+            with self.subTest(condition=condition):
+                with patch.object(self.host, "tab_drag", object() if condition == "foreign" else self.host.tab_drag), \
+                     patch.object(self.drop, "get_formats", return_value=Gdk.ContentFormats.new(
+                         ["text/plain"] if condition == "text" else [TERMINAL_TAB_DND_MIME_TYPE])), \
+                     patch.object(self.session, "detached_window", object() if condition == "detached" else None), \
+                     patch.object(self.host, "shutdown_in_progress", condition == "shutdown", create=True):
+                    if condition == "deleted":
+                        self.host.session_registry.remove(self.session.id)
+                    self.assertFalse(self.host.on_tab_bar_drop(None, self.drop, 20, 0))
+                    if condition == "deleted":
+                        self.host.session_registry.register(self.session)
+        self.drop.read_async.assert_not_called()
+
+    def test_async_drop_validates_payload_and_lifetime_after_drag_end(self):
+        for condition in ("valid", "wrong-id", "invalid-utf8", "stale", "deleted", "detached", "shutdown", "read-error"):
+            with self.subTest(condition=condition):
+                self.setUp()
+                self.assertTrue(self.host.on_tab_bar_drop(None, self.drop, 20, 0))
+                context = self.drop.read_async.call_args.args[-1]
+                self.host.tab_drag_session_id = None
+                self.host.tab_drag = None
+                stream = MagicMock()
+                payload = b"wrong" if condition == "wrong-id" else b"\xff" if condition == "invalid-utf8" else b"session-one"
+                stream.read_bytes_finish.return_value = GLib.Bytes.new(payload)
+                if condition == "stale":
+                    self.host.pending_tab_drop = object()
+                elif condition == "deleted":
+                    self.host.session_registry.remove(self.session.id)
+                elif condition == "detached":
+                    self.session.detached_window = object()
+                elif condition == "shutdown":
+                    self.host.shutdown_in_progress = True
+                elif condition == "read-error":
+                    stream.read_bytes_finish.side_effect = GLib.Error("read failed")
+                self.host.on_tab_bar_drop_bytes_read(stream, None, context)
+                accepted = condition == "valid"
+                self.drop.finish.assert_called_once_with(Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0))
+                self.assertEqual(self.host.set_active_session.call_count, int(accepted))
+                self.assertEqual(self.host.reorder_dragged_tab_at_bar_x.call_count, int(accepted))
+                stream.close_async.assert_called_once()
+
+    def test_async_read_rejects_wrong_format_and_io_failure(self):
+        for condition in ("wrong-mime", "no-stream", "error"):
+            with self.subTest(condition=condition):
+                self.setUp()
+                self.host.on_tab_bar_drop(None, self.drop, 20, 0)
+                context = self.drop.read_async.call_args.args[-1]
+                stream = MagicMock()
+                self.drop.read_finish.return_value = (None if condition == "no-stream" else stream, "text/plain")
+                if condition == "error":
+                    self.drop.read_finish.side_effect = GLib.Error("read failed")
+                self.host.on_tab_bar_drop_read(self.drop, None, context)
+                self.drop.finish.assert_called_once_with(Gdk.DragAction(0))
+                stream.read_bytes_async.assert_not_called()
+
+    def test_motion_reorders_only_the_current_local_drag(self):
+        self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 20, 0), Gdk.DragAction.MOVE)
+        self.host.reorder_dragged_tab_at_bar_x.assert_called_once_with(None, 20)
+        self.drop.get_drag.return_value = object()
+        self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 20, 0), Gdk.DragAction(0))
+        self.assertEqual(self.host.reorder_dragged_tab_at_bar_x.call_count, 1)
+
+    def test_real_async_stream_reorders_widgets_and_preserves_visual_order(self):
+        bar = Gtk.Box()
+        sessions = []
+        for session_id in ("first", "second", "third"):
+            label = Gtk.Label(label=session_id)
+            label.set_size_request(100, 30)
+            bar.append(label)
+            sessions.append(SimpleNamespace(id=session_id, tab_label=label, detached_window=None))
+        bar.allocate(300, 30, -1, None)
+        self.host.session_tab_bar = bar
+        self.host.session_registry = SessionRegistry(sessions)
+        self.host.tab_drag_session_id = "third"
+        self.host.update_session_tab_states = MagicMock()
+        self.host.schedule_active_tab_reveal = MagicMock()
+        self.host.reorder_dragged_tab_at_bar_x = TabsMixin.reorder_dragged_tab_at_bar_x.__get__(self.host)
+        self.host.on_tab_bar_drop(None, self.drop, 10, 0)
+        context = self.drop.read_async.call_args.args[-1]
+        stream = Gio.MemoryInputStream.new_from_bytes(GLib.Bytes.new(b"third"))
+        self.drop.read_finish.return_value = (stream, TERMINAL_TAB_DND_MIME_TYPE)
+        self.host.on_tab_bar_drop_read(self.drop, None, context)
+        deadline = time.monotonic() + 2
+        while not self.drop.finish.called and time.monotonic() < deadline:
+            GLib.MainContext.default().iteration(False)
+            time.sleep(0.001)
+        self.drop.finish.assert_called_once_with(Gdk.DragAction.MOVE)
+        self.assertEqual([session.id for session in self.host.visible_sessions_in_tab_order()], ["third", "first", "second"])
+        self.host.set_active_session.assert_called_once_with("third")
 
 
 class FakePopover:

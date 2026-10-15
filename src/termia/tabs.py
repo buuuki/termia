@@ -13,6 +13,8 @@ from gi.repository import Gdk, GLib, Graphene, Gtk, Pango
 from .debug import log_event
 from .ui_state import TerminalSession
 
+TERMINAL_TAB_DND_MIME_TYPE = "application/x-termia-terminal-tab-id"
+
 
 class TabsMixin:
     TAB_OVERFLOW_EPSILON = 1.0
@@ -346,9 +348,12 @@ class TabsMixin:
         session_id: str,
         _tab: Gtk.Widget,
     ) -> Gdk.ContentProvider | None:
-        if not self.session_registry.contains(session_id):
+        session = self.session_registry.get(session_id)
+        if session is None or session.detached_window is not None:
             return None
-        return Gdk.ContentProvider.new_for_value(session_id)
+        return Gdk.ContentProvider.new_for_bytes(
+            TERMINAL_TAB_DND_MIME_TYPE, GLib.Bytes.new(session_id.encode("utf-8"))
+        )
 
     def on_tab_drag_begin(
         self,
@@ -359,6 +364,8 @@ class TabsMixin:
     ) -> None:
         self.set_active_session(session_id)
         self.tab_drag_session_id = session_id
+        self.tab_drag = _drag
+        self.pending_tab_drop = None
         tab.add_css_class("dragging")
         source.set_icon(Gtk.WidgetPaintable.new(tab), tab.get_allocated_width() // 2, tab.get_allocated_height() // 2)
 
@@ -373,25 +380,84 @@ class TabsMixin:
         if session is not None:
             session.tab_label.remove_css_class("dragging")
         self.tab_drag_session_id = None
+        self.tab_drag = None
 
-    def on_tab_bar_drop_motion(self, target: Gtk.DropTarget, x: float, _y: float) -> Gdk.DragAction:
+    def on_tab_bar_drop_accept(self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop) -> bool:
+        session = self.session_registry.get(getattr(self, "tab_drag_session_id", None))
+        return bool(
+            session is not None and session.detached_window is None
+            and not getattr(self, "shutdown_in_progress", False)
+            and getattr(self, "tab_drag", None) is not None
+            and drop.get_drag() == self.tab_drag
+            and drop.get_formats().contain_mime_type(TERMINAL_TAB_DND_MIME_TYPE)
+        )
+
+    def on_tab_bar_drop_motion(self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, _y: float) -> Gdk.DragAction:
+        if not self.on_tab_bar_drop_accept(target, drop):
+            return Gdk.DragAction(0)
         self.reorder_dragged_tab_at_bar_x(target, x)
         return Gdk.DragAction.MOVE
 
-    def on_tab_bar_drop(self, target: Gtk.DropTarget, dragged_session_id: str, x: float, _y: float) -> bool:
-        self.reorder_dragged_tab_at_bar_x(target, x, dragged_session_id)
-        dragged = self.session_registry.get(dragged_session_id)
-        if dragged is not None:
-            self.set_active_session(dragged.id)
+    def on_tab_bar_drop(self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, _y: float) -> bool:
+        if not self.on_tab_bar_drop_accept(target, drop):
+            return False
+        token = object()
+        self.pending_tab_drop = token
+        drop.read_async(
+            [TERMINAL_TAB_DND_MIME_TYPE], GLib.PRIORITY_DEFAULT, None,
+            self.on_tab_bar_drop_read,
+            (drop, self.tab_drag_session_id, target, x, token),
+        )
         return True
+
+    def on_tab_bar_drop_read(self, drop, result, context) -> None:
+        try:
+            stream, mime_type = drop.read_finish(result)
+        except GLib.Error:
+            self.finish_tab_drop(context, False)
+            return
+        if stream is None or mime_type != TERMINAL_TAB_DND_MIME_TYPE:
+            if stream is not None:
+                stream.close_async(GLib.PRIORITY_DEFAULT, None, None)
+            self.finish_tab_drop(context, False)
+            return
+        stream.read_bytes_async(
+            256, GLib.PRIORITY_DEFAULT, None, self.on_tab_bar_drop_bytes_read, context
+        )
+
+    def on_tab_bar_drop_bytes_read(self, stream, result, context) -> None:
+        _drop, expected_id, target, x, token = context
+        try:
+            received_id = stream.read_bytes_finish(result).get_data().decode("utf-8")
+        except (GLib.Error, UnicodeError):
+            received_id = None
+        finally:
+            stream.close_async(GLib.PRIORITY_DEFAULT, None, None)
+        session = self.session_registry.get(expected_id)
+        accepted = (
+            getattr(self, "pending_tab_drop", None) is token
+            and received_id == expected_id and session is not None
+            and session.detached_window is None
+            and not getattr(self, "shutdown_in_progress", False)
+        )
+        if accepted:
+            self.reorder_dragged_tab_at_bar_x(target, x, expected_id)
+            self.set_active_session(expected_id)
+        self.finish_tab_drop(context, accepted)
+
+    def finish_tab_drop(self, context, accepted: bool) -> None:
+        drop, _expected_id, _target, _x, token = context
+        if getattr(self, "pending_tab_drop", None) is token:
+            self.pending_tab_drop = None
+        drop.finish(Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0))
 
     def reorder_dragged_tab_at_bar_x(
         self,
-        target: Gtk.DropTarget,
+        target: Gtk.DropTargetAsync,
         pointer_x: float,
         dragged_session_id: str | None = None,
     ) -> None:
-        dragged_session_id = dragged_session_id or getattr(self, "tab_drag_session_id", None) or target.get_value()
+        dragged_session_id = dragged_session_id or getattr(self, "tab_drag_session_id", None)
         if not isinstance(dragged_session_id, str):
             return
         dragged = self.session_registry.get(dragged_session_id)
