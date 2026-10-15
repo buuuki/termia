@@ -228,8 +228,10 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   `#001B33` i text blanc; el marge mostra números `#0065BF` sobre `#000D1A`.
   Aquests ajustos i la visibilitat de la barra es desen com a preferències
   independents del contingut.
-  La finestra s'obre davant de la principal sense bloquejar-la i conserva els
-  controls de minimitzar i maximitzar. El botó al costat de les pestanyes mostra
+  Notes fa servir una finestra independent i no modal, amb els mateixos controls
+  GTK que la principal. En obrir-la es restaura i es presenta; pots portar
+  qualsevol de les dues al davant. Tancar Notes n'oculta l'espai per reutilitzar-lo;
+  sortir de Termia desa els canvis i tanca totes dues finestres. El botó al costat de les pestanyes mostra
   o amaga la barra compacta;
   la llista, amb text més petit, manté la posició. En mode de només lectura, els
   ajustos duren aquella sessió.

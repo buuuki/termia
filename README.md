@@ -234,8 +234,10 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   default. The editor starts with background `#001B33` and white text; the
   gutter uses `#0065BF` numbers on `#000D1A`. Appearance and toolbar
   visibility are persistent preferences shared by all notes, separate from note
-  content. The notes window opens in
-  front of its parent without blocking it and retains minimize/maximize controls.
+  content. Notes uses an independent, modeless window with the same standard GTK
+  controls as the main window. Opening it restores and presents it; either window
+  can be brought to the front. Closing Notes hides its workspace for reuse;
+  quitting Termia saves changes and closes both windows.
   Its toggle beside the tabs hides or restores the compact toolbar while the
   smaller-text notes list stays in place. In read-only instances, appearance
   changes apply for that session.

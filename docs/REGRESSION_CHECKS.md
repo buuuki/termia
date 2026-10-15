@@ -277,11 +277,16 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   fresh isolated profile before any appearance setting has been saved. In
   read-only instances, appearance changes may apply for that session but must
   not persist.
-  The notes window must be transient for its parent, appear in front when
-  opened, and remain modeless so the parent is usable. It must retain minimize,
-  maximize, restore, and close controls even though GTK suppresses native
-  minimize/maximize controls for transient windows; their buttons must be round
-  like GTK's close control. Note-list titles must use normal font weight. Verify
+  The notes window must be an independent, modeless application window using
+  the same standard GTK title controls as the main window, including theme
+  colors, hover/pressed feedback, transitions, and desktop button order. Reopen
+  it after minimizing and after closing it, via the main menu and a server
+  context menu; it must regain focus without remaining minimized. Verify on
+  Wayland that closing the server popover does not reclaim focus from Notes.
+  Selecting the main window must allow it in front of Notes. Closing Notes
+  must preserve its reusable workspace; closing Termia must save and destroy
+  Notes through the existing shutdown path. Note-list titles must use normal
+  font weight. Verify
   that line numbers align with logical lines while editing, wrapping, and
   scrolling; after pressing Enter, the new empty line must be numbered before
   any text is entered. Verify that the toggle persists. Hide/restore the
