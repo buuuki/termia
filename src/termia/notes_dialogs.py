@@ -31,6 +31,9 @@ from .notes import NoteError, normalized_note_categories
 from .notes_io import export_notes_file, import_notes_file
 from .notes_presenter import NoteTreeCategory, NotesPresenter
 
+NOTE_TAB_DND_MIME_TYPE = "application/x-termia-note-tab-id"
+NOTE_ROW_DND_MIME_TYPE = "application/x-termia-note-id"
+
 
 def format_note_timestamp(value: str) -> str:
     """Render stored ISO timestamps without fractional seconds."""
@@ -259,10 +262,12 @@ class NotesDialogs:
         self.notes_top_row_size_group = Gtk.SizeGroup.new(Gtk.SizeGroupMode.VERTICAL)
         self.notes_top_row_size_group.add_widget(creation_controls)
         self.notes_top_row_size_group.add_widget(tabs_scroller)
-        tab_drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
-        tab_drop_target.set_preload(True)
+        tab_drop_target = Gtk.DropTargetAsync.new(
+            Gdk.ContentFormats.new([NOTE_TAB_DND_MIME_TYPE]), Gdk.DragAction.MOVE
+        )
         tab_drop_target.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-        tab_drop_target.connect("motion", self.on_editor_tab_drop_motion)
+        tab_drop_target.connect("accept", self.on_editor_tab_drop_accept)
+        tab_drop_target.connect("drag-motion", self.on_editor_tab_drop_motion)
         tab_drop_target.connect("drop", self.on_editor_tab_drop)
         self.editor_tabs_bar.add_controller(tab_drop_target)
 
@@ -1045,10 +1050,12 @@ class NotesDialogs:
             lambda _button, name=category, scope=server_id:
                 self.toggle_note_category(name, scope),
         )
-        drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
-        drop_target.set_preload(True)
-        drop_target.connect("motion", self.on_note_category_drop_motion, button)
-        drop_target.connect("leave", self.on_note_category_drop_leave, button)
+        drop_target = Gtk.DropTargetAsync.new(
+            Gdk.ContentFormats.new([NOTE_ROW_DND_MIME_TYPE]), Gdk.DragAction.MOVE
+        )
+        drop_target.connect("accept", self.on_note_category_drop_accept)
+        drop_target.connect("drag-motion", self.on_note_category_drop_motion, button)
+        drop_target.connect("drag-leave", self.on_note_category_drop_leave, button)
         drop_target.connect("drop", self.on_note_category_drop, category)
         button.add_controller(drop_target)
         contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -1098,13 +1105,18 @@ class NotesDialogs:
     def on_note_drag_prepare(
         self, _source: Gtk.DragSource, _x: float, _y: float, note_id: str
     ) -> Gdk.ContentProvider | None:
-        if self.find_note(note_id) is None:
+        if self.find_note(note_id) is None or self.store.read_only or self.store.encryption_locked:
             return None
-        return Gdk.ContentProvider.new_for_value(note_id)
+        return Gdk.ContentProvider.new_for_bytes(
+            NOTE_ROW_DND_MIME_TYPE, GLib.Bytes.new(note_id.encode("utf-8"))
+        )
 
     def on_note_drag_begin(
         self, source: Gtk.DragSource, _drag: Gdk.Drag, row: Gtk.ListBoxRow
     ) -> None:
+        self.note_row_drag_id = row.note_id
+        self.note_row_drag = _drag
+        self.pending_note_drop = None
         row.add_css_class("dragging")
         source.set_icon(
             Gtk.WidgetPaintable.new(row),
@@ -1117,23 +1129,101 @@ class NotesDialogs:
         _delete_data: bool, row: Gtk.ListBoxRow,
     ) -> None:
         row.remove_css_class("dragging")
+        self.note_row_drag_id = None
+        self.note_row_drag = None
+
+    def on_note_category_drop_accept(self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop) -> bool:
+        note_id = getattr(self, "note_row_drag_id", None)
+        return bool(
+            note_id is not None and self.find_note(note_id) is not None
+            and not self.store.read_only and not self.store.encryption_locked
+            and getattr(self, "note_row_drag", None) is not None
+            and drop.get_drag() == self.note_row_drag
+            and drop.get_formats().contain_mime_type(NOTE_ROW_DND_MIME_TYPE)
+        )
 
     def on_note_category_drop_motion(
-        self, _target: Gtk.DropTarget, _x: float, _y: float, button: Gtk.Button
+        self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, _x: float, _y: float, button: Gtk.Button
     ) -> Gdk.DragAction:
+        if not self.on_note_category_drop_accept(target, drop):
+            button.remove_css_class("drop-target")
+            return Gdk.DragAction(0)
         button.add_css_class("drop-target")
         return Gdk.DragAction.MOVE
 
     def on_note_category_drop_leave(
-        self, _target: Gtk.DropTarget, button: Gtk.Button
+        self, _target: Gtk.DropTargetAsync, _drop: Gdk.Drop, button: Gtk.Button
     ) -> None:
         button.remove_css_class("drop-target")
 
     def on_note_category_drop(
-        self, _target: Gtk.DropTarget, note_id: str, _x: float, _y: float,
+        self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, _x: float, _y: float,
         category: str,
     ) -> bool:
-        return self.move_note_to_category(note_id, category)
+        if not self.on_note_category_drop_accept(target, drop):
+            return False
+        self.read_private_note_drop(drop, NOTE_ROW_DND_MIME_TYPE, self.note_row_drag_id, category)
+        return True
+
+    def read_private_note_drop(self, drop, mime_type: str, expected_id: str, destination) -> None:
+        # Capture accepted drag state: drag-end can run before asynchronous reads finish.
+        token = object()
+        self.pending_note_drop = token
+        context = (drop, mime_type, expected_id, destination, self.window, token)
+        drop.read_async(
+            [mime_type], GLib.PRIORITY_DEFAULT, None, self.on_private_note_drop_read, context
+        )
+
+    def on_private_note_drop_read(self, drop, result, context) -> None:
+        try:
+            stream, mime_type = drop.read_finish(result)
+        except GLib.Error:
+            self.finish_private_note_drop(context, False)
+            return
+        if stream is None or mime_type != context[1]:
+            if stream is not None:
+                stream.close_async(GLib.PRIORITY_DEFAULT, None, None)
+            self.finish_private_note_drop(context, False)
+            return
+        stream.read_bytes_async(
+            256, GLib.PRIORITY_DEFAULT, None, self.on_private_note_drop_bytes_read, context
+        )
+
+    def on_private_note_drop_bytes_read(self, stream, result, context) -> None:
+        _drop, mime_type, expected_id, destination, window, token = context
+        try:
+            received_id = stream.read_bytes_finish(result).get_data().decode("utf-8")
+        except (GLib.Error, UnicodeError):
+            received_id = None
+        finally:
+            stream.close_async(GLib.PRIORITY_DEFAULT, None, None)
+        accepted = bool(
+            getattr(self, "pending_note_drop", None) is token
+            and received_id == expected_id and self.window is window
+            and window is not None and window.get_visible()
+            and not self.store.encryption_locked
+        )
+        if accepted and mime_type == NOTE_TAB_DND_MIME_TYPE:
+            tab = self.editor_tabs.get(expected_id)
+            accepted = tab is not None and tab.container_widget is not None
+            if accepted:
+                target, x = destination
+                self.reorder_editor_tab_at_bar_x(target, x, expected_id)
+                self.activate_editor_tab(expected_id)
+        elif accepted and mime_type == NOTE_ROW_DND_MIME_TYPE:
+            accepted = (
+                not self.store.read_only and self.find_note(expected_id) is not None
+                and self.move_note_to_category(expected_id, destination)
+            )
+        else:
+            accepted = False
+        self.finish_private_note_drop(context, accepted)
+
+    def finish_private_note_drop(self, context, accepted: bool) -> None:
+        drop, _mime_type, _expected_id, _destination, _window, token = context
+        if getattr(self, "pending_note_drop", None) is token:
+            self.pending_note_drop = None
+        drop.finish(Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0))
 
     def move_note_to_category(self, note_id: str, category: str) -> bool:
         if not self.ensure_writable():
@@ -1819,13 +1909,17 @@ class NotesDialogs:
     ) -> Gdk.ContentProvider | None:
         if key not in self.editor_tabs:
             return None
-        return Gdk.ContentProvider.new_for_value(key)
+        return Gdk.ContentProvider.new_for_bytes(
+            NOTE_TAB_DND_MIME_TYPE, GLib.Bytes.new(key.encode("utf-8"))
+        )
 
     def on_editor_tab_drag_begin(
         self, source: Gtk.DragSource, _drag: Gdk.Drag, key: str, tab_box: Gtk.Widget
     ) -> None:
         self.activate_editor_tab(key)
         self.editor_tab_drag_key = key
+        self.editor_tab_drag = _drag
+        self.pending_note_drop = None
         tab_box.add_css_class("dragging")
         source.set_icon(
             Gtk.WidgetPaintable.new(tab_box),
@@ -1839,25 +1933,40 @@ class NotesDialogs:
     ) -> None:
         tab_box.remove_css_class("dragging")
         self.editor_tab_drag_key = None
+        self.editor_tab_drag = None
+
+    def on_editor_tab_drop_accept(self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop) -> bool:
+        tab = self.editor_tabs.get(getattr(self, "editor_tab_drag_key", None))
+        return bool(
+            tab is not None and tab.container_widget is not None
+            and not self.store.encryption_locked
+            and getattr(self, "editor_tab_drag", None) is not None
+            and drop.get_drag() == self.editor_tab_drag
+            and drop.get_formats().contain_mime_type(NOTE_TAB_DND_MIME_TYPE)
+        )
 
     def on_editor_tab_drop_motion(
-        self, target: Gtk.DropTarget, x: float, _y: float
+        self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, _y: float
     ) -> Gdk.DragAction:
+        if not self.on_editor_tab_drop_accept(target, drop):
+            return Gdk.DragAction(0)
         self.reorder_editor_tab_at_bar_x(target, x)
         return Gdk.DragAction.MOVE
 
     def on_editor_tab_drop(
-        self, target: Gtk.DropTarget, key: str, x: float, _y: float
+        self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, _y: float
     ) -> bool:
-        self.reorder_editor_tab_at_bar_x(target, x, key)
-        if key in self.editor_tabs:
-            self.activate_editor_tab(key)
+        if not self.on_editor_tab_drop_accept(target, drop):
+            return False
+        self.read_private_note_drop(
+            drop, NOTE_TAB_DND_MIME_TYPE, self.editor_tab_drag_key, (target, x)
+        )
         return True
 
     def reorder_editor_tab_at_bar_x(
-        self, target: Gtk.DropTarget, pointer_x: float, dragged_key: str | None = None
+        self, target: Gtk.DropTargetAsync, pointer_x: float, dragged_key: str | None = None
     ) -> None:
-        dragged_key = dragged_key or getattr(self, "editor_tab_drag_key", None) or target.get_value()
+        dragged_key = dragged_key or getattr(self, "editor_tab_drag_key", None)
         if not isinstance(dragged_key, str):
             return
         dragged = self.editor_tabs.get(dragged_key)
@@ -2213,6 +2322,7 @@ class NotesDialogs:
             return False
 
     def on_close_request(self, _window: Gtk.Window) -> bool:
+        self.pending_note_drop = None
         self.close_note_context_menu()
         self.close_category_context_menu()
         self.close_note_tab_context_menu()

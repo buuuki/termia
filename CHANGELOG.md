@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- Keep terminal tabs, note tabs, and saved-note rows private during drag-and-drop
+  so text fields cannot insert their internal IDs. Preserve tab reordering and
+  moving saved notes between categories. Skip the two widget integration checks
+  when no graphical display is available (`#329`).
+
 - Apply the shared action-area insets once in the startup master-password panel,
   reduce excess button spacing, and show neutral error text while retaining its
   reserved message row (`#336`).
