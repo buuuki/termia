@@ -161,3 +161,68 @@ class StartupTerminalTests(unittest.TestCase):
         self.assertEqual(len(opened_sessions), 1)
         self.assertFalse(first_result)
         self.assertFalse(second_result)
+
+
+@unittest.skipUnless(importlib.util.find_spec("gi"), "GTK bindings are unavailable")
+class StartupUnlockLayoutTests(unittest.TestCase):
+    def setUp(self) -> None:
+        from termia.app import Gdk, Gtk, TermiaWindow
+
+        Gtk.init_check()
+        if Gdk.Display.get_default() is None:
+            self.skipTest("GTK display unavailable")
+        self.Gtk = Gtk
+        self.host = SimpleNamespace(
+            t=lambda key: key,
+            on_unlock_connections_requested=Mock(),
+            on_unlock_connections_cancelled=Mock(),
+        )
+        self.overlay = Gtk.Overlay()
+        TermiaWindow._build_unlock_panel(self.host, self.overlay)
+        self.content = self.host.unlock_panel.get_child()
+        self.form = self.content.get_first_child()
+        self.actions = self.content.get_last_child()
+
+    def test_action_insets_are_not_added_to_container_padding(self) -> None:
+        for side in ("top", "bottom", "start", "end"):
+            self.assertEqual(getattr(self.content, f"get_margin_{side}")(), 0)
+            self.assertEqual(getattr(self.actions, f"get_margin_{side}")(), 16)
+        self.assertEqual(self.content.get_spacing(), 0)
+        self.assertEqual(self.actions.get_spacing(), 8)
+        self.assertEqual(self.actions.get_halign(), self.Gtk.Align.END)
+        self.assertEqual(self.form.get_margin_bottom(), 0)
+        self.assertEqual(self.form.get_margin_end(), 16)
+        self.assertEqual(self.form.get_last_child(), self.host.unlock_error_label)
+
+    def test_error_row_reserves_space_and_uses_normal_text(self) -> None:
+        error = self.host.unlock_error_label
+        self.assertTrue(error.get_visible())
+        self.assertEqual(error.get_text(), "")
+        self.assertFalse(error.has_css_class("error"))
+        empty_height = error.measure(self.Gtk.Orientation.VERTICAL, 360).minimum
+        self.assertGreater(empty_height, 0)
+        for dark in (False, True):
+            with self.subTest(dark=dark):
+                settings = self.Gtk.Settings.get_default()
+                previous = settings.get_property("gtk-application-prefer-dark-theme")
+                try:
+                    settings.set_property("gtk-application-prefer-dark-theme", dark)
+                    error.set_label("Synthetic unlock failure")
+                    self.assertFalse(error.has_css_class("error"))
+                    self.assertEqual(error.get_color().to_string(),
+                                     self.form.get_first_child().get_color().to_string())
+                    self.assertEqual(error.measure(self.Gtk.Orientation.VERTICAL, 360).minimum, empty_height)
+                finally:
+                    settings.set_property("gtk-application-prefer-dark-theme", previous)
+
+    def test_unlock_controls_keep_their_existing_handlers(self) -> None:
+        cancel = self.actions.get_first_child()
+        unlock = self.actions.get_last_child()
+        self.assertEqual(cancel.get_label(), "cancel")
+        self.assertEqual(unlock.get_label(), "unlock")
+        cancel.emit("clicked")
+        unlock.emit("clicked")
+        self.host.unlock_password_entry.emit("activate")
+        self.host.on_unlock_connections_cancelled.assert_called_once_with(cancel)
+        self.assertEqual(self.host.on_unlock_connections_requested.call_args_list,
+                         [call(unlock), call(self.host.unlock_password_entry)])

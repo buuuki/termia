@@ -233,6 +233,12 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   and multi-monitor desktops and blocks the underlying controls until it is
   unlocked or cancelled. Window-management actions must remain available so
   the locked window can still be moved, minimized, maximized, or closed.
+- The startup unlock panel must apply the shared action-row insets only once:
+  Cancel/Unlock use 16 px bottom/right insets and 8 px between buttons. Keep
+  form padding separate, retain the error-message row when empty, and render
+  its text with the normal theme foreground rather than the red error class.
+  Check readability in light/dark themes, failed and successful unlock, Enter,
+  Escape, cancellation, and focus without using real credentials in tests.
 - Import/export configuration must preserve groups, subgroups, servers, SSH user, port, host, password, and private key path where available.
 - Importing Asbru configuration must not add unwanted suffixes such as `- copy`.
 - Launching a second Termia process must open a separate window and leave the new instance in read-only mode instead of writing shared config files concurrently.

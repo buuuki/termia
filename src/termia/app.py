@@ -807,70 +807,7 @@ class TermiaWindow(
         detail.append(self.terminal_stack)
         self.rebuild_tab_overflow_popover()
 
-        unlock_scrim = Gtk.Box()
-        self.unlock_scrim = unlock_scrim
-        unlock_scrim.set_halign(Gtk.Align.FILL)
-        unlock_scrim.set_valign(Gtk.Align.FILL)
-        unlock_scrim.set_hexpand(True)
-        unlock_scrim.set_vexpand(True)
-        unlock_scrim.set_visible(False)
-        window_overlay.add_overlay(unlock_scrim)
-
-        unlock_panel = Gtk.Frame()
-        self.unlock_panel = unlock_panel
-        unlock_panel.add_css_class("background")
-        unlock_panel.add_css_class("card")
-        unlock_panel.set_halign(Gtk.Align.CENTER)
-        unlock_panel.set_valign(Gtk.Align.CENTER)
-        unlock_panel.set_size_request(420, -1)
-        unlock_panel.set_margin_top(20)
-        unlock_panel.set_margin_bottom(20)
-        unlock_panel.set_margin_start(20)
-        unlock_panel.set_margin_end(20)
-        unlock_panel.set_visible(False)
-
-        unlock_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        unlock_content.set_margin_top(20)
-        unlock_content.set_margin_bottom(20)
-        unlock_content.set_margin_start(20)
-        unlock_content.set_margin_end(20)
-        unlock_panel.set_child(unlock_content)
-
-        unlock_title = Gtk.Label(label=self.t("unlock_connections_title"))
-        unlock_title.set_xalign(0)
-        unlock_title.add_css_class("title-2")
-        unlock_content.append(unlock_title)
-
-        unlock_detail = Gtk.Label(label=self.t("unlock_connections_detail"))
-        unlock_detail.set_xalign(0)
-        unlock_detail.set_wrap(True)
-        unlock_content.append(unlock_detail)
-
-        unlock_password_entry = Gtk.PasswordEntry()
-        self.unlock_password_entry = unlock_password_entry
-        unlock_password_entry.set_show_peek_icon(True)
-        unlock_password_entry.connect("activate", self.on_unlock_connections_requested)
-        unlock_content.append(unlock_password_entry)
-
-        unlock_error = Gtk.Label()
-        self.unlock_error_label = unlock_error
-        unlock_error.set_xalign(0)
-        unlock_error.set_wrap(True)
-        unlock_error.add_css_class("error")
-        unlock_content.append(unlock_error)
-
-        unlock_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        unlock_actions.set_halign(Gtk.Align.END)
-        cancel_button = Gtk.Button(label=self.t("cancel"))
-        cancel_button.connect("clicked", self.on_unlock_connections_cancelled)
-        unlock_actions.append(cancel_button)
-        unlock_button = Gtk.Button(label=self.t("unlock"))
-        unlock_button.add_css_class("suggested-action")
-        unlock_button.connect("clicked", self.on_unlock_connections_requested)
-        unlock_actions.append(unlock_button)
-        configure_action_area(unlock_actions)
-        unlock_content.append(unlock_actions)
-        window_overlay.add_overlay(unlock_panel)
+        self._build_unlock_panel(window_overlay)
 
         toast_revealer = Gtk.Revealer()
         self.toast_revealer = toast_revealer
@@ -894,6 +831,74 @@ class TermiaWindow(
         toast_frame.set_child(toast_content)
         toast_revealer.set_child(toast_frame)
         window_overlay.add_overlay(toast_revealer)
+
+    def _build_unlock_panel(self, window_overlay: Gtk.Overlay) -> None:
+        unlock_scrim = Gtk.Box()
+        self.unlock_scrim = unlock_scrim
+        unlock_scrim.set_halign(Gtk.Align.FILL)
+        unlock_scrim.set_valign(Gtk.Align.FILL)
+        unlock_scrim.set_hexpand(True)
+        unlock_scrim.set_vexpand(True)
+        unlock_scrim.set_visible(False)
+        window_overlay.add_overlay(unlock_scrim)
+
+        unlock_panel = Gtk.Frame()
+        self.unlock_panel = unlock_panel
+        unlock_panel.add_css_class("background")
+        unlock_panel.add_css_class("card")
+        unlock_panel.set_halign(Gtk.Align.CENTER)
+        unlock_panel.set_valign(Gtk.Align.CENTER)
+        unlock_panel.set_size_request(420, -1)
+        unlock_panel.set_margin_top(20)
+        unlock_panel.set_margin_bottom(20)
+        unlock_panel.set_margin_start(20)
+        unlock_panel.set_margin_end(20)
+        unlock_panel.set_visible(False)
+
+        unlock_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        unlock_panel.set_child(unlock_content)
+
+        # Form padding must not add a second inset around the shared action row.
+        unlock_form = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        unlock_form.set_margin_top(16)
+        unlock_form.set_margin_start(16)
+        unlock_form.set_margin_end(16)
+        unlock_content.append(unlock_form)
+
+        unlock_title = Gtk.Label(label=self.t("unlock_connections_title"))
+        unlock_title.set_xalign(0)
+        unlock_title.add_css_class("title-2")
+        unlock_form.append(unlock_title)
+
+        unlock_detail = Gtk.Label(label=self.t("unlock_connections_detail"))
+        unlock_detail.set_xalign(0)
+        unlock_detail.set_wrap(True)
+        unlock_form.append(unlock_detail)
+
+        unlock_password_entry = Gtk.PasswordEntry()
+        self.unlock_password_entry = unlock_password_entry
+        unlock_password_entry.set_show_peek_icon(True)
+        unlock_password_entry.connect("activate", self.on_unlock_connections_requested)
+        unlock_form.append(unlock_password_entry)
+
+        unlock_error = Gtk.Label()
+        self.unlock_error_label = unlock_error
+        unlock_error.set_xalign(0)
+        unlock_error.set_wrap(True)
+        unlock_form.append(unlock_error)
+
+        unlock_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        unlock_actions.set_halign(Gtk.Align.END)
+        cancel_button = Gtk.Button(label=self.t("cancel"))
+        cancel_button.connect("clicked", self.on_unlock_connections_cancelled)
+        unlock_actions.append(cancel_button)
+        unlock_button = Gtk.Button(label=self.t("unlock"))
+        unlock_button.add_css_class("suggested-action")
+        unlock_button.connect("clicked", self.on_unlock_connections_requested)
+        unlock_actions.append(unlock_button)
+        configure_action_area(unlock_actions)
+        unlock_content.append(unlock_actions)
+        window_overlay.add_overlay(unlock_panel)
 
     def on_window_key_pressed(
         self,

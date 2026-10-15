@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Apply the shared action-area insets once in the startup master-password panel,
+  reduce excess button spacing, and show neutral error text while retaining its
+  reserved message row (`#336`).
+
 - Show a line number on a newly created empty note line immediately after
   pressing Enter, and apply the dark editor background on a fresh profile
   (`#328`).
