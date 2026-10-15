@@ -99,6 +99,11 @@ an unchanged successful command. If later edits can affect its coverage, rerun
 the relevant check; rerun the full suite only when the later change warrants
 it. For documentation-only changes, validate the affected documentation,
 links, and documented commands without running unrelated application tests.
+Inside a restricted Codex sandbox, run unittest through
+`python3 scripts/run_sandbox_tests.py` so GTK and SFTP tests use a private
+display and session bus with local TCP sockets. Pass module names after the
+script for focused runs. Do not use the developer's desktop session or elevate
+tests to bypass the sandbox. GitHub Actions keeps its existing test command.
 
 When UI behavior changes, run an isolated test instance and review the relevant
 manual regression sections:
