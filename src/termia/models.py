@@ -33,6 +33,7 @@ class Server:
     password: str = ""
     public_key: str = ""
     split_layout: str = "none"
+    command_on_start: str = ""
 
 
 @dataclass

@@ -125,9 +125,10 @@ class ConnectionDialogsMixin:
         password_entry = Gtk.PasswordEntry()
         password_entry.set_show_peek_icon(True)
         public_key_entry = Gtk.Entry()
+        run_command_entry = Gtk.Entry()
         split_layout_combo = self.build_split_layout_combo(server.split_layout if server else "none")
         favorite_check = Gtk.CheckButton(label=self.t("favorite_server"))
-        for widget in (name_entry, host_entry, user_entry, port_spin, group_combo, password_entry, public_key_entry, split_layout_combo):
+        for widget in (name_entry, host_entry, user_entry, port_spin, group_combo, password_entry, public_key_entry, run_command_entry, split_layout_combo):
             widget.set_hexpand(True)
             widget.set_size_request(260, -1)
         favorite_check.set_halign(Gtk.Align.START)
@@ -145,6 +146,7 @@ class ConnectionDialogsMixin:
             group_combo.set_active_id(server.group_id or "")
             password_entry.set_text(server.password)
             public_key_entry.set_text(server.public_key)
+            run_command_entry.set_text(server.command_on_start)
             favorite_check.set_active(server.favorite)
         else:
             port_spin.set_value(22)
@@ -157,6 +159,7 @@ class ConnectionDialogsMixin:
             (self.t("group"), group_combo, False),
             (self.t("password"), password_entry, False),
             (self.t("public_key"), public_key_entry, False),
+            (self.t("run_command_on_start"), run_command_entry, False),
             (self.t("split"), split_layout_combo, False),
             ("", favorite_check, False),
         ]
@@ -187,6 +190,7 @@ class ConnectionDialogsMixin:
                 "group": group_combo,
                 "password": password_entry,
                 "public_key": public_key_entry,
+                "command_on_start": run_command_entry,
                 "split_layout": split_layout_combo,
                 "favorite": favorite_check,
             },
@@ -208,6 +212,7 @@ class ConnectionDialogsMixin:
         group_id = widgets["group"].get_active_id() or None
         password = widgets["password"].get_text()
         public_key = widgets["public_key"].get_text().strip()
+        command_on_start = widgets["command_on_start"].get_text().strip()
         split_layout = widgets["split_layout"].get_active_id() or "none"
         favorite = widgets["favorite"].get_active()
 
@@ -232,6 +237,7 @@ class ConnectionDialogsMixin:
                         password,
                         public_key,
                         split_layout,
+                        command_on_start,
                     )
                 else:
                     self.store.add_server(
@@ -244,6 +250,7 @@ class ConnectionDialogsMixin:
                         password,
                         public_key,
                         split_layout,
+                        command_on_start,
                     )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))

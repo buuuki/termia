@@ -13,7 +13,7 @@ from .constants import (
 from .models import DEFAULT_ANSI_PALETTE, TerminalSettings
 
 CURRENT_SCHEMA_VERSION = 1
-CURRENT_CONNECTIONS_SCHEMA_VERSION = 2
+CURRENT_CONNECTIONS_SCHEMA_VERSION = 3
 
 
 def _add_schema_version(
@@ -44,6 +44,12 @@ def migrate_connections_payload(payload: dict[str, Any]) -> tuple[dict[str, Any]
     if "snippet_categories" not in migrated:
         migrated["snippet_categories"] = []
         changed = True
+    servers = migrated.get("servers")
+    if isinstance(servers, list):
+        for server in servers:
+            if isinstance(server, dict) and "command_on_start" not in server:
+                server["command_on_start"] = ""
+                changed = True
     return migrated, changed
 
 

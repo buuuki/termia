@@ -31,7 +31,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
   una categoría, sus snippets pasan a Sin categoría.
 - Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
 - Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`. Arrastrar un servidor guardado a un grupo, subgrupo o Sin grupo para moverlo.
-- Guardar host, usuario, puerto, contraseña y ruta de clave privada de cada conexión SSH.
+- Guardar host, usuario, puerto, contraseña, ruta de clave privada y un comando opcional al iniciar cada conexión SSH.
 - Importar y exportar configuración de Termia, incluidas conexiones básicas, grupos anidados y credenciales disponibles de YAML de Asbru.
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Crear notas personales o asociadas a servidores, organizarlas por categorías y editarlas mientras se usan los terminales. Las notas tienen guardado automático e importación/exportación independientes.
@@ -212,6 +212,7 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
 
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, recuperación de la sesión anterior, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto. La recuperación de la sesión anterior está desactivada por defecto.
 - `Terminal` combina la apariencia del VTE y el prompt local con una única vista previa. Los cambios de apariencia se aplican a terminales abiertos; los del prompt solo a nuevos Bash locales o duplicaciones y nunca inyectan comandos en shells locales activos ni sesiones SSH. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
+- Edita un servidor SSH guardado para definir `Ejecutar comando al iniciar`. Termia lo ejecuta después de autenticar y mantiene abierta la sesión con una shell interactiva cuando termina. Se ejecuta cada vez que se inicia una sesión con ese perfil, incluidas las duplicadas o restauradas.
 - `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
 - `Ctrl+Izquierda`, `Ctrl+Derecha`, `Ctrl+Arriba` y `Ctrl+Abajo` mueven el
   foco entre paneles divididos según su dirección visual. Pueden reasignarse o
@@ -336,17 +337,17 @@ Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
 ~/.local/state/termia/last-session.json  # solo si se activa la restauración
 ```
 
-Las contraseñas guardadas se almacenan en `connections.json`; el fichero puede mantenerse en texto plano, ofuscado o cifrado con una contraseña maestra desde las preferencias de Seguridad. Cuando el cifrado está activado, Termia pide la contraseña maestra al arrancar y no puede recuperar los datos de conexión si esa contraseña se pierde. En Seguridad puedes cambiarla; Termia verifica la contraseña actual y vuelve a cifrar las conexiones y las notas. Las notas se guardan por separado en `notes.json` y siguen el mismo modo de protección local; no se incluyen al importar o exportar conexiones. Las notas exportadas sin contraseña son JSON sin cifrar y legible; al elegir una contraseña para la exportación, el fichero se cifra y esa contraseña es necesaria para importarlo. Esta contraseña de exportación es independiente de la contraseña maestra. Trata los ficheros exportados como datos sensibles. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
+Las contraseñas guardadas y los comandos de inicio por servidor se almacenan en `connections.json`; el fichero puede mantenerse en texto plano, ofuscado o cifrado con una contraseña maestra desde las preferencias de Seguridad. Un comando de inicio se ejecuta automáticamente cada vez que se inicia una sesión con su perfil SSH. Trátalo como configuración ejecutable, no incluyas secretos y protege las exportaciones, que pueden contener comandos y contraseñas. Cuando el cifrado está activado, Termia pide la contraseña maestra al arrancar y no puede recuperar los datos de conexión si esa contraseña se pierde. En Seguridad puedes cambiarla; Termia verifica la contraseña actual y vuelve a cifrar las conexiones y las notas. Las notas se guardan por separado en `notes.json` y siguen el mismo modo de protección local; no se incluyen al importar o exportar conexiones. Las notas exportadas sin contraseña son JSON sin cifrar y legible; al elegir una contraseña para la exportación, el fichero se cifra y esa contraseña es necesaria para importarlo. Esta contraseña de exportación es independiente de la contraseña maestra. Trata los ficheros exportados como datos sensibles. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
 Los ficheros de conexiones exportados también pueden contener credenciales.
 Los contadores locales agregados se guardan por separado en `statistics.json` y vienen desactivados por defecto. Desde **Complementos** en el menú principal puedes activar o desactivar Estadísticas y el explorador SFTP. Los cambios se aplican al reiniciar Termia; desactivar un complemento oculta sus acciones, pero no borra sus datos. Cuando hay varios procesos de Termia abiertos al mismo tiempo, solo la instancia que mantiene `instance.lock` escribe conexiones, ajustes o estadísticas; las siguientes permanecen en solo lectura para evitar corromper esos ficheros.
 El historial se guarda aparte en `connections-history.jsonl`; la sección Recent
 de la barra lateral se obtiene de las conexiones SSH correctas de ese historial.
 
-Termia no registra los comandos escritos o ejecutados en los terminales, su
-salida, el contenido del portapapeles ni contadores de comandos o pulsaciones.
-Los snippets, cuando están disponibles, son plantillas de comandos que el
-usuario guarda expresamente en `connections.json`; no son un historial de
-comandos ejecutados. Cuando están activadas, las estadísticas solo registran
+Termia no registra un historial de los comandos escritos o ejecutados en los
+terminales, su salida, el contenido del portapapeles ni contadores de comandos
+o pulsaciones. Los snippets y comandos de inicio por servidor son configuración
+que el usuario guarda en `connections.json`, no un historial de comandos
+ejecutados. Cuando están activadas, las estadísticas solo registran
 conexiones agregadas, uso por servidor y duración de sesiones; se escriben como
 máximo cada 30 segundos, al finalizar sesiones y al cerrar Termia. Consulta
 [../SECURITY.md](../SECURITY.md).

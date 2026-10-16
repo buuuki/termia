@@ -695,9 +695,18 @@ class TerminalSessionsMixin:
                 self.mark_session_for_reconnect(session, server, message)
                 return
             command = build_ssh_command(server, ssh_path, sshpass_path=sshpass_path)
+            display_command = build_ssh_command(
+                server,
+                ssh_path,
+                sshpass_path=sshpass_path,
+                include_startup_command=False,
+            )
         else:
             command = build_ssh_command(server, ssh_path)
-        terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
+            display_command = build_ssh_command(server, ssh_path, include_startup_command=False)
+        terminal.feed(
+            f"{self.t('ssh_connecting_command').format(command=' '.join(display_command))}\r\n\r\n".encode()
+        )
         terminal.grab_focus()
         try:
             child_process = spawn_terminal_process(terminal, None, command, envv)
@@ -1632,9 +1641,18 @@ class TerminalSessionsMixin:
                 self.mark_pane_for_reconnect(session, pane, message)
                 return
             command = build_ssh_command(server, ssh_path, sshpass_path=sshpass_path)
+            display_command = build_ssh_command(
+                server,
+                ssh_path,
+                sshpass_path=sshpass_path,
+                include_startup_command=False,
+            )
         else:
             command = build_ssh_command(server, ssh_path)
-        terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
+            display_command = build_ssh_command(server, ssh_path, include_startup_command=False)
+        terminal.feed(
+            f"{self.t('ssh_connecting_command').format(command=' '.join(display_command))}\r\n\r\n".encode()
+        )
         try:
             child_process = spawn_terminal_process(terminal, None, command, envv)
         except GLib.Error as exc:

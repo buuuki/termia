@@ -61,6 +61,21 @@ class ConfigIOTests(unittest.TestCase):
         self.assertEqual(payload["snippet_categories"], ["Empty"])
         self.assertNotIn("password", payload["workspaces"][0])
 
+    def test_server_startup_command_round_trip_and_legacy_default(self) -> None:
+        self.servers[0].command_on_start = "cd /srv/app && ./start.sh"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "connections.json"
+            write_connections_file(path, self.groups, self.servers, self.terminals, "plain")
+            imported = load_store_data_from_json(path, StoreData())
+            self.assertEqual(imported.servers[0].command_on_start, "cd /srv/app && ./start.sh")
+
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["servers"][0].pop("command_on_start")
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            legacy_imported = load_store_data_from_json(path, StoreData())
+
+        self.assertEqual(legacy_imported.servers[0].command_on_start, "")
+
     def test_import_retains_empty_and_snippet_categories(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "connections.json"

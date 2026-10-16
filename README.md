@@ -35,7 +35,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
   category moves its snippets to Uncategorized.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
 - Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`. Drag a saved server onto a group, subgroup, or Ungrouped to move it.
-- Store host, user, port, password, and private-key settings for each SSH connection.
+- Store host, user, port, password, private-key settings, and an optional startup command for each SSH connection.
 - Import and export Termia configuration, including basic connections, nested groups, and available credentials from Asbru YAML.
 - Review connection history and optional local usage statistics, including durations and most-used servers.
 - Keep personal notes or associate notes with servers; organize them with
@@ -279,6 +279,7 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   note in the list to edit, rename, clone, view properties, or delete it;
   cloning saves a copy with a new identity and the same content and associations.
 - `Terminal` combines embedded VTE appearance and local prompt settings with one live preview. Appearance changes apply to open terminals; prompt changes apply only to new or duplicated local Bash terminals and never inject commands into running local shells or SSH sessions. New installations start with JetBrains Mono and the Polaris palette.
+- Edit a saved SSH server to set `Run command on start`. Termia runs it after SSH authentication and leaves the session open with an interactive shell when it finishes. The command runs each time that server profile starts a session, including duplicated or restored sessions.
 - `Keybindings` shows the active shortcuts and lets you record shortcut combinations for common actions such as server filtering, sidebar visibility, opening a local terminal, focus navigation, copy, paste, tab switching, font zoom, and sending the saved password. `Ctrl+F` focuses the server filter, `Ctrl+Shift+B` toggles the server list, `F10` toggles the main menu, `Ctrl+Shift+T` opens a local terminal, and `Ctrl+F6`/`Ctrl+Shift+F6` cycle through the main interface regions. Other unmodified function keys pass through to terminal applications.
 - `Ctrl+Left`, `Ctrl+Right`, `Ctrl+Up`, and `Ctrl+Down` move focus between
   split panes by visual direction. These shortcuts can be reassigned or
@@ -364,15 +365,16 @@ Termia stores connection data, settings, and statistics outside the repository:
 ~/.local/state/termia/last-session.json  # only when session restoration is enabled
 ```
 
-Saved passwords are stored in `connections.json`; the file can be kept as plain text, obfuscated, or encrypted with a master password from Security preferences. When encryption is enabled, Termia asks for the master password on startup and cannot recover the connection data if that password is lost. Change the master password from Security preferences; Termia verifies the current password and re-encrypts connections and notes. `notes.json` is a separate file, uses the same local protection mode, and is deliberately not included in connection imports or exports. Notes have their own import/export actions. Notes exports without a password are unencrypted JSON; a password selected during export encrypts the file and is required to import it. This export password is separate from the master password protecting local Termia data. Replacing existing notes creates a backup first. Imported Ásbrú passwords are stored the same way when the source YAML exposes them in a `pass` field. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, notes, or statistics; later instances stay read-only to avoid corrupting these files.
+Saved passwords and per-server startup commands are stored in `connections.json`; the file can be kept as plain text, obfuscated, or encrypted with a master password from Security preferences. A startup command runs automatically whenever its SSH profile starts a session. Treat it as executable configuration, do not put secrets in the command, and protect exported connection files, which can contain both passwords and startup commands. When encryption is enabled, Termia asks for the master password on startup and cannot recover the connection data if that password is lost. Change the master password from Security preferences; Termia verifies the current password and re-encrypts connections and notes. `notes.json` is a separate file, uses the same local protection mode, and is deliberately not included in connection imports or exports. Notes have their own import/export actions. Notes exports without a password are unencrypted JSON; a password selected during export encrypts the file and is required to import it. This export password is separate from the master password protecting local Termia data. Replacing existing notes creates a backup first. Imported Ásbrú passwords are stored the same way when the source YAML exposes them in a `pass` field. Exported connection files can also contain passwords. Aggregate usage counters are stored separately in `statistics.json`. When several Termia processes are open at the same time, only the instance holding `instance.lock` writes connections, settings, notes, or statistics; later instances stay read-only to avoid corrupting these files.
 Connection history is stored separately in `connections-history.jsonl`; the
 sidebar derives its small, deduplicated Recent section from successful SSH
 connections in that history.
 
-Termia does not record commands typed or executed in terminal panes, terminal
-output, clipboard contents, command counters, or keystroke counters. Snippets,
-where available, are command templates the user explicitly saves in
-`connections.json`; they are not a history of executed commands. Statistics are
+Termia does not record commands typed or executed in terminal panes as an
+execution history, terminal output, clipboard contents, command counters, or
+keystroke counters. Snippets and per-server startup commands are user-authored
+configuration saved in `connections.json`, not a history of executed commands.
+Statistics are
 disabled by default and can be enabled from **Add-ons**. When enabled,
 they track only aggregate connections, per-server usage, and session durations;
 they are flushed at most every 30 seconds, when sessions end, and when Termia

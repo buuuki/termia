@@ -65,7 +65,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 - Local terminals must start in the user's home directory unless a future setting explicitly changes it.
 - Local terminal prompt customization must apply to newly opened and duplicated local terminals.
-- SSH sessions must not send arbitrary commands automatically to remote servers.
+- SSH sessions must not send commands automatically unless a non-empty startup
+  command was saved for that server. Run it only after SSH authentication, never
+  into a password or host-key prompt, and keep the session interactive after it
+  finishes. Verify normal, split, duplicated, restored, and reconnected sessions.
 - Command snippets must be stored locally and run only after explicit selection,
   variable entry when required, and confirmation of the final preview. Their
   command text and variable values must never be written to debug logs.

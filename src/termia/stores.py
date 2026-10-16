@@ -1212,6 +1212,7 @@ class ConnectionStore:
         password: str = "",
         public_key: str = "",
         split_layout: str = "none",
+        command_on_start: str = "",
     ) -> Server:
         self.ensure_writable()
         server = Server(
@@ -1225,6 +1226,7 @@ class ConnectionStore:
             password=password,
             public_key=public_key,
             split_layout=normalize_split_layout(split_layout),
+            command_on_start=command_on_start.strip(),
         )
         self.data.servers.append(server)
         self.save_connections()
@@ -1242,6 +1244,7 @@ class ConnectionStore:
         password: str = "",
         public_key: str = "",
         split_layout: str = "none",
+        command_on_start: str = "",
     ) -> None:
         self.ensure_writable()
         for server in self.data.servers:
@@ -1255,6 +1258,7 @@ class ConnectionStore:
                 server.password = password
                 server.public_key = public_key
                 server.split_layout = normalize_split_layout(split_layout)
+                server.command_on_start = command_on_start.strip()
                 break
         self.save_connections()
 
