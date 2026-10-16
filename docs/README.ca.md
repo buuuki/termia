@@ -25,10 +25,14 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Desar snippets d'ordres reutilitzables per categoria i limitar-los a tots
   els terminals, un grup o un servidor; previsualitzar les variables abans
   d'enviar-los explícitament al terminal seleccionat. Gestionar-los des d'una
-  vista de tres columnes amb categories i comptadors, llista de snippets,
-  previsualització de l'ordre en només lectura i cerca global. Crear, canviar el
-  nom, duplicar i suprimir categories per separat; quan se suprimeix una
-  categoria, els seus snippets passen a Sense categoria.
+  finestra independent amb tres columnes: categories i comptadors, llista de
+  snippets, previsualització de l'ordre en només lectura i cerca global. Els
+  terminals continuen disponibles mentre és oberta. Les targetes de categoria
+  mantenen la mida i ocupen tantes columnes com hi caben; passen a una altra
+  fila si falta espai. Usa **Torna als snippets** per tornar des de la gestió
+  de categories. Pots crear, canviar el nom, duplicar i suprimir categories per
+  separat; quan se suprimeix una categoria, els seus snippets passen a Sense
+  categoria.
 - Mantenir les dades de connexió en local amb emmagatzematge en text pla, ofuscat o xifrat opcional protegit per una contrasenya mestra.
 - Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`. Arrossegar un servidor desat a un grup, subgrup o Sense grup per moure'l.
 - Desar host, usuari, port, contrasenya, ruta de clau privada i una ordre opcional en iniciar cada connexió SSH.

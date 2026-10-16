@@ -1785,6 +1785,9 @@ msgstr "Vista previa del comando"
 msgid "All categories"
 msgstr "Todas las categorías"
 
+msgid "Back to snippets"
+msgstr "Volver a snippets"
+
 msgid "{count} snippets"
 msgstr "{count} snippets"
 

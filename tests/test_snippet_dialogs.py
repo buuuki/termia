@@ -266,6 +266,8 @@ class SnippetDialogTests(unittest.TestCase):
         grid = state.category_manage_grid
         self.assertTrue(grid.get_homogeneous())
         self.assertEqual(grid.get_halign(), Gtk.Align.START)
+        self.assertFalse(grid.get_hexpand())
+        self.assertEqual(grid.get_max_children_per_line(), 6)
         tiles = [grid.get_child_at_index(index) for index in range(6)]
         self.assertTrue(all(tile is not None for tile in tiles))
         self.assertTrue(all(tile.has_css_class("termia-snippet-category-tile") for tile in tiles))
@@ -290,13 +292,23 @@ class SnippetDialogTests(unittest.TestCase):
         category_page = state.stack.get_visible_child()
         header = category_page.get_first_child()
         back = header.get_first_child()
-        self.assertEqual(back.get_label(), "All categories")
+        self.assertEqual(back.get_label(), "Back to snippets")
         self.assertIsNone(back.get_next_sibling())
 
+        category_actions = header.get_next_sibling()
+        labels = []
+        button = category_actions.get_first_child()
+        while button is not None:
+            labels.append(button.get_label())
+            button = button.get_next_sibling()
+        self.assertEqual(
+            labels,
+            ["Add category", "Rename category", "Duplicate category", "Delete category"],
+        )
         actions = category_page.get_last_child()
         cancel = actions.get_last_child()
         self.assertEqual(cancel.get_label(), "Cancel")
-        self.assertEqual(cancel.get_prev_sibling().get_label(), "Delete category")
+        self.assertIsNone(cancel.get_prev_sibling())
 
         dialogs.on_category_manage_add(Mock(), state)
         state.category_name_entry.set_text("Unsaved")

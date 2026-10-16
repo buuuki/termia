@@ -29,8 +29,11 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Save reusable command snippets by category and scope them to all terminals, a
   server group, or one server; preview variable-expanded commands before
   explicitly sending them to a selected terminal. Manage them through a
-  three-column view with category counts, snippet lists, a read-only command
-  preview, and global search.
+  three-column view in an independent window with category counts, snippet
+  lists, a read-only command preview, and global search. Terminals remain
+  usable while the manager is open.
+  Fixed-size category tiles use as many columns as fit and wrap when space is
+  limited. Use **Back to snippets** to return from category management.
   Create, rename, duplicate, and delete categories independently; deleting a
   category moves its snippets to Uncategorized.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
