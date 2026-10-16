@@ -1,9 +1,10 @@
 import io
+import errno
 from pathlib import Path
 from queue import Queue
 import stat
 import tempfile
-from threading import Event
+from threading import Event, get_ident
 import unittest
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -12,10 +13,10 @@ from types import SimpleNamespace
 import paramiko
 
 from termia.sftp_service import (
-    AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, SFTPService,
+    AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, IncompleteTransfer, SFTPService,
     UnknownHost, child_path,
 )
-from termia.sftp_backend import ParamikoBackend, RequireConfirmation
+from termia.sftp_backend import ParamikoBackend, RequireConfirmation, failure_details
 
 
 class SFTPTests(unittest.TestCase):
@@ -146,6 +147,40 @@ class SFTPTests(unittest.TestCase):
         with self.assertRaises(Cancelled):
             backend.copy(io.BytesIO(b"data"), io.BytesIO(), 4, Mock())
 
+    def test_copy_rejects_truncated_and_growing_sources(self):
+        for data, size in ((b"abc", 10), (b"abcdef", 3)):
+            with self.subTest(size=size), self.assertRaises(IncompleteTransfer):
+                self.backend().copy(io.BytesIO(data), io.BytesIO(), size, Mock())
+        target = io.BytesIO()
+        self.assertEqual(self.backend().copy(io.BytesIO(b"abc"), target, None, Mock()), 3)
+        self.assertEqual(target.getvalue(), b"abc")
+
+    def test_short_download_removes_partial_file(self):
+        backend = self.backend()
+        backend.sftp = Mock()
+        backend.sftp.lstat.return_value = Mock(st_mode=stat.S_IFREG, st_size=10)
+        backend.sftp.open.return_value = io.BytesIO(b"abc")
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "partial"
+            with self.assertRaises(IncompleteTransfer):
+                backend.download("/synthetic", target, Mock())
+            self.assertFalse(target.exists())
+
+    def test_error_classification_does_not_include_sensitive_details(self):
+        for error, key, reconnect in (
+            (FileExistsError(errno.EEXIST, "secret"), "sftp_exists", False),
+            (PermissionError(errno.EACCES, "secret"), "sftp_permission", False),
+            (OSError(errno.ENOSPC, "secret"), "sftp_no_space", False),
+            (FileNotFoundError(errno.ENOENT, "secret"), "sftp_not_found", False),
+            (TimeoutError("secret"), "sftp_timeout", True),
+            (paramiko.SSHException("secret"), "sftp_connection_lost", True),
+            (IncompleteTransfer(), "sftp_incomplete", False),
+            (ValueError("secret"), "sftp_unsupported", False),
+            (RuntimeError("secret"), "sftp_failed", False),
+        ):
+            with self.subTest(key=key):
+                self.assertEqual(failure_details(error), (key, reconnect))
+
 
 class SFTPServiceTests(unittest.TestCase):
     def setUp(self):
@@ -155,6 +190,8 @@ class SFTPServiceTests(unittest.TestCase):
 
     def drain(self):
         self.service.worker.join(2)
+        if self.service.close_worker:
+            self.service.close_worker.join(2)
         self.assertFalse(self.service.worker.is_alive())
         while not self.queue.empty():
             callback, *args = self.queue.get_nowait()
@@ -193,6 +230,93 @@ class SFTPServiceTests(unittest.TestCase):
         self.assertIsInstance(failed.call_args.args[0], Cancelled)
         with self.assertRaises(RuntimeError):
             self.service.submit(Mock(), Mock(), Mock())
+
+    def test_tiny_file_batch_has_bounded_queue_and_exact_final_totals(self):
+        progress, done = Mock(), Mock()
+        def operation(_backend, report):
+            for index in range(2000):
+                report(0, 0, name=str(index))
+                report(0, 0, name=str(index), finished=True)
+            report(3, 3, name="last", finished=True)
+        self.service.submit(operation, done, Mock(), progress)
+        self.service.worker.join(2)
+        self.assertLessEqual(self.queue.qsize(), 2)
+        self.drain()
+        final = progress.call_args.args[0]
+        self.assertEqual((final.files_completed, final.bytes_transferred, final.name), (2001, 3, "last"))
+        done.assert_called_once()
+
+    def test_cancel_suppresses_already_queued_progress_and_success(self):
+        progress, done, failed = Mock(), Mock(), Mock()
+        self.service.submit(lambda backend, report: report(1, 2), done, failed, progress)
+        self.service.worker.join(2)
+        self.service.cancel()
+        self.drain()
+        self.assertTrue(self.service.stopped)
+        progress.assert_not_called()
+        done.assert_not_called()
+        self.assertIsInstance(failed.call_args.args[0], Cancelled)
+
+    def test_slow_cleanup_is_off_caller_thread_and_verified_before_stopped(self):
+        closing, release = Event(), Event()
+        caller = get_ident()
+        def close():
+            self.assertNotEqual(get_ident(), caller)
+            closing.set()
+            release.wait(2)
+        self.backend.close.side_effect = close
+        try:
+            self.service.close()
+            self.assertTrue(closing.wait(1))
+            self.assertFalse(self.service.stopped)
+            self.service.close()
+        finally:
+            release.set()
+            self.service.close_worker.join(2)
+        self.assertTrue(self.service.stopped)
+        self.backend.close.assert_called_once()
+
+    def test_setup_that_creates_transport_after_cancel_is_closed_again(self):
+        started, release = Event(), Event()
+        def connect(*_):
+            started.set()
+            release.wait(2)
+        self.service.submit(connect, Mock(), Mock())
+        self.assertTrue(started.wait(1))
+        self.service.cancel()
+        release.set()
+        self.drain()
+        self.assertTrue(self.service.stopped)
+        self.assertGreaterEqual(self.backend.close.call_count, 2)
+
+    def test_cleanup_failure_is_not_reported_as_verified_shutdown(self):
+        self.backend.close.side_effect = OSError("synthetic close failure")
+        self.service.close()
+        self.service.close_worker.join(2)
+        self.assertTrue(self.service.cleanup_failed)
+        self.assertFalse(self.service.stopped)
+
+    def test_recent_speed_uses_operation_bytes_across_files_and_resets(self):
+        mib = 1024 * 1024
+        clock = [0.0]
+        snapshots = []
+        def operation(_backend, report):
+            for moment, current, finished in ((1, mib, False), (2, 2 * mib, True),
+                                              (3, mib, False), (5, 3 * mib, True),
+                                              (9, 0, False)):
+                clock[0] = moment
+                report(current, 3 * mib, name="synthetic", finished=finished)
+                callback, *args = self.queue.get_nowait()
+                callback(*args)
+        with patch("termia.sftp_service.monotonic", side_effect=lambda: clock[0]):
+            self.service.submit(operation, Mock(), Mock(), snapshots.append)
+            self.drain()
+            self.assertEqual([item.bytes_per_second for item in snapshots], [mib, mib, mib, mib, 0])
+            self.assertEqual(snapshots[3].bytes_transferred, 5 * mib)
+            snapshots.clear()
+            self.service.submit(lambda _backend, report: report(0, 0), Mock(), Mock(), snapshots.append)
+            self.drain()
+            self.assertEqual(snapshots[-1].bytes_per_second, 0)
 
 
 class SFTPIntegrationTests(unittest.TestCase):

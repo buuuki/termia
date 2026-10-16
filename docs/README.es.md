@@ -62,13 +62,26 @@ en 0.6.0-beta.2.
 Abre **Explorar archivos (SFTP)** desde el menú de un servidor o panel SSH.
 Instala las dependencias con `scripts/termia-setup.sh install`. La ventana
 independiente permite navegar, subir archivos/carpetas, descargar, crear
-carpetas, renombrar y borrar archivos o carpetas vacías. No sobrescribe destinos
+carpetas, renombrar y borrar archivos o carpetas vacías. Los tamaños de la lista
+se muestran en B, kB, MB o GB según corresponda. No sobrescribe destinos
 existentes ni transfiere enlaces simbólicos. Cancelar desconecta SFTP; reconecta
 con **Reconectar SFTP** para continuar. **Desconectar** cierra la ventana y su
 conexión SFTP independiente, incluso durante una transferencia. Cancelar,
 Reconectar SFTP y Desconectar aparecen a la derecha. Pueden quedar archivos
-remotos o carpetas incompletos. El progreso es por archivo. Cerrar la pestaña
-propietaria o Termia cierra la conexión SFTP.
+remotos o carpetas incompletos. La ventana SFTP puede quedar detrás del terminal;
+sus diálogos solo bloquean SFTP. El progreso muestra el archivo actual en MB,
+la velocidad reciente en MB/s y los archivos completados. El tooltip muestra
+los MB acumulados de la operación, sin repetirlos en la barra. La velocidad
+usa una ventana reciente de tres segundos que continúa entre archivos. El total
+de una carpeta es desconocido porque la transferencia comienza sin recorrer
+antes todo el árbol.
+Una diferencia inesperada en el número de bytes hace fallar la transferencia;
+esto no verifica sumas de comprobación. Cancelar un diálogo de renombrado o
+borrado conserva la conexión. Cerrar la pestaña propietaria o Termia solicita
+la limpieza de SFTP sin bloquear GTK. La reconexión espera a que terminen el
+trabajador y la tarea de cierre. Si la limpieza sigue pendiente tras 30 segundos,
+se indica que no se ha verificado; ese plazo no garantiza que termine una llamada
+bloqueada del sistema operativo o de red.
 
 Paramiko usa el host y la identidad guardados, SSH-agent/claves predeterminadas
 o contraseña en memoria. Confirma las huellas desconocidas; se rechazan claves

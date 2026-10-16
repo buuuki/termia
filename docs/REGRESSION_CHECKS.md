@@ -634,6 +634,36 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Native SFTP explorer
 
+- Check file-list sizes around the 1000-byte, MB and GB boundaries, including
+  empty files. Units adapt to the size without changing the original byte count
+  or the existing MB/MB/s transfer indicators.
+- Open an isolated profile with `scripts/run_test_instance.sh --fresh`. During
+  a long transfer, return to the terminal window, type into a local terminal,
+  switch tabs and move SFTP behind the main window. Confirm that an SFTP-only
+  modal prompt does not grab unrelated windows and that no transfer is stopped
+  merely by moving focus. Check both sidebar- and pane-owned explorers.
+- Transfer mixed trees with empty files/directories and many tiny files. Check
+  the current filename, per-file MB, recent MB/s and completed-file count.
+  Accumulated operation MB appear in the tooltip without being repeated in the
+  bar. Confirm the speed continues across files, reacts to slower progress and
+  resets for a new operation, including empty files and zero elapsed time.
+  The whole-tree total is deliberately unknown; no pre-scan is
+  required. The final completion state must be delivered even if intermediate
+  progress is coalesced, without flooding the GTK loop.
+- Simulate early EOF and sources growing beyond their expected size; neither
+  may report success. Remove a partial failed local file while retaining earlier
+  completed files/directories. Byte counts do not prove checksum integrity.
+- Check safe messages for existing destinations, permissions/read-only targets,
+  missing paths, timeouts, disconnection, unsupported files and space/quota
+  errors where the server supplies a recognizable code. Cancel rename/delete
+  prompts and verify the original status and live connection are retained.
+- Use slow synthetic connection/close operations to verify that cancellation
+  and disconnect leave GTK responsive. No queued progress or success may appear
+  after cancellation, and reconnect stays disabled until both operation and
+  close workers have exited. Repeated close is safe; setup that creates its
+  transport after the first cancel must be closed again. A 30-second cleanup
+  warning is an unverified result, not proof that a blocked OS call terminated.
+
 - From the saved-server menu and from each SSH pane of a mixed split, open
   `Browse files (SFTP)` and check the correct endpoint. Terminal size, divider
   positions, application CSS, and existing SCP actions must remain unchanged.

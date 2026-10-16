@@ -8,24 +8,37 @@ from datetime import datetime
 from pathlib import Path
 import posixpath
 import stat
+from time import monotonic
 
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import GLib, Gtk
+from gi.repository import GLib, Gtk, Pango
 
 from .dialog_actions import add_dialog_action_button, configure_action_area
 from .known_hosts import ScannedHostKey, append_scanned_host_key
-from .sftp_backend import ParamikoBackend
+from .sftp_backend import ParamikoBackend, failure_details
 from .sftp_service import (
     AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, SFTPService,
     UnknownHost, child_path,
 )
 
 
+def format_file_size(size: int) -> str:
+    amount = float(size)
+    for unit in ("B", "kB", "MB", "GB"):
+        if amount < 1000 or unit == "GB":
+            return f"{size} B" if unit == "B" else f"{amount:.1f} {unit}"
+        amount /= 1000
+
+
 class SFTPWindow(Gtk.Window):
     def __init__(self, parent, endpoint: Endpoint, title, translate, on_closed,
                  owner_session_id=None, backend_factory=ParamikoBackend):
-        super().__init__(title=f"SFTP — {title}", transient_for=parent)
+        super().__init__(title=f"SFTP — {title}", application=parent.get_application())
+        self.set_modal(False)
+        # A modal SFTP prompt must not grab unrelated Termia windows.
+        self.window_group = Gtk.WindowGroup()
+        self.window_group.add_window(self)
         self.t = translate
         self.endpoint = endpoint
         self.backend_factory = backend_factory
@@ -34,6 +47,9 @@ class SFTPWindow(Gtk.Window):
         self.service = None
         self.disposed = False
         self.dialogs = set()
+        self.transfer_active = False
+        self.connection_ready = False
+        self.stop_source = 0
         self.path = "."
         self.set_default_size(820, 560)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -61,6 +77,7 @@ class SFTPWindow(Gtk.Window):
         scroll.set_child(self.rows)
         box.append(scroll)
         self.progress = Gtk.ProgressBar(show_text=True)
+        self.progress.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
         box.append(self.progress)
         self.status = Gtk.Label(xalign=0, wrap=True)
         box.append(self.status)
@@ -81,57 +98,97 @@ class SFTPWindow(Gtk.Window):
         return button
 
     def set_busy(self, busy):
-        self.toolbar.set_sensitive(not busy)
-        self.actions.set_sensitive(not busy)
-        self.rows.set_sensitive(not busy)
-        self.cancel_button.set_sensitive(busy)
+        stopping = bool(self.service and self.service.cancelled.is_set() and not self.service.stopped)
+        busy = busy or stopping
+        self.toolbar.set_sensitive(not busy and self.connection_ready)
+        self.actions.set_sensitive(not busy and self.connection_ready)
+        self.rows.set_sensitive(not busy and self.connection_ready)
+        self.cancel_button.set_sensitive(busy and not stopping)
         self.reconnect_button.set_sensitive(not busy)
 
     def connect_backend(self):
         if self.disposed:
             return
+        if self.service and (self.service.busy or
+                             (self.service.cancelled.is_set() and not self.service.stopped)):
+            return
         if self.service:
             self.service.close()
+        self.connection_ready = False
         self.service = SFTPService(self.backend_factory(self.endpoint), GLib.idle_add)
-        self.run(lambda backend, _: backend.connect(), self.navigate)
+        def connected(path):
+            self.connection_ready = True
+            self.navigate(path)
+        self.run(lambda backend, _: backend.connect(), connected)
 
-    def run(self, operation, done=None):
+    def run(self, operation, done=None, *, transfer=False):
         if self.disposed or self.service.busy:
             return
         if self.service.cancelled.is_set():
             self.status.set_text(self.t("sftp_reconnect_required"))
             return
         self.set_busy(True)
+        self.transfer_active = transfer
         self.status.set_text(self.t("sftp_working"))
-        self.progress.set_fraction(0)
+        if transfer:
+            self.progress.set_fraction(0)
+            self.progress.set_text("")
+            self.progress.set_tooltip_text(None)
 
         def completed(value):
+            self.transfer_active = False
             self.set_busy(False)
+            if transfer:
+                self.progress.set_fraction(1)
             self.status.set_text(self.t("sftp_done"))
             if done:
                 done(value)
 
         self.service.submit(operation, completed, self.failed, self.show_progress)
 
-    def show_progress(self, current, total):
-        self.progress.set_fraction(min(current / total, 1) if total else 0)
-        self.progress.set_text(f"{current:,} / {total:,} B")
+    def show_progress(self, value):
+        mb = 1000 * 1000
+        if value.total is None:
+            self.progress.pulse()
+            size = f"{value.current / mb:.1f} MB"
+        else:
+            self.progress.set_fraction(min(value.current / value.total, 1) if value.total else 1)
+            size = f"{value.current / mb:.1f} / {value.total / mb:.1f} MB"
+        text = self.t("sftp_progress").format(
+            name=value.name, size=size, files=value.files_completed,
+            speed=f"{value.bytes_per_second / mb:.2f}")
+        self.progress.set_text(text)
+        self.progress.set_tooltip_text(text + "\n" + self.t("sftp_progress_total").format(
+            transferred=f"{value.bytes_transferred / mb:.1f}"))
 
     def failed(self, error):
+        transfer = self.transfer_active
+        self.transfer_active = False
         self.set_busy(False)
         if isinstance(error, UnknownHost):
+            self.status.set_text(self.t("sftp_reconnect_required"))
             self.confirm(
                 f"{self.endpoint.host}:{self.endpoint.port}\n{error.key_type}\n{error.fingerprint}\n" + self.t("sftp_trust"),
                 lambda: self.accept_host(error),
             )
         elif isinstance(error, AuthenticationRequired):
+            self.status.set_text(self.t("sftp_reconnect_required"))
             self.prompt("sftp_password", self.use_password, secret=True)
         elif isinstance(error, HostKeyChanged):
             self.status.set_text(self.t("sftp_key_changed"))
         elif isinstance(error, Cancelled):
             self.status.set_text(self.t("sftp_cancelled"))
         else:
-            self.status.set_text(self.t("sftp_failed"))
+            key, reconnect = failure_details(error)
+            message = self.t(key)
+            if reconnect:
+                self.connection_ready = False
+                self.service.cancel()
+                self.monitor_stop()
+                message += " " + self.t("sftp_reconnect_required")
+            if transfer:
+                message += " " + self.t("sftp_partial")
+            self.status.set_text(message)
 
     def accept_host(self, error):
         key = ScannedHostKey(error.hostname, error.key_type, error.key_data, error.fingerprint)
@@ -162,7 +219,7 @@ class SFTPWindow(Gtk.Window):
                                  ellipsize=3, max_width_chars=50)
                 name.set_tooltip_text(entry.name)
                 line.append(name)
-                line.append(Gtk.Label(label=f"{entry.size:,} B"))
+                line.append(Gtk.Label(label=format_file_size(entry.size)))
                 try:
                     date = datetime.fromtimestamp(entry.modified).strftime("%Y-%m-%d %H:%M")
                 except (ValueError, OverflowError, OSError):
@@ -218,13 +275,14 @@ class SFTPWindow(Gtk.Window):
         def upload(backend, progress):
             for path in paths:
                 backend.upload(path, child_path(destination, path.name), progress)
-        self.run(upload, self.refresh_after)
+        self.run(upload, self.refresh_after, transfer=True)
 
     def choose_download(self):
         source = self.selected()
         if source:
             self.choose_local(True, lambda paths: self.run(
-                lambda backend, progress: backend.download(source, paths[0] / posixpath.basename(source), progress)))
+                lambda backend, progress: backend.download(source, paths[0] / posixpath.basename(source), progress),
+                transfer=True))
 
     def choose_local(self, directory, callback):
         action = Gtk.FileChooserAction.SELECT_FOLDER if directory else Gtk.FileChooserAction.OPEN
@@ -256,6 +314,7 @@ class SFTPWindow(Gtk.Window):
         self.dialog(message, lambda _value: callback())
 
     def dialog(self, message, callback, entry=None):
+        previous_status = self.status.get_text()
         dialog = Gtk.Dialog(transient_for=self, modal=True, title="SFTP")
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         add_dialog_action_button(
@@ -275,22 +334,46 @@ class SFTPWindow(Gtk.Window):
             if result == Gtk.ResponseType.OK and not self.disposed:
                 callback(value)
             elif not self.disposed:
-                self.status.set_text(self.t("sftp_reconnect_required"))
+                self.status.set_text(previous_status)
         dialog.connect("response", response)
         dialog.present()
 
     def cancel(self):
+        self.connection_ready = False
         self.service.cancel()
         self.status.set_text(self.t("sftp_cancelled"))
+        self.monitor_stop()
+
+    def monitor_stop(self):
+        """Observe actual worker/closer exit without blocking the GTK thread."""
+        if self.stop_source:
+            return
+        started = monotonic()
+
+        def check():
+            if self.service.stopped:
+                self.stop_source = 0
+                if self.disposed:
+                    self.on_closed(self)
+                    self.destroy()
+                else:
+                    self.set_busy(False)
+                return GLib.SOURCE_REMOVE
+            if monotonic() - started >= 30 or self.service.cleanup_failed:
+                # Keep observing; a deadline is not proof that cleanup succeeded.
+                self.status.set_text(self.t("sftp_stopping"))
+            return GLib.SOURCE_CONTINUE
+
+        self.set_busy(True)
+        self.cancel_button.set_sensitive(False)
+        self.stop_source = GLib.timeout_add(50, check)
 
     def disconnect(self):
         self.close_requested()
-        self.destroy()
 
     def cancel_active_transfer(self, *, close_dialog=False):
         if close_dialog:
             self.close_requested()
-            self.destroy()
         else:
             self.cancel()
 
@@ -302,5 +385,6 @@ class SFTPWindow(Gtk.Window):
                 dialog.destroy()
             self.dialogs.clear()
             self.endpoint = replace(self.endpoint, password="")
-            self.on_closed(self)
-        return False
+            self.set_visible(False)
+            self.monitor_stop()
+        return True

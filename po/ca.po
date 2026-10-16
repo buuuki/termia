@@ -2,6 +2,42 @@
 # Copyright (C) 2026 Jordi Pons
 # This file is distributed under the same license as the Termia package.
 #
+msgid "{name} · {size} · {speed} MB/s · {files} files completed"
+msgstr "{name} · {size} · {speed} MB/s · {files} fitxers completats"
+
+msgid "Operation total: {transferred} MB transferred (overall size unknown)."
+msgstr "Total de l'operació: {transferred} MB transferits (mida global desconeguda)."
+
+msgid "The source size changed or the transfer ended before all expected bytes were received. Transfer failed."
+msgstr "La mida de l'origen ha canviat o la transferència ha acabat abans de rebre tots els bytes esperats. La transferència ha fallat."
+
+msgid "The SFTP operation timed out."
+msgstr "S'ha esgotat el temps d'espera de l'operació SFTP."
+
+msgid "The SFTP connection was lost."
+msgstr "S'ha perdut la connexió SFTP."
+
+msgid "The destination already exists. Choose another name or location; nothing was overwritten."
+msgstr "La destinació ja existeix. Tria un altre nom o ubicació; no s'ha sobreescrit res."
+
+msgid "Permission denied or destination is read-only."
+msgstr "Permís denegat o destinació de només lectura."
+
+msgid "The destination has insufficient free space or its quota was exceeded."
+msgstr "La destinació no té prou espai lliure o se n'ha superat la quota."
+
+msgid "The source or destination directory no longer exists."
+msgstr "L'origen o la carpeta de destinació ja no existeix."
+
+msgid "Unsupported file type, invalid filename or directory nesting limit exceeded. Symbolic links are not transferred."
+msgstr "Tipus de fitxer no admès, nom no vàlid o límit de carpetes imbricades superat. No es transfereixen enllaços simbòlics."
+
+msgid "Partial remote files or newly created directories may remain."
+msgstr "Poden quedar fitxers remots o carpetes acabades de crear incomplets."
+
+msgid "SFTP cleanup is still pending. Worker termination has not been verified."
+msgstr "La neteja d'SFTP continua pendent. No s'ha verificat que el procés de treball hagi acabat."
+
 msgid "Browse files (SFTP)"
 msgstr "Explora fitxers (SFTP)"
 

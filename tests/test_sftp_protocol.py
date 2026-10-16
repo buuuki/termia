@@ -85,13 +85,19 @@ class SFTPProtocolTests(unittest.TestCase):
             source = Path(local) / "source"
             source.mkdir()
             (source / "nested").mkdir()
+            (source / "empty-directory").mkdir()
+            (source / "empty-file").touch()
             payload = b"test data\x00" * 40000
             (source / "nested" / "spaces ; ' name").write_bytes(payload)
             progress = []
-            backend.upload(source, "/upload", lambda *args: progress.append(args))
-            backend.download("/upload", Path(local) / "result", lambda *_: None)
+            backend.upload(source, "/upload", lambda *args, **kwargs: progress.append((args, kwargs)))
+            backend.download("/upload", Path(local) / "result", lambda *_, **__: None)
             self.assertEqual((Path(local) / "result/nested/spaces ; ' name").read_bytes(), payload)
-            self.assertEqual(progress[-1], (len(payload), len(payload)))
+            self.assertTrue((Path(local) / "result/empty-directory").is_dir())
+            self.assertEqual((Path(local) / "result/empty-file").read_bytes(), b"")
+            completed = [args for args, options in progress if options.get("finished")]
+            self.assertEqual(len(completed), 2)
+            self.assertEqual(sum(current for current, total in completed), len(payload))
             with self.assertRaises(OSError):
-                backend.upload(source / "nested" / "spaces ; ' name", "/upload/nested/spaces ; ' name", lambda *_: None)
+                backend.upload(source / "nested" / "spaces ; ' name", "/upload/nested/spaces ; ' name", lambda *_, **__: None)
             self.assertEqual((Path(remote) / "upload/nested/spaces ; ' name").read_bytes(), payload)

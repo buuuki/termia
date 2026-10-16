@@ -2,6 +2,42 @@
 # Copyright (C) 2026 Jordi Pons
 # This file is distributed under the same license as the Termia package.
 #
+msgid "{name} · {size} · {speed} MB/s · {files} files completed"
+msgstr "{name} · {size} · {speed} MB/s · {files} archivos completados"
+
+msgid "Operation total: {transferred} MB transferred (overall size unknown)."
+msgstr "Total de la operación: {transferred} MB transferidos (tamaño global desconocido)."
+
+msgid "The source size changed or the transfer ended before all expected bytes were received. Transfer failed."
+msgstr "El tamaño del origen cambió o la transferencia terminó antes de recibir todos los bytes esperados. La transferencia ha fallado."
+
+msgid "The SFTP operation timed out."
+msgstr "Se agotó el tiempo de espera de la operación SFTP."
+
+msgid "The SFTP connection was lost."
+msgstr "Se perdió la conexión SFTP."
+
+msgid "The destination already exists. Choose another name or location; nothing was overwritten."
+msgstr "El destino ya existe. Elige otro nombre o ubicación; no se ha sobrescrito nada."
+
+msgid "Permission denied or destination is read-only."
+msgstr "Permiso denegado o destino de solo lectura."
+
+msgid "The destination has insufficient free space or its quota was exceeded."
+msgstr "El destino no tiene suficiente espacio libre o se ha superado su cuota."
+
+msgid "The source or destination directory no longer exists."
+msgstr "El origen o la carpeta de destino ya no existe."
+
+msgid "Unsupported file type, invalid filename or directory nesting limit exceeded. Symbolic links are not transferred."
+msgstr "Tipo de archivo no compatible, nombre no válido o límite de carpetas anidadas superado. No se transfieren enlaces simbólicos."
+
+msgid "Partial remote files or newly created directories may remain."
+msgstr "Pueden quedar archivos remotos o carpetas recién creadas incompletos."
+
+msgid "SFTP cleanup is still pending. Worker termination has not been verified."
+msgstr "La limpieza de SFTP sigue pendiente. No se ha verificado que el proceso de trabajo haya terminado."
+
 msgid "Browse files (SFTP)"
 msgstr "Explorar archivos (SFTP)"
 
