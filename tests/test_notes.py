@@ -16,9 +16,9 @@ from termia.config_io import (
     read_connections_payload,
 )
 from termia.models import Note, NoteCategory
-from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories
+from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories, note_category_move_allowed
 from termia.notes_dialogs import (
-    Gdk, Gtk, NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE,
+    Gdk, Gtk, NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE, NOTE_CATEGORY_DND_MIME_TYPE,
     NoteEditorTab, NotesDialogs, format_note_timestamp,
 )
 from termia.notes_io import (
@@ -26,6 +26,8 @@ from termia.notes_io import (
     import_notes_file,
     read_notes_file,
     write_notes_file,
+    validate_notes_payload,
+    encode_notes_payload,
 )
 from termia.notes_presenter import NotesPresenter
 from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPasswordError
@@ -187,6 +189,258 @@ class PrivateNoteDragTests(unittest.TestCase):
         self.assertEqual(list(self.dialog.editor_tabs), ["draft:one", "saved-one", "saved-two"])
         self.assertEqual(self.dialog.editor_tabs["draft:one"].content, "content for draft:one")
         self.dialog.activate_editor_tab.assert_called_once_with("draft:one")
+
+
+class NoteHierarchyTests(unittest.TestCase):
+    def setUp(self):
+        self.categories = [
+            NoteCategory("Project"), NoteCategory("Child", parent="Project"),
+            NoteCategory("Leaf", parent="Child"), NoteCategory("Other"),
+            NoteCategory("Server only", "server"),
+        ]
+
+    def test_move_validation_rejects_cycles_missing_and_cross_scope_parents(self):
+        for name, parent, scope in (
+            ("Project", "Project", None), ("Project", "Leaf", None),
+            ("Child", "Server only", None), ("Missing", None, None),
+            ("Child", "Other", "server"),
+        ):
+            with self.subTest(name=name, parent=parent, scope=scope):
+                self.assertFalse(note_category_move_allowed(self.categories, name, parent, scope))
+        self.assertTrue(note_category_move_allowed(self.categories, "Child", "Other"))
+        self.assertTrue(note_category_move_allowed(self.categories, "Child", None))
+
+    def test_schema_three_rejects_invalid_hierarchies_and_canonicalizes_parent(self):
+        for parent in ("Missing", "Child", 123, " "):
+            with self.subTest(parent=parent), self.assertRaises(ValueError):
+                validate_notes_payload({"schema_version": 3, "categories": [
+                    {"name": "Child", "parent": parent},
+                ], "notes": []})
+        with self.assertRaises(ValueError):
+            validate_notes_payload({"schema_version": 3, "categories": [
+                {"name": "A", "parent": "B"}, {"name": "B", "parent": "A"},
+            ]})
+        payload = validate_notes_payload({"schema_version": 3, "categories": [
+            {"name": "Project"}, {"name": "Child", "parent": " project "},
+        ]})
+        self.assertEqual(payload["categories"][1]["parent"], "Project")
+
+    def test_legacy_backup_precedes_first_save_and_keeps_original_protection(self):
+        from termia.notes_store import NotesFileStore
+        for mode in ("plain", CONNECTION_STORAGE_OBFUSCATED, CONNECTION_STORAGE_ENCRYPTED):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "notes.json"
+                raw = json.dumps(encode_notes_payload({"schema_version": 2,
+                    "notes": [], "categories": [{"name": "Legacy"}]}, mode, "test password"))
+                path.write_text(raw, encoding="utf-8")
+                store = NotesFileStore(path)
+                store.load(mode, "test password")
+                self.assertEqual(store.categories, [NoteCategory("Legacy")])
+                self.assertEqual(path.read_text(encoding="utf-8"), raw)
+                store.save(mode, "test password")
+                backups = list(Path(directory).glob("notes.json.backup-*"))
+                self.assertEqual(len(backups), 1)
+                self.assertEqual(backups[0].read_text(encoding="utf-8"), raw)
+                store.save(mode, "test password")
+                self.assertEqual(len(list(Path(directory).glob("notes.json.backup-*"))), 1)
+
+    def test_failed_backup_leaves_legacy_file_unchanged(self):
+        from termia.notes_store import NotesFileStore
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes.json"
+            raw = '{"schema_version": 2, "categories": [{"name": "Legacy"}]}'
+            path.write_text(raw, encoding="utf-8")
+            store = NotesFileStore(path)
+            store.load("plain")
+            with patch.object(store, "backup_current_file", side_effect=OSError("test failure")):
+                with self.assertRaises(OSError):
+                    store.save("plain")
+            self.assertEqual(path.read_text(encoding="utf-8"), raw)
+
+    def test_read_only_legacy_and_invalid_hierarchy_preserve_original_files(self):
+        from termia.notes_store import NotesFileStore
+        for read_only, invalid in ((True, False), (True, True), (False, True)):
+            with self.subTest(read_only=read_only, invalid=invalid), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "notes.json"
+                raw = json.dumps({"schema_version": 3 if invalid else 2, "categories": [
+                    {"name": "Child", **({"parent": "Missing"} if invalid else {})},
+                ]})
+                path.write_text(raw, encoding="utf-8")
+                store = NotesFileStore(path, read_only=read_only)
+                store.load("plain")
+                if read_only:
+                    store.save("plain")
+                self.assertEqual(path.read_text(encoding="utf-8"), raw)
+                backups = list(Path(directory).glob("notes.json.*"))
+                self.assertEqual(len(backups), 1 if invalid and not read_only else 0)
+                if backups:
+                    self.assertEqual(backups[0].read_text(encoding="utf-8"), raw)
+
+    def test_interrupted_atomic_replace_preserves_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes.json"
+            write_notes_file(path, [], self.categories, "plain")
+            original = path.read_bytes()
+            with patch("termia.notes_io.os.replace", side_effect=OSError("test interrupted write")):
+                with self.assertRaises(OSError):
+                    write_notes_file(path, [], [NoteCategory("Different")], "plain")
+            self.assertEqual(path.read_bytes(), original)
+            self.assertEqual(read_notes_file(path)[1], self.categories)
+
+    def test_nested_round_trip_and_export_in_all_protection_modes(self):
+        note = normalize_note("id", "Title", "Body", "Leaf")
+        for mode in ("plain", CONNECTION_STORAGE_OBFUSCATED, CONNECTION_STORAGE_ENCRYPTED):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "notes.json"
+                write_notes_file(path, [note], self.categories, mode, "test password")
+                self.assertEqual(read_notes_file(path, "test password"), ([note], self.categories))
+                export_notes_file(path, [note], self.categories, "export password")
+                self.assertEqual(import_notes_file(path, "export password"), ([note], self.categories))
+
+    def test_search_retains_ancestors_and_excludes_unrelated_empty_groups(self):
+        note = normalize_note("id", "Needle", "Body", "Leaf")
+        presenter = NotesPresenter(lambda: [note], lambda: self.categories, lambda: [])
+        tree = presenter.tree("Needle")
+        self.assertEqual({item.name: item.parent for item in tree.personal_categories},
+                         {"Project": None, "Child": "Project", "Leaf": "Child"})
+        self.assertEqual(sum(len(item.items) for item in tree.personal_categories), 1)
+
+    def test_bulk_navigation_preserves_selection_tabs_and_never_saves(self):
+        for categories in ([], self.categories):
+            dialog = NotesDialogs.__new__(NotesDialogs)
+            dialog.store = SimpleNamespace(read_only=True, data=SimpleNamespace(
+                servers=[SimpleNamespace(id="server")], note_categories=categories))
+            dialog.selected_note_id, dialog.selected_draft_key = "selected", "draft"
+            dialog.editor_tabs = {"active": NoteEditorTab("active", None, "Draft", "Child", None, "Unsaved")}
+            dialog.active_editor_tab_key = "active"
+            def refresh(*_args):
+                dialog.selected_note_id = dialog.selected_draft_key = None
+            dialog.refresh_list = refresh
+            for expanded in (False, True):
+                dialog.set_all_note_groups_expanded(expanded)
+                self.assertEqual(dialog.expanded_note_sections, {"personal", "servers"} if expanded else set())
+                self.assertEqual(dialog.expanded_server_groups, {"server"} if expanded else set())
+                self.assertEqual(len(dialog.collapsed_note_categories), 0 if expanded else len(categories))
+                self.assertEqual((dialog.selected_note_id, dialog.selected_draft_key), ("selected", "draft"))
+                self.assertEqual(dialog.editor_tabs["active"].content, "Unsaved")
+                self.assertEqual(dialog.active_editor_tab_key, "active")
+
+    def test_private_category_drag_checks_scope_and_never_offers_text(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False,
+            data=SimpleNamespace(note_categories=self.categories), has_note_category=lambda *_args: True)
+        provider = dialog.on_category_group_drag_prepare(None, 0, 0, "Child", None)
+        self.assertTrue(provider.ref_formats().contain_mime_type(NOTE_CATEGORY_DND_MIME_TYPE))
+        self.assertFalse(provider.ref_formats().contain_gtype(GObject.TYPE_STRING))
+        dialog.category_group_drag = object()
+        drop = MagicMock()
+        drop.get_drag.return_value = dialog.category_group_drag
+        drop.get_formats.return_value = provider.ref_formats()
+        self.assertTrue(dialog.on_category_group_drop_accept(None, drop, None, "Other"))
+        self.assertTrue(dialog.on_category_group_drop_accept(None, drop, None, None))
+        for scope, parent in ((None, "Leaf"), (None, "Child"), ("server", None)):
+            self.assertFalse(dialog.on_category_group_drop_accept(None, drop, scope, parent))
+        for flag in ("read_only", "encryption_locked"):
+            with patch.object(dialog.store, flag, True):
+                self.assertFalse(dialog.on_category_group_drop_accept(None, drop, None, "Other"))
+        drop.get_drag.return_value = object()
+        self.assertFalse(dialog.on_category_group_drop_accept(None, drop, None, "Other"))
+
+    def test_category_async_drop_keeps_accepted_origin_after_drag_end(self):
+        for condition in ("valid", "wrong-token", "stale", "hidden", "locked", "read-only"):
+            with self.subTest(condition=condition):
+                dialog = NotesDialogs.__new__(NotesDialogs)
+                dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
+                dialog.window = MagicMock()
+                dialog.window.get_visible.return_value = True
+                dialog.move_category_group = MagicMock(return_value=True)
+                drop = MagicMock()
+                dialog.read_private_note_drop(drop, NOTE_CATEGORY_DND_MIME_TYPE, "nonce", (None, "Child", "Other"))
+                context = drop.read_async.call_args.args[-1]
+                dialog.category_group_drag_origin = dialog.category_group_drag_token = None
+                stream = MagicMock()
+                stream.read_bytes_finish.return_value = GLib.Bytes.new(
+                    b"wrong" if condition == "wrong-token" else b"nonce")
+                if condition == "stale":
+                    dialog.pending_note_drop = object()
+                elif condition == "hidden":
+                    dialog.window.get_visible.return_value = False
+                elif condition == "locked":
+                    dialog.store.encryption_locked = True
+                elif condition == "read-only":
+                    dialog.store.read_only = True
+                dialog.on_private_note_drop_bytes_read(stream, None, context)
+                if condition == "valid":
+                    dialog.move_category_group.assert_called_once_with(None, "Child", "Other")
+                else:
+                    dialog.move_category_group.assert_not_called()
+                drop.finish.assert_called_once_with(
+                    Gdk.DragAction.MOVE if condition == "valid" else Gdk.DragAction(0))
+
+    def test_nested_rows_hide_descendants_and_search_reveals_them(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=self.categories, servers=[]))
+        note = normalize_note("id", "Needle", "Body", "Leaf")
+        dialog.presenter = NotesPresenter(lambda: [note], lambda: self.categories, lambda: [])
+        dialog.search_entry = MagicMock()
+        dialog.search_entry.get_text.return_value = ""
+        dialog.notes_list = MagicMock()
+        dialog.notes_list.get_first_child.return_value = None
+        dialog.editor_tabs = {}
+        dialog.selected_note_id = "id"
+        dialog.selected_draft_key = None
+        dialog.active_editor_tab_key = "id"
+        dialog.server_filter_id = None
+        dialog.scope_mode = "personal"
+        dialog.translate = lambda key: key
+        dialog.expanded_note_sections = {"personal"}
+        dialog.expanded_server_groups = set()
+        dialog.collapsed_note_categories = {(None, "Project"), (None, "Child")}
+        dialog.close_note_context_menu = dialog.close_category_context_menu = lambda: None
+        dialog.append_note_tree_header = lambda *_args, **_kwargs: None
+        dialog.append_note_category_header = MagicMock()
+        dialog.append_note_row = MagicMock(return_value=SimpleNamespace(note_id="id"))
+        dialog.refresh_list()
+        self.assertEqual([call.args[0] for call in dialog.append_note_category_header.call_args_list],
+                         ["Other", "Project"])
+        dialog.append_note_row.assert_not_called()
+        dialog.append_note_category_header.reset_mock()
+        dialog.search_entry.get_text.return_value = "Needle"
+        dialog.refresh_list()
+        self.assertEqual(dialog.append_note_category_header.call_args_list, [
+            call("Project", 0, False, server_id=None, level=1),
+            call("Child", 0, False, server_id=None, level=2),
+            call("Leaf", 1, False, server_id=None, level=3),
+        ])
+        dialog.append_note_row.assert_called_once()
+        # Deep trees are rendered iteratively, including beyond Python's recursion limit.
+        self.categories[:] = [NoteCategory(str(index), parent=str(index - 1) if index else None)
+                              for index in range(1100)]
+        note.category = "1099"
+        dialog.search_entry.get_text.return_value = ""
+        dialog.collapsed_note_categories.clear()
+        dialog.append_note_category_header.reset_mock()
+        dialog.refresh_list()
+        self.assertEqual(dialog.append_note_category_header.call_count, 1100)
+        self.assertEqual(dialog.append_note_category_header.call_args.kwargs["level"], 1100)
+
+    def test_real_category_headers_have_private_drag_targets_and_sources(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list = Gtk.ListBox()
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.append_note_category_header("Child", 1, False, server_id=None, level=2)
+        button = dialog.notes_list.get_first_child().get_child()
+        controllers = button.observe_controllers()
+        sources = [controllers.get_item(i) for i in range(controllers.get_n_items())
+                   if isinstance(controllers.get_item(i), Gtk.DragSource)]
+        targets = [controllers.get_item(i) for i in range(controllers.get_n_items())
+                   if isinstance(controllers.get_item(i), Gtk.DropTargetAsync)]
+        self.assertEqual(len(sources), 1)
+        self.assertEqual(len(targets), 2)
+        self.assertTrue(any(target.get_formats().contain_mime_type(NOTE_CATEGORY_DND_MIME_TYPE)
+                            for target in targets))
 
 
 class NotesDomainTests(unittest.TestCase):
@@ -527,24 +781,27 @@ class NotesDialogSignalTests(unittest.TestCase):
         buttons[1].add_css_class.assert_not_called()
         buttons[4].add_css_class.assert_not_called()
 
-    def test_category_button_is_the_only_creation_control_above_search(self):
+    def test_category_and_bulk_navigation_controls_above_search(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.server_filter_id = None
         dialog.scope_mode = "personal"
         dialog.add_button = None
         dialog.translate = lambda key: key
         category_button = MagicMock()
+        expand_button, collapse_button = MagicMock(), MagicMock()
 
         with patch("termia.notes_dialogs.Gtk") as gtk:
-            gtk.Button.return_value = category_button
+            gtk.Button.side_effect = [category_button, expand_button, collapse_button]
             controls = dialog.build_creation_controls()
 
         controls.set_halign.assert_called_once_with(gtk.Align.START)
         self.assertEqual(
             [call.args[0] for call in controls.append.call_args_list],
-            [category_button],
+            [category_button, expand_button, collapse_button],
         )
         category_button.set_tooltip_text.assert_called_once_with("notes_category_add")
+        expand_button.set_tooltip_text.assert_called_once_with("notes_expand_all")
+        collapse_button.set_tooltip_text.assert_called_once_with("notes_collapse_all")
 
     def test_only_named_category_rows_get_context_menu_controls(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -1978,6 +2235,76 @@ class NotesStoreTests(unittest.TestCase):
             root / "connections.json", root / "settings.json", root / "statistics.json",
             root / "lock", root / "history", root / "notes.json",
         )
+
+    def test_reparenting_preserves_notes_rolls_back_failures_and_reloads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = self.make_store(root)
+            try:
+                for name in ("Project", "Child", "Leaf", "Other"):
+                    store.add_note_category(name)
+                note = store.add_note("Title", "Body", "Leaf")
+                store.move_note_category("Child", "Project")
+                store.move_note_category("Leaf", "Child")
+                before = list(store.data.note_categories)
+                original_file = (root / "notes.json").read_bytes()
+                for name, parent in (("Project", "Leaf"), ("Child", "Child"), ("Child", "missing")):
+                    with self.assertRaises(NoteError):
+                        store.move_note_category(name, parent)
+                with patch.object(store, "save_notes", side_effect=OSError("test failure")):
+                    with self.assertRaises(OSError):
+                        store.move_note_category("Child", "Other")
+                self.assertEqual(store.data.note_categories, before)
+                self.assertEqual((root / "notes.json").read_bytes(), original_file)
+                with patch.object(store, "read_only", True), self.assertRaises(ReadOnlyStoreError):
+                    store.move_note_category("Child", None)
+                with patch.object(store, "encryption_locked", True), self.assertRaises(ReadOnlyStoreError):
+                    store.move_note_category("Child", None)
+                store.move_note_category("Child", "Other")
+                store.move_note_category("Child", None)
+                self.assertEqual(store.data.notes, [note])
+            finally:
+                store.close()
+            restored = self.make_store(root)
+            try:
+                self.assertIn(NoteCategory("Child"), restored.data.note_categories)
+                self.assertIn(NoteCategory("Leaf", parent="Child"), restored.data.note_categories)
+                self.assertEqual(restored.data.notes, [note])
+            finally:
+                restored.close()
+
+    def test_rename_duplicate_and_delete_keep_nested_children_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = self.make_store(Path(directory))
+            try:
+                for name in ("Project", "Child", "Leaf"):
+                    store.add_note_category(name)
+                store.move_note_category("Child", "Project")
+                store.move_note_category("Leaf", "Child")
+                store.rename_note_category("Child", "Renamed")
+                self.assertIn(NoteCategory("Leaf", parent="Renamed"), store.data.note_categories)
+                store.duplicate_note_category("Renamed", "Copy")
+                self.assertIn(NoteCategory("Copy", parent="Project"), store.data.note_categories)
+                store.delete_note_category("Renamed")
+                self.assertIn(NoteCategory("Leaf", parent="Project"), store.data.note_categories)
+            finally:
+                store.close()
+
+    def test_server_reparenting_is_isolated_from_other_owners(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = self.make_store(Path(directory))
+            try:
+                server = store.add_server("Example", "example.test", "user", 22, None)
+                for scope in (None, server.id):
+                    for name in ("Project", "Child"):
+                        store.add_note_category(name, scope)
+                note = store.add_note("Title", "Body", "Child", server.id)
+                store.move_note_category("Child", "Project", server.id)
+                self.assertIn(NoteCategory("Child"), store.data.note_categories)
+                self.assertIn(NoteCategory("Child", server.id, "Project"), store.data.note_categories)
+                self.assertEqual(store.data.notes, [note])
+            finally:
+                store.close()
 
     def test_notes_default_to_sibling_of_custom_connections_file(self):
         with tempfile.TemporaryDirectory() as directory:

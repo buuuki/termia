@@ -29,9 +29,9 @@ from .config_io import (
     derive_connections_key,
 )
 from .models import Note, NoteCategory
-from .notes import normalize_note, normalized_note_categories
+from .notes import normalize_note, normalized_note_categories, note_category_move_allowed
 
-CURRENT_NOTES_SCHEMA_VERSION = 2
+CURRENT_NOTES_SCHEMA_VERSION = 3
 NOTES_OBFUSCATED_FORMAT = "termia-notes-obfuscated-v1"
 NOTES_ENCRYPTED_FORMAT = "termia-notes-encrypted-v1"
 NOTES_EXPORT_FORMAT = "termia-notes-export-v1"
@@ -94,7 +94,11 @@ def _encrypted_envelope(raw: bytes, password: str | None, format_name: str) -> d
     }
 
 
-def decode_notes_payload(raw_payload: dict[str, Any], password: str | None = None) -> dict[str, Any]:
+def decode_notes_payload(
+    raw_payload: dict[str, Any], password: str | None = None, *, validate: bool = True,
+) -> dict[str, Any]:
+    if not isinstance(raw_payload, dict):
+        raise ValueError("Notes payload must contain a JSON object.")
     format_name = raw_payload.get("format")
     if format_name in {NOTES_ENCRYPTED_FORMAT, NOTES_EXPORT_ENCRYPTED_FORMAT}:
         payload = _decrypt_envelope(raw_payload, password)
@@ -114,7 +118,7 @@ def decode_notes_payload(raw_payload: dict[str, Any], password: str | None = Non
         raise ValueError("Unsupported notes file format.")
     if not isinstance(payload, dict):
         raise ValueError("Notes payload must contain a JSON object.")
-    return validate_notes_payload(payload)
+    return validate_notes_payload(payload) if validate else payload
 
 
 def _decrypt_envelope(payload: dict[str, Any], password: str | None) -> dict[str, Any]:
@@ -195,6 +199,25 @@ def validate_notes_payload(payload: dict[str, Any]) -> dict[str, Any]:
         ]
         if any(not name for _scope, name in raw_keys) or len(set(raw_keys)) != len(raw_keys):
             raise ValueError("Notes file contains invalid or duplicate categories.")
+    if version < 3:
+        categories = [NoteCategory(item.name, item.server_id) for item in categories]
+    else:
+        if any(
+            item.get("parent") is not None
+            and (not isinstance(item["parent"], str) or not item["parent"].strip())
+            for item in raw_categories
+        ):
+            raise ValueError("Note category parents are invalid.")
+        names = {(item.server_id, item.name.casefold()): item.name for item in categories}
+        categories = [
+            NoteCategory(item.name, item.server_id,
+                         names.get((item.server_id, item.parent.casefold()), item.parent)
+                         if item.parent else None)
+            for item in categories
+        ]
+        if any(not note_category_move_allowed(categories, item.name, item.parent, item.server_id)
+               for item in categories):
+            raise ValueError("Note category hierarchy contains missing parents or cycles.")
     canonical = {
         (category.server_id, category.name.casefold()): category.name
         for category in categories

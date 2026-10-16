@@ -79,6 +79,7 @@ from .notes import (
     normalize_note,
     normalized_note_categories,
     note_category_name,
+    note_category_move_allowed,
     timestamp_now,
 )
 from .notes_store import NotesFileStore
@@ -894,6 +895,24 @@ class ConnectionStore:
     def has_note_category(self, name: str, server_id: str | None = None) -> bool:
         return note_category_name(self.data.note_categories, name, server_id) is not None
 
+    def move_note_category(
+        self, name: str, parent: str | None, server_id: str | None = None,
+    ) -> None:
+        self.ensure_writable()
+        if not note_category_move_allowed(self.data.note_categories, name, parent, server_id):
+            raise NoteError("note_category_missing")
+        snapshot = self._snapshot_notes()
+        self.data.note_categories = [
+            replace(item, parent=parent)
+            if item.name == name and item.server_id == server_id else item
+            for item in self.data.note_categories
+        ]
+        try:
+            self.save_notes()
+        except Exception:
+            self._restore_notes(snapshot)
+            raise
+
     def rename_note_category(
         self, old_name: str, new_name: str, server_id: str | None = None,
     ) -> None:
@@ -915,8 +934,10 @@ class ConnectionStore:
             return
         snapshot = self._snapshot_notes()
         self.data.note_categories = [
-            NoteCategory(new_name, item.server_id)
-            if item.server_id == (server_id or None) and item.name == canonical_old
+            replace(item,
+                    name=new_name if item.name == canonical_old else item.name,
+                    parent=new_name if item.parent == canonical_old else item.parent)
+            if item.server_id == (server_id or None)
             else item
             for item in self.data.note_categories
         ]
@@ -953,7 +974,9 @@ class ConnectionStore:
             for note in self.data.notes
             if note.category == canonical_name and note.server_id == (server_id or None)
         ]
-        self.data.note_categories.append(NoteCategory(new_name, server_id))
+        parent = next(item.parent for item in self.data.note_categories
+                      if item.name == canonical_name and item.server_id == (server_id or None))
+        self.data.note_categories.append(NoteCategory(new_name, server_id, parent))
         self.data.notes.extend(copies)
         try:
             self.save_notes()
@@ -971,8 +994,13 @@ class ConnectionStore:
         if canonical_name is None:
             raise NoteError("note_category_missing")
         snapshot = self._snapshot_notes()
+        parent = next(item.parent for item in self.data.note_categories
+                      if item.name == canonical_name and item.server_id == (server_id or None))
         self.data.note_categories = [
-            category for category in self.data.note_categories
+            replace(category, parent=parent)
+            if category.server_id == (server_id or None) and category.parent == canonical_name
+            else category
+            for category in self.data.note_categories
             if not (
                 category.name == canonical_name
                 and category.server_id == (server_id or None)

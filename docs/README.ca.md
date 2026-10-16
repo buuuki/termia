@@ -266,7 +266,17 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   notes i categories; les categories buides desades també són visibles. Un
   esborrany «Nota nova» apareix temporalment a «Sense categoria» i només es desa
   quan s'hi escriu contingut. Les categories pertanyen al seu àmbit i es poden
-  repetir entre notes personals i servidors. «Sense categoria» apareix si hi ha
+  repetir entre notes personals i servidors. Arrossega una categoria sobre una
+  altra per niar-la, o sobre la capçalera Personals/del servidor per tornar-la
+  a l'arrel. No es permet moure-la entre àmbits ni sobre ella mateixa o un
+  descendent. Els noms continuen sent únics dins de cada àmbit. Canviar-ne el
+  nom conserva els subgrups; suprimir-la puja els subgrups un nivell i mou les
+  seves pròpies notes a «Sense categoria». Duplicar copia només les seves notes,
+  al costat de l'original. Sobre el cercador, **Desplega tots els grups de notes**
+  i **Replega tots els grups de notes** actuen sobre tot l'arbre sense alterar
+  les notes ni els editors. La cerca mostra temporalment els resultats i els
+  grups avantpassats; en netejar-la es recupera l'estat de desplegament triat.
+  «Sense categoria» apareix si hi ha
   notes sense categoria o un esborrany actiu en aquell àmbit. La llista té
   cerca global i files
   compactes; el diàleg compacte de Propietats mostra, entre altres dades, la

@@ -23,7 +23,7 @@ def normalized_note_categories(
     result: list[NoteCategory] = []
     seen: set[tuple[str | None, str]] = set()
 
-    def add(name: object, server_id: object) -> None:
+    def add(name: object, server_id: object, parent: object = None) -> None:
         if not isinstance(name, str):
             return
         clean_name = name.strip()
@@ -34,7 +34,8 @@ def normalized_note_categories(
         if key in seen:
             return
         seen.add(key)
-        result.append(NoteCategory(clean_name, key[0]))
+        clean_parent = parent.strip() or None if isinstance(parent, str) else None
+        result.append(NoteCategory(clean_name, key[0], clean_parent))
 
     if isinstance(categories, list):
         legacy_names = all(isinstance(item, str) for item in categories)
@@ -55,13 +56,30 @@ def normalized_note_categories(
         else:
             for item in categories:
                 if isinstance(item, NoteCategory):
-                    add(item.name, item.server_id)
+                    add(item.name, item.server_id, item.parent)
                 elif isinstance(item, dict):
-                    add(item.get("name"), item.get("server_id"))
+                    add(item.get("name"), item.get("server_id"), item.get("parent"))
 
     for note in notes:
         add(note.category, note.server_id)
     return result
+
+
+def note_category_move_allowed(
+    categories: list[NoteCategory], name: str, parent: str | None,
+    server_id: str | None = None,
+) -> bool:
+    """Check reparenting without changing notes or category ownership."""
+    scoped = {item.name: item for item in categories if item.server_id == server_id}
+    if name not in scoped or (parent is not None and parent not in scoped):
+        return False
+    seen = {name}
+    while parent is not None:
+        if parent in seen or parent not in scoped:
+            return False
+        seen.add(parent)
+        parent = scoped[parent].parent
+    return True
 
 
 def note_category_name(

@@ -28,8 +28,17 @@ the format is an object or event payload.
   stored explicitly.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
-- `notes.json`: object schema `2`; stores notes and persistent note categories
-  separately from connections. Categories now carry an optional `server_id`.
+- `notes.json`: object schema `3`; stores notes and persistent note categories
+  separately from connections. Categories carry an optional `server_id` and
+  schema 3 adds an optional `parent` category name within that same scope.
+  Names remain unique per scope; missing parents and cycles are rejected.
+  Schema 2 categories migrate as root-level groups. Before the first save of
+  an older schema, Termia backs up the original bytes as `notes.json.backup-*`,
+  preserving its encryption or obfuscation. Read-only loading does not rewrite
+  or back up files. Older Termia versions cannot read schema 3; restore that
+  backup before downgrading, after separately exporting any newer notes.
+  When a removed server's categories become personal, those incoming groups
+  are flattened to avoid invalid hierarchies when names collide with personal groups.
   Schema 1 shared category names migrate to each scope that uses them; unused
   legacy categories remain personal. The notes file follows the connection storage
   protection mode; importing a notes export replaces the file only after

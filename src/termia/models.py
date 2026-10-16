@@ -98,6 +98,7 @@ class NoteCategory:
 
     name: str
     server_id: str | None = None
+    parent: str | None = None
 
 
 @dataclass

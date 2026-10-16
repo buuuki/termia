@@ -101,6 +101,14 @@ msgstr "¿Eliminar permanentemente el elemento seleccionado? Solo se pueden elim
 msgid "Select"
 msgstr "Seleccionar"
 
+#: src/termia/i18n.py:notes_expand_all
+msgid "Expand all note groups"
+msgstr "Expandir todos los grupos de notas"
+
+#: src/termia/i18n.py:notes_collapse_all
+msgid "Collapse all note groups"
+msgstr "Contraer todos los grupos de notas"
+
 msgid ""
 msgstr ""
 "Project-Id-Version: termia\n"

@@ -12,7 +12,9 @@ from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .models import Note, NoteCategory
 from .notes_io import (
     atomic_write,
-    read_notes_file,
+    decode_notes_payload,
+    notes_from_payload,
+    CURRENT_NOTES_SCHEMA_VERSION,
     write_notes_file,
 )
 from .notes import normalized_note_categories
@@ -27,6 +29,7 @@ class NotesFileStore:
         self.recovery_messages: list[str] = []
         self.encryption_locked = False
         self.encryption_error = ""
+        self._backup_before_save = False
 
     def load(self, storage_mode: str, password: str | None = None) -> None:
         self.encryption_locked = False
@@ -35,7 +38,10 @@ class NotesFileStore:
             self.notes, self.categories = [], []
             return
         try:
-            notes, categories = read_notes_file(self.path, password)
+            raw = json.loads(self.path.read_text(encoding="utf-8"))
+            payload = decode_notes_payload(raw, password, validate=False)
+            notes, categories = notes_from_payload(payload)
+            self._backup_before_save = payload.get("schema_version", 0) < CURRENT_NOTES_SCHEMA_VERSION
         except MissingMasterPasswordError:
             self.encryption_locked = True
             return
@@ -56,6 +62,9 @@ class NotesFileStore:
     def save(self, storage_mode: str, password: str | None = None) -> None:
         if self.read_only:
             return
+        if self._backup_before_save:
+            self.backup_current_file()
+            self._backup_before_save = False
         write_notes_file(
             self.path,
             self.notes,
