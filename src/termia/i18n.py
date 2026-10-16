@@ -157,7 +157,7 @@ MESSAGES = {'servers': 'Show or hide server list',
  'password_warning': 'Warning: the password will be stored in connections.json. You can switch '
                      'between plain text and obfuscated storage from Security.',
  'server_required_fields': 'Name, host, and SSH user are required.',
- 'required_field': '* Required field',
+ 'required_field': 'Fields marked with an asterisk (*) are required.',
  'reconnect_prompt': 'Press Enter to reconnect.',
  'close_tab_on_ssh_exit': 'Close the tab when leaving an SSH session with exit',
  'open_local_terminal_on_startup': 'Open a local terminal when Termia starts',

@@ -87,7 +87,7 @@ def build_application_css(
         ".termia-tree-item.selected { "
         "background-color: @theme_selected_bg_color; "
         "color: @theme_selected_fg_color; } "
-        ".termia-required-marker { color: @error_color; font-size: 1.2em; font-weight: 700; } "
-        ".termia-required-hint { color: @error_color; font-size: 1em; font-weight: 700; } "
+        ".termia-required-marker { font-size: 1.2em; font-weight: 700; } "
+        ".termia-required-hint { color: alpha(@theme_fg_color, 0.8); } "
         ".termia-tree-item:focus { outline: none; box-shadow: none; }"
     ).encode()

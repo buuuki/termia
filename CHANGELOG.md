@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Use neutral, theme-aware required-field markers and hints in connection and
+  workspace forms, explain the marker in the workspace dialog, and use normal
+  menu text for deleting servers, local terminals, and workspaces (`#342`).
+
 - Use standard GTK controls in the independent Notes window, restore it before
   presenting, and defer server-menu activation until after popover focus settles
   on Wayland. Preserve reusable notes and application shutdown (`#339`).

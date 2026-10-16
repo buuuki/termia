@@ -49,8 +49,7 @@ focus rendering unless Termia adds a narrowly scoped component rule.
 | Value or rule | Components | Notes |
 |---|---|---|
 | `@theme_selected_bg_color` | Active note-tab underline | Inherited from GTK |
-| `@error_color` | Required-field marker and hint | Inherited from GTK |
-| `alpha(...)` GTK expressions | Hover, active, dragging, selected, and scrollbar feedback | Derived from the active GTK theme |
+| `alpha(...)` GTK expressions | Hover, active, dragging, selected, scrollbar, and required-hint feedback | Derived from the active GTK theme |
 | `#001B33` and white text defaults | Notes writing surface | User may override these through saved Notes appearance preferences |
 | `#0065BF` on `#000D1A` | Notes line-number gutter | Scoped to the Notes editor |
 
@@ -75,7 +74,7 @@ application-theme tokens.
 | Note tabs and editor | GTK chrome with saved Notes appearance preferences, a scoped line-number gutter, and Termia underline, borders, and spacing | `notes_dialogs.py`, `styles.py`, and settings |
 | Sidebar selection and category drop target | GTK selection tokens | `styles.py` |
 | Split panes | Terminal preferences | `styles.py` and terminal settings |
-| Required-field marker | GTK `@error_color` token | `connection_dialogs.py` and `styles.py` |
+| Required-field marker and hint | GTK label foreground and secondary text derived from `@theme_fg_color` | `connection_dialogs.py` and `styles.py` |
 
 ## Known inconsistencies and decisions pending
 

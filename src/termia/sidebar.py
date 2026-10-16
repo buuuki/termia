@@ -1149,7 +1149,6 @@ class SidebarMixin:
                 menu,
                 self.t("delete_server"),
                 lambda: self.on_server_context_delete(None, popover, row.item_id),
-                destructive=True,
                 enabled=not self.store.read_only,
             )
         elif row.kind == "local_terminal":
@@ -1174,7 +1173,6 @@ class SidebarMixin:
                 menu,
                 self.t("delete_local_terminal"),
                 lambda: self.on_local_terminal_context_delete(popover, row.item_id),
-                destructive=True,
                 enabled=not self.store.read_only,
             )
         elif row.kind == "workspace":
@@ -1205,7 +1203,6 @@ class SidebarMixin:
                 menu,
                 self.t("delete_workspace"),
                 lambda: self.on_workspace_context_delete(popover, row.item_id),
-                destructive=True,
                 enabled=not self.store.read_only,
             )
         elif row.kind == "group":
@@ -1359,6 +1356,7 @@ class SidebarMixin:
         grid = Gtk.Grid(column_spacing=12, row_spacing=12)
         grid.attach(self.build_form_label(self.t("workspace_name"), True), 0, 0, 1, 1)
         grid.attach(entry, 1, 0, 1, 1)
+        grid.attach(self.build_required_hint(), 1, 1, 1, 1)
         content.append(grid)
         dialog.connect("response", self.on_workspace_name_dialog_response, entry, tabs, workspace_id)
         dialog.present()
