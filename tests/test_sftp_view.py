@@ -1,8 +1,9 @@
 import time
 import os
 import unittest
+from pathlib import Path
 from threading import Event
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import gi
 gi.require_version("Gtk", "4.0")
@@ -110,6 +111,64 @@ class SFTPViewTests(unittest.TestCase):
                 self.assertEqual(row.entry.size, size)
                 row = row.get_next_sibling()
         self.assertIsNone(row)
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
+
+    def test_selected_directory_can_be_downloaded_without_navigating(self):
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = [RemoteEntry("folder", 0, 0, 0o040700)]
+        _parent, window, closed = self.make_window(backend)
+        self.drain_window(window)
+        self.assertFalse(window.rows.get_activate_on_single_click())
+        row = window.rows.get_first_child()
+        window.rows.select_row(row)
+        self.assertEqual(window.path, "/synthetic")
+        self.assertEqual(window.selected(), "/synthetic/folder")
+        backend.list_directory.assert_called_once_with("/synthetic")
+        destination = Path("/synthetic-downloads")
+        with patch.object(window, "choose_local", side_effect=lambda directory, callback: callback([destination])) as chooser:
+            window.choose_download()
+            self.wait_for(lambda: not window.service.busy)
+        chooser.assert_called_once()
+        self.assertTrue(chooser.call_args.args[0])
+        self.assertEqual(backend.download.call_args.args[:2],
+                         ("/synthetic/folder", destination / "folder"))
+        self.assertEqual(window.path, "/synthetic")
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
+
+    def test_row_activation_opens_directory_and_keeps_file_navigation_unchanged(self):
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = [RemoteEntry("folder", 0, 0, 0o040700),
+                                               RemoteEntry("file.txt", 1, 0, 0o100600)]
+        _parent, window, closed = self.make_window(backend)
+        self.drain_window(window)
+        folder = window.rows.get_first_child()
+        file_row = folder.get_next_sibling()
+        window.rows.select_row(file_row)
+        file_row.emit("activate")
+        self.assertEqual(window.path, "/synthetic")
+        backend.list_directory.assert_called_once_with("/synthetic")
+        folder.emit("activate")
+        self.wait_for(lambda: window.path == "/synthetic/folder")
+        backend.list_directory.assert_called_with("/synthetic/folder")
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
+
+    def test_keyboard_activation_still_opens_focused_directory(self):
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = [RemoteEntry("folder", 0, 0, 0o040700)]
+        _parent, window, closed = self.make_window(backend)
+        self.drain_window(window)
+        window.present()
+        self.wait_for(window.get_mapped)
+        row = window.rows.get_first_child()
+        self.assertTrue(row.grab_focus())
+        window.rows.emit("activate-cursor-row")
+        self.wait_for(lambda: window.path == "/synthetic/folder")
         window.disconnect()
         self.wait_for(lambda: closed.called)
 
