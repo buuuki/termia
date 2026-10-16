@@ -325,8 +325,8 @@ msgid "Name, host, and SSH user are required."
 msgstr "El nom, el host i l'usuari SSH són obligatoris."
 
 #: src/termia/i18n.py:required_field
-msgid "* Required field"
-msgstr "* Camp obligatori"
+msgid "Fields marked with an asterisk (*) are required."
+msgstr "Els camps marcats amb un asterisc (*) són obligatoris."
 
 #: src/termia/i18n.py:reconnect_prompt
 msgid "Press Enter to reconnect."

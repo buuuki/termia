@@ -499,6 +499,12 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Header bar, main menu, configuration menu, statistics menu, popovers, sidebars, tabs, buttons, selected rows, warning text, and dialogs must remain readable in light, dark, system, and any custom app themes.
 - Tab colors, borders, spacing, close button contrast, selected tab state, and hover/active states must remain visually clear.
 - Context menus and popovers must use readable foreground/background colors and must not inherit terminal colors.
+- Required asterisks in server, local-terminal, workspace-name, and split-connection
+  forms must match normal label text. The explanatory hint in server,
+  local-terminal, and workspace-name forms must remain readable as secondary
+  text. Sidebar Delete server, Delete local terminal, and Delete workspace
+  actions must use normal menu text while real validation errors retain their
+  error styling.
 - Sidebar group/server selection colors must remain readable and must preserve the distinction between folders/groups and server entries.
 - New CSS rules must be scoped to Termia classes where practical and must not unintentionally override GTK/VTE internals.
 - Split pane dividers have two deliberately different visual parts that must be

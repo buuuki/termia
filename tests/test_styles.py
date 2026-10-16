@@ -98,9 +98,14 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             css,
         )
         self.assertIn(
-            ".termia-required-marker { color: @error_color; font-size: 1.2em; font-weight: 700; }",
+            ".termia-required-marker { font-size: 1.2em; font-weight: 700; }",
             css,
         )
+        self.assertIn(
+            ".termia-required-hint { color: alpha(@theme_fg_color, 0.8); }",
+            css,
+        )
+        self.assertNotIn("@error_color", css)
 
 
 if __name__ == "__main__":
