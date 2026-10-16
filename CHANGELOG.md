@@ -19,6 +19,12 @@
 
 ### Added
 
+- Nest note categories by dragging within their Personal/server scope, or
+  return groups to the root via the scope header. Preserve notes and editor
+  tabs, reject cycles and cross-scope drops, and back up older notes files
+  before upgrading to schema 3. Add Expand all / Collapse all controls with
+  search revealing matching notes and their ancestors (`#331`, `#332`).
+
 - Open the snippet manager as an independent GTK window so terminals remain
   usable while snippets are managed. Fit fixed-size category tiles into the
   available width and wrap them into additional rows, align Create snippet to

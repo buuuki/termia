@@ -2052,6 +2052,14 @@ msgstr ""
 msgid "Add category"
 msgstr ""
 
+#: src/termia/i18n.py:notes_expand_all
+msgid "Expand all note groups"
+msgstr ""
+
+#: src/termia/i18n.py:notes_collapse_all
+msgid "Collapse all note groups"
+msgstr ""
+
 #: src/termia/i18n.py:notes_category_rename
 #: src/termia/i18n.py:snippet_category_rename
 msgid "Rename category"

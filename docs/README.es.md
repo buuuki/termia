@@ -266,7 +266,17 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   muestran. Un borrador «Nota nueva» aparece temporalmente bajo «Sin categoría»
   y solo se guarda al escribir contenido. Las
   categorías pertenecen a su ámbito y pueden repetirse entre notas personales
-  y servidores. «Sin categoría» aparece si hay notas sin categoría o un
+  y servidores. Arrastra una categoría sobre otra para anidarla, o sobre la
+  cabecera Personales/del servidor para devolverla a la raíz. No se permiten
+  movimientos entre ámbitos ni sobre sí misma o un descendiente. Los nombres
+  siguen siendo únicos dentro de cada ámbito. Renombrar conserva los subgrupos;
+  eliminar una categoría sube sus subgrupos un nivel y pasa sus propias notas a
+  «Sin categoría». Duplicar copia solo sus propias notas, junto al original.
+  Sobre el buscador, **Expandir todos los grupos de notas** y **Contraer todos
+  los grupos de notas** actúan sobre todo el árbol sin alterar notas ni editores.
+  La búsqueda muestra temporalmente los resultados y sus grupos antecesores;
+  al limpiarla se recupera el estado de expansión elegido.
+  «Sin categoría» aparece si hay notas sin categoría o un
   borrador activo en ese ámbito. La lista tiene búsqueda global
   y filas compactas; el diálogo compacto de Propiedades muestra, entre otros
   datos, la categoría guardada de cada nota. Un clic selecciona la nota y un doble clic

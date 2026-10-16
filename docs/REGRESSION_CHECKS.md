@@ -273,6 +273,25 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Notes
 
+- Drag a category into another in the same Personal/server scope, move its
+  subtree to another parent, and drop it onto the scope header to return it
+  to the root. Check indentation, drop highlighting, restart persistence,
+  unchanged notes and open editors. Reject self, descendant, cross-scope,
+  external, encrypted-locked, and read-only drops without mutation. Category
+  drags must offer only the private format, never insert names or IDs into text.
+- Rename a parent and check its children stay attached. Delete a group and
+  check its children move up one level while its own notes become Uncategorized.
+  Duplicate a nested group and check its own notes are copied beside it.
+- Use Expand all / Collapse all above search with empty, large, personal,
+  server, and nested trees. Keep selection, editor tabs, and drafts intact;
+  both controls remain usable in read-only mode. Search must reveal matching
+  notes and ancestors even after Collapse all; clearing search restores the
+  chosen expansion state. Individual expanders remain usable.
+- Load an existing schema 1/2 notes file and verify groups start at the root.
+  On its first save, check the original backup is created before the schema 3
+  replacement. Repeat with plain, obfuscated, encrypted, and read-only storage;
+  verify a failed backup/write or an invalid hierarchy preserves original data.
+
 - The notes toolbar must sit below note tabs and remain restorable from the
   tab-row toggle when hidden. Toolbar visibility must not move the notes list
   or search entry. Their vertical position stays fixed independently of the editor.

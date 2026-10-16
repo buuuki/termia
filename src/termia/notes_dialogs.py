@@ -27,12 +27,13 @@ from .constants import (
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .dialog_actions import add_dialog_action_button, configure_action_area
 from .models import Note, NoteCategory
-from .notes import NoteError, normalized_note_categories
+from .notes import NoteError, normalized_note_categories, note_category_move_allowed
 from .notes_io import export_notes_file, import_notes_file
 from .notes_presenter import NoteTreeCategory, NotesPresenter
 
 NOTE_TAB_DND_MIME_TYPE = "application/x-termia-note-tab-id"
 NOTE_ROW_DND_MIME_TYPE = "application/x-termia-note-id"
+NOTE_CATEGORY_DND_MIME_TYPE = "application/x-termia-note-category"
 
 
 def format_note_timestamp(value: str) -> str:
@@ -585,8 +586,29 @@ class NotesDialogs:
             ),
         )
         controls.append(self.category_add_button)
+        for icon, key, expand in (
+            ("pan-down-symbolic", "notes_expand_all", True),
+            ("pan-up-symbolic", "notes_collapse_all", False),
+        ):
+            button = Gtk.Button(icon_name=icon)
+            button.set_tooltip_text(self.translate(key))
+            button.connect("clicked", lambda _button, value=expand: self.set_all_note_groups_expanded(value))
+            controls.append(button)
         self.update_creation_controls()
         return controls
+
+    def set_all_note_groups_expanded(self, expanded: bool) -> None:
+        """Bulk navigation changes view state only, including in read-only mode."""
+        self.expanded_note_sections = {"personal", "servers"} if expanded else set()
+        self.expanded_server_groups = {
+            server.id for server in self.store.data.servers
+        } if expanded else set()
+        self.collapsed_note_categories = set() if expanded else {
+            (item.server_id, item.name) for item in self.store.data.note_categories
+        }
+        selected = (self.selected_note_id, self.selected_draft_key)
+        self.refresh_list(self.selected_note_id)
+        self.selected_note_id, self.selected_draft_key = selected
 
     @staticmethod
     def style_notes_menu(popover: Gtk.Popover, panel: Gtk.Widget) -> None:
@@ -805,11 +827,30 @@ class NotesDialogs:
                     extra_names, key=lambda value: (value != "", value.casefold())
                 )
             )
-            categories = tuple(sorted(
-                categories,
-                key=lambda category: (category.name != "", category.name.casefold()),
-            ))
-            for category in categories:
+            by_name = {category.name: category for category in categories}
+            stored_categories = {
+                item.name: item for item in getattr(self.store.data, "note_categories", ())
+                if item.server_id == server_id
+            }
+            for tab in drafts:
+                name = tab.category
+                seen = set()
+                while name in stored_categories and name not in seen:
+                    seen.add(name)
+                    item = stored_categories[name]
+                    existing = by_name.get(name)
+                    by_name[name] = NoteTreeCategory(name, existing.items if existing else (), item.parent)
+                    name = item.parent
+            children: dict[str | None, list[NoteTreeCategory]] = {}
+            for category in by_name.values():
+                parent = getattr(category, "parent", None)
+                parent = parent if parent in by_name else None
+                children.setdefault(parent, []).append(category)
+            for siblings in children.values():
+                siblings.sort(key=lambda category: (category.name != "", category.name.casefold()))
+            pending = [(category, level) for category in reversed(children.get(None, []))]
+            while pending:
+                category, category_level = pending.pop()
                 key = (server_id, category.name)
                 collapsed = key in self.collapsed_note_categories and not query
                 category_drafts = [
@@ -817,16 +858,18 @@ class NotesDialogs:
                 ]
                 self.append_note_category_header(
                     category.name, len(category.items) + len(category_drafts), collapsed,
-                    server_id=server_id, level=level,
+                    server_id=server_id, level=category_level,
                 )
                 if collapsed:
                     continue
+                pending.extend((child, category_level + 1)
+                               for child in reversed(children.get(category.name, [])))
                 for item in category.items:
-                    row = self.append_note_row(item, level + 1)
+                    row = self.append_note_row(item, category_level + 1)
                     if item.note.id == selected_id:
                         selected_row = row
                 for tab in category_drafts:
-                    row = self.append_note_draft_row(tab, level + 1)
+                    row = self.append_note_draft_row(tab, category_level + 1)
                     if tab.key == selected_draft_key:
                         selected_row = row
 
@@ -835,11 +878,13 @@ class NotesDialogs:
             len(category.items) for category in tree.personal_categories
         ) + len(personal_drafts)
         personal_expanded = "personal" in self.expanded_note_sections or bool(query)
-        self.append_note_tree_header(
+        personal_header = self.append_note_tree_header(
             self.translate("notes_personal_scope"), "avatar-default-symbolic",
             personal_expanded, personal_count,
             lambda: self.on_note_section_clicked("personal"), level=0,
         )
+        if personal_header is not None:
+            self.add_category_group_drop_target(personal_header.get_child(), None, None)
         if personal_expanded:
             append_categories(tree.personal_categories, None, 1, personal_drafts)
 
@@ -855,7 +900,7 @@ class NotesDialogs:
         if servers_expanded:
             for server in tree.servers:
                 expanded = server.id in self.expanded_server_groups or bool(query)
-                self.append_note_tree_header(
+                server_header = self.append_note_tree_header(
                     server.name or self.translate("notes_unknown_server"),
                     "network-server-symbolic", expanded,
                     sum(len(category.items) for category in server.categories)
@@ -863,6 +908,8 @@ class NotesDialogs:
                     lambda server_id=server.id: self.on_server_tree_node_clicked(server_id),
                     level=1,
                 )
+                if server_header is not None:
+                    self.add_category_group_drop_target(server_header.get_child(), server.id, None)
                 if expanded:
                     append_categories(
                         server.categories, server.id, 2,
@@ -1057,6 +1104,13 @@ class NotesDialogs:
         row.set_child(button)
         button.add_css_class("termia-note-category")
         if category:
+            self.add_category_group_drop_target(button, server_id, category)
+            source = Gtk.DragSource.new()
+            source.set_actions(Gdk.DragAction.MOVE)
+            source.connect("prepare", self.on_category_group_drag_prepare, category, server_id)
+            source.connect("drag-begin", self.on_category_group_drag_begin, button)
+            source.connect("drag-end", self.on_category_group_drag_end, button)
+            button.add_controller(source)
             context_click = Gtk.GestureClick()
             context_click.set_button(3)
             context_click.connect(
@@ -1071,6 +1125,90 @@ class NotesDialogs:
             )
             button.add_controller(context_key)
         self.notes_list.append(row)
+
+    def add_category_group_drop_target(self, button, server_id, parent) -> None:
+        target = Gtk.DropTargetAsync.new(
+            Gdk.ContentFormats.new([NOTE_CATEGORY_DND_MIME_TYPE]), Gdk.DragAction.MOVE,
+        )
+        target.connect("accept", self.on_category_group_drop_accept, server_id, parent)
+        target.connect("drag-motion", self.on_category_group_drop_motion, button, server_id, parent)
+        target.connect("drag-leave", self.on_note_category_drop_leave, button)
+        target.connect("drop", self.on_category_group_drop, server_id, parent)
+        button.add_controller(target)
+
+    def on_category_group_drag_prepare(self, _source, _x, _y, name, server_id):
+        if self.store.read_only or self.store.encryption_locked:
+            return None
+        if not self.store.has_note_category(name, server_id):
+            return None
+        self.category_group_drag_origin = (server_id, name)
+        self.category_group_drag_token = str(uuid4())
+        return Gdk.ContentProvider.new_for_bytes(
+            NOTE_CATEGORY_DND_MIME_TYPE,
+            GLib.Bytes.new(self.category_group_drag_token.encode("utf-8")),
+        )
+
+    def on_category_group_drag_begin(self, source, drag, button) -> None:
+        self.category_group_drag = drag
+        self.pending_note_drop = None
+        button.add_css_class("dragging")
+        source.set_icon(Gtk.WidgetPaintable.new(button), 0, 0)
+
+    def on_category_group_drag_end(self, _source, _drag, _delete_data, button) -> None:
+        button.remove_css_class("dragging")
+        self.category_group_drag = None
+        self.category_group_drag_origin = None
+        self.category_group_drag_token = None
+
+    def on_category_group_drop_accept(self, _target, drop, server_id, parent) -> bool:
+        origin = getattr(self, "category_group_drag_origin", None)
+        return bool(
+            origin is not None and origin[0] == server_id
+            and not self.store.read_only and not self.store.encryption_locked
+            and getattr(self, "category_group_drag", None) is not None
+            and drop.get_drag() == self.category_group_drag
+            and drop.get_formats().contain_mime_type(NOTE_CATEGORY_DND_MIME_TYPE)
+            and note_category_move_allowed(self.store.data.note_categories, origin[1], parent, server_id)
+        )
+
+    def on_category_group_drop_motion(self, target, drop, _x, _y, button, server_id, parent):
+        accepted = self.on_category_group_drop_accept(target, drop, server_id, parent)
+        if accepted:
+            button.add_css_class("drop-target")
+        else:
+            button.remove_css_class("drop-target")
+        return Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0)
+
+    def on_category_group_drop(self, target, drop, _x, _y, server_id, parent) -> bool:
+        if not self.on_category_group_drop_accept(target, drop, server_id, parent):
+            return False
+        self.read_private_note_drop(
+            drop, NOTE_CATEGORY_DND_MIME_TYPE, self.category_group_drag_token,
+            (server_id, self.category_group_drag_origin[1], parent),
+        )
+        return True
+
+    def move_category_group(self, server_id, name, parent) -> bool:
+        if not self.ensure_writable():
+            return False
+        try:
+            self.store.move_note_category(name, parent, server_id)
+        except (NoteError, OSError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return False
+        # Reveal the new location without touching any editor contents or tabs.
+        if server_id is None:
+            self.expanded_note_sections.add("personal")
+        else:
+            self.expanded_note_sections.add("servers")
+            self.expanded_server_groups.add(server_id)
+        parents = {item.name: item.parent for item in self.store.data.note_categories
+                   if item.server_id == server_id}
+        while parent is not None:
+            self.collapsed_note_categories.discard((server_id, parent))
+            parent = parents.get(parent)
+        self.refresh_list(self.selected_note_id)
+        return True
 
     def on_note_drag_prepare(
         self, _source: Gtk.DragSource, _x: float, _y: float, note_id: str
@@ -1180,6 +1318,8 @@ class NotesDialogs:
                 target, x = destination
                 self.reorder_editor_tab_at_bar_x(target, x, expected_id)
                 self.activate_editor_tab(expected_id)
+        elif accepted and mime_type == NOTE_CATEGORY_DND_MIME_TYPE:
+            accepted = not self.store.read_only and self.move_category_group(*destination)
         elif accepted and mime_type == NOTE_ROW_DND_MIME_TYPE:
             accepted = (
                 not self.store.read_only and self.find_note(expected_id) is not None

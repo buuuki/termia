@@ -101,6 +101,14 @@ msgstr "Vols suprimir permanentment l'element seleccionat? Només es poden supri
 msgid "Select"
 msgstr "Selecciona"
 
+#: src/termia/i18n.py:notes_expand_all
+msgid "Expand all note groups"
+msgstr "Desplega tots els grups de notes"
+
+#: src/termia/i18n.py:notes_collapse_all
+msgid "Collapse all note groups"
+msgstr "Replega tots els grups de notes"
+
 msgid ""
 msgstr ""
 "Project-Id-Version: termia\n"

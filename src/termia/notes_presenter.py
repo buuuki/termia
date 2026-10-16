@@ -19,6 +19,7 @@ class NoteListItem:
 class NoteTreeCategory:
     name: str
     items: tuple[NoteListItem, ...]
+    parent: str | None = None
 
 
 @dataclass(frozen=True)
@@ -110,8 +111,16 @@ class NotesPresenter:
             if not query:
                 for name in category_names_by_scope.get(scope_id, ()):
                     grouped.setdefault(name, [])
+            parents = {item.name: item.parent for item in categories if item.server_id == scope_id}
+            for name in tuple(grouped):
+                seen = {name}
+                parent = parents.get(name)
+                while parent is not None and parent not in seen:
+                    seen.add(parent)
+                    grouped.setdefault(parent, [])
+                    parent = parents.get(parent)
             return tuple(
-                NoteTreeCategory(name, tuple(grouped[name]))
+                NoteTreeCategory(name, tuple(grouped[name]), parents.get(name))
                 for name in sorted(grouped, key=lambda value: (value != "", value.casefold()))
             )
 

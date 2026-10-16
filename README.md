@@ -269,6 +269,15 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   under Uncategorized in its scope and is stored only after text is entered.
   Categories belong to their scope, so
   names can be reused across personal notes and different servers.
+  Drag a category onto another to nest it, or onto its Personal/server header
+  to return it to the root. Groups stay in the same scope; self and descendant
+  drops are rejected. Names remain unique within each scope. Renaming preserves
+  subgroups; deleting a category promotes its subgroups one level, while its
+  own notes move to Uncategorized. Duplicating copies only that category's
+  notes, alongside the original. Above search, **Expand all note groups** and
+  **Collapse all note groups** control the entire tree without changing notes
+  or open editors. Search temporarily reveals matching notes and their ancestors;
+  clearing it restores the chosen expansion state.
   Uncategorized appears when that scope has uncategorized notes or an active
   draft. Rows
   are compact and show further details, including a linked note's saved
