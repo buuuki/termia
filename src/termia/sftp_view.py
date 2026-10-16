@@ -72,6 +72,7 @@ class SFTPWindow(Gtk.Window):
         self.button("sftp_rename", self.rename_selected, self.actions)
         self.button("sftp_delete", self.delete_selected, self.actions)
         self.rows = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
+        self.rows.set_activate_on_single_click(False)
         self.rows.connect("row-activated", self.activate_row)
         scroll = Gtk.ScrolledWindow(vexpand=True)
         scroll.set_child(self.rows)

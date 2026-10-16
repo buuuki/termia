@@ -63,7 +63,9 @@ Abre **Explorar archivos (SFTP)** desde el menú de un servidor o panel SSH.
 Instala las dependencias con `scripts/termia-setup.sh install`. La ventana
 independiente permite navegar, subir archivos/carpetas, descargar, crear
 carpetas, renombrar y borrar archivos o carpetas vacías. Los tamaños de la lista
-se muestran en B, kB, MB o GB según corresponda. No sobrescribe destinos
+se muestran en B, kB, MB o GB según corresponda. Un clic selecciona un archivo
+o carpeta para descargarlo; un doble clic en una carpeta o Enter con su fila
+enfocada permite abrirla. No sobrescribe destinos
 existentes ni transfiere enlaces simbólicos. Cancelar desconecta SFTP; reconecta
 con **Reconectar SFTP** para continuar. **Desconectar** cierra la ventana y su
 conexión SFTP independiente, incluso durante una transferencia. Cancelar,

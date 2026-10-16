@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Select SFTP directories with one click so they can be downloaded, and open
+  them with a double-click or keyboard activation (`#326`).
+
 ### Refactored
 
 - Keep the SFTP explorer independent from terminal windows and scope its modal

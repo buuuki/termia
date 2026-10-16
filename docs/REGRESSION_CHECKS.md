@@ -634,6 +634,9 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Native SFTP explorer
 
+- Single-click a directory: it must remain selected in the current path and be
+  downloadable. Double-click it to navigate inside. Use arrows to focus a row
+  and Enter to open a directory; activating a regular file must not navigate.
 - Check file-list sizes around the 1000-byte, MB and GB boundaries, including
   empty files. Units adapt to the size without changing the original byte count
   or the existing MB/MB/s transfer indicators.

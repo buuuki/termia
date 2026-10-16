@@ -64,7 +64,9 @@ Obre **Explora fitxers (SFTP)** des del menú d'un servidor o panell SSH.
 Instal·la les dependències amb `scripts/termia-setup.sh install`. La finestra
 independent permet navegar, pujar fitxers/carpetes, baixar, crear carpetes,
 canviar noms i suprimir fitxers o carpetes buides. Les mides de la llista es
-mostren en B, kB, MB o GB segons correspongui. No sobreescriu destinacions
+mostren en B, kB, MB o GB segons correspongui. Un clic selecciona un fitxer
+o carpeta per baixar-lo; un doble clic en una carpeta o Enter amb la seva fila
+enfocada permet obrir-la. No sobreescriu destinacions
 existents ni transfereix enllaços simbòlics. Cancel·lar desconnecta SFTP;
 fes servir **Reconnecta SFTP** per continuar. **Desconnectar** tanca la finestra
 i la seva connexió SFTP independent, fins i tot durant una transferència.

@@ -68,6 +68,8 @@ an independent file window. Install dependencies using
 `scripts/termia-setup.sh install`. Browse, upload files/folders, download into a
 local folder, create directories, rename, and delete files or empty directories.
 File-list sizes use B, kB, MB or GB according to their size.
+Click once to select a file or directory for download. Double-click a directory
+or press Enter while its row is focused to open it.
 Existing destination paths and symbolic links are refused. Cancellation closes
 SFTP; use **Reconnect SFTP** to continue. **Disconnect** closes the independent
 SFTP window and connection, including during a transfer. Cancel, Reconnect SFTP,
