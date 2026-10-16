@@ -9,7 +9,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
 from termia.i18n import translate_key
-from termia.sftp_service import Endpoint, RemoteEntry
+from termia.sftp_service import Endpoint, RemoteEntry, TransferProgress
 from termia.sftp_view import SFTPWindow
 
 
@@ -40,6 +40,16 @@ class SFTPViewTests(unittest.TestCase):
                 break
             time.sleep(0.005)
 
+    def wait_for(self, predicate):
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+            if predicate():
+                return
+            time.sleep(0.005)
+        self.fail("Timed out waiting for isolated SFTP operation")
+
     def test_window_lists_files_without_changing_parent_and_closes_backend(self):
         backend = Mock()
         backend.connect.return_value = "/home/synthetic"
@@ -50,8 +60,9 @@ class SFTPViewTests(unittest.TestCase):
         self.assertEqual(window.rows.get_first_child().entry.name, "test.txt")
         self.assertIsNone(parent.get_child())
         window.cancel_active_transfer(close_dialog=True)
+        self.wait_for(lambda: closed.called)
         self.assertTrue(window.disposed)
-        backend.close.assert_called_once()
+        backend.close.assert_called()
         closed.assert_called_once_with(window)
 
     def test_actions_are_right_aligned_and_disconnect_closes_idle_window(self):
@@ -73,9 +84,34 @@ class SFTPViewTests(unittest.TestCase):
         self.assertTrue(window.disconnect_button.get_sensitive())
 
         window.disconnect_button.emit("clicked")
+        self.wait_for(lambda: closed.called)
         self.assertTrue(window.disposed)
-        backend.close.assert_called_once()
+        backend.close.assert_called()
         closed.assert_called_once_with(window)
+
+    def test_file_list_uses_readable_decimal_sizes_and_preserves_byte_counts(self):
+        cases = ((0, "0 B"), (999, "999 B"), (1000, "1.0 kB"),
+                 (1500, "1.5 kB"), (1000 ** 2, "1.0 MB"),
+                 (128 * 1000 ** 2, "128.0 MB"), (1000 ** 3, "1.0 GB"),
+                 (5 * 1000 ** 3 // 2, "2.5 GB"))
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = [
+            RemoteEntry(f"file-{index}", size, 0, 0o100600)
+            for index, (size, _label) in enumerate(cases)
+        ]
+        _parent, window, closed = self.make_window(backend)
+        self.drain_window(window)
+        row = window.rows.get_first_child()
+        for size, label in cases:
+            with self.subTest(size=size):
+                size_label = row.get_child().get_first_child().get_next_sibling().get_next_sibling()
+                self.assertEqual(size_label.get_text(), label)
+                self.assertEqual(row.entry.size, size)
+                row = row.get_next_sibling()
+        self.assertIsNone(row)
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
 
     def test_disconnect_during_connection_closes_backend_and_suppresses_completion(self):
         started, released = Event(), Event()
@@ -95,11 +131,90 @@ class SFTPViewTests(unittest.TestCase):
         self.assertTrue(window.disconnect_button.get_sensitive())
 
         window.disconnect_button.emit("clicked")
+        self.wait_for(lambda: closed.called)
         window.service.worker.join(2)
         self.assertFalse(window.service.worker.is_alive())
         while GLib.MainContext.default().pending():
             GLib.MainContext.default().iteration(False)
         self.assertTrue(window.disposed)
-        backend.close.assert_called_once()
+        backend.close.assert_called()
         backend.list_directory.assert_not_called()
         closed.assert_called_once_with(window)
+
+    def test_independent_window_and_modal_prompts_leave_parent_in_separate_group(self):
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = []
+        parent, window, closed = self.make_window(backend)
+        self.wait_for(lambda: not window.service.busy)
+        self.assertIsNone(window.get_transient_for())
+        self.assertFalse(window.get_modal())
+        self.assertIsNot(window.get_group(), parent.get_group())
+        previous = window.status.get_text()
+        action = Mock()
+        window.confirm("Synthetic confirmation", action)
+        dialog = next(iter(window.dialogs))
+        self.assertIs(dialog.get_group(), window.get_group())
+        dialog.response(Gtk.ResponseType.CANCEL)
+        action.assert_not_called()
+        self.assertEqual(window.status.get_text(), previous)
+        self.assertFalse(window.service.cancelled.is_set())
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
+
+    def test_transfer_and_slow_cancel_leave_main_loop_responsive(self):
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = []
+        _parent, window, closed = self.make_window(backend)
+        self.wait_for(lambda: not window.service.busy)
+        started, release, closing = Event(), Event(), Event()
+        def transfer(*_):
+            started.set()
+            release.wait(2)
+        def close():
+            closing.set()
+            release.wait(2)
+        backend.close.side_effect = close
+        try:
+            window.run(transfer, transfer=True)
+            self.assertTrue(started.wait(1))
+            heartbeat = Mock(return_value=GLib.SOURCE_REMOVE)
+            GLib.idle_add(heartbeat)
+            self.wait_for(lambda: heartbeat.called)
+            window.cancel()
+            self.assertTrue(closing.wait(1))
+            GLib.idle_add(heartbeat)
+            self.wait_for(lambda: heartbeat.call_count == 2)
+            self.assertFalse(window.reconnect_button.get_sensitive())
+        finally:
+            release.set()
+        self.wait_for(lambda: window.service.stopped)
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
+
+    def test_transfer_progress_final_empty_directory_and_safe_error(self):
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = []
+        _parent, window, closed = self.make_window(backend)
+        self.wait_for(lambda: not window.service.busy)
+        mb = 1000 * 1000
+        value = TransferProgress("synthetic.txt", 64 * mb, 128 * mb, 2, 192 * mb, 12.5 * mb)
+        window.show_progress(value)
+        self.assertEqual(window.progress.get_fraction(), 0.5)
+        self.assertIn("synthetic.txt", window.progress.get_text())
+        self.assertIn("2 files completed", window.progress.get_text())
+        self.assertIn("64.0 / 128.0 MB", window.progress.get_text())
+        self.assertIn("12.50 MB/s", window.progress.get_text())
+        self.assertNotIn("192.0", window.progress.get_text())
+        self.assertIn("192.0 MB transferred", window.progress.get_tooltip_text())
+        window.run(lambda _backend, report: report(0, None, name="empty-directory"), transfer=True)
+        self.wait_for(lambda: not window.service.busy)
+        self.assertEqual(window.progress.get_fraction(), 1)
+        self.assertIn("empty-directory", window.progress.get_text())
+        window.failed(PermissionError(13, "sensitive backend path"))
+        self.assertNotIn("sensitive", window.status.get_text())
+        self.assertIn("Permission denied", window.status.get_text())
+        window.disconnect()
+        self.wait_for(lambda: closed.called)

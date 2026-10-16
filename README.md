@@ -67,12 +67,23 @@ Use **Browse files (SFTP)** in saved-server and SSH-pane context menus to open
 an independent file window. Install dependencies using
 `scripts/termia-setup.sh install`. Browse, upload files/folders, download into a
 local folder, create directories, rename, and delete files or empty directories.
+File-list sizes use B, kB, MB or GB according to their size.
 Existing destination paths and symbolic links are refused. Cancellation closes
 SFTP; use **Reconnect SFTP** to continue. **Disconnect** closes the independent
 SFTP window and connection, including during a transfer. Cancel, Reconnect SFTP,
 and Disconnect appear on the right. Partial remote files and newly created
-directories may remain after cancellation or failure. Progress is per file.
-Closing the owning tab or Termia closes its SFTP connections.
+directories may remain after cancellation or failure. The SFTP window can move
+behind the terminal window; its prompts are scoped to SFTP. Progress shows the
+current file in MB, recent speed in MB/s and completed-file count. The tooltip
+shows accumulated MB for the operation without repeating them in the bar.
+Speed uses a recent three-second window across files. Folder totals are
+unknown because transfers start without scanning the entire tree first.
+Unexpected byte-count changes fail the transfer; this is not checksum
+verification. Cancelling a rename or delete prompt keeps the connection usable.
+Closing the owning tab or Termia requests SFTP cleanup without blocking GTK.
+Reconnect stays unavailable until the previous worker and transport-close task
+have exited. Cleanup still pending after 30 seconds is reported as unverified;
+this deadline does not guarantee completion of a blocked OS/network call.
 
 The Paramiko backend uses the saved endpoint and identity, SSH-agent/default
 keys, or a password prompt. Verify unknown host fingerprints before accepting;

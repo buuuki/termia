@@ -208,6 +208,54 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
+#: src/termia/i18n.py:sftp_progress
+msgid "{name} · {size} · {speed} MB/s · {files} files completed"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_progress_total
+msgid "Operation total: {transferred} MB transferred (overall size unknown)."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_incomplete
+msgid "The source size changed or the transfer ended before all expected bytes were received. Transfer failed."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_timeout
+msgid "The SFTP operation timed out."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_connection_lost
+msgid "The SFTP connection was lost."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_exists
+msgid "The destination already exists. Choose another name or location; nothing was overwritten."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_permission
+msgid "Permission denied or destination is read-only."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_no_space
+msgid "The destination has insufficient free space or its quota was exceeded."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_not_found
+msgid "The source or destination directory no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_unsupported
+msgid "Unsupported file type, invalid filename or directory nesting limit exceeded. Symbolic links are not transferred."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_partial
+msgid "Partial remote files or newly created directories may remain."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_stopping
+msgid "SFTP cleanup is still pending. Worker termination has not been verified."
+msgstr ""
+
 #: src/termia/i18n.py:open_local_terminal_tooltip
 msgid "Open local terminal"
 msgstr ""

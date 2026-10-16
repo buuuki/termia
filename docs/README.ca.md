@@ -63,13 +63,26 @@ L'explorador SFTP i les actualitzacions des de Quant a ja estaven disponibles a
 Obre **Explora fitxers (SFTP)** des del menú d'un servidor o panell SSH.
 Instal·la les dependències amb `scripts/termia-setup.sh install`. La finestra
 independent permet navegar, pujar fitxers/carpetes, baixar, crear carpetes,
-canviar noms i suprimir fitxers o carpetes buides. No sobreescriu destinacions
+canviar noms i suprimir fitxers o carpetes buides. Les mides de la llista es
+mostren en B, kB, MB o GB segons correspongui. No sobreescriu destinacions
 existents ni transfereix enllaços simbòlics. Cancel·lar desconnecta SFTP;
 fes servir **Reconnecta SFTP** per continuar. **Desconnectar** tanca la finestra
 i la seva connexió SFTP independent, fins i tot durant una transferència.
 Cancel·lar, Reconnecta SFTP i Desconnectar apareixen a la dreta. Poden quedar
-fitxers remots o carpetes incomplets. El progrés és per fitxer. Tancar la
-pestanya propietària o Termia tanca SFTP.
+fitxers remots o carpetes incomplets. La finestra SFTP pot quedar darrere del
+terminal; els seus diàlegs només bloquegen SFTP. El progrés mostra el fitxer
+actual en MB, la velocitat recent en MB/s i els fitxers completats. El tooltip
+mostra els MB acumulats de l'operació, sense repetir-los a la barra. La velocitat
+usa una finestra recent de tres segons que continua entre fitxers. El total
+d'una carpeta és desconegut perquè la transferència comença sense recórrer
+abans tot l'arbre.
+Una diferència inesperada en el nombre de bytes fa fallar la transferència;
+això no verifica sumes de comprovació. Cancel·lar un diàleg de canvi de nom o
+supressió conserva la connexió. Tancar la pestanya propietària o Termia demana
+la neteja d'SFTP sense bloquejar GTK. La reconnexió espera que acabin el
+treballador i la tasca de tancament. Si la neteja continua pendent després de
+30 segons, s'indica que no s'ha verificat; aquest termini no garanteix que
+acabi una crida bloquejada del sistema operatiu o de xarxa.
 
 Paramiko usa el host i la identitat desats, SSH-agent/claus predeterminades o
 contrasenya en memòria. Confirma les empremtes desconegudes; es rebutgen claus

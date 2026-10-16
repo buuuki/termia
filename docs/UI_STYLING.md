@@ -140,6 +140,23 @@ that call alone does not guarantee an exact 170 × 112 allocation. The grid's
 current start alignment avoids ordinary stretching, but the fixed-size rule
 still needs visual validation and, if necessary, an explicit layout fix.
 
+### SFTP explorer (#327)
+
+- The explorer is an independent, non-modal application window without a
+  transient parent. Existing transfer ownership still links its cleanup to the
+  originating terminal session or application.
+- A private GTK window group confines modal SFTP prompts/selectors to the
+  explorer. Other terminal and application windows remain accessible.
+- The default size remains 820 × 560 logical px. Cancel, Reconnect SFTP and
+  Disconnect remain right-aligned in that order.
+- File-list sizes use B, kB, MB or GB automatically, with one decimal for
+  scaled units. Transfer progress remains in MB and speed in MB/s.
+- Progress text includes the filename, per-file MB, recent MB/s and completed
+  files. Accumulated operation MB appear only in the tooltip. Long text is
+  ellipsized with the full text in a tooltip. Speed uses a recent three-second
+  window across files and resets for each operation.
+  Folder totals remain unknown while the tree is discovered during transfer.
+
 ## Known inconsistencies and decisions pending
 
 - Termia does not yet have a complete semantic palette for its own components.

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Refactored
+
+- Keep the SFTP explorer independent from terminal windows and scope its modal
+  prompts to SFTP. Coalesce progress updates, show per-file MB and recent MB/s
+  with accumulated MB in a tooltip, format file-list sizes in B/kB/MB/GB,
+  reject unexpected byte counts, classify
+  failures without exposing backend details, preserve connections when cancelling ordinary
+  prompts, and observe asynchronous cancellation/cleanup before reconnecting
+  (`#327`).
+
 ### Added
 
 - Open the snippet manager as an independent GTK window so terminals remain

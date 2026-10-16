@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import base64
+import errno
 from dataclasses import replace
 import hashlib
 import logging
@@ -15,9 +16,31 @@ from threading import Event, Lock
 import paramiko
 
 from .sftp_service import (
-    AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, RemoteEntry,
+    AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, IncompleteTransfer, RemoteEntry,
     UnknownHost, child_path,
 )
+
+
+def failure_details(error):
+    """Return safe UI message keys; never expose backend exception text."""
+    if isinstance(error, IncompleteTransfer):
+        return "sftp_incomplete", False
+    if isinstance(error, TimeoutError):
+        return "sftp_timeout", True
+    if isinstance(error, (ConnectionError, EOFError, paramiko.SSHException)):
+        return "sftp_connection_lost", True
+    code = getattr(error, "errno", None)
+    if code == errno.EEXIST:
+        return "sftp_exists", False
+    if code in (errno.EACCES, errno.EPERM, errno.EROFS):
+        return "sftp_permission", False
+    if code in (errno.ENOSPC, errno.EDQUOT):
+        return "sftp_no_space", False
+    if code == errno.ENOENT:
+        return "sftp_not_found", False
+    if isinstance(error, ValueError):
+        return "sftp_unsupported", False
+    return "sftp_failed", False
 
 
 class RequireConfirmation(paramiko.MissingHostKeyPolicy):
@@ -125,13 +148,17 @@ class ParamikoBackend:
             raise ValueError("directory nesting limit")
         mode = local.lstat().st_mode
         if stat.S_ISDIR(mode):
+            progress(0, None, name=local.name)
             self.sftp.mkdir(remote)  # Refuse existing directories; never merge silently.
             for item in local.iterdir():
                 self.upload(item, child_path(remote, item.name), progress, _depth + 1)
         elif stat.S_ISREG(mode):
             # Exclusive creation protects existing remote data from overwrites.
             with local.open("rb") as source, self.sftp.open(remote, "wx") as target:
-                self.copy(source, target, local.stat().st_size, progress)
+                total = os.fstat(source.fileno()).st_size
+                self.copy(source, target, total,
+                          lambda current, size: progress(current, size, name=local.name))
+            progress(total, total, name=local.name, finished=True)
         else:
             raise ValueError("unsupported file type")
 
@@ -141,6 +168,7 @@ class ParamikoBackend:
             raise ValueError("directory nesting limit")
         attrs = self.sftp.lstat(remote)
         if stat.S_ISDIR(attrs.st_mode):
+            progress(0, None, name=local.name)
             local.mkdir(mode=0o700)  # Reject existing paths, including symlinks.
             for entry in self.list_directory(remote):
                 path = child_path(remote, entry.name)
@@ -150,10 +178,13 @@ class ParamikoBackend:
             fd = os.open(local, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             try:
                 with os.fdopen(fd, "wb") as target, self.sftp.open(remote, "rb") as source:
-                    self.copy(source, target, attrs.st_size or 0, progress)
+                    total = attrs.st_size
+                    copied = self.copy(source, target, total,
+                                       lambda current, size: progress(current, size, name=local.name))
             except Exception:
                 local.unlink(missing_ok=True)
                 raise
+            progress(copied, total, name=local.name, finished=True)
         else:
             raise ValueError("unsupported file type")
 
@@ -165,15 +196,20 @@ class ParamikoBackend:
             data = source.read(256 * 1024)
             if not data:
                 break
+            if total is not None and transferred + len(data) > total:
+                raise IncompleteTransfer()
             target.write(data)
             transferred += len(data)
             progress(transferred, total)
         self.check()
+        if total is not None and transferred != total:
+            raise IncompleteTransfer()
+        return transferred
 
     def close(self):
         self.stopped.set()
         self.endpoint = replace(self.endpoint, password="")
         with self.lock:
             client = self.client
-        if client:
-            client.close()
+            if client:
+                client.close()
