@@ -20,11 +20,12 @@ the format is an object or event payload.
 
 ## Current schemas
 
-- `connections.json`: object schema `2`; embedded legacy settings and
-  statistics are extracted into their dedicated files, and schema `2` adds
-  locally stored command snippets and persistent snippet categories. Existing
-  development files without the category list recover category names from
-  their snippets when loaded; empty categories are stored explicitly.
+- `connections.json`: object schema `3`; embedded legacy settings and
+  statistics are extracted into their dedicated files, schema `2` adds
+  locally stored command snippets and persistent snippet categories, and
+  schema `3` adds an optional per-server startup command. Existing server
+  profiles receive an empty command when migrated; empty categories remain
+  stored explicitly.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
 - `notes.json`: object schema `2`; stores notes and persistent note categories

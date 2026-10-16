@@ -115,6 +115,7 @@ class SidebarMixin:
             server.favorite,
             server.password,
             server.public_key,
+            command_on_start=server.command_on_start,
         )
         self.selected = RowObject("server", clone.id, clone.name)
         self.toast_label.set_label(f"Conexión clonada: {clone.name}")

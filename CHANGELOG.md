@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Allow each saved SSH server to run a configured command after authentication
+  and keep the remote session open with an interactive shell (`#344`).
+
 ### Fixed
 
 - Use neutral, theme-aware required-field markers and hints in connection and

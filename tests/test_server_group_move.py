@@ -34,6 +34,7 @@ class ServerGroupMoveTests(unittest.TestCase):
         self.server = self.store.add_server(
             "Web", "web.example.test", "admin", 2222, self.first.id,
             favorite=True, password="synthetic-password", public_key="synthetic-key",
+            command_on_start="cd /srv/app && ./start.sh",
         )
 
     def tearDown(self) -> None:
@@ -45,6 +46,7 @@ class ServerGroupMoveTests(unittest.TestCase):
             self.server.id, self.server.name, self.server.host, self.server.user,
             self.server.port, self.server.favorite, self.server.password,
             self.server.public_key, self.server.split_layout,
+            self.server.command_on_start,
         )
 
         self.assertTrue(self.store.move_server_to_group(self.server.id, self.child.id))
@@ -56,6 +58,7 @@ class ServerGroupMoveTests(unittest.TestCase):
                 self.server.id, self.server.name, self.server.host, self.server.user,
                 self.server.port, self.server.favorite, self.server.password,
                 self.server.public_key, self.server.split_layout,
+                self.server.command_on_start,
             ),
             original_fields,
         )
@@ -65,8 +68,26 @@ class ServerGroupMoveTests(unittest.TestCase):
         try:
             self.assertIsNone(restored.data.servers[0].group_id)
             self.assertEqual(restored.data.servers[0].id, self.server.id)
+            self.assertEqual(restored.data.servers[0].command_on_start, "cd /srv/app && ./start.sh")
         finally:
             restored.close()
+
+    def test_update_server_persists_startup_command(self) -> None:
+        self.store.update_server(
+            self.server.id,
+            self.server.name,
+            self.server.host,
+            self.server.user,
+            self.server.port,
+            self.server.group_id,
+            self.server.favorite,
+            self.server.password,
+            self.server.public_key,
+            self.server.split_layout,
+            "printf 'connected'",
+        )
+
+        self.assertEqual(self.server.command_on_start, "printf 'connected'")
 
     def test_invalid_or_unchanged_move_never_saves(self) -> None:
         with patch.object(self.store, "save_connections") as save:
