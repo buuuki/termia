@@ -4,6 +4,12 @@
 
 ### Added
 
+- Open the snippet manager as an independent GTK window so terminals remain
+  usable while snippets are managed. Fit fixed-size category tiles into the
+  available width and wrap them into additional rows, align Create snippet to
+  the left, place category actions below Back to snippets, and label the return
+  action clearly (`#346`).
+
 - Allow each saved SSH server to run a configured command after authentication
   and keep the remote session open with an interactive shell (`#344`).
 

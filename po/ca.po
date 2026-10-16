@@ -1785,6 +1785,9 @@ msgstr "Previsualització de l'ordre"
 msgid "All categories"
 msgstr "Totes les categories"
 
+msgid "Back to snippets"
+msgstr "Torna als snippets"
+
 msgid "{count} snippets"
 msgstr "{count} snippets"
 

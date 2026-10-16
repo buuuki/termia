@@ -90,12 +90,17 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   preserve empty categories, rename all contained snippets, duplicate them
   with new IDs, and move them to Uncategorized on confirmed deletion. The
   category-management page must have no repeated heading; All categories
-  remains at the top, while Cancel sits beside Delete category and both return
-  to the three-column snippet manager. Category management must show uniform
-  icon tiles with names and snippet counts (including zero) across multiple
-  rows; selecting a tile enables Rename, Duplicate, and Delete. The selected
-  highlight must follow the rounded tile rather than the square outer cell,
-  while keyboard focus remains visible in light and dark themes.
+  remains at the top of the manager's category filter, while Back to snippets
+  and Cancel return to the three-column snippet manager. Category management
+  must place Add, Rename, Duplicate, and Delete directly below Back to snippets,
+  with Cancel alone at the bottom right. It must show uniform icon tiles with
+  names and snippet counts (including zero) in 170 × 112 logical px frames.
+  Resizing the window must not change those frame dimensions. The grid uses as
+  many columns as fit and wraps onto additional rows when the window narrows.
+  Selecting a tile enables Rename, Duplicate, and Delete. Create snippet must
+  align with the left edge of the snippet list.
+  The selected highlight must follow the rounded tile rather than the square
+  outer cell, while keyboard focus remains visible in light and dark themes.
 - Snippet variable values must be shell-quoted as individual arguments, and a
   group-scoped snippet must apply to servers in that group and its nested
   subgroups. Invalid or deleted scope targets must never broaden a snippet to
@@ -103,6 +108,12 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Repeatedly opening, cancelling, and reusing snippet management and execution
   flows must reuse their existing windows and remain responsive during window
   resizing; these flows must not accumulate top-level GTK surfaces.
+- The snippet manager must use a standard independent GTK window: opening it
+  must leave the main window and terminal sessions usable. Closing it with the
+  window controls or its Close button must hide the reusable window; reopening
+  must restore the manager view without creating another surface. The execution
+  picker must remain modal to its owning terminal window, and application
+  shutdown must destroy both snippet windows.
 - SSH fingerprint prompts must remain visible and interactive in the terminal.
 - Known-host inspection must prefer the configured endpoint (`host` on port 22
   or `[host]:port` otherwise), then mirror OpenSSH's non-standard-port fallback

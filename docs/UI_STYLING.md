@@ -75,6 +75,70 @@ application-theme tokens.
 | Sidebar selection and category drop target | GTK selection tokens | `styles.py` |
 | Split panes | Terminal preferences | `styles.py` and terminal settings |
 | Required-field marker and hint | GTK label foreground and secondary text derived from `@theme_fg_color` | `connection_dialogs.py` and `styles.py` |
+| Snippet manager and category tiles | GTK window and buttons with Termia layout and selection rules | `snippet_dialogs.py` and `styles.py` |
+
+### Notes window layout
+
+These are the current Notes window settings in `src/termia/notes_dialogs.py`.
+They describe the existing implementation, not a reusable window contract:
+
+- Notes is a reusable, independent, non-modal `Gtk.Window` associated with
+  the application. It has no transient parent. Closing it hides the workspace;
+  application shutdown destroys it. The default size is **1240 × 660 logical
+  px**, not a fixed size. Its root content has 14 px margins on all sides and
+  10 px vertical spacing.
+- Its `Gtk.HeaderBar` supplies standard GTK title buttons. On the left, the
+  notes-list toggle, New note, and Import/Export overflow button appear in
+  that order, with 4 px between them and an 8 px start margin. The overflow
+  button is hidden for server-scoped notes.
+- The notes-list pane starts at **330 logical px** and restores its last width
+  after being hidden. Its search entry requests at least 300 px and has a 6 px
+  end margin. The editor side keeps a 6 px inset beside the divider while the
+  list is visible; hiding the list removes that inset so tabs and editor align.
+- Note tabs stay above the editor toolbar. The editor text has 12 px internal
+  margins on all sides. The editor surface has a 1 px theme border and an 8 px
+  corner radius. The editor's default foreground and background are white and
+  `#001B33`; saved Notes appearance preferences can replace them.
+- `termia-notes-window` marks the window; no window-frame CSS rule currently
+  targets that class. `termia-note-tab`, `termia-notes-tab-scroller`, and
+  `termia-notes-editor` have scoped rules in `src/termia/styles.py`. The
+  `termia-notes-toolbar` and `termia-notes-list` rules are applied by the
+  editor appearance provider in `notes_dialogs.py`. GTK owns ordinary button
+  and title-control colors, focus, and interaction states.
+
+The protected behavior, including focus, reuse, resizing, and the title-bar
+control order, is recorded in [Regression Checks](REGRESSION_CHECKS.md#notes).
+
+### Snippet manager layout (#346)
+
+These are the intended layout rules for the snippet manager. They describe its
+current design, not a reusable component API:
+
+- The manager uses a standard, independent GTK window. Its content keeps the
+  category, snippet-list, and preview columns. **Create snippet** is aligned
+  to the left edge above the snippet list.
+- On **Manage categories**, **Back to snippets** is at the top left. The
+  **Add category**, **Rename category**, **Duplicate category**, and
+  **Delete category** buttons form a left-aligned row directly below it, in
+  that order, with 6 px between buttons. The page has 16 px outer margins and
+  10 px vertical spacing. **Cancel** stays alone at the bottom right.
+- Each framed category card is intended to measure **170 × 112 logical px**.
+  A window resize changes how many cards fit on a row; it must not stretch or
+  shrink the cards. The grid starts at the top left, uses 12 px between rows
+  and columns, wraps onto more rows, and scrolls vertically without a
+  horizontal scrollbar. The card icon, name, and snippet count are centered;
+  long names are ellipsized.
+- The card uses `termia-snippet-category-tile` on the `Gtk.FlowBoxChild` and
+  `termia-snippet-category-frame` on its `Gtk.Frame`. Their scoped CSS in
+  `src/termia/styles.py` supplies rounded corners and selection feedback from
+  GTK theme colors. GTK continues to style the buttons and keyboard focus.
+
+Implementation detail to verify before calling the size invariant enforced:
+`src/termia/snippet_dialogs.py` currently uses
+`frame.set_size_request(170, 112)`. GTK treats this as a minimum request, so
+that call alone does not guarantee an exact 170 × 112 allocation. The grid's
+current start alignment avoids ordinary stretching, but the fixed-size rule
+still needs visual validation and, if necessary, an explicit layout fix.
 
 ## Known inconsistencies and decisions pending
 

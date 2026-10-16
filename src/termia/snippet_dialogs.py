@@ -203,8 +203,7 @@ class SnippetDialogs:
     def build_manager(self) -> ManagerState:
         window = Gtk.Window(
             title=self.translate("manage_snippets"),
-            transient_for=self.parent,
-            modal=True,
+            application=self.parent.get_application(),
         )
         window.set_default_size(1060, 560)
         stack = Gtk.Stack()
@@ -243,7 +242,7 @@ class SnippetDialogs:
         list_scroller.set_child(listing)
         snippet_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         snippet_column.set_hexpand(True)
-        add.set_halign(Gtk.Align.END)
+        add.set_halign(Gtk.Align.START)
         snippet_column.append(add)
         snippet_column.append(list_scroller)
 
@@ -377,19 +376,28 @@ class SnippetDialogs:
 
         category_page = self.page()
         category_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        category_back = self.button(self.translate("snippet_back_to_categories"))
+        category_back = self.button(self.translate("snippet_back_to_manager"))
         category_header.append(category_back)
         category_page.append(category_header)
+        category_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        category_actions.set_halign(Gtk.Align.START)
+        category_add = self.button(self.translate("snippet_category_add"))
+        category_rename = self.button(self.translate("snippet_category_rename"))
+        category_duplicate = self.button(self.translate("snippet_category_duplicate"))
+        category_delete = self.button(self.translate("snippet_category_delete"), destructive=True)
+        for item in (category_add, category_rename, category_duplicate, category_delete):
+            category_actions.append(item)
+        category_page.append(category_actions)
         category_manage_grid = Gtk.FlowBox()
         category_manage_grid.set_selection_mode(Gtk.SelectionMode.SINGLE)
         category_manage_grid.set_homogeneous(True)
         category_manage_grid.set_min_children_per_line(1)
-        category_manage_grid.set_max_children_per_line(4)
         category_manage_grid.set_row_spacing(12)
         category_manage_grid.set_column_spacing(12)
         category_manage_grid.set_halign(Gtk.Align.START)
         category_manage_grid.set_valign(Gtk.Align.START)
         category_manage_scroller = Gtk.ScrolledWindow()
+        category_manage_scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         category_manage_scroller.set_vexpand(True)
         category_manage_scroller.set_child(category_manage_grid)
         category_page.append(category_manage_scroller)
@@ -405,13 +413,8 @@ class SnippetDialogs:
         category_name_box.set_visible(False)
         category_page.append(category_name_box)
         category_buttons = self.button_row()
-        category_add = self.button(self.translate("snippet_category_add"))
-        category_rename = self.button(self.translate("snippet_category_rename"))
-        category_duplicate = self.button(self.translate("snippet_category_duplicate"))
-        category_delete = self.button(self.translate("snippet_category_delete"), destructive=True)
         category_cancel = self.button(self.translate("cancel"))
-        for item in (category_add, category_rename, category_duplicate, category_delete, category_cancel):
-            category_buttons.append(item)
+        category_buttons.append(category_cancel)
         category_page.append(category_buttons)
         stack.add_named(category_page, "categories")
 
@@ -506,6 +509,7 @@ class SnippetDialogs:
         if handler_id is not None:
             grid.handler_block(handler_id)
         categories = [item for item in self.presenter.categories() if item.key]
+        grid.set_max_children_per_line(max(1, len(categories)))
         try:
             self.clear_flow_box(grid)
             state.category_manage_keys = [item.key for item in categories]

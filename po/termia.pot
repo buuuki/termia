@@ -2134,6 +2134,10 @@ msgstr ""
 msgid "All categories"
 msgstr ""
 
+#: src/termia/i18n.py:snippet_back_to_manager
+msgid "Back to snippets"
+msgstr ""
+
 #: src/termia/i18n.py:snippet_select_preview
 msgid "Select a snippet to preview its command."
 msgstr ""
