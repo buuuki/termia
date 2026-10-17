@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import argparse
 import signal
+from time import monotonic
 
 import gi
 
@@ -52,10 +53,12 @@ from .tab_lifecycle_actions import TabLifecycleActions
 from .tabs import TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
 from .terminal_menus import TerminalMenusMixin
 from .terminal_menu_actions import TerminalMenuActions
+from .terminal_processes import TerminalProcess
 from .terminal_sessions import TerminalSessionsMixin
 from .ui_state import RowObject
 
 TOAST_VISIBLE_SECONDS = 5
+SHUTDOWN_CLEANUP_DEADLINE_SECONDS = 30
 
 
 def gnome_interface_settings() -> Gio.Settings | None:
@@ -284,6 +287,11 @@ class TermiaWindow(
         self.close_confirmation_pending = False
         self.shutdown_in_progress = False
         self.file_transfer_controllers: set[ManagedTransfer] = set()
+        self.shutdown_transfers: tuple[ManagedTransfer, ...] = ()
+        self.orphaned_terminal_processes: set[TerminalProcess] = set()
+        self.shutdown_terminal_processes: tuple[TerminalProcess, ...] = ()
+        self.shutdown_deadline = 0.0
+        self.shutdown_force_sent = False
         self.connect("close-request", self.on_main_window_close_request)
         self.connect("destroy", lambda *_args: self.store.close())
         if hasattr(GLib, "unix_signal_add"):
@@ -507,6 +515,9 @@ class TermiaWindow(
         if not self.notes_dialogs.prepare_shutdown():
             return
         self.shutdown_in_progress = True
+        self.shutdown_deadline = monotonic() + SHUTDOWN_CLEANUP_DEADLINE_SECONDS
+        self.shutdown_force_sent = False
+        self.shutdown_transfers = tuple(self.file_transfer_controllers)
         log_event("application.shutdown_started", sessions=len(self.session_registry.sessions()))
         self.snippet_dialogs.shutdown()
         self.notes_dialogs.shutdown()
@@ -548,8 +559,36 @@ class TermiaWindow(
         )
 
     def finish_main_window_shutdown(self) -> bool:
-        self.terminate_open_terminal_processes(force=True)
-        log_event("application.shutdown_finished")
+        if not self.shutdown_force_sent:
+            self.terminate_open_terminal_processes(force=True)
+            self.shutdown_force_sent = True
+        pending_processes = self.pending_shutdown_terminal_processes()
+        transfer_states = tuple(
+            transfer.shutdown_cleanup_state() for transfer in self.shutdown_transfers
+        )
+        pending_transfers = transfer_states.count("pending")
+        failed_transfers = transfer_states.count("failed")
+        timed_out = monotonic() >= self.shutdown_deadline and (
+            pending_processes or pending_transfers
+        )
+        if (pending_processes or pending_transfers) and not timed_out:
+            return GLib.SOURCE_CONTINUE
+
+        if timed_out:
+            outcome = "timed_out"
+        elif failed_transfers:
+            outcome = "failed"
+        else:
+            outcome = "stopped"
+        if outcome != "stopped":
+            log_event(
+                "application.shutdown_cleanup_unverified",
+                outcome=outcome,
+                terminal_processes=len(pending_processes),
+                transfers_pending=pending_transfers,
+                transfers_failed=failed_transfers,
+            )
+        log_event("application.shutdown_finished", cleanup=outcome)
         application = self.get_application()
         if application is not None:
             application.quit()

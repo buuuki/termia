@@ -378,6 +378,17 @@ class SFTPWindow(Gtk.Window):
         else:
             self.cancel()
 
+    def shutdown_cleanup_state(self):
+        if self.service.stopped:
+            return "stopped"
+        workers_alive = any(
+            worker is not None and worker.is_alive()
+            for worker in (self.service.worker, self.service.close_worker)
+        )
+        if self.service.cleanup_failed and not workers_alive:
+            return "failed"
+        return "pending"
+
     def close_requested(self, *_args):
         if not self.disposed:
             self.disposed = True

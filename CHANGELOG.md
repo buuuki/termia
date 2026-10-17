@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- Retain verified terminal process-group identities through tab disconnection,
+  closure, and application shutdown, including forced cleanup after the leader
+  exits. Observe SCP/SFTP cleanup for a bounded period, and report failed or
+  timed-out cleanup without marking it successful. Reuse captured identities
+  when terminal-exit callbacks run, release expired uncertain sessions, and
+  track the refreshed SCP identity through cancellation (`#351`).
 - Select SFTP directories with one click so they can be downloaded, and open
   them with a double-click or keyboard activation (`#326`).
 

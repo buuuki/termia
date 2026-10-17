@@ -3,6 +3,7 @@ import os
 import unittest
 from pathlib import Path
 from threading import Event
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import gi
@@ -50,6 +51,21 @@ class SFTPViewTests(unittest.TestCase):
                 return
             time.sleep(0.005)
         self.fail("Timed out waiting for isolated SFTP operation")
+
+    def test_shutdown_cleanup_state_distinguishes_pending_stopped_and_failed(self):
+        service = SimpleNamespace(
+            stopped=False,
+            cleanup_failed=False,
+            worker=None,
+            close_worker=None,
+        )
+        host = SimpleNamespace(service=service)
+
+        self.assertEqual(SFTPWindow.shutdown_cleanup_state(host), "pending")
+        service.cleanup_failed = True
+        self.assertEqual(SFTPWindow.shutdown_cleanup_state(host), "failed")
+        service.stopped = True
+        self.assertEqual(SFTPWindow.shutdown_cleanup_state(host), "stopped")
 
     def test_window_lists_files_without_changing_parent_and_closes_backend(self):
         backend = Mock()

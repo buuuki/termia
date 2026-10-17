@@ -580,11 +580,9 @@ class TerminalPaneStateTests(unittest.TestCase):
             id(other_terminal): other_process,
         }
 
-        TerminalSessionsMixin.clear_terminal_process_state(
-            session,
-            split_terminal,
-            split,
-        )
+        host = TerminalSessionsMixin()
+        with patch("termia.terminal_sessions.terminal_process_is_active", return_value=False):
+            host.clear_terminal_process_state(session, split_terminal, split)
 
         self.assertIsNone(split.child_pid)
         self.assertIsNone(split.child_process)
