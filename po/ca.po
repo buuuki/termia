@@ -38,6 +38,9 @@ msgstr "Poden quedar fitxers remots o carpetes acabades de crear incomplets."
 msgid "SFTP cleanup is still pending. Worker termination has not been verified."
 msgstr "La neteja d'SFTP continua pendent. No s'ha verificat que el procés de treball hagi acabat."
 
+msgid "SFTP cleanup failed after retrying. Connection closure has not been verified; reconnect is disabled."
+msgstr "La neteja d'SFTP ha fallat després de reintentar-ho. No s'ha verificat el tancament de la connexió; la reconnexió està desactivada."
+
 msgid "Browse files (SFTP)"
 msgstr "Explora fitxers (SFTP)"
 

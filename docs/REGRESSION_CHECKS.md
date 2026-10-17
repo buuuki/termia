@@ -169,6 +169,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
 - Every split pane must retain its own SSH or local-profile identity, process,
   status bar, reconnect state, history entry, statistics, and context actions.
+- Retry the same failed local and SSH split at least three times. Each exit
+  must produce exactly one history result, statistics notification and reconnect
+  transition. An extra exit for an inactive or removed pane must be ignored;
+  sibling panes and the managed-process cleanup path must remain unaffected.
 - Disconnecting one pane must terminate only its managed process; closing the
   tab or Termia must terminate all pane processes.
 - In a local terminal, replace the shell with a test process whose child runs
@@ -702,6 +706,18 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   close workers have exited. Repeated close is safe; setup that creates its
   transport after the first cancel must be closed again. A 30-second cleanup
   warning is an unverified result, not proof that a blocked OS call terminated.
+- Reconnect an idle explorer while its synthetic backend closes slowly. No
+  replacement backend may be created before the previous service is verified
+  stopped. Repeated reconnect requests must create only one replacement, and
+  closing/cancelling the explorer while waiting must cancel the queued reconnect.
+  Queued old-service callbacks must not update the replacement window state.
+- Inject a synthetic backend close failure: cleanup gets one automatic retry
+  on the same close worker, without blocking GTK or starting concurrent closers.
+  A successful retry permits reconnect/closure. A second failure must show a
+  translated cleanup-failed message and keep reconnect disabled. The window's
+  periodic monitor must stop; even if the window is hidden, retain its host
+  registration and report failed/pending cleanup accurately during application
+  shutdown. Never report successful resource release on failure or timeout.
 
 - From the saved-server menu and from each SSH pane of a mixed split, open
   `Browse files (SFTP)` and check the correct endpoint. Terminal size, divider

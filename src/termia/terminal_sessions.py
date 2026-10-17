@@ -1552,7 +1552,7 @@ class TerminalSessionsMixin:
         pane.timeout_id = GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
         session.split_child_pids[id(terminal)] = child_process.pid
         session.split_processes[id(terminal)] = child_process
-        terminal.connect("child-exited", self.on_split_terminal_exited, session)
+        self.connect_split_exit_handler(session, pane)
         if profile is not None and profile.command_on_start.strip():
             GLib.timeout_add(
                 INITIAL_LOCAL_COMMAND_DELAY_MS,
@@ -1681,7 +1681,7 @@ class TerminalSessionsMixin:
         pane.timeout_id = GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
         session.split_child_pids[id(terminal)] = child_process.pid
         session.split_processes[id(terminal)] = child_process
-        terminal.connect("child-exited", self.on_split_terminal_exited, session)
+        self.connect_split_exit_handler(session, pane)
         self.session_observer.connection_started(server.id)
         if announce:
             self.toast_label.set_label(self.t("session_opened").format(title=server.name))
@@ -1700,8 +1700,19 @@ class TerminalSessionsMixin:
             return fallback_working_directory
         return str(Path.home())
 
+    def connect_split_exit_handler(self, session: TerminalSession, pane: TerminalPane) -> None:
+        """A retried VTE keeps one subscription for its owning pane/session."""
+        pane.exit_processed = False
+        if pane.exit_handler_id is None:
+            pane.exit_handler_id = pane.terminal.connect(
+                "child-exited", self.on_split_terminal_exited, session
+            )
+
     def on_split_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         pane = session.pane_for_terminal(terminal)
+        if pane is None or getattr(pane, "exit_processed", False):
+            return
+        pane.exit_processed = True
         self.mark_terminal_inactive(terminal, session)
         if pane is not None:
             self.session_observer.pane_finished(pane)

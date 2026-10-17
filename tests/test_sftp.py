@@ -295,6 +295,56 @@ class SFTPServiceTests(unittest.TestCase):
         self.service.close_worker.join(2)
         self.assertTrue(self.service.cleanup_failed)
         self.assertFalse(self.service.stopped)
+        self.assertEqual(self.backend.close.call_count, 2)
+
+    def test_cleanup_recovers_once_on_the_same_background_worker(self):
+        callers = []
+        def close():
+            callers.append(get_ident())
+            if len(callers) == 1:
+                raise OSError("synthetic transient failure")
+        self.backend.close.side_effect = close
+        self.service.close()
+        closer = self.service.close_worker
+        self.service.close()
+        closer.join(2)
+        self.assertTrue(self.service.stopped)
+        self.assertFalse(self.service.cleanup_failed)
+        self.assertEqual(len(callers), 2)
+        self.assertEqual(len(set(callers)), 1)
+        self.assertNotEqual(callers[0], get_ident())
+        self.assertIs(self.service.close_worker, closer)
+
+    def test_permanent_cleanup_failure_never_starts_more_retries(self):
+        self.backend.close.side_effect = OSError("synthetic permanent failure")
+        self.service.cancel()
+        closer = self.service.close_worker
+        closer.join(2)
+        self.service.close()
+        self.service.cancel()
+        self.assertIs(self.service.close_worker, closer)
+        self.assertFalse(closer.is_alive())
+        self.assertEqual(self.backend.close.call_count, 2)
+        self.assertFalse(self.service.stopped)
+        self.assertTrue(self.service.cleanup_failed)
+
+    def test_failed_closer_does_not_claim_live_operation_has_stopped(self):
+        started, release = Event(), Event()
+        def operation(*_):
+            started.set()
+            release.wait(2)
+        self.backend.close.side_effect = OSError("synthetic permanent failure")
+        self.service.submit(operation, Mock(), Mock())
+        try:
+            self.assertTrue(started.wait(1))
+            self.service.close()
+            self.service.close_worker.join(2)
+            self.assertTrue(self.service.worker.is_alive())
+            self.assertTrue(self.service.cleanup_failed)
+            self.assertFalse(self.service.stopped)
+        finally:
+            release.set()
+            self.service.worker.join(2)
 
     def test_recent_speed_uses_operation_bytes_across_files_and_resets(self):
         mib = 1024 * 1024

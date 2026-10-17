@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- Wait for the previous SFTP service to finish cleanup before reconnecting,
+  retry a failed backend close once off the UI thread, and report exhausted
+  cleanup without discarding unresolved resources or polling indefinitely.
+  Keep a single exit handler across local/SSH split retries and ignore exits
+  from inactive or removed panes (`#319`).
+
 - Retain verified terminal process-group identities through tab disconnection,
   closure, and application shutdown, including forced cleanup after the leader
   exits. Observe SCP/SFTP cleanup for a bounded period, and report failed or

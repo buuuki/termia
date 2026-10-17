@@ -28,6 +28,8 @@ class TerminalPane:
     server_id: str | None = None
     local_profile_id: str | None = None
     timeout_id: int | None = None
+    exit_handler_id: int | None = None
+    exit_processed: bool = False
     child_pid: int | None = None
     child_process: TerminalProcess | None = None
     connected: bool = True
