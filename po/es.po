@@ -38,6 +38,9 @@ msgstr "Pueden quedar archivos remotos o carpetas recién creadas incompletos."
 msgid "SFTP cleanup is still pending. Worker termination has not been verified."
 msgstr "La limpieza de SFTP sigue pendiente. No se ha verificado que el proceso de trabajo haya terminado."
 
+msgid "SFTP cleanup failed after retrying. Connection closure has not been verified; reconnect is disabled."
+msgstr "La limpieza de SFTP falló tras reintentarlo. No se ha verificado el cierre de la conexión; la reconexión está desactivada."
+
 msgid "Browse files (SFTP)"
 msgstr "Explorar archivos (SFTP)"
 

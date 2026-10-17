@@ -11,7 +11,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
 from termia.i18n import translate_key
-from termia.sftp_service import Endpoint, RemoteEntry, TransferProgress
+from termia.sftp_service import Cancelled, Endpoint, RemoteEntry, TransferProgress
 from termia.sftp_view import SFTPWindow
 
 
@@ -66,6 +66,166 @@ class SFTPViewTests(unittest.TestCase):
         self.assertEqual(SFTPWindow.shutdown_cleanup_state(host), "failed")
         service.stopped = True
         self.assertEqual(SFTPWindow.shutdown_cleanup_state(host), "stopped")
+
+    def test_idle_reconnect_waits_for_old_closer_and_ignores_repeat_requests(self):
+        old_backend, new_backend = Mock(), Mock()
+        for backend in (old_backend, new_backend):
+            backend.connect.return_value = "/synthetic"
+            backend.list_directory.return_value = []
+        _parent, window, closed = self.make_window(old_backend)
+        self.wait_for(lambda: not window.service.busy)
+        old = window.service
+        closing, release = Event(), Event()
+        def close():
+            closing.set()
+            release.wait(2)
+        old_backend.close.side_effect = close
+        window.backend_factory = Mock(return_value=new_backend)
+        try:
+            window.connect_backend()
+            self.assertTrue(closing.wait(1))
+            window.connect_backend()
+            self.assertIs(window.service, old)
+            self.assertTrue(window.reconnect_pending)
+            window.backend_factory.assert_not_called()
+            self.assertFalse(window.reconnect_button.get_sensitive())
+            heartbeat = Mock(return_value=GLib.SOURCE_REMOVE)
+            GLib.idle_add(heartbeat)
+            self.wait_for(lambda: heartbeat.called)
+        finally:
+            release.set()
+        self.wait_for(lambda: window.service is not old and not window.service.busy)
+        window.backend_factory.assert_called_once()
+        new_backend.connect.assert_called_once()
+        self.assertTrue(old.stopped)
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
+
+    def test_close_during_pending_reconnect_never_opens_replacement(self):
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = []
+        _parent, window, closed = self.make_window(backend)
+        self.wait_for(lambda: not window.service.busy)
+        closing, release = Event(), Event()
+        def close():
+            closing.set()
+            release.wait(2)
+        backend.close.side_effect = close
+        window.backend_factory = Mock()
+        try:
+            window.connect_backend()
+            self.assertTrue(closing.wait(1))
+            window.disconnect()
+            window.connect_backend()
+            self.assertFalse(window.reconnect_pending)
+        finally:
+            release.set()
+        self.wait_for(lambda: closed.called)
+        window.backend_factory.assert_not_called()
+        closed.assert_called_once_with(window)
+
+    def test_old_queued_completion_cannot_update_reconnected_window(self):
+        backend, replacement = Mock(), Mock()
+        for current in (backend, replacement):
+            current.connect.return_value = "/synthetic"
+            current.list_directory.return_value = []
+        _parent, window, closed = self.make_window(backend)
+        self.wait_for(lambda: not window.service.busy)
+        old = window.service
+        queued = []
+        old.dispatch = lambda callback, *args: queued.append((callback, args))
+        completed = Mock()
+        window.run(lambda *_: "stale result", completed)
+        old.worker.join(2)
+        window.cancel()
+        old.close_worker.join(2)
+        window.backend_factory = Mock(return_value=replacement)
+        window.connect_backend()
+        self.wait_for(lambda: window.service is not old and not window.service.busy)
+        before = window.status.get_text()
+        for callback, args in queued:
+            callback(*args)
+        completed.assert_not_called()
+        self.assertEqual(window.status.get_text(), before)
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
+
+    def test_cancel_while_waiting_clears_only_the_queued_reconnect(self):
+        backend, replacement = Mock(), Mock()
+        for current in (backend, replacement):
+            current.connect.return_value = "/synthetic"
+            current.list_directory.return_value = []
+        _parent, window, closed = self.make_window(backend)
+        self.wait_for(lambda: not window.service.busy)
+        old = window.service
+        closing, release = Event(), Event()
+        def close():
+            closing.set()
+            release.wait(2)
+        backend.close.side_effect = close
+        window.backend_factory = Mock(return_value=replacement)
+        try:
+            window.connect_backend()
+            self.assertTrue(closing.wait(1))
+            window.cancel()
+        finally:
+            release.set()
+        self.wait_for(lambda: not window.stop_source)
+        self.assertIs(window.service, old)
+        window.backend_factory.assert_not_called()
+        self.assertTrue(window.reconnect_button.get_sensitive())
+        window.connect_backend()
+        self.wait_for(lambda: window.service is not old and not window.service.busy)
+        replacement.connect.assert_called_once()
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
+
+    def test_failed_cleanup_stops_monitor_without_dropping_resource_owner(self):
+        backend = Mock()
+        backend.connect.return_value = "/synthetic"
+        backend.list_directory.return_value = []
+        _parent, window, closed = self.make_window(backend)
+        self.wait_for(lambda: not window.service.busy)
+        backend.close.side_effect = OSError("sensitive synthetic error")
+        factory = Mock()
+        window.backend_factory = factory
+        window.connect_backend()
+        self.wait_for(lambda: window.service.cleanup_failed and not window.stop_source)
+        self.assertEqual(window.shutdown_cleanup_state(), "failed")
+        self.assertFalse(window.reconnect_pending)
+        self.assertFalse(window.reconnect_button.get_sensitive())
+        self.assertFalse(window.cancel_button.get_sensitive())
+        self.assertEqual(backend.close.call_count, 2)
+        self.assertIn("failed after retrying", window.status.get_text())
+        self.assertNotIn("sensitive", window.status.get_text())
+        window.failed(Cancelled())
+        self.assertIn("failed after retrying", window.status.get_text())
+        window.disconnect()
+        self.wait_for(lambda: not window.stop_source)
+        self.assertTrue(window.disposed)
+        self.assertFalse(window.get_visible())
+        closed.assert_not_called()
+        factory.assert_not_called()
+        self.assertEqual(window.shutdown_cleanup_state(), "failed")
+
+    def test_reconnect_can_recover_after_one_transient_cleanup_failure(self):
+        backend, replacement = Mock(), Mock()
+        for current in (backend, replacement):
+            current.connect.return_value = "/synthetic"
+            current.list_directory.return_value = []
+        _parent, window, closed = self.make_window(backend)
+        self.wait_for(lambda: not window.service.busy)
+        old = window.service
+        backend.close.side_effect = [OSError("synthetic transient failure"), None]
+        window.backend_factory = Mock(return_value=replacement)
+        window.connect_backend()
+        self.wait_for(lambda: window.service is not old and not window.service.busy)
+        self.assertEqual(backend.close.call_count, 2)
+        self.assertTrue(old.stopped)
+        replacement.connect.assert_called_once()
+        window.disconnect()
+        self.wait_for(lambda: closed.called)
 
     def test_window_lists_files_without_changing_parent_and_closes_backend(self):
         backend = Mock()

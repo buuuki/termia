@@ -1,3 +1,6 @@
+import os
+import sys
+import time
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -101,6 +104,129 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    @unittest.skipUnless(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"),
+                         "GTK display unavailable")
+    def test_real_vte_split_retries_process_each_child_exit_once(self):
+        from gi.repository import Gtk, GLib, Vte
+
+        # Exercise the SSH start/exit path with a local synthetic child; no
+        # SSH host, credentials or real network connection is involved.
+        for kind in ("local", "ssh"):
+            with self.subTest(kind=kind):
+                terminal, root_terminal = Vte.Terminal(), FakeTerminal()
+                window = Gtk.Window()
+                window.set_child(terminal)
+                window.present()
+                root = make_pane(root_terminal, "root")
+                pane = make_pane(terminal, "retry-pane")
+                session = make_session(root_terminal, root)
+                session.panes[id(terminal)] = pane
+                session.split_terminals.append(terminal)
+                host = TerminalSessionsMixin()
+                host.session_registry = {session.id: session}
+                host.store = SimpleNamespace(
+                    data=SimpleNamespace(terminal=SimpleNamespace(ls_colors="")),
+                    record_history_start=Mock(), record_history_end=Mock(),
+                )
+                host.session_observer = Mock()
+                host.t = lambda key: key
+                host.toast_label = Mock()
+                host.mark_pane_for_reconnect = Mock()
+                command = [sys.executable, "-c", "import time; time.sleep(0.1); raise SystemExit(255)"]
+                host.local_terminal_session_title = lambda _: "Synthetic"
+                host.build_local_terminal_command = lambda _: command
+                host.local_terminal_working_directory = lambda *_: "/tmp"
+                server = Server(id="synthetic", name="Synthetic", host="example.test", user="test")
+                try:
+                    with patch("termia.terminal_sessions.GLib.find_program_in_path", return_value=sys.executable), \
+                         patch("termia.terminal_sessions.build_ssh_command", return_value=command):
+                        for attempt in range(3):
+                            session.active_terminal_ids.add(id(terminal))
+                            if kind == "local":
+                                host.start_local_split_terminal(session, terminal, root_terminal)
+                            else:
+                                host.start_ssh_split_terminal(session, terminal, server, announce=False)
+                            deadline = time.monotonic() + 3
+                            while host.store.record_history_end.call_count <= attempt and time.monotonic() < deadline:
+                                GLib.MainContext.default().iteration(False)
+                                time.sleep(0.005)
+                            self.assertEqual(host.store.record_history_end.call_count, attempt + 1)
+                            self.assertEqual(host.mark_pane_for_reconnect.call_count, attempt + 1)
+                            self.assertEqual(host.session_observer.pane_finished.call_count, attempt + 1)
+                            self.assertIn(id(root_terminal), session.active_terminal_ids)
+                            self.assertIsNone(pane.child_process)
+                finally:
+                    if pane.child_process is not None:
+                        host.terminate_terminal_process(pane.child_process, force=True)
+                    window.destroy()
+
+    def test_repeated_local_and_ssh_split_retries_deliver_each_exit_once(self):
+        from gi.repository import GObject
+
+        class SignalTerminal(GObject.Object):
+            __gsignals__ = {"child-exited": (GObject.SignalFlags.RUN_LAST, None, (int,))}
+
+            def feed(self, payload):
+                pass
+
+        for kind in ("local", "ssh"):
+            with self.subTest(kind=kind):
+                terminal, root_terminal = SignalTerminal(), FakeTerminal()
+                root = make_pane(root_terminal, "root")
+                pane = make_pane(terminal, "retry-pane")
+                session = make_session(root_terminal, root)
+                session.panes[id(terminal)] = pane
+                session.split_terminals.append(terminal)
+                host = TerminalSessionsMixin()
+                host.session_registry = {session.id: session}
+                host.store = SimpleNamespace(
+                    data=SimpleNamespace(terminal=SimpleNamespace(ls_colors="")),
+                    record_history_start=Mock(), record_history_end=Mock(),
+                )
+                host.session_observer = Mock()
+                host.t = lambda key: key
+                host.toast_label = Mock()
+                host.local_terminal_session_title = lambda _: "Synthetic"
+                host.build_local_terminal_command = lambda _: ["synthetic-shell"]
+                host.local_terminal_working_directory = lambda *_: "/synthetic"
+                host.mark_pane_for_reconnect = Mock()
+                server = Server(id="synthetic", name="Synthetic", host="example.test", user="test")
+                with patch("termia.terminal_sessions.spawn_terminal_process",
+                           return_value=TerminalProcess(42, 42, 42, "synthetic-birth")), \
+                     patch("termia.terminal_sessions.GLib.find_program_in_path", return_value="synthetic-ssh"), \
+                     patch("termia.terminal_sessions.GLib.timeout_add_seconds", return_value=123), \
+                     patch("termia.terminal_sessions.GLib.source_remove"), \
+                     patch("termia.terminal_sessions.terminal_process_is_active", return_value=False), \
+                     patch("termia.terminal_sessions.build_terminal_environment", return_value=[]):
+                    handler_ids = []
+                    for attempt in range(3):
+                        session.active_terminal_ids.add(id(terminal))
+                        if kind == "local":
+                            host.start_local_split_terminal(session, terminal, root_terminal)
+                        else:
+                            host.start_ssh_split_terminal(session, terminal, server, announce=False)
+                        handler_ids.append(pane.exit_handler_id)
+                        terminal.emit("child-exited", 255 << 8)
+                        self.assertEqual(host.store.record_history_end.call_count, attempt + 1)
+                        self.assertEqual(host.session_observer.pane_finished.call_count, attempt + 1)
+                        self.assertEqual(host.mark_pane_for_reconnect.call_count, attempt + 1)
+                        # A repeated/late exit for the inactive attempt is ignored.
+                        terminal.emit("child-exited", 255 << 8)
+                        self.assertEqual(host.store.record_history_end.call_count, attempt + 1)
+                    self.assertIsNotNone(handler_ids[0])
+                    self.assertEqual(len(set(handler_ids)), 1)
+
+    def test_exit_from_removed_split_does_not_touch_session(self):
+        host = TerminalSessionsMixin()
+        host.session_observer = Mock()
+        host.store = Mock()
+        terminal = FakeTerminal()
+        root_terminal = FakeTerminal()
+        session = make_session(root_terminal, make_pane(root_terminal, "root"))
+        host.on_split_terminal_exited(terminal, 255 << 8, session)
+        host.session_observer.pane_finished.assert_not_called()
+        host.store.record_history_end.assert_not_called()
+
     def test_terminal_preferences_from_menu_use_session_window(self) -> None:
         owner = object()
         session = SimpleNamespace()

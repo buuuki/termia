@@ -256,6 +256,10 @@ msgstr ""
 msgid "SFTP cleanup is still pending. Worker termination has not been verified."
 msgstr ""
 
+#: src/termia/i18n.py:sftp_cleanup_failed
+msgid "SFTP cleanup failed after retrying. Connection closure has not been verified; reconnect is disabled."
+msgstr ""
+
 #: src/termia/i18n.py:open_local_terminal_tooltip
 msgid "Open local terminal"
 msgstr ""

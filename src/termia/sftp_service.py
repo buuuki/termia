@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Event, Lock, Thread
-from time import monotonic
+from time import monotonic, sleep
 from typing import Protocol, Any
 import posixpath
 
@@ -197,15 +197,30 @@ class SFTPService:
         self.cancelled.set()
 
         def stop_backend():
+            failures = 0
+
+            def close_backend():
+                nonlocal failures
+                while True:
+                    try:
+                        self.backend.close()
+                        return True
+                    except Exception:
+                        if failures:
+                            self.cleanup_failed = True
+                            return False
+                        failures += 1
+                        # One recovery attempt, on this same worker. Repeated
+                        # cancel/close requests must not create more closers.
+                        sleep(0.05)
+
             # Retry while setup is running: the first close may precede creation
             # of Paramiko's transport. The last close runs after the worker exits.
-            try:
-                while self.worker is not None and self.worker.is_alive():
-                    self.backend.close()
-                    self.worker.join(0.05)
-                self.backend.close()
-            except Exception:
-                self.cleanup_failed = True
+            while self.worker is not None and self.worker.is_alive():
+                if not close_backend():
+                    return
+                self.worker.join(0.05)
+            close_backend()
 
         self.close_worker = Thread(target=stop_backend, name="termia-sftp-close", daemon=True)
         self.close_worker.start()

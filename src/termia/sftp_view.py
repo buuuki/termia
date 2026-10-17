@@ -15,6 +15,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk, Pango
 
 from .dialog_actions import add_dialog_action_button, configure_action_area
+from .debug import log_event
 from .known_hosts import ScannedHostKey, append_scanned_host_key
 from .sftp_backend import ParamikoBackend, failure_details
 from .sftp_service import (
@@ -50,6 +51,7 @@ class SFTPWindow(Gtk.Window):
         self.transfer_active = False
         self.connection_ready = False
         self.stop_source = 0
+        self.reconnect_pending = False
         self.path = "."
         self.set_default_size(820, 560)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -108,13 +110,18 @@ class SFTPWindow(Gtk.Window):
         self.reconnect_button.set_sensitive(not busy)
 
     def connect_backend(self):
-        if self.disposed:
+        if self.disposed or self.reconnect_pending:
             return
-        if self.service and (self.service.busy or
-                             (self.service.cancelled.is_set() and not self.service.stopped)):
+        if self.service and self.service.busy and not self.service.cancelled.is_set():
             return
         if self.service:
             self.service.close()
+            if not self.service.stopped or self.stop_source:
+                self.connection_ready = False
+                self.reconnect_pending = True
+                self.status.set_text(self.t("sftp_stopping"))
+                self.monitor_stop()
+                return
         self.connection_ready = False
         self.service = SFTPService(self.backend_factory(self.endpoint), GLib.idle_add)
         def connected(path):
@@ -166,6 +173,9 @@ class SFTPWindow(Gtk.Window):
         transfer = self.transfer_active
         self.transfer_active = False
         self.set_busy(False)
+        if self.service.cleanup_failed:
+            self.status.set_text(self.t("sftp_cleanup_failed"))
+            return
         if isinstance(error, UnknownHost):
             self.status.set_text(self.t("sftp_reconnect_required"))
             self.confirm(
@@ -340,6 +350,7 @@ class SFTPWindow(Gtk.Window):
         dialog.present()
 
     def cancel(self):
+        self.reconnect_pending = False
         self.connection_ready = False
         self.service.cancel()
         self.status.set_text(self.t("sftp_cancelled"))
@@ -350,17 +361,29 @@ class SFTPWindow(Gtk.Window):
         if self.stop_source:
             return
         started = monotonic()
+        service = self.service
 
         def check():
-            if self.service.stopped:
+            if service.stopped:
                 self.stop_source = 0
                 if self.disposed:
                     self.on_closed(self)
                     self.destroy()
+                elif self.reconnect_pending:
+                    self.reconnect_pending = False
+                    self.connect_backend()
                 else:
                     self.set_busy(False)
                 return GLib.SOURCE_REMOVE
-            if monotonic() - started >= 30 or self.service.cleanup_failed:
+            if service.cleanup_failed:
+                self.stop_source = 0
+                self.reconnect_pending = False
+                self.status.set_text(self.t("sftp_cleanup_failed"))
+                log_event("sftp.cleanup_failed", window_disposed=self.disposed)
+                # Keep ownership in the host registry for shutdown observation,
+                # but do not poll a terminal failure forever or replace it.
+                return GLib.SOURCE_REMOVE
+            if monotonic() - started >= 30:
                 # Keep observing; a deadline is not proof that cleanup succeeded.
                 self.status.set_text(self.t("sftp_stopping"))
             return GLib.SOURCE_CONTINUE
@@ -392,6 +415,7 @@ class SFTPWindow(Gtk.Window):
     def close_requested(self, *_args):
         if not self.disposed:
             self.disposed = True
+            self.reconnect_pending = False
             self.service.close()
             for dialog in tuple(self.dialogs):
                 dialog.destroy()
