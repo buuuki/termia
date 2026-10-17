@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Open the snippet editor at a compact, resizable 680 × 560 logical px size,
+  constrain selectors with long labels, and restore the manager's previous
+  size after saving, cancelling, or closing the editor (`#355`).
+
 - Wait for the previous SFTP service to finish cleanup before reconnecting,
   retry a failed backend close once off the UI thread, and report exhausted
   cleanup without discarding unresolved resources or polling indefinitely.
