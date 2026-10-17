@@ -31,6 +31,12 @@ class SnippetDialogTests(unittest.TestCase):
         while context.pending():
             context.iteration(False)
 
+    @staticmethod
+    def settle_window():
+        loop = GLib.MainLoop()
+        GLib.timeout_add(300, lambda: (loop.quit(), False)[1])
+        loop.run()
+
     def make_dialogs(self, parent, data, *, store=None, notice=None):
         return SnippetDialogs(
             parent,
@@ -397,6 +403,68 @@ class SnippetDialogTests(unittest.TestCase):
         dialogs.on_editor_save(Mock(), state)
         self.assertEqual(data.snippets[-1].category, "__termia_uncategorized__")
         self.assertEqual(state.visible_ids, ["2"])
+
+    def test_editor_is_compact_with_long_labels_and_restores_resized_manager(self):
+        parent = self.make_parent()
+        category = "A very long category name " * 12
+        data = SimpleNamespace(
+            snippets=[CommandSnippet("one", "Example", "true", category)],
+            groups=[], servers=[],
+        )
+        dialogs = self.make_dialogs(parent, data)
+        self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
+        state = dialogs.show_manager()
+        state.window.set_default_size(1140, 640)
+        self.settle_window()
+        manager_size = (state.window.get_width(), state.window.get_height())
+
+        for duplicate in (False, True):
+            dialogs.show_editor(state, "one", duplicate)
+            state.target.append("long", "A very long target name " * 12)
+            state.target.set_active_id("long")
+            state.target.set_visible(True)
+            self.settle_window()
+            self.assertEqual(state.window.get_width(), 680)
+            self.assertEqual(state.window.get_height(), 560)
+            for selector in (state.category, state.scope, state.target):
+                self.assertLessEqual(selector.get_width(), 360)
+                self.assertGreaterEqual(selector.get_width(), 260)
+            self.assertGreater(state.command.get_height(), 100)
+            dialogs.on_new_category(Mock(), state)
+            self.settle_window()
+            self.assertEqual(state.window.get_width(), 680)
+            self.assertGreater(state.command.get_height(), 60)
+            dialogs.on_editor_cancel(Mock(), state)
+            self.settle_window()
+            self.assertEqual((state.window.get_width(), state.window.get_height()), manager_size)
+
+    def test_editor_save_and_close_restore_manager_size(self):
+        parent = self.make_parent()
+        data = SimpleNamespace(snippets=[], groups=[], servers=[])
+        dialogs = self.make_dialogs(parent, data, store=self.make_snippet_store(data))
+        self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
+        state = dialogs.show_manager()
+        self.settle_window()
+        manager_size = (state.window.get_width(), state.window.get_height())
+        dialogs.show_editor(state, None, False)
+        self.settle_window()
+        state.name.set_text("Example")
+        state.command.get_buffer().set_text("true")
+        dialogs.on_editor_save(Mock(), state)
+        self.settle_window()
+        self.assertEqual((state.window.get_width(), state.window.get_height()), manager_size)
+        self.assertEqual(len(data.snippets), 1)
+
+        dialogs.show_editor(state, None, False)
+        self.settle_window()
+        dialogs.on_manager_close_request(state.window, state)
+        reopened = dialogs.show_manager()
+        self.settle_window()
+        self.assertIs(reopened, state)
+        self.assertEqual(state.stack.get_visible_child_name(), "manager")
+        self.assertEqual((state.window.get_width(), state.window.get_height()), manager_size)
 
     def test_manager_reuses_one_window_during_repeated_editor_cancellation(self):
         parent = self.make_parent()

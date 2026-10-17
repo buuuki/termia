@@ -65,6 +65,7 @@ class ManagerState:
     category_pending_delete: str | None = None
     category_manage_handler_id: int | None = None
     selection_hint: Gtk.ListBoxRow | None = None
+    manager_size: tuple[int, int] | None = None
 
 
 @dataclass
@@ -191,6 +192,7 @@ class SnippetDialogs:
             return None
         state = self.manager_state or self.build_manager()
         self.manager_state = state
+        self.restore_manager_size(state)
         state.window.set_title(self.translate("manage_snippets"))
         state.stack.set_visible_child_name("manager")
         state.category_filter = None
@@ -301,8 +303,8 @@ class SnippetDialogs:
         name = Gtk.Entry()
         category = Gtk.ComboBoxText()
         category_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        category_row.set_halign(Gtk.Align.START)
         category_row.append(category)
-        category.set_hexpand(True)
         new_category_button = self.button("+")
         new_category_button.set_tooltip_text(self.translate("snippet_new_category"))
         category_row.append(new_category_button)
@@ -318,6 +320,12 @@ class SnippetDialogs:
         new_category_box.set_visible(False)
         scope = Gtk.ComboBoxText()
         target = Gtk.ComboBoxText()
+        for selector in (category, scope, target):
+            selector.set_halign(Gtk.Align.START)
+            selector.set_size_request(260, -1)
+            for cell in selector.get_cells():
+                cell.set_property("ellipsize", Pango.EllipsizeMode.END)
+                cell.set_property("max-width-chars", 30)
         command = Gtk.TextView()
         command.set_monospace(True)
         command.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
@@ -480,6 +488,7 @@ class SnippetDialogs:
         return state
 
     def hide_manager(self, state: ManagerState) -> None:
+        self.restore_manager_size(state)
         state.stack.set_visible_child_name("manager")
         state.editor_snippet_id = None
         state.delete_snippet_id = None
@@ -836,6 +845,12 @@ class SnippetDialogs:
         if snippet_id and snippet is None:
             self.refresh_manager(state)
             return
+        if state.manager_size is None:
+            default_width, default_height = state.window.get_default_size()
+            state.manager_size = (
+                state.window.get_width() or default_width,
+                state.window.get_height() or default_height,
+            )
         state.editor_snippet_id = snippet_id
         state.editor_duplicate = duplicate
         suffix = f" {self.translate('snippet_copy_suffix')}" if snippet and duplicate else ""
@@ -848,6 +863,7 @@ class SnippetDialogs:
         self.populate_targets(state, snippet.target_id if snippet else "")
         state.window.set_title(self.translate("snippet_add" if snippet is None or duplicate else "snippet_edit"))
         state.stack.set_visible_child_name("editor")
+        state.window.set_default_size(680, 560)
         state.name.grab_focus()
         log_event("snippet.editor_opened", duplicate=duplicate, editing=snippet is not None)
 
@@ -869,6 +885,7 @@ class SnippetDialogs:
         self.hide_new_category(state)
         state.window.set_title(self.translate("manage_snippets"))
         state.stack.set_visible_child_name("manager")
+        self.restore_manager_size(state)
         self.refresh_manager(state)
         log_event("snippet.editor_cancelled")
 
@@ -892,8 +909,15 @@ class SnippetDialogs:
         self.hide_new_category(state)
         state.window.set_title(self.translate("manage_snippets"))
         state.stack.set_visible_child_name("manager")
+        self.restore_manager_size(state)
         self.refresh_manager(state, selected_id)
         log_event("snippet.saved")
+
+    @staticmethod
+    def restore_manager_size(state: ManagerState) -> None:
+        if state.manager_size is not None:
+            state.window.set_default_size(*state.manager_size)
+            state.manager_size = None
 
     def on_manager_delete(self, _button: Gtk.Button, state: ManagerState) -> None:
         snippet = self.presenter.snippet(state.selected_id)

@@ -108,6 +108,12 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Repeatedly opening, cancelling, and reusing snippet management and execution
   flows must reuse their existing windows and remain responsive during window
   resizing; these flows must not accumulate top-level GTK surfaces.
+- Creating, editing, or duplicating a snippet must open a compact, resizable
+  editor (680 × 560 logical px by default) with compact category, scope, and
+  target selectors. Long labels must not widen the window. The command field
+  must retain useful editing space, including while creating a category.
+  Saving, cancelling, or closing and reopening must restore the manager's
+  previous size, including a size chosen manually by the user.
 - The snippet manager must use a standard independent GTK window: opening it
   must leave the main window and terminal sessions usable. Closing it with the
   window controls or its Close button must hide the reusable window; reopening
