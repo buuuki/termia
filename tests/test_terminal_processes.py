@@ -4,8 +4,10 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from termia.terminal_processes import (
+    SessionProcessIdentity,
     TerminalProcess,
     signal_terminal_process,
+    snapshot_terminal_process,
     spawn_terminal_process,
     terminal_process_is_active,
 )
@@ -20,27 +22,36 @@ class FakeTerminal:
 
 
 class TerminalProcessTests(unittest.TestCase):
-    @patch("termia.terminal_processes.process_groups_in_session", return_value={99})
-    def test_terminal_process_is_active_while_a_session_group_remains(self, groups) -> None:
+    @patch(
+        "termia.terminal_processes.os.getsid",
+        return_value=500,
+    )
+    @patch("termia.terminal_processes.os.getpgid", return_value=99)
+    @patch("termia.terminal_processes.process_session_members", return_value=(
+        SessionProcessIdentity(42, 99, "42"),
+        SessionProcessIdentity(43, 99, "child"),
+    ))
+    @patch("termia.terminal_processes.process_start_time", side_effect=["42", "42", "42", "child"])
+    def test_terminal_process_is_active_while_a_session_group_remains(
+        self, _start_time, members, _getpgid, _getsid
+    ) -> None:
         process = TerminalProcess(42, 99, 500, "42")
 
         self.assertTrue(terminal_process_is_active(process))
 
-        groups.assert_called_once_with(500)
+        members.assert_called_once_with(500)
 
     @patch("termia.terminal_processes.process_start_time", return_value=None)
-    @patch("termia.terminal_processes.process_groups_in_session", return_value=set())
+    @patch("termia.terminal_processes.process_session_members", return_value=())
     def test_terminal_process_is_inactive_after_every_session_process_exits(
-        self,
-        groups,
-        start_time,
+        self, members, start_time
     ) -> None:
         process = TerminalProcess(42, 99, 500, "42")
 
         self.assertFalse(terminal_process_is_active(process))
 
-        groups.assert_called_once_with(500)
-        start_time.assert_called_once_with(42)
+        members.assert_called_once_with(500)
+        self.assertEqual(start_time.call_count, 2)
 
     def test_spawn_helper_centralizes_vte_arguments(self) -> None:
         terminal = FakeTerminal()
@@ -71,10 +82,18 @@ class TerminalProcessTests(unittest.TestCase):
         self.assertFalse(signal_terminal_process(process, signal.SIGTERM))
         kill.assert_not_called()
 
+    @patch("termia.terminal_processes.process_start_time", side_effect=["42", "42", "42", "43"])
+    @patch("termia.terminal_processes.os.getsid", return_value=500)
+    @patch("termia.terminal_processes.os.getpgid", side_effect=[99, 100])
+    @patch("termia.terminal_processes.process_session_members", return_value=(
+        SessionProcessIdentity(42, 99, "42"),
+        SessionProcessIdentity(43, 100, "43"),
+    ))
     @patch("termia.terminal_processes.os.killpg")
     @patch("termia.terminal_processes.os.getpgrp", return_value=1)
-    @patch("termia.terminal_processes.process_groups_in_session", return_value={99, 100})
-    def test_signals_every_group_in_the_captured_terminal_session(self, groups, getpgrp, killpg) -> None:
+    def test_signals_every_group_in_the_captured_terminal_session(
+        self, getpgrp, killpg, members, getpgid, getsid, _start_time
+    ) -> None:
         process = TerminalProcess(pid=42, process_group_id=99, session_id=500, start_time="42")
 
         self.assertTrue(signal_terminal_process(process, signal.SIGTERM))
@@ -85,6 +104,140 @@ class TerminalProcessTests(unittest.TestCase):
                 ((100, signal.SIGTERM),),
             ],
         )
+
+    def test_signals_snapshot_groups_after_leader_exits(self) -> None:
+        process = TerminalProcess(
+            pid=42,
+            process_group_id=42,
+            session_id=500,
+            start_time="leader",
+            session_members=(SessionProcessIdentity(43, 99, "child"),),
+        )
+        with (
+            patch("termia.terminal_processes.process_start_time", return_value="child"),
+            patch("termia.terminal_processes.os.getpgid", return_value=99),
+            patch("termia.terminal_processes.os.getsid", return_value=500),
+            patch("termia.terminal_processes.os.getpgrp", return_value=1),
+            patch("termia.terminal_processes.os.killpg") as killpg,
+            patch("termia.terminal_processes.process_session_members") as live_members,
+        ):
+            self.assertTrue(signal_terminal_process(process, signal.SIGKILL))
+
+        killpg.assert_called_once_with(99, signal.SIGKILL)
+        live_members.assert_not_called()
+
+    def test_session_pid_reuse_rejects_unrelated_live_groups(self) -> None:
+        process = TerminalProcess(pid=42, process_group_id=99, session_id=500, start_time="old")
+        with (
+            patch("termia.terminal_processes.process_start_time", side_effect=["new", "new"]),
+            patch(
+                "termia.terminal_processes.process_session_members",
+                return_value=(SessionProcessIdentity(43, 99, "unrelated"),),
+            ) as groups,
+            patch("termia.terminal_processes.os.killpg") as killpg,
+            patch("termia.terminal_processes.os.kill") as kill,
+        ):
+            self.assertFalse(signal_terminal_process(process, signal.SIGTERM))
+
+        groups.assert_called_once_with(500)
+        killpg.assert_not_called()
+        kill.assert_not_called()
+
+    def test_snapshot_does_not_adopt_a_reused_session_id(self) -> None:
+        process = TerminalProcess(pid=42, process_group_id=99, session_id=500, start_time="old")
+        with (
+            patch("termia.terminal_processes.process_start_time", return_value="new"),
+            patch("termia.terminal_processes.process_session_members", return_value=()) as members,
+        ):
+            snapshot = snapshot_terminal_process(process)
+
+        self.assertEqual(snapshot.session_members, ())
+        self.assertFalse(snapshot.session_unverified)
+        members.assert_called_once_with(500)
+
+    def test_snapshot_marks_live_groups_unverified_when_the_leader_identity_changed(self) -> None:
+        process = TerminalProcess(pid=42, process_group_id=99, session_id=500, start_time="old")
+        members = (SessionProcessIdentity(43, 99, "new"),)
+        with (
+            patch("termia.terminal_processes.process_start_time", return_value="reused"),
+            patch("termia.terminal_processes.process_session_members", return_value=members),
+        ):
+            snapshot = snapshot_terminal_process(process)
+
+        self.assertTrue(snapshot.session_unverified)
+        self.assertEqual(snapshot.session_members, ())
+        with patch("termia.terminal_processes.process_session_members", return_value=members):
+            self.assertTrue(terminal_process_is_active(snapshot))
+
+    def test_unverified_session_stops_pending_when_its_members_disappear(self) -> None:
+        process = TerminalProcess(42, 42, 42, "leader", session_unverified=True)
+        members = (SessionProcessIdentity(43, 43, "child"),)
+        with patch(
+            "termia.terminal_processes.process_session_members",
+            side_effect=[members, ()],
+        ):
+            self.assertTrue(terminal_process_is_active(process))
+            self.assertFalse(terminal_process_is_active(process))
+
+        with patch("termia.terminal_processes.os.killpg") as killpg:
+            self.assertFalse(signal_terminal_process(process, signal.SIGKILL))
+        killpg.assert_not_called()
+
+    def test_child_exit_reuses_shutdown_snapshot_without_false_pending_identity(self) -> None:
+        process = TerminalProcess(42, 42, 42, "leader")
+        terminal = object()
+        pane = SimpleNamespace(child_pid=42, child_process=process)
+        session = SimpleNamespace(
+            id="session", terminal=terminal, child_pid=42, child_process=process,
+            split_child_pids={}, split_processes={}, panes={id(terminal): pane},
+        )
+        host = TerminalSessionsMixin()
+        host.shutdown_in_progress = True
+        host.orphaned_terminal_processes = set()
+        host.session_registry = SessionRegistry([session])
+        live = {42: "leader", 43: "child"}
+
+        with (
+            patch("termia.terminal_processes.process_start_time", side_effect=live.get),
+            patch(
+                "termia.terminal_processes.process_session_members",
+                side_effect=lambda _sid: tuple(
+                    SessionProcessIdentity(pid, pid, birth) for pid, birth in live.items()
+                ),
+            ),
+            patch("termia.terminal_processes.os.getpgid", side_effect=lambda pid: pid),
+            patch("termia.terminal_processes.os.getsid", return_value=42),
+        ):
+            host.prepare_terminal_sessions_for_shutdown()
+            snapshot, = host.shutdown_terminal_processes
+            del live[42]
+            host.clear_terminal_process_state(session, terminal, pane)
+
+            self.assertEqual(host.orphaned_terminal_processes, {snapshot})
+            self.assertEqual(host.pending_shutdown_terminal_processes(), (snapshot,))
+            live.clear()
+            self.assertEqual(host.pending_shutdown_terminal_processes(), ())
+
+    def test_child_exit_does_not_restart_pending_forced_cleanup(self) -> None:
+        terminal = object()
+        process = TerminalProcess(42, 42, 42, "leader")
+        snapshot = TerminalProcess(
+            42, 42, 42, "leader", (SessionProcessIdentity(43, 43, "child"),)
+        )
+        pane = SimpleNamespace(child_pid=42, child_process=process)
+        session = SimpleNamespace(
+            terminal=terminal, child_pid=42, child_process=process,
+            split_child_pids={}, split_processes={},
+        )
+        host = TerminalSessionsMixin()
+        host.orphaned_terminal_processes = {snapshot}
+        host.terminate_terminal_process = Mock()
+
+        with patch("termia.terminal_sessions.terminal_process_is_active", return_value=True):
+            host.clear_terminal_process_state(session, terminal, pane)
+
+        host.terminate_terminal_process.assert_not_called()
+        self.assertEqual(host.orphaned_terminal_processes, {snapshot})
 
     def test_terminates_main_and_split_processes_for_every_open_session(self) -> None:
         main_process = TerminalProcess(pid=1, process_group_id=10, session_id=100, start_time="1")
@@ -142,6 +295,52 @@ class TerminalProcessTests(unittest.TestCase):
         self.assertTrue(split_pane.disconnect_requested)
         self.assertFalse(split_pane.pending_reconnect)
 
+    @patch("termia.terminal_sessions.terminal_process_is_active", return_value=True)
+    @patch(
+        "termia.terminal_sessions.snapshot_terminal_process",
+        side_effect=lambda process: TerminalProcess(
+            process.pid,
+            process.process_group_id,
+            process.session_id,
+            process.start_time,
+            (SessionProcessIdentity(process.pid + 1, process.pid + 1, "child"),),
+        ),
+    )
+    def test_shutdown_retains_process_identity_after_terminal_state_is_cleared(
+        self, _snapshot, _active
+    ) -> None:
+        process = TerminalProcess(42, 99, 500, "leader")
+        session = SimpleNamespace(
+            id="session",
+            child_process=process,
+            split_processes={},
+            panes={},
+            disconnect_requested=False,
+            pending_reconnect=False,
+        )
+
+        class Host(TerminalSessionsMixin):
+            def __init__(self) -> None:
+                self.session_registry = SessionRegistry([session])
+                self.shutdown_in_progress = True
+                self.terminated = []
+
+            def terminate_terminal_process(self, current, *, force=False):
+                self.terminated.append((current, force))
+                return True
+
+        host = Host()
+        host.prepare_terminal_sessions_for_shutdown()
+        host.terminate_open_terminal_processes()
+        session.child_process = None
+
+        host.terminate_open_terminal_processes(force=True)
+
+        self.assertEqual(len(host.terminated), 2)
+        for captured, _forced in host.terminated:
+            self.assertEqual(captured.session_members[0].pid, 43)
+        self.assertEqual([forced for _captured, forced in host.terminated], [False, True])
+
     @patch("termia.terminal_sessions.GLib.timeout_add")
     @patch("termia.terminal_sessions.signal_terminal_process", return_value=True)
     def test_shutdown_uses_only_the_global_forced_termination_pass(self, signal_process, timeout_add) -> None:
@@ -153,6 +352,39 @@ class TerminalProcessTests(unittest.TestCase):
 
         signal_process.assert_called_once_with(process, signal.SIGTERM)
         timeout_add.assert_not_called()
+
+    def test_forced_cleanup_retains_the_snapshot_used_for_soft_termination(self) -> None:
+        process = TerminalProcess(42, 42, 42, "leader")
+        snapshot = TerminalProcess(
+            42, 42, 42, "leader", (SessionProcessIdentity(43, 43, "child"),)
+        )
+        host = TerminalSessionsMixin()
+
+        with (
+            patch("termia.terminal_sessions.snapshot_terminal_process", return_value=snapshot),
+            patch("termia.terminal_sessions.signal_terminal_process", return_value=True) as signal_process,
+            patch("termia.terminal_sessions.GLib.timeout_add") as timeout_add,
+        ):
+            self.assertTrue(host.terminate_terminal_process(process))
+
+        signal_process.assert_called_once_with(snapshot, signal.SIGTERM)
+        timeout_add.assert_called_once_with(500, host.force_terminate_terminal_process, snapshot)
+        self.assertEqual(host.orphaned_terminal_processes, {snapshot})
+
+    def test_forced_cleanup_does_not_signal_a_reused_snapshot_child_pid(self) -> None:
+        process = TerminalProcess(
+            42, 42, 42, "leader", (SessionProcessIdentity(43, 43, "old-child"),)
+        )
+        host = TerminalSessionsMixin()
+        with (
+            patch("termia.terminal_processes.process_start_time", side_effect=lambda pid: "new-child" if pid == 43 else None),
+            patch("termia.terminal_processes.os.killpg") as killpg,
+            patch("termia.terminal_processes.os.kill") as kill,
+        ):
+            host.force_terminate_terminal_process(process)
+
+        killpg.assert_not_called()
+        kill.assert_not_called()
 
     @patch("termia.terminal_sessions.log_event")
     @patch("termia.terminal_sessions.terminal_process_is_active", return_value=False)

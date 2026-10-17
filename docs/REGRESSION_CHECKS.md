@@ -171,6 +171,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   status bar, reconnect state, history entry, statistics, and context actions.
 - Disconnecting one pane must terminate only its managed process; closing the
   tab or Termia must terminate all pane processes.
+- In a local terminal, replace the shell with a test process whose child runs
+  in a separate process group and ignores SIGTERM and SIGHUP. Disconnect the
+  pane or close its tab. After the 500 ms forced-cleanup grace period, both
+  processes must have stopped even if the VTE leader exited first. Unrelated
+  terminals must remain running.
 - Explicitly disconnecting the original/first pane of a multi-pane local or SSH
   tab must remove and collapse that pane just like any later split, keep sibling
   panes usable, and clear its process identity so detached-window, tab, and
@@ -185,6 +190,18 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   `Down`, and `Enter` from the search field.
 - When close-on-exit is enabled, a split tab must close after the last pane exits regardless of whether the original terminal or a split exits last.
 - Closing Termia must terminate every process group in the isolated VTE session for active SSH, local-terminal, and split-pane sessions without signalling unrelated processes.
+- Close Termia while terminal leaders have exited but captured child processes
+  remain. Cleanup must use the captured process birth identities, terminate the
+  remaining owned groups, and avoid signalling a process that reused a PID or
+  session ID. Once all processes are gone, terminal-exit callbacks and expired
+  uncertain identities must not produce a false 30-second shutdown timeout.
+- Close Termia with SCP and SFTP cleanup pending. Shutdown must wait for
+  verified completion or a bounded deadline, then report failed or timed-out
+  cleanup as unverified rather than successful. Repeat with SFTP disabled and
+  confirm ordinary SSH shutdown remains functional.
+- Cancel SCP immediately after launch, including before its isolated session
+  identity was initially captured. Cleanup must retain the refreshed identity
+  and stay pending while its captured children remain after the leader exits.
 
 ### Focus and Keyboard
 

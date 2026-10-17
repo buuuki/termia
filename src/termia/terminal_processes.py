@@ -5,13 +5,20 @@ from __future__ import annotations
 
 import os
 import signal
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import gi
 
 gi.require_version("Vte", "3.91")
 from gi.repository import GLib, Vte
+
+
+@dataclass(frozen=True)
+class SessionProcessIdentity:
+    pid: int
+    process_group_id: int
+    start_time: str
 
 
 @dataclass(frozen=True)
@@ -22,6 +29,8 @@ class TerminalProcess:
     process_group_id: int | None
     session_id: int | None
     start_time: str | None
+    session_members: tuple[SessionProcessIdentity, ...] = ()
+    session_unverified: bool = False
 
 
 def process_start_time(pid: int) -> str | None:
@@ -37,32 +46,81 @@ def process_start_time(pid: int) -> str | None:
     return values[19] if len(values) > 19 else None
 
 
-def process_group_and_session(pid: int) -> tuple[int, int] | None:
-    try:
-        stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
-    except OSError:
-        return None
-    _prefix, separator, fields = stat.rpartition(")")
-    if not separator:
-        return None
-    values = fields.split()
-    if len(values) < 4:
-        return None
-    return int(values[2]), int(values[3])
-
-
-def process_groups_in_session(session_id: int) -> set[int]:
-    groups: set[int] = set()
+def process_session_members(session_id: int) -> tuple[SessionProcessIdentity, ...]:
+    members: list[SessionProcessIdentity] = []
     try:
         candidates = Path("/proc").iterdir()
-    except OSError:
-        return groups
+    except (OSError, UnicodeError):
+        return ()
     for candidate in candidates:
         if not candidate.name.isdigit():
             continue
-        identity = process_group_and_session(int(candidate.name))
-        if identity is not None and identity[1] == session_id:
-            groups.add(identity[0])
+        try:
+            stat = (candidate / "stat").read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            continue
+        _prefix, separator, fields = stat.rpartition(")")
+        if not separator:
+            continue
+        values = fields.split()
+        if len(values) <= 19:
+            continue
+        try:
+            process_group_id = int(values[2])
+            current_session_id = int(values[3])
+        except ValueError:
+            continue
+        if current_session_id == session_id:
+            members.append(
+                SessionProcessIdentity(
+                    pid=int(candidate.name),
+                    process_group_id=process_group_id,
+                    start_time=values[19],
+                )
+            )
+    return tuple(members)
+
+
+def snapshot_terminal_process(process: TerminalProcess) -> TerminalProcess:
+    """Capture process identities that prove ownership of its isolated session."""
+    if process.session_id is None or process.session_members or process.session_unverified:
+        return process
+    if process.start_time is None or process_start_time(process.pid) != process.start_time:
+        return replace(
+            process,
+            session_unverified=bool(process_session_members(process.session_id)),
+        )
+    members = process_session_members(process.session_id)
+    if (
+        process_start_time(process.pid) != process.start_time
+        or not any(
+            member.pid == process.pid and member.start_time == process.start_time
+            for member in members
+        )
+    ):
+        return replace(process, session_unverified=bool(members))
+    return replace(process, session_members=members)
+
+
+def _verified_session_groups(process: TerminalProcess) -> set[int]:
+    if process.session_id is None or process.session_unverified:
+        return set()
+    members = process.session_members
+    if not members:
+        members = snapshot_terminal_process(process).session_members
+    if not members:
+        return set()
+    groups: set[int] = set()
+    for member in members:
+        if process_start_time(member.pid) != member.start_time:
+            continue
+        try:
+            process_group_id = os.getpgid(member.pid)
+            session_id = os.getsid(member.pid)
+        except OSError:
+            continue
+        if process_group_id == member.process_group_id and session_id == process.session_id:
+            groups.add(member.process_group_id)
     return groups
 
 
@@ -84,8 +142,10 @@ def capture_terminal_process(pid: int) -> TerminalProcess:
 
 def signal_terminal_process(process: TerminalProcess, signum: int) -> bool:
     """Signal every process group in an isolated VTE session when available."""
+    if process.session_unverified:
+        return False
     if process.session_id is not None:
-        groups = process_groups_in_session(process.session_id)
+        groups = _verified_session_groups(process)
         if groups:
             signalled = False
             for process_group_id in groups:
@@ -99,7 +159,7 @@ def signal_terminal_process(process: TerminalProcess, signum: int) -> bool:
             if signalled:
                 return True
     current_start_time = process_start_time(process.pid)
-    if process.start_time is not None and current_start_time != process.start_time:
+    if process.start_time is None or current_start_time != process.start_time:
         return False
     try:
         if process.process_group_id is not None and os.getpgid(process.pid) == process.process_group_id:
@@ -113,7 +173,10 @@ def signal_terminal_process(process: TerminalProcess, signum: int) -> bool:
 
 def terminal_process_is_active(process: TerminalProcess) -> bool:
     """Return whether the captured VTE process or any session group still exists."""
-    if process.session_id is not None and process_groups_in_session(process.session_id):
+    if process.session_unverified:
+        # Uncertainty forbids signalling; it does not prove permanent activity.
+        return process.session_id is not None and bool(process_session_members(process.session_id))
+    if process.session_id is not None and _verified_session_groups(process):
         return True
     current_start_time = process_start_time(process.pid)
     if process.start_time is not None:

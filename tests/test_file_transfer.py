@@ -20,7 +20,7 @@ from termia.file_transfer import (
 )
 from termia.known_hosts import ScannedHostKey
 from termia.models import Server
-from termia.terminal_processes import TerminalProcess
+from termia.terminal_processes import SessionProcessIdentity, TerminalProcess
 
 
 class FileTransferTests(unittest.TestCase):
@@ -462,6 +462,67 @@ class FileTransferTests(unittest.TestCase):
 
         on_success.assert_not_called()
         self.assertIsNone(state["process"])
+
+    def test_shutdown_cleanup_state_tracks_captured_scp_process_until_exit(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        identity = TerminalProcess(321, 321, 321, "start")
+        controller.shutdown_processes.add(identity)
+
+        with patch(
+            "termia.file_transfer.terminal_process_is_active",
+            side_effect=[True, False],
+        ):
+            self.assertEqual(controller.shutdown_cleanup_state(), "pending")
+            self.assertEqual(controller.shutdown_cleanup_state(), "stopped")
+
+        self.assertEqual(controller.shutdown_processes, set())
+
+    def test_owner_cancel_tracks_refreshed_scp_identity_until_children_exit(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        initial = TerminalProcess(321, None, None, "leader")
+        snapshot = TerminalProcess(
+            321, 321, 321, "leader", (SessionProcessIdentity(322, 322, "child"),)
+        )
+        state = self.build_state(process=Mock(spec=Gio.Subprocess), process_identity=initial)
+        controller.active_state = state
+
+        with (
+            patch("termia.file_transfer.capture_terminal_process", return_value=snapshot),
+            patch("termia.file_transfer.signal_terminal_process", return_value=True),
+            patch("termia.file_transfer.GLib.timeout_add", return_value=77),
+        ):
+            controller.cancel_active_transfer(close_dialog=True)
+
+        self.assertIs(state["process_identity"], snapshot)
+        self.assertEqual(controller.shutdown_processes, {snapshot})
+        live = {322: "child"}
+        with (
+            patch("termia.terminal_processes.process_start_time", side_effect=live.get),
+            patch("termia.terminal_processes.os.getpgid", return_value=322),
+            patch("termia.terminal_processes.os.getsid", return_value=321),
+        ):
+            self.assertEqual(controller.shutdown_cleanup_state(), "pending")
+            live.clear()
+            self.assertEqual(controller.shutdown_cleanup_state(), "stopped")
+
+    def test_refresh_preserves_verified_scp_snapshot(self) -> None:
+        snapshot = TerminalProcess(
+            321, 321, 321, "leader", (SessionProcessIdentity(322, 322, "child"),)
+        )
+        with patch("termia.file_transfer.capture_terminal_process") as capture:
+            self.assertIs(FileTransferController.refresh_process_identity(snapshot), snapshot)
+        capture.assert_not_called()
+
+    def test_owner_cancel_reports_failed_cleanup_without_process_identity(self) -> None:
+        controller, _parent, _toast = self.build_controller()
+        process = Mock(spec=Gio.Subprocess)
+        process.get_identifier.return_value = None
+        controller.active_state = self.build_state(process=process)
+
+        controller.cancel_active_transfer(close_dialog=True)
+
+        process.force_exit.assert_called_once_with()
+        self.assertEqual(controller.shutdown_cleanup_state(), "failed")
 
     def test_known_host_callback_cannot_start_transfer_after_owner_shutdown(self) -> None:
         controller, _parent, _toast = self.build_controller()

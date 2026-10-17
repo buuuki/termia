@@ -41,6 +41,7 @@ from .terminal_config import (
 from .terminal_processes import (
     TerminalProcess,
     signal_terminal_process,
+    snapshot_terminal_process,
     spawn_terminal_process,
     terminal_process_is_active,
 )
@@ -1828,12 +1829,36 @@ class TerminalSessionsMixin:
     def mark_terminal_inactive(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
         session.active_terminal_ids.discard(id(terminal))
 
-    @staticmethod
     def clear_terminal_process_state(
+        self,
         session: TerminalSession,
         terminal: Vte.Terminal,
         pane: TerminalPane,
     ) -> None:
+        process = pane.child_process
+        if isinstance(process, TerminalProcess):
+            retained = (
+                *getattr(self, "shutdown_terminal_processes", ()),
+                *getattr(self, "orphaned_terminal_processes", ()),
+            )
+            snapshot = next(
+                (
+                    candidate for candidate in retained
+                    if candidate.pid == process.pid
+                    and candidate.start_time == process.start_time
+                    and candidate.session_members
+                ),
+                None,
+            )
+            termination_pending = snapshot is not None
+            if snapshot is None:
+                snapshot = snapshot_terminal_process(process)
+            if terminal_process_is_active(snapshot):
+                orphaned = getattr(self, "orphaned_terminal_processes", set())
+                orphaned.add(snapshot)
+                self.orphaned_terminal_processes = orphaned
+                if not termination_pending and not getattr(self, "shutdown_in_progress", False):
+                    self.terminate_terminal_process(snapshot)
         pane.child_pid = None
         pane.child_process = None
         if terminal is session.terminal:
@@ -2044,6 +2069,9 @@ class TerminalSessionsMixin:
         session.split_processes.clear()
 
     def terminate_terminal_process(self, process: TerminalProcess, *, force: bool = False) -> bool:
+        if not force:
+            # Retain verified descendants before SIGTERM can remove the leader.
+            process = snapshot_terminal_process(process)
         signum = signal.SIGKILL if force else signal.SIGTERM
         terminated = signal_terminal_process(process, signum)
         log_event(
@@ -2052,6 +2080,13 @@ class TerminalSessionsMixin:
             signal=signum.name,
             accepted=terminated,
         )
+        if terminated and not force:
+            orphaned = {
+                candidate for candidate in getattr(self, "orphaned_terminal_processes", ())
+                if (candidate.pid, candidate.start_time) != (process.pid, process.start_time)
+            }
+            orphaned.add(process)
+            self.orphaned_terminal_processes = orphaned
         if terminated and not force and not getattr(self, "shutdown_in_progress", False):
             GLib.timeout_add(500, self.force_terminate_terminal_process, process)
         return terminated
@@ -2068,9 +2103,19 @@ class TerminalSessionsMixin:
         return GLib.SOURCE_REMOVE
 
     def prepare_terminal_sessions_for_shutdown(self) -> None:
+        pending_processes: set[TerminalProcess] = {
+            snapshot_terminal_process(process)
+            for process in getattr(self, "orphaned_terminal_processes", ())
+        }
         for session in self.session_registry.sessions():
             session.disconnect_requested = True
             session.pending_reconnect = False
+            process = getattr(session, "child_process", None)
+            if isinstance(process, TerminalProcess):
+                pending_processes.add(snapshot_terminal_process(process))
+            for process in getattr(session, "split_processes", {}).values():
+                if isinstance(process, TerminalProcess):
+                    pending_processes.add(snapshot_terminal_process(process))
             for pane in session.panes.values():
                 pane.disconnect_requested = True
                 pane.pending_reconnect = False
@@ -2079,8 +2124,25 @@ class TerminalSessionsMixin:
                 session_id=session.id,
                 panes=len(session.panes),
             )
+        self.shutdown_terminal_processes = tuple(pending_processes)
+
+    def pending_shutdown_terminal_processes(self) -> tuple[TerminalProcess, ...]:
+        candidates = set(getattr(self, "shutdown_terminal_processes", ()))
+        candidates.update(getattr(self, "orphaned_terminal_processes", ()))
+        pending = tuple(
+            process
+            for process in candidates
+            if terminal_process_is_active(process)
+        )
+        self.shutdown_terminal_processes = pending
+        self.orphaned_terminal_processes = set(pending)
+        return pending
 
     def terminate_open_terminal_processes(self, *, force: bool = False) -> None:
+        if getattr(self, "shutdown_in_progress", False):
+            for process in self.pending_shutdown_terminal_processes():
+                self.terminate_terminal_process(process, force=force)
+            return
         for session in self.session_registry.sessions():
             if session.child_process is not None:
                 self.terminate_terminal_process(session.child_process, force=force)

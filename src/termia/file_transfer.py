@@ -22,6 +22,7 @@ from .terminal_processes import (
     TerminalProcess,
     capture_terminal_process,
     signal_terminal_process,
+    snapshot_terminal_process,
     terminal_process_is_active,
 )
 
@@ -103,6 +104,8 @@ class FileTransferController:
         self.active_state: dict[str, Any] | None = None
         self.inactive_notified = False
         self.cancelled = False
+        self.shutdown_processes: set[TerminalProcess] = set()
+        self.shutdown_cleanup_unverified = False
 
     def open_file_selection(self, server: Server) -> None:
         dialog = Gtk.FileDialog(title=self.t("send_files_to_server"))
@@ -649,6 +652,14 @@ class FileTransferController:
             return
         self.mark_inactive()
 
+    def shutdown_cleanup_state(self) -> str:
+        self.shutdown_processes = {
+            process for process in self.shutdown_processes if terminal_process_is_active(process)
+        }
+        if self.shutdown_processes:
+            return "pending"
+        return "failed" if self.shutdown_cleanup_unverified else "stopped"
+
     @staticmethod
     def destroy_transfer_dialog(state: dict[str, Any]) -> None:
         if state.get("dialog_destroyed"):
@@ -795,6 +806,8 @@ class FileTransferController:
 
     @staticmethod
     def refresh_process_identity(process: TerminalProcess) -> TerminalProcess:
+        if process.session_members or process.session_unverified:
+            return process
         current = capture_terminal_process(process.pid)
         if process.start_time is not None and current.start_time != process.start_time:
             return process
@@ -803,12 +816,21 @@ class FileTransferController:
     def request_process_termination(self, state: dict[str, Any]) -> None:
         process = state.get("process")
         identity = state.get("process_identity")
+        if isinstance(process, Gio.Subprocess) and not isinstance(identity, TerminalProcess):
+            identity = self.capture_subprocess_identity(process)
         accepted = False
         termination_signal = "SIGTERM"
         if isinstance(identity, TerminalProcess):
-            identity = self.refresh_process_identity(identity)
+            identity = snapshot_terminal_process(self.refresh_process_identity(identity))
             state["process_identity"] = identity
+            self.shutdown_processes = {
+                candidate for candidate in self.shutdown_processes
+                if (candidate.pid, candidate.start_time) != (identity.pid, identity.start_time)
+            }
+            self.shutdown_processes.add(identity)
             accepted = signal_terminal_process(identity, signal.SIGTERM)
+        elif isinstance(process, Gio.Subprocess):
+            self.shutdown_cleanup_unverified = True
         if not accepted and isinstance(process, Gio.Subprocess):
             process.force_exit()
             accepted = True
