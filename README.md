@@ -36,6 +36,13 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
   limited. Use **Back to snippets** to return from category management.
   Create, rename, duplicate, and delete categories independently; deleting a
   category moves its snippets to Uncategorized.
+  Assign an optional keyboard shortcut beside Availability in the snippet
+  editor or in the Snippets section of keyboard preferences. Both edit the
+  same assignment; conflicts are rejected and shortcuts require Ctrl, Alt, or
+  Super. With a terminal focused, the shortcut opens variables/preview for
+  that pane when its scope matches; confirm before sending. Copies have no
+  shortcut. Assignments are local keyboard settings, separate from connection
+  exports; older versions may discard them when saving keyboard settings.
 - Keep connection data locally with plain, obfuscated, or optional encrypted storage protected by a master password.
 - Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`. Drag a saved server onto a group, subgroup, or Ungrouped to move it.
 - Store host, user, port, password, private-key settings, and an optional startup command for each SSH connection.

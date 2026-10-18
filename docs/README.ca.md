@@ -33,6 +33,14 @@ Documentació en castellà: [README.es.md](README.es.md)
   de categories. Pots crear, canviar el nom, duplicar i suprimir categories per
   separat; quan se suprimeix una categoria, els seus snippets passen a Sense
   categoria.
+  Assigna una drecera opcional al costat de Disponibilitat a l'editor del
+  snippet o a la secció Snippets de les preferències de teclat. Tots dos editen
+  la mateixa assignació; es rebutgen conflictes i cal Ctrl, Alt o Super.
+  Amb un terminal enfocat, la drecera obre les variables/previsualització per
+  a aquell panell si coincideix el seu àmbit; confirma abans d'enviar. Les
+  còpies no tenen drecera. Es desen als ajustos locals de teclat, separats de
+  les exportacions de connexions; versions anteriors poden descartar-les en
+  desar els ajustos de teclat.
 - Mantenir les dades de connexió en local amb emmagatzematge en text pla, ofuscat o xifrat opcional protegit per una contrasenya mestra.
 - Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`. Arrossegar un servidor desat a un grup, subgrup o Sense grup per moure'l.
 - Desar host, usuari, port, contrasenya, ruta de clau privada i una ordre opcional en iniciar cada connexió SSH.

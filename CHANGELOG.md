@@ -4,9 +4,12 @@
 
 ### Fixed
 
-- Open the snippet editor at a compact, resizable 680 × 560 logical px size,
+- Reduce the snippet manager's default width by 25% to 795 logical px while
+  retaining its three columns, actions, and resizable layout (`#330`).
+
+- Open the snippet editor at a compact, resizable 600 × 560 logical px size,
   constrain selectors with long labels, and restore the manager's previous
-  size after saving, cancelling, or closing the editor (`#355`).
+  size after saving, cancelling, or closing the editor (`#355`, `#330`).
 
 - Wait for the previous SFTP service to finish cleanup before reconnecting,
   retry a failed backend close once off the UI thread, and report exhausted
@@ -34,6 +37,11 @@
   (`#327`).
 
 ### Added
+
+- Assign a keyboard shortcut to a saved snippet in its compact editor or in
+  keyboard preferences. Share assignments by snippet ID, reject conflicts,
+  respect the focused pane's scope, and retain variable prompts and final
+  preview confirmation. Copies start without shortcuts (`#330`).
 
 - Nest note categories by dragging within their Personal/server scope, or
   return groups to the root via the scope header. Preserve notes and editor

@@ -56,7 +56,7 @@ from .migrations import (
     migrate_settings_payload,
     migrate_statistics_payload,
 )
-from .keybindings import normalize_keybindings
+from .keybindings import KeybindingError, is_snippet_action, merge_keybindings, normalize_keybindings, snippet_action
 from .models import (
     DEFAULT_ANSI_PALETTE,
     AppSettings,
@@ -749,6 +749,14 @@ class ConnectionStore:
             self.data.snippets,
             self.data.snippet_categories,
         )
+        live_actions = {snippet_action(snippet.id) for snippet in self.data.snippets}
+        keybindings = {
+            action: value for action, value in self.data.app.keybindings.items()
+            if not is_snippet_action(action) or action in live_actions
+        }
+        if keybindings != self.data.app.keybindings:
+            self.data.app.keybindings = keybindings
+            self.save_settings()
 
     def save_notes(self) -> None:
         if self.read_only or self.encryption_locked:
@@ -1435,17 +1443,23 @@ class ConnectionStore:
 
     def add_snippet(
         self, name: str, content: str, category: str = "", scope: str = "global", target_id: str = "",
+        *, shortcut: str = "",
     ) -> CommandSnippet:
         self.ensure_writable()
         snippet = normalize_snippet(str(uuid4()), name, content, category, scope, target_id)
         if not snippet_target_exists(snippet, self.data.groups, self.data.servers):
             raise SnippetError("snippet_scope_target_required")
+        keybindings = merge_keybindings(self.data.app.keybindings, {snippet_action(snippet.id): shortcut})
         self.data.snippets.append(snippet)
         self.save_connections()
+        if shortcut:
+            self.data.app.keybindings = keybindings
+            self.save_settings()
         return snippet
 
     def update_snippet(
         self, snippet_id: str, name: str, content: str, category: str = "", scope: str = "global", target_id: str = "",
+        *, shortcut: str | None = None, previous_shortcut: str | None = None,
     ) -> None:
         self.ensure_writable()
         updated = normalize_snippet(snippet_id, name, content, category, scope, target_id)
@@ -1453,9 +1467,19 @@ class ConnectionStore:
             raise SnippetError("snippet_scope_target_required")
         for index, snippet in enumerate(self.data.snippets):
             if snippet.id == snippet_id:
+                action = snippet_action(snippet_id)
+                keybindings = merge_keybindings(
+                    self.data.app.keybindings,
+                    {action: shortcut} if shortcut is not None else {},
+                    {action: previous_shortcut} if previous_shortcut is not None else None,
+                )
                 self.data.snippets[index] = updated
                 self.save_connections()
+                if keybindings != self.data.app.keybindings:
+                    self.data.app.keybindings = keybindings
+                    self.save_settings()
                 return
+        raise KeybindingError("keybindings_changed")
 
     def delete_snippet(self, snippet_id: str) -> None:
         self.ensure_writable()
@@ -1615,7 +1639,16 @@ class ConnectionStore:
         self.data.app.sftp_enabled = sftp_enabled
         self.save_settings()
 
-    def update_keybindings(self, keybindings: dict[str, str]) -> None:
+    def update_keybindings(self, keybindings: dict[str, str], *, previous: dict[str, str] | None = None) -> None:
         self.ensure_writable()
-        self.data.app.keybindings = normalize_keybindings(keybindings)
+        live_actions = {snippet_action(snippet.id) for snippet in self.data.snippets}
+        for action, value in keybindings.items():
+            if is_snippet_action(action) and action not in live_actions and value:
+                if previous is None or value != previous.get(action, ""):
+                    raise KeybindingError("keybindings_changed")
+        current = {action: value for action, value in self.data.app.keybindings.items()
+                   if not is_snippet_action(action) or action in live_actions}
+        updates = {action: value for action, value in keybindings.items()
+                   if not is_snippet_action(action) or action in live_actions}
+        self.data.app.keybindings = merge_keybindings(current, updates, previous)
         self.save_settings()

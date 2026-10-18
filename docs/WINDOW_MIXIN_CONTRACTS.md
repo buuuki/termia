@@ -43,6 +43,13 @@ the mixins:
   and pending save timer.
 - Explicit actions: `main_menu_actions`, `terminal_menu_actions`, and
   `tab_lifecycle_actions`.
+- Terminal keyboard dispatch: `terminal_shortcut_handler(keyval, modifiers,
+  session, terminal) -> bool`, composed in `app.py` with the snippet dialog
+  adapter. The terminal mixin calls this only after existing terminal actions
+  and does not import snippet UI implementations. The adapter checks focus,
+  pane availability, scope, and assignments, then reuses variables/preview;
+  it must not send a command without explicit confirmation. This remains a
+  GTK session-level contract, not a new generic add-on API.
 - Sidebar selection: `selected`, `selected_tree_widget`,
   `group_expanded_state`, `collapse_groups_on_startup`, `tree_widgets`, and
   `sidebar_drag_server_id`, and `active_context_popover`.
