@@ -679,7 +679,10 @@ class TermiaWindow(
         menu_button = Gtk.MenuButton()
         self.main_menu_button = menu_button
         menu_button.set_tooltip_text(self.t("main_menu"))
-        menu_button.set_popover(self.build_main_menu(self.main_menu_actions))
+        menu_button.set_popover(self.build_main_menu(
+            self.main_menu_actions,
+            write_allowed=not (self.store.read_only or self.store.encryption_locked),
+        ))
         menu_button.set_child(Gtk.Image.new_from_icon_name("open-menu-symbolic"))
         header_actions.append(menu_button)
         header.pack_start(header_actions)
@@ -1029,7 +1032,10 @@ class TermiaWindow(
         self.new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
         self.main_menu_button.set_tooltip_text(self.t("main_menu"))
         self.main_menu_button.set_popover(
-            self.build_main_menu(self.main_menu_actions)
+            self.build_main_menu(
+                self.main_menu_actions,
+                write_allowed=not (self.store.read_only or self.store.encryption_locked),
+            )
         )
         self.read_only_badge.set_label(self.t("read_only_badge"))
         if self.store.read_only:

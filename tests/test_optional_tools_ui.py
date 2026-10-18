@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk
+from gi.repository import Gio, Gtk
 
 from termia.main_menu import MainMenuMixin
 from termia.optional_tools_dialog import OptionalToolsDialog
@@ -21,9 +21,6 @@ class OptionalToolsUITests(unittest.TestCase):
         class Host(MainMenuMixin):
             t = staticmethod(lambda key: key)
 
-            def configure_write_action(self, _button) -> None:
-                pass
-
         host = Host()
         actions = SimpleNamespace(**{
             key: Mock()
@@ -34,16 +31,16 @@ class OptionalToolsUITests(unittest.TestCase):
                 "import_config", "import_asbru_config", "clear_config", "help", "about",
             )
         })
-        popover = Gtk.Popover()
-
         def labels() -> list[str]:
-            content = host.build_main_menu_content(popover, actions)
+            popover = host.build_main_menu(actions, write_allowed=True)
+            model = popover.get_menu_model()
             result = []
-            child = content.get_first_child()
-            while child is not None:
-                if isinstance(child, Gtk.Button):
-                    result.append(child.get_label())
-                child = child.get_next_sibling()
+            for index in range(model.get_n_items()):
+                section = model.get_item_link(index, Gio.MENU_LINK_SECTION)
+                result.extend(
+                    section.get_item_attribute_value(item, "label", None).unpack()
+                    for item in range(section.get_n_items())
+                )
             return result
 
         self.assertIn("optional_tools", labels())
