@@ -10,6 +10,9 @@
 
 ### Fixed
 
+- Anchor the terminal-tab context menu to the right-click position and use a
+  standard GTK menu, retaining tab actions and rejecting stale targets (`#360`).
+
 - Reduce the snippet manager's default width by 25% to 795 logical px while
   retaining its three columns, actions, and resizable layout (`#330`).
 

@@ -128,6 +128,175 @@ class PrivateTabDragTests(unittest.TestCase):
         self.host.set_active_session.assert_called_once_with("third")
 
 
+class TabContextMenuTests(unittest.TestCase):
+    def setUp(self) -> None:
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        self.window = Gtk.Window()
+        bar = Gtk.Box()
+        self.tab = Gtk.Box()
+        self.tab.set_size_request(220, 40)
+        self.tab.append(Gtk.Label(label="Clicked tab"))
+        bar.append(self.tab)
+        other_tab = Gtk.Box()
+        other_tab.append(Gtk.Label(label="Active tab"))
+        bar.append(other_tab)
+        self.window.set_child(bar)
+        self.window.present()
+        self.addCleanup(self.destroy_window)
+        self.session = SimpleNamespace(id="clicked", tab_label=self.tab, detached_window=None)
+        self.other = SimpleNamespace(id="active", tab_label=other_tab, detached_window=None)
+        self.host = TabsMixin()
+        self.host.t = lambda key: key
+        self.host.session_registry = SessionRegistry([self.session, self.other])
+        self.host.duplicate_tab = MagicMock()
+        self.host.detach_tab = MagicMock()
+        self.host.show_rename_tab_dialog = MagicMock()
+
+    def destroy_window(self) -> None:
+        for menu in self.menus():
+            menu.popdown()
+            if menu.get_parent() is not None:
+                menu.unparent()
+        self.window.destroy()
+
+    def menus(self):
+        result = []
+        child = self.tab.get_first_child()
+        while child is not None:
+            if isinstance(child, Gtk.Popover):
+                result.append(child)
+            child = child.get_next_sibling()
+        return result
+
+    @staticmethod
+    def drain_events():
+        context = GLib.MainContext.default()
+        for _ in range(100):
+            if not context.pending():
+                break
+            context.iteration(False)
+
+    def open_menu(self, x=15.0, y=20.0):
+        self.host.on_tab_right_click(None, 1, x, y, self.session.id, self.tab)
+        menus = self.menus()
+        self.assertEqual(len(menus), 1)
+        return menus[0]
+
+    def test_menu_anchors_to_different_click_positions_and_preserves_commands(self) -> None:
+        for x, y in ((5.75, 8.25), (110.0, 20.0), (190.5, 32.75)):
+            with self.subTest(x=x, y=y):
+                menu = self.open_menu(x, y)
+                self.assertIsInstance(menu, Gtk.PopoverMenu)
+                valid, rect = menu.get_pointing_to()
+                self.assertTrue(valid)
+                self.assertEqual((rect.x, rect.y, rect.width, rect.height),
+                                 (int(x), int(y), 1, 1))
+                model = menu.get_menu_model()
+                self.assertEqual([
+                    model.get_item_attribute_value(i, "label", None).unpack()
+                    for i in range(model.get_n_items())
+                ], ["duplicate_tab", "detach_tab", "rename_tab"])
+                menu.popdown()
+                self.drain_events()
+                self.assertIsNone(menu.get_parent())
+                self.assertEqual(self.menus(), [])
+
+    def test_actions_close_menu_then_defer_dispatch_to_the_clicked_tab(self) -> None:
+        for name, command in (
+            ("duplicate_tab", self.host.duplicate_tab),
+            ("detach_tab", self.host.detach_tab),
+            ("rename_tab", self.host.show_rename_tab_dialog),
+        ):
+            with self.subTest(action=name):
+                menu = self.open_menu()
+                with patch("termia.tabs.GLib.idle_add") as schedule:
+                    self.assertTrue(menu.activate_action(f"tab-menu.{name}", None))
+                self.assertFalse(menu.get_visible())
+                command.assert_not_called()
+                release = schedule.call_args_list[0].args[0]
+                self.assertEqual(release(), GLib.SOURCE_REMOVE)
+                self.assertIsNone(menu.get_parent())
+                deferred, callback = schedule.call_args.args
+                self.assertEqual(deferred(callback), GLib.SOURCE_REMOVE)
+                command.assert_called_once_with(menu, self.session)
+                command.reset_mock()
+
+    def test_pending_actions_reject_removed_replaced_detached_and_shutdown_targets(self) -> None:
+        for condition in ("removed", "replaced", "detached", "new-label", "shutdown"):
+            with self.subTest(condition=condition):
+                self.host.session_registry = SessionRegistry([self.session, self.other])
+                self.session.detached_window = None
+                self.session.tab_label = self.tab
+                self.host.shutdown_in_progress = False
+                menu = self.open_menu()
+                with patch("termia.tabs.GLib.idle_add") as schedule:
+                    menu.activate_action("tab-menu.duplicate_tab", None)
+                schedule.call_args_list[0].args[0]()
+                deferred, callback = schedule.call_args.args
+                if condition in ("removed", "replaced"):
+                    self.host.session_registry.remove(self.session.id)
+                    if condition == "replaced":
+                        self.host.session_registry.register(SimpleNamespace(
+                            id=self.session.id, tab_label=self.tab, detached_window=None,
+                        ))
+                elif condition == "detached":
+                    self.session.detached_window = object()
+                elif condition == "new-label":
+                    self.session.tab_label = Gtk.Box()
+                else:
+                    self.host.shutdown_in_progress = True
+                self.assertEqual(deferred(callback), GLib.SOURCE_REMOVE)
+                self.host.duplicate_tab.assert_not_called()
+
+    def test_invalid_targets_do_not_open_a_menu(self) -> None:
+        for condition in ("missing", "detached", "new-label", "shutdown"):
+            with self.subTest(condition=condition):
+                self.host.session_registry = SessionRegistry([self.session, self.other])
+                self.session.detached_window = None
+                self.session.tab_label = self.tab
+                self.host.shutdown_in_progress = False
+                if condition == "missing":
+                    self.host.session_registry.remove(self.session.id)
+                elif condition == "detached":
+                    self.session.detached_window = object()
+                elif condition == "new-label":
+                    self.session.tab_label = Gtk.Box()
+                else:
+                    self.host.shutdown_in_progress = True
+                self.host.on_tab_right_click(None, 1, 10, 20, self.session.id, self.tab)
+                self.assertEqual(self.menus(), [])
+
+    def test_real_menu_entries_dispatch_after_gtk_closes_the_popover(self) -> None:
+        def find_entry(widget, label):
+            if isinstance(widget, Gtk.Label) and widget.get_label() == label:
+                return widget.get_parent()
+            child = widget.get_first_child()
+            while child is not None:
+                entry = find_entry(child, label)
+                if entry is not None:
+                    return entry
+                child = child.get_next_sibling()
+            return None
+
+        for name, command in (
+            ("duplicate_tab", self.host.duplicate_tab),
+            ("detach_tab", self.host.detach_tab),
+            ("rename_tab", self.host.show_rename_tab_dialog),
+        ):
+            with self.subTest(action=name):
+                menu = self.open_menu()
+                self.drain_events()
+                entry = find_entry(menu, name)
+                self.assertIsNotNone(entry)
+                entry.emit("clicked")
+                command.assert_not_called()
+                self.drain_events()
+                command.assert_called_once_with(menu, self.session)
+                self.assertIsNone(menu.get_parent())
+                command.reset_mock()
+
+
 class FakePopover:
     def __init__(self) -> None:
         self.closed = False
