@@ -185,24 +185,7 @@ class NotesDialogs:
         self.add_button.connect("clicked", lambda *_: self.create_note())
         header_actions.append(self.add_button)
 
-        self.import_export_popover = Gtk.Popover()
-        import_export_actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        self.style_notes_menu(self.import_export_popover, import_export_actions)
-        self.export_button = Gtk.Button(label=self.translate("notes_export"))
-        self.export_button.set_halign(Gtk.Align.FILL)
-        self.export_button.connect(
-            "clicked",
-            lambda *_: self.run_import_export_action(self.choose_export_protection),
-        )
-        import_export_actions.append(self.export_button)
-        self.import_button = Gtk.Button(label=self.translate("notes_import"))
-        self.import_button.set_halign(Gtk.Align.FILL)
-        self.import_button.connect(
-            "clicked",
-            lambda *_: self.run_import_export_action(self.start_import),
-        )
-        import_export_actions.append(self.import_button)
-        self.import_export_popover.set_child(import_export_actions)
+        self.import_export_popover = self.build_import_export_menu()
         self.import_export_menu_button = Gtk.MenuButton(icon_name="view-more-symbolic")
         self.import_export_menu_button.set_tooltip_text(
             self.translate("notes_import_export_options")
@@ -670,22 +653,46 @@ class NotesDialogs:
         if category_button is not None and hasattr(category_button, "set_sensitive"):
             category_button.set_sensitive(enabled)
 
+    def build_import_export_menu(self) -> Gtk.PopoverMenu:
+        """Keep menu presentation and command dispatch within the notes component."""
+        model = Gio.Menu()
+        model.append(self.translate("notes_export"), "notes-transfer.export")
+        model.append(self.translate("notes_import"), "notes-transfer.import")
+        actions = Gio.SimpleActionGroup()
+        self.export_action = Gio.SimpleAction.new("export", None)
+        self.export_action.connect(
+            "activate",
+            lambda *_: self.run_import_export_action(self.choose_export_protection),
+        )
+        actions.add_action(self.export_action)
+        self.import_action = Gio.SimpleAction.new("import", None)
+        self.import_action.connect(
+            "activate", lambda *_: self.run_import_export_action(self.start_import),
+        )
+        actions.add_action(self.import_action)
+        popover = Gtk.PopoverMenu.new_from_model(model)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(True)
+        popover.insert_action_group("notes-transfer", actions)
+        return popover
+
     def configure_write_controls(self) -> None:
         writable = not self.store.read_only and not self.store.encryption_locked
         for widget in (
             self.category_add_button,
             self.add_button,
-            self.import_button,
             self.text_view,
             self.save_button,
             self.delete_button,
         ):
             widget.set_sensitive(writable)
-        self.export_button.set_sensitive(not self.store.encryption_locked)
+        self.set_import_export_actions_visible(self.scope_mode == "personal")
 
     def set_import_export_actions_visible(self, visible: bool) -> None:
-        self.import_button.set_visible(visible)
-        self.export_button.set_visible(visible)
+        self.import_action.set_enabled(
+            visible and not self.store.read_only and not self.store.encryption_locked
+        )
+        self.export_action.set_enabled(visible and not self.store.encryption_locked)
         self.import_export_menu_button.set_visible(visible)
 
     def run_import_export_action(self, callback) -> None:

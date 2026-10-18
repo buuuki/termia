@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+
+- Use standard GTK popover menus with native arrows for the main menu and
+  notes import/export, retaining component-owned actions, optional statistics
+  visibility, and write restrictions (`#358`).
+
 ### Fixed
 
 - Reduce the snippet manager's default width by 25% to 795 logical px while

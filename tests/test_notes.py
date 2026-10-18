@@ -758,7 +758,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.configure_write_controls = MagicMock()
         dialog.set_editor_enabled = MagicMock()
         boxes = []
-        buttons = [MagicMock() for _ in range(7)]
+        buttons = [MagicMock() for _ in range(5)]
 
         with patch("termia.notes_dialogs.Gtk") as gtk:
             gtk.Button.side_effect = buttons
@@ -779,7 +779,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(boxes[0].append.call_args_list[1], call(dialog.add_button))
         self.assertEqual(boxes[0].append.call_args_list[2], call(dialog.import_export_menu_button))
         buttons[1].add_css_class.assert_not_called()
-        buttons[4].add_css_class.assert_not_called()
+        dialog.save_button.add_css_class.assert_not_called()
 
     def test_category_and_bulk_navigation_controls_above_search(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -1275,19 +1275,66 @@ class NotesDialogSignalTests(unittest.TestCase):
     def test_import_export_menu_is_hidden_for_server_scoped_notes(self):
         visibility = []
         dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.import_button = SimpleNamespace(set_visible=lambda value: visibility.append(("import", value)))
-        dialog.export_button = SimpleNamespace(set_visible=lambda value: visibility.append(("export", value)))
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
+        dialog.import_action = Gio.SimpleAction.new("import", None)
+        dialog.export_action = Gio.SimpleAction.new("export", None)
         dialog.import_export_menu_button = SimpleNamespace(
             set_visible=lambda value: visibility.append(("menu", value))
         )
 
         dialog.set_import_export_actions_visible(False)
+        self.assertFalse(dialog.import_action.get_enabled())
+        self.assertFalse(dialog.export_action.get_enabled())
         dialog.set_import_export_actions_visible(True)
+        self.assertTrue(dialog.import_action.get_enabled())
+        self.assertTrue(dialog.export_action.get_enabled())
 
-        self.assertEqual(visibility, [
-            ("import", False), ("export", False), ("menu", False),
-            ("import", True), ("export", True), ("menu", True),
-        ])
+        self.assertEqual(visibility, [("menu", False), ("menu", True)])
+
+    def test_import_export_menu_dispatches_to_notes_commands(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.translate = lambda key: {"notes_export": "Export notes", "notes_import": "Import notes"}[key]
+        dialog.choose_export_protection = MagicMock()
+        dialog.start_import = MagicMock()
+        dialog.run_import_export_action = MagicMock()
+        dialog.import_export_popover = dialog.build_import_export_menu()
+        popover = dialog.import_export_popover
+        self.assertIsInstance(popover, Gtk.PopoverMenu)
+        self.assertTrue(popover.get_has_arrow())
+        model = popover.get_menu_model()
+        self.assertEqual([
+            model.get_item_attribute_value(i, "label", None).unpack()
+            for i in range(model.get_n_items())
+        ], ["Export notes", "Import notes"])
+        for name, command in (
+            ("export", dialog.choose_export_protection), ("import", dialog.start_import),
+        ):
+            self.assertTrue(popover.activate_action(f"notes-transfer.{name}", None))
+            dialog.run_import_export_action.assert_called_once_with(command)
+            dialog.run_import_export_action.reset_mock()
+
+    def test_import_export_permissions_preserve_scope_and_storage_guards(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.import_action = Gio.SimpleAction.new("import", None)
+        dialog.export_action = Gio.SimpleAction.new("export", None)
+        dialog.import_export_menu_button = MagicMock()
+        for name in (
+            "category_add_button", "add_button", "text_view", "save_button", "delete_button",
+        ):
+            setattr(dialog, name, MagicMock())
+        for scope in ("personal", "server"):
+            for read_only, locked in ((False, False), (True, False), (False, True), (True, True)):
+                with self.subTest(scope=scope, read_only=read_only, locked=locked):
+                    dialog.scope_mode = scope
+                    dialog.store = SimpleNamespace(read_only=read_only, encryption_locked=locked)
+                    dialog.configure_write_controls()
+                    self.assertEqual(dialog.import_action.get_enabled(),
+                                     scope == "personal" and not read_only and not locked)
+                    self.assertEqual(dialog.export_action.get_enabled(),
+                                     scope == "personal" and not locked)
+                    dialog.import_export_menu_button.set_visible.assert_called_with(scope == "personal")
 
     def test_import_export_action_closes_popover_before_dispatch(self):
         calls = []
@@ -1857,8 +1904,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.editor_dirty = False
         dialog.search_entry = SimpleNamespace(set_text=lambda _text: None)
         dialog.add_button = SimpleNamespace(set_tooltip_text=lambda _text: None)
-        dialog.import_button = SimpleNamespace(set_visible=lambda _visible: None)
-        dialog.export_button = SimpleNamespace(set_visible=lambda _visible: None)
+        dialog.import_action = Gio.SimpleAction.new("import", None)
+        dialog.export_action = Gio.SimpleAction.new("export", None)
         dialog.import_export_menu_button = SimpleNamespace(set_visible=lambda _visible: None)
         dialog.refresh_list = lambda *_args: None
         dialog.save_editor = lambda: False
@@ -1932,11 +1979,11 @@ class NotesDialogSignalTests(unittest.TestCase):
         views = []
         dialog.refresh_list = lambda: views.append(dialog.server_filter_id)
         dialog.add_button = SimpleNamespace(set_tooltip_text=lambda _label: None)
-        import_visibility = []
-        export_visibility = []
+        import_enabled = []
+        export_enabled = []
         menu_visibility = []
-        dialog.import_button = SimpleNamespace(set_visible=import_visibility.append)
-        dialog.export_button = SimpleNamespace(set_visible=export_visibility.append)
+        dialog.import_action = SimpleNamespace(set_enabled=import_enabled.append)
+        dialog.export_action = SimpleNamespace(set_enabled=export_enabled.append)
         dialog.import_export_menu_button = SimpleNamespace(set_visible=menu_visibility.append)
         dialog.window = SimpleNamespace(
             get_visible=lambda: True, present=lambda: None, set_title=lambda _title: None,
@@ -1946,14 +1993,14 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.show_manager("server-id")
         self.assertEqual(views, ["server-id"])
         self.assertIsNone(dialog.current_note_id)
-        self.assertEqual(import_visibility, [False])
-        self.assertEqual(export_visibility, [False])
+        self.assertEqual(import_enabled, [False])
+        self.assertEqual(export_enabled, [False])
         self.assertEqual(menu_visibility, [False])
 
         dialog.show_manager()
         self.assertEqual(views, ["server-id", None])
-        self.assertEqual(import_visibility, [False, True])
-        self.assertEqual(export_visibility, [False, True])
+        self.assertEqual(import_enabled, [False, False])
+        self.assertEqual(export_enabled, [False, True])
         self.assertEqual(menu_visibility, [False, True])
 
     def test_opening_hidden_notes_window_starts_a_draft_in_the_current_scope(self):
