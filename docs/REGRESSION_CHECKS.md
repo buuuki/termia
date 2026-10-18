@@ -259,6 +259,22 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 ### Context Menus and Popovers
 
 - Right-click on servers, groups, terminals, and tabs must show context menus at the expected location.
+- The terminal-tab context menu must anchor to the right-click position within
+  the tab, including after horizontal tab-strip scrolling. Check the left,
+  middle, and right of tabs and near window/screen edges; GTK may adjust the
+  popup to keep it accessible. Duplicate, Move to new window, and Rename must
+  target the clicked tab even when another tab is active. Dismiss/reopen the
+  menu repeatedly and confirm no stale popup remains; if the target closes or
+  detaches before dispatch, its pending action must do nothing.
+- The note-tab context menu must follow the right-click position and rename
+  the clicked saved note or draft even when another tab is active. Rename must
+  be disabled for read-only or locked storage. Dismiss/reopen with Escape and
+  activate Rename by mouse and keyboard; preserve draft content and focus in
+  the rename dialog. Closing or replacing the target, closing Notes, or losing
+  write access before deferred dispatch must not open a stale rename dialog.
+  Saving or cancelling Rename must leave Notes usable; reopen the menu on
+  another tab without GTK warnings or crashes. Reuse one hidden popup and
+  release it when the Notes workspace shuts down.
 - Opening dialogs from popovers must close or defer the popover first to avoid GTK grabbing-popup hangs.
 - Context menus must not cause sidebar scroll jumps or horizontal scroll movement.
 - Context menu actions must operate on the selected/right-clicked item, not a stale selection.

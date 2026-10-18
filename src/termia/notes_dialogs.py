@@ -89,6 +89,8 @@ class NotesDialogs:
         self.notes_context_popover: Gtk.Popover | None = None
         self.category_context_popover: Gtk.Popover | None = None
         self.tab_context_popover: Gtk.Popover | None = None
+        self._note_tab_menu: Gtk.PopoverMenu | None = None
+        self._note_tab_menu_target = None
         self.current_note_id: str | None = None
         self.selected_note_id: str | None = None
         self.selected_draft_key: str | None = None
@@ -136,12 +138,14 @@ class NotesDialogs:
             GLib.idle_add(self.focus_active_editor)
 
     def focus_active_editor(self) -> bool:
+        tab_menu = getattr(self, "tab_context_popover", None)
         if (
             self.window is not None
             and self.window.get_visible()
             and self.window.is_active()
             and self.active_editor_tab_key is not None
             and self.text_view.get_editable()
+            and not (tab_menu is not None and tab_menu.get_visible())
         ):
             self.text_view.grab_focus()
         return GLib.SOURCE_REMOVE
@@ -1678,41 +1682,114 @@ class NotesDialogs:
         dialog.present()
 
     def on_note_tab_context_pressed(
-        self, gesture: Gtk.GestureClick, _presses: int, _x: float, _y: float,
+        self, gesture: Gtk.GestureClick, _presses: int, x: float, y: float,
         key: str,
     ) -> None:
-        self.show_note_tab_context_menu(key)
+        self.show_note_tab_context_menu(key, x, y)
         gesture.set_state(Gtk.EventSequenceState.CLAIMED)
 
-    def show_note_tab_context_menu(self, key: str) -> None:
+    def show_note_tab_context_menu(
+        self, key: str, x: float | None = None, y: float | None = None,
+    ) -> None:
         tab = self.editor_tabs.get(key)
         if tab is None or tab.container_widget is None:
             return
-        self.close_note_tab_context_menu()
-        popover = Gtk.Popover()
-        actions = self.build_notes_context_menu(popover)
-        popover.set_position(Gtk.PositionType.BOTTOM)
-        popover.connect("closed", self.on_note_tab_context_menu_closed)
-        self.append_notes_context_menu_item(
-            actions,
-            self.translate("notes_rename"),
-            lambda selected_key=key: self.on_note_tab_rename_action(selected_key),
-            enabled=not self.store.read_only and not self.store.encryption_locked,
+        parent = tab.container_widget
+        point = Graphene.Point().init(
+            x if x is not None else parent.get_width() / 2,
+            y if y is not None else parent.get_height() / 2,
         )
-        popover.set_child(actions)
-        popover.set_parent(tab.container_widget)
+        valid, point = parent.compute_point(self.editor_tabs_bar, point)
+        if not valid:
+            return
+        self.close_note_tab_context_menu()
+        popover = getattr(self, "_note_tab_menu", None)
+        if popover is None:
+            popover = self.build_note_tab_context_menu()
+            self._note_tab_menu = popover
+        model = Gio.Menu()
+        model.append(self.translate("notes_rename"), "note-tab.rename")
+        popover.set_menu_model(model)
+        self._note_tab_menu_target = (key, tab, parent, self.window)
+        self._note_tab_rename_action.set_enabled(
+            not self.store.read_only and not self.store.encryption_locked
+        )
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(point.x), int(point.y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
         self.tab_context_popover = popover
         popover.popup()
 
+    def build_note_tab_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        rename = Gio.SimpleAction.new("rename", None)
+
+        def activate_rename(*_args) -> None:
+            target = self._note_tab_menu_target
+            self._note_tab_menu_target = None
+            if target is None:
+                return
+            key, tab, parent, window = target
+            if (
+                self.editor_tabs.get(key) is tab
+                and tab.container_widget is parent
+                and self.window is window
+            ):
+                self.on_note_tab_rename_action(key)
+
+        rename.connect("activate", activate_rename)
+        actions.add_action(rename)
+        self._note_tab_rename_action = rename
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.insert_action_group("note-tab", actions)
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_note_tab_context_menu_closed)
+        # One native popup belongs to the Notes workspace, not to a tab that
+        # can be removed while GTK is returning focus from its rename dialog.
+        popover.set_parent(self.editor_tabs_bar)
+        return popover
+
     def on_note_tab_rename_action(self, key: str) -> None:
+        tab = self.editor_tabs.get(key)
+        parent = tab.container_widget if tab is not None else None
+        window = self.window
         self.close_note_tab_context_menu()
-        GLib.idle_add(self.prompt_editor_tab_rename, key)
+
+        def rename_if_current() -> bool:
+            if (
+                tab is not None
+                and self.editor_tabs.get(key) is tab
+                and tab.container_widget is parent
+                and parent is not None
+                and self.window is window
+                and window is not None
+                and window.get_visible()
+                and parent.get_root() is window
+                and not self.store.read_only
+                and not self.store.encryption_locked
+            ):
+                self.prompt_editor_tab_rename(key)
+            return GLib.SOURCE_REMOVE
+
+        # Let GTK release the closing popup's input grab before opening a dialog.
+        GLib.timeout_add(100, rename_if_current)
 
     def on_note_tab_context_menu_closed(self, popover: Gtk.Popover) -> None:
         if self.tab_context_popover is popover:
             self.tab_context_popover = None
-        if popover.get_parent() is not None:
-            popover.unparent()
+        target = self._note_tab_menu_target
+
+        def clear_target() -> bool:
+            # Native entries close before activating their action. A newer
+            # opening must retain its own target when this callback runs.
+            if self._note_tab_menu_target is target:
+                self._note_tab_menu_target = None
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(clear_target)
 
     def close_note_tab_context_menu(self) -> None:
         popover = getattr(self, "tab_context_popover", None)
@@ -1720,8 +1797,15 @@ class NotesDialogs:
             return
         self.tab_context_popover = None
         popover.popdown()
-        if popover.get_parent() is not None:
+
+    def dispose_note_tab_context_menu(self) -> None:
+        self.close_note_tab_context_menu()
+        self._note_tab_menu_target = None
+        popover = getattr(self, "_note_tab_menu", None)
+        if popover is not None:
+            popover.insert_action_group("note-tab", None)
             popover.unparent()
+            self._note_tab_menu = None
 
     def show_note_rename_dialog(self, title: str, response_callback, *callback_args) -> None:
         dialog = Gtk.Dialog(
@@ -2900,7 +2984,7 @@ class NotesDialogs:
         self.cancel_autosave()
         self.close_note_context_menu()
         self.close_category_context_menu()
-        self.close_note_tab_context_menu()
+        self.dispose_note_tab_context_menu()
         if self.window is not None:
             self.window.destroy()
 

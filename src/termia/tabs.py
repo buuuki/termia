@@ -8,7 +8,7 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Graphene", "1.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
-from gi.repository import Gdk, GLib, Graphene, Gtk, Pango
+from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango
 
 from .debug import log_event
 from .ui_state import TerminalSession
@@ -500,29 +500,64 @@ class TabsMixin:
         self,
         _gesture: Gtk.GestureClick,
         _n_press: int,
-        _x: float,
-        _y: float,
+        x: float,
+        y: float,
         session_id: str,
         parent: Gtk.Widget,
     ) -> None:
         session = self.session_registry.get(session_id)
-        if session is None:
+        if (
+            session is None
+            or session.detached_window is not None
+            or session.tab_label is not parent
+            or getattr(self, "shutdown_in_progress", False)
+        ):
             return
-        popover = Gtk.Popover()
+        model = Gio.Menu()
+        action_group = Gio.SimpleActionGroup()
+        popover = Gtk.PopoverMenu.new_from_model(None)
         popover.add_css_class("termia-menu-popover")
         popover.set_has_arrow(False)
         popover.set_parent(parent)
-        menu = Gtk.ListBox()
-        menu.add_css_class("termia-menu-panel")
-        menu.set_selection_mode(Gtk.SelectionMode.NONE)
-        menu.set_margin_top(6)
-        menu.set_margin_bottom(6)
-        menu.set_margin_start(6)
-        menu.set_margin_end(6)
-        self.add_context_menu_item(menu, self.t("duplicate_tab"), lambda: self.duplicate_tab(popover, session))
-        self.add_context_menu_item(menu, self.t("detach_tab"), lambda: self.detach_tab(popover, session))
-        self.add_context_menu_item(menu, self.t("rename_tab"), lambda: self.show_rename_tab_dialog(popover, session))
-        popover.set_child(menu)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(x), int(y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
+
+        def release_popover() -> bool:
+            if popover.get_parent() is not None:
+                popover.unparent()
+            return GLib.SOURCE_REMOVE
+
+        # Model buttons may close their popover before activating its action.
+        # Keep the action group attached until that GTK event has finished.
+        popover.connect("closed", lambda *_: GLib.idle_add(release_popover))
+
+        def run_command(callback) -> bool:
+            if (
+                self.session_registry.get(session_id) is session
+                and session.tab_label is parent
+                and session.detached_window is None
+                and not getattr(self, "shutdown_in_progress", False)
+            ):
+                callback(popover, session)
+            return GLib.SOURCE_REMOVE
+
+        def activate_command(_action, _parameter, callback) -> None:
+            popover.popdown()
+            GLib.idle_add(run_command, callback)
+
+        for name, callback in (
+            ("duplicate_tab", self.duplicate_tab),
+            ("detach_tab", self.detach_tab),
+            ("rename_tab", self.show_rename_tab_dialog),
+        ):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", activate_command, callback)
+            action_group.add_action(action)
+            model.append(self.t(name), f"tab-menu.{name}")
+        popover.insert_action_group("tab-menu", action_group)
+        popover.set_menu_model(model)
         popover.popup()
 
     def duplicate_tab(self, popover: Gtk.Popover, session: TerminalSession) -> None:
