@@ -10,6 +10,10 @@
 
 ### Fixed
 
+- Use a standard GTK menu anchored to the right-click position on note tabs,
+  preserving rename permissions, focus and popup lifetime around dialogs, and
+  rejecting stale targets (`#360`).
+
 - Anchor the terminal-tab context menu to the right-click position and use a
   standard GTK menu, retaining tab actions and rejecting stale targets (`#360`).
 

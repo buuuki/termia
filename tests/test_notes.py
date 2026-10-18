@@ -468,6 +468,14 @@ class NotesDomainTests(unittest.TestCase):
         dialog.focus_active_editor()
         dialog.text_view.grab_focus.assert_not_called()
 
+        dialog.active_editor_tab_key = "draft"
+        dialog.tab_context_popover = SimpleNamespace(get_visible=lambda: True)
+        dialog.focus_active_editor()
+        dialog.text_view.grab_focus.assert_not_called()
+        dialog.tab_context_popover = None
+        dialog.focus_active_editor()
+        dialog.text_view.grab_focus.assert_called_once_with()
+
     def test_editor_saves_plain_text_without_rewriting_markdown_punctuation(self):
         content = "**bold **\n# literal café `code`"
         tab = NoteEditorTab("draft", None, "Draft", "", None, "")
@@ -702,6 +710,193 @@ class NotesDomainTests(unittest.TestCase):
         self.assertEqual(tree.personal_categories, ())
         self.assertEqual([server.id for server in tree.servers], ["server-a"])
         self.assertEqual([category.name for category in tree.servers[0].categories], ["Ops"])
+
+
+class NoteTabContextMenuTests(unittest.TestCase):
+    def setUp(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        self.window = Gtk.Window()
+        self.bar = Gtk.Box()
+        self.parent = Gtk.Box()
+        self.parent.set_size_request(220, 40)
+        self.parent.append(Gtk.Label(label="Clicked note"))
+        self.bar.append(self.parent)
+        self.window.set_child(self.bar)
+        self.window.present()
+        self.addCleanup(self.destroy_window)
+        self.tab = NoteEditorTab("clicked", "note-one", "Clicked note", "Ops", "server-one", "Body")
+        self.tab.container_widget = self.parent
+        self.other = NoteEditorTab("active", None, "Draft", "", None, "Unsaved text", dirty=True)
+        self.dialog = NotesDialogs.__new__(NotesDialogs)
+        self.dialog.window = self.window
+        self.dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
+        self.dialog.translate = lambda key: "Rename"
+        self.dialog.tab_context_popover = None
+        self.dialog.editor_tabs_bar = self.bar
+        self.dialog.editor_tabs = {self.tab.key: self.tab, self.other.key: self.other}
+        self.dialog.active_editor_tab_key = self.other.key
+        self.dialog.ensure_writable = MagicMock(return_value=True)
+        self.dialog.show_note_rename_dialog = MagicMock()
+
+    @staticmethod
+    def drain_events(wait_for_rename=False):
+        context = GLib.MainContext.default()
+        deadline = time.monotonic() + (0.2 if wait_for_rename else 0)
+        for _ in range(350):
+            if context.pending():
+                context.iteration(False)
+            elif time.monotonic() < deadline:
+                time.sleep(0.001)
+            else:
+                break
+
+    def destroy_window(self):
+        self.dialog.dispose_note_tab_context_menu()
+        self.drain_events()
+        self.window.destroy()
+
+    def open_menu(self, key=None, x=15.0, y=20.0):
+        gesture = MagicMock()
+        self.dialog.on_note_tab_context_pressed(gesture, 1, x, y, key or self.tab.key)
+        gesture.set_state.assert_called_once_with(Gtk.EventSequenceState.CLAIMED)
+        menu = self.dialog.tab_context_popover
+        self.assertIsInstance(menu, Gtk.PopoverMenu)
+        return menu
+
+    def rename_entry(self, widget):
+        if isinstance(widget, Gtk.Label) and widget.get_label() == "Rename":
+            return widget.get_parent()
+        child = widget.get_first_child()
+        while child is not None:
+            entry = self.rename_entry(child)
+            if entry is not None:
+                return entry
+            child = child.get_next_sibling()
+        return None
+
+    def test_menu_follows_click_and_retains_one_hidden_popup_until_disposal(self):
+        for x, y in ((5.75, 8.25), (110, 20), (190.5, 32.75)):
+            with self.subTest(x=x, y=y):
+                menu = self.open_menu(x=x, y=y)
+                valid, rect = menu.get_pointing_to()
+                self.assertTrue(valid)
+                self.assertEqual((rect.x, rect.y, rect.width, rect.height), (int(x), int(y), 1, 1))
+                model = menu.get_menu_model()
+                self.assertEqual(model.get_n_items(), 1)
+                self.assertEqual(model.get_item_attribute_value(0, "label", None).unpack(), "Rename")
+                menu.popdown()
+                self.assertIsNone(self.dialog.tab_context_popover)
+                self.drain_events()
+                self.assertIs(menu.get_parent(), self.bar)
+        self.dialog.dispose_note_tab_context_menu()
+        self.assertIsNone(menu.get_parent())
+
+    def test_native_entry_defers_rename_for_clicked_saved_note_or_draft(self):
+        for tab in (self.tab, self.other):
+            with self.subTest(saved=tab.note_id is not None):
+                tab.container_widget = self.parent
+                menu = self.open_menu(tab.key)
+                self.drain_events()
+                entry = self.rename_entry(menu)
+                self.assertIsNotNone(entry)
+                entry.emit("clicked")
+                self.dialog.show_note_rename_dialog.assert_not_called()
+                self.assertFalse(menu.get_visible())
+                self.drain_events(wait_for_rename=True)
+                self.dialog.show_note_rename_dialog.assert_called_once_with(
+                    tab.title, self.dialog.on_editor_tab_rename_response, tab.key,
+                )
+                self.dialog.show_note_rename_dialog.reset_mock()
+                self.assertIs(menu.get_parent(), self.bar)
+                self.assertEqual(self.dialog.active_editor_tab_key, "active")
+                self.assertEqual((self.other.content, self.other.dirty), ("Unsaved text", True))
+                self.assertEqual((self.tab.category, self.tab.server_id, self.tab.content),
+                                 ("Ops", "server-one", "Body"))
+
+    def test_rename_is_disabled_in_read_only_or_locked_storage(self):
+        for flag in ("read_only", "encryption_locked"):
+            with self.subTest(flag=flag), patch.object(self.dialog.store, flag, True):
+                menu = self.open_menu()
+                self.drain_events()
+                self.assertFalse(self.rename_entry(menu).is_sensitive())
+                menu.activate_action("note-tab.rename", None)
+                self.drain_events()
+                self.dialog.show_note_rename_dialog.assert_not_called()
+                self.dialog.close_note_tab_context_menu()
+                self.drain_events()
+
+    def test_popup_survives_real_modal_dialog_and_can_be_disposed_after_cancel(self):
+        self.dialog.show_note_rename_dialog = NotesDialogs.show_note_rename_dialog.__get__(self.dialog)
+        menu = self.open_menu()
+        self.drain_events()
+        self.rename_entry(menu).emit("clicked")
+        self.drain_events(wait_for_rename=True)
+        dialogs = [window for window in Gtk.Window.list_toplevels()
+                   if window.get_visible() and window.get_transient_for() is self.window]
+        self.assertEqual(len(dialogs), 1)
+        self.addCleanup(dialogs[0].destroy)
+        self.assertFalse(menu.get_visible())
+        self.assertIs(menu.get_parent(), self.bar)
+        dialogs[0].get_widget_for_response(Gtk.ResponseType.CANCEL).emit("clicked")
+        self.drain_events()
+        self.assertIs(menu.get_parent(), self.bar)
+        self.dialog.dispose_note_tab_context_menu()
+        self.assertIsNone(menu.get_parent())
+        self.assertEqual(self.tab.title, "Clicked note")
+
+    def test_pending_rename_rejects_stale_tabs_windows_and_permissions(self):
+        for condition in ("removed", "replaced", "new-label", "hidden", "new-window",
+                          "unparented", "read_only", "encryption_locked"):
+            with self.subTest(condition=condition):
+                menu = self.open_menu()
+                self.drain_events()
+                self.rename_entry(menu).emit("clicked")
+                if condition == "removed":
+                    self.dialog.editor_tabs.pop(self.tab.key)
+                elif condition == "replaced":
+                    self.dialog.editor_tabs[self.tab.key] = self.other
+                elif condition == "new-label":
+                    self.tab.container_widget = Gtk.Box()
+                elif condition == "hidden":
+                    self.window.set_visible(False)
+                elif condition == "new-window":
+                    self.dialog.window = None
+                elif condition == "unparented":
+                    self.bar.remove(self.parent)
+                else:
+                    setattr(self.dialog.store, condition, True)
+                self.drain_events(wait_for_rename=True)
+                self.dialog.show_note_rename_dialog.assert_not_called()
+                self.dialog.editor_tabs[self.tab.key] = self.tab
+                self.tab.container_widget = self.parent
+                self.dialog.window = self.window
+                self.window.present()
+                if self.parent.get_parent() is None:
+                    self.bar.append(self.parent)
+                self.dialog.store.read_only = self.dialog.store.encryption_locked = False
+
+    def test_reopening_reuses_popup_without_clearing_the_new_target(self):
+        old = self.open_menu()
+        new = self.open_menu(x=180)
+        self.drain_events()
+        self.assertIs(old, new)
+        self.assertIs(old.get_parent(), self.bar)
+        self.assertIs(self.dialog.tab_context_popover, new)
+        new.activate_action("note-tab.rename", None)
+        self.drain_events(wait_for_rename=True)
+        self.dialog.show_note_rename_dialog.assert_called_once_with(
+            self.tab.title, self.dialog.on_editor_tab_rename_response, self.tab.key,
+        )
+
+    def test_missing_or_replaced_tab_cannot_dispatch_old_menu(self):
+        self.dialog.show_note_tab_context_menu("missing")
+        self.assertIsNone(self.dialog.tab_context_popover)
+        menu = self.open_menu()
+        self.dialog.editor_tabs[self.tab.key] = self.other
+        menu.activate_action("note-tab.rename", None)
+        self.drain_events()
+        self.dialog.show_note_rename_dialog.assert_not_called()
 
 
 class NotesDialogSignalTests(unittest.TestCase):
