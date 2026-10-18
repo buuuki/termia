@@ -43,6 +43,59 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
 )
 
 _MODIFIER_ORDER = ("Ctrl", "Shift", "Alt", "Super")
+SNIPPET_ACTION_PREFIX = "snippet:"
+
+
+class KeybindingError(ValueError):
+    def __init__(self, message: str, shortcut: str = "") -> None:
+        super().__init__(message)
+        self.shortcut = shortcut
+
+
+def snippet_action(snippet_id: str) -> str:
+    return f"{SNIPPET_ACTION_PREFIX}{snippet_id}"
+
+
+def is_snippet_action(action: str) -> bool:
+    return isinstance(action, str) and action.startswith(SNIPPET_ACTION_PREFIX) and len(action) > len(SNIPPET_ACTION_PREFIX)
+
+
+def validate_keybindings(keybindings: dict[str, str]) -> None:
+    seen: set[str] = set()
+    for action, shortcut in keybindings.items():
+        shortcut = normalize_keybinding(shortcut)
+        if not shortcut:
+            continue
+        if is_snippet_action(action) and not any(
+            modifier in shortcut.split("+")[:-1] for modifier in ("Ctrl", "Alt", "Super")
+        ):
+            raise KeybindingError("snippet_shortcut_modifier_required")
+        # +/- actions without Shift also match shifted variants in VTE dispatch.
+        conflict_key = shortcut.replace("Shift+", "") if shortcut.endswith(("+", "-")) else shortcut
+        if conflict_key in seen:
+            raise KeybindingError("keybindings_conflict", shortcut)
+        seen.add(conflict_key)
+
+
+def merge_keybindings(current: dict[str, str], updates: dict[str, str],
+                      previous: dict[str, str] | None = None) -> dict[str, str]:
+    """Merge edited actions only; do not overwrite a newer edit from another window."""
+    result = normalize_keybindings(current)
+    for action, value in updates.items():
+        if action not in DEFAULT_KEYBINDINGS and not is_snippet_action(action):
+            continue
+        value = normalize_keybinding(value)
+        if previous is not None:
+            before = normalize_keybinding(previous.get(action, ""))
+            if value == before:
+                continue
+            if result.get(action, "") != before:
+                raise KeybindingError("keybindings_changed")
+        result[action] = value
+    validate_keybindings(result)
+    return result
+
+
 _MODIFIER_ALIASES = {
     "ctrl": "Ctrl",
     "control": "Ctrl",
@@ -57,9 +110,11 @@ _KEY_ALIASES = {
     "pageup": "PageUp",
     "page_up": "PageUp",
     "prior": "PageUp",
+    "kp_page_up": "PageUp",
     "pagedown": "PageDown",
     "page_down": "PageDown",
     "next": "PageDown",
+    "kp_page_down": "PageDown",
     "plus": "+",
     "equal": "+",
     "kp_add": "+",
@@ -67,9 +122,13 @@ _KEY_ALIASES = {
     "underscore": "-",
     "kp_subtract": "-",
     "left": "Left",
+    "kp_left": "Left",
     "right": "Right",
+    "kp_right": "Right",
     "up": "Up",
+    "kp_up": "Up",
     "down": "Down",
+    "kp_down": "Down",
 }
 _KEYVAL_ALIASES = {
     "PageUp": {"page_up", "kp_page_up"},
@@ -164,6 +223,9 @@ def normalize_keybindings(keybindings: dict[str, str] | None) -> dict[str, str]:
     for action in DEFAULT_KEYBINDINGS:
         value = normalize_keybinding(str(keybindings.get(action, normalized[action])))
         normalized[action] = value
+    for action, value in keybindings.items():
+        if is_snippet_action(action) and isinstance(value, str):
+            normalized[action] = normalize_keybinding(value)
     return normalized
 
 

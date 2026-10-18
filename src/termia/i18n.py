@@ -42,6 +42,11 @@ def translate_key(key: str, language: str | None) -> str:
 
 
 MESSAGES = {'servers': 'Show or hide server list',
+ "snippet_shortcut": "Keyboard shortcut",
+ "snippet_keybindings": "Snippets",
+ "snippet_shortcut_help": "Click to change the combination.",
+ "snippet_shortcut_modifier_required": "Snippet shortcuts must include Ctrl, Alt or Super.",
+ "keybindings_changed": "Shortcuts changed in another window. Reopen this form and try again.",
  "update_title": "Termia updates",
  "update_check": "Check for updates",
  "update_current": "Current version: {version}",

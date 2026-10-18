@@ -38,9 +38,14 @@ class SnippetDialogTests(unittest.TestCase):
         loop.run()
 
     def make_dialogs(self, parent, data, *, store=None, notice=None):
+        if not hasattr(data, "app"):
+            data.app = SimpleNamespace(keybindings={})
+        if store is not None:
+            store.data = data
+            store.encryption_locked = False
         return SnippetDialogs(
             parent,
-            store or SimpleNamespace(data=data),
+            store or SimpleNamespace(data=data, encryption_locked=False),
             SnippetPresenter(
                 lambda: data.snippets, lambda: data.groups, lambda: data.servers,
                 lambda: getattr(data, "snippet_categories", []),
@@ -55,7 +60,7 @@ class SnippetDialogTests(unittest.TestCase):
     def make_snippet_store(data):
         store = Mock()
 
-        def add_snippet(name, content, category, scope, target_id):
+        def add_snippet(name, content, category, scope, target_id, *, shortcut=""):
             snippet = CommandSnippet(str(len(data.snippets) + 1), name, content, category, scope, target_id)
             data.snippets.append(snippet)
             return snippet
@@ -425,19 +430,51 @@ class SnippetDialogTests(unittest.TestCase):
             state.target.set_active_id("long")
             state.target.set_visible(True)
             self.settle_window()
-            self.assertEqual(state.window.get_width(), 680)
+            self.assertEqual(state.window.get_width(), 600)
             self.assertEqual(state.window.get_height(), 560)
+            state.shortcut.set_accelerator("Ctrl+Shift+Alt+Super+XF86AudioRaiseVolume")
+            self.settle_window()
+            self.assertEqual(state.window.get_width(), 600)
             for selector in (state.category, state.scope, state.target):
                 self.assertLessEqual(selector.get_width(), 360)
-                self.assertGreaterEqual(selector.get_width(), 260)
+                self.assertGreaterEqual(selector.get_width(), 220)
             self.assertGreater(state.command.get_height(), 100)
             dialogs.on_new_category(Mock(), state)
             self.settle_window()
-            self.assertEqual(state.window.get_width(), 680)
+            self.assertEqual(state.window.get_width(), 600)
             self.assertGreater(state.command.get_height(), 60)
             dialogs.on_editor_cancel(Mock(), state)
             self.settle_window()
             self.assertEqual((state.window.get_width(), state.window.get_height()), manager_size)
+
+    def test_narrow_manager_keeps_three_columns_and_actions_in_all_languages(self):
+        for language in ("en", "es", "ca"):
+            with self.subTest(language=language):
+                parent = self.make_parent()
+                data = SimpleNamespace(
+                    snippets=[CommandSnippet("one", "A long example name " * 8, "df -h", "Example")],
+                    groups=[], servers=[],
+                )
+                dialogs = self.make_dialogs(parent, data)
+                dialogs.translate = lambda key, lang=language: translate_key(key, lang)
+                try:
+                    state = dialogs.show_manager()
+                    self.settle_window()
+                    self.assertEqual((state.window.get_width(), state.window.get_height()), (795, 560))
+                    state.listing.select_row(state.listing.get_row_at_index(0))
+                    self.settle_window()
+                    self.assertEqual(state.window.get_width(), 795)
+                    for widget in (state.category_scroller, state.list_scroller, state.preview_view):
+                        self.assertGreater(widget.get_width(), 140)
+                    for button in state.actions:
+                        ok, bounds = button.compute_bounds(state.window)
+                        self.assertTrue(ok)
+                        self.assertGreaterEqual(bounds.get_x(), 0)
+                        self.assertLessEqual(bounds.get_x() + bounds.get_width(), 795)
+                        self.assertTrue(button.get_sensitive())
+                finally:
+                    dialogs.shutdown()
+                    parent.destroy()
 
     def test_editor_save_and_close_restore_manager_size(self):
         parent = self.make_parent()
@@ -448,6 +485,9 @@ class SnippetDialogTests(unittest.TestCase):
         state = dialogs.show_manager()
         self.settle_window()
         manager_size = (state.window.get_width(), state.window.get_height())
+        self.assertEqual(manager_size, (795, 560))
+        for widget in (state.category_scroller, state.list_scroller, state.preview_view):
+            self.assertGreater(widget.get_width(), 100)
         dialogs.show_editor(state, None, False)
         self.settle_window()
         state.name.set_text("Example")

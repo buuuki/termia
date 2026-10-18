@@ -16,6 +16,26 @@ msgstr ""
 msgid "Show or hide server list"
 msgstr ""
 
+#: src/termia/i18n.py:snippet_shortcut
+msgid "Keyboard shortcut"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_keybindings
+msgid "Snippets"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_shortcut_help
+msgid "Click to change the combination."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_shortcut_modifier_required
+msgid "Snippet shortcuts must include Ctrl, Alt or Super."
+msgstr ""
+
+#: src/termia/i18n.py:keybindings_changed
+msgid "Shortcuts changed in another window. Reopen this form and try again."
+msgstr ""
+
 #: src/termia/i18n.py:update_title
 msgid "Termia updates"
 msgstr ""

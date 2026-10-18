@@ -117,3 +117,9 @@ class SnippetPresenter:
                 for server in sorted(self._servers(), key=lambda item: item.name.lower())
             ]
         return []
+
+    def available(self, snippet_id: str, server_id: str | None) -> bool:
+        # A missing saved server must not turn an SSH pane into a local terminal.
+        if server_id is not None and find_server(self._servers(), server_id) is None:
+            return False
+        return any(item.id == snippet_id for item in self.run_items(server_id, ""))

@@ -950,7 +950,7 @@ class TerminalSessionsMixin:
         ):
             self.send_saved_password(session, terminal)
             return True
-        return False
+        return self.terminal_shortcut_handler(keyval, state, session, terminal)
 
     def move_split_pane_focus(
         self,

@@ -78,6 +78,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   is selected. Category rows must remain uniformly sized, including long names
   and empty categories. Selecting a category filters the list; typing in search
   must search across all categories, even after a category was selected.
+  Its default size is 795 × 560 logical px (25% narrower than the previous
+  1060 px width); all three columns and their actions must fit in every UI
+  language. Manual resizing and returning from the editor must preserve the
+  user's chosen manager size.
   Search spans the top alone; Manage categories appears above the category
   column, Create snippet above the list, and a modest Command preview label
   above the read-only preview. The selection hint appears beneath the list
@@ -105,11 +109,24 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   group-scoped snippet must apply to servers in that group and its nested
   subgroups. Invalid or deleted scope targets must never broaden a snippet to
   global availability.
+- Snippet shortcuts must use the same assignment in the editor and keyboard
+  preferences, retain the compact editor, and reject conflicts or stale edits
+  from another window. Require Ctrl, Alt, or Super; ordinary typing and
+  unmodified function keys must continue to reach the terminal. Reset defaults
+  clears snippet shortcuts; cancelling either form must preserve assignments.
+  Shortcuts apply only to a focused, connected, active terminal pane within
+  the snippet's scope, including splits and detached windows. Variables and
+  final preview confirmation remain mandatory; pressing the shortcut alone
+  must never send a command. Recheck availability before sending if the
+  snippet or its target was removed while the preview was open. Renaming
+  preserves assignments, duplication does not copy them, and deleting a
+  snippet or its scope target removes its assignment. Locked/read-only guards
+  must protect edits, and locked credentials must prevent shortcut execution.
 - Repeatedly opening, cancelling, and reusing snippet management and execution
   flows must reuse their existing windows and remain responsive during window
   resizing; these flows must not accumulate top-level GTK surfaces.
 - Creating, editing, or duplicating a snippet must open a compact, resizable
-  editor (680 × 560 logical px by default) with compact category, scope, and
+  editor (600 × 560 logical px by default) with compact category, scope, and
   target selectors. Long labels must not widen the window. The command field
   must retain useful editing space, including while creating a category.
   Saving, cancelling, or closing and reopening must restore the manager's

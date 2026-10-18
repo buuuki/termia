@@ -112,6 +112,21 @@ msgstr "Desplega tots els grups de notes"
 msgid "Collapse all note groups"
 msgstr "Replega tots els grups de notes"
 
+msgid "Keyboard shortcut"
+msgstr "Drecera de teclat"
+
+msgid "Snippets"
+msgstr "Snippets"
+
+msgid "Click to change the combination."
+msgstr "Prem per canviar la combinació."
+
+msgid "Snippet shortcuts must include Ctrl, Alt or Super."
+msgstr "Les dreceres de snippets han d'incloure Ctrl, Alt o Super."
+
+msgid "Shortcuts changed in another window. Reopen this form and try again."
+msgstr "Les dreceres han canviat en una altra finestra. Torna a obrir aquest formulari i prova-ho de nou."
+
 msgid ""
 msgstr ""
 "Project-Id-Version: termia\n"

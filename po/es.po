@@ -112,6 +112,21 @@ msgstr "Expandir todos los grupos de notas"
 msgid "Collapse all note groups"
 msgstr "Contraer todos los grupos de notas"
 
+msgid "Keyboard shortcut"
+msgstr "Atajo de teclado"
+
+msgid "Snippets"
+msgstr "Snippets"
+
+msgid "Click to change the combination."
+msgstr "Pulsa para cambiar la combinación."
+
+msgid "Snippet shortcuts must include Ctrl, Alt or Super."
+msgstr "Los atajos de snippets deben incluir Ctrl, Alt o Super."
+
+msgid "Shortcuts changed in another window. Reopen this form and try again."
+msgstr "Los atajos han cambiado en otra ventana. Vuelve a abrir este formulario e inténtalo de nuevo."
+
 msgid ""
 msgstr ""
 "Project-Id-Version: termia\n"

@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from termia.models import CommandSnippet, Group, Server
+from termia.keybindings import KeybindingError, snippet_action
 from termia.snippet_presenter import SnippetPresenter
 from termia.snippets import (
     SnippetError,
@@ -19,6 +20,39 @@ from termia.stores import ConnectionStore, ReadOnlyStoreError
 
 
 class SnippetDomainTests(unittest.TestCase):
+    def test_shortcuts_follow_ids_survive_reload_and_are_not_duplicated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = (root / "connections.json", root / "settings.json", root / "statistics.json",
+                     root / "lock", root / "history")
+            store = ConnectionStore(*paths)
+            try:
+                store.add_snippet_category("Example")
+                snippet = store.add_snippet("Example", "true", "Example", shortcut="Ctrl+Alt+D")
+                action = snippet_action(snippet.id)
+                store.update_snippet(snippet.id, "Renamed", "true", "Example")
+                store.duplicate_snippet_category("Example", "Copy")
+                copy = next(item for item in store.data.snippets if item.category == "Copy")
+                self.assertNotIn(snippet_action(copy.id), store.data.app.keybindings)
+                with self.assertRaises(KeybindingError):
+                    store.add_snippet("Conflicting", "true", shortcut="Ctrl+Alt+D")
+                self.assertEqual(len(store.data.snippets), 2)
+            finally:
+                store.close()
+            restored = ConnectionStore(*paths)
+            try:
+                self.assertEqual(restored.data.app.keybindings[action], "Ctrl+Alt+D")
+                self.assertEqual(restored.data.snippets[0].name, "Renamed")
+                previous = restored.data.app.keybindings.copy()
+                restored.delete_snippet(snippet.id)
+                self.assertNotIn(action, restored.data.app.keybindings)
+                restored.update_keybindings(previous, previous=previous)
+                self.assertNotIn(action, restored.data.app.keybindings)
+                with self.assertRaises(KeybindingError):
+                    restored.update_keybindings({action: "Ctrl+Alt+E"}, previous=previous)
+            finally:
+                restored.close()
+
     def test_variables_are_unique_and_rendered_without_shell_interpretation(self):
         content = "systemctl restart {{service}} --path {{path}} {{service}}"
         self.assertEqual(snippet_variables(content), ["service", "path"])

@@ -28,6 +28,16 @@ the format is an object or event payload.
   stored explicitly.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
+  Optional `app.keybindings` entries named `snippet:<id>` assign shortcuts to
+  stable snippet IDs. This extends the existing action dictionary without
+  changing object fields or the schema version. Old settings have no snippet
+  assignments; ordinary action defaults remain unchanged. These local settings
+  are separate from connection exports. Older versions can still read the
+  file but may discard snippet action keys when normalizing/saving settings;
+  retain a settings backup before downgrading if these assignments are needed.
+  Duplicate snippets receive new IDs and no assignment. Removing a snippet or
+  its scope target prunes its assignment on the next connection save. Shortcut
+  edits reject conflicts and stale concurrent changes before modifying data.
 - `notes.json`: object schema `3`; stores notes and persistent note categories
   separately from connections. Categories carry an optional `server_id` and
   schema 3 adds an optional `parent` category name within that same scope.

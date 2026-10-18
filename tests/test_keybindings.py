@@ -5,10 +5,36 @@ from termia.keybindings import (
     keybinding_label,
     normalize_keybinding,
     normalize_keybindings,
+    KeybindingError,
+    merge_keybindings,
+    snippet_action,
+    validate_keybindings,
 )
 
 
 class KeybindingTests(unittest.TestCase):
+    def test_snippet_keys_survive_normalization_and_unknown_actions_do_not(self):
+        bindings = normalize_keybindings({"snippet:one": "<Control><Alt>d", "unknown": "Ctrl+K"})
+        self.assertEqual(bindings["snippet:one"], "Ctrl+Alt+D")
+        self.assertNotIn("unknown", bindings)
+
+    def test_snippet_shortcuts_require_modifiers_and_cannot_conflict(self):
+        for shortcut in ("D", "F8", "Shift+D", "Ctrl+Shift+C", "Ctrl+Shift++", "Ctrl+Shift+-",
+                         "Ctrl+KP_Page_Up", "Ctrl+KP_Left"):
+            with self.subTest(shortcut=shortcut), self.assertRaises(KeybindingError):
+                merge_keybindings(DEFAULT_KEYBINDINGS, {snippet_action("one"): shortcut})
+        with self.assertRaises(KeybindingError):
+            validate_keybindings({"snippet:one": "Ctrl+Alt+D", "snippet:two": "<Control><Alt>d"})
+
+    def test_merge_preserves_newer_unedited_actions_and_rejects_stale_edits(self):
+        previous = {**DEFAULT_KEYBINDINGS, "snippet:one": "Ctrl+Alt+D"}
+        current = {**previous, "snippet:one": "Ctrl+Alt+E"}
+        merged = merge_keybindings(current, {**previous, "copy": "Ctrl+Alt+C"}, previous)
+        self.assertEqual(merged["snippet:one"], "Ctrl+Alt+E")
+        self.assertEqual(merged["copy"], "Ctrl+Alt+C")
+        with self.assertRaises(KeybindingError):
+            merge_keybindings(current, {"snippet:one": "Ctrl+Alt+F"}, previous)
+
     def test_normalizes_gtk_style_accelerators(self) -> None:
         self.assertEqual(normalize_keybinding("<Shift><Control>c"), "Ctrl+Shift+C")
         self.assertEqual(normalize_keybinding("control+page_up"), "Ctrl+PageUp")

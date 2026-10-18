@@ -33,6 +33,14 @@ Documentación en catalán: [README.ca.md](README.ca.md)
   para regresar desde la gestión de categorías. Puedes crear, renombrar,
   duplicar y eliminar categorías por separado; al eliminar una categoría, sus
   snippets pasan a Sin categoría.
+  Asigna un atajo opcional junto a Disponibilidad en el editor del snippet o
+  en la sección Snippets de las preferencias de teclado. Ambos editan la
+  misma asignación; se rechazan conflictos y se exige Ctrl, Alt o Super.
+  Con un terminal enfocado, el atajo abre las variables/previsualización para
+  ese panel si coincide su ámbito; confirma antes de enviar. Las copias no
+  tienen atajo. Se guardan en los ajustes locales de teclado, separados de
+  las exportaciones de conexiones; versiones anteriores pueden descartarlos
+  al guardar los ajustes de teclado.
 - Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
 - Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`. Arrastrar un servidor guardado a un grupo, subgrupo o Sin grupo para moverlo.
 - Guardar host, usuario, puerto, contraseña, ruta de clave privada y un comando opcional al iniciar cada conexión SSH.

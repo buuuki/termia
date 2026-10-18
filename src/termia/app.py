@@ -228,6 +228,7 @@ class TermiaWindow(
             self.toast_label.set_error,
             self.toast_label.set_label,
         )
+        self.terminal_shortcut_handler = self.snippet_dialogs.on_terminal_shortcut
         self.notes_presenter = NotesPresenter(
             lambda: self.store.data.notes,
             lambda: self.store.data.note_categories,
