@@ -73,13 +73,49 @@ component's interaction uses a standard GTK control. See the
 |---|---|---|
 | Main and context menus | GTK | `styles.py`, menu classes |
 | Dialogs | GTK | Individual dialog builders |
-| Header and session tabs | GTK tokens with Termia spacing rules | `styles.py` |
+| Header and session tabs | Native `Gtk.Notebook` selection, expanding page labels, and overflow arrows; scoped rounded corners and theme-derived colors. Selected tabs use a highlighted background without the native blue underline and retain their color on hover; inactive tabs use a softer outer hover. Private drag uses a translucent blue floating preview and a dimmed source tab. | `app.py`, `tabs.py`, `styles.py` |
 | Note tabs and editor | Native `Gtk.Notebook` tabs with scoped rounded corners, a transparent header, a theme-derived selected-tab background, and GTK's blue underline; saved Notes appearance preferences, native GtkSourceView line numbers, and Termia editor borders and spacing | `notes_dialogs.py`, `styles.py`, `assets/termia-notes.xml`, and settings |
 | Notes tree | GTK `ListView` selection and `TreeExpander` disclosure; Termia row spacing and scoped context/drop feedback | `notes_dialogs.py`, `styles.py` |
-| Sidebar selection and category drop target | GTK selection tokens | `styles.py` |
+| Connections tree selection and group drop target | Native `Gtk.ListView` selection and `Gtk.TreeExpander` disclosure; selection colors confined to rounded content-width icon/title blocks, scoped spacing, and theme-derived drop feedback | `sidebar.py`, `sidebar_projection.py`, `styles.py` |
 | Split panes | Terminal preferences | `styles.py` and terminal settings |
 | Required-field marker and hint | GTK label foreground and secondary text derived from `@theme_fg_color` | `connection_dialogs.py` and `styles.py` |
 | Snippet manager and category tiles | GTK window and buttons with Termia layout and selection rules | `snippet_dialogs.py` and `styles.py` |
+
+### Connections list background
+
+The connections list keeps a transparent background, matching the original
+sidebar container and allowing the window background to show through. GTK still
+owns selection, but its full-row background is suppressed. Selection colors are
+painted on the content-width icon/title block with 6 px horizontal padding and
+4 px corner radii, leaving the remaining row background unchanged.
+
+### Terminal tab selection
+
+GTK's default notebook theme originally drew a blue underline below the active
+terminal tab, in addition to Termia's selected-tab background. Terminal tabs
+now intentionally suppress that native shadow indicator through the scoped
+`termia-terminal-notebook` style. Selection is indicated by the theme-derived
+background, which remains unchanged on hover; inactive tabs have a softer hover.
+Inactive terminal tabs also suppress GTK's dark inset hover shadow, so hovering
+does not introduce a bottom line.
+This terminal rule is distinct from the Notes notebook styling above.
+
+Terminal tab labels and their native tabs use no vertical padding; native tabs
+have a 28 px minimum content height around the close button, 6 px horizontal
+padding, and 2 px side margins (4 px between neighboring tabs). The terminal
+notebook header also suppresses its native bottom border, which otherwise appears
+as a dark separator below the tabs.
+
+Close buttons use a centered 24 px circular target with a darker hover background.
+During private drag, a separate `Gtk.DragIcon` preview covers the full exterior
+tab dimensions, including GTK padding, and keeps the original grab point under
+the pointer. Its transparent background carries the theme selection color at
+25% alpha (normally translucent blue); the preview has 72% opacity. The source
+label left in the bar has no blue tint and dims to 72% opacity with a 120 ms
+transition. The active tab's background marks its current placement without a
+notebook-wide destination highlight. These effects do not animate or delay
+reordering. The notebook is a standard GTK control with scoped styling, while
+the private drag/reorder behavior and floating preview are Termia-owned.
 
 ### Notes window layout
 

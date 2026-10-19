@@ -17,6 +17,14 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
   local-terminal profiles, workspaces and notes, with keyboard navigation.
 - Work with multiple tabs, detachable windows, and terminal split panes that
   can connect independently to different SSH servers or local terminals.
+- Reach terminal tabs that do not fit using GTK's arrow buttons or the tab
+  list. Browse the connections tree with keyboard navigation and expandable
+  groups; drag regular server rows between groups or into Ungrouped.
+- The active terminal tab uses a background highlight without a blue underline;
+  hovering an inactive tab produces a softer highlight.
+- Sidebar selection highlights the icon and name with slightly rounded corners.
+  In a detached terminal, Reattach to main window is directly below the status
+  bar command in the terminal context menu.
 - Save split layouts per SSH server or local terminal profile to reopen a workspace ready to use.
 - Save named workspaces containing multiple tabs and independent SSH or local split panes, then reopen them from the sidebar.
 - Restore the previous tabs and split layout on startup after confirmation; only saved connection references are stored, never terminal output, running processes, PIDs, passwords, or private paths.

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
 
 import gi
 
@@ -12,7 +11,8 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Gio", "2.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Graphene", "1.0")
-from gi.repository import Gdk, Gio, GLib, Graphene, Gtk
+gi.require_version("Pango", "1.0")
+from gi.repository import Gdk, Gio, GLib, GObject, Graphene, Gtk, Pango
 
 from .connection_utils import (
     find_group,
@@ -37,6 +37,17 @@ from .workspace_layout import (
 
 GROUP_START_CONFIRMATION_THRESHOLD = 10
 SERVER_GROUP_DND_MIME_TYPE = "application/x-termia-server-id"
+
+
+class SidebarTreeNode(GObject.Object):
+    """A projected row with stable identity and native GTK tree children."""
+
+    def __init__(self, row: RowObject, icon: str, *, expanded_key: str | None = None):
+        super().__init__()
+        self.row = row
+        self.icon = icon
+        self.expanded_key = expanded_key
+        self.children = Gio.ListStore.new(SidebarTreeNode)
 
 
 class SidebarMixin:
@@ -257,12 +268,29 @@ class SidebarMixin:
         self.refresh_list()
         self.render_detail()
 
+    def create_sidebar_tree(self) -> Gtk.ListView:
+        self.sidebar_drag = None
+        self.sidebar_tree_selection = Gtk.SingleSelection()
+        self.sidebar_tree_selection.set_autoselect(False)
+        self.sidebar_tree_selection.set_can_unselect(True)
+        self.sidebar_tree_selection.connect("notify::selected-item", self.on_sidebar_tree_selected)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", self.setup_sidebar_tree_item)
+        factory.connect("bind", self.bind_sidebar_tree_item)
+        factory.connect("unbind", self.unbind_sidebar_tree_item)
+        view = Gtk.ListView.new(self.sidebar_tree_selection, factory)
+        view.add_css_class("termia-connections-tree")
+        view.connect("activate", self.on_sidebar_tree_activated)
+        return view
+
     def set_all_groups_expanded(self, expanded: bool) -> None:
-        for expander in self.group_expanders:
-            expander.set_expanded(expanded)
-            group_id = getattr(expander, "group_id", None)
-            if group_id:
-                self.group_expanded_state[group_id] = expanded
+        def remember(nodes):
+            for node in nodes:
+                if node.expanded_key is not None:
+                    self.group_expanded_state[node.expanded_key] = expanded
+                remember(node.children)
+        remember(self.sidebar_tree_root)
+        self.refresh_list()
 
     def get_group_expanded(self, group_id: str, query: str) -> bool:
         if query:
@@ -271,57 +299,264 @@ class SidebarMixin:
             return self.group_expanded_state.get(group_id, True)
         return self.group_expanded_state.get(group_id, not self.collapse_groups_on_startup)
 
-    def on_group_expanded_changed(self, expander: Gtk.Expander, _param: Any) -> None:
-        group_id = getattr(expander, "group_id", None)
-        if group_id:
-            self.group_expanded_state[group_id] = expander.get_expanded()
-
     def refresh_list(self) -> None:
-        query = self.search_entry.get_text().lower().strip() if hasattr(self, "search_entry") else ""
         if not hasattr(self, "server_list"):
             return
-
-        while child := self.server_list.get_first_child():
-            self.server_list.remove(child)
-        self.group_expanders: list[Gtk.Expander] = []
+        query = self.search_entry.get_text().lower().strip()
+        self.sidebar_query = query
+        self.close_active_context_menu()
+        self.sidebar_model_token = object()
         self.tree_widgets = {}
         self.selected_tree_widget = None
-
         projection = build_sidebar_projection(
-            self.store.data.groups,
-            self.store.data.servers,
-            self.store.data.local_terminals,
-            self.store.data.workspaces,
-            self.store.recent_server_ids(),
-            query,
-            self.group_expanded_state,
+            self.store.data.groups, self.store.data.servers,
+            self.store.data.local_terminals, self.store.data.workspaces,
+            self.store.recent_server_ids(), query, self.group_expanded_state,
             self.collapse_groups_on_startup,
         )
         self.sidebar_projection = projection
-        self.visible_tree_rows = projection.rows
-        if self.selected is not None and self.get_visible_tree_row_index(self.selected) is None:
-            self.selected = None
-            self.selected_tree_widget = None
+        root = Gio.ListStore.new(SidebarTreeNode)
+
+        def server_node(server, kind="server", icon="network-server-symbolic"):
+            return SidebarTreeNode(self.build_server_row_object(server, kind), icon)
+
+        def section(key, title, icon, nodes):
+            node = SidebarTreeNode(RowObject("section", key, f"{title} ({len(nodes)})"),
+                                   icon, expanded_key=key)
+            for child in nodes:
+                node.children.append(child)
+            root.append(node)
+
         if projection.workspaces:
-            self.server_list.append(self.build_workspaces_widget(projection.workspaces, query))
+            section("__workspaces__", self.t("workspaces"), "view-grid-symbolic", [
+                SidebarTreeNode(self.build_workspace_row_object(item), "view-grid-symbolic")
+                for item in projection.workspaces])
         if projection.local_terminal_profiles:
-            self.server_list.append(self.build_local_terminals_widget(projection.local_terminal_profiles, query))
+            section("__local_terminals__", self.t("local_terminals"), "utilities-terminal-symbolic", [
+                SidebarTreeNode(self.build_local_terminal_row_object(item), "utilities-terminal-symbolic")
+                for item in projection.local_terminal_profiles])
         if projection.recent_servers:
-            self.server_list.append(self.build_recent_widget(projection.recent_servers, query))
+            section("__recent__", self.t("recent"), "document-open-recent-symbolic", [
+                server_node(item, "recent", "document-open-recent-symbolic")
+                for item in projection.recent_servers])
         if projection.favorite_servers:
-            self.server_list.append(self.build_favorites_widget(projection.favorite_servers, query))
+            section("__favorites__", self.t("favorites"), "starred-symbolic", [
+                server_node(item, "favorite", "starred-symbolic")
+                for item in projection.favorite_servers])
+
+        def group_node(group):
+            nodes = [
+                node for child in sorted(projection.children_by_parent.get(group.id, []),
+                                         key=lambda item: item.name.lower())
+                if (node := group_node(child)) is not None
+            ]
+            servers = sorted(projection.servers_by_group.get(group.id, []),
+                             key=lambda item: item.name.lower())
+            if query and not group_matches_query(group, query) and not servers and not nodes:
+                return None
+            count = len(servers) + sum(node.server_count for node in nodes)
+            node = SidebarTreeNode(RowObject("group", group.id, group.name, str(count)),
+                                   "folder-symbolic", expanded_key=group.id)
+            node.server_count = count
+            for child in nodes:
+                node.children.append(child)
+            for server in servers:
+                node.children.append(server_node(server))
+            return node
+
         for group in projection.root_groups:
-            widget = self.build_group_widget(group, projection.children_by_parent, projection.servers_by_group, query)
-            if widget is not None:
-                self.server_list.append(widget)
-
-        self.server_list.append(self.build_ungrouped_widget(projection.ungrouped_servers, query))
-
-        root_groups = len([group for group in self.store.data.groups if group.parent_id is None])
-        subgroups = len(self.store.data.groups) - root_groups
-        self.summary_label.set_label(
-            self.t("summary").format(groups=root_groups, subgroups=subgroups, servers=len(self.store.data.servers))
+            node = group_node(group)
+            if node is not None:
+                root.append(node)
+        section("__ungrouped__", self.t("no_group"), "folder-symbolic", [
+            server_node(item) for item in sorted(projection.ungrouped_servers,
+                                                key=lambda item: item.name.lower())])
+        self.sidebar_tree_root = root
+        model = Gtk.TreeListModel.new(
+            root, False, False,
+            lambda node: node.children if node.expanded_key is not None else None,
         )
+        self.sidebar_tree_model = model
+        self._sidebar_tree_wired_rows = set()
+        self._sidebar_tree_loading = True
+        try:
+            position = 0
+            while position < model.get_n_items():
+                tree_row = model.get_row(position)
+                node = tree_row.get_item()
+                if node.expanded_key is not None:
+                    tree_row.set_expanded(self.get_group_expanded(node.expanded_key, query))
+                    self._sidebar_tree_wired_rows.add(tree_row)
+                    tree_row.connect("notify::expanded", self.on_sidebar_tree_expanded)
+                position += 1
+            self.sidebar_tree_selection.set_model(model)
+            self.sync_sidebar_tree_rows()
+            selected = self.get_visible_tree_row_index(self.selected) if self.selected else None
+            self.sidebar_tree_selection.set_selected(
+                selected if selected is not None else Gtk.INVALID_LIST_POSITION)
+            if selected is None:
+                self.selected = None
+            else:
+                self.selected = model.get_row(selected).get_item().row
+        finally:
+            self._sidebar_tree_loading = False
+        model.connect("items-changed", self.on_sidebar_tree_items_changed)
+        root_groups = len([group for group in self.store.data.groups if group.parent_id is None])
+        self.summary_label.set_label(self.t("summary").format(
+            groups=root_groups, subgroups=len(self.store.data.groups) - root_groups,
+            servers=len(self.store.data.servers)))
+        self.render_detail()
+
+    def sync_sidebar_tree_rows(self) -> None:
+        self.visible_tree_rows = [
+            self.sidebar_tree_model.get_row(i).get_item().row
+            for i in range(self.sidebar_tree_model.get_n_items())
+        ]
+
+    def on_sidebar_tree_items_changed(self, model, _position, _removed, _added) -> None:
+        GLib.idle_add(self.wire_sidebar_tree_rows, model)
+
+    def wire_sidebar_tree_rows(self, model) -> bool:
+        if model is not self.sidebar_tree_model:
+            return GLib.SOURCE_REMOVE
+        # Newly expanded children acquire rows only when their parent opens.
+        index = 0
+        live_rows = set()
+        while index < model.get_n_items():
+            row = model.get_row(index)
+            live_rows.add(row)
+            node = row.get_item()
+            if node.expanded_key is not None and row not in self._sidebar_tree_wired_rows:
+                self._sidebar_tree_wired_rows.add(row)
+                row.set_expanded(self.get_group_expanded(
+                    node.expanded_key, self.search_entry.get_text().strip()))
+                row.connect("notify::expanded", self.on_sidebar_tree_expanded)
+            index += 1
+        self._sidebar_tree_wired_rows.intersection_update(live_rows)
+        self.sync_sidebar_tree_rows()
+        return GLib.SOURCE_REMOVE
+
+    def on_sidebar_tree_expanded(self, tree_row, _param) -> None:
+        if getattr(self, "_sidebar_tree_loading", False):
+            return
+        if self.search_entry.get_text().strip():
+            if not tree_row.get_expanded():
+                def expand():
+                    if tree_row in self._sidebar_tree_wired_rows and self.search_entry.get_text().strip():
+                        tree_row.set_expanded(True)
+                    return GLib.SOURCE_REMOVE
+                GLib.idle_add(expand)
+            return
+        model = self.sidebar_tree_model
+        expanded = tree_row.get_expanded()
+        def remember():
+            if model is self.sidebar_tree_model and any(
+                model.get_row(i) == tree_row for i in range(model.get_n_items())
+            ):
+                self.group_expanded_state[tree_row.get_item().expanded_key] = expanded
+            return GLib.SOURCE_REMOVE
+        GLib.idle_add(remember)
+
+    def setup_sidebar_tree_item(self, _factory, item) -> None:
+        item.set_child(Gtk.TreeExpander())
+        item.set_focusable(False)
+
+    def bind_sidebar_tree_item(self, _factory, item) -> None:
+        tree_row = item.get_item()
+        node = tree_row.get_item()
+        row = node.row
+        expander = item.get_child()
+        expander.set_list_row(tree_row)
+        expander.set_hide_expander(node.expanded_key is None)
+        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        content.add_css_class("termia-sidebar-object")
+        content.set_halign(Gtk.Align.START)
+        content.set_margin_end(6)
+        content.append(Gtk.Image.new_from_icon_name(node.icon))
+        title = row.title + (f" ({row.subtitle})" if row.kind == "group" else "")
+        label = Gtk.Label(label=title, xalign=0)
+        label.set_ellipsize(Pango.EllipsizeMode.END)
+        label.set_hexpand(True)
+        if node.expanded_key is not None:
+            label.add_css_class("heading")
+        content.append(label)
+        content.set_tooltip_text(row.subtitle or row.title)
+        content.sidebar_model_token = self.sidebar_model_token
+        content.sidebar_row = row
+        expander.set_child(content)
+        self.tree_widgets[(row.kind, row.item_id)] = content
+        if row == self.selected:
+            self.selected_tree_widget = content
+        if row.kind != "section":
+            click = Gtk.GestureClick()
+            click.set_button(3)
+            click.connect("pressed", self.on_sidebar_tree_context_pressed, row, content)
+            content.add_controller(click)
+        if row.kind == "server":
+            source = Gtk.DragSource.new()
+            source.set_actions(Gdk.DragAction.MOVE)
+            source.connect("prepare", self.on_server_drag_prepare, row.item_id)
+            source.connect("drag-begin", self.on_server_drag_begin, row.item_id, content)
+            source.connect("drag-end", self.on_server_drag_end, row.item_id, content)
+            content.add_controller(source)
+            content.add_css_class("termia-server-item")
+        if row.kind == "group" or row.item_id == "__ungrouped__":
+            content.add_css_class("termia-group-drop-target")
+            self.add_server_group_drop_target(content, row.item_id if row.kind == "group" else None)
+
+    def unbind_sidebar_tree_item(self, _factory, item) -> None:
+        expander = item.get_child()
+        content = expander.get_child()
+        if content is not None:
+            row = content.sidebar_row
+            key = (row.kind, row.item_id)
+            if self.tree_widgets.get(key) is content:
+                self.tree_widgets.pop(key)
+            if self.selected_tree_widget is content:
+                self.selected_tree_widget = None
+            content.sidebar_model_token = None
+        expander.set_list_row(None)
+        expander.set_child(None)
+
+    def on_sidebar_tree_selected(self, selection, _param) -> None:
+        if getattr(self, "_sidebar_tree_loading", False):
+            return
+        selected = selection.get_selected_item()
+        self.selected = selected.get_item().row if selected else None
+        row = self.selected
+        self.selected_tree_widget = self.tree_widgets.get((row.kind, row.item_id)) if row else None
+        def render():
+            if self.selected is row:
+                self.render_detail()
+            return GLib.SOURCE_REMOVE
+        GLib.idle_add(render)
+
+    def on_sidebar_tree_activated(self, _view, position) -> None:
+        row = self.sidebar_tree_model.get_row(position)
+        if row is None:
+            return
+        self.sidebar_tree_selection.set_selected(position)
+        if row.get_item().expanded_key is not None:
+            row.set_expanded(not row.get_expanded())
+        else:
+            self.activate_selected_tree_row()
+
+    def on_sidebar_tree_context_pressed(self, gesture, _count, x, y, row, content) -> None:
+        root = self.get_child()
+        valid, point = content.compute_point(root, Graphene.Point().init(x, y))
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        token = self.sidebar_model_token
+        if not valid:
+            return
+        def open_menu():
+            if self.sidebar_model_token is not token or not self.get_visible():
+                return GLib.SOURCE_REMOVE
+            index = self.get_visible_tree_row_index(row)
+            if index is not None:
+                self.sidebar_tree_selection.set_selected(index)
+                self.show_row_context_menu(row, root, point.x, point.y)
+            return GLib.SOURCE_REMOVE
+        GLib.idle_add(open_menu)
 
     def build_local_terminal_row_object(self, profile: LocalTerminalProfile) -> RowObject:
         title = profile.name or self.t("local_terminal")
@@ -329,52 +564,6 @@ class SidebarMixin:
 
     def build_workspace_row_object(self, workspace: Workspace) -> RowObject:
         return RowObject("workspace", workspace.id, workspace.name)
-
-    def build_workspaces_widget(self, workspaces: list[Workspace], query: str) -> Gtk.Widget:
-        expander = Gtk.Expander()
-        expander.set_focusable(False)
-        expander.set_label_widget(self.build_workspaces_label(f"{self.t('workspaces')} ({len(workspaces)})"))
-        self.group_expanders.append(expander)
-        expander.group_id = "__workspaces__"
-        expander.set_expanded(self.get_group_expanded("__workspaces__", query))
-        expander.connect("notify::expanded", self.on_group_expanded_changed)
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        for workspace in workspaces:
-            content.append(self.build_workspace_widget(workspace))
-        expander.set_child(content)
-        return expander
-
-    def build_workspaces_label(self, text: str) -> Gtk.Widget:
-        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        label_box.append(Gtk.Image.new_from_icon_name("view-grid-symbolic"))
-        label = Gtk.Label(label=text)
-        label.add_css_class("heading")
-        label_box.append(label)
-        return label_box
-
-    def build_workspace_widget(self, workspace: Workspace) -> Gtk.Widget:
-        row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        row.set_focusable(False)
-        row.set_margin_start(18)
-        row.set_margin_end(6)
-        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        title_box.append(Gtk.Image.new_from_icon_name("view-grid-symbolic"))
-        title = Gtk.Label(label=workspace.name)
-        title.set_xalign(0)
-        title_box.append(title)
-        row.append(title_box)
-        row.set_tooltip_text(self.workspace_description(workspace))
-        row_obj = self.build_workspace_row_object(workspace)
-        self.register_tree_widget(row_obj, row)
-        left_click = Gtk.GestureClick.new()
-        left_click.set_button(1)
-        left_click.connect("pressed", self.on_workspace_widget_left_click, row_obj)
-        row.add_controller(left_click)
-        right_click = Gtk.GestureClick.new()
-        right_click.set_button(3)
-        right_click.connect("pressed", self.on_workspace_widget_right_click, row_obj, row)
-        row.add_controller(right_click)
-        return row
 
     def workspace_description(self, workspace: Workspace) -> str:
         layouts = workspace_tab_layouts(workspace.tabs)
@@ -386,227 +575,8 @@ class SidebarMixin:
     def build_server_row_object(self, server: Server, row_kind: str = "server") -> RowObject:
         return RowObject(row_kind, server.id, server.name, self.get_server_connection_text(server))
 
-    def build_local_terminals_widget(self, profiles: list[LocalTerminalProfile], query: str) -> Gtk.Widget:
-        expander = Gtk.Expander()
-        expander.set_focusable(False)
-        expander.set_label_widget(self.build_local_terminals_label(f"{self.t('local_terminals')} ({len(profiles)})"))
-        self.group_expanders.append(expander)
-        expander.group_id = "__local_terminals__"
-        expander.set_expanded(self.get_group_expanded("__local_terminals__", query))
-        expander.connect("notify::expanded", self.on_group_expanded_changed)
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        for profile in profiles:
-            content.append(self.build_local_terminal_profile_widget(profile))
-        expander.set_child(content)
-        return expander
-
-    def build_local_terminals_label(self, text: str) -> Gtk.Widget:
-        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        label_box.append(Gtk.Image.new_from_icon_name("utilities-terminal-symbolic"))
-        label = Gtk.Label(label=text)
-        label.add_css_class("heading")
-        label_box.append(label)
-        return label_box
-
-    def build_local_terminal_profile_widget(self, profile: LocalTerminalProfile) -> Gtk.Widget:
-        row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        row.set_focusable(False)
-        row.set_margin_top(0)
-        row.set_margin_bottom(0)
-        row.set_margin_start(18)
-        row.set_margin_end(6)
-
-        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        title_box.append(Gtk.Image.new_from_icon_name("utilities-terminal-symbolic"))
-        title = Gtk.Label(label=profile.name or self.t("local_terminal"))
-        title.set_xalign(0)
-        title_box.append(title)
-        row.append(title_box)
-
-        row_obj = self.build_local_terminal_row_object(profile)
-        self.register_tree_widget(row_obj, row)
-        left_click = Gtk.GestureClick.new()
-        left_click.set_button(1)
-        left_click.connect("pressed", self.on_local_terminal_widget_left_click, row_obj)
-        row.add_controller(left_click)
-
-        right_click = Gtk.GestureClick.new()
-        right_click.set_button(3)
-        right_click.connect("pressed", self.on_local_terminal_widget_right_click, row_obj, row)
-        row.add_controller(right_click)
-        return row
-
     def get_server_connection_text(self, server: Server) -> str:
         return f"{server.user}@{server.host}:{server.port}" if server.user else f"{server.host}:{server.port}"
-
-    def build_favorites_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
-        expander = Gtk.Expander()
-        expander.set_focusable(False)
-        expander.set_label_widget(self.build_favorites_label(f"{self.t('favorites')} ({len(servers)})"))
-        self.group_expanders.append(expander)
-        expander.group_id = "__favorites__"
-        expander.set_expanded(self.get_group_expanded("__favorites__", query))
-        expander.connect("notify::expanded", self.on_group_expanded_changed)
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        for server in servers:
-            content.append(self.build_server_widget(server, row_kind="favorite", icon_name="starred-symbolic"))
-        expander.set_child(content)
-        return expander
-
-    def build_recent_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
-        expander = Gtk.Expander()
-        expander.set_focusable(False)
-        expander.set_label_widget(self.build_recent_label(f"{self.t('recent')} ({len(servers)})"))
-        self.group_expanders.append(expander)
-        expander.group_id = "__recent__"
-        expander.set_expanded(self.get_group_expanded("__recent__", query))
-        expander.connect("notify::expanded", self.on_group_expanded_changed)
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        for server in servers:
-            content.append(self.build_server_widget(server, row_kind="recent", icon_name="document-open-recent-symbolic"))
-        expander.set_child(content)
-        return expander
-
-    def build_favorites_label(self, text: str) -> Gtk.Widget:
-        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        label_box.append(Gtk.Image.new_from_icon_name("starred-symbolic"))
-        label = Gtk.Label(label=text)
-        label.add_css_class("heading")
-        label_box.append(label)
-        return label_box
-
-    def build_recent_label(self, text: str) -> Gtk.Widget:
-        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        label_box.append(Gtk.Image.new_from_icon_name("document-open-recent-symbolic"))
-        label = Gtk.Label(label=text)
-        label.add_css_class("heading")
-        label_box.append(label)
-        return label_box
-
-    def build_group_widget(
-        self,
-        group: Group,
-        children_by_parent: dict[str | None, list[Group]],
-        servers_by_group: dict[str | None, list[Server]],
-        query: str,
-    ) -> Gtk.Widget | None:
-        child_groups = children_by_parent.get(group.id, [])
-        servers = servers_by_group.get(group.id, [])
-        child_widgets = [
-            widget
-            for child in sorted(child_groups, key=lambda item: item.name.lower())
-            if (widget := self.build_group_widget(child, children_by_parent, servers_by_group, query)) is not None
-        ]
-        group_matches = group_matches_query(group, query)
-        if query and not group_matches and not servers and not child_widgets:
-            return None
-
-        descendant_servers = len(servers) + sum(
-            int(getattr(widget, "server_count", 0)) for widget in child_widgets
-        )
-        expander = Gtk.Expander()
-        expander.set_focusable(False)
-        group_label = self.build_group_label(f"{group.name} ({descendant_servers})")
-        expander.set_label_widget(group_label)
-        self.group_expanders.append(expander)
-        expander.group_id = group.id
-        expander.server_count = descendant_servers
-        expander.set_expanded(self.get_group_expanded(group.id, query))
-        expander.connect("notify::expanded", self.on_group_expanded_changed)
-        expander.set_margin_top(3)
-        expander.set_margin_bottom(3)
-        expander.set_margin_start(4)
-        expander.set_margin_end(2)
-
-        group_row = RowObject("group", group.id, group.name, f"{descendant_servers} servidor(es)")
-        self.register_tree_widget(group_row, group_label)
-        left_click = Gtk.GestureClick.new()
-        left_click.set_button(1)
-        left_click.connect("pressed", self.on_group_widget_left_click, group_row, group_label)
-        group_label.add_controller(left_click)
-        right_click = Gtk.GestureClick.new()
-        right_click.set_button(3)
-        right_click.connect("pressed", self.on_group_widget_right_click, group_row, group_label)
-        group_label.add_controller(right_click)
-        self.add_server_group_drop_target(group_label, group.id)
-
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        for widget in child_widgets:
-            widget.set_margin_start(widget.get_margin_start() + 10)
-            content.append(widget)
-        for server in sorted(servers, key=lambda item: item.name.lower()):
-            content.append(self.build_server_widget(server))
-        expander.set_child(content)
-        return expander
-
-    def build_group_label(self, text: str) -> Gtk.Widget:
-        label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        label_box.set_hexpand(True)
-        label_box.set_halign(Gtk.Align.FILL)
-        label_box.add_css_class("termia-group-drop-target")
-        label_box.append(Gtk.Image.new_from_icon_name("folder-symbolic"))
-        label = Gtk.Label(label=text)
-        label.add_css_class("heading")
-        label_box.append(label)
-        return label_box
-
-    def build_ungrouped_widget(self, servers: list[Server], query: str) -> Gtk.Widget:
-        expander = Gtk.Expander()
-        expander.set_focusable(False)
-        group_label = self.build_group_label(f"{self.t('no_group')} ({len(servers)})")
-        expander.set_label_widget(group_label)
-        self.add_server_group_drop_target(group_label, None)
-        self.group_expanders.append(expander)
-        expander.group_id = "__ungrouped__"
-        expander.set_expanded(self.get_group_expanded("__ungrouped__", query))
-        expander.connect("notify::expanded", self.on_group_expanded_changed)
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        for server in sorted(servers, key=lambda item: item.name.lower()):
-            content.append(self.build_server_widget(server))
-        expander.set_child(content)
-        return expander
-
-    def build_server_widget(
-        self,
-        server: Server,
-        row_kind: str = "server",
-        icon_name: str = "network-server-symbolic",
-    ) -> Gtk.Widget:
-        row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        row.set_focusable(False)
-        row.set_margin_top(0)
-        row.set_margin_bottom(0)
-        row.set_margin_start(18)
-        row.set_margin_end(6)
-
-        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        title_box.append(Gtk.Image.new_from_icon_name(icon_name))
-        title = Gtk.Label(label=server.name)
-        title.set_xalign(0)
-        title_box.append(title)
-        row.append(title_box)
-
-        connection = self.get_server_connection_text(server)
-        row.set_tooltip_text(connection)
-        row_obj = self.build_server_row_object(server, row_kind)
-        self.register_tree_widget(row_obj, row)
-        left_click = Gtk.GestureClick.new()
-        left_click.set_button(1)
-        left_click.connect("pressed", self.on_server_widget_left_click, row_obj)
-        row.add_controller(left_click)
-
-        right_click = Gtk.GestureClick.new()
-        right_click.set_button(3)
-        right_click.connect("pressed", self.on_server_widget_right_click, row_obj, row)
-        row.add_controller(right_click)
-        if row_kind == "server":
-            drag_source = Gtk.DragSource.new()
-            drag_source.set_actions(Gdk.DragAction.MOVE)
-            drag_source.connect("prepare", self.on_server_drag_prepare, server.id)
-            drag_source.connect("drag-begin", self.on_server_drag_begin, server.id, row)
-            drag_source.connect("drag-end", self.on_server_drag_end, server.id, row)
-            row.add_controller(drag_source)
-        return row
 
     def on_server_drag_prepare(
         self, _source: Gtk.DragSource, _x: float, _y: float, server_id: str,
@@ -628,6 +598,7 @@ class SidebarMixin:
         self, source: Gtk.DragSource, _drag: Gdk.Drag, server_id: str, row: Gtk.Widget,
     ) -> None:
         self.sidebar_drag_server_id = server_id
+        self.sidebar_drag = _drag
         row.add_css_class("dragging")
         source.set_icon(
             Gtk.WidgetPaintable.new(row),
@@ -641,6 +612,7 @@ class SidebarMixin:
     ) -> None:
         if self.sidebar_drag_server_id == server_id:
             self.sidebar_drag_server_id = None
+            self.sidebar_drag = None
         row.remove_css_class("dragging")
 
     def add_server_group_drop_target(self, label: Gtk.Widget, group_id: str | None) -> None:
@@ -658,6 +630,8 @@ class SidebarMixin:
         formats = drop.get_formats()
         return (
             self.sidebar_drag_server_id is not None
+            and (not hasattr(self, "sidebar_tree_selection") or (
+                self.sidebar_drag is not None and drop.get_drag() == self.sidebar_drag))
             and formats is not None
             and formats.contain_mime_type(SERVER_GROUP_DND_MIME_TYPE)
         )
@@ -667,6 +641,8 @@ class SidebarMixin:
         group_id: str | None, label: Gtk.Widget,
     ) -> Gdk.DragAction:
         server_id = self.sidebar_drag_server_id
+        if hasattr(self, "sidebar_tree_selection") and label.sidebar_model_token is not self.sidebar_model_token:
+            return Gdk.DragAction(0)
         if server_id is not None and self.store.can_move_server_to_group(server_id, group_id):
             label.add_css_class("drop-target")
             return Gdk.DragAction.MOVE
@@ -683,6 +659,8 @@ class SidebarMixin:
         group_id: str | None, label: Gtk.Widget,
     ) -> bool:
         label.remove_css_class("drop-target")
+        if hasattr(self, "sidebar_tree_selection") and label.sidebar_model_token is not self.sidebar_model_token:
+            return False
         server_id = self.sidebar_drag_server_id
         if server_id is None or not self.on_server_group_drop_accept(_target, drop):
             return False
@@ -710,6 +688,8 @@ class SidebarMixin:
             drop.finish(Gdk.DragAction(0))
             return
         if stream is None or mime_type != SERVER_GROUP_DND_MIME_TYPE:
+            if stream is not None:
+                stream.close_async(GLib.PRIORITY_DEFAULT, None, None)
             self.clear_pending_server_group_drop(drop_token)
             drop.finish(Gdk.DragAction(0))
             return
@@ -729,6 +709,8 @@ class SidebarMixin:
             server_id = stream.read_bytes_finish(result).get_data().decode("utf-8")
         except (GLib.Error, UnicodeDecodeError):
             server_id = ""
+        finally:
+            stream.close_async(GLib.PRIORITY_DEFAULT, None, None)
         moved = (
             getattr(self, "sidebar_pending_group_drop", None) is drop_token
             and server_id == expected_server_id
@@ -745,6 +727,10 @@ class SidebarMixin:
         self, server_id: str, group_id: str | None, label: Gtk.Widget,
         *, require_active_drag: bool = True,
     ) -> bool:
+        if getattr(self, "shutdown_in_progress", False):
+            return False
+        if hasattr(self, "sidebar_tree_selection") and label.sidebar_model_token is not self.sidebar_model_token:
+            return False
         if require_active_drag and server_id != self.sidebar_drag_server_id:
             return False
         if not self.store.can_move_server_to_group(server_id, group_id):
@@ -757,30 +743,6 @@ class SidebarMixin:
         self.render_detail()
         self.preserve_sidebar_scroll(*scroll_values)
         return True
-
-    def register_tree_widget(self, row: RowObject, widget: Gtk.Widget) -> None:
-        widget.add_css_class("termia-tree-item")
-        if row.kind == "group":
-            widget.add_css_class("termia-group-item")
-        if row.kind in {"server", "favorite", "recent", "local_terminal", "workspace"}:
-            widget.add_css_class("termia-server-item")
-        widget.set_focusable(True)
-        self.tree_widgets[(row.kind, row.item_id)] = widget
-        if self.selected and self.selected.kind == row.kind and self.selected.item_id == row.item_id:
-            widget.add_css_class("selected")
-            self.selected_tree_widget = widget
-
-    def select_tree_row(
-        self, row: RowObject, widget: Gtk.Widget, preserve_scroll: bool = True
-    ) -> None:
-        if preserve_scroll:
-            self.preserve_sidebar_scroll()
-        if self.selected_tree_widget is not None and self.selected_tree_widget is not widget:
-            self.selected_tree_widget.remove_css_class("selected")
-        self.selected = row
-        self.selected_tree_widget = widget
-        widget.add_css_class("selected")
-        self.render_detail()
 
     def get_sidebar_scroll_values(self) -> tuple[float, float]:
         return (
@@ -833,36 +795,44 @@ class SidebarMixin:
         adjustment.set_value(min(max(value, adjustment.get_lower()), maximum))
 
     def focus_selected_tree_row(self) -> bool:
-        if self.selected is not None:
-            widget = self.tree_widgets.get((self.selected.kind, self.selected.item_id))
-            if widget is not None:
-                widget.grab_focus()
+        index = self.sidebar_tree_selection.get_selected()
+        if index != Gtk.INVALID_LIST_POSITION:
+            self.focus_sidebar_tree_position(index)
         return GLib.SOURCE_REMOVE
 
-    def get_group_expander(self, group_id: str) -> Gtk.Expander | None:
-        for expander in getattr(self, "group_expanders", []):
-            if getattr(expander, "group_id", None) == group_id:
-                return expander
+    def focus_sidebar_tree_position(self, index: int) -> None:
+        self.server_list.grab_focus()
+        if hasattr(self.server_list, "scroll_to"):
+            self.server_list.scroll_to(index, Gtk.ListScrollFlags.FOCUS, None)
+        else:
+            self.server_list.activate_action("list.scroll-to-item", GLib.Variant("u", index))
+            self.server_list.grab_focus()
+
+    def get_group_expander(self, group_id: str) -> Gtk.TreeListRow | None:
+        model = self.sidebar_tree_model
+        for index in range(model.get_n_items()):
+            tree_row = model.get_row(index)
+            if tree_row.get_item().expanded_key == group_id:
+                return tree_row
         return None
 
     def get_visible_tree_row_index(self, row: RowObject) -> int | None:
+        if hasattr(self, "sidebar_tree_model"):
+            self.sync_sidebar_tree_rows()
         for index, visible_row in enumerate(getattr(self, "visible_tree_rows", [])):
             if visible_row.kind == row.kind and visible_row.item_id == row.item_id:
                 return index
         return None
 
     def select_visible_tree_row(self, index: int) -> bool:
-        rows = getattr(self, "visible_tree_rows", [])
+        self.sync_sidebar_tree_rows()
+        rows = self.visible_tree_rows
         if not rows:
             return False
         index = max(0, min(index, len(rows) - 1))
-        row = rows[index]
-        widget = self.tree_widgets.get((row.kind, row.item_id))
-        if widget is None:
-            return False
         self.cancel_sidebar_scroll_restore()
-        self.select_tree_row(row, widget, preserve_scroll=False)
-        widget.grab_focus()
+        self.sidebar_tree_selection.set_selected(index)
+        self.focus_sidebar_tree_position(index)
         return True
 
     def move_visible_tree_selection(self, delta: int) -> bool:
@@ -878,7 +848,9 @@ class SidebarMixin:
 
     def activate_selected_tree_row(self) -> bool:
         if self.selected is None or self.get_visible_tree_row_index(self.selected) is None:
-            if not self.select_visible_tree_row(0):
+            first = next((i for i, row in enumerate(getattr(self, "visible_tree_rows", []))
+                          if row.kind != "section"), None)
+            if first is None or not self.select_visible_tree_row(first):
                 return False
         if self.selected is None or self.get_visible_tree_row_index(self.selected) is None:
             return False
@@ -900,13 +872,12 @@ class SidebarMixin:
                 return False
             self.open_terminal_tab(server)
             return True
-        if self.selected.kind == "group":
+        if self.selected.kind in {"group", "section"}:
             expander = self.get_group_expander(self.selected.item_id)
             if expander is None:
                 return False
             self.cancel_sidebar_scroll_restore()
             expander.set_expanded(not expander.get_expanded())
-            self.refresh_list()
             GLib.idle_add(self.focus_selected_tree_row)
             return True
         return False
@@ -927,7 +898,19 @@ class SidebarMixin:
         if state & relevant_mask:
             return False
 
+        focused = self.get_focus() if hasattr(self, "sidebar_tree_selection") else None
+        if hasattr(self, "sidebar_tree_selection") and not (
+            focused is self.search_entry or (focused is not None and focused.is_ancestor(self.search_entry))
+        ):
+            # GTK owns keyboard navigation while focus is inside the native view.
+            return False
+
         enter_keys = {Gdk.KEY_Return, Gdk.KEY_KP_Enter, getattr(Gdk, "KEY_ISO_Enter", Gdk.KEY_Return)}
+        navigation_keys = {Gdk.KEY_Up, Gdk.KEY_Down, Gdk.KEY_Home, Gdk.KEY_End, *enter_keys}
+        query = self.search_entry.get_text().lower().strip()
+        if keyval in navigation_keys and query != self.sidebar_query:
+            # SearchEntry debounces search-changed; Enter must use current text.
+            self.refresh_list()
         if keyval == Gdk.KEY_Up:
             return self.move_visible_tree_selection(-1)
         if keyval == Gdk.KEY_Down:
@@ -937,128 +920,13 @@ class SidebarMixin:
         if keyval == Gdk.KEY_End:
             return self.select_visible_tree_row(len(getattr(self, "visible_tree_rows", [])) - 1)
         if keyval in enter_keys:
+            if query:
+                first = next((i for i, row in enumerate(self.visible_tree_rows)
+                              if row.kind in {"server", "favorite", "recent", "workspace", "local_terminal"}), None)
+                if first is not None:
+                    self.sidebar_tree_selection.set_selected(first)
             return self.activate_selected_tree_row()
         return False
-
-    def on_group_widget_left_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        _n_press: int,
-        _x: float,
-        _y: float,
-        row: RowObject,
-        widget: Gtk.Widget,
-    ) -> None:
-        self.select_tree_row(row, widget)
-        widget.grab_focus()
-
-    def on_server_widget_left_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        n_press: int,
-        _x: float,
-        _y: float,
-        row: RowObject,
-    ) -> None:
-        widget = self.tree_widgets[(row.kind, row.item_id)]
-        self.select_tree_row(row, widget)
-        widget.grab_focus()
-        if n_press == 2:
-            server = find_server(self.store.data.servers, row.item_id)
-            if server:
-                self.open_terminal_tab(server)
-
-    def on_server_widget_right_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        _n_press: int,
-        _x: float,
-        _y: float,
-        row: RowObject,
-        parent: Gtk.Widget,
-    ) -> None:
-        scroll_values = self.get_sidebar_scroll_values()
-        self.close_active_context_menu()
-        self.select_tree_row(row, parent)
-        self.show_row_context_menu(row, parent, _x, _y)
-        self.preserve_sidebar_scroll(*scroll_values)
-
-    def on_local_terminal_widget_left_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        n_press: int,
-        _x: float,
-        _y: float,
-        row: RowObject,
-    ) -> None:
-        widget = self.tree_widgets[(row.kind, row.item_id)]
-        self.select_tree_row(row, widget)
-        widget.grab_focus()
-        if n_press == 2:
-            profile = find_local_terminal_profile(self.store.data.local_terminals, row.item_id)
-            if profile is not None:
-                self.open_local_terminal_profile(profile)
-
-    def on_local_terminal_widget_right_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        _n_press: int,
-        _x: float,
-        _y: float,
-        row: RowObject,
-        parent: Gtk.Widget,
-    ) -> None:
-        scroll_values = self.get_sidebar_scroll_values()
-        self.close_active_context_menu()
-        self.select_tree_row(row, parent)
-        self.show_row_context_menu(row, parent, _x, _y)
-        self.preserve_sidebar_scroll(*scroll_values)
-
-    def on_workspace_widget_left_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        n_press: int,
-        _x: float,
-        _y: float,
-        row: RowObject,
-    ) -> None:
-        widget = self.tree_widgets[(row.kind, row.item_id)]
-        self.select_tree_row(row, widget)
-        widget.grab_focus()
-        if n_press == 2:
-            workspace = find_workspace(self.store.data.workspaces, row.item_id)
-            if workspace is not None:
-                self.open_workspace(workspace)
-
-    def on_workspace_widget_right_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        _n_press: int,
-        _x: float,
-        _y: float,
-        row: RowObject,
-        parent: Gtk.Widget,
-    ) -> None:
-        scroll_values = self.get_sidebar_scroll_values()
-        self.close_active_context_menu()
-        self.select_tree_row(row, parent)
-        self.show_row_context_menu(row, parent, _x, _y)
-        self.preserve_sidebar_scroll(*scroll_values)
-
-    def on_group_widget_right_click(
-        self,
-        _gesture: Gtk.GestureClick,
-        _n_press: int,
-        _x: float,
-        _y: float,
-        row: RowObject,
-        parent: Gtk.Widget,
-    ) -> None:
-        scroll_values = self.get_sidebar_scroll_values()
-        self.close_active_context_menu()
-        self.select_tree_row(row, parent)
-        self.show_row_context_menu(row, parent, _x, _y)
-        self.preserve_sidebar_scroll(*scroll_values)
 
     def close_active_context_menu(self) -> None:
         popover = self.active_context_popover

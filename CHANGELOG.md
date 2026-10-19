@@ -4,6 +4,18 @@
 
 ### Changed
 
+- Use `Gtk.Notebook` for terminal tabs, with native selection and overflow
+  arrows, tabs sharing the header width, a highlighted active tab without the
+  native blue underline, stable selected-tab colors on hover,
+  and a softer inactive-tab hover. Retain private drag reordering without a
+  notebook-wide drop highlight, the overflow menu, detached windows, split
+  panes, and terminal lifecycle callbacks (`#360`).
+
+- Use a native GTK tree model, expanders, list view, and single selection for
+  connections, preserving nested groups, search, context actions, expansion
+  state, and private server-to-group drag targets. Keep the original sidebar
+  background and highlight only rounded icon/title blocks (`#360`).
+
 - Use `Gtk.TreeListModel`, `Gtk.TreeExpander`, and `Gtk.ListView` for the Notes
   tree while retaining nested groups, search, drafts, scope navigation, menus,
   and private drag targets (`#360`).
@@ -31,6 +43,26 @@
   visibility, and write restrictions (`#358`).
 
 ### Fixed
+
+- Limit sidebar selection colors to a rounded icon/title block with horizontal
+  padding instead of highlighting the entire row (`#360`).
+
+- Keep floating tab drag previews at the full exterior tab size and original
+  grab point, with the original translucent selection tint and opacity; only
+  dim the source tab left in the bar. Retain existing reorder thresholds (`#360`).
+
+- Restore the connections sidebar's original background and place Reattach to
+  main window directly below Show/Hide status bar in detached terminals (`#360`).
+
+- Reduce terminal-tab label padding and remove the native header's dark bottom
+  border for a more compact tab bar. Suppress the dark bottom shadow when
+  hovering inactive terminal tabs, reduce the gap between tabs, and give close
+  buttons a larger circular hover (`#360`).
+
+- Defer and coalesce private terminal-tab drag reordering until GTK finishes
+  the current event, revalidate queued moves, and ignore hidden tab geometry.
+  Cover rapid repeated moves with overflowing tabs in an isolated process to
+  guard against GTK's notebook hover-timer assertion (`#360`).
 
 - Keep Notes GTK tests safe in headless CI while retaining GtkSourceView
   integration coverage on a private display (`#360`).

@@ -11,10 +11,11 @@ import gi
 
 gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, Gio, Gtk
 
 from termia.models import CommandSnippet, Group, Server
-from termia.sidebar import SERVER_GROUP_DND_MIME_TYPE, SidebarMixin
+from termia.sidebar import SERVER_GROUP_DND_MIME_TYPE, SidebarMixin, SidebarTreeNode
+from termia.sidebar_projection import SidebarRow
 from termia.snippets import available_snippets
 from termia.stores import ConnectionStore, ReadOnlyStoreError
 
@@ -199,16 +200,29 @@ class ServerGroupWidgetTests(unittest.TestCase):
                 self.group_expanded_state = {}
                 self.collapse_groups_on_startup = False
                 self.selected = None
+                self.selected_tree_widget = None
                 self.tree_widgets = {}
+                self.sidebar_model_token = object()
 
             def t(self, key: str) -> str:
                 return key
 
         self.host = Host()
 
+    def bind_row(self, kind, item_id, title, expanded_key=None):
+        node = SidebarTreeNode(SidebarRow(kind, item_id, title), "folder-symbolic",
+                               expanded_key=expanded_key)
+        root = Gio.ListStore.new(SidebarTreeNode)
+        root.append(node)
+        model = Gtk.TreeListModel.new(root, False, False, lambda item: item.children)
+        expander = Gtk.TreeExpander()
+        item = SimpleNamespace(get_item=lambda: model.get_row(0), get_child=lambda: expander)
+        self.host.bind_sidebar_tree_item(None, item)
+        self.addCleanup(self.host.unbind_sidebar_tree_item, None, item)
+        return expander.get_child()
+
     def test_empty_ungrouped_heading_has_drop_target(self) -> None:
-        expander = self.host.build_ungrouped_widget([], "")
-        label = expander.get_label_widget()
+        label = self.bind_row("section", "__ungrouped__", "no_group (0)", "__ungrouped__")
         controllers = label.observe_controllers()
 
         self.assertEqual(label.get_last_child().get_text(), "no_group (0)")
@@ -218,9 +232,7 @@ class ServerGroupWidgetTests(unittest.TestCase):
         ))
 
     def test_regular_group_heading_has_drop_target(self) -> None:
-        group = Group("group", "Group")
-        expander = self.host.build_group_widget(group, {}, {}, "")
-        label = expander.get_label_widget()
+        label = self.bind_row("group", "group", "Group", "group")
         controllers = label.observe_controllers()
 
         self.assertTrue(any(
@@ -238,11 +250,9 @@ class ServerGroupWidgetTests(unittest.TestCase):
         self.assertFalse(formats.contain_mime_type("text/plain"))
 
     def test_only_regular_server_rows_are_drag_sources(self) -> None:
-        server = Server("server", "Web", "web.example.test", "admin")
-
         for kind, expected in (("server", True), ("favorite", False), ("recent", False)):
             with self.subTest(kind=kind):
-                row = self.host.build_server_widget(server, row_kind=kind)
+                row = self.bind_row(kind, "server", "Web")
                 controllers = row.observe_controllers()
                 has_drag_source = any(
                     isinstance(controllers.get_item(index), Gtk.DragSource)

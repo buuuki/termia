@@ -17,139 +17,89 @@ TERMINAL_TAB_DND_MIME_TYPE = "application/x-termia-terminal-tab-id"
 
 
 class TabsMixin:
-    TAB_OVERFLOW_EPSILON = 1.0
+    def install_terminal_tab_drop_target(self) -> None:
+        target = Gtk.DropTargetAsync.new(
+            Gdk.ContentFormats.new([TERMINAL_TAB_DND_MIME_TYPE]), Gdk.DragAction.MOVE)
+        target.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        target.connect("accept", self.on_tab_bar_drop_accept)
+        target.connect("drag-motion", self.on_tab_bar_drop_motion)
+        target.connect("drag-leave", self.on_tab_bar_drop_leave)
+        target.connect("drop", self.on_tab_bar_drop)
+        self.terminal_notebook.add_controller(target)
 
     def add_session_to_main_view(self, session: TerminalSession) -> None:
-        self.terminal_stack.add_named(session.page, session.id)
-        self.session_tab_bar.append(session.tab_label)
+        self.terminal_notebook.append_page(session.page, session.tab_label)
+        notebook_page = self.terminal_notebook.get_page(session.page)
+        notebook_page.set_property("tab-expand", True)
+        notebook_page.set_property("tab-fill", True)
+        if not getattr(session.tab_label, "_termia_visibility_wired", False):
+            session.tab_label.connect("map", self.on_terminal_tab_visibility_changed)
+            session.tab_label.connect("unmap", self.on_terminal_tab_visibility_changed)
+            session.tab_label._termia_visibility_wired = True
+        # Keep Termia's private drag format; GTK owns selection and overflow.
+        self.terminal_notebook.set_tab_reorderable(session.page, False)
         self.update_session_tab_bar_visibility()
         self.set_active_session(session.id)
         self.sync_window_title_with_visible_session()
         log_event("tab.attached", session_id=session.id)
 
-    @staticmethod
-    def tab_reveal_scroll_value(
-        current: float,
-        page_size: float,
-        lower: float,
-        upper: float,
-        tab_start: float,
-        tab_end: float,
-    ) -> float:
-        maximum = max(lower, upper - page_size)
-        if tab_start < current:
-            return max(lower, tab_start)
-        if tab_end > current + page_size:
-            return min(maximum, tab_end - page_size)
-        return min(maximum, max(lower, current))
+    def visible_terminal_page(self) -> Gtk.Widget | None:
+        return self.terminal_notebook.get_nth_page(self.terminal_notebook.get_current_page())
 
-    @classmethod
-    def tab_strip_has_overflow(
-        cls,
-        *,
-        page_size: float,
-        lower: float,
-        upper: float,
-    ) -> bool:
-        """Return whether the tab strip is wider than its viewport."""
-        return upper - lower > page_size + cls.TAB_OVERFLOW_EPSILON
+    def on_terminal_page_switched(self, _notebook, page, _position) -> None:
+        # switch-page runs before GTK updates current-page. Defer focus until
+        # the change finishes and reject a page removed in the meantime.
+        def focus_page() -> bool:
+            if getattr(self, "shutdown_in_progress", False) or self.visible_terminal_page() is not page:
+                return GLib.SOURCE_REMOVE
+            for session in self.session_registry.sessions():
+                if session.page is page and session.detached_window is None:
+                    session.terminal.grab_focus()
+                    break
+            self.rebuild_tab_overflow_popover()
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(focus_page)
+
+    def on_terminal_page_reordered(self, *_args) -> None:
+        self.rebuild_tab_overflow_popover()
+
+    def on_terminal_tab_visibility_changed(self, *_args) -> None:
+        if getattr(self, "tab_overflow_visibility_id", None) is None:
+            self.tab_overflow_visibility_id = GLib.idle_add(self.update_tab_overflow_visibility)
+
+    def update_tab_overflow_visibility(self) -> bool:
+        self.tab_overflow_visibility_id = None
+        if self.terminal_notebook.get_mapped():
+            sessions = self.visible_sessions_in_tab_order()
+            self.tab_overflow_button.set_visible(
+                len(sessions) > 1 and any(not item.tab_label.get_mapped() for item in sessions))
+        return GLib.SOURCE_REMOVE
 
     def visible_sessions_in_tab_order(self) -> list[TerminalSession]:
-        sessions_by_label = {
-            session.tab_label: session
+        sessions_by_page = {
+            session.page: session
             for session in self.session_registry.sessions()
             if session.detached_window is None
         }
         ordered: list[TerminalSession] = []
-        child = self.session_tab_bar.get_first_child()
-        while child is not None:
-            session = sessions_by_label.get(child)
+        for position in range(self.terminal_notebook.get_n_pages()):
+            session = sessions_by_page.get(self.terminal_notebook.get_nth_page(position))
             if session is not None:
                 ordered.append(session)
-            child = child.get_next_sibling()
         return ordered
 
     def set_active_session(self, session_id: str) -> None:
         session = self.session_registry.get(session_id)
         if session is None or session.detached_window is not None:
             return
-        self.terminal_stack.set_visible_child(session.page)
-        self.update_session_tab_states()
-        self.schedule_active_tab_reveal()
+        position = self.terminal_notebook.page_num(session.page)
+        if position < 0:
+            return
+        self.terminal_notebook.set_current_page(position)
+        self.rebuild_tab_overflow_popover()
         session.terminal.grab_focus()
         log_event("tab.selected", session_id=session.id)
-
-    def update_session_tab_states(self) -> None:
-        visible_page = self.terminal_stack.get_visible_child()
-        for session in self.session_registry.sessions():
-            session.tab_label.remove_css_class("active")
-            if visible_page is session.page and session.detached_window is None:
-                session.tab_label.add_css_class("active")
-        self.rebuild_tab_overflow_popover()
-
-    def schedule_active_tab_reveal(self) -> None:
-        pending_id = getattr(self, "active_tab_reveal_id", None)
-        if pending_id is not None:
-            GLib.source_remove(pending_id)
-        self.active_tab_reveal_id = GLib.idle_add(self.reveal_active_tab)
-
-    def reveal_active_tab(self) -> bool:
-        self.active_tab_reveal_id = None
-        visible_page = self.terminal_stack.get_visible_child()
-        active_session = next(
-            (
-                session
-                for session in self.visible_sessions_in_tab_order()
-                if session.page is visible_page
-            ),
-            None,
-        )
-        if active_session is None:
-            return GLib.SOURCE_REMOVE
-        ok, bounds = active_session.tab_label.compute_bounds(self.session_tab_bar)
-        if not ok:
-            return GLib.SOURCE_REMOVE
-        adjustment = self.session_tab_scroller.get_hadjustment()
-        adjustment.set_value(
-            self.tab_reveal_scroll_value(
-                adjustment.get_value(),
-                adjustment.get_page_size(),
-                adjustment.get_lower(),
-                adjustment.get_upper(),
-                bounds.get_x(),
-                bounds.get_x() + bounds.get_width(),
-            )
-        )
-        return GLib.SOURCE_REMOVE
-
-    def on_tab_scroll_adjustment_changed(
-        self,
-        adjustment: Gtk.Adjustment,
-        *_args: object,
-    ) -> None:
-        self.schedule_active_tab_reveal()
-        self.schedule_tab_overflow_visibility()
-
-    def schedule_tab_overflow_visibility(self) -> None:
-        pending_id = getattr(self, "tab_overflow_visibility_id", None)
-        if pending_id is not None:
-            GLib.source_remove(pending_id)
-        self.tab_overflow_visibility_id = GLib.idle_add(self.update_tab_overflow_visibility)
-
-    def update_tab_overflow_visibility(self) -> bool:
-        self.tab_overflow_visibility_id = None
-        if not self.session_tab_controls.get_visible():
-            self.tab_overflow_button.set_visible(False)
-            return GLib.SOURCE_REMOVE
-        adjustment = self.session_tab_scroller.get_hadjustment()
-        self.tab_overflow_button.set_visible(
-            self.tab_strip_has_overflow(
-                page_size=adjustment.get_page_size(),
-                lower=adjustment.get_lower(),
-                upper=adjustment.get_upper(),
-            )
-        )
-        return GLib.SOURCE_REMOVE
 
     def rebuild_tab_overflow_popover(self) -> None:
         if not hasattr(self, "tab_overflow_button"):
@@ -158,7 +108,7 @@ class TabsMixin:
         popover.add_css_class("termia-menu-popover")
         menu = Gio.Menu()
         group = Gio.SimpleActionGroup()
-        visible_page = self.terminal_stack.get_visible_child()
+        visible_page = self.visible_terminal_page()
         selected_id = ""
         for session in self.visible_sessions_in_tab_order():
             display_title = self.session_tab_display_title(session)
@@ -226,23 +176,17 @@ class TabsMixin:
 
     def remove_session_from_main_view(self, session: TerminalSession) -> None:
         if session.detached_window is None:
-            parent = session.tab_label.get_parent()
-            if parent is self.session_tab_bar:
-                self.session_tab_bar.remove(session.tab_label)
-            try:
-                self.terminal_stack.remove(session.page)
-            except Exception:
-                pass
-        self.update_session_tab_states()
+            position = self.terminal_notebook.page_num(session.page)
+            if position >= 0:
+                self.terminal_notebook.remove_page(position)
         self.update_session_tab_bar_visibility()
 
     def update_session_tab_bar_visibility(self) -> None:
-        visible_sessions = [session for session in self.session_registry.sessions() if session.detached_window is None]
-        has_multiple_tabs = len(visible_sessions) > 1
-        self.session_tab_controls.set_visible(has_multiple_tabs)
-        self.tab_overflow_button.set_visible(False)
-        if has_multiple_tabs:
-            self.schedule_tab_overflow_visibility()
+        has_multiple_tabs = self.terminal_notebook.get_n_pages() > 1
+        self.terminal_notebook.set_show_tabs(has_multiple_tabs)
+        if not has_multiple_tabs:
+            self.tab_overflow_button.set_visible(False)
+        self.on_terminal_tab_visibility_changed()
         self.rebuild_tab_overflow_popover()
 
     def sync_window_title_with_visible_session(self) -> None:
@@ -283,13 +227,11 @@ class TabsMixin:
             if isinstance(label, Gtk.Label):
                 label.set_label(title)
         self.rebuild_tab_overflow_popover()
-        self.schedule_active_tab_reveal()
-        self.schedule_tab_overflow_visibility()
 
     def build_tab_label(self, title: str, session_id: str, page: Gtk.Widget) -> Gtk.Widget:
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         box.add_css_class("termia-tab-label")
-        box.set_hexpand(False)
+        box.set_hexpand(True)
         box.set_size_request(118, -1)
         box.set_can_target(True)
         box.set_margin_start(0)
@@ -307,6 +249,7 @@ class TabsMixin:
         label.set_margin_end(4)
         close_button = Gtk.Button(icon_name="window-close-symbolic")
         close_button.add_css_class("termia-tab-close")
+        close_button.set_valign(Gtk.Align.CENTER)
         close_button.set_has_frame(False)
         close_button.set_tooltip_text(self.t("close_tab"))
         close_button.connect("clicked", self.on_request_close_tab, session_id, page)
@@ -364,6 +307,14 @@ class TabsMixin:
         session = self.session_registry.get(session_id)
         if session is None or session.detached_window is not None:
             return None
+        if isinstance(_tab, Gtk.Widget):
+            outer = _tab.get_parent()
+            if outer is not None and outer.get_css_name() == "tab":
+                valid, bounds = outer.compute_bounds(_tab)
+                if valid:
+                    _x -= bounds.get_x()
+                    _y -= bounds.get_y()
+        self.tab_drag_hotspot = (session_id, int(_x), int(_y))
         return Gdk.ContentProvider.new_for_bytes(
             TERMINAL_TAB_DND_MIME_TYPE, GLib.Bytes.new(session_id.encode("utf-8"))
         )
@@ -378,9 +329,43 @@ class TabsMixin:
         self.set_active_session(session_id)
         self.tab_drag_session_id = session_id
         self.tab_drag = _drag
+        self.pending_tab_reorder = None
         self.pending_tab_drop = None
+        # Keep the floating tab's selection tint separate from its source.
+        preview = self.build_tab_drag_preview(tab)
+        hotspot = getattr(self, "tab_drag_hotspot", None)
+        if hotspot is not None and hotspot[0] == session_id:
+            x, y = hotspot[1:]
+        else:
+            x, y = tab.get_width() // 2, tab.get_height() // 2
+        Gtk.DragIcon.get_for_drag(_drag).set_child(preview)
+        _drag.set_hotspot(x, y)
         tab.add_css_class("dragging")
-        source.set_icon(Gtk.WidgetPaintable.new(tab), tab.get_allocated_width() // 2, tab.get_allocated_height() // 2)
+
+    def build_tab_drag_preview(self, tab: Gtk.Widget) -> Gtk.Widget:
+        preview = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        preview.add_css_class("termia-tab-drag-preview")
+        outer = tab.get_parent()
+        if outer is None or outer.get_css_name() != "tab":
+            outer = tab
+        valid, bounds = outer.compute_bounds(tab)
+        if valid:
+            preview.set_size_request(round(bounds.get_width()), round(bounds.get_height()))
+        else:
+            preview.set_size_request(tab.get_width(), tab.get_height())
+        title = Gtk.Label(label=tab.get_first_child().get_label())
+        title.add_css_class("termia-tab-title")
+        title.set_hexpand(True)
+        title.set_single_line_mode(True)
+        title.set_ellipsize(Pango.EllipsizeMode.END)
+        title.set_margin_start(20)
+        title.set_margin_end(4)
+        close_icon = Gtk.Image.new_from_icon_name("window-close-symbolic")
+        close_icon.set_margin_start(4)
+        close_icon.set_margin_end(20)
+        preview.append(title)
+        preview.append(close_icon)
+        return preview
 
     def on_tab_drag_end(
         self,
@@ -394,6 +379,8 @@ class TabsMixin:
             session.tab_label.remove_css_class("dragging")
         self.tab_drag_session_id = None
         self.tab_drag = None
+        self.tab_drag_hotspot = None
+        self.pending_tab_reorder = None
 
     def on_tab_bar_drop_accept(self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop) -> bool:
         session = self.session_registry.get(getattr(self, "tab_drag_session_id", None))
@@ -405,14 +392,48 @@ class TabsMixin:
             and drop.get_formats().contain_mime_type(TERMINAL_TAB_DND_MIME_TYPE)
         )
 
-    def on_tab_bar_drop_motion(self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, _y: float) -> Gdk.DragAction:
-        if not self.on_tab_bar_drop_accept(target, drop):
+    def tab_drop_is_in_header(self, x: float, y: float) -> bool:
+        for session in self.visible_sessions_in_tab_order():
+            label = session.tab_label
+            if not label.get_mapped():
+                continue
+            valid, bounds = label.compute_bounds(self.terminal_notebook)
+            if valid and bounds.get_y() <= y < bounds.get_y() + bounds.get_height():
+                return 0 <= x < self.terminal_notebook.get_width()
+        return False
+
+    def on_tab_bar_drop_motion(self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, y: float) -> Gdk.DragAction:
+        if not self.on_tab_bar_drop_accept(target, drop) or not self.tab_drop_is_in_header(x, y):
+            self.pending_tab_reorder = None
             return Gdk.DragAction(0)
-        self.reorder_dragged_tab_at_bar_x(target, x)
+        # Reordering here changes GTK's own tab enter/leave path while its
+        # hover-switch timer is being dispatched. Coalesce movement after the
+        # native event and revalidate the originating drag before touching pages.
+        self.pending_tab_reorder = (target, drop, x, self.session_registry.get(self.tab_drag_session_id))
+        if getattr(self, "pending_tab_reorder_id", None) is None:
+            self.pending_tab_reorder_id = GLib.idle_add(self.apply_pending_tab_reorder)
         return Gdk.DragAction.MOVE
 
-    def on_tab_bar_drop(self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, _y: float) -> bool:
-        if not self.on_tab_bar_drop_accept(target, drop):
+    def apply_pending_tab_reorder(self) -> bool:
+        self.pending_tab_reorder_id = None
+        pending = getattr(self, "pending_tab_reorder", None)
+        self.pending_tab_reorder = None
+        if pending is not None:
+            target, drop, x, session = pending
+            if (
+                session is not None and self.tab_drag_session_id == session.id
+                and self.session_registry.get(session.id) is session
+                and self.on_tab_bar_drop_accept(target, drop)
+            ):
+                self.reorder_dragged_tab_at_bar_x(target, x, session.id)
+        return GLib.SOURCE_REMOVE
+
+    def on_tab_bar_drop_leave(self, *_args) -> None:
+        self.pending_tab_reorder = None
+
+    def on_tab_bar_drop(self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, y: float) -> bool:
+        self.pending_tab_reorder = None
+        if not self.on_tab_bar_drop_accept(target, drop) or not self.tab_drop_is_in_header(x, y):
             return False
         token = object()
         self.pending_tab_drop = token
@@ -484,30 +505,29 @@ class TabsMixin:
         except ValueError:
             return
 
-        previous_sibling = dragged.tab_label.get_prev_sibling()
+        destination = dragged_index
         for index, session in enumerate(sessions):
-            if session.id == dragged_session_id:
+            if session.id == dragged_session_id or not session.tab_label.get_mapped():
                 continue
             width = session.tab_label.get_allocated_width()
             ok, start = session.tab_label.compute_point(
-                self.session_tab_bar, Graphene.Point().init(0, 0)
+                self.terminal_notebook, Graphene.Point().init(0, 0)
             )
             if not ok or pointer_x < start.x or pointer_x > start.x + width:
                 continue
 
             if index < dragged_index:
                 threshold = start.x + width * 0.8
-                previous_sibling = session.tab_label.get_prev_sibling() if pointer_x < threshold else session.tab_label
+                destination = index if pointer_x < threshold else index + 1
             else:
                 threshold = start.x + width * 0.2
-                previous_sibling = session.tab_label if pointer_x > threshold else session.tab_label.get_prev_sibling()
+                destination = index if pointer_x > threshold else index - 1
             break
 
-        if dragged.tab_label.get_prev_sibling() is previous_sibling:
+        if dragged_index == destination:
             return
-        self.session_tab_bar.reorder_child_after(dragged.tab_label, previous_sibling)
-        self.update_session_tab_states()
-        self.schedule_active_tab_reveal()
+        self.terminal_notebook.reorder_child(dragged.page, destination)
+        self.rebuild_tab_overflow_popover()
 
     def on_tab_right_click(
         self,

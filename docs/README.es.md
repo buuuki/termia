@@ -15,6 +15,14 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Trabajar con varias pestañas, ventanas independientes y paneles de terminal
   divididos que pueden conectarse de forma independiente a distintos servidores
   SSH o terminales locales.
+- Acceder a las pestañas de terminal que no caben mediante las flechas de GTK
+  o la lista de pestañas. Navegar por el árbol de conexiones con el teclado y
+  desplegar grupos; arrastrar servidores entre grupos o a Sin grupo.
+- La pestaña de terminal activa tiene el fondo resaltado, sin línea azul;
+  al pasar el ratón por una pestaña inactiva, el resaltado es más suave.
+- La selección del sidebar resalta el icono y el nombre con esquinas ligeramente
+  redondeadas. En un terminal separado, Volver a acoplar a la ventana principal
+  está justo debajo de la opción de barra de estado del menú contextual del terminal.
 - Guardar diseños de división por servidor SSH o perfil de terminal local para reabrir un espacio de trabajo preparado.
 - Guardar espacios de trabajo con varias pestañas y, si se activa la opción
   correspondiente, restaurar la sesión anterior al iniciar. La restauración

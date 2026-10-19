@@ -15,6 +15,14 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Treballar amb diverses pestanyes, finestres independents i panells de terminal
   dividits que es poden connectar independentment a diferents servidors SSH o
   terminals locals.
+- Accedir a les pestanyes de terminal que no hi caben amb les fletxes de GTK
+  o la llista de pestanyes. Navegar per l'arbre de connexions amb el teclat i
+  desplegar grups; arrossegar servidors entre grups o a Sense grup.
+- La pestanya de terminal activa té el fons ressaltat, sense línia blava;
+  en passar el ratolí per una pestanya inactiva, el ressaltat és més suau.
+- La selecció de la barra lateral ressalta la icona i el nom amb cantonades
+  lleugerament arrodonides. En un terminal separat, Tornar a acoblar a la finestra
+  principal és just sota l'opció de barra d'estat del menú contextual del terminal.
 - Desar dissenys de divisió per servidor SSH o perfil de terminal local per reobrir un espai de treball preparat.
 - Desar espais de treball amb diverses pestanyes i, si s'activa l'opció
   corresponent, restaurar la sessió anterior en iniciar. La restauració està
