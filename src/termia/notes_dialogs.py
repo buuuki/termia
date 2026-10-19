@@ -87,7 +87,11 @@ class NotesDialogs:
         self.window: Gtk.Window | None = None
         self.export_protection_window: Gtk.Window | None = None
         self.notes_context_popover: Gtk.Popover | None = None
+        self._note_context_menu: Gtk.PopoverMenu | None = None
+        self._note_context_menu_target = None
         self.category_context_popover: Gtk.Popover | None = None
+        self._category_context_menu: Gtk.PopoverMenu | None = None
+        self._category_context_menu_target = None
         self.tab_context_popover: Gtk.Popover | None = None
         self._note_tab_menu: Gtk.PopoverMenu | None = None
         self._note_tab_menu_target = None
@@ -138,14 +142,16 @@ class NotesDialogs:
             GLib.idle_add(self.focus_active_editor)
 
     def focus_active_editor(self) -> bool:
-        tab_menu = getattr(self, "tab_context_popover", None)
+        menus = (getattr(self, "tab_context_popover", None),
+                 getattr(self, "notes_context_popover", None),
+                 getattr(self, "category_context_popover", None))
         if (
             self.window is not None
             and self.window.get_visible()
             and self.window.is_active()
             and self.active_editor_tab_key is not None
             and self.text_view.get_editable()
-            and not (tab_menu is not None and tab_menu.get_visible())
+            and not any(menu is not None and menu.get_visible() for menu in menus)
         ):
             self.text_view.grab_focus()
         return GLib.SOURCE_REMOVE
@@ -1405,10 +1411,10 @@ class NotesDialogs:
         self.refresh_list(self.selected_note_id)
 
     def on_category_context_pressed(
-        self, gesture: Gtk.GestureClick, _presses: int, _x: float, _y: float,
+        self, gesture: Gtk.GestureClick, _presses: int, x: float, y: float,
         category: str, button: Gtk.Button, server_id: str | None = None,
     ) -> None:
-        self.show_category_context_menu(category, button, server_id)
+        self.show_category_context_menu(category, button, server_id, (x, y))
         gesture.set_state(Gtk.EventSequenceState.CLAIMED)
 
     def on_category_context_key_pressed(
@@ -1425,36 +1431,80 @@ class NotesDialogs:
 
     def show_category_context_menu(
         self, category: str, button: Gtk.Button, server_id: str | None = None,
+        position: tuple[float, float] | None = None,
     ) -> None:
         if not self.store.has_note_category(category, server_id):
             return
+        valid, point = button.compute_point(
+            self.window.get_child(), Graphene.Point().init(
+                *(position if position is not None else
+                  (button.get_width() / 2, button.get_height() / 2)),
+            ),
+        )
+        if not valid:
+            return
         self.close_category_context_menu()
-        popover = Gtk.Popover()
-        actions = self.build_notes_context_menu(popover)
-        popover.set_position(Gtk.PositionType.BOTTOM)
-        popover.connect("closed", self.on_category_context_menu_closed)
+        popover = getattr(self, "_category_context_menu", None)
+        if popover is None:
+            popover = self.build_category_context_menu()
+            self._category_context_menu = popover
+        model = Gio.Menu()
         for action, label_key in (
             ("rename", "notes_category_rename"),
             ("duplicate", "notes_category_duplicate"),
             ("delete", "notes_category_delete"),
         ):
-            self.append_notes_context_menu_item(
-                actions,
-                self.translate(label_key),
-                lambda selected_action=action, name=category, scope=server_id:
-                    self.on_category_context_action(selected_action, name, scope),
-                enabled=not self.store.read_only and not self.store.encryption_locked,
+            model.append(self.translate(label_key), f"note-category.{action}")
+            self._category_context_actions[action].set_enabled(
+                not self.store.read_only and not self.store.encryption_locked,
             )
-        popover.set_child(actions)
-        popover.set_parent(button)
+        popover.set_menu_model(model)
+        self._category_context_menu_target = (category, server_id, self.window)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(point.x), int(point.y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
         self.category_context_popover = popover
         popover.popup()
+
+    def build_category_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        self._category_context_actions = {}
+
+        def activate_action(_action, _parameter, name) -> None:
+            target = self._category_context_menu_target
+            self._category_context_menu_target = None
+            if target is not None:
+                category, server_id, window = target
+                if self.window is window:
+                    self.on_category_context_action(name, category, server_id)
+
+        for name in ("rename", "duplicate", "delete"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", activate_action, name)
+            actions.add_action(action)
+            self._category_context_actions[name] = action
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.insert_action_group("note-category", actions)
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_category_context_menu_closed)
+        # Category buttons are replaced when the tree is rebuilt.
+        popover.set_parent(self.window.get_child())
+        return popover
 
     def on_category_context_menu_closed(self, popover: Gtk.Popover) -> None:
         if self.category_context_popover is popover:
             self.category_context_popover = None
-        if popover.get_parent() is not None:
-            popover.unparent()
+        target = self._category_context_menu_target
+
+        def clear_target() -> bool:
+            if self._category_context_menu_target is target:
+                self._category_context_menu_target = None
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(clear_target)
 
     def close_category_context_menu(self) -> None:
         popover = getattr(self, "category_context_popover", None)
@@ -1462,17 +1512,39 @@ class NotesDialogs:
             return
         self.category_context_popover = None
         popover.popdown()
-        if popover.get_parent() is not None:
+
+    def dispose_category_context_menu(self) -> None:
+        self.close_category_context_menu()
+        self._category_context_menu_target = None
+        popover = getattr(self, "_category_context_menu", None)
+        if popover is not None:
+            popover.insert_action_group("note-category", None)
             popover.unparent()
+            self._category_context_menu = None
+            self._category_context_actions = {}
 
     def on_category_context_action(
         self, action: str, category: str, server_id: str | None = None,
     ) -> None:
+        window = self.window
         self.close_category_context_menu()
-        if action in ("rename", "duplicate"):
-            GLib.idle_add(self.prompt_category_edit, action, category, server_id)
-        elif action == "delete":
-            GLib.idle_add(self.confirm_delete_category, category, server_id)
+
+        def dispatch_if_current() -> bool:
+            if (
+                self.window is not window or window is None
+                or not window.get_visible()
+                or self.notes_list_panel.get_root() is not window
+                or self.store.read_only or self.store.encryption_locked
+                or not self.store.has_note_category(category, server_id)
+            ):
+                return GLib.SOURCE_REMOVE
+            if action in ("rename", "duplicate"):
+                self.prompt_category_edit(action, category, server_id)
+            elif action == "delete":
+                self.confirm_delete_category(category, server_id)
+            return GLib.SOURCE_REMOVE
+
+        GLib.timeout_add(100, dispatch_if_current)
 
     def on_note_selected(self, _listbox: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
         if row is None:
@@ -1523,10 +1595,13 @@ class NotesDialogs:
             row = row.get_next_sibling()
 
     def on_note_context_pressed(
-        self, gesture: Gtk.GestureClick, _presses: int, _x: float, _y: float,
+        self, gesture: Gtk.GestureClick, _presses: int, x: float, y: float,
         row: Gtk.ListBoxRow,
     ) -> None:
         note_id = getattr(row, "note_id", None)
+        valid, point = row.compute_point(
+            self.window.get_child(), Graphene.Point().init(x, y),
+        )
         self.notes_list.select_row(row)
         if self.notes_list.get_selected_row() is not row:
             if not note_id or self.selected_note_id != note_id:
@@ -1543,15 +1618,28 @@ class NotesDialogs:
         if self.notes_list.get_selected_row() is not row:
             gesture.set_state(Gtk.EventSequenceState.CLAIMED)
             return
-        self.show_note_context_menu(row)
+        self.show_note_context_menu(row, point if valid else None)
         gesture.set_state(Gtk.EventSequenceState.CLAIMED)
 
-    def show_note_context_menu(self, row: Gtk.ListBoxRow) -> None:
+    def show_note_context_menu(
+        self, row: Gtk.ListBoxRow, point: Graphene.Point | None = None,
+    ) -> None:
+        note = self.find_note(getattr(row, "note_id", None))
+        if note is None:
+            return
+        if point is None:
+            valid, point = row.compute_point(
+                self.window.get_child(),
+                Graphene.Point().init(row.get_width() / 2, row.get_height() / 2),
+            )
+            if not valid:
+                return
         self.close_note_context_menu()
-        popover = Gtk.Popover()
-        actions = self.build_notes_context_menu(popover)
-        popover.set_position(Gtk.PositionType.BOTTOM)
-        popover.connect("closed", self.on_note_context_menu_closed)
+        popover = getattr(self, "_note_context_menu", None)
+        if popover is None:
+            popover = self.build_note_context_menu()
+            self._note_context_menu = popover
+        model = Gio.Menu()
         for action, label_key in (
             ("edit", "notes_edit"),
             ("rename", "notes_rename"),
@@ -1559,26 +1647,60 @@ class NotesDialogs:
             ("properties", "notes_properties"),
             ("delete", "notes_delete"),
         ):
-            self.append_notes_context_menu_item(
-                actions,
-                self.translate(label_key),
-                lambda selected_action=action, note_id=row.note_id:
-                    self.on_note_context_action(selected_action, note_id),
-                enabled=(
-                    not self.store.encryption_locked
-                    and (action == "properties" or not self.store.read_only)
-                ),
+            model.append(self.translate(label_key), f"note-list.{action}")
+            self._note_context_actions[action].set_enabled(
+                not self.store.encryption_locked
+                and (action == "properties" or not self.store.read_only)
             )
-        popover.set_child(actions)
-        popover.set_parent(row)
+        popover.set_menu_model(model)
+        self._note_context_menu_target = (note.id, self.window)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(point.x), int(point.y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
         self.notes_context_popover = popover
         popover.popup()
+
+    def build_note_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        self._note_context_actions = {}
+
+        def activate_action(_action, _parameter, name) -> None:
+            target = self._note_context_menu_target
+            self._note_context_menu_target = None
+            if target is not None:
+                note_id, window = target
+                if self.window is window and self.find_note(note_id) is not None:
+                    self.on_note_context_action(name, note_id)
+
+        for name in ("edit", "rename", "clone", "properties", "delete"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", activate_action, name)
+            actions.add_action(action)
+            self._note_context_actions[name] = action
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.insert_action_group("note-list", actions)
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_note_context_menu_closed)
+        # Rows are rebuilt and the list panel can be hidden; the workspace
+        # content persists until the Notes window is shut down.
+        popover.set_parent(self.window.get_child())
+        return popover
 
     def on_note_context_menu_closed(self, popover: Gtk.Popover) -> None:
         if self.notes_context_popover is popover:
             self.notes_context_popover = None
-        if popover.get_parent() is not None:
-            popover.unparent()
+        target = self._note_context_menu_target
+
+        def clear_target() -> bool:
+            if self._note_context_menu_target is target:
+                self._note_context_menu_target = None
+            return GLib.SOURCE_REMOVE
+
+        # GTK closes native entries before dispatching their action.
+        GLib.idle_add(clear_target)
 
     def close_note_context_menu(self) -> None:
         popover = getattr(self, "notes_context_popover", None)
@@ -1586,23 +1708,47 @@ class NotesDialogs:
             return
         self.notes_context_popover = None
         popover.popdown()
-        if popover.get_parent() is not None:
+
+    def dispose_note_context_menu(self) -> None:
+        self.close_note_context_menu()
+        self._note_context_menu_target = None
+        popover = getattr(self, "_note_context_menu", None)
+        if popover is not None:
+            popover.insert_action_group("note-list", None)
             popover.unparent()
+            self._note_context_menu = None
+            self._note_context_actions = {}
 
     def on_note_context_action(self, action: str, note_id: str) -> None:
+        window = self.window
         self.close_note_context_menu()
-        if action == "edit":
+
+        def dispatch_if_current() -> bool:
+            # Saving replaces Note objects; the persisted ID is their identity.
             note = self.find_note(note_id)
-            if note is not None:
+            if (
+                note is None
+                or self.window is not window or window is None
+                or not window.get_visible()
+                or self.notes_list_panel.get_root() is not window
+                or self.store.encryption_locked
+                or (action != "properties" and self.store.read_only)
+            ):
+                return GLib.SOURCE_REMOVE
+            if action == "edit":
                 self.load_editor(note)
-        elif action == "clone":
-            self.clone_note(note_id)
-        elif action == "rename":
-            GLib.idle_add(self.prompt_note_rename, note_id)
-        elif action == "properties":
-            GLib.idle_add(self.show_note_properties, note_id)
-        elif action == "delete":
-            self.confirm_delete_note(note_id)
+            elif action == "clone":
+                self.clone_note(note_id)
+            elif action == "rename":
+                self.prompt_note_rename(note_id)
+            elif action == "properties":
+                self.show_note_properties(note_id)
+            elif action == "delete":
+                self.confirm_delete_note(note_id)
+            return GLib.SOURCE_REMOVE
+
+        # Release the popup's input grab before editing or opening a dialog.
+        GLib.timeout_add(100, dispatch_if_current)
 
     def note_property_rows(self, note: Note) -> list[tuple[str, str]]:
         server_name = self.translate("notes_standalone")
@@ -2982,8 +3128,8 @@ class NotesDialogs:
 
     def shutdown(self) -> None:
         self.cancel_autosave()
-        self.close_note_context_menu()
-        self.close_category_context_menu()
+        self.dispose_note_context_menu()
+        self.dispose_category_context_menu()
         self.dispose_note_tab_context_menu()
         if self.window is not None:
             self.window.destroy()

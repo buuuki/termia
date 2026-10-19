@@ -154,42 +154,55 @@ class TabsMixin:
     def rebuild_tab_overflow_popover(self) -> None:
         if not hasattr(self, "tab_overflow_button"):
             return
-        popover = Gtk.Popover()
+        popover = Gtk.PopoverMenu.new_from_model(None)
         popover.add_css_class("termia-menu-popover")
-        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        panel.add_css_class("termia-menu-panel")
-        panel.set_margin_top(6)
-        panel.set_margin_bottom(6)
-        panel.set_margin_start(6)
-        panel.set_margin_end(6)
+        menu = Gio.Menu()
+        group = Gio.SimpleActionGroup()
         visible_page = self.terminal_stack.get_visible_child()
+        selected_id = ""
         for session in self.visible_sessions_in_tab_order():
             display_title = self.session_tab_display_title(session)
-            button = Gtk.Button()
-            button.add_css_class("flat")
-            button.add_css_class("termia-tab-overflow-item")
-            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-            marker = Gtk.Image.new_from_icon_name("object-select-symbolic")
-            marker.set_visible(session.page is visible_page)
-            label = Gtk.Label(label=display_title)
-            label.set_xalign(0)
-            label.set_hexpand(True)
-            label.set_wrap(True)
-            label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-            label.set_max_width_chars(50)
-            label.set_tooltip_text(display_title)
-            row.append(marker)
-            row.append(label)
-            button.set_child(row)
-            button.connect("clicked", self.on_tab_overflow_item_clicked, session.id, popover)
-            panel.append(button)
-        scroller = Gtk.ScrolledWindow()
-        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scroller.set_max_content_height(360)
-        scroller.set_propagate_natural_height(True)
-        scroller.set_child(panel)
-        popover.set_child(scroller)
+            if session.page is visible_page:
+                selected_id = session.id
+            item = Gio.MenuItem.new(display_title, None)
+            item.set_action_and_target_value("tab-overflow.select", GLib.Variant("s", session.id))
+            menu.append_item(item)
+        select = Gio.SimpleAction.new_stateful("select", GLib.VariantType.new("s"),
+                                              GLib.Variant("s", selected_id))
+
+        def activate(_action, parameter):
+            session_id = parameter.get_string()
+            popover.popdown()
+
+            def dispatch():
+                session = self.session_registry.get(session_id)
+                if session is not None and session.detached_window is None:
+                    self.set_active_session(session_id)
+                return GLib.SOURCE_REMOVE
+
+            GLib.idle_add(dispatch)
+
+        select.connect("activate", activate)
+        group.add_action(select)
+        popover.insert_action_group("tab-overflow", group)
+        popover.set_menu_model(menu)
+        self.configure_overflow_labels(popover, {self.session_tab_display_title(session)
+                                               for session in self.visible_sessions_in_tab_order()})
         self.tab_overflow_button.set_popover(popover)
+
+    @staticmethod
+    def configure_overflow_labels(widget: Gtk.Widget, titles: set[str]) -> None:
+        """Keep native menu labels readable for long session titles."""
+        if isinstance(widget, Gtk.Label) and widget.get_label() in titles:
+            widget.set_wrap(True)
+            widget.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            widget.set_max_width_chars(50)
+            widget.set_ellipsize(Pango.EllipsizeMode.NONE)
+            widget.set_tooltip_text(widget.get_label())
+        child = widget.get_first_child()
+        while child is not None:
+            TabsMixin.configure_overflow_labels(child, titles)
+            child = child.get_next_sibling()
 
     @staticmethod
     def session_tab_display_title(session: TerminalSession) -> str:

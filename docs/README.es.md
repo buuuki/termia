@@ -10,6 +10,8 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 ## Funciones
 
 - Ejecutar conexiones SSH y terminales locales en terminales VTE de GTK 4 integrados.
+- Usar menús contextuales estándar de GTK para terminales, conexiones, grupos,
+  perfiles locales, espacios de trabajo y notas, con navegación por teclado.
 - Trabajar con varias pestañas, ventanas independientes y paneles de terminal
   divididos que pueden conectarse de forma independiente a distintos servidores
   SSH o terminales locales.

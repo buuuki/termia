@@ -11,7 +11,8 @@ import gi
 gi.require_version("Gdk", "4.0")
 gi.require_version("Gio", "2.0")
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gdk, Gio, GLib, Gtk
+gi.require_version("Graphene", "1.0")
+from gi.repository import Gdk, Gio, GLib, Graphene, Gtk
 
 from .connection_utils import (
     find_group,
@@ -1066,7 +1067,12 @@ class SidebarMixin:
         scroll_values = self.get_sidebar_scroll_values()
         self.active_context_popover = None
         popover.popdown()
-        if popover.get_parent() is not None:
+        if (
+            popover is not getattr(self, "_server_context_menu", None)
+            and popover is not getattr(self, "_group_context_menu", None)
+            and popover is not getattr(self, "_saved_context_menu", None)
+            and popover.get_parent() is not None
+        ):
             popover.unparent()
         self.preserve_sidebar_scroll(*scroll_values)
 
@@ -1074,194 +1080,361 @@ class SidebarMixin:
         scroll_values = self.get_sidebar_scroll_values()
         if self.active_context_popover is popover:
             self.active_context_popover = None
-        if popover.get_parent() is not None:
+        target_attribute = None
+        if popover is getattr(self, "_server_context_menu", None):
+            target_attribute = "_server_context_menu_target"
+        elif popover is getattr(self, "_group_context_menu", None):
+            target_attribute = "_group_context_menu_target"
+        elif popover is getattr(self, "_saved_context_menu", None):
+            target_attribute = "_saved_context_menu_target"
+        if target_attribute is not None:
+            target = getattr(self, target_attribute)
+
+            def clear_target() -> bool:
+                if getattr(self, target_attribute) is target:
+                    setattr(self, target_attribute, None)
+                return GLib.SOURCE_REMOVE
+
+            # Native entries close their popup before activating the action.
+            GLib.idle_add(clear_target)
+        elif popover.get_parent() is not None:
             popover.unparent()
         self.preserve_sidebar_scroll(*scroll_values)
+
+    def show_server_context_menu(
+        self, server_id: str, parent: Gtk.Widget, x: float, y: float,
+    ) -> None:
+        server = find_server(self.store.data.servers, server_id)
+        if server is None or parent.get_root() is not self:
+            return
+        valid, point = parent.compute_point(self.get_child(), Graphene.Point().init(x, y))
+        if not valid:
+            return
+        self.close_active_context_menu()
+        popover = getattr(self, "_server_context_menu", None)
+        if popover is None:
+            popover = self.build_server_context_menu()
+            self._server_context_menu = popover
+        model = Gio.Menu()
+        writable = not self.store.read_only and not self.store.encryption_locked
+        for name, label, modifies in (
+            ("favorite", "remove_favorite" if server.favorite else "add_favorite", True),
+            ("connect", "connect", False),
+            ("notes", "notes_view_server", False),
+            ("edit", "edit_server", True),
+            ("clone", "clone_connection", True),
+            ("send-files", "send_files_to_server", False),
+            ("sftp", "sftp_browse", False),
+            ("delete", "delete_server", True),
+        ):
+            if name == "sftp" and self.sftp_tool is None:
+                continue
+            model.append(self.t(label), f"server-menu.{name}")
+            self._server_context_actions[name].set_enabled(
+                not self.store.encryption_locked and (not modifies or writable),
+            )
+        popover.set_menu_model(model)
+        self._server_context_menu_target = (server_id,)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(point.x), int(point.y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
+        self.active_context_popover = popover
+        popover.popup()
+        self.preserve_sidebar_scroll()
+
+    def build_server_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        self._server_context_actions = {}
+        self._server_context_menu_target = None
+
+        def activate_action(_action, _parameter, name) -> None:
+            target = self._server_context_menu_target
+            self._server_context_menu_target = None
+            if target is not None:
+                self.dispatch_server_context_action(name, target[0])
+
+        for name in ("favorite", "connect", "notes", "edit", "clone", "send-files", "sftp", "delete"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", activate_action, name)
+            actions.add_action(action)
+            self._server_context_actions[name] = action
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.set_position(Gtk.PositionType.RIGHT)
+        popover.insert_action_group("server-menu", actions)
+        popover.connect("closed", self.on_context_menu_closed)
+        # Sidebar rows are rebuilt by favorite, clone and delete actions.
+        popover.set_parent(self.get_child())
+        self.connect("destroy", lambda *_args: self.dispose_server_context_menu())
+        return popover
+
+    def dispose_server_context_menu(self) -> None:
+        popover = getattr(self, "_server_context_menu", None)
+        self._server_context_menu_target = None
+        if popover is not None:
+            if self.active_context_popover is popover:
+                self.active_context_popover = None
+            popover.popdown()
+            popover.insert_action_group("server-menu", None)
+            if popover.get_parent() is not None:
+                popover.unparent()
+            self._server_context_menu = None
+            self._server_context_actions = {}
+
+    def dispatch_server_context_action(self, name: str, server_id: str) -> None:
+        popover = self._server_context_menu
+        self.close_active_context_menu()
+
+        def dispatch_if_current() -> bool:
+            if (
+                not self.get_visible() or getattr(self, "shutdown_in_progress", False)
+                or self._server_context_menu is not popover
+                or self.store.encryption_locked
+                or find_server(self.store.data.servers, server_id) is None
+                or (name in {"favorite", "edit", "clone", "delete"} and self.store.read_only)
+            ):
+                return GLib.SOURCE_REMOVE
+            callbacks = {
+                "favorite": self.on_server_context_toggle_favorite,
+                "connect": self.on_server_context_connect,
+                "edit": self.on_server_context_edit,
+                "clone": self.on_server_context_clone,
+                "send-files": self.on_server_context_send_files,
+                "delete": self.on_server_context_delete,
+            }
+            if name == "notes":
+                self.notes_dialogs.show_for_server_after_popover(popover, server_id)
+            elif name == "sftp":
+                self.on_server_context_sftp(popover, server_id)
+            elif name in callbacks:
+                callbacks[name](None, popover, server_id)
+            return GLib.SOURCE_REMOVE
+
+        # Let GTK release the popup grab before callbacks present a window.
+        GLib.timeout_add(100, dispatch_if_current)
+
+    def show_group_context_menu(
+        self, group_id: str, parent: Gtk.Widget, x: float, y: float,
+    ) -> None:
+        if find_group(self.store.data.groups, group_id) is None or parent.get_root() is not self:
+            return
+        valid, point = parent.compute_point(self.get_child(), Graphene.Point().init(x, y))
+        if not valid:
+            return
+        self.close_active_context_menu()
+        popover = getattr(self, "_group_context_menu", None)
+        if popover is None:
+            popover = self.build_group_context_menu()
+            self._group_context_menu = popover
+        model = Gio.Menu()
+        for name, label in (
+            ("start", "start_group"), ("subgroup", "new_subgroup"),
+            ("edit", "edit_group"), ("delete", "delete_group"),
+        ):
+            model.append(self.t(label), f"group-menu.{name}")
+            self._group_context_actions[name].set_enabled(
+                not self.store.encryption_locked
+                and (name == "start" or not self.store.read_only),
+            )
+        popover.set_menu_model(model)
+        self._group_context_menu_target = (group_id,)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(point.x), int(point.y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
+        self.active_context_popover = popover
+        popover.popup()
+        self.preserve_sidebar_scroll()
+
+    def build_group_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        self._group_context_actions = {}
+        self._group_context_menu_target = None
+
+        def activate_action(_action, _parameter, name) -> None:
+            target = self._group_context_menu_target
+            self._group_context_menu_target = None
+            if target is not None:
+                self.dispatch_group_context_action(name, target[0])
+
+        for name in ("start", "subgroup", "edit", "delete"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", activate_action, name)
+            actions.add_action(action)
+            self._group_context_actions[name] = action
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.set_position(Gtk.PositionType.RIGHT)
+        popover.insert_action_group("group-menu", actions)
+        popover.connect("closed", self.on_context_menu_closed)
+        popover.set_parent(self.get_child())
+        self.connect("destroy", lambda *_args: self.dispose_group_context_menu())
+        return popover
+
+    def dispose_group_context_menu(self) -> None:
+        popover = getattr(self, "_group_context_menu", None)
+        self._group_context_menu_target = None
+        if popover is not None:
+            if self.active_context_popover is popover:
+                self.active_context_popover = None
+            popover.popdown()
+            popover.insert_action_group("group-menu", None)
+            if popover.get_parent() is not None:
+                popover.unparent()
+            self._group_context_menu = None
+            self._group_context_actions = {}
+
+    def dispatch_group_context_action(self, name: str, group_id: str) -> None:
+        popover = self._group_context_menu
+        self.close_active_context_menu()
+
+        def dispatch_if_current() -> bool:
+            if (
+                not self.get_visible() or getattr(self, "shutdown_in_progress", False)
+                or self._group_context_menu is not popover
+                or self.store.encryption_locked
+                or find_group(self.store.data.groups, group_id) is None
+                or (name != "start" and self.store.read_only)
+            ):
+                return GLib.SOURCE_REMOVE
+            callbacks = {
+                "start": self.on_group_context_start,
+                "subgroup": self.on_group_context_add_subgroup,
+                "edit": self.on_group_context_edit,
+                "delete": self.on_group_context_delete,
+            }
+            callback = callbacks.get(name)
+            if callback is not None:
+                callback(None, popover, group_id)
+            return GLib.SOURCE_REMOVE
+
+        GLib.timeout_add(100, dispatch_if_current)
 
     def show_row_context_menu(
         self, row: RowObject, parent: Gtk.Widget, x: float, y: float
     ) -> None:
         if row.kind == "group" and row.item_id == "":
             return
+        if row.kind in {"server", "favorite", "recent"}:
+            self.show_server_context_menu(row.item_id, parent, x, y)
+            return
+        if row.kind == "group":
+            self.show_group_context_menu(row.item_id, parent, x, y)
+            return
 
-        popover = Gtk.Popover()
-        popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
-        popover.set_parent(parent)
+        if row.kind not in {"local_terminal", "workspace"}:
+            return
+        find_item = find_local_terminal_profile if row.kind == "local_terminal" else find_workspace
+        items = self.store.data.local_terminals if row.kind == "local_terminal" else self.store.data.workspaces
+        if find_item(items, row.item_id) is None or parent.get_root() is not self:
+            return
+        valid, point = parent.compute_point(self.get_child(), Graphene.Point().init(x, y))
+        if not valid:
+            return
+        self.close_active_context_menu()
+        popover = getattr(self, "_saved_context_menu", None)
+        if popover is None:
+            popover = self.build_saved_context_menu()
+            self._saved_context_menu = popover
         pointing_rectangle = Gdk.Rectangle()
-        pointing_rectangle.x = int(x)
-        pointing_rectangle.y = int(y)
+        pointing_rectangle.x = int(point.x)
+        pointing_rectangle.y = int(point.y)
         pointing_rectangle.width = 1
         pointing_rectangle.height = 1
         popover.set_pointing_to(pointing_rectangle)
         popover.set_position(Gtk.PositionType.RIGHT)
-        popover.connect("closed", self.on_context_menu_closed)
         self.active_context_popover = popover
-        menu = Gtk.ListBox()
-        menu.add_css_class("termia-menu-panel")
-        menu.set_selection_mode(Gtk.SelectionMode.NONE)
-        menu.set_margin_top(6)
-        menu.set_margin_bottom(6)
-        menu.set_margin_start(6)
-        menu.set_margin_end(6)
-
-        if row.kind in {"server", "favorite", "recent"}:
-            server = find_server(self.store.data.servers, row.item_id)
-            if server is not None:
-                self.add_context_menu_item(
-                    menu,
-                    self.t("remove_favorite") if server.favorite else self.t("add_favorite"),
-                    lambda: self.on_server_context_toggle_favorite(None, popover, row.item_id),
-                    enabled=not self.store.read_only,
-                )
-            self.add_context_menu_item(
-                menu,
-                self.t("connect"),
-                lambda: self.on_server_context_connect(None, popover, row.item_id),
+        menu = Gio.Menu()
+        if row.kind == "local_terminal":
+            entries = (("open", "new_tab"), ("edit", "edit_local_terminal"),
+                       ("clone", "clone_connection"), ("delete", "delete_local_terminal"))
+        else:
+            entries = (("open", "open_workspace"), ("update", "update_workspace"),
+                       ("rename", "rename_workspace"), ("duplicate", "duplicate_workspace"),
+                       ("delete", "delete_workspace"))
+        for name, action in self._saved_context_actions.items():
+            action.set_enabled(
+                not self.store.encryption_locked and (name == "open" or not self.store.read_only),
             )
-            self.add_context_menu_item(
-                menu,
-                self.t("notes_view_server"),
-                lambda: self.notes_dialogs.show_for_server_after_popover(popover, row.item_id),
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("edit_server"),
-                lambda: self.on_server_context_edit(None, popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("clone_connection"),
-                lambda: self.on_server_context_clone(None, popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("send_files_to_server"),
-                lambda: self.on_server_context_send_files(None, popover, row.item_id),
-            )
-            if self.sftp_tool is not None:
-                self.add_context_menu_item(
-                    menu, self.t("sftp_browse"),
-                    lambda: self.on_server_context_sftp(popover, row.item_id),
-                )
-            self.add_context_menu_item(
-                menu,
-                self.t("delete_server"),
-                lambda: self.on_server_context_delete(None, popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-        elif row.kind == "local_terminal":
-            self.add_context_menu_item(
-                menu,
-                self.t("new_tab"),
-                lambda: self.on_local_terminal_context_open(popover, row.item_id),
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("edit_local_terminal"),
-                lambda: self.on_local_terminal_context_edit(popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("clone_connection"),
-                lambda: self.on_local_terminal_context_clone(popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("delete_local_terminal"),
-                lambda: self.on_local_terminal_context_delete(popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-        elif row.kind == "workspace":
-            self.add_context_menu_item(
-                menu,
-                self.t("open_workspace"),
-                lambda: self.on_workspace_context_open(popover, row.item_id),
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("update_workspace"),
-                lambda: self.on_workspace_context_update(popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("rename_workspace"),
-                lambda: self.on_workspace_context_rename(popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("duplicate_workspace"),
-                lambda: self.on_workspace_context_duplicate(popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("delete_workspace"),
-                lambda: self.on_workspace_context_delete(popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-        elif row.kind == "group":
-            self.add_context_menu_item(
-                menu,
-                self.t("start_group"),
-                lambda: self.on_group_context_start(None, popover, row.item_id),
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("new_subgroup"),
-                lambda: self.on_group_context_add_subgroup(None, popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("edit_group"),
-                lambda: self.on_group_context_edit(None, popover, row.item_id),
-                enabled=not self.store.read_only,
-            )
-            self.add_context_menu_item(
-                menu,
-                self.t("delete_group"),
-                lambda: self.on_group_context_delete(None, popover, row.item_id),
-                destructive=True,
-                enabled=not self.store.read_only,
-            )
-
-        popover.set_child(menu)
+        for name, label in entries:
+            menu.append(self.t(label), f"saved-menu.{name}")
+        popover.set_menu_model(menu)
+        self._saved_context_menu_target = (row.kind, row.item_id)
         popover.popup()
         self.preserve_sidebar_scroll()
 
-    def add_context_menu_item(
-        self,
-        menu: Gtk.ListBox,
-        label_text: str,
-        callback: Any,
-        destructive: bool = False,
-        enabled: bool = True,
-    ) -> None:
-        row = Gtk.ListBoxRow()
-        label = Gtk.Label(label=label_text)
-        label.set_xalign(0)
-        label.set_margin_top(8)
-        label.set_margin_bottom(8)
-        label.set_margin_start(12)
-        label.set_margin_end(36)
-        if destructive:
-            label.add_css_class("error")
-        row.set_child(label)
-        row.set_sensitive(enabled)
+    def build_saved_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        self._saved_context_actions = {}
+        self._saved_context_menu_target = None
 
-        if enabled:
-            click = Gtk.GestureClick.new()
-            click.set_button(1)
-            click.connect("released", lambda *_args: callback())
-            row.add_controller(click)
-        menu.append(row)
+        def activate_action(_action, _parameter, name) -> None:
+            target = self._saved_context_menu_target
+            self._saved_context_menu_target = None
+            if target is not None:
+                self.dispatch_saved_context_action(name, *target)
+
+        for name in ("open", "edit", "clone", "delete", "update", "rename", "duplicate"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", activate_action, name)
+            actions.add_action(action)
+            self._saved_context_actions[name] = action
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.insert_action_group("saved-menu", actions)
+        popover.set_parent(self.get_child())
+        popover.connect("closed", self.on_context_menu_closed)
+        self.connect("destroy", lambda *_args: self.dispose_saved_context_menu())
+        return popover
+
+    def dispose_saved_context_menu(self) -> None:
+        popover = getattr(self, "_saved_context_menu", None)
+        self._saved_context_menu_target = None
+        if popover is not None:
+            if self.active_context_popover is popover:
+                self.active_context_popover = None
+            popover.popdown()
+            popover.insert_action_group("saved-menu", None)
+            if popover.get_parent() is not None:
+                popover.unparent()
+            self._saved_context_menu = None
+            self._saved_context_actions = {}
+
+    def dispatch_saved_context_action(self, name: str, kind: str, item_id: str) -> None:
+        popover = self._saved_context_menu
+        self.close_active_context_menu()
+
+        def dispatch_if_current() -> bool:
+            local = kind == "local_terminal"
+            find_item = find_local_terminal_profile if local else find_workspace
+            items = self.store.data.local_terminals if local else self.store.data.workspaces
+            if (
+                not self.get_visible() or getattr(self, "shutdown_in_progress", False)
+                or self._saved_context_menu is not popover
+                or self.store.encryption_locked
+                or (name != "open" and self.store.read_only)
+                or find_item(items, item_id) is None
+            ):
+                return GLib.SOURCE_REMOVE
+            callbacks = {
+                "open": self.on_local_terminal_context_open if local else self.on_workspace_context_open,
+                "delete": self.on_local_terminal_context_delete if local else self.on_workspace_context_delete,
+            }
+            if local:
+                callbacks.update(edit=self.on_local_terminal_context_edit, clone=self.on_local_terminal_context_clone)
+            else:
+                callbacks.update(update=self.on_workspace_context_update, rename=self.on_workspace_context_rename,
+                                 duplicate=self.on_workspace_context_duplicate)
+            callback = callbacks.get(name)
+            if callback is not None:
+                callback(popover, item_id)
+            return GLib.SOURCE_REMOVE
+
+        GLib.timeout_add(100, dispatch_if_current)
 
     def on_local_terminal_context_open(self, popover: Gtk.Popover, profile_id: str) -> None:
         popover.popdown()
@@ -1481,15 +1654,6 @@ class SidebarMixin:
         self.toast_label.set_label(self.t("workspace_deleted").format(name=workspace_name))
         self.refresh_list()
         self.render_detail()
-
-    def add_context_menu_separator(self, menu: Gtk.ListBox) -> None:
-        row = Gtk.ListBoxRow()
-        row.set_activatable(False)
-        row.set_selectable(False)
-        separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        separator.add_css_class("termia-menu-separator")
-        row.set_child(separator)
-        menu.append(row)
 
     def render_detail(self) -> None:
         if self.selected is None:

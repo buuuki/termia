@@ -10,6 +10,71 @@ from termia.tab_lifecycle_actions import TabLifecycleActions
 from termia.tabs import Gdk, GLib, Gtk, TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
 
 
+class NativeOverflowMenuTests(unittest.TestCase):
+    def setUp(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        self.window = Gtk.Window()
+        self.button = Gtk.MenuButton(label="Tabs")
+        self.window.set_child(self.button)
+        self.window.present()
+        self.addCleanup(self.window.destroy)
+        self.host = TabsMixin()
+        self.host.tab_overflow_button = self.button
+        self.sessions = []
+        for index in range(40):
+            title = f"Session {index}: " + "long title " * 12
+            label = Gtk.Box()
+            label.append(Gtk.Label(label=title))
+            self.sessions.append(SimpleNamespace(id=str(index), title=title,
+                tab_label=label, page=Gtk.Box(), detached_window=None))
+        self.host.session_registry = SessionRegistry(self.sessions)
+        self.host.visible_sessions_in_tab_order = lambda: self.sessions
+        self.host.terminal_stack = SimpleNamespace(get_visible_child=lambda: self.sessions[1].page)
+        self.host.set_active_session = MagicMock()
+
+    def drain(self):
+        while GLib.MainContext.default().pending():
+            GLib.MainContext.default().iteration(False)
+
+    def test_all_long_titles_order_state_and_selection_are_preserved(self):
+        self.host.rebuild_tab_overflow_popover()
+        menu = self.button.get_popover()
+        self.assertIsInstance(menu, Gtk.PopoverMenu)
+        model = menu.get_menu_model()
+        self.assertEqual(model.get_n_items(), 40)
+        self.assertEqual([model.get_item_attribute_value(i, "label", None).unpack() for i in range(40)],
+                         [session.title for session in self.sessions])
+        labels = []
+        def collect(widget):
+            if isinstance(widget, Gtk.Label) and widget.get_label() in {session.title for session in self.sessions}:
+                labels.append(widget)
+            child = widget.get_first_child()
+            while child is not None:
+                collect(child)
+                child = child.get_next_sibling()
+        collect(menu)
+        self.assertEqual(len(labels), 40)
+        self.assertTrue(all(label.get_wrap() and label.get_max_width_chars() == 50 for label in labels))
+        selected = next(label for label in labels if label.get_label() == self.sessions[1].title)
+        self.assertTrue(selected.get_parent().get_property("active"))
+        menu.activate_action("tab-overflow.select", GLib.Variant("s", "39"))
+        self.drain()
+        self.host.set_active_session.assert_called_once_with("39")
+
+    def test_removed_or_detached_session_cannot_be_selected_from_stale_menu(self):
+        self.host.rebuild_tab_overflow_popover()
+        menu = self.button.get_popover()
+        menu.activate_action("tab-overflow.select", GLib.Variant("s", "2"))
+        self.sessions[2].detached_window = object()
+        self.drain()
+        self.host.set_active_session.assert_not_called()
+        menu.activate_action("tab-overflow.select", GLib.Variant("s", "3"))
+        self.host.session_registry.remove("3")
+        self.drain()
+        self.host.set_active_session.assert_not_called()
+
+
 class PrivateTabDragTests(unittest.TestCase):
     def setUp(self):
         self.host = TabsMixin()

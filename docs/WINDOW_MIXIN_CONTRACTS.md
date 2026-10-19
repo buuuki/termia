@@ -129,6 +129,9 @@ keybinding dialogs have comparatively small contracts.
 - Architectural note: this is both a renderer and a controller. Projection,
   selection/navigation, rendering, and context actions are separate
   responsibilities despite sharing one mixin.
+- Owns reusable native menus for servers, groups, local profiles and saved
+  workspaces. Each dispatch revalidates the captured object ID and permissions;
+  menu construction no longer supplies generic custom rows to other mixins.
 
 ### `ConnectionHistoryDialog`
 
@@ -163,7 +166,12 @@ keybinding dialogs have comparatively small contracts.
 
 - Reads: `store` and the explicitly composed `TerminalMenuActions` callback
   set.
-- Window services: translation and context-menu construction.
+- Window services: translation and the session registry for target validation.
+- Owns one reusable native context menu per owning window, including native
+  Split and Tab submenu models. Commands retain the clicked session and pane;
+  their lifetime and owning window are checked before deferred dispatch.
+  A shared pointer-leave controller closes the nested child and refreshes the
+  root menu so its outside-click dismissal and terminal input remain active.
 - Cross-mixin dependencies: none for action dispatch; session splitting and
   disconnection, file transfer, tab operations, terminal copy/paste,
   preferences, status visibility, and statistics are supplied as callbacks.

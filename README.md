@@ -13,6 +13,8 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 ## Features
 
 - Run SSH connections and local terminals in embedded GTK 4 VTE terminals.
+- Use standard GTK context menus for terminals, saved connections, groups,
+  local-terminal profiles, workspaces and notes, with keyboard navigation.
 - Work with multiple tabs, detachable windows, and terminal split panes that
   can connect independently to different SSH servers or local terminals.
 - Save split layouts per SSH server or local terminal profile to reopen a workspace ready to use.

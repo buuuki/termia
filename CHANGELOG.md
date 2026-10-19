@@ -4,11 +4,35 @@
 
 ### Changed
 
+- Use native GTK menus for local-terminal profiles, saved workspaces, terminal
+  actions and their Split/Tab submenus, and the tab overflow selector. Preserve
+  long titles, scoped dispatch, optional actions and submenu leave-to-close
+  behavior; retire the obsolete sidebar menu-row builder (`#360`).
+
 - Use standard GTK popover menus with native arrows for the main menu and
   notes import/export, retaining component-owned actions, optional statistics
   visibility, and write restrictions (`#358`).
 
 ### Fixed
+
+- Restore terminal input after leaving the native Split or Tab submenu and
+  dismissing the terminal context menu with an outside click (`#360`).
+
+- Use a standard GTK menu for groups and subgroups, preserving scoped start,
+  subgroup creation, editing and confirmed deletion, write restrictions and
+  popup lifetime across tree rebuilds (`#360`).
+
+- Use a standard GTK menu for servers, Favorites and Recent connections,
+  retaining scoped actions, optional SFTP visibility, write restrictions and
+  sidebar scrolling while rejecting stale targets (`#360`).
+
+- Use a standard, reusable GTK menu for note categories, retaining scoped
+  rename, duplicate and delete actions, keyboard access and write restrictions
+  across tree rebuilds (`#360`).
+
+- Use a standard, reusable GTK menu for saved-note list actions, preserving
+  note targets across row rebuilds and saves, click anchoring and storage
+  permissions (`#360`).
 
 - Use a standard GTK menu anchored to the right-click position on note tabs,
   preserving rename permissions, focus and popup lifetime around dialogs, and

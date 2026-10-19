@@ -18,7 +18,7 @@ from termia.config_io import (
 from termia.models import Note, NoteCategory
 from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories, note_category_move_allowed
 from termia.notes_dialogs import (
-    Gdk, Gtk, NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE, NOTE_CATEGORY_DND_MIME_TYPE,
+    Gdk, Graphene, Gtk, NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE, NOTE_CATEGORY_DND_MIME_TYPE,
     NoteEditorTab, NotesDialogs, format_note_timestamp,
 )
 from termia.notes_io import (
@@ -475,6 +475,14 @@ class NotesDomainTests(unittest.TestCase):
         dialog.tab_context_popover = None
         dialog.focus_active_editor()
         dialog.text_view.grab_focus.assert_called_once_with()
+        dialog.text_view.grab_focus.reset_mock()
+        dialog.notes_context_popover = SimpleNamespace(get_visible=lambda: True)
+        dialog.focus_active_editor()
+        dialog.text_view.grab_focus.assert_not_called()
+        dialog.notes_context_popover = None
+        dialog.category_context_popover = SimpleNamespace(get_visible=lambda: True)
+        dialog.focus_active_editor()
+        dialog.text_view.grab_focus.assert_not_called()
 
     def test_editor_saves_plain_text_without_rewriting_markdown_punctuation(self):
         content = "**bold **\n# literal café `code`"
@@ -899,6 +907,418 @@ class NoteTabContextMenuTests(unittest.TestCase):
         self.dialog.show_note_rename_dialog.assert_not_called()
 
 
+class CategoryContextMenuTests(unittest.TestCase):
+    def setUp(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        self.window = Gtk.Window()
+        self.host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.button = Gtk.Button(label="Ops")
+        self.button.set_size_request(260, 36)
+        self.panel.append(self.button)
+        self.host.append(self.panel)
+        self.window.set_child(self.host)
+        self.window.present()
+        self.dialog = NotesDialogs.__new__(NotesDialogs)
+        self.dialog.window = self.window
+        self.dialog.notes_list_panel = self.panel
+        self.dialog.category_context_popover = None
+        self.categories = {("Ops", None), ("Ops", "server-one")}
+        self.dialog.store = SimpleNamespace(
+            read_only=False, encryption_locked=False,
+            has_note_category=lambda name, server_id=None: (name, server_id) in self.categories,
+        )
+        self.labels = {"rename": "Rename category", "duplicate": "Duplicate category",
+                       "delete": "Delete category"}
+        self.dialog.translate = lambda key: self.labels[key.removeprefix("notes_category_")]
+        self.dialog.prompt_category_edit = MagicMock()
+        self.dialog.confirm_delete_category = MagicMock()
+        self.addCleanup(self.destroy_window)
+        self.drain_events()
+
+    drain_events = staticmethod(NoteTabContextMenuTests.drain_events)
+
+    def destroy_window(self):
+        self.dialog.dispose_category_context_menu()
+        self.drain_events()
+        self.window.destroy()
+
+    def entry(self, widget, name):
+        if isinstance(widget, Gtk.Label) and widget.get_label() == self.labels[name]:
+            return widget.get_parent()
+        child = widget.get_first_child()
+        while child is not None:
+            found = self.entry(child, name)
+            if found is not None:
+                return found
+            child = child.get_next_sibling()
+        return None
+
+    def open_menu(self, scope=None, position=None):
+        self.dialog.show_category_context_menu("Ops", self.button, scope, position)
+        menu = self.dialog.category_context_popover
+        self.assertIsInstance(menu, Gtk.PopoverMenu)
+        return menu
+
+    def test_pointer_anchor_keyboard_anchor_order_reuse_and_disposal(self):
+        gesture = MagicMock()
+        self.dialog.on_category_context_pressed(gesture, 1, 19, 10, "Ops", self.button)
+        gesture.set_state.assert_called_once_with(Gtk.EventSequenceState.CLAIMED)
+        menu = self.dialog.category_context_popover
+        _, point = self.button.compute_point(self.host, Graphene.Point().init(19, 10))
+        _, rect = menu.get_pointing_to()
+        self.assertEqual((rect.x, rect.y), (int(point.x), int(point.y)))
+        model = menu.get_menu_model()
+        self.assertEqual([model.get_item_attribute_value(i, "label", None).unpack()
+                          for i in range(model.get_n_items())], list(self.labels.values()))
+        menu.popdown()
+        self.drain_events()
+        self.assertTrue(self.dialog.on_category_context_key_pressed(
+            None, Gdk.KEY_F10, 0, Gdk.ModifierType.SHIFT_MASK,
+            "Ops", self.button, "server-one",
+        ))
+        self.assertIs(self.dialog.category_context_popover, menu)
+        _, point = self.button.compute_point(self.host, Graphene.Point().init(
+            self.button.get_width() / 2, self.button.get_height() / 2,
+        ))
+        _, rect = menu.get_pointing_to()
+        self.assertEqual((rect.x, rect.y), (int(point.x), int(point.y)))
+        self.dialog.dispose_category_context_menu()
+        self.assertIsNone(menu.get_parent())
+        self.assertIs(self.button.get_parent(), self.panel)
+
+    def test_native_entries_dispatch_each_action_in_its_scope_after_closing(self):
+        for scope in (None, "server-one"):
+            for action in self.labels:
+                with self.subTest(scope=scope, action=action):
+                    menu = self.open_menu(scope)
+                    self.entry(menu, action).emit("clicked")
+                    self.assertFalse(menu.get_visible())
+                    self.dialog.prompt_category_edit.assert_not_called()
+                    self.dialog.confirm_delete_category.assert_not_called()
+                    self.drain_events(wait_for_rename=True)
+                    if action == "delete":
+                        self.dialog.confirm_delete_category.assert_called_once_with("Ops", scope)
+                        self.dialog.prompt_category_edit.assert_not_called()
+                    else:
+                        self.dialog.prompt_category_edit.assert_called_once_with(action, "Ops", scope)
+                        self.dialog.confirm_delete_category.assert_not_called()
+                    self.dialog.prompt_category_edit.reset_mock()
+                    self.dialog.confirm_delete_category.reset_mock()
+
+    def test_permissions_disable_all_native_commands(self):
+        for read_only, locked in ((True, False), (False, True), (True, True)):
+            self.dialog.store.read_only = read_only
+            self.dialog.store.encryption_locked = locked
+            menu = self.open_menu()
+            for action in self.labels:
+                self.assertFalse(self.entry(menu, action).is_sensitive())
+                menu.activate_action(f"note-category.{action}", None)
+            menu.popdown()
+            self.drain_events(wait_for_rename=True)
+        self.dialog.prompt_category_edit.assert_not_called()
+        self.dialog.confirm_delete_category.assert_not_called()
+
+    def test_pending_action_rejects_stale_scope_window_panel_and_permissions(self):
+        for reason in ("missing", "readonly", "locked", "hidden", "window", "panel"):
+            with self.subTest(reason=reason):
+                menu = self.open_menu("server-one")
+                self.entry(menu, "delete").emit("clicked")
+                if reason == "missing":
+                    self.categories.remove(("Ops", "server-one"))
+                elif reason == "readonly":
+                    self.dialog.store.read_only = True
+                elif reason == "locked":
+                    self.dialog.store.encryption_locked = True
+                elif reason == "hidden":
+                    self.window.set_visible(False)
+                elif reason == "window":
+                    self.dialog.window = None
+                else:
+                    self.host.remove(self.panel)
+                self.drain_events(wait_for_rename=True)
+                self.dialog.confirm_delete_category.assert_not_called()
+                self.categories.add(("Ops", "server-one"))
+                self.dialog.store.read_only = self.dialog.store.encryption_locked = False
+                self.dialog.window = self.window
+                self.window.present()
+                if self.panel.get_parent() is None:
+                    self.host.append(self.panel)
+                self.drain_events()
+
+    def test_tree_rebuild_preserves_menu_target_and_new_open_survives_old_close(self):
+        menu = self.open_menu("server-one")
+        self.panel.remove(self.button)
+        self.button = Gtk.Button(label="Ops rebuilt")
+        self.panel.append(self.button)
+        self.entry(menu, "rename").emit("clicked")
+        self.drain_events(wait_for_rename=True)
+        self.dialog.prompt_category_edit.assert_called_once_with("rename", "Ops", "server-one")
+        self.dialog.prompt_category_edit.reset_mock()
+        self.open_menu("server-one")
+        menu.popdown()
+        self.open_menu(None)
+        self.drain_events()
+        self.entry(menu, "duplicate").emit("clicked")
+        self.drain_events(wait_for_rename=True)
+        self.dialog.prompt_category_edit.assert_called_once_with("duplicate", "Ops", None)
+
+    def test_missing_category_does_not_open_menu(self):
+        self.dialog.show_category_context_menu("missing", self.button)
+        self.dialog.show_category_context_menu("Ops", self.button, "other-server")
+        self.assertIsNone(self.dialog.category_context_popover)
+
+    def test_real_category_dialog_cancel_keeps_popup_reusable(self):
+        self.dialog.prompt_category_edit = NotesDialogs.prompt_category_edit.__get__(self.dialog)
+        self.dialog.ensure_writable = lambda: True
+        self.dialog.save_active_editor_if_valid = lambda: True
+        self.dialog.translate = lambda key: key
+        menu = self.open_menu()
+        menu.activate_action("note-category.rename", None)
+        self.drain_events(wait_for_rename=True)
+        dialogs = [window for window in Gtk.Window.list_toplevels()
+                   if isinstance(window, Gtk.Dialog) and window.get_transient_for() is self.window]
+        self.assertEqual(len(dialogs), 1)
+        dialogs[0].response(Gtk.ResponseType.CANCEL)
+        self.drain_events()
+        self.assertIs(self.open_menu("server-one"), menu)
+
+
+class NoteListContextMenuTests(unittest.TestCase):
+    def setUp(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        self.window = Gtk.Window()
+        self.window.set_default_size(320, 240)
+        self.panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.panel.append(Gtk.Label(label="Notes list"))
+        self.notes_list = Gtk.ListBox()
+        self.panel.append(self.notes_list)
+        self.host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.host.append(Gtk.Label(label="Notes workspace"))
+        self.host.append(self.panel)
+        self.window.set_child(self.host)
+        self.window.present()
+        self.addCleanup(self.destroy_window)
+        self.notes = [Note("one", "First note", "First body"),
+                      Note("two", "Second note", "Second body", "Ops", "server-one")]
+        self.original_notes = tuple(self.notes)
+        self.rows = [self.make_row(note) for note in self.notes]
+        self.dialog = NotesDialogs.__new__(NotesDialogs)
+        self.dialog.window = self.window
+        self.dialog.notes_list_panel = self.panel
+        self.dialog.notes_list = self.notes_list
+        self.dialog.notes_context_popover = None
+        self.dialog.selected_note_id = "one"
+        self.dialog.active_editor_tab_key = "one"
+        self.dialog.store = SimpleNamespace(
+            read_only=False, encryption_locked=False, data=SimpleNamespace(notes=self.notes),
+        )
+        self.labels = {"edit": "Edit", "rename": "Rename", "clone": "Clone",
+                       "properties": "Properties", "delete": "Delete"}
+        self.dialog.translate = lambda key: self.labels[key.removeprefix("notes_")]
+        self.commands = {name: MagicMock() for name in self.labels}
+        for name, method in (("edit", "load_editor"), ("rename", "prompt_note_rename"),
+                             ("clone", "clone_note"), ("properties", "show_note_properties"),
+                             ("delete", "confirm_delete_note")):
+            setattr(self.dialog, method, self.commands[name])
+        self.drain_events()
+
+    drain_events = staticmethod(NoteTabContextMenuTests.drain_events)
+
+    def make_row(self, note):
+        row = Gtk.ListBoxRow()
+        row.note_id = note.id
+        row.set_child(Gtk.Label(label=note.title))
+        row.set_size_request(280, 36)
+        self.notes_list.append(row)
+        return row
+
+    def destroy_window(self):
+        self.dialog.dispose_note_context_menu()
+        self.drain_events()
+        self.window.destroy()
+
+    def open_menu(self, row=None, x=20, y=12):
+        gesture = MagicMock()
+        self.dialog.on_note_context_pressed(gesture, 1, x, y, row or self.rows[1])
+        gesture.set_state.assert_called_once_with(Gtk.EventSequenceState.CLAIMED)
+        menu = self.dialog.notes_context_popover
+        self.assertIsInstance(menu, Gtk.PopoverMenu)
+        return menu
+
+    def entry(self, widget, name):
+        if isinstance(widget, Gtk.Label) and widget.get_label() == self.labels[name]:
+            return widget.get_parent()
+        child = widget.get_first_child()
+        while child is not None:
+            found = self.entry(child, name)
+            if found is not None:
+                return found
+            child = child.get_next_sibling()
+        return None
+
+    def reset_commands(self):
+        for command in self.commands.values():
+            command.reset_mock()
+
+    def test_click_anchor_order_reuse_and_disposal(self):
+        previous = None
+        for x in (8, 180):
+            with self.subTest(x=x):
+                valid, point = self.rows[1].compute_point(self.host, Graphene.Point().init(x, 12))
+                self.assertTrue(valid)
+                menu = self.open_menu(x=x)
+                if previous is not None:
+                    self.assertIs(menu, previous)
+                model = menu.get_menu_model()
+                self.assertEqual([model.get_item_attribute_value(i, "label", None).unpack()
+                                  for i in range(model.get_n_items())], list(self.labels.values()))
+                valid, rect = menu.get_pointing_to()
+                self.assertTrue(valid)
+                self.assertEqual((rect.x, rect.y, rect.width, rect.height),
+                                 (int(point.x), int(point.y), 1, 1))
+                menu.popdown()
+                self.drain_events()
+                self.assertIsNone(self.dialog.notes_context_popover)
+                self.assertIs(menu.get_parent(), self.host)
+                previous = menu
+        self.dialog.dispose_note_context_menu()
+        self.assertIsNone(menu.get_parent())
+        self.assertEqual(list(self.dialog.iter_note_rows()), self.rows)
+
+    def test_native_entries_defer_each_command_for_the_clicked_note(self):
+        for name, command in self.commands.items():
+            with self.subTest(action=name):
+                menu = self.open_menu()
+                self.entry(menu, name).emit("clicked")
+                self.assertFalse(menu.get_visible())
+                for other in self.commands.values():
+                    other.assert_not_called()
+                self.drain_events(wait_for_rename=True)
+                command.assert_called_once_with(self.notes[1] if name == "edit" else "two")
+                for other_name, other in self.commands.items():
+                    if other_name != name:
+                        other.assert_not_called()
+                self.assertEqual(self.dialog.active_editor_tab_key, "one")
+                self.assertEqual(self.notes[1].content, "Second body")
+                self.reset_commands()
+
+    def test_native_permissions_keep_only_properties_in_read_only_and_none_when_locked(self):
+        for read_only, locked in ((False, False), (True, False), (False, True), (True, True)):
+            for name, command in self.commands.items():
+                with self.subTest(read_only=read_only, locked=locked, action=name):
+                    self.dialog.store.read_only = read_only
+                    self.dialog.store.encryption_locked = locked
+                    menu = self.open_menu()
+                    enabled = not locked and (name == "properties" or not read_only)
+                    self.assertEqual(self.entry(menu, name).is_sensitive(), enabled)
+                    menu.activate_action(f"note-list.{name}", None)
+                    self.drain_events(wait_for_rename=enabled)
+                    if enabled:
+                        command.assert_called_once_with(self.notes[1] if name == "edit" else "two")
+                    else:
+                        for other in self.commands.values():
+                            other.assert_not_called()
+                    self.dialog.close_note_context_menu()
+                    self.drain_events()
+                    self.reset_commands()
+
+    def test_pending_delete_rechecks_target_window_panel_and_permissions(self):
+        for condition in ("deleted", "locked", "read-only", "hidden", "new-window", "panel-removed"):
+            with self.subTest(condition=condition):
+                menu = self.open_menu()
+                self.entry(menu, "delete").emit("clicked")
+                if condition == "deleted":
+                    self.notes.pop()
+                elif condition == "locked":
+                    self.dialog.store.encryption_locked = True
+                elif condition == "read-only":
+                    self.dialog.store.read_only = True
+                elif condition == "hidden":
+                    self.window.set_visible(False)
+                elif condition == "new-window":
+                    self.dialog.window = None
+                else:
+                    self.host.remove(self.panel)
+                self.drain_events(wait_for_rename=True)
+                self.commands["delete"].assert_not_called()
+                # Restore the same original identities for the next case.
+                self.notes[:] = self.original_notes
+                self.dialog.store.encryption_locked = self.dialog.store.read_only = False
+                self.dialog.window = self.window
+                if self.panel.get_parent() is None:
+                    self.host.append(self.panel)
+                self.window.present()
+
+    def test_regular_saves_before_and_after_activation_keep_the_persisted_note_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = ConnectionStore(
+                root / "connections.json", root / "settings.json", root / "statistics.json",
+                root / "lock", root / "history",
+            )
+            self.addCleanup(store.close)
+            note = store.add_note("Saved sample", "Original body", "", None)
+            self.dialog.store = store
+            row = self.make_row(note)
+            for timing in ("before-activation", "after-activation"):
+                with self.subTest(timing=timing):
+                    menu = self.open_menu(row)
+                    previous = self.dialog.find_note(note.id)
+                    if timing == "after-activation":
+                        self.entry(menu, "edit").emit("clicked")
+                    store.update_note(note.id, "Saved title", timing, "", None)
+                    updated = self.dialog.find_note(note.id)
+                    self.assertIsNot(updated, previous)
+                    if timing == "before-activation":
+                        self.entry(menu, "edit").emit("clicked")
+                    self.drain_events(wait_for_rename=True)
+                    self.commands["edit"].assert_called_once_with(updated)
+                    self.assertEqual(updated.content, timing)
+                    self.reset_commands()
+
+    def test_selection_can_rebuild_the_clicked_row_without_losing_target_or_anchor(self):
+        original = self.rows[1]
+        valid, point = original.compute_point(self.host, Graphene.Point().init(90, 12))
+        self.assertTrue(valid)
+        replacement = []
+
+        def rebuild(_list, row):
+            if row is original:
+                self.dialog.selected_note_id = "two"
+                self.notes_list.remove(original)
+                replacement.append(self.make_row(self.notes[1]))
+
+        self.notes_list.connect("row-selected", rebuild)
+        menu = self.open_menu(original, x=90)
+        self.assertIs(self.notes_list.get_selected_row(), replacement[0])
+        valid, rect = menu.get_pointing_to()
+        self.assertTrue(valid)
+        self.assertEqual((rect.x, rect.y), (int(point.x), int(point.y)))
+        self.entry(menu, "properties").emit("clicked")
+        self.drain_events(wait_for_rename=True)
+        self.commands["properties"].assert_called_once_with("two")
+
+    def test_reopening_retains_new_target_and_properties_allow_late_read_only(self):
+        old = self.open_menu()
+        new = self.open_menu(self.rows[0])
+        self.assertIs(old, new)
+        self.drain_events()
+        self.entry(new, "properties").emit("clicked")
+        self.dialog.store.read_only = True
+        self.drain_events(wait_for_rename=True)
+        self.commands["properties"].assert_called_once_with("one")
+
+    def test_missing_notes_and_draft_rows_do_not_open_a_menu(self):
+        for note_id in (None, "deleted"):
+            row = Gtk.ListBoxRow()
+            row.note_id = note_id
+            self.dialog.show_note_context_menu(row)
+            self.assertIsNone(self.dialog.notes_context_popover)
+
+
 class NotesDialogSignalTests(unittest.TestCase):
     def test_notes_window_title_reflects_server_scope(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -1011,46 +1431,6 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(gtk.EventControllerKey.new.call_count, 1)
         self.assertEqual(dialog.notes_list.append.call_count, 2)
 
-    def test_category_context_menu_has_three_translated_actions(self):
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(
-            read_only=False, encryption_locked=False,
-            data=SimpleNamespace(note_categories=[NoteCategory("Ops")]),
-            has_note_category=lambda name, server_id=None: name == "Ops" and server_id is None,
-        )
-        dialog.translate = lambda key: key
-        dialog.category_context_popover = None
-        button = MagicMock()
-        dialog.append_notes_context_menu_item = MagicMock()
-
-        with patch("termia.notes_dialogs.Gtk") as gtk:
-            dialog.show_category_context_menu("Ops", button)
-
-        self.assertEqual(
-            [call.args[1] for call in dialog.append_notes_context_menu_item.call_args_list],
-            ["notes_category_rename", "notes_category_duplicate", "notes_category_delete"],
-        )
-        gtk.Popover.return_value.set_parent.assert_called_once_with(button)
-        gtk.Popover.return_value.popup.assert_called_once()
-        for action in dialog.append_notes_context_menu_item.call_args_list:
-            self.assertTrue(action.kwargs["enabled"])
-
-    def test_note_context_menu_uses_list_actions(self):
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
-        dialog.translate = lambda key: key
-        dialog.close_note_context_menu = MagicMock()
-        dialog.append_notes_context_menu_item = MagicMock()
-        row = SimpleNamespace(note_id="note-id")
-
-        with patch("termia.notes_dialogs.Gtk") as gtk:
-            dialog.show_note_context_menu(row)
-
-        self.assertEqual(
-            [call.args[1] for call in dialog.append_notes_context_menu_item.call_args_list],
-            ["notes_edit", "notes_rename", "notes_clone", "notes_properties", "notes_delete"],
-        )
-
     def test_note_context_menu_rows_use_gtk_selection_states(self):
         menu = MagicMock()
 
@@ -1080,20 +1460,6 @@ class NotesDialogSignalTests(unittest.TestCase):
             None, Gdk.KEY_F10, 0, Gdk.ModifierType(0), "Ops", button,
         ))
         self.assertEqual(dialog.show_category_context_menu.call_count, 2)
-
-    def test_category_context_action_waits_until_popover_is_closed(self):
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.close_category_context_menu = MagicMock()
-        dialog.prompt_category_edit = MagicMock()
-        dialog.confirm_delete_category = MagicMock()
-
-        with patch("termia.notes_dialogs.GLib.idle_add") as idle_add:
-            dialog.on_category_context_action("rename", "Ops")
-            idle_add.assert_called_with(dialog.prompt_category_edit, "rename", "Ops", None)
-            dialog.on_category_context_action("delete", "Ops")
-            idle_add.assert_called_with(dialog.confirm_delete_category, "Ops", None)
-
-        self.assertEqual(dialog.close_category_context_menu.call_count, 2)
 
     def test_servers_tree_root_selects_server_scope_without_a_picker(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
