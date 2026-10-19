@@ -81,6 +81,8 @@ class TerminalMenusMixin:
         add(menu, "disconnect", "disconnect", lambda: actions.disconnect(popover, session, terminal))
         add(menu, "status", status_bar_action_label_key(pane.status_bar.get_visible()),
             lambda: actions.toggle_status_bar(popover, session, terminal))
+        if session.detached_window is not None:
+            add(menu, "reattach", "reattach_tab", lambda: actions.reattach_tab(popover, session))
         add(menu, "copy", "copy", lambda: actions.copy(popover, terminal),
             self.store.data.app.keybindings.get("copy", ""))
         add(menu, "paste", "paste", lambda: actions.paste(popover, terminal),
@@ -116,8 +118,6 @@ class TerminalMenusMixin:
             ("new", "new_tab", lambda: actions.new_tab(popover)),
         ):
             add(tab, name, label, callback)
-        if session.detached_window is not None:
-            add(tab, "reattach", "reattach_tab", lambda: actions.reattach_tab(popover, session))
         add(tab, "close", "close_tab", lambda: actions.close_tab(popover, session))
         section.append_submenu(self.t("tab"), tab)
         menu.append_section(None, section)

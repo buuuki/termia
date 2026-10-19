@@ -149,6 +149,12 @@ class NativeTerminalMenuTests(unittest.TestCase):
     def test_detached_menu_includes_reattach_and_server_actions_use_latest_server(self):
         self.session.detached_window = self.window
         menu = self.open_menu()
+        model = menu.get_menu_model()
+        self.assertEqual(self.labels(model)[:5],
+                         ["disconnect", "hide_session_status_bar", "reattach_tab", "copy", "paste"])
+        section = model.get_item_link(model.get_n_items() - 1, Gio.MENU_LINK_SECTION)
+        tab = section.get_item_link(1, Gio.MENU_LINK_SUBMENU)
+        self.assertNotIn("reattach_tab", self.labels(tab))
         menu.activate_action("terminal-menu.reattach", None)
         self.drain(wait=True)
         self.callbacks["reattach_tab"].assert_called_once_with(menu, self.session)

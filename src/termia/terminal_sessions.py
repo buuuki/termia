@@ -983,7 +983,7 @@ class TerminalSessionsMixin:
         sessions = self.visible_sessions_in_tab_order()
         if len(sessions) <= 1:
             return
-        visible = self.terminal_stack.get_visible_child()
+        visible = self.visible_terminal_page()
         current = 0
         for index, item in enumerate(sessions):
             if item.page is visible or item.id == session.id:

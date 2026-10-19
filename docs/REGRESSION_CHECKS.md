@@ -50,10 +50,50 @@ and proposed controls.
 - Reorder terminal and note tabs after these rejected drops, and move saved
   notes between categories and Uncategorized. Retain active selection, content,
   server associations, keyboard order, and read-only/locked-storage guards.
-- Connection and local terminal tabs must remain visibly and reliably reorderable with left-button drag in the custom tab bar.
+- Connection and local terminal tabs must remain visibly and reliably reorderable
+  with left-button private drag in the native `Gtk.Notebook`. Reject GTK's
+  built-in notebook drag format and foreign/private-format drags from other windows.
 - Left-clicking a tab title must select that session without stealing focus from the terminal after selection.
+- Moving the pointer over the active tab must leave its selected background
+  unchanged. An inactive tab must receive a softer, theme-derived hover on its
+  outer tab surface, without another hover background on the inner label.
+  Hovering an inactive terminal tab must not introduce a dark bottom line.
+  The active terminal tab must have no native blue underline; its highlighted
+  background is the selection indicator. Check focused/unfocused windows in
+  System, Light, and Dark appearance.
+- Terminal tabs must retain compact vertical spacing, readable titles and usable
+  close buttons, without a dark bottom border beneath the notebook header.
+- Tab close buttons must show a larger circular dark hover, without stretching
+  vertically. Drag previews must retain the grab point near either end of a tab,
+  preserve the full exterior tab width/height rather than shrinking to its inner
+  label, and retain unchanged reordering behavior. Adjacent tabs have 4 px spacing.
+  The floating preview must be readable with a translucent theme-selection tint;
+  use 25% theme-selection alpha and 72% preview opacity. The source left in the
+  bar must only dim to 72% opacity, without a blue tint. Tabs must
+  remain compact without vertical label or native-tab padding.
+- Attached tabs must share the available header width equally, shrinking as
+  more tabs are opened until the readable minimum requires GTK's overflow
+  arrows. Retain this layout after reordering, detaching, and reattaching.
+- In a detached terminal, Reattach to main window must appear in the first
+  context menu immediately below Show/Hide status bar, outside the Tab submenu.
+- The connections list background must match the surrounding sidebar in light
+  and dark appearance. Selection must highlight only the icon/title block with
+  slightly rounded corners and space before/after its content, not the whole
+  row. Check short/ellipsized long names and keyboard selection changes.
+- Private tab dragging must highlight the source tab without outlining or
+  illuminating the entire notebook or header as a drop target. Dropping over
+  terminal content must not reorder tabs or insert a private ID.
+- With at least twelve tabs overflowing a narrow window, drag one repeatedly
+  across the visible tabs, pause on the overflow arrows, leave the header and
+  return, then drop. Repeat in both directions: GTK must not abort with a
+  `gtk_notebook_tab_drop_enter` / `switch_page_timer` assertion. Queued motion
+  must not move a closed/detached session, continue after leaving the header,
+  or override a newer drag. Check the final order, selected session, and content.
 - Drag logic must keep tab order, Ctrl+PageUp/Ctrl+PageDown navigation, and close-next-focus behavior aligned with the visual tab order.
 - Right-click tab actions must keep working: duplicate, detach, and rename.
+- In a detached window, right-click inside the terminal, open the native Tab
+  submenu, and activate Reattach to main window. The command must be present
+  and return the same live session and all split panes to the main notebook.
 - The close button must only close the intended tab and must not make accidental closure too easy.
 - Closing a tab must focus the terminal in the next active tab when one exists.
 - Detached tabs must be restorable to the main window when their detached window closes.
@@ -254,6 +294,16 @@ and proposed controls.
   and confirm its key combination reaches the terminal instead.
 - After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. Keyboard navigation must scroll just enough to keep the selected item visible. These keys must still reach the VTE while a terminal has focus.
 - The selected group, subgroup, or server must use a single consistent sidebar selection highlight; selecting a new item must clear the previous highlight. Starting navigation from the server filter must focus the selected row, GTK expander focus must not create a second selector, and `Up` must never leave the list for the sidebar action buttons while an earlier visible row exists. GTK must automatically scroll the focused row into view, while terminal focus must keep sidebar navigation disabled.
+- In the native connections tree, use GTK disclosure keys (`Shift+Right`,
+  `Shift+Left`, `+`, and `-`) and pointer disclosure on nested groups. Collapsing
+  a parent must retain its children's expansion preferences. Search must reveal
+  matching descendants without changing expansion preferences; clearing it
+  must restore the previous state. Expand/collapse all must include hidden
+  descendants. Keep workspace, local, Recent, Favorites, and Ungrouped sections.
+- Scroll a large connection list until rows are recycled. Open server and group
+  context menus on a different selection and verify the clicked identity.
+  Rebuild/filter the tree during a pending private drag: stale row targets and
+  delayed menu openings must be rejected, including read-only/locked guards.
 - Dragging a saved server from its regular sidebar row onto a group, subgroup,
   or Ungrouped must change only its saved group assignment. Ungrouped remains
   visible as a drop target when empty. Reject invalid, unchanged, external,
@@ -705,8 +755,8 @@ and proposed controls.
 - Font size shortcuts must update existing open terminals.
 - LS color customization must continue to reduce overly bright directory/file colors.
 - Tab labels should show short and medium names without unnecessary truncation, and provide a tooltip with the full title.
-- The terminal tab strip must keep tabs at a readable width, show its compact
-  horizontal scrollbar only when tabs overflow, and never widen the window or
+- The terminal notebook must keep tabs at a readable width, show native GTK
+  overflow arrows instead of a horizontal scrollbar, and never widen the window or
   collapse/change the selected server-sidebar width.
 - The tab overflow control must list every attached tab in visual order, show
   full titles, indicate the active tab, and support keyboard activation.
@@ -861,8 +911,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Open Termia and confirm a local terminal opens if the preference is enabled.
 - Open two local terminals and reorder their tabs with the mouse.
 - At 1280, 1366, 1920, and 2560 logical pixels, open enough tabs to overflow
-  with the sidebar visible and hidden. Confirm the compact horizontal scrollbar
-  appears only while needed, the window and sidebar widths remain unchanged,
+  with the sidebar visible and hidden. Confirm the native notebook arrows
+  appear only while needed, the window and sidebar widths remain unchanged,
   and every tab is reachable from the strip and overflow control.
 - With exactly two tabs whose titles fit, confirm the overflow selector is
   hidden. Reduce the window width or lengthen a tab title until the strip

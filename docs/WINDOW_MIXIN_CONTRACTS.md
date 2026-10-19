@@ -55,14 +55,15 @@ the mixins:
   `sidebar_drag_server_id`, and `active_context_popover`.
 - Main UI widgets: `body`, `sidebar`, `search_entry`, `server_list`,
   `server_scroller`, `summary_label`, `title_label`, `info_label`,
-  `session_tab_bar`, and `terminal_stack`.
+  `terminal_notebook` (a native `Gtk.Notebook`).
 - Header widgets: sidebar, new-tab, menu, read-only, add, expand, and collapse
   controls.
 
 Some mixins add transient state after construction:
 
-- `SidebarMixin`: `group_expanders`, `sidebar_projection`,
-  `visible_tree_rows`, `scroll_restore_id`, `sidebar_visible`, and
+- `SidebarMixin`: `sidebar_tree_root`, `sidebar_tree_model`,
+  `sidebar_tree_selection`, `sidebar_projection`, `visible_tree_rows`,
+  `sidebar_model_token`, `scroll_restore_id`, `sidebar_visible`, and
   `sidebar_width`.
 - `TabsMixin`: `tab_drag_session_id`.
 - `TerminalSessionsMixin`: updates `run_connections` and `stats_save_id`.
@@ -129,6 +130,13 @@ keybinding dialogs have comparatively small contracts.
 - Architectural note: this is both a renderer and a controller. Projection,
   selection/navigation, rendering, and context actions are separate
   responsibilities despite sharing one mixin.
+- GTK's tree model, expanders, list view, and single selection own disclosure,
+  selection, scrolling, and in-view navigation. Termia provides projected row
+  identities, filtering and expansion preferences, existing action dispatch,
+  and private server-to-group drags. Recycled rows and deferred callbacks are
+  checked against the current model generation. GTK model reads and expansion
+  persistence wait until expansion notifications finish; disappearing child
+  rows must not overwrite their saved expansion preferences.
 - Owns reusable native menus for servers, groups, local profiles and saved
   workspaces. Each dispatch revalidates the captured object ID and permissions;
   menu construction no longer supplies generic custom rows to other mixins.
@@ -181,7 +189,7 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TerminalSessionsMixin`
 
-- Reads: `store`, `session_registry`, `terminal_stack`, `toast_label`, terminal-menu
+- Reads: `store`, `session_registry`, `toast_label`, terminal-menu
   callbacks, and terminal-font resolution.
 - Writes: `TerminalSession` objects held in `session_registry`. Each session owns
   explicit `TerminalPane` state for every VTE pane, including its connection
@@ -203,9 +211,26 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TabsMixin`
 
-- Reads: `store`, `session_registry`, `tab_lifecycle_actions`,
-  `session_tab_bar`, and `terminal_stack`.
+- Reads: `store`, `session_registry`, `tab_lifecycle_actions`, and
+  `terminal_notebook`.
 - Writes: drag state and the GTK placement of session pages and labels.
+- `visible_terminal_page()` resolves the native notebook's current page for
+  terminal keyboard dispatch and focus cycling. Notebook order is the source
+  for keyboard tab order, workspace snapshots, and close-neighbor selection.
+  GTK owns page selection, tab visibility, and overflow arrows. Termia retains
+  its private tab drag format and reorders notebook pages with it; built-in
+  notebook dragging is disabled. Private drag motion is coalesced and deferred
+  until GTK finishes the current event, avoiding reentrant native tab
+  enter/leave and hover-switch timer handling. Queued moves revalidate the
+  originating drag and session, cancel on leaving the target or ending the
+  drag, and use only mapped tab geometry. A child-process pointer test covers
+  repeated drag moves with overflow without letting a GTK abort terminate the
+  entire suite. Page-switch focus callbacks revalidate page
+  identity and session ownership before focusing a terminal.
+- The floating `Gtk.DragIcon` preview is a separate GTK composition measured
+  from the full native tab bounds, with the grab point translated from the inner
+  label. Its appearance is independent of the dimmed source label; these visual
+  effects do not change reorder thresholds or terminal-process ownership.
 - Cross-mixin dependencies: terminal context actions and shared dialog helpers.
   Terminal creation, confirmation, disconnection, and split-process cleanup
   are supplied explicitly through `TabLifecycleActions`.
