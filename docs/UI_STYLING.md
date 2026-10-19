@@ -74,7 +74,7 @@ component's interaction uses a standard GTK control. See the
 | Main and context menus | GTK | `styles.py`, menu classes |
 | Dialogs | GTK | Individual dialog builders |
 | Header and session tabs | GTK tokens with Termia spacing rules | `styles.py` |
-| Note tabs and editor | Native `Gtk.Notebook` tabs with scoped rounded corners and a transparent header, saved Notes appearance preferences, native GtkSourceView line numbers, and Termia editor borders and spacing | `notes_dialogs.py`, `styles.py`, `assets/termia-notes.xml`, and settings |
+| Note tabs and editor | Native `Gtk.Notebook` tabs with scoped rounded corners, a transparent header, a theme-derived selected-tab background, and GTK's blue underline; saved Notes appearance preferences, native GtkSourceView line numbers, and Termia editor borders and spacing | `notes_dialogs.py`, `styles.py`, `assets/termia-notes.xml`, and settings |
 | Sidebar selection and category drop target | GTK selection tokens | `styles.py` |
 | Split panes | Terminal preferences | `styles.py` and terminal settings |
 | Required-field marker and hint | GTK label foreground and secondary text derived from `@theme_fg_color` | `connection_dialogs.py` and `styles.py` |
@@ -104,7 +104,8 @@ They describe the existing implementation, not a reusable window contract:
   `#001B33`; saved Notes appearance preferences can replace them.
 - `termia-notes-window` marks the window; no window-frame CSS rule currently
   targets that class. `termia-notes-notebook` keeps GTK's selected-tab and overflow
-  behavior, with a transparent header and rounded tab corners scoped in
+  behavior and blue selection underline, with a transparent header, rounded tab
+  corners, and a selected-tab background derived from `@theme_fg_color`, scoped in
   `src/termia/styles.py`. `termia-notes-editor` has scoped rules there. The
   `termia-notes-toolbar` and `termia-notes-list` rules are applied by the
   editor appearance provider in `notes_dialogs.py`. GTK owns ordinary button

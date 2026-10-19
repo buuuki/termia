@@ -294,9 +294,9 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   draft. Rows
   are compact and show further details, including a linked note's saved
   category, in the compact right-click Properties dialog. A single click selects
-  a note; a double click opens it in an editor tab. The active tab has a
-  thin, full-width blue underline, and the writing area has a distinct,
-  theme-aware background and border. Notes context menus and the Properties
+  a note; a double click opens it in an editor tab. The selected tab has a
+  theme-derived background highlight and retains GTK's blue underline. The
+  writing area has a distinct, theme-aware background and border. Notes context menus and the Properties
   window use the same theme-aware surface as Termia's main menu. The title bar's left-side controls hide
   the list and open the Import/Export menu.
   The header keeps the new-note button beside the list toggle, even when the

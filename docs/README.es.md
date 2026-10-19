@@ -294,9 +294,10 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   borrador activo en ese ámbito. La lista tiene búsqueda global
   y filas compactas; el diálogo compacto de Propiedades muestra, entre otros
   datos, la categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
-  la abre en una pestaña de edición. La pestaña activa tiene un subrayado azul
-  oscuro y fino de ancho completo. El área de escritura tiene un fondo y un borde
-  diferenciados que se adaptan al tema. Los menús contextuales de notas y
+  la abre en una pestaña de edición. La pestaña seleccionada tiene un fondo
+  resaltado que se adapta al tema y conserva la línea azul de GTK. El área de
+  escritura tiene un fondo y un borde diferenciados que se adaptan al tema.
+  Los menús contextuales de notas y
   Propiedades comparten la superficie y el estilo del menú principal de Termia.
   Los controles
   a la izquierda de la barra de título ocultan la lista y abren el menú de

@@ -295,9 +295,10 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   cerca global i files
   compactes; el diàleg compacte de Propietats mostra, entre altres dades, la
   categoria desada de cada nota. Un clic selecciona la nota i un doble clic l'obre en una
-  pestanya d'edició. La pestanya activa té un subratllat blau fosc i fi de
-  banda a banda. L'àrea d'escriptura té un fons i una vora diferenciats que
-  s'adapten al tema. Els menús contextuals de notes i Propietats comparteixen
+  pestanya d'edició. La pestanya seleccionada té un fons ressaltat que
+  s'adapta al tema i conserva la línia blava de GTK. L'àrea d'escriptura té un
+  fons i una vora diferenciats que s'adapten al tema. Els menús contextuals de
+  notes i Propietats comparteixen
   la superfície i l'estil del menú principal de Termia. Els controls a
   l'esquerra de la barra de títol amaguen la
   llista i obren el menú d'importació/exportació. El botó de nota nova es manté

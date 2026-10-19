@@ -5,9 +5,9 @@
 ### Changed
 
 - Use `Gtk.Notebook` for Notes editor tabs, including native selection,
-  reordering, and overflow with rounded tabs and a window-matched header while
-  keeping drafts, save guards, and tab actions
-  (`#360`).
+  reordering, and overflow with rounded tabs, a window-matched header, and a
+  theme-derived highlight alongside GTK's blue underline on the selected tab
+  while keeping drafts, save guards, and tab actions (`#360`).
 
 - Use GtkSourceView 5 for native Notes line numbers while preserving plain-text
   content, saved visibility, and editor colors; install its runtime dependency

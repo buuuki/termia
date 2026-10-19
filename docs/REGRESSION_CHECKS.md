@@ -504,7 +504,9 @@ and proposed controls.
   independently clickable.
 - Note editors must support multiple open tabs. New note titles are numbered
   within their scope (“New note”, “New note 2”, and so on). The active tab
-  must use the GTK notebook selection style. Tabs must be reorderable by
+  must have a theme-derived highlighted background and retain GTK's blue
+  selection underline; inactive tabs remain distinct and GTK keyboard focus
+  remains visible. Tabs must be reorderable by
   dragging without changing note content or saved associations. Right-click an
   open tab and a note in the sidebar; each menu must offer Rename, and renaming
   must persist while updating all open tabs for the same note. Opening a note

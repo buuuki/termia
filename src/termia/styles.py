@@ -49,6 +49,7 @@ def build_application_css(
         ".termia-notes-notebook, .termia-notes-notebook > header, "
         ".termia-notes-notebook > header > tabs { background: transparent; border: 0; box-shadow: none; } "
         ".termia-notes-notebook > header > tabs > tab { border-radius: 8px 8px 0 0; } "
+        ".termia-notes-notebook > header > tabs > tab:checked { background: alpha(@theme_fg_color, 0.13); } "
         ".termia-notes-editor { border: 1px solid @borders; border-radius: 8px; "
         f"background-color: {DEFAULT_NOTES_EDITOR_BACKGROUND}; }} "
         f".termia-notes-editor textview {{ color: {DEFAULT_NOTES_EDITOR_FOREGROUND}; "
