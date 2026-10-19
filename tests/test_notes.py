@@ -829,6 +829,8 @@ class NotesDomainTests(unittest.TestCase):
         dialog.update_editor_appearance.assert_called_once_with({"line_numbers": True})
 
     def test_notes_editor_uses_plain_text_source_buffer_and_native_numbers(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GtkSourceView integration requires a graphical display")
         view = create_notes_text_view(True)
         self.assertIsInstance(view, GtkSource.View)
         self.assertTrue(view.get_show_line_numbers())
@@ -1655,7 +1657,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         boxes = []
         buttons = [MagicMock() for _ in range(5)]
 
-        with patch("termia.notes_dialogs.Gtk") as gtk:
+        with patch("termia.notes_dialogs.Gtk") as gtk, patch(
+            "termia.notes_dialogs.create_notes_text_view"
+        ):
             gtk.Button.side_effect = buttons
 
             def make_box(**_kwargs):

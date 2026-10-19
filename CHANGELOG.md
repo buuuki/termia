@@ -32,6 +32,9 @@
 
 ### Fixed
 
+- Keep Notes GTK tests safe in headless CI while retaining GtkSourceView
+  integration coverage on a private display (`#360`).
+
 - Keep Notes category rows alive until a left-button drag can start, restoring
   category moves into other groups in the native tree (`#360`).
 
