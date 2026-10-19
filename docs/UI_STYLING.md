@@ -75,6 +75,7 @@ component's interaction uses a standard GTK control. See the
 | Dialogs | GTK | Individual dialog builders |
 | Header and session tabs | GTK tokens with Termia spacing rules | `styles.py` |
 | Note tabs and editor | Native `Gtk.Notebook` tabs with scoped rounded corners, a transparent header, a theme-derived selected-tab background, and GTK's blue underline; saved Notes appearance preferences, native GtkSourceView line numbers, and Termia editor borders and spacing | `notes_dialogs.py`, `styles.py`, `assets/termia-notes.xml`, and settings |
+| Notes tree | GTK `ListView` selection and `TreeExpander` disclosure; Termia row spacing and scoped context/drop feedback | `notes_dialogs.py`, `styles.py` |
 | Sidebar selection and category drop target | GTK selection tokens | `styles.py` |
 | Split panes | Terminal preferences | `styles.py` and terminal settings |
 | Required-field marker and hint | GTK label foreground and secondary text derived from `@theme_fg_color` | `connection_dialogs.py` and `styles.py` |

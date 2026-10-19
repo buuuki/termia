@@ -390,10 +390,17 @@ and proposed controls.
 
 ### Notes
 
+- In the native Notes tree, use pointer and keyboard disclosure on personal,
+  server, and nested category rows. Select and open saved notes and drafts;
+  with one note open and selected, right-click a different note. Repeat across
+  Personal and server scopes, after scrolling and rebuilding the list. Right-click
+  a category too.
+  The menu must act on the visible target, and selection must follow GTK rows.
 - Drag a category into another in the same Personal/server scope, move its
   subtree to another parent, and drop it onto the scope header to return it
   to the root. Check indentation, drop highlighting, restart persistence,
-  unchanged notes and open editors. Reject self, descendant, cross-scope,
+  unchanged notes and open editors. Starting a drag must not first toggle or
+  rebuild the source category row. Reject self, descendant, cross-scope,
   external, encrypted-locked, and read-only drops without mutation. Category
   drags must offer only the private format, never insert names or IDs into text.
 - Rename a parent and check its children stay attached. Delete a group and

@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 import tempfile
 import time
 import unittest
@@ -19,7 +21,7 @@ from termia.models import Note, NoteCategory
 from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories, note_category_move_allowed
 from termia.notes_dialogs import (
     Gdk, Graphene, Gtk, GtkSource, NOTE_ROW_DND_MIME_TYPE,
-    NOTE_CATEGORY_DND_MIME_TYPE, NoteEditorTab, NotesDialogs,
+    NOTE_CATEGORY_DND_MIME_TYPE, NoteEditorTab, NotesDialogs, NotesTreeNode,
     create_notes_text_view, format_note_timestamp,
 )
 from termia.notes_io import (
@@ -226,6 +228,260 @@ class NoteHierarchyTests(unittest.TestCase):
             NoteCategory("Leaf", parent="Child"), NoteCategory("Other"),
             NoteCategory("Server only", "server"),
         ]
+
+    def test_native_tree_model_preserves_hierarchy_search_and_deep_groups(self):
+        note = normalize_note("id", "Needle", "Body", "Leaf")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(
+            note_categories=self.categories, servers=[],
+        ))
+        dialog.presenter = NotesPresenter(lambda: [note], lambda: self.categories, lambda: [])
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+        dialog.notes_list = object()
+        dialog.notes_tree_selection = Gtk.SingleSelection.new(None)
+        dialog.notes_tree_selection.set_autoselect(False)
+        dialog.editor_tabs = {}
+        dialog.selected_note_id = "id"
+        dialog.selected_draft_key = None
+        dialog.active_editor_tab_key = "id"
+        dialog.scope_mode = "personal"
+        dialog.server_filter_id = None
+        dialog.expanded_note_sections = {"personal"}
+        dialog.expanded_server_groups = set()
+        dialog.collapsed_note_categories = {(None, "Project")}
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.close_note_context_menu = dialog.close_category_context_menu = lambda: None
+        dialog.refresh_list()
+        visible = [dialog.notes_tree_model.get_row(i).get_item().title
+                   for i in range(dialog.notes_tree_model.get_n_items())]
+        self.assertIn("Project", visible)
+        self.assertNotIn("Needle", visible)
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "Needle")
+        dialog.selected_note_id = "id"
+        dialog.refresh_list()
+        visible = [dialog.notes_tree_model.get_row(i).get_item().title
+                   for i in range(dialog.notes_tree_model.get_n_items())]
+        self.assertEqual(visible, ["notes_personal_scope", "Project", "Child", "Leaf", "Needle", "notes_server_scope"])
+        self.assertEqual(dialog.notes_tree_selection.get_selected_item().get_item().note_id, "id")
+        self.categories[:] = [NoteCategory(str(index), parent=str(index - 1) if index else None)
+                              for index in range(1100)]
+        note.category = "1099"
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+        dialog.collapsed_note_categories.clear()
+        dialog.refresh_list()
+        self.assertEqual(dialog.notes_tree_model.get_n_items(), 1103)
+
+    def test_native_tree_rows_bind_and_recycle_controllers(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
+        dialog.on_note_tree_header_clicked = MagicMock()
+        root = Gio.ListStore.new(NotesTreeNode)
+        category = NotesTreeNode("category", "Folder", "folder-symbolic", 1, category="Folder")
+        category.children.append(NotesTreeNode("note", "Needle", note_id="id"))
+        root.append(category)
+        model = Gtk.TreeListModel.new(root, False, True, dialog.create_note_tree_children)
+        selection = Gtk.SingleSelection.new(model)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", dialog.setup_note_tree_item)
+        factory.connect("bind", dialog.bind_note_tree_item)
+        factory.connect("unbind", dialog.unbind_note_tree_item)
+        view = Gtk.ListView.new(selection, factory)
+        window = Gtk.Window()
+        window.set_child(view)
+        window.present()
+        for _ in range(10):
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+        self.assertEqual(model.get_n_items(), 2)
+        widgets = [view]
+        expanders = []
+        while widgets:
+            widget = widgets.pop()
+            if isinstance(widget, Gtk.TreeExpander):
+                expanders.append(widget)
+            child = widget.get_first_child()
+            while child is not None:
+                widgets.append(child)
+                child = child.get_next_sibling()
+        self.assertEqual(len(expanders), 2)
+        controllers_by_title = {}
+        for expander in expanders:
+            content = expander.get_child()
+            title = content.get_first_child().get_next_sibling().get_label()
+            controllers = content.observe_controllers()
+            controllers_by_title[title] = [controllers.get_item(i)
+                                           for i in range(controllers.get_n_items())]
+        self.assertTrue(any(isinstance(item, Gtk.DragSource)
+                            for item in controllers_by_title["Needle"]))
+        self.assertTrue(any(isinstance(item, Gtk.DropTargetAsync)
+                            for item in controllers_by_title["Folder"]))
+        header_click = next(item for item in controllers_by_title["Folder"]
+                            if isinstance(item, Gtk.GestureClick) and item.get_button() == 1)
+        header_click.emit("pressed", 1, 10.0, 10.0)
+        dialog.on_note_tree_header_clicked.assert_not_called()
+        header_click.emit("released", 1, 10.0, 10.0)
+        dialog.on_note_tree_header_clicked.assert_called_once()
+        window.close()
+
+    def test_notes_window_installs_native_tree(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        parent = Gtk.Window()
+        store = SimpleNamespace(read_only=True, encryption_locked=False, data=SimpleNamespace(
+            app=SimpleNamespace(notes_editor={}), notes=[], note_categories=[], servers=[],
+        ))
+        presenter = NotesPresenter(lambda: [], lambda: [], lambda: [])
+        dialog = NotesDialogs(parent, store, presenter, lambda key: key,
+                              lambda: True, lambda _message: None, lambda _message: None)
+        dialog.ensure_window()
+        self.assertIsInstance(dialog.notes_list, Gtk.ListView)
+        self.assertIsInstance(dialog.notes_tree_model, Gtk.TreeListModel)
+        dialog.refresh_list()
+        dialog.window.present()
+        for _ in range(10):
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+        self.assertEqual(dialog.notes_tree_model.get_n_items(), 2)
+        dialog.window.close()
+        parent.close()
+
+    def test_native_right_click_other_note_defers_selection_and_menu(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        first = Note("one", "First", "Body")
+        second = Note("two", "Second", "Body")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(notes=[first, second]))
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.selected_note_id = "one"
+        dialog.selected_draft_key = None
+        dialog.active_editor_tab_key = "one"
+        dialog.scope_mode = "personal"
+        dialog.server_filter_id = None
+        dialog.loading_note_list = False
+        dialog.show_note_context_menu = MagicMock()
+        root = Gio.ListStore.new(NotesTreeNode)
+        category = NotesTreeNode("category", "Notes", "folder-symbolic", 2)
+        for note in (first, second):
+            category.children.append(NotesTreeNode("note", note.title, note_id=note.id))
+        root.append(category)
+        dialog.notes_tree_model = Gtk.TreeListModel.new(root, False, True,
+                                                        dialog.create_note_tree_children)
+        dialog.notes_tree_selection = Gtk.SingleSelection.new(dialog.notes_tree_model)
+        dialog.notes_tree_selection.set_autoselect(False)
+        dialog.notes_tree_selection.connect("notify::selected-item", dialog.on_note_tree_selected)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", dialog.setup_note_tree_item)
+        factory.connect("bind", dialog.bind_note_tree_item)
+        factory.connect("unbind", dialog.unbind_note_tree_item)
+        view = Gtk.ListView.new(dialog.notes_tree_selection, factory)
+        dialog.window = Gtk.Window()
+        dialog.window.set_child(view)
+        dialog.window.present()
+        while GLib.MainContext.default().pending():
+            GLib.MainContext.default().iteration(False)
+        widgets = [view]
+        target = None
+        while widgets:
+            widget = widgets.pop()
+            if isinstance(widget, Gtk.TreeExpander):
+                content = widget.get_child()
+                if getattr(content, "note_id", None) == "two":
+                    target = content
+            child = widget.get_first_child()
+            while child is not None:
+                widgets.append(child)
+                child = child.get_next_sibling()
+        self.assertIsNotNone(target)
+        gesture = MagicMock()
+        dialog.on_note_tree_context_pressed(gesture, 1, 5, 5, target, "two")
+        self.assertEqual(dialog.selected_note_id, "one")
+        dialog.show_note_context_menu.assert_not_called()
+        while GLib.MainContext.default().pending():
+            GLib.MainContext.default().iteration(False)
+        self.assertEqual(dialog.selected_note_id, "two")
+        self.assertEqual(dialog.active_editor_tab_key, "one")
+        dialog.show_note_context_menu.assert_called_once()
+        self.assertEqual(dialog.show_note_context_menu.call_args.kwargs["note_id"], "two")
+        dialog.window.close()
+
+    def test_native_category_pointer_drag_starts_without_expanding(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None or not shutil.which("xdotool"):
+            self.skipTest("GTK pointer drag test requires a private display and xdotool")
+        import gi
+        gi.require_version("GdkX11", "4.0")
+        from gi.repository import GdkX11
+
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False,
+                                       has_note_category=lambda *_args: True,
+                                       data=SimpleNamespace(note_categories=[
+                                           NoteCategory("Source"), NoteCategory("Target"),
+                                       ]))
+        dialog.on_note_tree_header_clicked = MagicMock()
+        drag_begin = dialog.on_category_group_drag_begin
+        dialog.on_category_group_drag_begin = MagicMock(wraps=drag_begin)
+        root = Gio.ListStore.new(NotesTreeNode)
+        root.append(NotesTreeNode("category", "Source", "folder-symbolic", category="Source"))
+        root.append(NotesTreeNode("category", "Target", "folder-symbolic", category="Target"))
+        model = Gtk.TreeListModel.new(root, False, False, dialog.create_note_tree_children)
+        selection = Gtk.SingleSelection.new(model)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", dialog.setup_note_tree_item)
+        factory.connect("bind", dialog.bind_note_tree_item)
+        factory.connect("unbind", dialog.unbind_note_tree_item)
+        view = Gtk.ListView.new(selection, factory)
+        window = Gtk.Window()
+        window.set_default_size(360, 180)
+        window.set_child(view)
+        dialog.window = window
+        window.present()
+
+        def drain():
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+
+        drain()
+        widgets = [view]
+        source = None
+        while widgets:
+            widget = widgets.pop()
+            if isinstance(widget, Gtk.TreeExpander):
+                content = widget.get_child()
+                title = content.get_first_child().get_next_sibling().get_label()
+                if title == "Source":
+                    source = content
+            child = widget.get_first_child()
+            while child is not None:
+                widgets.append(child)
+                child = child.get_next_sibling()
+        self.assertIsNotNone(source)
+        valid, point = source.compute_point(window, Graphene.Point().init(35, source.get_height() / 2))
+        self.assertTrue(valid)
+        xid = GdkX11.X11Surface.get_xid(window.get_surface())
+        def pointer(*args):
+            subprocess.run(["xdotool", *args], check=True, stdout=subprocess.DEVNULL)
+            drain()
+        def reset_pointer_and_close():
+            pointer("mouseup", "1")
+            pointer("mousemove", "0", "0")
+            window.close()
+            drain()
+        self.addCleanup(reset_pointer_and_close)
+        pointer("mousemove", "--window", str(xid), str(int(point.x)), str(int(point.y)))
+        pointer("mousedown", "1")
+        self.assertFalse(dialog.on_note_tree_header_clicked.called)
+        for offset in (12, 24, 48, 80):
+            pointer("mousemove", "--window", str(xid), str(int(point.x + offset)), str(int(point.y)))
+            time.sleep(0.03)
+            drain()
+        self.assertTrue(dialog.on_category_group_drag_begin.called)
+        pointer("mouseup", "1")
+        dialog.on_note_tree_header_clicked.assert_not_called()
 
     def test_move_validation_rejects_cycles_missing_and_cross_scope_parents(self):
         for name, parent, scope in (
