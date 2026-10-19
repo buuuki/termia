@@ -48,7 +48,6 @@ focus rendering unless Termia adds a narrowly scoped component rule.
 
 | Value or rule | Components | Notes |
 |---|---|---|
-| `@theme_selected_bg_color` | Active note-tab underline | Inherited from GTK |
 | `alpha(...)` GTK expressions | Hover, active, dragging, selected, scrollbar, and required-hint feedback | Derived from the active GTK theme |
 | `#001B33` and white text defaults | Notes writing surface | User may override these through saved Notes appearance preferences |
 | `#0065BF` on `#000D1A` | Notes line-number gutter | GtkSourceView style scheme in `src/termia/assets/termia-notes.xml` |
@@ -75,7 +74,7 @@ component's interaction uses a standard GTK control. See the
 | Main and context menus | GTK | `styles.py`, menu classes |
 | Dialogs | GTK | Individual dialog builders |
 | Header and session tabs | GTK tokens with Termia spacing rules | `styles.py` |
-| Note tabs and editor | GTK chrome with saved Notes appearance preferences, native GtkSourceView line numbers, and Termia underline, borders, and spacing | `notes_dialogs.py`, `styles.py`, `assets/termia-notes.xml`, and settings |
+| Note tabs and editor | Native `Gtk.Notebook` tabs with scoped rounded corners and a transparent header, saved Notes appearance preferences, native GtkSourceView line numbers, and Termia editor borders and spacing | `notes_dialogs.py`, `styles.py`, `assets/termia-notes.xml`, and settings |
 | Sidebar selection and category drop target | GTK selection tokens | `styles.py` |
 | Split panes | Terminal preferences | `styles.py` and terminal settings |
 | Required-field marker and hint | GTK label foreground and secondary text derived from `@theme_fg_color` | `connection_dialogs.py` and `styles.py` |
@@ -104,8 +103,9 @@ They describe the existing implementation, not a reusable window contract:
   corner radius. The editor's default foreground and background are white and
   `#001B33`; saved Notes appearance preferences can replace them.
 - `termia-notes-window` marks the window; no window-frame CSS rule currently
-  targets that class. `termia-note-tab`, `termia-notes-tab-scroller`, and
-  `termia-notes-editor` have scoped rules in `src/termia/styles.py`. The
+  targets that class. `termia-notes-notebook` keeps GTK's selected-tab and overflow
+  behavior, with a transparent header and rounded tab corners scoped in
+  `src/termia/styles.py`. `termia-notes-editor` has scoped rules there. The
   `termia-notes-toolbar` and `termia-notes-list` rules are applied by the
   editor appearance provider in `notes_dialogs.py`. GTK owns ordinary button
   and title-control colors, focus, and interaction states.

@@ -262,8 +262,9 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   independientes del contenido. Notas utiliza una ventana independiente y no modal,
   con los mismos controles GTK que la principal. Al abrirla se restaura y se presenta;
   puedes llevar cualquiera de las dos al frente. Cerrar Notas oculta su espacio para
-  reutilizarlo; salir de Termia guarda los cambios y cierra ambas ventanas. El botón junto a las
-  pestañas muestra u oculta la barra compacta;
+  reutilizarlo; salir de Termia guarda los cambios y cierra ambas ventanas.
+  Las pestañas usan el cuaderno GTK estándar para seleccionarlas, reordenarlas y acceder a las que no caben.
+  El botón junto a las pestañas muestra u oculta la barra compacta;
   la lista, con texto más pequeño, mantiene su posición. En modo solo lectura,
   estos ajustes duran esa sesión.
   Las notas se guardan automáticamente en un fichero separado; también hay un

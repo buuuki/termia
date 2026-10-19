@@ -264,8 +264,9 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   Notes fa servir una finestra independent i no modal, amb els mateixos controls
   GTK que la principal. En obrir-la es restaura i es presenta; pots portar
   qualsevol de les dues al davant. Tancar Notes n'oculta l'espai per reutilitzar-lo;
-  sortir de Termia desa els canvis i tanca totes dues finestres. El botó al costat de les pestanyes mostra
-  o amaga la barra compacta;
+  sortir de Termia desa els canvis i tanca totes dues finestres.
+  Les pestanyes fan servir el quadern GTK estàndard per seleccionar-les, reordenar-les i accedir a les que no hi caben.
+  El botó al costat de les pestanyes mostra o amaga la barra compacta;
   la llista, amb text més petit, manté la posició. En mode de només lectura, els
   ajustos duren aquella sessió.
   També hi ha un botó **Desa**. En obrir la finestra es crea un esborrany nou o es reprèn

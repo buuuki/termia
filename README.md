@@ -265,6 +265,7 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   controls as the main window. Opening it restores and presents it; either window
   can be brought to the front. Closing Notes hides its workspace for reuse;
   quitting Termia saves changes and closes both windows.
+  Note tabs use GTK's native notebook for selection, drag reordering, and overflow.
   Its toggle beside the tabs hides or restores the compact toolbar while the
   smaller-text notes list stays in place. In read-only instances, appearance
   changes apply for that session.

@@ -409,8 +409,8 @@ and proposed controls.
   replacement. Repeat with plain, obfuscated, encrypted, and read-only storage;
   verify a failed backup/write or an invalid hierarchy preserves original data.
 
-- The notes toolbar must sit below note tabs and remain restorable from the
-  tab-row toggle when hidden. Toolbar visibility must not move the notes list
+- The notes toolbar must sit below the native `Gtk.Notebook` tabs and remain restorable from the
+  notebook header toggle when hidden. Toolbar visibility must not move the notes list
   or search entry. Their vertical position stays fixed independently of the editor.
   When horizontal scrolling is needed, reserve space below the controls instead
   of covering them. Keep toolbar controls compact and list text slightly smaller.
@@ -499,15 +499,12 @@ and proposed controls.
   New note titles are numbered
   within the selected scope (New note, New note 2, etc.). Tabs show a
   personal/server icon; hovering or focusing a server-note
-  tab identifies its server. Keep the tab bar and editor aligned when the
+  tab identifies its server. Keep the notebook tabs and editor aligned when the
   sidebar is hidden. Tab close icons must appear inside the tab card and remain
   independently clickable.
 - Note editors must support multiple open tabs. New note titles are numbered
   within their scope (“New note”, “New note 2”, and so on). The active tab
-  must have the
-  same visible focus highlight as a terminal tab plus a thin, full-width
-  dark-blue underline with no side glow; inactive note tabs must not show that
-  underline. Tabs must be reorderable by
+  must use the GTK notebook selection style. Tabs must be reorderable by
   dragging without changing note content or saved associations. Right-click an
   open tab and a note in the sidebar; each menu must offer Rename, and renaming
   must persist while updating all open tabs for the same note. Opening a note
@@ -578,9 +575,9 @@ and proposed controls.
   contains Import and Export in the general view, and is hidden in server-scoped
   notes. With several notes, verify the list fills the panel height and shows
   multiple rows before scrolling. Open
-  enough note tabs to overflow and confirm that their horizontal scrollbar is
-  slim and translucent, does not obscure tab titles, and remains usable with
-  the mouse in light and dark themes. Open two existing notes and one draft in
+  enough note tabs to overflow and confirm that GTK's notebook arrows make
+  every tab reachable without obscuring titles in light and dark themes.
+  Open two existing notes and one draft in
   tabs; verify the close icon is visually inside each tab and works
   independently. Switch among the tabs while editing,
   reorder them by dragging, and verify each retains its own content without a

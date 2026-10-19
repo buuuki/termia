@@ -29,7 +29,6 @@ from .notes import NoteError, normalized_note_categories, note_category_move_all
 from .notes_io import export_notes_file, import_notes_file
 from .notes_presenter import NoteTreeCategory, NotesPresenter
 
-NOTE_TAB_DND_MIME_TYPE = "application/x-termia-note-tab-id"
 NOTE_ROW_DND_MIME_TYPE = "application/x-termia-note-id"
 NOTE_CATEGORY_DND_MIME_TYPE = "application/x-termia-note-category"
 
@@ -83,6 +82,7 @@ class NoteEditorTab:
     label_widget: Gtk.Label | None = None
     scope_icon_widget: Gtk.Image | None = None
     container_widget: Gtk.Widget | None = None
+    page_widget: Gtk.Widget | None = None
 
 
 class NotesDialogs:
@@ -261,31 +261,19 @@ class NotesDialogs:
         self.update_notes_list_toggle()
 
         detail_area = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        self.editor_tabs_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        self.editor_tabs_bar.set_halign(Gtk.Align.START)
-        self.editor_tabs_bar.add_css_class("termia-notes-tab-bar")
-        tabs_scroller = Gtk.ScrolledWindow()
-        tabs_scroller.add_css_class("termia-notes-tab-scroller")
-        tabs_scroller.set_hexpand(True)
-        tabs_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
-        tabs_scroller.set_child(self.editor_tabs_bar)
-        tab_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        tab_row.append(tabs_scroller)
+        self.editor_notebook = Gtk.Notebook()
+        self.editor_notebook.add_css_class("termia-notes-notebook")
+        self.editor_notebook.set_scrollable(True)
+        self.editor_notebook.set_show_border(False)
+        self.editor_notebook.set_hexpand(True)
+        self.editor_notebook.set_vexpand(True)
+        self.editor_notebook.connect("switch-page", self.on_editor_notebook_switch_page)
+        self.editor_notebook.connect("page-reordered", self.on_editor_notebook_page_reordered)
+        self.editor_tabs_bar = self.editor_notebook
+        self._syncing_editor_notebook = False
         self.toolbar_toggle = Gtk.ToggleButton(icon_name="view-reveal-symbolic")
         self.toolbar_toggle.set_tooltip_text(self.translate("notes_toolbar"))
-        tab_row.append(self.toolbar_toggle)
-        detail_area.append(tab_row)
-        self.notes_top_row_size_group = Gtk.SizeGroup.new(Gtk.SizeGroupMode.VERTICAL)
-        self.notes_top_row_size_group.add_widget(creation_controls)
-        self.notes_top_row_size_group.add_widget(tabs_scroller)
-        tab_drop_target = Gtk.DropTargetAsync.new(
-            Gdk.ContentFormats.new([NOTE_TAB_DND_MIME_TYPE]), Gdk.DragAction.MOVE
-        )
-        tab_drop_target.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-        tab_drop_target.connect("accept", self.on_editor_tab_drop_accept)
-        tab_drop_target.connect("drag-motion", self.on_editor_tab_drop_motion)
-        tab_drop_target.connect("drop", self.on_editor_tab_drop)
-        self.editor_tabs_bar.add_controller(tab_drop_target)
+        self.editor_notebook.set_action_widget(self.toolbar_toggle, Gtk.PackType.END)
 
         self.detail_stack = Gtk.Stack()
         self.detail_stack.set_hexpand(True)
@@ -335,8 +323,9 @@ class NotesDialogs:
         footer.append(self.close_editor_button)
         editor.append(footer)
         editor_workspace.append(editor)
-        self.detail_stack.add_named(editor_workspace, "editor")
-        self.note_detail_inset_widgets = (tabs_scroller, empty, editor)
+        self.editor_workspace = editor_workspace
+        self.detail_stack.add_named(self.editor_notebook, "editor")
+        self.note_detail_inset_widgets = (self.editor_notebook, empty, editor)
         self.update_note_detail_inset()
 
         self.configure_write_controls()
@@ -1272,14 +1261,7 @@ class NotesDialogs:
             and window is not None and window.get_visible()
             and not self.store.encryption_locked
         )
-        if accepted and mime_type == NOTE_TAB_DND_MIME_TYPE:
-            tab = self.editor_tabs.get(expected_id)
-            accepted = tab is not None and tab.container_widget is not None
-            if accepted:
-                target, x = destination
-                self.reorder_editor_tab_at_bar_x(target, x, expected_id)
-                self.activate_editor_tab(expected_id)
-        elif accepted and mime_type == NOTE_CATEGORY_DND_MIME_TYPE:
+        if accepted and mime_type == NOTE_CATEGORY_DND_MIME_TYPE:
             accepted = not self.store.read_only and self.move_category_group(*destination)
         elif accepted and mime_type == NOTE_ROW_DND_MIME_TYPE:
             accepted = (
@@ -2113,8 +2095,6 @@ class NotesDialogs:
     def add_editor_tab(self, tab: NoteEditorTab) -> None:
         self.editor_tabs[tab.key] = tab
         tab_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        tab_box.add_css_class("termia-tab-label")
-        tab_box.add_css_class("termia-note-tab")
         tab_box.set_hexpand(False)
         tab_box.set_size_request(150, -1)
         tab_box.set_focusable(True)
@@ -2135,10 +2115,6 @@ class NotesDialogs:
         close_button.set_has_frame(False)
         close_button.set_tooltip_text(self.translate("notes_close_tab"))
         close_button.connect("clicked", lambda _button, key=tab.key: self.close_editor_tab(key))
-        click = Gtk.GestureClick.new()
-        click.set_button(1)
-        click.connect("pressed", lambda _gesture, _presses, _x, _y, key=tab.key: self.activate_editor_tab(key))
-        tab_box.add_controller(click)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
         right_click.connect("pressed", self.on_note_tab_context_pressed, tab.key)
@@ -2150,14 +2126,14 @@ class NotesDialogs:
         tab.scope_icon_widget = scope_icon
         tab.container_widget = tab_box
         self.update_editor_tab_label(tab)
-        self.editor_tabs_bar.append(tab_box)
-
-        drag_source = Gtk.DragSource.new()
-        drag_source.set_actions(Gdk.DragAction.MOVE)
-        drag_source.connect("prepare", self.on_editor_tab_drag_prepare, tab.key)
-        drag_source.connect("drag-begin", self.on_editor_tab_drag_begin, tab.key, tab_box)
-        drag_source.connect("drag-end", self.on_editor_tab_drag_end, tab.key, tab_box)
-        tab_box.add_controller(drag_source)
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        tab.page_widget = page
+        self._syncing_editor_notebook = True
+        try:
+            self.editor_notebook.append_page(page, tab_box)
+            self.editor_notebook.set_tab_reorderable(page, True)
+        finally:
+            self._syncing_editor_notebook = False
 
     def update_editor_tab_label(self, tab: NoteEditorTab) -> None:
         if tab.label_widget is None:
@@ -2170,10 +2146,6 @@ class NotesDialogs:
                 tab.container_widget.set_tooltip_text(
                     self.note_tab_tooltip(tab, is_server_note)
                 )
-            if tab.key == self.active_editor_tab_key:
-                tab.container_widget.add_css_class("active")
-            else:
-                tab.container_widget.remove_css_class("active")
         if tab.scope_icon_widget is not None:
             tab.scope_icon_widget.set_from_icon_name(
                 "network-server-symbolic" if tab.server_id else "avatar-default-symbolic"
@@ -2195,126 +2167,52 @@ class NotesDialogs:
             server=server_name, title=title,
         )
 
-    def on_editor_tab_drag_prepare(
-        self, _source: Gtk.DragSource, _x: float, _y: float, key: str
-    ) -> Gdk.ContentProvider | None:
-        if key not in self.editor_tabs:
-            return None
-        return Gdk.ContentProvider.new_for_bytes(
-            NOTE_TAB_DND_MIME_TYPE, GLib.Bytes.new(key.encode("utf-8"))
-        )
-
-    def on_editor_tab_drag_begin(
-        self, source: Gtk.DragSource, _drag: Gdk.Drag, key: str, tab_box: Gtk.Widget
+    def on_editor_notebook_switch_page(
+        self, _notebook: Gtk.Notebook, page: Gtk.Widget, _page_num: int,
     ) -> None:
-        self.activate_editor_tab(key)
-        self.editor_tab_drag_key = key
-        self.editor_tab_drag = _drag
-        self.pending_note_drop = None
-        tab_box.add_css_class("dragging")
-        source.set_icon(
-            Gtk.WidgetPaintable.new(tab_box),
-            tab_box.get_allocated_width() // 2,
-            tab_box.get_allocated_height() // 2,
-        )
-
-    def on_editor_tab_drag_end(
-        self, _source: Gtk.DragSource, _drag: Gdk.Drag, _delete_data: bool,
-        _key: str, tab_box: Gtk.Widget,
-    ) -> None:
-        tab_box.remove_css_class("dragging")
-        self.editor_tab_drag_key = None
-        self.editor_tab_drag = None
-
-    def on_editor_tab_drop_accept(self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop) -> bool:
-        tab = self.editor_tabs.get(getattr(self, "editor_tab_drag_key", None))
-        return bool(
-            tab is not None and tab.container_widget is not None
-            and not self.store.encryption_locked
-            and getattr(self, "editor_tab_drag", None) is not None
-            and drop.get_drag() == self.editor_tab_drag
-            and drop.get_formats().contain_mime_type(NOTE_TAB_DND_MIME_TYPE)
-        )
-
-    def on_editor_tab_drop_motion(
-        self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, _y: float
-    ) -> Gdk.DragAction:
-        if not self.on_editor_tab_drop_accept(target, drop):
-            return Gdk.DragAction(0)
-        self.reorder_editor_tab_at_bar_x(target, x)
-        return Gdk.DragAction.MOVE
-
-    def on_editor_tab_drop(
-        self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, x: float, _y: float
-    ) -> bool:
-        if not self.on_editor_tab_drop_accept(target, drop):
-            return False
-        self.read_private_note_drop(
-            drop, NOTE_TAB_DND_MIME_TYPE, self.editor_tab_drag_key, (target, x)
-        )
-        return True
-
-    def reorder_editor_tab_at_bar_x(
-        self, target: Gtk.DropTargetAsync, pointer_x: float, dragged_key: str | None = None
-    ) -> None:
-        dragged_key = dragged_key or getattr(self, "editor_tab_drag_key", None)
-        if not isinstance(dragged_key, str):
+        if self._syncing_editor_notebook:
             return
-        dragged = self.editor_tabs.get(dragged_key)
-        if dragged is None or dragged.container_widget is None:
+        tab = next((item for item in self.editor_tabs.values() if item.page_widget is page), None)
+        if tab is None:
             return
-        ordered = [
-            tab for tab in self.editor_tabs.values()
-            if tab.container_widget is not None
-        ]
-        if len(ordered) <= 1:
-            return
+        self.activate_editor_tab(tab.key)
+        if self.active_editor_tab_key != tab.key:
+            GLib.idle_add(self.restore_editor_notebook_page, self.active_editor_tab_key)
+
+    def restore_editor_notebook_page(self, key: str | None) -> bool:
+        if self.active_editor_tab_key == key:
+            self.select_editor_notebook_page(key)
+        return GLib.SOURCE_REMOVE
+
+    def select_editor_notebook_page(self, key: str | None) -> bool:
+        tab = self.editor_tabs.get(key) if key is not None else None
+        if tab is None or tab.page_widget is None:
+            return GLib.SOURCE_REMOVE
+        index = self.editor_notebook.page_num(tab.page_widget)
+        if index < 0 or index == self.editor_notebook.get_current_page():
+            return GLib.SOURCE_REMOVE
+        self._syncing_editor_notebook = True
         try:
-            dragged_index = ordered.index(dragged)
-        except ValueError:
-            return
+            self.editor_notebook.set_current_page(index)
+        finally:
+            self._syncing_editor_notebook = False
+        return GLib.SOURCE_REMOVE
 
-        previous_sibling = dragged.container_widget.get_prev_sibling()
-        for index, tab in enumerate(ordered):
-            if tab.key == dragged_key:
-                continue
-            widget = tab.container_widget
-            width = widget.get_allocated_width()
-            ok, start = widget.compute_point(
-                self.editor_tabs_bar, Graphene.Point().init(0, 0)
-            )
-            if not ok or pointer_x < start.x or pointer_x > start.x + width:
-                continue
-            if index < dragged_index:
-                previous_sibling = (
-                    widget.get_prev_sibling()
-                    if pointer_x < start.x + width * 0.8 else widget
-                )
-            else:
-                previous_sibling = (
-                    widget if pointer_x > start.x + width * 0.2
-                    else widget.get_prev_sibling()
-                )
-            break
-
-        if dragged.container_widget.get_prev_sibling() is previous_sibling:
-            return
-        self.editor_tabs_bar.reorder_child_after(
-            dragged.container_widget, previous_sibling
-        )
+    def on_editor_notebook_page_reordered(
+        self, _notebook: Gtk.Notebook, _page: Gtk.Widget, _page_num: int,
+    ) -> None:
         self.sync_editor_tab_order()
 
     def sync_editor_tab_order(self) -> None:
         ordered: dict[str, NoteEditorTab] = {}
-        child = self.editor_tabs_bar.get_first_child()
-        while child is not None:
+        for index in range(self.editor_notebook.get_n_pages()):
+            child = self.editor_notebook.get_nth_page(index)
             tab = next(
-                (item for item in self.editor_tabs.values() if item.container_widget is child),
+                (item for item in self.editor_tabs.values() if item.page_widget is child),
                 None,
             )
             if tab is not None:
                 ordered[tab.key] = tab
-            child = child.get_next_sibling()
         ordered.update(
             (key, tab) for key, tab in self.editor_tabs.items() if key not in ordered
         )
@@ -2348,6 +2246,8 @@ class NotesDialogs:
             for current_tab in self.editor_tabs.values():
                 self.update_editor_tab_label(current_tab)
             self.detail_stack.set_visible_child_name("editor")
+            if hasattr(self, "editor_notebook"):
+                self.select_editor_notebook_page(key)
             return
         if self.active_editor_tab_key is not None:
             if (
@@ -2362,6 +2262,14 @@ class NotesDialogs:
             self.cancel_autosave()
             self.capture_active_editor_tab()
         self.active_editor_tab_key = key
+        if hasattr(self, "editor_workspace") and tab.page_widget is not None:
+            parent = self.editor_workspace.get_parent()
+            if parent is not tab.page_widget:
+                if parent is not None:
+                    parent.remove(self.editor_workspace)
+                tab.page_widget.append(self.editor_workspace)
+        if hasattr(self, "editor_notebook"):
+            self.select_editor_notebook_page(key)
         for current_tab in self.editor_tabs.values():
             self.update_editor_tab_label(current_tab)
         note = self.find_note(tab.note_id) if tab.note_id else None
@@ -2482,11 +2390,16 @@ class NotesDialogs:
             self.active_editor_tab_key = None
             self.current_note_id = None
             self.editor_dirty = False
-        if (
-            tab.container_widget is not None
-            and tab.container_widget.get_parent() is self.editor_tabs_bar
-        ):
-            self.editor_tabs_bar.remove(tab.container_widget)
+        if tab.page_widget is not None and hasattr(self, "editor_notebook"):
+            if hasattr(self, "editor_workspace") and self.editor_workspace.get_parent() is tab.page_widget:
+                tab.page_widget.remove(self.editor_workspace)
+            index = self.editor_notebook.page_num(tab.page_widget)
+            if index >= 0:
+                self._syncing_editor_notebook = True
+                try:
+                    self.editor_notebook.remove_page(index)
+                finally:
+                    self._syncing_editor_notebook = False
         if not was_active:
             self.refresh_list()
             return
