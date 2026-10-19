@@ -114,6 +114,20 @@ scripts/run_test_instance.sh --fresh
 
 ## GTK/VTE Notes
 
+- Use standard GTK controls for Termia UI interactions when GTK provides an
+  appropriate control. Do not replace an existing standard GTK control with a
+  custom implementation, or introduce a custom implementation for an interaction
+  covered by a standard control, without first explaining the reason, affected
+  behavior, alternatives, and regression risks to the requester and obtaining
+  explicit confirmation. A layout made from GTK boxes, buttons, and CSS is still
+  a custom control when Termia implements the control's interaction itself.
+- Consult [the GTK control inventory](docs/GTK_CONTROLS.md) before changing a
+  listed surface. Keep its standard/custom classification and source references
+  current. Existing custom compositions are recorded as current implementation,
+  not as blanket approval to add more or to replace them without review.
+- Apply this GTK control policy within the Core/add-on boundaries above. A
+  standard widget choice does not authorize new concrete add-on dependencies in
+  Core or broader contracts between components.
 - Keep terminal keyboard shortcuts centralized in terminal session handling unless a feature clearly belongs elsewhere.
 - Be careful with GTK popovers and dialogs; opening dialogs from popovers can require closing or deferring the popover first.
 - Treat every VTE child as a managed terminal process. Launch it through `terminal_processes.spawn_terminal_process()` and retain its captured identity instead of storing or signalling an unvalidated PID.

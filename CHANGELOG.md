@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Document the standard GTK control policy and inventory, including the
+  confirmation required before introducing custom replacements and the
+  existing Core/add-on architecture boundaries (`#360`).
+
 - Use native GTK menus for local-terminal profiles, saved workspaces, terminal
   actions and their Split/Tab submenus, and the tab overflow selector. Preserve
   long titles, scoped dispatch, optional actions and submenu leave-to-close

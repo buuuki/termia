@@ -13,6 +13,13 @@ When a requested change touches a protected behavior:
 
 Protected behavior does not mean the code cannot change. It means regressions should not happen silently.
 
+For UI changes, consult the [GTK control policy and inventory](GTK_CONTROLS.md).
+Use a standard GTK control when one is appropriate. Before replacing one with a
+custom composition, or implementing a standard control's interaction in custom
+code, report the reason, alternatives, and affected behavior and obtain explicit
+requester confirmation. Preserve the relevant checks below for both existing
+and proposed controls.
+
 ## Protected Behaviors
 
 ### Project License

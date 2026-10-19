@@ -66,6 +66,10 @@ application-theme tokens.
 
 ## Component ownership
 
+This table describes **appearance ownership**. It does not classify whether a
+component's interaction uses a standard GTK control. See the
+[GTK control policy and inventory](GTK_CONTROLS.md) for that classification.
+
 | Component | Current owner | Current implementation |
 |---|---|---|
 | Main and context menus | GTK | `styles.py`, menu classes |
