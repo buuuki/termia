@@ -14,15 +14,13 @@ gi.require_version("Gio", "2.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Graphene", "1.0")
 gi.require_version("Gtk", "4.0")
+gi.require_version("GtkSource", "5")
 gi.require_version("Pango", "1.0")
-gi.require_version("PangoCairo", "1.0")
-from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango, PangoCairo
+from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, GtkSource, Pango
 
 from .constants import (
     DEFAULT_NOTES_EDITOR_BACKGROUND,
     DEFAULT_NOTES_EDITOR_FOREGROUND,
-    NOTES_LINE_NUMBER_BACKGROUND,
-    NOTES_LINE_NUMBER_FOREGROUND,
 )
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .dialog_actions import add_dialog_action_button, configure_action_area
@@ -45,6 +43,31 @@ def format_note_timestamp(value: str) -> str:
     except ValueError:
         return value
     return timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def create_notes_text_view(show_line_numbers: bool) -> GtkSource.View:
+    """Build the plain-text Notes editor with GtkSource's native line numbers."""
+    GtkSource.init()
+    buffer = GtkSource.Buffer()
+    buffer.set_highlight_syntax(False)
+    buffer.set_highlight_matching_brackets(False)
+    scheme_manager = GtkSource.StyleSchemeManager.new()
+    scheme_manager.append_search_path(str(Path(__file__).parent / "assets"))
+    scheme = scheme_manager.get_scheme("termia-notes")
+    if scheme is None:
+        raise RuntimeError("Termia Notes style scheme is unavailable")
+    buffer.set_style_scheme(scheme)
+    text_view = GtkSource.View.new_with_buffer(buffer)
+    text_view.set_show_line_numbers(show_line_numbers)
+    text_view.set_auto_indent(False)
+    text_view.set_smart_backspace(False)
+    text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+    text_view.set_monospace(False)
+    text_view.set_left_margin(12)
+    text_view.set_right_margin(12)
+    text_view.set_top_margin(12)
+    text_view.set_bottom_margin(12)
+    return text_view
 
 
 @dataclass
@@ -279,13 +302,7 @@ class NotesDialogs:
 
         editor_workspace = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         editor = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        text_view = Gtk.TextView()
-        text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
-        text_view.set_monospace(False)
-        text_view.set_left_margin(12)
-        text_view.set_right_margin(12)
-        text_view.set_top_margin(12)
-        text_view.set_bottom_margin(12)
+        text_view = create_notes_text_view(True)
         buffer = text_view.get_buffer()
         buffer.connect("changed", self.on_editor_changed)
         self.text_view = text_view
@@ -295,12 +312,6 @@ class NotesDialogs:
         text_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         text_scroller.set_vexpand(True)
         text_scroller.set_child(text_view)
-        text_scroller.get_vadjustment().connect(
-            "value-changed", self.queue_line_number_redraw,
-        )
-        text_scroller.get_vadjustment().connect(
-            "changed", self.queue_line_number_redraw,
-        )
         editor.append(text_scroller)
 
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -342,12 +353,7 @@ class NotesDialogs:
         self.line_numbers_button.set_active(settings.get("line_numbers", True))
         self.line_numbers_button.connect("toggled", self.on_line_numbers_toggled)
         toolbar.append(self.line_numbers_button)
-        self.line_number_gutter = Gtk.DrawingArea()
-        self.line_number_gutter.add_css_class("termia-notes-line-number-gutter")
-        self.line_number_gutter.set_draw_func(self.draw_line_numbers)
-        self.update_line_number_gutter_width()
-        if settings.get("line_numbers", True):
-            self.text_view.set_gutter(Gtk.TextWindowType.LEFT, self.line_number_gutter)
+        self.text_view.set_show_line_numbers(settings.get("line_numbers", True))
         font = Gtk.ComboBoxText()
         font.set_tooltip_text(self.translate("font_size"))
         font.append("", self.translate("theme_system"))
@@ -398,68 +404,8 @@ class NotesDialogs:
 
     def on_line_numbers_toggled(self, button: Gtk.ToggleButton) -> None:
         enabled = button.get_active()
-        self.text_view.set_gutter(
-            Gtk.TextWindowType.LEFT,
-            self.line_number_gutter if enabled else None,
-        )
+        self.text_view.set_show_line_numbers(enabled)
         self.update_editor_appearance({"line_numbers": enabled})
-
-    def update_line_number_gutter_width(self) -> None:
-        if not hasattr(self, "line_number_gutter"):
-            return
-        line_count = self.text_view.get_buffer().get_line_count()
-        layout = self.line_number_gutter.create_pango_layout(str(max(1, line_count)))
-        layout.set_font_description(
-            self.text_view.get_pango_context().get_font_description(),
-        )
-        text_width, _text_height = layout.get_pixel_size()
-        width = max(36, text_width + 16)
-        self.line_number_gutter.set_content_width(width)
-        self.line_number_gutter.set_size_request(width, -1)
-        self.line_number_gutter.queue_draw()
-
-    def draw_line_numbers(
-        self, area: Gtk.DrawingArea, context, width: int, _height: int,
-    ) -> None:
-        background = Gdk.RGBA()
-        background.parse(NOTES_LINE_NUMBER_BACKGROUND)
-        context.set_source_rgba(
-            background.red, background.green, background.blue, background.alpha,
-        )
-        context.paint()
-
-        foreground = Gdk.RGBA()
-        foreground.parse(NOTES_LINE_NUMBER_FOREGROUND)
-        context.set_source_rgba(
-            foreground.red, foreground.green, foreground.blue, foreground.alpha,
-        )
-        visible = self.text_view.get_visible_rect()
-        iterator, _line_top = self.text_view.get_line_at_y(visible.y)
-        buffer = self.text_view.get_buffer()
-        bottom = visible.y + visible.height
-        font_description = self.text_view.get_pango_context().get_font_description()
-        for line_number in range(iterator.get_line(), buffer.get_line_count()):
-            valid, iterator = buffer.get_iter_at_line(line_number)
-            if not valid:
-                break
-            line_y, line_height = self.text_view.get_line_yrange(iterator)
-            if line_y > bottom:
-                break
-            _window_x, window_y = self.text_view.buffer_to_window_coords(
-                Gtk.TextWindowType.LEFT, 0, line_y,
-            )
-            layout = area.create_pango_layout(str(line_number + 1))
-            layout.set_font_description(font_description)
-            text_width, text_height = layout.get_pixel_size()
-            context.move_to(
-                width - text_width - 8,
-                window_y + max(0, (line_height - text_height) / 2),
-            )
-            PangoCairo.show_layout(context, layout)
-
-    def queue_line_number_redraw(self, *_args) -> None:
-        if hasattr(self, "line_number_gutter"):
-            self.line_number_gutter.queue_draw()
 
     def on_toolbar_toggled(self, button: Gtk.ToggleButton) -> None:
         visible = button.get_active()
@@ -493,8 +439,6 @@ class NotesDialogs:
         background = settings.get("background") or DEFAULT_NOTES_EDITOR_BACKGROUND
         css += ".termia-notes-editor, .termia-notes-editor textview, .termia-notes-editor textview text {background-color: " + background + ";}"
         self.editor_css_provider.load_from_data(css.encode())
-        self.update_line_number_gutter_width()
-        self.queue_line_number_redraw()
 
     def set_notes_scope(self, mode: str, server_id: str | None = None) -> bool:
         if mode not in ("personal", "server"):
@@ -2590,7 +2534,6 @@ class NotesDialogs:
         self.text_view.grab_focus()
 
     def on_editor_changed(self, *_args) -> None:
-        self.update_line_number_gutter_width()
         if self.loading_editor:
             return
         self.editor_dirty = True

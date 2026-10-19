@@ -439,8 +439,9 @@ and proposed controls.
   font weight. Verify
   that line numbers align with logical lines while editing, wrapping, and
   scrolling; after pressing Enter, the new empty line must be numbered before
-  any text is entered. Verify that the toggle persists. Hide/restore the
-  toolbar, restart and confirm preferences persist, and check keyboard
+  any text is entered. Verify that the native GtkSourceView gutter changes width
+  as the note crosses 9 and 99 lines, and that the toggle persists. Hide/restore
+  the toolbar, restart and confirm preferences persist, and check keyboard
   navigation, narrow windows,
   light/dark themes, encrypted storage, and notes export/import with punctuation
   preserved literally.

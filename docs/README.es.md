@@ -165,6 +165,8 @@ El instalador verifica el resultado después de instalar. También intenta insta
 Si la comprobación indica que falta el namespace `Vte 3.91`, falta el paquete de
 introspección GTK 4 VTE. En Debian, Ubuntu o Linux Mint el paquete necesario es
 `gir1.2-vte-3.91`.
+El editor de Notas también necesita GtkSourceView 5 (`gir1.2-gtksource-5`
+en Debian, Ubuntu y Linux Mint); el instalador y el paquete Debian lo instalan.
 
 También puedes ejecutar Termia directamente desde el repositorio:
 
@@ -233,7 +235,7 @@ sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 El paquete Debian instala el comando `termia`, el lanzador de escritorio y el
-icono; APT instala las dependencias de GTK, VTE, Python, SSH y cifrado.
+icono; APT instala las dependencias de GTK, VTE, GtkSourceView, Python, SSH y cifrado.
 
 ## Notas de uso
 
@@ -254,7 +256,8 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   invertidas se conservan literalmente. La barra solo ofrece controles de
   apariencia: fuente, tamaño, color del texto, fondo y un conmutador persistente
   para la numeración de líneas, activada por defecto. El editor usa el fondo
-  `#001B33` y texto blanco; la regleta usa números `#0065BF` sobre `#000D1A`.
+  `#001B33` y texto blanco; el margen estándar de GtkSourceView muestra números
+  `#0065BF` sobre `#000D1A`.
   Estos ajustes y la visibilidad de la barra se guardan como preferencias
   independientes del contenido. Notas utiliza una ventana independiente y no modal,
   con los mismos controles GTK que la principal. Al abrirla se restaura y se presenta;
@@ -355,8 +358,9 @@ Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
 
 ## Base de ejecución compatible
 
-Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0 y el espacio de
-introspección de VTE para GTK 4, `Vte 3.91`. El entorno actual de validación
+Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0, GtkSourceView 5
+(`GtkSource 5`) y el espacio de introspección de VTE para GTK 4, `Vte 3.91`.
+El entorno actual de validación
 proporciona GTK 4.14.5 y VTE 0.76.0. Las comprobaciones de compatibilidad para
 métodos GTK opcionales como `set_handle_menubar_accel` y
 `set_show_separators` son intencionadas, porque las distribuciones pueden

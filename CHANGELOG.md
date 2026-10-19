@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Use GtkSourceView 5 for native Notes line numbers while preserving plain-text
+  content, saved visibility, and editor colors; install its runtime dependency
+  on supported distributions (`#360`).
+
 - Document the standard GTK control policy and inventory, including the
   confirmation required before introducing custom replacements and the
   existing Core/add-on architecture boundaries (`#360`).

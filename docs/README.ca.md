@@ -166,6 +166,8 @@ L'instal·lador verifica el resultat després d'instal·lar. També intenta inst
 Si la comprovació indica que falta el namespace `Vte 3.91`, falta el paquet
 d'introspecció GTK 4 VTE. En Debian, Ubuntu o Linux Mint el paquet necessari és
 `gir1.2-vte-3.91`.
+L'editor de Notes també necessita GtkSourceView 5 (`gir1.2-gtksource-5`
+en Debian, Ubuntu i Linux Mint); l'instal·lador i el paquet Debian l'instal·len.
 
 També pots executar Termia directament des del repositori:
 
@@ -234,7 +236,7 @@ sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la
-icona; APT instal·la les dependències de GTK, VTE, Python, SSH i xifratge.
+icona; APT instal·la les dependències de GTK, VTE, GtkSourceView, Python, SSH i xifratge.
 
 ## Notes d'ús
 
@@ -255,7 +257,8 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   cometes inverses es conserven literalment. La barra només ofereix controls
   d'aparença: lletra, mida, color del text, fons i un commutador persistent per
   a la numeració de línies, activada per defecte. L'editor fa servir el fons
-  `#001B33` i text blanc; el marge mostra números `#0065BF` sobre `#000D1A`.
+  `#001B33` i text blanc; el marge estàndard de GtkSourceView mostra números
+  `#0065BF` sobre `#000D1A`.
   Aquests ajustos i la visibilitat de la barra es desen com a preferències
   independents del contingut.
   Notes fa servir una finestra independent i no modal, amb els mateixos controls
@@ -355,8 +358,9 @@ Termia s'ha provat en Ubuntu 24.04.4 LTS amb kernel Linux
 
 ## Base d'execució compatible
 
-Termia requereix Python 3.10 o posterior, GTK 4.0/GDK 4.0 i l'espai
-d'introspecció de VTE per a GTK 4, `Vte 3.91`. L'entorn actual de validació
+Termia requereix Python 3.10 o posterior, GTK 4.0/GDK 4.0, GtkSourceView 5
+(`GtkSource 5`) i l'espai d'introspecció de VTE per a GTK 4, `Vte 3.91`.
+L'entorn actual de validació
 proporciona GTK 4.14.5 i VTE 0.76.0. Les comprovacions de compatibilitat per a
 mètodes GTK opcionals com `set_handle_menubar_accel` i
 `set_show_separators` són intencionades, perquè les distribucions poden

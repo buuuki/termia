@@ -18,8 +18,9 @@ from termia.config_io import (
 from termia.models import Note, NoteCategory
 from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories, note_category_move_allowed
 from termia.notes_dialogs import (
-    Gdk, Graphene, Gtk, NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE, NOTE_CATEGORY_DND_MIME_TYPE,
-    NoteEditorTab, NotesDialogs, format_note_timestamp,
+    Gdk, Graphene, Gtk, GtkSource, NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE,
+    NOTE_CATEGORY_DND_MIME_TYPE, NoteEditorTab, NotesDialogs,
+    create_notes_text_view, format_note_timestamp,
 )
 from termia.notes_io import (
     export_notes_file,
@@ -524,57 +525,53 @@ class NotesDomainTests(unittest.TestCase):
         dialog.store.update_notes_editor.assert_not_called()
         dialog.apply_editor_appearance.assert_called_once_with({"size": 18})
 
-    def test_line_number_toggle_attaches_gutter_and_persists_visibility(self):
+    def test_line_number_toggle_uses_source_view_and_persists_visibility(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.text_view = MagicMock()
-        dialog.line_number_gutter = MagicMock()
         dialog.update_editor_appearance = MagicMock()
         button = SimpleNamespace(get_active=lambda: False)
 
         dialog.on_line_numbers_toggled(button)
 
-        dialog.text_view.set_gutter.assert_called_once_with(
-            Gtk.TextWindowType.LEFT, None,
-        )
+        dialog.text_view.set_show_line_numbers.assert_called_once_with(False)
         dialog.update_editor_appearance.assert_called_once_with({"line_numbers": False})
 
-        dialog.text_view.set_gutter.reset_mock()
+        dialog.text_view.set_show_line_numbers.reset_mock()
         dialog.update_editor_appearance.reset_mock()
         button.get_active = lambda: True
 
         dialog.on_line_numbers_toggled(button)
 
-        dialog.text_view.set_gutter.assert_called_once_with(
-            Gtk.TextWindowType.LEFT, dialog.line_number_gutter,
-        )
+        dialog.text_view.set_show_line_numbers.assert_called_once_with(True)
         dialog.update_editor_appearance.assert_called_once_with({"line_numbers": True})
 
-    def test_line_number_draw_includes_empty_final_line(self):
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        buffer = Gtk.TextBuffer()
+    def test_notes_editor_uses_plain_text_source_buffer_and_native_numbers(self):
+        view = create_notes_text_view(True)
+        self.assertIsInstance(view, GtkSource.View)
+        self.assertTrue(view.get_show_line_numbers())
+        self.assertEqual(view.get_wrap_mode(), Gtk.WrapMode.WORD_CHAR)
+        self.assertFalse(view.get_auto_indent())
+        buffer = view.get_buffer()
+        self.assertIsInstance(buffer, GtkSource.Buffer)
+        self.assertFalse(buffer.get_highlight_syntax())
+        self.assertFalse(buffer.get_highlight_matching_brackets())
+        scheme = buffer.get_style_scheme()
+        self.assertEqual(scheme.get_id(), "termia-notes")
+        line_style = scheme.get_style("line-numbers")
+        self.assertEqual(line_style.get_property("foreground"), "#0065BF")
+        self.assertEqual(line_style.get_property("background"), "#000D1A")
         buffer.set_text("first line\n")
-        dialog.text_view = MagicMock()
-        dialog.text_view.get_buffer.return_value = buffer
-        dialog.text_view.get_visible_rect.return_value = SimpleNamespace(y=0, height=100)
-        dialog.text_view.get_line_at_y.return_value = (buffer.get_start_iter(), 0)
-        dialog.text_view.get_line_yrange.side_effect = lambda iterator: (iterator.get_line() * 16, 16)
-        dialog.text_view.buffer_to_window_coords.side_effect = lambda _window, _x, y: (0, y)
-        area = MagicMock()
-        area.create_pango_layout.return_value.get_pixel_size.return_value = (8, 12)
-
-        with patch("termia.notes_dialogs.PangoCairo.show_layout"):
-            dialog.draw_line_numbers(area, MagicMock(), 36, 100)
-
+        self.assertEqual(buffer.get_line_count(), 2)
         self.assertEqual(
-            [call.args[0] for call in area.create_pango_layout.call_args_list],
-            ["1", "2"],
+            buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False),
+            "first line\n",
         )
+        view.set_show_line_numbers(False)
+        self.assertFalse(view.get_show_line_numbers())
 
     def test_editor_appearance_uses_dark_defaults_when_settings_are_empty(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.editor_css_provider = MagicMock()
-        dialog.update_line_number_gutter_width = MagicMock()
-        dialog.queue_line_number_redraw = MagicMock()
 
         dialog.apply_editor_appearance({"size": 12})
 

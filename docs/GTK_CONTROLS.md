@@ -50,12 +50,16 @@ a standard GTK control does not justify crossing those boundaries.
 | 9 | Note-list item context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; note identity and write guards |
 | 10 | Notes category context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; category identity and write guards |
 | 11 | Notes editor-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; saved-note and draft identity |
+| 16 | Notes line-number gutter | `GtkSource.View` from GtkSourceView 5 | `src/termia/notes_dialogs.py`; saved visibility and Notes colors |
 | 20 | Terminal tab overflow selector | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/tabs.py`; visual order and active marker |
 
 The two unnumbered menus were completed under
 [issue #358](https://github.com/buuuki/termia/issues/358). Numbers 1–20 follow
 issue #360. Standard menu presentation does not remove the application logic
 listed in the final column.
+
+Item 16 uses the standard GtkSourceView widget, which extends GTK 4 and requires
+an additional runtime package; it is not a control built into GTK 4 itself.
 
 ## Existing custom compositions in the reviewed inventory
 
@@ -65,13 +69,12 @@ listed in the final column.
 | 13 | Notes editor tab bar | GTK boxes and buttons; Termia owns activation, closing, ordering, and draft identity | `src/termia/notes_dialogs.py` | Compare native tab controls with the full behavior |
 | 14 | Connections tree | `Gtk.Expander` and boxes; Termia owns hierarchy, selection, navigation, drag, and expansion state | `src/termia/sidebar.py` | Compare `Gtk.TreeListModel` and `Gtk.TreeExpander` based views with the full behavior |
 | 15 | Notes tree | `Gtk.ListBox` rows and indentation; Termia owns hierarchy, selection, expansion, and note moves | `src/termia/notes_dialogs.py` | Compare native tree controls with the full behavior |
-| 16 | Notes line-number gutter | `Gtk.DrawingArea` aligned with `Gtk.TextView`; Termia draws line numbers | `src/termia/notes_dialogs.py` | Existing feature-specific GTK composition |
 | 17 | Shortcut capture control | `Gtk.Box`, buttons, and key controllers; Termia captures and validates assignments | `src/termia/keybinding_preferences.py` | Existing feature-specific GTK composition |
 | 18 | Grouped temporary notifications | `Gtk.Revealer` and child widgets; Termia owns grouping and timing | `src/termia/app.py`, `src/termia/notifications.py` | Existing feature-specific GTK composition |
 | 19 | Startup unlock panel | In-window `Gtk.Overlay` with standard password entry; Termia owns blocking and focus | `src/termia/app.py` | Existing feature-specific GTK composition |
 
 Items 12–15 were compared with native tab or tree controls under issue #360;
-equivalent behavior has not been demonstrated. Items 16–19 currently remain
+equivalent behavior has not been demonstrated. Items 17–19 currently remain
 feature-specific compositions. This status is not a claim that GTK lacks useful
 primitives for them.
 

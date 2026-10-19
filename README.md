@@ -149,8 +149,8 @@ cd termia
 
 ## Install from source
 
-Termia uses system GTK and VTE packages. Install missing dependencies, verify the
-result, and add a user-local desktop launcher with:
+Termia uses system GTK, VTE, and GtkSourceView 5 packages. Install missing
+dependencies, verify the result, and add a user-local desktop launcher with:
 
 ```bash
 chmod +x scripts/termia-setup.sh
@@ -173,6 +173,8 @@ Other Linux distributions require equivalent packages.
 If the check reports a missing `Vte 3.91` namespace, the GTK 4 VTE introspection
 package is missing. On Debian, Ubuntu, or Linux Mint the package is
 `gir1.2-vte-3.91`.
+The Notes editor also requires GtkSourceView 5 (`gir1.2-gtksource-5` on
+Debian, Ubuntu, and Linux Mint). The setup script and Debian package install it.
 
 ## Run from a clone
 
@@ -245,7 +247,7 @@ sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 The Debian package installs the `termia` command, desktop launcher, and icon;
-APT installs its GTK, VTE, Python, SSH, and encryption dependencies.
+APT installs its GTK, VTE, GtkSourceView, Python, SSH, and encryption dependencies.
 
 ## Usage notes
 
@@ -257,9 +259,9 @@ The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and
   The toolbar contains appearance controls only: font, size, text color,
   background, and a persistent line-number toggle. Line numbers are on by
   default. The editor starts with background `#001B33` and white text; the
-  gutter uses `#0065BF` numbers on `#000D1A`. Appearance and toolbar
-  visibility are persistent preferences shared by all notes, separate from note
-  content. Notes uses an independent, modeless window with the same standard GTK
+  native GtkSourceView gutter uses `#0065BF` numbers on `#000D1A`. Appearance
+  and toolbar visibility are persistent preferences shared by all notes,
+  separate from note content. Notes uses an independent, modeless window with the same standard GTK
   controls as the main window. Opening it restores and presents it; either window
   can be brought to the front. Closing Notes hides its workspace for reuse;
   quitting Termia saves changes and closes both windows.
@@ -355,8 +357,9 @@ Termia has been tested on Ubuntu 24.04.4 LTS with Linux kernel
 
 ## Supported runtime baseline
 
-Termia requires Python 3.10 or newer, GTK 4.0/GDK 4.0, and the GTK 4 VTE
-introspection namespace `Vte 3.91`. The current validation environment provides
+Termia requires Python 3.10 or newer, GTK 4.0/GDK 4.0, GtkSourceView 5
+(`GtkSource 5`), and the GTK 4 VTE introspection namespace `Vte 3.91`.
+The current validation environment provides
 GTK 4.14.5 and VTE 0.76.0. Compatibility guards for optional GTK methods such as
 `set_handle_menubar_accel` and `set_show_separators` remain intentional so the
 same source can run across distributions that expose different GTK API levels.
