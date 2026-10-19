@@ -276,16 +276,57 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   another tab without GTK warnings or crashes. Reuse one hidden popup and
   release it when the Notes workspace shuts down.
 - Opening dialogs from popovers must close or defer the popover first to avoid GTK grabbing-popup hangs.
+- The saved-note list menu must offer Edit, Rename, Clone, Properties and
+  Delete at the click position, preserving the target if selection rebuilds
+  its row. Only Properties is enabled in read-only storage; locked storage
+  disables every command. Recheck permissions and note identity before
+  deferred dispatch. Exercise all actions on synthetic notes, cancel deletion,
+  rename/save/reopen, and hide/show or filter the list; no stale row, popup or
+  dialog may survive. Notes owns and reuses the popup until workspace shutdown.
 - Context menus must not cause sidebar scroll jumps or horizontal scroll movement.
+- Note category menus must use native GTK entries for Rename, Duplicate and
+  Delete in the clicked category's Personal/server scope. Check right-click
+  anchoring and keyboard opening with Menu or Shift+F10, Escape and reopening.
+  Read-only or locked storage disables all three actions. A pending command
+  must be rejected if its category disappears, permissions change, Notes closes
+  or the list panel is removed. Rebuilding the tree must preserve a valid
+  scoped target. Cancel and save category dialogs, then reopen the reusable
+  menu without GTK warnings; release it only at workspace shutdown.
 - Context menu actions must operate on the selected/right-clicked item, not a stale selection.
 - The terminal context menu must show `Show session status bar` when the
   selected pane bar is hidden and `Hide session status bar` when it is visible;
   toggling it must not change sibling panes or the global default.
 - Terminal context menus must keep the translated `Split` submenu above the `Tab` submenu, with a visual separator before the split actions.
 - Terminal context-menu submenus must share the same hover behavior: open on pointer movement over the submenu row, stay usable while moving into the submenu panel, close when leaving the row and panel, and never close the whole terminal menu unexpectedly.
-- Future terminal context-menu submenus must use the shared nested-menu helper instead of building independent popovers with custom hover behavior.
+- Terminal menus must use native nested GTK menu models. The shared leave
+  controller must close only the child submenu when the pointer leaves both
+  its entry and its panel; the main menu must remain usable. After opening
+  `Split` and `Tab` without selecting an action, click the terminal background:
+  the menu must disappear and a further click must reach the terminal. Repeat
+  after reopening the menu and with `Escape`. Cancel a dialog
+  and reopen a submenu, including from detached windows and non-active split
+  panes. Removed/replaced panes, closed sessions and shutdown must reject any
+  pending command. Optional SFTP, statistics and snippet entries must follow
+  their injected callbacks; server actions must resolve the current server.
+- Local-terminal profile and saved-workspace menus must retain their existing
+  action order, read-only restrictions and the clicked saved object. Recheck
+  object existence and permissions before delayed dispatch. Exercise all
+  commands on synthetic objects, including workspace deletion cancellation,
+  repeated reopening after list rebuilds and switching between menu kinds.
+- The native tab overflow menu must retain visual tab order and full long
+  titles, wrapping them within the popup and indicating the active session.
+  Selecting a removed or detached session from an older popup must do nothing.
 
 ### Server Tree
+
+- Server, Favorite and Recent connection menus must share native GTK entries
+  anchored to the click. Preserve favorite toggling, Connect, View notes, Edit,
+  Clone, Send files, optional Browse files (SFTP), and Delete on the clicked
+  server. In read-only mode disable only mutations; locked storage rejects all
+  commands. Recheck the server, permissions, shutdown state and optional SFTP
+  availability before dispatch. Escape/reopen and opening a dialog must leave
+  the reusable menu and sidebar scroll position intact across row rebuilds.
+  Group, workspace and local-profile menus retain their existing behavior.
 
 - The icon-only sidebar actions for creating a group, server, or local terminal
   and for expanding or collapsing all groups must expose their translated
@@ -295,6 +336,15 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Creation tooltips must distinguish opening an immediate local terminal from
   creating an SSH connection or a reusable local-terminal profile.
 - Groups and subgroups must preserve expanded/collapsed state when editing servers or refreshing the list.
+- Group and subgroup context menus must use native GTK entries for Start,
+  New subgroup, Edit and Delete, anchored to the click. Start must retain the
+  current descendant-server selection, tab-capacity checks and confirmation
+  above ten connections. Read-only storage allows Start but disables mutations;
+  locked storage disables all commands. Revalidate the group and permissions
+  before deferred dispatch. Cancel and accept dialogs using synthetic groups,
+  preserve unrelated groups, and reopen after tree rebuilds without stale
+  targets or scrolling jumps. Switching between server and group menus must
+  keep their targets and cached popups independent until window destruction.
 - The server tree must not jump to the top when selecting or right-clicking entries.
 - Filtering must include matching servers, groups, and subgroups.
 - Group server counts must include servers inside subgroups.
