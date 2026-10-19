@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 import tempfile
 import time
 import unittest
@@ -18,8 +20,9 @@ from termia.config_io import (
 from termia.models import Note, NoteCategory
 from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories, note_category_move_allowed
 from termia.notes_dialogs import (
-    Gdk, Graphene, Gtk, NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE, NOTE_CATEGORY_DND_MIME_TYPE,
-    NoteEditorTab, NotesDialogs, format_note_timestamp,
+    Gdk, Graphene, Gtk, GtkSource, NOTE_ROW_DND_MIME_TYPE,
+    NOTE_CATEGORY_DND_MIME_TYPE, NoteEditorTab, NotesDialogs, NotesTreeNode,
+    create_notes_text_view, format_note_timestamp,
 )
 from termia.notes_io import (
     export_notes_file,
@@ -40,52 +43,34 @@ class PrivateNoteDragTests(unittest.TestCase):
         self.dialog.window = MagicMock()
         self.dialog.window.get_visible.return_value = True
         self.dialog.find_note = MagicMock(return_value=SimpleNamespace(id="note-one"))
-        self.dialog.editor_tabs = {"draft:one": SimpleNamespace(container_widget=object())}
         self.dialog.move_note_to_category = MagicMock(return_value=True)
-        self.dialog.reorder_editor_tab_at_bar_x = MagicMock()
-        self.dialog.activate_editor_tab = MagicMock()
         self.dialog.note_row_drag_id = "note-one"
         self.dialog.note_row_drag = object()
-        self.dialog.editor_tab_drag_key = "draft:one"
-        self.dialog.editor_tab_drag = object()
 
     def make_drop(self, mime_type):
         drop = MagicMock()
         drop.get_formats.return_value = Gdk.ContentFormats.new([mime_type])
-        drop.get_drag.return_value = (
-            self.dialog.note_row_drag if mime_type == NOTE_ROW_DND_MIME_TYPE
-            else self.dialog.editor_tab_drag
-        )
+        drop.get_drag.return_value = self.dialog.note_row_drag
         return drop
 
     def test_sources_offer_distinct_private_formats_without_text(self):
-        for mime_type, provider in (
-            (NOTE_ROW_DND_MIME_TYPE, self.dialog.on_note_drag_prepare(None, 0, 0, "note-one")),
-            (NOTE_TAB_DND_MIME_TYPE, self.dialog.on_editor_tab_drag_prepare(None, 0, 0, "draft:one")),
-        ):
-            with self.subTest(mime_type=mime_type):
-                formats = provider.ref_formats()
-                self.assertTrue(formats.contain_mime_type(mime_type))
-                self.assertFalse(formats.contain_gtype(GObject.TYPE_STRING))
-                self.assertFalse(formats.match(Gdk.ContentProvider.new_for_value("normal text").ref_formats()))
-        self.assertIsNone(self.dialog.on_editor_tab_drag_prepare(None, 0, 0, "missing"))
+        provider = self.dialog.on_note_drag_prepare(None, 0, 0, "note-one")
+        formats = provider.ref_formats()
+        self.assertTrue(formats.contain_mime_type(NOTE_ROW_DND_MIME_TYPE))
+        self.assertFalse(formats.contain_gtype(GObject.TYPE_STRING))
+        self.assertFalse(formats.match(Gdk.ContentProvider.new_for_value("normal text").ref_formats()))
         self.dialog.find_note.return_value = None
         self.assertIsNone(self.dialog.on_note_drag_prepare(None, 0, 0, "missing"))
 
     def test_receivers_reject_text_other_kinds_and_foreign_drags(self):
-        for mime_type, accept in (
-            (NOTE_ROW_DND_MIME_TYPE, self.dialog.on_note_category_drop_accept),
-            (NOTE_TAB_DND_MIME_TYPE, self.dialog.on_editor_tab_drop_accept),
-        ):
-            drop = self.make_drop(mime_type)
-            self.assertTrue(accept(None, drop))
-            drop.get_drag.return_value = object()
-            self.assertFalse(accept(None, drop))
-            drop = self.make_drop(mime_type)
-            for other_type in ("text/plain", "application/x-termia-terminal-tab-id",
-                               NOTE_TAB_DND_MIME_TYPE if mime_type == NOTE_ROW_DND_MIME_TYPE else NOTE_ROW_DND_MIME_TYPE):
-                drop.get_formats.return_value = Gdk.ContentFormats.new([other_type])
-                self.assertFalse(accept(None, drop))
+        drop = self.make_drop(NOTE_ROW_DND_MIME_TYPE)
+        self.assertTrue(self.dialog.on_note_category_drop_accept(None, drop))
+        drop.get_drag.return_value = object()
+        self.assertFalse(self.dialog.on_note_category_drop_accept(None, drop))
+        drop = self.make_drop(NOTE_ROW_DND_MIME_TYPE)
+        for other_type in ("text/plain", "application/x-termia-terminal-tab-id"):
+            drop.get_formats.return_value = Gdk.ContentFormats.new([other_type])
+            self.assertFalse(self.dialog.on_note_category_drop_accept(None, drop))
 
     def test_note_rows_respect_locked_and_read_only_storage(self):
         drop = self.make_drop(NOTE_ROW_DND_MIME_TYPE)
@@ -96,46 +81,40 @@ class PrivateNoteDragTests(unittest.TestCase):
         drop.read_async.assert_not_called()
 
     def test_async_drop_only_applies_live_matching_payload(self):
-        for mime_type in (NOTE_ROW_DND_MIME_TYPE, NOTE_TAB_DND_MIME_TYPE):
-            for condition in ("valid", "wrong-id", "invalid-utf8", "stale", "deleted", "hidden",
-                              "replaced-window", "locked", "read-only", "read-error"):
-                with self.subTest(mime_type=mime_type, condition=condition):
-                    self.setUp()
-                    drop = self.make_drop(mime_type)
-                    is_row = mime_type == NOTE_ROW_DND_MIME_TYPE
-                    expected = "note-one" if is_row else "draft:one"
-                    handler = self.dialog.on_note_category_drop if is_row else self.dialog.on_editor_tab_drop
-                    args = (None, drop, 15, 0, "Work") if is_row else (None, drop, 15, 0)
-                    self.assertTrue(handler(*args))
-                    context = drop.read_async.call_args.args[-1]
-                    self.dialog.note_row_drag_id = self.dialog.editor_tab_drag_key = None
-                    self.dialog.note_row_drag = self.dialog.editor_tab_drag = None
-                    stream = MagicMock()
-                    payload = b"wrong" if condition == "wrong-id" else b"\xff" if condition == "invalid-utf8" else expected.encode()
-                    stream.read_bytes_finish.return_value = GLib.Bytes.new(payload)
-                    if condition == "stale":
-                        self.dialog.pending_note_drop = object()
-                    elif condition == "deleted":
-                        self.dialog.editor_tabs.clear()
-                        self.dialog.find_note.return_value = None
-                    elif condition == "hidden":
-                        self.dialog.window.get_visible.return_value = False
-                    elif condition == "replaced-window":
-                        self.dialog.window = MagicMock()
-                    elif condition == "locked":
-                        self.dialog.store.encryption_locked = True
-                    elif condition == "read-only":
-                        self.dialog.store.read_only = True
-                    elif condition == "read-error":
-                        stream.read_bytes_finish.side_effect = GLib.Error("read failed")
-                    self.dialog.on_private_note_drop_bytes_read(stream, None, context)
-                    accepted = condition == "valid" or condition == "read-only" and not is_row
-                    drop.finish.assert_called_once_with(Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0))
-                    self.assertEqual(self.dialog.move_note_to_category.call_count, int(accepted and is_row))
-                    self.assertEqual(self.dialog.activate_editor_tab.call_count, int(accepted and not is_row))
-                    if accepted and is_row:
-                        self.dialog.move_note_to_category.assert_called_once_with("note-one", "Work")
-                    stream.close_async.assert_called_once()
+        for condition in ("valid", "wrong-id", "invalid-utf8", "stale", "deleted", "hidden",
+                          "replaced-window", "locked", "read-only", "read-error"):
+            with self.subTest(condition=condition):
+                self.setUp()
+                drop = self.make_drop(NOTE_ROW_DND_MIME_TYPE)
+                expected = "note-one"
+                self.assertTrue(self.dialog.on_note_category_drop(None, drop, 15, 0, "Work"))
+                context = drop.read_async.call_args.args[-1]
+                self.dialog.note_row_drag_id = None
+                self.dialog.note_row_drag = None
+                stream = MagicMock()
+                payload = b"wrong" if condition == "wrong-id" else b"\xff" if condition == "invalid-utf8" else expected.encode()
+                stream.read_bytes_finish.return_value = GLib.Bytes.new(payload)
+                if condition == "stale":
+                    self.dialog.pending_note_drop = object()
+                elif condition == "deleted":
+                    self.dialog.find_note.return_value = None
+                elif condition == "hidden":
+                    self.dialog.window.get_visible.return_value = False
+                elif condition == "replaced-window":
+                    self.dialog.window = MagicMock()
+                elif condition == "locked":
+                    self.dialog.store.encryption_locked = True
+                elif condition == "read-only":
+                    self.dialog.store.read_only = True
+                elif condition == "read-error":
+                    stream.read_bytes_finish.side_effect = GLib.Error("read failed")
+                self.dialog.on_private_note_drop_bytes_read(stream, None, context)
+                accepted = condition == "valid"
+                drop.finish.assert_called_once_with(Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0))
+                self.assertEqual(self.dialog.move_note_to_category.call_count, int(accepted))
+                if accepted:
+                    self.dialog.move_note_to_category.assert_called_once_with("note-one", "Work")
+                stream.close_async.assert_called_once()
 
     def test_async_reader_validates_mime_and_handles_io_failures(self):
         for condition in ("valid", "wrong-mime", "no-stream", "error"):
@@ -159,36 +138,87 @@ class PrivateNoteDragTests(unittest.TestCase):
                     drop.finish.assert_called_once_with(Gdk.DragAction(0))
                     stream.read_bytes_async.assert_not_called()
 
-    def test_real_async_stream_reorders_note_widgets_and_keeps_draft_content(self):
+class NativeNoteTabsTests(unittest.TestCase):
+    def setUp(self):
         if not Gtk.init_check() or Gdk.Display.get_default() is None:
             self.skipTest("GTK widget integration requires a graphical display")
-        bar = Gtk.Box()
+        self.dialog = NotesDialogs.__new__(NotesDialogs)
         self.dialog.editor_tabs = {}
-        for key in ("saved-one", "draft:one", "saved-two"):
-            label = Gtk.Label(label=key)
-            label.set_size_request(100, 30)
-            bar.append(label)
-            self.dialog.editor_tabs[key] = NoteEditorTab(
-                key, None if key == "draft:one" else key, key, "", None,
-                "content for " + key, container_widget=label,
-            )
-        bar.allocate(300, 30, -1, None)
-        self.dialog.editor_tabs_bar = bar
-        self.dialog.reorder_editor_tab_at_bar_x = NotesDialogs.reorder_editor_tab_at_bar_x.__get__(self.dialog)
-        drop = self.make_drop(NOTE_TAB_DND_MIME_TYPE)
-        self.dialog.on_editor_tab_drop(None, drop, 10, 0)
-        context = drop.read_async.call_args.args[-1]
-        stream = Gio.MemoryInputStream.new_from_bytes(GLib.Bytes.new(b"draft:one"))
-        drop.read_finish.return_value = (stream, NOTE_TAB_DND_MIME_TYPE)
-        self.dialog.on_private_note_drop_read(drop, None, context)
-        deadline = time.monotonic() + 2
-        while not drop.finish.called and time.monotonic() < deadline:
-            GLib.MainContext.default().iteration(False)
-            time.sleep(0.001)
-        drop.finish.assert_called_once_with(Gdk.DragAction.MOVE)
-        self.assertEqual(list(self.dialog.editor_tabs), ["draft:one", "saved-one", "saved-two"])
-        self.assertEqual(self.dialog.editor_tabs["draft:one"].content, "content for draft:one")
+        self.dialog.active_editor_tab_key = None
+        self.dialog._syncing_editor_notebook = False
+        self.dialog.editor_notebook = Gtk.Notebook()
+        self.dialog.editor_notebook.connect("switch-page", self.dialog.on_editor_notebook_switch_page)
+        self.dialog.editor_notebook.connect("page-reordered", self.dialog.on_editor_notebook_page_reordered)
+        self.dialog.store = SimpleNamespace(data=SimpleNamespace(servers=[]))
+        self.dialog.translate = lambda key: key
+
+    def add_tab(self, key):
+        tab = NoteEditorTab(key, None, key, "", None, "content for " + key)
+        self.dialog.add_editor_tab(tab)
+        return tab
+
+    def test_notebook_owns_selection_and_reordering_without_changing_draft(self):
+        first, draft, last = (self.add_tab(key) for key in ("one", "draft:one", "two"))
+        self.assertEqual(self.dialog.editor_notebook.get_n_pages(), 3)
+        self.assertTrue(self.dialog.editor_notebook.get_tab_reorderable(draft.page_widget))
+        self.dialog.activate_editor_tab = MagicMock(side_effect=lambda key: setattr(self.dialog, "active_editor_tab_key", key))
+        self.dialog.editor_notebook.set_current_page(1)
         self.dialog.activate_editor_tab.assert_called_once_with("draft:one")
+        self.dialog.editor_notebook.reorder_child(draft.page_widget, 0)
+        self.assertEqual(list(self.dialog.editor_tabs), ["draft:one", "one", "two"])
+        self.assertEqual(draft.content, "content for draft:one")
+        self.assertIs(self.dialog.editor_notebook.get_nth_page(0), draft.page_widget)
+
+    def test_failed_switch_restores_selected_page(self):
+        first, second = self.add_tab("one"), self.add_tab("two")
+        self.dialog.active_editor_tab_key = "one"
+        self.dialog.activate_editor_tab = MagicMock()
+        self.dialog.editor_notebook.set_current_page(1)
+        while GLib.MainContext.default().pending():
+            GLib.MainContext.default().iteration(False)
+        self.assertEqual(self.dialog.editor_notebook.get_current_page(), 0)
+        self.assertIs(self.dialog.editor_notebook.get_nth_page(0), first.page_widget)
+
+    def test_shared_editor_moves_between_pages_and_keeps_each_draft(self):
+        first, second = self.add_tab("one"), self.add_tab("two")
+        self.dialog.editor_workspace = Gtk.Box()
+        self.dialog.text_view = Gtk.TextView()
+        self.dialog.status_label = Gtk.Label()
+        self.dialog.modified_label = Gtk.Label()
+        self.dialog.detail_stack = Gtk.Stack()
+        self.dialog.detail_stack.add_named(self.dialog.editor_notebook, "editor")
+        self.dialog.scope_mode = "personal"
+        self.dialog.server_filter_id = None
+        self.dialog.editor_dirty = False
+        self.dialog.current_note_id = None
+        self.dialog.selected_note_id = None
+        self.dialog.cancel_autosave = MagicMock()
+        self.dialog.find_note = MagicMock(return_value=None)
+        self.dialog.set_editor_enabled = MagicMock()
+        self.dialog.refresh_list = MagicMock()
+        self.dialog.notes_list = Gtk.ListBox()
+        self.dialog.editor_content = lambda: self.dialog.text_view.get_buffer().get_text(
+            self.dialog.text_view.get_buffer().get_start_iter(),
+            self.dialog.text_view.get_buffer().get_end_iter(), True,
+        )
+        self.dialog.activate_editor_tab("one")
+        self.assertIs(self.dialog.editor_workspace.get_parent(), first.page_widget)
+        self.dialog.text_view.get_buffer().set_text("edited one")
+        self.dialog.editor_notebook.set_current_page(1)
+        self.assertIs(self.dialog.editor_workspace.get_parent(), second.page_widget)
+        self.assertEqual(first.content, "edited one")
+        self.assertEqual(self.dialog.editor_content(), "content for two")
+        self.dialog.editor_notebook.set_current_page(0)
+        self.assertEqual(self.dialog.editor_content(), "edited one")
+        self.dialog.editor_dirty = True
+        self.dialog.save_editor = MagicMock(return_value=False)
+        self.dialog.editor_notebook.set_current_page(1)
+        while GLib.MainContext.default().pending():
+            GLib.MainContext.default().iteration(False)
+        self.dialog.save_editor.assert_called_once_with()
+        self.assertEqual(self.dialog.active_editor_tab_key, "one")
+        self.assertEqual(self.dialog.editor_notebook.get_current_page(), 0)
+        self.assertEqual(self.dialog.editor_content(), "edited one")
 
 
 class NoteHierarchyTests(unittest.TestCase):
@@ -198,6 +228,260 @@ class NoteHierarchyTests(unittest.TestCase):
             NoteCategory("Leaf", parent="Child"), NoteCategory("Other"),
             NoteCategory("Server only", "server"),
         ]
+
+    def test_native_tree_model_preserves_hierarchy_search_and_deep_groups(self):
+        note = normalize_note("id", "Needle", "Body", "Leaf")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(
+            note_categories=self.categories, servers=[],
+        ))
+        dialog.presenter = NotesPresenter(lambda: [note], lambda: self.categories, lambda: [])
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+        dialog.notes_list = object()
+        dialog.notes_tree_selection = Gtk.SingleSelection.new(None)
+        dialog.notes_tree_selection.set_autoselect(False)
+        dialog.editor_tabs = {}
+        dialog.selected_note_id = "id"
+        dialog.selected_draft_key = None
+        dialog.active_editor_tab_key = "id"
+        dialog.scope_mode = "personal"
+        dialog.server_filter_id = None
+        dialog.expanded_note_sections = {"personal"}
+        dialog.expanded_server_groups = set()
+        dialog.collapsed_note_categories = {(None, "Project")}
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.close_note_context_menu = dialog.close_category_context_menu = lambda: None
+        dialog.refresh_list()
+        visible = [dialog.notes_tree_model.get_row(i).get_item().title
+                   for i in range(dialog.notes_tree_model.get_n_items())]
+        self.assertIn("Project", visible)
+        self.assertNotIn("Needle", visible)
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "Needle")
+        dialog.selected_note_id = "id"
+        dialog.refresh_list()
+        visible = [dialog.notes_tree_model.get_row(i).get_item().title
+                   for i in range(dialog.notes_tree_model.get_n_items())]
+        self.assertEqual(visible, ["notes_personal_scope", "Project", "Child", "Leaf", "Needle", "notes_server_scope"])
+        self.assertEqual(dialog.notes_tree_selection.get_selected_item().get_item().note_id, "id")
+        self.categories[:] = [NoteCategory(str(index), parent=str(index - 1) if index else None)
+                              for index in range(1100)]
+        note.category = "1099"
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+        dialog.collapsed_note_categories.clear()
+        dialog.refresh_list()
+        self.assertEqual(dialog.notes_tree_model.get_n_items(), 1103)
+
+    def test_native_tree_rows_bind_and_recycle_controllers(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False)
+        dialog.on_note_tree_header_clicked = MagicMock()
+        root = Gio.ListStore.new(NotesTreeNode)
+        category = NotesTreeNode("category", "Folder", "folder-symbolic", 1, category="Folder")
+        category.children.append(NotesTreeNode("note", "Needle", note_id="id"))
+        root.append(category)
+        model = Gtk.TreeListModel.new(root, False, True, dialog.create_note_tree_children)
+        selection = Gtk.SingleSelection.new(model)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", dialog.setup_note_tree_item)
+        factory.connect("bind", dialog.bind_note_tree_item)
+        factory.connect("unbind", dialog.unbind_note_tree_item)
+        view = Gtk.ListView.new(selection, factory)
+        window = Gtk.Window()
+        window.set_child(view)
+        window.present()
+        for _ in range(10):
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+        self.assertEqual(model.get_n_items(), 2)
+        widgets = [view]
+        expanders = []
+        while widgets:
+            widget = widgets.pop()
+            if isinstance(widget, Gtk.TreeExpander):
+                expanders.append(widget)
+            child = widget.get_first_child()
+            while child is not None:
+                widgets.append(child)
+                child = child.get_next_sibling()
+        self.assertEqual(len(expanders), 2)
+        controllers_by_title = {}
+        for expander in expanders:
+            content = expander.get_child()
+            title = content.get_first_child().get_next_sibling().get_label()
+            controllers = content.observe_controllers()
+            controllers_by_title[title] = [controllers.get_item(i)
+                                           for i in range(controllers.get_n_items())]
+        self.assertTrue(any(isinstance(item, Gtk.DragSource)
+                            for item in controllers_by_title["Needle"]))
+        self.assertTrue(any(isinstance(item, Gtk.DropTargetAsync)
+                            for item in controllers_by_title["Folder"]))
+        header_click = next(item for item in controllers_by_title["Folder"]
+                            if isinstance(item, Gtk.GestureClick) and item.get_button() == 1)
+        header_click.emit("pressed", 1, 10.0, 10.0)
+        dialog.on_note_tree_header_clicked.assert_not_called()
+        header_click.emit("released", 1, 10.0, 10.0)
+        dialog.on_note_tree_header_clicked.assert_called_once()
+        window.close()
+
+    def test_notes_window_installs_native_tree(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        parent = Gtk.Window()
+        store = SimpleNamespace(read_only=True, encryption_locked=False, data=SimpleNamespace(
+            app=SimpleNamespace(notes_editor={}), notes=[], note_categories=[], servers=[],
+        ))
+        presenter = NotesPresenter(lambda: [], lambda: [], lambda: [])
+        dialog = NotesDialogs(parent, store, presenter, lambda key: key,
+                              lambda: True, lambda _message: None, lambda _message: None)
+        dialog.ensure_window()
+        self.assertIsInstance(dialog.notes_list, Gtk.ListView)
+        self.assertIsInstance(dialog.notes_tree_model, Gtk.TreeListModel)
+        dialog.refresh_list()
+        dialog.window.present()
+        for _ in range(10):
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+        self.assertEqual(dialog.notes_tree_model.get_n_items(), 2)
+        dialog.window.close()
+        parent.close()
+
+    def test_native_right_click_other_note_defers_selection_and_menu(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        first = Note("one", "First", "Body")
+        second = Note("two", "Second", "Body")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.store = SimpleNamespace(data=SimpleNamespace(notes=[first, second]))
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.selected_note_id = "one"
+        dialog.selected_draft_key = None
+        dialog.active_editor_tab_key = "one"
+        dialog.scope_mode = "personal"
+        dialog.server_filter_id = None
+        dialog.loading_note_list = False
+        dialog.show_note_context_menu = MagicMock()
+        root = Gio.ListStore.new(NotesTreeNode)
+        category = NotesTreeNode("category", "Notes", "folder-symbolic", 2)
+        for note in (first, second):
+            category.children.append(NotesTreeNode("note", note.title, note_id=note.id))
+        root.append(category)
+        dialog.notes_tree_model = Gtk.TreeListModel.new(root, False, True,
+                                                        dialog.create_note_tree_children)
+        dialog.notes_tree_selection = Gtk.SingleSelection.new(dialog.notes_tree_model)
+        dialog.notes_tree_selection.set_autoselect(False)
+        dialog.notes_tree_selection.connect("notify::selected-item", dialog.on_note_tree_selected)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", dialog.setup_note_tree_item)
+        factory.connect("bind", dialog.bind_note_tree_item)
+        factory.connect("unbind", dialog.unbind_note_tree_item)
+        view = Gtk.ListView.new(dialog.notes_tree_selection, factory)
+        dialog.window = Gtk.Window()
+        dialog.window.set_child(view)
+        dialog.window.present()
+        while GLib.MainContext.default().pending():
+            GLib.MainContext.default().iteration(False)
+        widgets = [view]
+        target = None
+        while widgets:
+            widget = widgets.pop()
+            if isinstance(widget, Gtk.TreeExpander):
+                content = widget.get_child()
+                if getattr(content, "note_id", None) == "two":
+                    target = content
+            child = widget.get_first_child()
+            while child is not None:
+                widgets.append(child)
+                child = child.get_next_sibling()
+        self.assertIsNotNone(target)
+        gesture = MagicMock()
+        dialog.on_note_tree_context_pressed(gesture, 1, 5, 5, target, "two")
+        self.assertEqual(dialog.selected_note_id, "one")
+        dialog.show_note_context_menu.assert_not_called()
+        while GLib.MainContext.default().pending():
+            GLib.MainContext.default().iteration(False)
+        self.assertEqual(dialog.selected_note_id, "two")
+        self.assertEqual(dialog.active_editor_tab_key, "one")
+        dialog.show_note_context_menu.assert_called_once()
+        self.assertEqual(dialog.show_note_context_menu.call_args.kwargs["note_id"], "two")
+        dialog.window.close()
+
+    def test_native_category_pointer_drag_starts_without_expanding(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None or not shutil.which("xdotool"):
+            self.skipTest("GTK pointer drag test requires a private display and xdotool")
+        import gi
+        gi.require_version("GdkX11", "4.0")
+        from gi.repository import GdkX11
+
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False,
+                                       has_note_category=lambda *_args: True,
+                                       data=SimpleNamespace(note_categories=[
+                                           NoteCategory("Source"), NoteCategory("Target"),
+                                       ]))
+        dialog.on_note_tree_header_clicked = MagicMock()
+        drag_begin = dialog.on_category_group_drag_begin
+        dialog.on_category_group_drag_begin = MagicMock(wraps=drag_begin)
+        root = Gio.ListStore.new(NotesTreeNode)
+        root.append(NotesTreeNode("category", "Source", "folder-symbolic", category="Source"))
+        root.append(NotesTreeNode("category", "Target", "folder-symbolic", category="Target"))
+        model = Gtk.TreeListModel.new(root, False, False, dialog.create_note_tree_children)
+        selection = Gtk.SingleSelection.new(model)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", dialog.setup_note_tree_item)
+        factory.connect("bind", dialog.bind_note_tree_item)
+        factory.connect("unbind", dialog.unbind_note_tree_item)
+        view = Gtk.ListView.new(selection, factory)
+        window = Gtk.Window()
+        window.set_default_size(360, 180)
+        window.set_child(view)
+        dialog.window = window
+        window.present()
+
+        def drain():
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+
+        drain()
+        widgets = [view]
+        source = None
+        while widgets:
+            widget = widgets.pop()
+            if isinstance(widget, Gtk.TreeExpander):
+                content = widget.get_child()
+                title = content.get_first_child().get_next_sibling().get_label()
+                if title == "Source":
+                    source = content
+            child = widget.get_first_child()
+            while child is not None:
+                widgets.append(child)
+                child = child.get_next_sibling()
+        self.assertIsNotNone(source)
+        valid, point = source.compute_point(window, Graphene.Point().init(35, source.get_height() / 2))
+        self.assertTrue(valid)
+        xid = GdkX11.X11Surface.get_xid(window.get_surface())
+        def pointer(*args):
+            subprocess.run(["xdotool", *args], check=True, stdout=subprocess.DEVNULL)
+            drain()
+        def reset_pointer_and_close():
+            pointer("mouseup", "1")
+            pointer("mousemove", "0", "0")
+            window.close()
+            drain()
+        self.addCleanup(reset_pointer_and_close)
+        pointer("mousemove", "--window", str(xid), str(int(point.x)), str(int(point.y)))
+        pointer("mousedown", "1")
+        self.assertFalse(dialog.on_note_tree_header_clicked.called)
+        for offset in (12, 24, 48, 80):
+            pointer("mousemove", "--window", str(xid), str(int(point.x + offset)), str(int(point.y)))
+            time.sleep(0.03)
+            drain()
+        self.assertTrue(dialog.on_category_group_drag_begin.called)
+        pointer("mouseup", "1")
+        dialog.on_note_tree_header_clicked.assert_not_called()
 
     def test_move_validation_rejects_cycles_missing_and_cross_scope_parents(self):
         for name, parent, scope in (
@@ -524,57 +808,55 @@ class NotesDomainTests(unittest.TestCase):
         dialog.store.update_notes_editor.assert_not_called()
         dialog.apply_editor_appearance.assert_called_once_with({"size": 18})
 
-    def test_line_number_toggle_attaches_gutter_and_persists_visibility(self):
+    def test_line_number_toggle_uses_source_view_and_persists_visibility(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.text_view = MagicMock()
-        dialog.line_number_gutter = MagicMock()
         dialog.update_editor_appearance = MagicMock()
         button = SimpleNamespace(get_active=lambda: False)
 
         dialog.on_line_numbers_toggled(button)
 
-        dialog.text_view.set_gutter.assert_called_once_with(
-            Gtk.TextWindowType.LEFT, None,
-        )
+        dialog.text_view.set_show_line_numbers.assert_called_once_with(False)
         dialog.update_editor_appearance.assert_called_once_with({"line_numbers": False})
 
-        dialog.text_view.set_gutter.reset_mock()
+        dialog.text_view.set_show_line_numbers.reset_mock()
         dialog.update_editor_appearance.reset_mock()
         button.get_active = lambda: True
 
         dialog.on_line_numbers_toggled(button)
 
-        dialog.text_view.set_gutter.assert_called_once_with(
-            Gtk.TextWindowType.LEFT, dialog.line_number_gutter,
-        )
+        dialog.text_view.set_show_line_numbers.assert_called_once_with(True)
         dialog.update_editor_appearance.assert_called_once_with({"line_numbers": True})
 
-    def test_line_number_draw_includes_empty_final_line(self):
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        buffer = Gtk.TextBuffer()
+    def test_notes_editor_uses_plain_text_source_buffer_and_native_numbers(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GtkSourceView integration requires a graphical display")
+        view = create_notes_text_view(True)
+        self.assertIsInstance(view, GtkSource.View)
+        self.assertTrue(view.get_show_line_numbers())
+        self.assertEqual(view.get_wrap_mode(), Gtk.WrapMode.WORD_CHAR)
+        self.assertFalse(view.get_auto_indent())
+        buffer = view.get_buffer()
+        self.assertIsInstance(buffer, GtkSource.Buffer)
+        self.assertFalse(buffer.get_highlight_syntax())
+        self.assertFalse(buffer.get_highlight_matching_brackets())
+        scheme = buffer.get_style_scheme()
+        self.assertEqual(scheme.get_id(), "termia-notes")
+        line_style = scheme.get_style("line-numbers")
+        self.assertEqual(line_style.get_property("foreground"), "#0065BF")
+        self.assertEqual(line_style.get_property("background"), "#000D1A")
         buffer.set_text("first line\n")
-        dialog.text_view = MagicMock()
-        dialog.text_view.get_buffer.return_value = buffer
-        dialog.text_view.get_visible_rect.return_value = SimpleNamespace(y=0, height=100)
-        dialog.text_view.get_line_at_y.return_value = (buffer.get_start_iter(), 0)
-        dialog.text_view.get_line_yrange.side_effect = lambda iterator: (iterator.get_line() * 16, 16)
-        dialog.text_view.buffer_to_window_coords.side_effect = lambda _window, _x, y: (0, y)
-        area = MagicMock()
-        area.create_pango_layout.return_value.get_pixel_size.return_value = (8, 12)
-
-        with patch("termia.notes_dialogs.PangoCairo.show_layout"):
-            dialog.draw_line_numbers(area, MagicMock(), 36, 100)
-
+        self.assertEqual(buffer.get_line_count(), 2)
         self.assertEqual(
-            [call.args[0] for call in area.create_pango_layout.call_args_list],
-            ["1", "2"],
+            buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False),
+            "first line\n",
         )
+        view.set_show_line_numbers(False)
+        self.assertFalse(view.get_show_line_numbers())
 
     def test_editor_appearance_uses_dark_defaults_when_settings_are_empty(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.editor_css_provider = MagicMock()
-        dialog.update_line_number_gutter_width = MagicMock()
-        dialog.queue_line_number_redraw = MagicMock()
 
         dialog.apply_editor_appearance({"size": 12})
 
@@ -1375,7 +1657,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         boxes = []
         buttons = [MagicMock() for _ in range(5)]
 
-        with patch("termia.notes_dialogs.Gtk") as gtk:
+        with patch("termia.notes_dialogs.Gtk") as gtk, patch(
+            "termia.notes_dialogs.create_notes_text_view"
+        ):
             gtk.Button.side_effect = buttons
 
             def make_box(**_kwargs):
@@ -1631,33 +1915,27 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         self.assertEqual(closed, ["note-id"])
 
-    def test_remove_editor_tab_removes_its_outer_tab_container(self):
+    def test_remove_editor_tab_removes_its_notebook_page(self):
         tab = NoteEditorTab("note-id", "note-id", "Runbook", "", None, "Saved")
         removed = []
+        page = object()
+        tab.page_widget = page
 
-        class Container:
-            parent = None
+        class Notebook:
+            def page_num(self, widget):
+                return 0 if widget is page else -1
 
-            def get_parent(self):
-                return self.parent
+            def remove_page(self, index):
+                removed.append(index)
 
-        container = Container()
-
-        class TabBar:
-            def remove(self, widget):
-                removed.append(widget)
-                widget.parent = None
-
-        tab.container_widget = container
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.editor_tabs = {tab.key: tab}
         dialog.active_editor_tab_key = "another-tab"
-        dialog.editor_tabs_bar = TabBar()
-        container.parent = dialog.editor_tabs_bar
+        dialog.editor_notebook = Notebook()
 
         dialog.remove_editor_tab(tab.key)
 
-        self.assertEqual(removed, [container])
+        self.assertEqual(removed, [0])
         self.assertEqual(dialog.editor_tabs, {})
 
     def test_closing_dirty_editor_tab_offers_save_discard_or_keep(self):
@@ -1926,37 +2204,6 @@ class NotesDialogSignalTests(unittest.TestCase):
             ("saved-id", "New note 12345678", "", None, "Restart service", True, "Saving…"),
         )
 
-    def test_active_note_tab_gets_terminal_style_highlight(self):
-        class TabContainer:
-            def __init__(self):
-                self.classes = set()
-
-            def add_css_class(self, name):
-                self.classes.add(name)
-
-            def remove_css_class(self, name):
-                self.classes.discard(name)
-
-        class Label:
-            def set_label(self, _value):
-                pass
-
-        first = NoteEditorTab("one", "one", "First", "", None, "")
-        second = NoteEditorTab("two", "two", "Second", "", None, "")
-        first.container_widget = TabContainer()
-        second.container_widget = TabContainer()
-        first.label_widget = Label()
-        second.label_widget = Label()
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.active_editor_tab_key = "two"
-        dialog.translate = lambda key: key
-
-        dialog.update_editor_tab_label(first)
-        dialog.update_editor_tab_label(second)
-
-        self.assertNotIn("active", first.container_widget.classes)
-        self.assertIn("active", second.container_widget.classes)
-
     def test_new_note_uses_plain_name_and_inherits_server_scope(self):
         created = []
         activated = []
@@ -2112,25 +2359,20 @@ class NotesDialogSignalTests(unittest.TestCase):
         first = NoteEditorTab("one", "one", "First", "", None, "")
         second = NoteEditorTab("two", "two", "Second", "", None, "")
 
-        class Child:
-            def __init__(self, next_child=None):
-                self.next_child = next_child
+        visual_first, visual_second = object(), object()
+        first.page_widget = visual_second
+        second.page_widget = visual_first
 
-            def get_next_sibling(self):
-                return self.next_child
+        class Notebook:
+            def get_n_pages(self):
+                return 2
 
-        visual_first, visual_second = Child(), Child()
-        visual_first.next_child = visual_second
-        first.container_widget = visual_second
-        second.container_widget = visual_first
-
-        class TabBar:
-            def get_first_child(self):
-                return visual_first
+            def get_nth_page(self, index):
+                return (visual_first, visual_second)[index]
 
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.editor_tabs = {first.key: first, second.key: second}
-        dialog.editor_tabs_bar = TabBar()
+        dialog.editor_notebook = Notebook()
 
         dialog.sync_editor_tab_order()
 

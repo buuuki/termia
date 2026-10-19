@@ -50,6 +50,9 @@ a standard GTK control does not justify crossing those boundaries.
 | 9 | Note-list item context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; note identity and write guards |
 | 10 | Notes category context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; category identity and write guards |
 | 11 | Notes editor-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; saved-note and draft identity |
+| 13 | Notes editor tab bar | `Gtk.Notebook` | `src/termia/notes_dialogs.py`; shared editor, draft identity, save guards, close action, and tab menu |
+| 15 | Notes tree | `Gtk.TreeListModel`, `Gtk.TreeExpander`, `Gtk.ListView`, and `Gtk.SingleSelection` | `src/termia/notes_dialogs.py`; Notes supplies hierarchy data, scope actions, saved expansion, menus, and private drag targets |
+| 16 | Notes line-number gutter | `GtkSource.View` from GtkSourceView 5 | `src/termia/notes_dialogs.py`; saved visibility and Notes colors |
 | 20 | Terminal tab overflow selector | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/tabs.py`; visual order and active marker |
 
 The two unnumbered menus were completed under
@@ -57,23 +60,75 @@ The two unnumbered menus were completed under
 issue #360. Standard menu presentation does not remove the application logic
 listed in the final column.
 
+Item 16 uses the standard GtkSourceView widget, which extends GTK 4 and requires
+an additional runtime package; it is not a control built into GTK 4 itself.
+
 ## Existing custom compositions in the reviewed inventory
 
 | # | Surface | Current composition and responsibility | Source | Review status |
 |---:|---|---|---|---|
 | 12 | Terminal tab bar | `Gtk.Box` and `Gtk.Stack`; Termia owns selection, ordering, drag, overflow visibility, and session lifecycle | `src/termia/app.py`, `src/termia/tabs.py` | Compare `Gtk.Notebook` with the full behavior before any replacement |
-| 13 | Notes editor tab bar | GTK boxes and buttons; Termia owns activation, closing, ordering, and draft identity | `src/termia/notes_dialogs.py` | Compare native tab controls with the full behavior |
 | 14 | Connections tree | `Gtk.Expander` and boxes; Termia owns hierarchy, selection, navigation, drag, and expansion state | `src/termia/sidebar.py` | Compare `Gtk.TreeListModel` and `Gtk.TreeExpander` based views with the full behavior |
-| 15 | Notes tree | `Gtk.ListBox` rows and indentation; Termia owns hierarchy, selection, expansion, and note moves | `src/termia/notes_dialogs.py` | Compare native tree controls with the full behavior |
-| 16 | Notes line-number gutter | `Gtk.DrawingArea` aligned with `Gtk.TextView`; Termia draws line numbers | `src/termia/notes_dialogs.py` | Existing feature-specific GTK composition |
-| 17 | Shortcut capture control | `Gtk.Box`, buttons, and key controllers; Termia captures and validates assignments | `src/termia/keybinding_preferences.py` | Existing feature-specific GTK composition |
-| 18 | Grouped temporary notifications | `Gtk.Revealer` and child widgets; Termia owns grouping and timing | `src/termia/app.py`, `src/termia/notifications.py` | Existing feature-specific GTK composition |
-| 19 | Startup unlock panel | In-window `Gtk.Overlay` with standard password entry; Termia owns blocking and focus | `src/termia/app.py` | Existing feature-specific GTK composition |
+| 17 | Shortcut capture control | `Gtk.Box`, buttons, and key controllers; Termia captures and validates assignments | `src/termia/keybinding_preferences.py` | Retain as a justified custom capture: GTK 4 has no supported standalone recorder with equivalent behavior |
+| 18 | Grouped temporary notifications | `Gtk.Overlay`, `Gtk.Revealer`, frame, icon, and label; Termia owns grouping, severity, and timing | `src/termia/app.py`, `src/termia/notifications.py` | Retain as a justified composition of standard GTK widgets; GTK has no equivalent grouped notification control |
+| 19 | Startup unlock panel | In-window `Gtk.Overlay` with `Gtk.PasswordEntry`; Termia owns blocking, focus, and unlock flow | `src/termia/app.py` | Retain as a justified composition of standard GTK widgets; no single GTK 4 control preserves the full in-window interaction |
 
-Items 12–15 were compared with native tab or tree controls under issue #360;
-equivalent behavior has not been demonstrated. Items 16–19 currently remain
-feature-specific compositions. This status is not a claim that GTK lacks useful
-primitives for them.
+Items 12 and 14 were compared with native tab or tree controls under issue #360;
+equivalent behavior has not been demonstrated. Items 17–19 have documented
+reasons for retaining their current compositions. These decisions do not
+authorize custom replacements where an appropriate standard control exists.
+
+### Item 17: justified capture exception
+
+`KeybindingCaptureRow` is shared by preferences and the snippet editor. It uses
+standard GTK buttons and event/focus controllers, but Termia owns the recording
+interaction: begin capture, normalize the key
+combination, cancel with Escape or focus loss, clear the assignment, and pass
+the result to conflict and storage validation. `Gtk.ShortcutController` handles
+shortcut activation, while `Gtk.ShortcutLabel` only displays one. The GTK 4
+widget that can edit accelerators, `Gtk.CellRendererAccel`, is deprecated since
+4.10 and belongs to the deprecated cell-renderer/tree-view interface; [GTK
+recommends application-owned capture instead](https://docs.gtk.org/gtk4/class.CellRendererAccel.html).
+Retain the current capture composition under issue #360. Revisit it if GTK
+provides a supported standalone recorder that preserves these behaviors.
+
+### Item 18: justified grouped-notification composition
+
+The in-window notification panel already uses standard `Gtk.Overlay` and
+`Gtk.Revealer` widgets with a frame, icon, and label. Termia groups every
+message in arrival order, including duplicates, shows the highest severity,
+and restarts its five-second hide timer for each new message. The overlay does
+not intercept terminal input. [GTK's deprecated `Gtk.InfoBar` documentation](https://docs.gtk.org/gtk4/class.InfoBar.html)
+recommends composing `Gtk.Revealer` with ordinary widgets because GTK has no
+replacement info-bar control. [`Adw.ToastOverlay`](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1-latest/method.ToastOverlay.add_toast.html)
+belongs to libadwaita, an additional dependency; it queues separate toasts by
+default and would still need Termia-owned grouping and severity logic to
+preserve this interaction.
+Retain the current composition under issue #360. Revisit it only if a supported
+control can preserve the protected behavior in the regression checklist.
+
+### Item 19: justified startup-unlock composition
+
+The password field is the standard `Gtk.PasswordEntry`; the window is a
+`Gtk.ApplicationWindow`. Termia composes standard `Gtk.Overlay`, `Gtk.Frame`,
+labels, boxes, and buttons to keep the unlock panel centered inside that window.
+Application logic disables the underlying content and header actions, directs
+focus to the password field, and handles Enter, Escape, validation, errors, and
+cancellation. The protected behavior requires the panel to follow the Termia
+window across monitors while window-management actions remain available.
+
+A modal [`Gtk.Dialog`](https://docs.gtk.org/gtk4/class.Dialog.html) is a separate
+top-level window and is deprecated in GTK 4.10. A
+[`Gtk.Popover`](https://docs.gtk.org/gtk4/class.Popover.html) is attached to a
+widget and its modal mode automatically hides on outside interaction; that
+would change the current centered, persistent unlock flow.
+[`Adw.Dialog`](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1-latest/class.Dialog.html)
+can provide an in-window dialog, but requires libadwaita and an `Adw.Window` or
+`Adw.ApplicationWindow`, rather than Termia's current GTK window. No single
+control in the supported GTK 4 baseline provides the same interaction without
+such changes. Retain this GTK composition under issue #360; revisit it if the
+window architecture or supported controls change. This is a justification for
+composing standard GTK widgets, not a claim that GTK lacks a password control.
 
 ## Review before changing a control
 

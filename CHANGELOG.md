@@ -4,6 +4,19 @@
 
 ### Changed
 
+- Use `Gtk.TreeListModel`, `Gtk.TreeExpander`, and `Gtk.ListView` for the Notes
+  tree while retaining nested groups, search, drafts, scope navigation, menus,
+  and private drag targets (`#360`).
+
+- Use `Gtk.Notebook` for Notes editor tabs, including native selection,
+  reordering, and overflow with rounded tabs, a window-matched header, and a
+  theme-derived highlight alongside GTK's blue underline on the selected tab
+  while keeping drafts, save guards, and tab actions (`#360`).
+
+- Use GtkSourceView 5 for native Notes line numbers while preserving plain-text
+  content, saved visibility, and editor colors; install its runtime dependency
+  on supported distributions (`#360`).
+
 - Document the standard GTK control policy and inventory, including the
   confirmation required before introducing custom replacements and the
   existing Core/add-on architecture boundaries (`#360`).
@@ -18,6 +31,15 @@
   visibility, and write restrictions (`#358`).
 
 ### Fixed
+
+- Keep Notes GTK tests safe in headless CI while retaining GtkSourceView
+  integration coverage on a private display (`#360`).
+
+- Keep Notes category rows alive until a left-button drag can start, restoring
+  category moves into other groups in the native tree (`#360`).
+
+- Defer Notes tree selection and context-menu opening until GTK finishes the
+  right-click event, avoiding a crash when targeting another note (`#360`).
 
 - Restore terminal input after leaving the native Split or Tab submenu and
   dismissing the terminal context menu with an outside click (`#360`).

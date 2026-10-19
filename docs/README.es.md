@@ -165,6 +165,8 @@ El instalador verifica el resultado después de instalar. También intenta insta
 Si la comprobación indica que falta el namespace `Vte 3.91`, falta el paquete de
 introspección GTK 4 VTE. En Debian, Ubuntu o Linux Mint el paquete necesario es
 `gir1.2-vte-3.91`.
+El editor de Notas también necesita GtkSourceView 5 (`gir1.2-gtksource-5`
+en Debian, Ubuntu y Linux Mint); el instalador y el paquete Debian lo instalan.
 
 También puedes ejecutar Termia directamente desde el repositorio:
 
@@ -233,7 +235,7 @@ sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 El paquete Debian instala el comando `termia`, el lanzador de escritorio y el
-icono; APT instala las dependencias de GTK, VTE, Python, SSH y cifrado.
+icono; APT instala las dependencias de GTK, VTE, GtkSourceView, Python, SSH y cifrado.
 
 ## Notas de uso
 
@@ -254,13 +256,15 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   invertidas se conservan literalmente. La barra solo ofrece controles de
   apariencia: fuente, tamaño, color del texto, fondo y un conmutador persistente
   para la numeración de líneas, activada por defecto. El editor usa el fondo
-  `#001B33` y texto blanco; la regleta usa números `#0065BF` sobre `#000D1A`.
+  `#001B33` y texto blanco; el margen estándar de GtkSourceView muestra números
+  `#0065BF` sobre `#000D1A`.
   Estos ajustes y la visibilidad de la barra se guardan como preferencias
   independientes del contenido. Notas utiliza una ventana independiente y no modal,
   con los mismos controles GTK que la principal. Al abrirla se restaura y se presenta;
   puedes llevar cualquiera de las dos al frente. Cerrar Notas oculta su espacio para
-  reutilizarlo; salir de Termia guarda los cambios y cierra ambas ventanas. El botón junto a las
-  pestañas muestra u oculta la barra compacta;
+  reutilizarlo; salir de Termia guarda los cambios y cierra ambas ventanas.
+  Las pestañas usan el cuaderno GTK estándar para seleccionarlas, reordenarlas y acceder a las que no caben.
+  El botón junto a las pestañas muestra u oculta la barra compacta;
   la lista, con texto más pequeño, mantiene su posición. En modo solo lectura,
   estos ajustes duran esa sesión.
   Las notas se guardan automáticamente en un fichero separado; también hay un
@@ -290,9 +294,10 @@ El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguri
   borrador activo en ese ámbito. La lista tiene búsqueda global
   y filas compactas; el diálogo compacto de Propiedades muestra, entre otros
   datos, la categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
-  la abre en una pestaña de edición. La pestaña activa tiene un subrayado azul
-  oscuro y fino de ancho completo. El área de escritura tiene un fondo y un borde
-  diferenciados que se adaptan al tema. Los menús contextuales de notas y
+  la abre en una pestaña de edición. La pestaña seleccionada tiene un fondo
+  resaltado que se adapta al tema y conserva la línea azul de GTK. El área de
+  escritura tiene un fondo y un borde diferenciados que se adaptan al tema.
+  Los menús contextuales de notas y
   Propiedades comparten la superficie y el estilo del menú principal de Termia.
   Los controles
   a la izquierda de la barra de título ocultan la lista y abren el menú de
@@ -355,8 +360,9 @@ Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
 
 ## Base de ejecución compatible
 
-Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0 y el espacio de
-introspección de VTE para GTK 4, `Vte 3.91`. El entorno actual de validación
+Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0, GtkSourceView 5
+(`GtkSource 5`) y el espacio de introspección de VTE para GTK 4, `Vte 3.91`.
+El entorno actual de validación
 proporciona GTK 4.14.5 y VTE 0.76.0. Las comprobaciones de compatibilidad para
 métodos GTK opcionales como `set_handle_menubar_accel` y
 `set_show_separators` son intencionadas, porque las distribuciones pueden

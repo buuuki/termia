@@ -166,6 +166,8 @@ L'instal·lador verifica el resultat després d'instal·lar. També intenta inst
 Si la comprovació indica que falta el namespace `Vte 3.91`, falta el paquet
 d'introspecció GTK 4 VTE. En Debian, Ubuntu o Linux Mint el paquet necessari és
 `gir1.2-vte-3.91`.
+L'editor de Notes també necessita GtkSourceView 5 (`gir1.2-gtksource-5`
+en Debian, Ubuntu i Linux Mint); l'instal·lador i el paquet Debian l'instal·len.
 
 També pots executar Termia directament des del repositori:
 
@@ -234,7 +236,7 @@ sudo apt install ../termia_0.6.0~beta.3-1_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la
-icona; APT instal·la les dependències de GTK, VTE, Python, SSH i xifratge.
+icona; APT instal·la les dependències de GTK, VTE, GtkSourceView, Python, SSH i xifratge.
 
 ## Notes d'ús
 
@@ -255,14 +257,16 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   cometes inverses es conserven literalment. La barra només ofereix controls
   d'aparença: lletra, mida, color del text, fons i un commutador persistent per
   a la numeració de línies, activada per defecte. L'editor fa servir el fons
-  `#001B33` i text blanc; el marge mostra números `#0065BF` sobre `#000D1A`.
+  `#001B33` i text blanc; el marge estàndard de GtkSourceView mostra números
+  `#0065BF` sobre `#000D1A`.
   Aquests ajustos i la visibilitat de la barra es desen com a preferències
   independents del contingut.
   Notes fa servir una finestra independent i no modal, amb els mateixos controls
   GTK que la principal. En obrir-la es restaura i es presenta; pots portar
   qualsevol de les dues al davant. Tancar Notes n'oculta l'espai per reutilitzar-lo;
-  sortir de Termia desa els canvis i tanca totes dues finestres. El botó al costat de les pestanyes mostra
-  o amaga la barra compacta;
+  sortir de Termia desa els canvis i tanca totes dues finestres.
+  Les pestanyes fan servir el quadern GTK estàndard per seleccionar-les, reordenar-les i accedir a les que no hi caben.
+  El botó al costat de les pestanyes mostra o amaga la barra compacta;
   la llista, amb text més petit, manté la posició. En mode de només lectura, els
   ajustos duren aquella sessió.
   També hi ha un botó **Desa**. En obrir la finestra es crea un esborrany nou o es reprèn
@@ -291,9 +295,10 @@ El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seg
   cerca global i files
   compactes; el diàleg compacte de Propietats mostra, entre altres dades, la
   categoria desada de cada nota. Un clic selecciona la nota i un doble clic l'obre en una
-  pestanya d'edició. La pestanya activa té un subratllat blau fosc i fi de
-  banda a banda. L'àrea d'escriptura té un fons i una vora diferenciats que
-  s'adapten al tema. Els menús contextuals de notes i Propietats comparteixen
+  pestanya d'edició. La pestanya seleccionada té un fons ressaltat que
+  s'adapta al tema i conserva la línia blava de GTK. L'àrea d'escriptura té un
+  fons i una vora diferenciats que s'adapten al tema. Els menús contextuals de
+  notes i Propietats comparteixen
   la superfície i l'estil del menú principal de Termia. Els controls a
   l'esquerra de la barra de títol amaguen la
   llista i obren el menú d'importació/exportació. El botó de nota nova es manté
@@ -355,8 +360,9 @@ Termia s'ha provat en Ubuntu 24.04.4 LTS amb kernel Linux
 
 ## Base d'execució compatible
 
-Termia requereix Python 3.10 o posterior, GTK 4.0/GDK 4.0 i l'espai
-d'introspecció de VTE per a GTK 4, `Vte 3.91`. L'entorn actual de validació
+Termia requereix Python 3.10 o posterior, GTK 4.0/GDK 4.0, GtkSourceView 5
+(`GtkSource 5`) i l'espai d'introspecció de VTE per a GTK 4, `Vte 3.91`.
+L'entorn actual de validació
 proporciona GTK 4.14.5 i VTE 0.76.0. Les comprovacions de compatibilitat per a
 mètodes GTK opcionals com `set_handle_menubar_accel` i
 `set_show_separators` són intencionades, perquè les distribucions poden

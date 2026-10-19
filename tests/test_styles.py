@@ -42,24 +42,6 @@ class SplitSeparatorStyleTests(unittest.TestCase):
             warnings.simplefilter("ignore", DeprecationWarning)
             provider.load_from_data(build_application_css("#202020", "#008712", 1))
 
-    def test_notes_tab_scrollbar_is_compact_and_translucent(self) -> None:
-        css = build_application_css("#202020", "#008712", 1).decode()
-
-        self.assertIn(
-            ".termia-notes-tab-scroller scrollbar.horizontal { min-height: 5px; margin: 0 2px; padding: 0; }",
-            css,
-        )
-        self.assertIn(
-            ".termia-notes-tab-scroller scrollbar.horizontal slider { min-height: 3px; min-width: 24px; "
-            "background-color: alpha(@theme_fg_color, 0.35); }",
-            css,
-        )
-        self.assertIn(
-            ".termia-notes-tab-scroller scrollbar.horizontal slider:hover { "
-            "background-color: alpha(@theme_fg_color, 0.6); }",
-            css,
-        )
-
     def test_notes_editor_has_dark_default_background_and_border(self) -> None:
         css = build_application_css("#202020", "#008712", 1).decode()
 
@@ -86,17 +68,9 @@ class SplitSeparatorStyleTests(unittest.TestCase):
         self.assertNotIn("termia-menu-panel {", css)
         self.assertNotIn("window.termia-note-properties", css)
 
-    def test_only_active_note_tab_gets_thin_full_width_blue_underline(self) -> None:
+    def test_required_marker_uses_theme_colors(self) -> None:
         css = build_application_css("#202020", "#008712", 1).decode()
 
-        self.assertIn(
-            ".termia-note-tab { border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; }",
-            css,
-        )
-        self.assertIn(
-            ".termia-note-tab.active { border-bottom-color: @theme_selected_bg_color; }",
-            css,
-        )
         self.assertIn(
             ".termia-required-marker { font-size: 1.2em; font-weight: 700; }",
             css,
