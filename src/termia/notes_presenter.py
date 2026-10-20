@@ -75,17 +75,6 @@ class NotesPresenter:
             items.append(NoteListItem(note, server_name))
         return sorted(items, key=lambda item: (item.note.modified_at, item.note.title.casefold()), reverse=True)
 
-    def categories(self, server_id: str | None = None) -> list[tuple[str, int]]:
-        counts = {
-            category.name: sum(
-                note.category == category.name and note.server_id == (server_id or None)
-                for note in self._notes()
-            )
-            for category in self._categories()
-            if category.server_id == (server_id or None)
-        }
-        return sorted(counts.items(), key=lambda item: item[0].casefold())
-
     def tree(
         self, query: str = "", include_server_ids: set[str] | None = None,
     ) -> NoteTree:

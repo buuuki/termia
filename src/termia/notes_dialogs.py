@@ -281,7 +281,6 @@ class NotesDialogs:
         list_scroller.set_vexpand(True)
         list_scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         list_scroller.set_child(self.notes_list)
-        self.notes_list_scroller = list_scroller
         list_panel.append(list_scroller)
         paned.set_start_child(list_panel)
         self.notes_list_panel = list_panel
@@ -565,45 +564,6 @@ class NotesDialogs:
         self.refresh_list(self.selected_note_id)
         self.selected_note_id, self.selected_draft_key = selected
 
-    @staticmethod
-    def style_notes_menu(popover: Gtk.Popover, panel: Gtk.Widget) -> None:
-        popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
-        panel.add_css_class("termia-menu-panel")
-        for side in ("top", "bottom", "start", "end"):
-            getattr(panel, f"set_margin_{side}")(6)
-
-    def build_notes_context_menu(self, popover: Gtk.Popover) -> Gtk.ListBox:
-        menu = Gtk.ListBox()
-        menu.set_selection_mode(Gtk.SelectionMode.NONE)
-        self.style_notes_menu(popover, menu)
-        return menu
-
-    @staticmethod
-    def append_notes_context_menu_item(
-        menu: Gtk.ListBox,
-        label_text: str,
-        callback,
-        *,
-        enabled: bool = True,
-    ) -> None:
-        row = Gtk.ListBoxRow()
-        row.set_focusable(False)
-        label = Gtk.Label(label=label_text)
-        label.set_xalign(0)
-        label.set_margin_top(8)
-        label.set_margin_bottom(8)
-        label.set_margin_start(12)
-        label.set_margin_end(36)
-        row.set_child(label)
-        row.set_sensitive(enabled)
-        if enabled:
-            click = Gtk.GestureClick.new()
-            click.set_button(1)
-            click.connect("released", lambda *_args: callback())
-            row.add_controller(click)
-        menu.append(row)
-
     def update_creation_controls(self) -> None:
         add_button = getattr(self, "add_button", None)
         category_button = getattr(self, "category_add_button", None)
@@ -746,10 +706,7 @@ class NotesDialogs:
         was_loading = getattr(self, "loading_note_list", False)
         self.loading_note_list = True
         try:
-            if hasattr(self, "notes_tree_selection"):
-                self._refresh_note_tree(selected_id)
-            else:
-                self._refresh_list_rows(selected_id)
+            self._refresh_note_tree(selected_id)
         finally:
             self.loading_note_list = was_loading
 
@@ -1132,256 +1089,6 @@ class NotesDialogs:
     def unselect_note_list(self) -> None:
         if hasattr(self, "notes_tree_selection"):
             self.notes_tree_selection.set_selected(Gtk.INVALID_LIST_POSITION)
-        else:
-            self.notes_list.unselect_all()
-
-    def _refresh_list_rows(self, selected_id: str | None = None) -> None:
-        self.close_note_context_menu()
-        self.close_category_context_menu()
-        selected_id = selected_id if selected_id is not None else self.selected_note_id
-        query = self.search_entry.get_text().strip()
-        while child := self.notes_list.get_first_child():
-            self.notes_list.remove(child)
-        tabs = tuple(getattr(self, "editor_tabs", {}).values())
-        drafts_by_scope: dict[str | None, list[NoteEditorTab]] = {}
-        for tab in tabs:
-            if tab.note_id is None:
-                drafts_by_scope.setdefault(tab.server_id, []).append(tab)
-        server_ids_with_drafts = {
-            server_id for server_id in drafts_by_scope if server_id is not None
-        }
-        if (
-            getattr(self, "scope_mode", "personal") == "server"
-            and self.server_filter_id is not None
-        ):
-            server_ids_with_drafts.add(self.server_filter_id)
-        tree = self.presenter.tree(query, server_ids_with_drafts)
-        selected_row = None
-        selected_draft_key = getattr(self, "selected_draft_key", None)
-        server_names = {
-            server.id: server.name
-            for server in getattr(getattr(self.store, "data", None), "servers", ())
-        }
-
-        def matching_drafts(server_id: str | None) -> list[NoteEditorTab]:
-            drafts = drafts_by_scope.get(server_id, [])
-            if not query:
-                return drafts
-            searchable = query.casefold()
-            server_name = server_names.get(server_id or "", "").casefold()
-            return [
-                tab for tab in drafts
-                if searchable in " ".join((
-                    tab.title, tab.content, tab.category, server_name,
-                )).casefold()
-            ]
-
-        def append_categories(
-            categories, server_id: str | None, level: int,
-            drafts: list[NoteEditorTab],
-        ) -> None:
-            nonlocal selected_row
-            category_names = {category.name for category in categories}
-            extra_names = {
-                tab.category or "" for tab in drafts
-                if (tab.category or "") not in category_names
-            }
-            categories = tuple(categories) + tuple(
-                NoteTreeCategory(name, ()) for name in sorted(
-                    extra_names, key=lambda value: (value != "", value.casefold())
-                )
-            )
-            by_name = {category.name: category for category in categories}
-            stored_categories = {
-                item.name: item for item in getattr(self.store.data, "note_categories", ())
-                if item.server_id == server_id
-            }
-            for tab in drafts:
-                name = tab.category
-                seen = set()
-                while name in stored_categories and name not in seen:
-                    seen.add(name)
-                    item = stored_categories[name]
-                    existing = by_name.get(name)
-                    by_name[name] = NoteTreeCategory(name, existing.items if existing else (), item.parent)
-                    name = item.parent
-            children: dict[str | None, list[NoteTreeCategory]] = {}
-            for category in by_name.values():
-                parent = getattr(category, "parent", None)
-                parent = parent if parent in by_name else None
-                children.setdefault(parent, []).append(category)
-            for siblings in children.values():
-                siblings.sort(key=lambda category: (category.name != "", category.name.casefold()))
-            pending = [(category, level) for category in reversed(children.get(None, []))]
-            while pending:
-                category, category_level = pending.pop()
-                key = (server_id, category.name)
-                collapsed = key in self.collapsed_note_categories and not query
-                category_drafts = [
-                    tab for tab in drafts if (tab.category or "") == category.name
-                ]
-                self.append_note_category_header(
-                    category.name, len(category.items) + len(category_drafts), collapsed,
-                    server_id=server_id, level=category_level,
-                )
-                if collapsed:
-                    continue
-                pending.extend((child, category_level + 1)
-                               for child in reversed(children.get(category.name, [])))
-                for item in category.items:
-                    row = self.append_note_row(item, category_level + 1)
-                    if item.note.id == selected_id:
-                        selected_row = row
-                for tab in category_drafts:
-                    row = self.append_note_draft_row(tab, category_level + 1)
-                    if tab.key == selected_draft_key:
-                        selected_row = row
-
-        personal_drafts = matching_drafts(None)
-        personal_count = sum(
-            len(category.items) for category in tree.personal_categories
-        ) + len(personal_drafts)
-        personal_expanded = "personal" in self.expanded_note_sections or bool(query)
-        personal_header = self.append_note_tree_header(
-            self.translate("notes_personal_scope"), "avatar-default-symbolic",
-            personal_expanded, personal_count,
-            lambda: self.on_note_section_clicked("personal"), level=0,
-        )
-        if personal_header is not None:
-            self.add_category_group_drop_target(personal_header.get_child(), None, None)
-        if personal_expanded:
-            append_categories(tree.personal_categories, None, 1, personal_drafts)
-
-        server_count = sum(
-            len(item.items) for server in tree.servers for item in server.categories
-        ) + sum(len(matching_drafts(server.id)) for server in tree.servers)
-        servers_expanded = "servers" in self.expanded_note_sections or bool(query)
-        self.append_note_tree_header(
-            self.translate("notes_server_scope"), "network-server-symbolic",
-            servers_expanded, server_count,
-            lambda: self.on_note_section_clicked("servers"), level=0,
-        )
-        if servers_expanded:
-            for server in tree.servers:
-                expanded = server.id in self.expanded_server_groups or bool(query)
-                server_header = self.append_note_tree_header(
-                    server.name or self.translate("notes_unknown_server"),
-                    "network-server-symbolic", expanded,
-                    sum(len(category.items) for category in server.categories)
-                    + len(matching_drafts(server.id)),
-                    lambda server_id=server.id: self.on_server_tree_node_clicked(server_id),
-                    level=1,
-                )
-                if server_header is not None:
-                    self.add_category_group_drop_target(server_header.get_child(), server.id, None)
-                if expanded:
-                    append_categories(
-                        server.categories, server.id, 2,
-                        matching_drafts(server.id),
-                    )
-        if selected_row is not None:
-            if getattr(selected_row, "draft_key", None):
-                self.selected_note_id = None
-                self.selected_draft_key = selected_row.draft_key
-            else:
-                self.selected_note_id = selected_row.note_id
-                self.selected_draft_key = None
-            self.notes_list.select_row(selected_row)
-        else:
-            self.selected_note_id = None
-            self.selected_draft_key = None
-            self.unselect_note_list()
-        if selected_row is not None:
-            if getattr(self, "active_editor_tab_key", None) is None:
-                self.show_idle_workspace()
-        elif getattr(self, "active_editor_tab_key", None) is None:
-            self.show_empty_state()
-
-    def append_note_draft_row(self, tab: NoteEditorTab, level: int) -> Gtk.ListBoxRow:
-        row = Gtk.ListBoxRow()
-        row.note_id = None
-        row.draft_key = tab.key
-        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        title = Gtk.Label(label=tab.title)
-        title.set_xalign(0)
-        title.set_ellipsize(3)
-        title.set_hexpand(True)
-        title.add_css_class("dim-label")
-        content.append(title)
-        content.set_margin_top(4)
-        content.set_margin_bottom(4)
-        content.set_margin_start(24 + level * 16)
-        content.set_margin_end(8)
-        row.set_child(content)
-        self.notes_list.append(row)
-        return row
-
-    def append_note_row(self, item, level: int) -> Gtk.ListBoxRow:
-        row = Gtk.ListBoxRow()
-        row.note_id = item.note.id
-        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        title = Gtk.Label(label=item.note.title)
-        title.set_xalign(0)
-        title.set_ellipsize(3)
-        title.set_hexpand(True)
-        content.append(title)
-        content.set_margin_top(4)
-        content.set_margin_bottom(4)
-        content.set_margin_start(24 + level * 16)
-        content.set_margin_end(8)
-        row.set_child(content)
-        context_click = Gtk.GestureClick()
-        context_click.set_button(3)
-        context_click.connect("pressed", self.on_note_context_pressed, row)
-        row.add_controller(context_click)
-        drag_source = Gtk.DragSource.new()
-        drag_source.set_actions(Gdk.DragAction.MOVE)
-        drag_source.connect("prepare", self.on_note_drag_prepare, item.note.id)
-        drag_source.connect("drag-begin", self.on_note_drag_begin, row)
-        drag_source.connect("drag-end", self.on_note_drag_end, row)
-        row.add_controller(drag_source)
-        self.notes_list.append(row)
-        return row
-
-    def append_note_tree_header(
-        self, label: str, icon_name: str, expanded: bool, count: int,
-        callback, *, level: int,
-    ) -> Gtk.ListBoxRow:
-        row = Gtk.ListBoxRow()
-        row.set_selectable(False)
-        row.set_activatable(False)
-        button = Gtk.Button()
-        button.add_css_class("flat")
-        button.add_css_class("termia-note-category")
-        button.add_css_class("termia-note-tree-root" if level == 0 else "termia-note-server")
-        button.set_hexpand(True)
-        button.set_halign(Gtk.Align.FILL)
-        button.connect("clicked", lambda *_args: callback())
-        contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        contents.append(Gtk.Image.new_from_icon_name(
-            "pan-down-symbolic" if expanded else "pan-end-symbolic"
-        ))
-        contents.append(Gtk.Image.new_from_icon_name(icon_name))
-        name = Gtk.Label(label=label)
-        name.set_xalign(0)
-        name.set_ellipsize(3)
-        name.set_hexpand(True)
-        name.set_tooltip_text(label)
-        name.add_css_class("heading")
-        contents.append(name)
-        count_label = Gtk.Label(
-            label=self.translate("notes_category_count").format(count=count)
-        )
-        count_label.add_css_class("dim-label")
-        contents.append(count_label)
-        contents.set_margin_start(4 + level * 16)
-        contents.set_margin_end(4)
-        contents.set_margin_top(4)
-        contents.set_margin_bottom(4)
-        button.set_child(contents)
-        row.set_child(button)
-        self.notes_list.append(row)
-        return row
 
     def on_note_section_clicked(self, section: str) -> None:
         if section == "personal":
@@ -1414,81 +1121,6 @@ class NotesDialogs:
         else:
             self.expanded_server_groups = {server_id}
         self.refresh_list(self.selected_note_id)
-
-    def append_note_category_header(
-        self, category: str, count: int, collapsed: bool,
-        *, server_id: str | None, level: int,
-    ) -> None:
-        row = Gtk.ListBoxRow()
-        row.set_selectable(False)
-        row.set_activatable(False)
-        button = Gtk.Button()
-        button.add_css_class("flat")
-        button.set_hexpand(True)
-        button.set_halign(Gtk.Align.FILL)
-        button.connect(
-            "clicked",
-            lambda _button, name=category, scope=server_id:
-                self.toggle_note_category(name, scope),
-        )
-        drop_target = Gtk.DropTargetAsync.new(
-            Gdk.ContentFormats.new([NOTE_ROW_DND_MIME_TYPE]), Gdk.DragAction.MOVE
-        )
-        drop_target.connect("accept", self.on_note_category_drop_accept)
-        drop_target.connect("drag-motion", self.on_note_category_drop_motion, button)
-        drop_target.connect("drag-leave", self.on_note_category_drop_leave, button)
-        drop_target.connect("drop", self.on_note_category_drop, category)
-        button.add_controller(drop_target)
-        contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        disclosure = Gtk.Image.new_from_icon_name(
-            "pan-end-symbolic" if collapsed else "pan-down-symbolic"
-        )
-        contents.append(disclosure)
-        contents.append(Gtk.Image.new_from_icon_name(
-            "view-list-symbolic" if category == "" else "folder-symbolic"
-        ))
-        name = category or self.translate("notes_uncategorized")
-        label = Gtk.Label(label=name)
-        label.set_xalign(0)
-        label.set_ellipsize(3)
-        label.set_hexpand(True)
-        label.set_tooltip_text(name)
-        label.add_css_class("heading")
-        contents.append(label)
-        count_label = Gtk.Label(
-            label=self.translate("notes_category_count").format(count=count)
-        )
-        count_label.add_css_class("dim-label")
-        contents.append(count_label)
-        contents.set_margin_start(4 + level * 16)
-        contents.set_margin_end(4)
-        contents.set_margin_top(4)
-        contents.set_margin_bottom(4)
-        button.set_child(contents)
-        row.set_child(button)
-        button.add_css_class("termia-note-category")
-        if category:
-            self.add_category_group_drop_target(button, server_id, category)
-            source = Gtk.DragSource.new()
-            source.set_actions(Gdk.DragAction.MOVE)
-            source.connect("prepare", self.on_category_group_drag_prepare, category, server_id)
-            source.connect("drag-begin", self.on_category_group_drag_begin, button)
-            source.connect("drag-end", self.on_category_group_drag_end, button)
-            button.add_controller(source)
-            context_click = Gtk.GestureClick()
-            context_click.set_button(3)
-            context_click.connect(
-                "pressed", self.on_category_context_pressed,
-                category, button, server_id,
-            )
-            button.add_controller(context_click)
-            context_key = Gtk.EventControllerKey.new()
-            context_key.connect(
-                "key-pressed", self.on_category_context_key_pressed,
-                category, button, server_id,
-            )
-            button.add_controller(context_key)
-        self.notes_list.append(row)
 
     def add_category_group_drop_target(self, button, server_id, parent) -> None:
         target = Gtk.DropTargetAsync.new(
@@ -1585,7 +1217,7 @@ class NotesDialogs:
         )
 
     def on_note_drag_begin(
-        self, source: Gtk.DragSource, _drag: Gdk.Drag, row: Gtk.ListBoxRow
+        self, source: Gtk.DragSource, _drag: Gdk.Drag, row: Gtk.Widget
     ) -> None:
         self.note_row_drag_id = row.note_id
         self.note_row_drag = _drag
@@ -1599,7 +1231,7 @@ class NotesDialogs:
 
     def on_note_drag_end(
         self, _source: Gtk.DragSource, _drag: Gdk.Drag,
-        _delete_data: bool, row: Gtk.ListBoxRow,
+        _delete_data: bool, row: Gtk.Widget,
     ) -> None:
         row.remove_css_class("dragging")
         self.note_row_drag_id = None
@@ -1887,7 +1519,7 @@ class NotesDialogs:
 
         GLib.timeout_add(100, dispatch_if_current)
 
-    def on_note_selected(self, _listbox: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
+    def on_note_selected(self, _view: Gtk.ListView | None, row: NotesTreeNode | None) -> None:
         if row is None:
             return
         if self.loading_note_list:
@@ -1918,7 +1550,7 @@ class NotesDialogs:
             self.show_idle_workspace()
 
     def on_note_row_activated(
-        self, _listbox: Gtk.ListBox, row: Gtk.ListBoxRow,
+        self, _view: Gtk.ListView | None, row: NotesTreeNode,
     ) -> None:
         draft_key = getattr(row, "draft_key", None)
         if draft_key:
@@ -1928,39 +1560,6 @@ class NotesDialogs:
         note = self.find_note(note_id) if note_id else None
         if note is not None:
             self.load_editor(note)
-
-    def iter_note_rows(self):
-        row = self.notes_list.get_first_child()
-        while row:
-            yield row
-            row = row.get_next_sibling()
-
-    def on_note_context_pressed(
-        self, gesture: Gtk.GestureClick, _presses: int, x: float, y: float,
-        row: Gtk.ListBoxRow,
-    ) -> None:
-        note_id = getattr(row, "note_id", None)
-        valid, point = row.compute_point(
-            self.window.get_child(), Graphene.Point().init(x, y),
-        )
-        self.notes_list.select_row(row)
-        if self.notes_list.get_selected_row() is not row:
-            if not note_id or self.selected_note_id != note_id:
-                gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-                return
-            row = next(
-                (item for item in self.iter_note_rows() if getattr(item, "note_id", None) == note_id),
-                None,
-            )
-            if row is None:
-                gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-                return
-            self.notes_list.select_row(row)
-        if self.notes_list.get_selected_row() is not row:
-            gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-            return
-        self.show_note_context_menu(row, point if valid else None)
-        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
 
     def show_note_context_menu(
         self, row: Gtk.Widget, point: Graphene.Point | None = None,
@@ -2303,7 +1902,7 @@ class NotesDialogs:
             dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
         )
         add_dialog_action_button(
-            dialog, self.translate("save"), Gtk.ResponseType.OK, last=True,
+            dialog, self.translate("save"), Gtk.ResponseType.OK,
         )
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
@@ -3011,7 +2610,7 @@ class NotesDialogs:
             dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
         )
         add_dialog_action_button(
-            dialog, self.translate("save"), Gtk.ResponseType.OK, last=True,
+            dialog, self.translate("save"), Gtk.ResponseType.OK,
         )
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
@@ -3366,7 +2965,7 @@ class NotesDialogs:
             dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
         )
         add_dialog_action_button(
-            dialog, self.translate("continue"), Gtk.ResponseType.ACCEPT, last=True,
+            dialog, self.translate("continue"), Gtk.ResponseType.ACCEPT,
         )
 
         def response(source: Gtk.Dialog, result: int) -> None:

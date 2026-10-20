@@ -133,8 +133,3 @@ def normalize_note(
         created_at=created_at or timestamp,
         modified_at=modified_at or timestamp,
     )
-
-
-def note_matches_query(note: Note, query: str) -> bool:
-    query = query.strip().casefold()
-    return not query or query in " ".join((note.title, note.content, note.category)).casefold()

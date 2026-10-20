@@ -28,7 +28,7 @@ class ConfigActionsMixin:
     def on_data_locations(self) -> None:
         dialog = Gtk.Dialog(title=self.t("data_locations_title"), transient_for=self, modal=True)
         dialog.set_default_size(680, 360)
-        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
+        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE)
         dialog.connect("response", lambda source, _response: source.destroy())
 
         content = dialog.get_content_area()

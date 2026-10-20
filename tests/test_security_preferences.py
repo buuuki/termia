@@ -112,7 +112,7 @@ class SecurityPreferencesUITests(unittest.TestCase):
 
         def add_dialog_action_buttons(self, dialog, save_label):
             add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
-            add_dialog_action_button(dialog, save_label, Gtk.ResponseType.OK, last=True)
+            add_dialog_action_button(dialog, save_label, Gtk.ResponseType.OK)
 
     def widgets(self, root):
         child = root.get_first_child()

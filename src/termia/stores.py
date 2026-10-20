@@ -1583,24 +1583,6 @@ class ConnectionStore:
         )
         self.save_settings()
 
-    def update_prompt_settings(self, enabled: bool, template: str, color: str) -> None:
-        self.ensure_writable()
-        current = self.data.terminal
-        self.data.terminal = TerminalSettings(
-            font_family=current.font_family,
-            font_size=current.font_size,
-            foreground=current.foreground,
-            background=current.background,
-            split_separator_color=current.split_separator_color,
-            split_separator_thickness=current.split_separator_thickness,
-            ls_colors=current.ls_colors,
-            ansi_palette=current.ansi_palette or DEFAULT_ANSI_PALETTE.copy(),
-            prompt_enabled=enabled,
-            prompt_template=template if template.strip() else r"\u@\h:\w\$ ",
-            prompt_color=color.strip() or DEFAULT_PROMPT_COLOR,
-        )
-        self.save_settings()
-
     def update_app_settings(self, app: AppSettings) -> None:
         self.ensure_writable()
         current = self.data.app

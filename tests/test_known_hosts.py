@@ -10,7 +10,6 @@ from termia.known_hosts import (
     append_scanned_host_key,
     inspect_known_host_async,
     known_host_lookup_commands,
-    parse_scanned_host_key,
     parse_scanned_host_keys,
 )
 
@@ -42,14 +41,14 @@ class FakeLauncher:
 class KnownHostsTests(unittest.TestCase):
     def test_parses_scanned_key_and_calculates_fingerprint(self) -> None:
         key_data = base64.b64encode(b"synthetic-key").decode()
-        scanned = parse_scanned_host_key(
+        scanned_keys = parse_scanned_host_keys(
             f"10.0.0.1 ssh-ed25519 {key_data}",
             "10.0.0.1",
             2200,
         )
 
-        self.assertIsNotNone(scanned)
-        assert scanned is not None
+        self.assertEqual(len(scanned_keys), 1)
+        scanned = scanned_keys[0]
         expected = base64.b64encode(hashlib.sha256(b"synthetic-key").digest()).decode().rstrip("=")
         self.assertEqual(scanned.host, "[10.0.0.1]:2200")
         self.assertEqual(scanned.fingerprint, f"SHA256:{expected}")
@@ -63,7 +62,7 @@ class KnownHostsTests(unittest.TestCase):
         self.assertEqual([key.key_type for key in scanned], ["ssh-ed25519", "ssh-rsa"])
 
     def test_rejects_invalid_scanned_key_output(self) -> None:
-        self.assertIsNone(parse_scanned_host_key("10.0.0.1 ssh-ed25519 not-base64", "10.0.0.1", 22))
+        self.assertEqual(parse_scanned_host_keys("10.0.0.1 ssh-ed25519 not-base64", "10.0.0.1", 22), [])
 
     def test_appends_accepted_key_to_known_hosts(self) -> None:
         scanned = ScannedHostKey("[example.test]:2200", "ssh-ed25519", "c3ludGhldGlj", "SHA256:test")

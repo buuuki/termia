@@ -165,15 +165,6 @@ class TabsMixin:
                 return label.get_label()
         return session.title
 
-    def on_tab_overflow_item_clicked(
-        self,
-        _button: Gtk.Button,
-        session_id: str,
-        popover: Gtk.Popover,
-    ) -> None:
-        popover.popdown()
-        self.set_active_session(session_id)
-
     def remove_session_from_main_view(self, session: TerminalSession) -> None:
         if session.detached_window is None:
             position = self.terminal_notebook.page_num(session.page)

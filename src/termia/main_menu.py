@@ -103,23 +103,23 @@ class MainMenuMixin:
         GLib.timeout_add(self.POPOVER_CALLBACK_DELAY_MS, run_callback)
 
     def add_dialog_action_button(
-        self, dialog: Gtk.Dialog, label: str, response: Gtk.ResponseType, *, last: bool = False
+        self, dialog: Gtk.Dialog, label: str, response: Gtk.ResponseType
     ) -> Gtk.Button:
         return add_shared_dialog_action_button(
-            dialog, label, response, last=last,
+            dialog, label, response,
         )
 
     def add_dialog_action_buttons(
         self, dialog: Gtk.Dialog, confirm_label: str, confirm_response: Gtk.ResponseType = Gtk.ResponseType.OK
     ) -> tuple[Gtk.Button, Gtk.Button]:
         cancel = self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
-        confirm = self.add_dialog_action_button(dialog, confirm_label, confirm_response, last=True)
+        confirm = self.add_dialog_action_button(dialog, confirm_label, confirm_response)
         return cancel, confirm
 
     def on_help(self, _button: Gtk.Button) -> None:
         dialog = Gtk.Dialog(title=self.t("help_title"), transient_for=self, modal=True)
         dialog.set_default_size(620, 440)
-        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
+        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE)
         dialog.connect("response", lambda source, _response: source.destroy())
 
         content = dialog.get_content_area()

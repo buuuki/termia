@@ -80,7 +80,7 @@ class SecurityPreferencesMixin:
         dialog.set_default_size(460, -1)
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         add_dialog_action_button(
-            dialog, self.t("change_master_password"), Gtk.ResponseType.OK, last=True,
+            dialog, self.t("change_master_password"), Gtk.ResponseType.OK,
         )
         content = dialog.get_content_area()
         for side in ("top", "bottom", "start", "end"):
@@ -222,7 +222,7 @@ class SecurityPreferencesMixin:
         dialog.set_default_size(460, -1)
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         add_dialog_action_button(
-            dialog, self.t("enable_encryption"), Gtk.ResponseType.OK, last=True,
+            dialog, self.t("enable_encryption"), Gtk.ResponseType.OK,
         )
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()

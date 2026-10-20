@@ -44,7 +44,7 @@ class ConnectionHistoryDialog:
         )
         self.configure_write_action(clear_button)
         add_dialog_action_button(
-            dialog, self.translate("close"), Gtk.ResponseType.CLOSE, last=True,
+            dialog, self.translate("close"), Gtk.ResponseType.CLOSE,
         )
 
         content = dialog.get_content_area()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .general_preferences import GeneralPreferencesMixin
-from .keybinding_preferences import KeybindingCaptureRow, KeybindingPreferencesMixin
+from .keybinding_preferences import KeybindingPreferencesMixin
 from .prompt_preferences import PromptPreferencesMixin
 from .security_preferences import SecurityPreferencesMixin
 from .terminal_preferences import TerminalPreferencesMixin

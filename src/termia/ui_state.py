@@ -27,7 +27,6 @@ class TerminalPane:
     started_at: float
     server_id: str | None = None
     local_profile_id: str | None = None
-    timeout_id: int | None = None
     exit_handler_id: int | None = None
     exit_processed: bool = False
     child_pid: int | None = None
@@ -64,7 +63,6 @@ class TerminalSession:
     last_directory_title: str = ""
     local_profile_id: str | None = None
     detached_window: Gtk.Window | None = None
-    timeout_id: int | None = None
     child_pid: int | None = None
     child_process: TerminalProcess | None = None
     connected: bool = True

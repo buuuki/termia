@@ -31,7 +31,7 @@ class StatisticsDialog:
         dialog.set_resizable(True)
         dialog.set_default_size(620, 520)
         add_dialog_action_button(
-            dialog, self.translate("close"), Gtk.ResponseType.CLOSE, last=True,
+            dialog, self.translate("close"), Gtk.ResponseType.CLOSE,
         )
 
         content = dialog.get_content_area()
@@ -81,7 +81,7 @@ class StatisticsDialog:
         )
         dialog.set_resizable(False)
         add_dialog_action_button(
-            dialog, self.translate("close"), Gtk.ResponseType.CLOSE, last=True,
+            dialog, self.translate("close"), Gtk.ResponseType.CLOSE,
         )
         label = Gtk.Label(
             label=f"{self.translate('server_connections')}: {server_connections}"

@@ -156,7 +156,6 @@ class FileTransferController:
             dialog,
             self.t("send_files_to_server_destination_confirm"),
             Gtk.ResponseType.OK,
-            last=True,
         )
         dialog.set_default_response(Gtk.ResponseType.OK)
 
@@ -370,7 +369,6 @@ class FileTransferController:
             dialog,
             self.t("send_files_to_server_password_confirm"),
             Gtk.ResponseType.OK,
-            last=True,
         )
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -485,7 +483,6 @@ class FileTransferController:
             dialog,
             self.t("send_files_to_server_fingerprint_accept"),
             Gtk.ResponseType.OK,
-            last=True,
         )
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -550,7 +547,7 @@ class FileTransferController:
         )
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
-        cancel = self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL, last=True)
+        cancel = self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
 
         content = dialog.get_content_area()
         content.set_margin_top(16)

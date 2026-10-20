@@ -826,22 +826,6 @@ class TabOverflowTests(unittest.TestCase):
 
         self.assertEqual(Host().visible_sessions_in_tab_order(), [second, first])
 
-    def test_overflow_item_activates_selected_session_after_closing_popover(self) -> None:
-        class Host(TabsMixin):
-            def __init__(self) -> None:
-                self.activated = None
-
-            def set_active_session(self, session_id: str) -> None:
-                self.activated = session_id
-
-        host = Host()
-        popover = FakePopover()
-
-        host.on_tab_overflow_item_clicked(None, "selected", popover)
-
-        self.assertTrue(popover.closed)
-        self.assertEqual(host.activated, "selected")
-
 class NativeTerminalNotebookTests(unittest.TestCase):
     def setUp(self):
         if not Gtk.init_check() or Gdk.Display.get_default() is None:
