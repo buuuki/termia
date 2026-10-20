@@ -11,6 +11,7 @@ gi.require_version("Graphene", "1.0")
 from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Vte
 
 from .connection_utils import find_server
+from .keybindings import keybinding_accelerator
 from .terminal_menu_actions import (
     TerminalMenuActions,
     status_bar_action_label_key,
@@ -30,6 +31,7 @@ class TerminalMenusMixin:
         valid, point = terminal.compute_point(window.get_child(), Graphene.Point().init(x, y))
         if not valid or self.session_registry.get(session.id) is not session:
             return
+        terminal.grab_focus()
         menus = getattr(self, "_terminal_context_menus", None)
         if menus is None:
             menus = self._terminal_context_menus = {}
@@ -74,6 +76,7 @@ class TerminalMenusMixin:
             action.connect("activate", activate)
             group.add_action(action)
             item = Gio.MenuItem.new(self.t(label), f"terminal-menu.{name}")
+            accelerator = keybinding_accelerator(accelerator)
             if accelerator:
                 item.set_attribute_value("accel", GLib.Variant("s", accelerator))
             model.append_item(item)
@@ -117,7 +120,11 @@ class TerminalMenusMixin:
             ("duplicate", "duplicate_tab", lambda: actions.duplicate_tab(popover, session)),
             ("new", "new_tab", lambda: actions.new_tab(popover)),
         ):
-            add(tab, name, label, callback)
+            accelerator = (
+                self.store.data.app.keybindings.get("new_local_terminal", "")
+                if name == "new" else ""
+            )
+            add(tab, name, label, callback, accelerator)
         add(tab, "close", "close_tab", lambda: actions.close_tab(popover, session))
         section.append_submenu(self.t("tab"), tab)
         menu.append_section(None, section)

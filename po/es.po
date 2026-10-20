@@ -2,6 +2,43 @@
 # Copyright (C) 2026 Jordi Pons
 # This file is distributed under the same license as the Termia package.
 #
+
+msgid "Getting started"
+msgstr "Primeros pasos"
+
+msgid "Create groups, SSH servers and local terminal profiles from the sidebar. Double-click a server or profile to open it. Use search, Favorites and Recent to find connections; right-click an item for its available actions."
+msgstr "Crea grupos, servidores SSH y perfiles de terminal local desde la barra lateral. Haz doble clic en un servidor o perfil para abrirlo. Usa la búsqueda, Favoritos y Recientes para encontrar conexiones; haz clic derecho en un elemento para ver sus acciones."
+
+msgid "Terminals, tabs and split panes"
+msgstr "Terminales, pestañas y paneles divididos"
+
+msgid "Right-click a terminal for copy, paste, connection actions and the Split and Tab submenus. Split panes keep independent terminals. Tabs can be renamed, duplicated, reordered or moved to a separate window; use the terminal menu to reattach a detached tab. The status bar can be shown or hidden per pane. Use preferences to configure terminal appearance, keybindings and split separators."
+msgstr "Haz clic derecho en un terminal para copiar, pegar, acceder a las acciones de conexión y a los submenús Dividir y Pestaña. Cada panel dividido mantiene un terminal independiente. Puedes renombrar, duplicar, reordenar o mover pestañas a otra ventana; usa el menú del terminal para devolverlas a la ventana principal. La barra de estado se puede mostrar u ocultar por panel. Las preferencias permiten configurar la apariencia, los atajos y los separadores."
+
+msgid "Save a workspace to reopen its terminal layout later. Closing a tab or pane ends its managed terminal processes; closing Termia also stops its managed processes. Restoring a layout starts sessions again, rather than preserving running processes."
+msgstr "Guarda un espacio de trabajo para volver a abrir su distribución de terminales. Cerrar una pestaña o panel termina sus procesos de terminal gestionados; cerrar Termia también detiene los procesos que gestiona. Restaurar una distribución inicia nuevas sesiones, no conserva los procesos en ejecución."
+
+msgid "Open Notes from the main menu for personal or server-associated notes. Organize them in categories and subcategories, search them and open several editor tabs. Changes are saved automatically; empty notes are not saved. Import and export are separate from connection configuration. Notes are never executed in terminals."
+msgstr "Abre Notas desde el menú principal para gestionar notas personales o asociadas a servidores. Organízalas en categorías y subcategorías, búscalas y abre varias pestañas de edición. Los cambios se guardan automáticamente; las notas vacías no se guardan. La importación y exportación son independientes de la configuración de conexiones. Las notas nunca se ejecutan en los terminales."
+
+msgid "Save reusable command snippets, organize them in categories and restrict their scope where needed. Review commands and variables before execution. Snippet shortcuts can be assigned in preferences; they apply to eligible active terminal panes."
+msgstr "Guarda fragmentos de comandos reutilizables, organízalos en categorías y restringe su ámbito cuando sea necesario. Revisa los comandos y las variables antes de ejecutarlos. Puedes asignar atajos a los fragmentos en las preferencias; se aplican a los paneles de terminal activos que correspondan a su ámbito."
+
+msgid "Enable or disable Statistics and the SFTP browser in Add-ons, then restart Termia. Disabling an add-on does not delete its data. Statistics records connection counts and durations, not terminal commands. SFTP provides file browsing and transfers when enabled."
+msgstr "Activa o desactiva Estadísticas y el explorador SFTP en Complementos y reinicia Termia. Desactivar un complemento no elimina sus datos. Estadísticas registra cantidades y duraciones de conexiones, no comandos de terminal. SFTP permite explorar y transferir archivos cuando está activado."
+
+msgid "Use Security preferences to configure local storage protection. Obfuscation is not encryption. Encrypted storage requires a master password, which cannot be recovered if lost. Connection exports may contain credentials: keep them private. Notes exports can use a separate password. Importing notes replaces existing notes after validation and backup."
+msgstr "Las preferencias de seguridad permiten proteger el almacenamiento local. La ofuscación no es cifrado. El almacenamiento cifrado requiere una contraseña maestra que no se puede recuperar si se pierde. Las exportaciones de conexiones pueden contener credenciales: mantenlas privadas. Las notas se pueden exportar con una contraseña independiente. Al importar notas se sustituyen las existentes tras validarlas y crear una copia de seguridad."
+
+msgid "Open About and choose Check for updates to consult official releases. Automatic installation depends on the installation type and compatible release assets; development checkouts or local changes may require a manual update. Installation can request administrator authorization. Restart Termia after a successful update."
+msgstr "Abre Acerca de y elige Buscar actualizaciones para consultar las versiones oficiales. La instalación automática depende del tipo de instalación y de los archivos compatibles publicados; las ramas de desarrollo o los cambios locales pueden requerir una actualización manual. La instalación puede solicitar autorización de administrador. Reinicia Termia después de actualizar correctamente."
+
+msgid "Your keyboard shortcuts"
+msgstr "Tus atajos de teclado"
+
+msgid "These are your current application shortcuts, including custom assignments. Change them in preferences. Disabled combinations are not handled by Termia. Snippet-specific assignments are managed separately in preferences."
+msgstr "Estos son los atajos actuales de la aplicación, incluidas tus asignaciones personalizadas. Cámbialos en las preferencias. Termia no intercepta las combinaciones desactivadas. Los atajos de fragmentos se gestionan por separado en las preferencias."
+
 msgid "{name} · {size} · {speed} MB/s · {files} files completed"
 msgstr "{name} · {size} · {speed} MB/s · {files} archivos completados"
 
@@ -1446,44 +1483,6 @@ msgstr "Menú principal"
 msgid "Termia Help"
 msgstr "Ayuda de Termia"
 
-#: src/termia/i18n.py:help_content
-msgid ""
-"Termia is an SSH connection manager with embedded terminals.\n"
-"\n"
-"Main features:\n"
-"- Organize servers into groups and subgroups.\n"
-"- Create, edit, delete, clone and filter SSH connections.\n"
-"- Mark servers as favorites for quick access from a dedicated section.\n"
-"- Open connections and local terminals from the sidebar in embedded, compact and detachable tabs.\n"
-"- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
-"- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
-"- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
-"- Configure general options, the VTE terminal, split separators and the PS1 prompt separately.\n"
-"- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
-"- View a local connection history with timestamps, outcomes and durations.\n"
-"- Import and export configurations, including basic imports from Ásbrú.\n"
-"\n"
-"Quick start:\n"
-"Use the sidebar icons to create groups, servers or local terminal profiles. Double-click a server or local terminal profile to connect. Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
-msgstr ""
-"Termia es un gestor de conexiones SSH con terminales embebidas.\n"
-"\n"
-"Características principales:\n"
-"- Organiza servidores en grupos y subgrupos.\n"
-"- Crea, edita, elimina, clona y filtra conexiones SSH.\n"
-"- Marca servidores como favoritos para acceder rápidamente desde una sección dedicada.\n"
-"- Abre conexiones y terminales locales desde el panel lateral en pestañas embebidas, compactas y desacoplables.\n"
-"- Usa las acciones contextuales de grupo para iniciar todos los servidores de un grupo o subgrupo.\n"
-"- Muestra un dashboard de estadísticas con métricas globales, duración y servidores más usados, además de estadísticas por sesión.\n"
-"- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede mostrarse desde General, ocultarse por sesión y restaurarse desde el menú contextual.\n"
-"- Permite configurar atajos de terminal, incluido copiar, pegar y enviar la contraseña guardada.\n"
-"- Configura por separado opciones generales, terminal VTE, separadores de paneles y prompt PS1.\n"
-"- El prompt local permite color, temas predefinidos, hora, fecha y previsualización sin modificar sesiones remotas.\n"
-"- Muestra un historial local de conexiones con marcas de tiempo, resultados y duraciones.\n"
-"- Importa y exporta configuraciones, incluida la importación básica desde Ásbrú.\n"
-"\n"
-"Uso rápido:\n"
-"Utiliza los iconos del panel lateral para crear grupos, servidores o perfiles de terminal local. Haz doble clic sobre un servidor o perfil de terminal local para conectar. Usa el botón derecho en servidores, pestañas o terminales para ver acciones contextuales como duplicar, dividir paneles, desconectar, copiar, pegar, mostrar la barra de estado o ver estadísticas."
 
 #: src/termia/i18n.py:about_content
 msgid "SSH connection manager with embedded terminals"

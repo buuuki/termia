@@ -78,6 +78,15 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 The native SFTP explorer and About-based updates were already included in
 0.6.0-beta.2.
 
+## Help and terminal menu shortcuts
+
+Open **Help** from the main menu for guidance grouped by workflow, including
+notes, snippets, workspaces, security and updates. Its shortcut list reflects
+your current keyboard preferences, including disabled assignments.
+Terminal context menus show configured shortcuts for Copy, Paste and
+**Tab → New tab**. Pasting from the menu returns focus to the clicked terminal
+or split pane, so subsequent input stays in that terminal.
+
 ## SFTP explorer
 
 Use **Browse files (SFTP)** in saved-server and SSH-pane context menus to open

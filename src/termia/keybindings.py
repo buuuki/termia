@@ -234,6 +234,38 @@ def keybinding_label(accelerator: str, disabled_label: str) -> str:
     return normalized or disabled_label
 
 
+def keybinding_accelerator(accelerator: str) -> str:
+    """Convert a stored shortcut to GTK's menu accelerator syntax."""
+    normalized = normalize_keybinding(accelerator)
+    if not normalized:
+        return ""
+
+    from gi.repository import Gdk, Gtk
+
+    if normalized.endswith("+"):
+        modifiers = normalized[:-1].rstrip("+").split("+")
+        key = "+"
+    else:
+        *modifiers, key = normalized.split("+")
+    if len(key) == 1:
+        keyval = Gdk.keyval_to_lower(Gdk.unicode_to_keyval(ord(key)))
+    else:
+        keyval = Gdk.keyval_from_name({"PageUp": "Page_Up", "PageDown": "Page_Down"}.get(key, key))
+    if not keyval or keyval == Gdk.KEY_VoidSymbol:
+        return ""
+    masks = {
+        "Ctrl": Gdk.ModifierType.CONTROL_MASK,
+        "Shift": Gdk.ModifierType.SHIFT_MASK,
+        "Alt": Gdk.ModifierType.ALT_MASK,
+        "Super": Gdk.ModifierType.SUPER_MASK,
+    }
+    state = Gdk.ModifierType(0)
+    for modifier in modifiers:
+        if modifier:
+            state |= masks[modifier]
+    return Gtk.accelerator_name(keyval, state)
+
+
 def is_unmodified_function_key(keyval: int, state: object) -> bool:
     from gi.repository import Gdk
 
