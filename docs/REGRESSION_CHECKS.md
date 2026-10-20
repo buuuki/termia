@@ -1099,6 +1099,29 @@ light/dark appearance. Start an isolated instance with
 
 ## Automated Checks
 
+### Setup and upgrade compatibility
+
+Missing Python/GI, SSH or sshpass dependencies must make `run_checks()` fail
+when invoked as an `if` condition. Setup must install missing dependencies,
+recheck them, and never create a launcher or report successful installation
+after a package-manager or post-install verification failure. Optional font
+fallback must remain non-blocking.
+
+The focused check is:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_setup_script
+```
+
+The [Docker upgrade report](DOCKER_UPGRADE_VALIDATION.md) records Debian and Git
+trials on Ubuntu 24.04 and 26.04. Repeat affected integration scenarios when
+changing packaging, dependency detection or source-update behavior. Do not run
+setup against the developer's host as a regression test: it can invoke sudo and
+install packages. Official release assets, HTTPS transport and desktop privilege
+authorization require separate release-time validation.
+
+### Standard automated commands
+
 While iterating on code, run the affected test module and syntax-check the
 touched Python files. Use non-verbose output by default; rerun only a failing
 module or case with `-v` when its detailed output helps diagnose the failure.

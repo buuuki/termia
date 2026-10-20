@@ -114,9 +114,9 @@ check_terminal_font() {
 }
 
 run_checks() {
-  check_python_modules
-  check_command ssh openssh-client
-  check_command sshpass sshpass
+  check_python_modules || return
+  check_command ssh openssh-client || return
+  check_command sshpass sshpass || return
   echo "ssh and sshpass clients OK"
   check_terminal_font
 }

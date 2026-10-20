@@ -23,6 +23,12 @@ Install or verify system dependencies from a clone:
 The setup command verifies the GTK/VTE runtime dependencies and installs the
 user-local launcher. It does not modify repository files.
 
+Run setup after source updates and before restarting, especially when a release
+adds system dependencies. Missing mandatory checks must propagate failure even
+when `run_checks()` is called as a Bash conditional; do not rely on errexit
+inside that condition. See [Docker upgrade validation](docs/DOCKER_UPGRADE_VALIDATION.md)
+for the beta.3-to-beta.4 trials, privilege boundaries and release-time checks.
+
 Run Termia from the checkout with:
 
 ```bash
