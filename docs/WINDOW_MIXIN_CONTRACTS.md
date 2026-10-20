@@ -189,6 +189,17 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TerminalSessionsMixin`
 
+- Each `TerminalPane` owns its Termia UI handler IDs through `SignalConnections`,
+  using native weak emitter references. Retiring a tab or removing a pane
+  disconnects those UI handlers; its separately owned `child-exited` handler
+  survives a live child and is released only after final history/accounting.
+  A retained disconnected/reconnect pane keeps its interactions until retired.
+- Tab labels similarly own their interaction handlers. Detaching/reparenting
+  does not retire a session; final tab closure does. GTK internal handlers and
+  captured process identities are not disposed through the UI signal owner.
+- New split terminals receive focus only after mapping. Their pane owns the
+  pending map handler, so retirement cancels it before a never-mapped split can
+  leave GTK weak focus pointers referring into a destroyed paned container.
 - Reads: `store`, `session_registry`, `toast_label`, terminal-menu
   callbacks, and terminal-font resolution.
 - Writes: `TerminalSession` objects held in `session_registry`. Each session owns
@@ -211,6 +222,11 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TabsMixin`
 
+- Overflow-action callbacks hold weak references to the host and native
+  popover, so replacing the menu cannot form a popover/action/callback cycle.
+  Pages are inserted before assigning their tab label through public notebook
+  APIs, avoiding the retained explicit-label construction reference observed
+  with GTK 4.14. This changes no tab geometry, styles or control ownership.
 - Reads: `store`, `session_registry`, `tab_lifecycle_actions`, and
   `terminal_notebook`.
 - Writes: drag state and the GTK placement of session pages and labels.

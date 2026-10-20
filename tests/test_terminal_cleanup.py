@@ -1,4 +1,5 @@
 import os
+import gc
 from dataclasses import replace
 from pathlib import Path
 import signal
@@ -8,7 +9,8 @@ import tempfile
 import time
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+import weakref
+from unittest.mock import Mock, patch
 
 import gi
 
@@ -69,6 +71,61 @@ class CleanupHost(TerminalSessionsMixin, TabsMixin):
     "GTK display unavailable",
 )
 class TerminalCleanupIntegrationTests(unittest.TestCase):
+    def test_closed_sessions_and_native_widgets_are_released(self):
+        from termia.app import TermiaApp, TermiaWindow
+        from termia.stores import ConnectionStore
+        app = TermiaApp()
+        app.set_application_id('local.termia.cleanup')
+        app.register(None)
+        for enabled in (False, True):
+            with self.subTest(optional_tools=enabled), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                store = ConnectionStore(root/'connections.json', root/'settings.json',
+                                        root/'statistics.json', root/'lock', root/'history')
+                store.data.app.open_local_terminal_on_startup = False
+                store.data.app.confirm_disconnect = False
+                store.data.app.sftp_enabled = enabled
+                store.data.app.statistics_enabled = enabled
+                with patch('termia.app.ConnectionStore', return_value=store):
+                    window = TermiaWindow(app)
+                window.present()
+                try:
+                    def open_and_close():
+                        session_refs, widget_refs, panes, accounting = [], [], [], []
+                        for index in range(2):
+                            session = window.open_process_terminal_tab('Synthetic', ['/bin/sh'], None)
+                            terminal = window.split_terminal_pane(session, session.terminal, 'horizontal')
+                            window.start_split_child_terminal(session, terminal, session.terminal, None, announce=False)
+                            session_refs.append(weakref.ref(session))
+                            widget_refs.extend(widget.weak_ref() for widget in
+                                               (session.page, session.tab_label, session.terminal, terminal))
+                            panes.extend(session.panes.values())
+                            accounting.extend((session, session.pane_for_terminal(terminal)))
+                            if index == 0:
+                                window.disconnect_pane(session, terminal)
+                                self.wait_until(lambda: session.pane_for_terminal(terminal) is None)
+                                self.assertTrue(accounting[-1].retired)
+                                self.assertIsNone(accounting[-1].exit_handler_id)
+                                self.assertTrue(session.connected)
+                            window.close_tab(session.id, session.page, disconnect=True)
+                        return session_refs, widget_refs, panes, accounting
+                    session_refs, widget_refs, panes, accounting = open_and_close()
+                    self.wait_until(lambda: all(pane.child_process is None for pane in panes))
+                    self.assertTrue(all(item.history_end_recorded for item in accounting))
+                    del panes, accounting
+                    def released():
+                        gc.collect()
+                        return all(ref() is None for ref in session_refs + widget_refs)
+                    self.wait_until(released, timeout=5)
+                finally:
+                    window.shutdown_in_progress = True
+                    window.prepare_terminal_sessions_for_shutdown()
+                    window.terminate_open_terminal_processes(force=True)
+                    window.snippet_dialogs.shutdown()
+                    window.notes_dialogs.shutdown()
+                    window.destroy()
+                    store.close()
+
     def wait_until(self, predicate, timeout=3, *, dispatch=True):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:

@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- Release replaced terminal-tab overflow menus and retired tab/pane signal
+  handlers without dropping pending process-exit accounting; avoid retained
+  GTK notebook tab labels, defer split focus until mapping, and cover native
+  widget lifetimes (`#374`).
+
 - Propagate mandatory setup-check failures so source upgrades install missing
   dependencies instead of reporting false success; cover setup failures and
   document Debian/Git Docker compatibility trials on Ubuntu 24.04 and 26.04

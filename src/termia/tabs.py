@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import weakref
+
 import gi
 
 gi.require_version("Gdk", "4.0")
@@ -11,7 +13,7 @@ gi.require_version("Pango", "1.0")
 from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango
 
 from .debug import log_event
-from .ui_state import TerminalSession
+from .ui_state import SignalConnections, TerminalSession
 
 TERMINAL_TAB_DND_MIME_TYPE = "application/x-termia-terminal-tab-id"
 
@@ -28,13 +30,19 @@ class TabsMixin:
         self.terminal_notebook.add_controller(target)
 
     def add_session_to_main_view(self, session: TerminalSession) -> None:
-        self.terminal_notebook.append_page(session.page, session.tab_label)
+        # GTK 4.14 retains an explicit constructor label; assigning it after
+        # insertion avoids that extra reference through the public API.
+        self.terminal_notebook.append_page(session.page, None)
+        self.terminal_notebook.set_tab_label(session.page, session.tab_label)
         notebook_page = self.terminal_notebook.get_page(session.page)
         notebook_page.set_property("tab-expand", True)
         notebook_page.set_property("tab-fill", True)
         if not getattr(session.tab_label, "_termia_visibility_wired", False):
-            session.tab_label.connect("map", self.on_terminal_tab_visibility_changed)
-            session.tab_label.connect("unmap", self.on_terminal_tab_visibility_changed)
+            signals = getattr(session.tab_label, "_termia_signals", None)
+            if signals is None:
+                signals = session.tab_label._termia_signals = SignalConnections()
+            signals.connect(session.tab_label, "map", self.on_terminal_tab_visibility_changed)
+            signals.connect(session.tab_label, "unmap", self.on_terminal_tab_visibility_changed)
             session.tab_label._termia_visibility_wired = True
         # Keep Termia's private drag format; GTK owns selection and overflow.
         self.terminal_notebook.set_tab_reorderable(session.page, False)
@@ -120,14 +128,23 @@ class TabsMixin:
         select = Gio.SimpleAction.new_stateful("select", GLib.VariantType.new("s"),
                                               GLib.Variant("s", selected_id))
 
+        host_ref = weakref.ref(self)
+        popover_ref = popover.weak_ref()
+
         def activate(_action, parameter):
             session_id = parameter.get_string()
-            popover.popdown()
+            current = popover_ref()
+            if current is None:
+                return
+            current.popdown()
 
             def dispatch():
-                session = self.session_registry.get(session_id)
+                host = host_ref()
+                if host is None or getattr(host, "shutdown_in_progress", False):
+                    return GLib.SOURCE_REMOVE
+                session = host.session_registry.get(session_id)
                 if session is not None and session.detached_window is None:
-                    self.set_active_session(session_id)
+                    host.set_active_session(session_id)
                 return GLib.SOURCE_REMOVE
 
             GLib.idle_add(dispatch)
@@ -221,6 +238,7 @@ class TabsMixin:
 
     def build_tab_label(self, title: str, session_id: str, page: Gtk.Widget) -> Gtk.Widget:
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        signals = box._termia_signals = SignalConnections()
         box.add_css_class("termia-tab-label")
         box.set_hexpand(True)
         box.set_size_request(118, -1)
@@ -243,24 +261,24 @@ class TabsMixin:
         close_button.set_valign(Gtk.Align.CENTER)
         close_button.set_has_frame(False)
         close_button.set_tooltip_text(self.t("close_tab"))
-        close_button.connect("clicked", self.on_request_close_tab, session_id, page)
+        signals.connect(close_button, "clicked", self.on_request_close_tab, session_id, page)
         left_click = Gtk.GestureClick.new()
         left_click.set_button(1)
-        left_click.connect("pressed", self.on_tab_left_press, session_id)
+        signals.connect(left_click, "pressed", self.on_tab_left_press, session_id)
         box.add_controller(left_click)
         middle_click = Gtk.GestureClick.new()
         middle_click.set_button(2)
-        middle_click.connect("pressed", self.on_tab_middle_press, session_id, page)
+        signals.connect(middle_click, "pressed", self.on_tab_middle_press, session_id, page)
         box.add_controller(middle_click)
         drag_source = Gtk.DragSource.new()
         drag_source.set_actions(Gdk.DragAction.MOVE)
-        drag_source.connect("prepare", self.on_tab_drag_prepare, session_id, box)
-        drag_source.connect("drag-begin", self.on_tab_drag_begin, session_id, box)
-        drag_source.connect("drag-end", self.on_tab_drag_end, session_id)
+        signals.connect(drag_source, "prepare", self.on_tab_drag_prepare, session_id, box)
+        signals.connect(drag_source, "drag-begin", self.on_tab_drag_begin, session_id, box)
+        signals.connect(drag_source, "drag-end", self.on_tab_drag_end, session_id)
         box.add_controller(drag_source)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
-        right_click.connect("pressed", self.on_tab_right_click, session_id, box)
+        signals.connect(right_click, "pressed", self.on_tab_right_click, session_id, box)
         box.add_controller(right_click)
         box.append(label)
         box.append(close_button)
@@ -730,6 +748,7 @@ class TabsMixin:
         else:
             self.remove_session_from_main_view(session)
         self.session_registry.remove(session_id)
+        session.retire()
         self.update_session_tab_bar_visibility()
         self.focus_available_session_after_close(session_id, previous_order)
         self.sync_window_title_with_visible_session()

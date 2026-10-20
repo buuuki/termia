@@ -41,6 +41,17 @@ and proposed controls.
 
 ### Tabs
 
+- Repeatedly open and close local/SSH tabs and split panes. Retired sessions,
+  native VTE widgets, pages, tab labels and replaced overflow menus must become
+  collectible after exit accounting finishes. Preserve history/statistics,
+  reconnect controls for retained panes, private tab dragging, sibling sessions
+  and optional SFTP cleanup. Exercise detached/reattached tabs and close the
+  application with live connections and an active transfer. Compare settled
+  memory across repeated cycles; distinguish allocator warm-up from retained
+  objects rather than requiring identical RSS values.
+  Create a split in a background tab and close it before showing it; then
+  create another, show it, and verify the new pane receives focus only once.
+
 - Focus a sidebar control, then right-click a terminal or split and choose
   Paste. Press Enter: input must reach that terminal, not activate the sidebar
   or its toggle. Repeat in a detached window. Preserve VTE selection and any

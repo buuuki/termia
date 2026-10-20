@@ -1,4 +1,5 @@
 import unittest
+import gc
 import time
 import shutil
 import subprocess
@@ -78,6 +79,15 @@ class NativeOverflowMenuTests(unittest.TestCase):
         self.host.session_registry.remove("3")
         self.drain()
         self.host.set_active_session.assert_not_called()
+
+    def test_replaced_overflow_popovers_are_destroyed(self):
+        references = []
+        for _ in range(20):
+            self.host.rebuild_tab_overflow_popover()
+            references.append(self.button.get_popover().weak_ref())
+        self.drain()
+        gc.collect()
+        self.assertEqual(sum(ref() is not None for ref in references), 1)
 
 
 class PrivateTabDragTests(unittest.TestCase):
@@ -734,6 +744,7 @@ class CloseTabTests(unittest.TestCase):
             page=page,
             connected=True,
             detached_window=None,
+            retire=MagicMock(),
         )
         remaining_session = SimpleNamespace(
             id="remaining",
@@ -786,6 +797,7 @@ class CloseTabTests(unittest.TestCase):
         self.assertIs(host.disconnected, session)
         self.assertIs(host.removed, session)
         self.assertIs(host.terminated, session)
+        session.retire.assert_called_once_with()
         self.assertEqual(host.cancelled_transfers, (session.id, True))
         self.assertIsNone(host.session_registry.get(session.id))
         self.assertIs(host.session_registry.get(remaining_session.id), remaining_session)

@@ -265,8 +265,9 @@ class TerminalSessionsMixin:
             title_locked=title_locked,
         )
         terminal = session.terminal
-        focus_button.connect("clicked", self.on_hide_pane_status_bar, session, terminal)
-        session.disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, terminal)
+        pane = session.pane_for_terminal(terminal)
+        pane.ui_signals.connect(focus_button, "clicked", self.on_hide_pane_status_bar, session, terminal)
+        pane.ui_signals.connect(session.disconnect_button, "clicked", self.on_request_disconnect_pane, session, terminal)
         self.configure_terminal_interactions(terminal, session)
         self.session_registry.register(session)
         self.add_session_to_main_view(session)
@@ -306,7 +307,7 @@ class TerminalSessionsMixin:
         self.sync_root_pane_state(session)
         self.update_local_session_directory_title(session)
         GLib.timeout_add_seconds(1, self.update_session_timer, session)
-        terminal.connect("child-exited", self.on_process_terminal_exited, session)
+        pane.exit_handler_id = terminal.connect("child-exited", self.on_process_terminal_exited, session)
         session.status_label.set_label(f"{title} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, fallback_working_directory=working_directory)
         if initial_command.strip():
@@ -336,6 +337,8 @@ class TerminalSessionsMixin:
         )
         self.store.record_history_end(session, result)
         pane.connected = False
+        if getattr(pane, "retired", False):
+            pane.release_exit_handler()
         if getattr(self, "shutdown_in_progress", False):
             return
         pane.disconnect_button.set_sensitive(False)
@@ -379,8 +382,9 @@ class TerminalSessionsMixin:
         if not self.can_open_terminal_tabs():
             return None
         session, focus_button = self.create_terminal_session(server.name, server.id, toolbar_margins=True)
-        focus_button.connect("clicked", self.on_hide_pane_status_bar, session, session.terminal)
-        session.disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, session.terminal)
+        pane = session.pane_for_terminal(session.terminal)
+        pane.ui_signals.connect(focus_button, "clicked", self.on_hide_pane_status_bar, session, session.terminal)
+        pane.ui_signals.connect(session.disconnect_button, "clicked", self.on_request_disconnect_pane, session, session.terminal)
         self.configure_terminal_interactions(session.terminal, session)
         self.session_registry.register(session)
         self.add_session_to_main_view(session)
@@ -730,7 +734,7 @@ class TerminalSessionsMixin:
         )
         self.sync_root_pane_state(session)
         GLib.timeout_add_seconds(1, self.update_session_timer, session)
-        terminal.connect("child-exited", self.on_terminal_exited, server, session)
+        root_pane.exit_handler_id = terminal.connect("child-exited", self.on_terminal_exited, server, session)
         self.session_observer.connection_started(server.id)
         session.status_label.set_label(f"{server.name} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, server=server)
@@ -876,15 +880,16 @@ class TerminalSessionsMixin:
                     self.store.record_history_end(pane, result)
 
     def configure_terminal_interactions(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
+        signals = self.pane_state(session, terminal).ui_signals
         keys = Gtk.EventControllerKey.new()
-        keys.connect("key-pressed", self.on_terminal_key_pressed, session, terminal)
+        signals.connect(keys, "key-pressed", self.on_terminal_key_pressed, session, terminal)
         terminal.add_controller(keys)
         focus = Gtk.EventControllerFocus.new()
-        focus.connect("enter", self.on_terminal_focus_enter, session, terminal)
+        signals.connect(focus, "enter", self.on_terminal_focus_enter, session, terminal)
         terminal.add_controller(focus)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
-        right_click.connect("pressed", self.on_terminal_right_click, session, terminal)
+        signals.connect(right_click, "pressed", self.on_terminal_right_click, session, terminal)
         terminal.add_controller(right_click)
 
     def on_terminal_focus_enter(
@@ -1455,8 +1460,8 @@ class TerminalSessionsMixin:
             local_profile_id=source.local_profile_id if source is not None else session.local_profile_id,
         )
         session.panes[id(terminal)] = pane
-        focus_button.connect("clicked", self.on_hide_pane_status_bar, session, terminal)
-        disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, terminal)
+        pane.ui_signals.connect(focus_button, "clicked", self.on_hide_pane_status_bar, session, terminal)
+        pane.ui_signals.connect(disconnect_button, "clicked", self.on_request_disconnect_pane, session, terminal)
         self.configure_terminal_interactions(terminal, session)
         session.split_terminals.append(terminal)
         session.active_terminal_ids.add(id(terminal))
@@ -1735,6 +1740,8 @@ class TerminalSessionsMixin:
             )
             self.store.record_history_end(pane, result)
             pane.connected = False
+            if getattr(pane, "retired", False):
+                pane.release_exit_handler()
         self.session_observer.flush()
         if getattr(self, "shutdown_in_progress", False):
             return
@@ -1787,6 +1794,7 @@ class TerminalSessionsMixin:
         self.clear_split_focus_before_replacement(parent)
         self.replace_split_container(parent, sibling)
         session.panes.pop(id(terminal), None)
+        pane.retire()
         log_event(
             "split.removed",
             session_id=session.id,
@@ -2314,6 +2322,8 @@ class TerminalSessionsMixin:
         )
         self.store.record_history_end(session, result)
         pane.connected = False
+        if getattr(pane, "retired", False):
+            pane.release_exit_handler()
         if getattr(self, "shutdown_in_progress", False):
             return
         pane.disconnect_button.set_sensitive(False)
