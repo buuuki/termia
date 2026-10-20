@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- Propagate mandatory setup-check failures so source upgrades install missing
+  dependencies instead of reporting false success; cover setup failures and
+  document Debian/Git Docker compatibility trials on Ubuntu 24.04 and 26.04
+  (`#371`).
+
 - Keep focus on the clicked terminal or split pane when opening its context
   menu and pasting; render configured Copy, Paste and New tab shortcuts using
   GTK accelerator syntax, including custom and disabled assignments (`#369`).

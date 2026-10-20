@@ -141,6 +141,19 @@ only fast-forwards; development branches, local changes and divergent histories
 require manual updating. Afterwards, run `scripts/termia-setup.sh install` in the
 checkout to verify runtime dependencies, then restart Termia yourself.
 
+For **beta.3 → beta.4 source upgrades**, run that setup command **before
+restarting**: beta.4 adds GtkSourceView 5 (`gir1.2-gtksource-5` on Ubuntu).
+The updater only changes the checkout; it does not install system packages.
+After the fast-forward, the command runs the newly downloaded beta.4 setup,
+including its corrected missing-dependency detection. On Ubuntu, setup invokes
+`sudo apt-get update` and `sudo apt-get install` when dependencies are missing;
+it may ask for your sudo password. If dependencies are already available, no
+sudo is needed. The desktop launcher is installed in your user data directory.
+Debian package upgrades resolve dependencies through APT instead.
+
+See the [Docker upgrade compatibility report](docs/DOCKER_UPGRADE_VALIDATION.md)
+for the Ubuntu 24.04/26.04 trials and their explicit limitations.
+
 Checks and downloads can be cancelled. Once installation starts, allow it to
 finish; closing Termia does not terminate the package-manager transaction.
 Restart manually to use the new version. It does not update Debian-only rebuilds

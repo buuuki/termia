@@ -135,6 +135,19 @@ de desenvolupament, canvis locals i historials divergents requereixen una
 actualització manual. Després executa `scripts/termia-setup.sh install` per
 verificar les dependències i reinicia Termia manualment.
 
+Per actualitzar **des del codi beta.3 a beta.4**, executa aquest setup **abans
+de reiniciar**: beta.4 incorpora GtkSourceView 5 (`gir1.2-gtksource-5` a Ubuntu).
+L'actualitzador només canvia el codi, no instal·la paquets del sistema. Després
+d'avançar el repositori, s'executa el setup acabat de baixar de beta.4, amb la
+detecció de dependències corregida. Si falten dependències, a Ubuntu utilitza
+`sudo apt-get update` i `sudo apt-get install` i pot demanar la contrasenya de
+sudo. Si ja estan disponibles, no necessita sudo. El llançador s'instal·la al
+directori de dades de l'usuari. Els paquets Debian resolen les dependències
+mitjançant APT.
+
+L'[informe de compatibilitat Docker](DOCKER_UPGRADE_VALIDATION.md) descriu les
+proves a Ubuntu 24.04 i 26.04 i les seves limitacions.
+
 Es poden cancel·lar consultes i baixades. Un cop iniciada la instal·lació, cal
 deixar-la acabar; tancar Termia no atura el gestor de paquets. Aquesta funció
 s'inclou al paquet beta.2 i no actualitza revisions exclusivament Debian de la
