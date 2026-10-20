@@ -41,6 +41,15 @@ and proposed controls.
 
 ### Tabs
 
+- Focus a sidebar control, then right-click a terminal or split and choose
+  Paste. Press Enter: input must reach that terminal, not activate the sidebar
+  or its toggle. Repeat in a detached window. Preserve VTE selection and any
+  shell-owned paste highlighting rather than forcibly clearing it.
+- Terminal context menus must show the current Copy, Paste and Tab → New tab
+  assignments. Change and disable them in keyboard preferences, reopen the
+  menu, and verify updated labels or no label for a disabled assignment.
+  Other commands must not display unrelated shortcuts (split focus is not
+  split creation). Check keyboard activation and menu dismissal still work.
 - Terminal tabs, note tabs (including drafts), and saved-note rows must offer
   only their distinct private drag formats. Drag each onto the server filter,
   notes search, note editor, and another application's text field: no internal
@@ -1078,6 +1087,15 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   a shell where completion produces a bell; disable it again and confirm the
   same action is silent. Verify the default is disabled in a fresh profile.
 - Confirm terminal ANSI colors, prompt colors, and the reconnect prompt are readable on both light and dark terminal backgrounds.
+
+### Help
+
+Open the main menu's Help action and check section headings, scrolling,
+readable wrapped text, Close, and configured/disabled shortcut labels in
+English, Spanish and Catalan. Reopen after editing keyboard preferences;
+the list must reflect the latest values. Check small window sizes and
+light/dark appearance. Start an isolated instance with
+`scripts/run_test_instance.sh --fresh`.
 
 ## Automated Checks
 

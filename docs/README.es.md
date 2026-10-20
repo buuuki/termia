@@ -9,6 +9,10 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 
 ## Funciones
 
+- Abre **Ayuda** desde el menú principal para consultar secciones por función
+  y tus atajos actuales, incluidos los desactivados. Los menús del terminal
+  muestran los atajos de Copiar, Pegar y Pestaña → Nueva pestaña. Al pegar desde
+  el menú, el foco vuelve al terminal o panel pulsado.
 - Ejecutar conexiones SSH y terminales locales en terminales VTE de GTK 4 integrados.
 - Usar menús contextuales estándar de GTK para terminales, conexiones, grupos,
   perfiles locales, espacios de trabajo y notas, con navegación por teclado.

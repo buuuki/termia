@@ -2,11 +2,12 @@ import time
 import unittest
 from dataclasses import fields, replace
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from termia.models import Server
 from termia.terminal_menu_actions import TerminalMenuActions
 from termia.terminal_menus import Gdk, Gio, GLib, Gtk, Vte, TerminalMenusMixin
+from termia.terminal_sessions import TerminalSessionsMixin
 
 
 class NativeTerminalMenuTests(unittest.TestCase):
@@ -72,11 +73,15 @@ class NativeTerminalMenuTests(unittest.TestCase):
             child = child.get_next_sibling()
         return None
 
+    def assert_accelerator(self, model, index, expected):
+        actual = model.get_item_attribute_value(index, "accel", None).unpack()
+        self.assertEqual(Gtk.accelerator_parse(actual), Gtk.accelerator_parse(expected))
+
     def test_model_nested_order_shortcuts_and_optional_actions(self):
         menu = self.open_menu()
         model = menu.get_menu_model()
         self.assertEqual(self.labels(model)[:4], ["disconnect", "hide_session_status_bar", "copy", "paste"])
-        self.assertEqual(model.get_item_attribute_value(2, "accel", None).unpack(), "<Control><Shift>c")
+        self.assert_accelerator(model, 2, "<Control><Shift>c")
         section = model.get_item_link(model.get_n_items() - 1, Gio.MENU_LINK_SECTION)
         self.assertEqual(self.labels(section), ["split", "tab"])
         split = section.get_item_link(0, Gio.MENU_LINK_SUBMENU)
@@ -88,6 +93,61 @@ class NativeTerminalMenuTests(unittest.TestCase):
             browse_files=None, run_snippet=None, session_statistics=None)
         model = self.open_menu().get_menu_model()
         self.assertFalse({"sftp_browse", "run_snippet", "session_statistics"} & set(self.labels(model)))
+
+    def test_current_custom_shortcuts_and_disabled_values_rebuild_on_reopen(self):
+        bindings = self.host.store.data.app.keybindings
+        bindings.update(copy="Ctrl+Alt+C", paste="Ctrl+Shift+V", new_local_terminal="Alt+T")
+        menu = self.open_menu()
+        model = menu.get_menu_model()
+        self.assert_accelerator(model, 2, "<Control><Alt>c")
+        self.assert_accelerator(model, 3, "<Control><Shift>v")
+        section = model.get_item_link(model.get_n_items() - 1, Gio.MENU_LINK_SECTION)
+        tab = section.get_item_link(1, Gio.MENU_LINK_SUBMENU)
+        self.assert_accelerator(tab, 2, "<Alt>t")
+        for i in (0, 1, 3):
+            self.assertIsNone(tab.get_item_attribute_value(i, "accel", None))
+        menu.popdown()
+        self.drain()
+        bindings.update(copy="", paste="", new_local_terminal="")
+        model = self.open_menu().get_menu_model()
+        self.assertIsNone(model.get_item_attribute_value(2, "accel", None))
+        self.assertIsNone(model.get_item_attribute_value(3, "accel", None))
+        section = model.get_item_link(model.get_n_items() - 1, Gio.MENU_LINK_SECTION)
+        tab = section.get_item_link(1, Gio.MENU_LINK_SUBMENU)
+        self.assertIsNone(tab.get_item_attribute_value(2, "accel", None))
+
+    def test_paste_menu_returns_focus_from_other_control_to_clicked_terminal(self):
+        self.window.set_child(None)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        button = Gtk.Button(label="Synthetic sidebar control")
+        box.append(button)
+        box.append(self.terminal)
+        self.window.set_child(box)
+        self.drain()
+        button.grab_focus()
+        self.assertIs(self.window.get_focus(), button)
+        self.host.terminal_menu_actions = replace(
+            self.host.terminal_menu_actions,
+            paste=lambda popover, terminal: TerminalSessionsMixin.paste_terminal_clipboard(
+                self.host, popover, terminal
+            ),
+        )
+        with patch.object(self.terminal, "paste_clipboard") as paste:
+            menu = self.open_menu()
+            menu.activate_action("terminal-menu.paste", None)
+            self.drain(wait=True)
+            paste.assert_called_once_with()
+        self.assertFalse(menu.get_visible())
+        self.assertIs(self.window.get_focus(), self.terminal)
+
+    def test_paste_orders_popdown_focus_and_clipboard_without_clearing_selection(self):
+        calls = Mock()
+        TerminalSessionsMixin.paste_terminal_clipboard(self.host, calls.menu, calls.terminal)
+        self.assertEqual(calls.mock_calls, [
+            unittest.mock.call.menu.popdown(),
+            unittest.mock.call.terminal.grab_focus(),
+            unittest.mock.call.terminal.paste_clipboard(),
+        ])
 
     def test_native_copy_entry_closes_before_deferred_dispatch_and_menu_reuses(self):
         menu = self.open_menu()

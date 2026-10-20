@@ -3,6 +3,7 @@ import unittest
 from termia.keybindings import (
     DEFAULT_KEYBINDINGS,
     keybinding_label,
+    keybinding_accelerator,
     normalize_keybinding,
     normalize_keybindings,
     KeybindingError,
@@ -13,6 +14,31 @@ from termia.keybindings import (
 
 
 class KeybindingTests(unittest.TestCase):
+    def test_menu_accelerators_parse_to_the_configured_keys_and_modifiers(self):
+        from gi.repository import Gdk, Gtk
+
+        for stored, key, modifiers in (
+            ("Ctrl+Shift+V", Gdk.KEY_v, Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK),
+            ("<Control><Shift>c", Gdk.KEY_c, Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK),
+            ("Ctrl++", Gdk.KEY_plus, Gdk.ModifierType.CONTROL_MASK),
+            ("Ctrl+-", Gdk.KEY_minus, Gdk.ModifierType.CONTROL_MASK),
+            ("Ctrl+PageUp", Gdk.KEY_Page_Up, Gdk.ModifierType.CONTROL_MASK),
+            ("Alt+PageDown", Gdk.KEY_Page_Down, Gdk.ModifierType.ALT_MASK),
+            ("Super+Left", Gdk.KEY_Left, Gdk.ModifierType.SUPER_MASK),
+            ("F10", Gdk.KEY_F10, Gdk.ModifierType(0)),
+            ("Ctrl+semicolon", Gdk.KEY_semicolon, Gdk.ModifierType.CONTROL_MASK),
+        ):
+            with self.subTest(shortcut=stored):
+                valid, actual_key, actual_modifiers = Gtk.accelerator_parse(keybinding_accelerator(stored))
+                self.assertTrue(valid)
+                self.assertEqual(actual_key, key)
+                self.assertEqual(actual_modifiers, modifiers)
+
+    def test_disabled_and_unknown_menu_accelerators_are_omitted(self):
+        for shortcut in ("", "  ", "Ctrl+NotARealKeyName"):
+            with self.subTest(shortcut=shortcut):
+                self.assertEqual(keybinding_accelerator(shortcut), "")
+
     def test_snippet_keys_survive_normalization_and_unknown_actions_do_not(self):
         bindings = normalize_keybindings({"snippet:one": "<Control><Alt>d", "unknown": "Ctrl+K"})
         self.assertEqual(bindings["snippet:one"], "Ctrl+Alt+D")

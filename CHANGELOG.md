@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- Keep focus on the clicked terminal or split pane when opening its context
+  menu and pasting; render configured Copy, Paste and New tab shortcuts using
+  GTK accelerator syntax, including custom and disabled assignments (`#369`).
+
 ### Removed
 
 - Drop write-only terminal session/pane timer-ID fields while retaining all
@@ -23,6 +29,9 @@
   CSS; record the evidence and deferred cleanup candidates (`#367`).
 
 ### Changed
+
+- Organize Help into translated sections covering current workflows and show
+  the user's configured application shortcuts (`#369`).
 
 - Use `Gtk.Notebook` for terminal tabs, with native selection and overflow
   arrows, tabs sharing the header width, a highlighted active tab without the

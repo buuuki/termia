@@ -14,6 +14,7 @@ from .constants import ABOUT_IMAGE, ISSUES_URL
 from . import __version__
 from .dialog_actions import add_dialog_action_button as add_shared_dialog_action_button
 from .main_menu_actions import MainMenuActions
+from .keybindings import KEYBINDING_ACTIONS, keybinding_label
 
 
 class MainMenuMixin:
@@ -118,7 +119,7 @@ class MainMenuMixin:
 
     def on_help(self, _button: Gtk.Button) -> None:
         dialog = Gtk.Dialog(title=self.t("help_title"), transient_for=self, modal=True)
-        dialog.set_default_size(620, 440)
+        dialog.set_default_size(760, 620)
         self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE)
         dialog.connect("response", lambda source, _response: source.destroy())
 
@@ -130,12 +131,44 @@ class MainMenuMixin:
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_vexpand(True)
-        label = Gtk.Label(label=self.t("help_content"))
-        label.set_xalign(0)
-        label.set_yalign(0)
-        label.set_wrap(True)
-        label.set_selectable(True)
-        scroller.set_child(label)
+        sections = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+
+        def add_section(title_key: str, body_key: str) -> None:
+            section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            title = Gtk.Label(label=self.t(title_key), xalign=0, wrap=True)
+            title.add_css_class("heading")
+            section.append(title)
+            body = Gtk.Label(label=self.t(body_key), xalign=0, wrap=True, selectable=True)
+            body.set_max_width_chars(80)
+            section.append(body)
+            sections.append(section)
+
+        for title_key, body_key in (
+            ("help_start", "help_start_body"),
+            ("help_terminals", "help_terminals_body"),
+            ("workspaces", "help_workspaces_body"),
+            ("manage_notes", "help_notes_body"),
+            ("manage_snippets", "help_snippets_body"),
+            ("optional_tools", "help_addons_body"),
+            ("security", "help_security_body"),
+            ("update_title", "help_updates_body"),
+        ):
+            add_section(title_key, body_key)
+        add_section("help_shortcuts", "help_shortcuts_body")
+        shortcuts = Gtk.Grid(column_spacing=24, row_spacing=8)
+        for row, (action, label_key) in enumerate(KEYBINDING_ACTIONS):
+            name = Gtk.Label(label=self.t(label_key), xalign=0, wrap=True, hexpand=True)
+            value = Gtk.Label(
+                label=keybinding_label(
+                    self.store.data.app.keybindings.get(action, ""), self.t("keybinding_disabled")
+                ),
+                xalign=0, selectable=True,
+            )
+            value.add_css_class("monospace")
+            shortcuts.attach(name, 0, row, 1, 1)
+            shortcuts.attach(value, 1, row, 1, 1)
+        sections.append(shortcuts)
+        scroller.set_child(sections)
         content.append(scroller)
         dialog.present()
 

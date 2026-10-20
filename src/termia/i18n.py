@@ -503,33 +503,18 @@ MESSAGES = {'servers': 'Show or hide server list',
  'report_issue': 'Report an issue',
  'main_menu': 'Main menu',
  'help_title': 'Termia Help',
- 'help_content': 'Termia is an SSH connection manager with embedded terminals.\n'
-                 '\n'
-                 'Main features:\n'
-                 '- Organize servers into groups and subgroups.\n'
-                 '- Create, edit, delete, clone and filter SSH connections.\n'
-                 '- Mark servers as favorites for quick access from a dedicated section.\n'
-                 '- Open connections and local terminals from the sidebar in embedded, compact '
-                 'and detachable tabs.\n'
-                 '- View a statistics dashboard with global metrics, durations and most used '
-                 'servers, plus per-session statistics.\n'
-                 '- The session status bar shows status, PID, duration and disconnect controls; it '
-                 'can be enabled from General, hidden per session and restored from the context '
-                 'menu.\n'
-                 '- Configure terminal keybindings, including copy, paste and sending the saved '
-                 'password.\n'
-                 '- Configure general options, the VTE terminal, split separators and the PS1 '
-                 'prompt separately.\n'
-                 '- The local prompt supports color, presets, time, date and live preview without '
-                 'modifying remote sessions.\n'
-                 '- View a local connection history with timestamps, outcomes and durations.\n'
-                 '- Import and export configurations, including basic imports from Ásbrú.\n'
-                 '\n'
-                 'Quick start:\n'
-                 'Use the sidebar icons to create groups, servers or local terminal profiles. '
-                 'Double-click a server or local terminal profile to connect. Right-click '
-                 'servers, tabs or terminals to access contextual actions such as duplicate, '
-                 'split panes, disconnect, copy, paste, show the status bar or view statistics.',
+ 'help_start': 'Getting started',
+ 'help_start_body': 'Create groups, SSH servers and local terminal profiles from the sidebar. Double-click a server or profile to open it. Use search, Favorites and Recent to find connections; right-click an item for its available actions.',
+ 'help_terminals': 'Terminals, tabs and split panes',
+ 'help_terminals_body': 'Right-click a terminal for copy, paste, connection actions and the Split and Tab submenus. Split panes keep independent terminals. Tabs can be renamed, duplicated, reordered or moved to a separate window; use the terminal menu to reattach a detached tab. The status bar can be shown or hidden per pane. Use preferences to configure terminal appearance, keybindings and split separators.',
+ 'help_workspaces_body': 'Save a workspace to reopen its terminal layout later. Closing a tab or pane ends its managed terminal processes; closing Termia also stops its managed processes. Restoring a layout starts sessions again, rather than preserving running processes.',
+ 'help_notes_body': 'Open Notes from the main menu for personal or server-associated notes. Organize them in categories and subcategories, search them and open several editor tabs. Changes are saved automatically; empty notes are not saved. Import and export are separate from connection configuration. Notes are never executed in terminals.',
+ 'help_snippets_body': 'Save reusable command snippets, organize them in categories and restrict their scope where needed. Review commands and variables before execution. Snippet shortcuts can be assigned in preferences; they apply to eligible active terminal panes.',
+ 'help_addons_body': 'Enable or disable Statistics and the SFTP browser in Add-ons, then restart Termia. Disabling an add-on does not delete its data. Statistics records connection counts and durations, not terminal commands. SFTP provides file browsing and transfers when enabled.',
+ 'help_security_body': 'Use Security preferences to configure local storage protection. Obfuscation is not encryption. Encrypted storage requires a master password, which cannot be recovered if lost. Connection exports may contain credentials: keep them private. Notes exports can use a separate password. Importing notes replaces existing notes after validation and backup.',
+ 'help_updates_body': 'Open About and choose Check for updates to consult official releases. Automatic installation depends on the installation type and compatible release assets; development checkouts or local changes may require a manual update. Installation can request administrator authorization. Restart Termia after a successful update.',
+ 'help_shortcuts': 'Your keyboard shortcuts',
+ 'help_shortcuts_body': 'These are your current application shortcuts, including custom assignments. Change them in preferences. Disabled combinations are not handled by Termia. Snippet-specific assignments are managed separately in preferences.',
  'about_content': 'SSH connection manager with embedded terminals',
  'manage_snippets': 'Manage snippets',
  'manage_notes': 'Manage notes',

@@ -1951,6 +1951,7 @@ class TerminalSessionsMixin:
 
     def paste_terminal_clipboard(self, popover: Gtk.Popover, terminal: Vte.Terminal) -> None:
         popover.popdown()
+        terminal.grab_focus()
         terminal.paste_clipboard()
 
     def configure_terminal_from_menu(
