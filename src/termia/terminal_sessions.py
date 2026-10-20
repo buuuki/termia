@@ -305,7 +305,7 @@ class TerminalSessionsMixin:
         )
         self.sync_root_pane_state(session)
         self.update_local_session_directory_title(session)
-        session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
+        GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_process_terminal_exited, session)
         session.status_label.set_label(f"{title} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, fallback_working_directory=working_directory)
@@ -729,7 +729,7 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         self.sync_root_pane_state(session)
-        session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
+        GLib.timeout_add_seconds(1, self.update_session_timer, session)
         terminal.connect("child-exited", self.on_terminal_exited, server, session)
         self.session_observer.connection_started(server.id)
         session.status_label.set_label(f"{server.name} · PID {child_process.pid}")
@@ -1549,7 +1549,7 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         pane.status_label.set_label(f"{pane.title} · PID {child_process.pid}")
-        pane.timeout_id = GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
+        GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
         session.split_child_pids[id(terminal)] = child_process.pid
         session.split_processes[id(terminal)] = child_process
         self.connect_split_exit_handler(session, pane)
@@ -1678,7 +1678,7 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         pane.status_label.set_label(f"{server.name} · PID {child_process.pid}")
-        pane.timeout_id = GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
+        GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
         session.split_child_pids[id(terminal)] = child_process.pid
         session.split_processes[id(terminal)] = child_process
         self.connect_split_exit_handler(session, pane)
@@ -2159,20 +2159,6 @@ class TerminalSessionsMixin:
                 self.terminate_terminal_process(session.child_process, force=force)
             for process in tuple(session.split_processes.values()):
                 self.terminate_terminal_process(process, force=force)
-
-    def on_request_disconnect_session(self, _button: Gtk.Button, session: TerminalSession) -> None:
-        if not session.connected:
-            return
-        if not self.store.data.app.confirm_disconnect:
-            self.disconnect_session(session)
-            return
-        self.confirm_session_action(
-            session,
-            self.t("disconnect_session_title"),
-            self.t("disconnect_session_detail").format(title=session.title),
-            self.t("disconnect_session_confirm"),
-            lambda: self.disconnect_session(session),
-        )
 
     def close_pending_reconnect_pane(
         self,

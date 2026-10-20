@@ -13,7 +13,7 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gio, Gtk
 
-from termia.models import CommandSnippet, Group, Server
+from termia.models import CommandSnippet
 from termia.sidebar import SERVER_GROUP_DND_MIME_TYPE, SidebarMixin, SidebarTreeNode
 from termia.sidebar_projection import SidebarRow
 from termia.snippets import available_snippets

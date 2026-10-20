@@ -18,7 +18,7 @@ from termia.config_io import (
     read_connections_payload,
 )
 from termia.models import Note, NoteCategory
-from termia.notes import NoteError, normalize_note, note_matches_query, normalized_note_categories, note_category_move_allowed
+from termia.notes import NoteError, normalize_note, normalized_note_categories, note_category_move_allowed
 from termia.notes_dialogs import (
     Gdk, Graphene, Gtk, GtkSource, NOTE_ROW_DND_MIME_TYPE,
     NOTE_CATEGORY_DND_MIME_TYPE, NoteEditorTab, NotesDialogs, NotesTreeNode,
@@ -34,6 +34,67 @@ from termia.notes_io import (
 )
 from termia.notes_presenter import NotesPresenter
 from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPasswordError
+
+
+def make_note_tree_dialog(notes=(), categories=(), servers=(), tabs=()):
+    """Build the native model state used by refresh tests without a window."""
+    dialog = NotesDialogs.__new__(NotesDialogs)
+    dialog.store = SimpleNamespace(data=SimpleNamespace(
+        notes=list(notes), note_categories=list(categories), servers=list(servers),
+    ))
+    dialog.presenter = NotesPresenter(
+        lambda: dialog.store.data.notes, lambda: dialog.store.data.note_categories,
+        lambda: dialog.store.data.servers,
+    )
+    dialog.notes_list = object()
+    dialog.notes_tree_selection = Gtk.SingleSelection.new(None)
+    dialog.notes_tree_selection.set_autoselect(False)
+    dialog.notes_tree_selection.set_can_unselect(True)
+    dialog.search_entry = SimpleNamespace(get_text=lambda: "")
+    dialog.editor_tabs = {tab.key: tab for tab in tabs}
+    dialog.selected_note_id = dialog.selected_draft_key = None
+    dialog.active_editor_tab_key = next(iter(dialog.editor_tabs), "active")
+    dialog.scope_mode = "personal"
+    dialog.server_filter_id = None
+    dialog.loading_note_list = False
+    dialog.expanded_note_sections = {"personal", "servers"}
+    dialog.expanded_server_groups = set()
+    dialog.collapsed_note_categories = set()
+    dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
+    dialog.close_note_context_menu = MagicMock()
+    dialog.close_category_context_menu = MagicMock()
+    dialog.show_empty_state = MagicMock()
+    dialog.show_idle_workspace = MagicMock()
+    return dialog
+
+
+def bind_note_tree_node(test_case, dialog, node):
+    """Exercise a mapped native row with GTK owning its factory lifecycle."""
+    root = Gio.ListStore.new(NotesTreeNode)
+    root.append(node)
+    model = Gtk.TreeListModel.new(root, False, False, dialog.create_note_tree_children)
+    selection = Gtk.SingleSelection.new(model)
+    factory = Gtk.SignalListItemFactory()
+    factory.connect("setup", dialog.setup_note_tree_item)
+    factory.connect("bind", dialog.bind_note_tree_item)
+    factory.connect("unbind", dialog.unbind_note_tree_item)
+    view = Gtk.ListView.new(selection, factory)
+    window = Gtk.Window()
+    window.set_child(view)
+    test_case.addCleanup(window.destroy)
+    window.present()
+    while GLib.MainContext.default().pending():
+        GLib.MainContext.default().iteration(False)
+    pending = [view]
+    while pending:
+        widget = pending.pop()
+        if isinstance(widget, Gtk.TreeExpander):
+            return widget.get_child()
+        child = widget.get_first_child()
+        while child is not None:
+            pending.append(child)
+            child = child.get_next_sibling()
+    test_case.fail("Native category row was not bound")
 
 
 class PrivateNoteDragTests(unittest.TestCase):
@@ -196,7 +257,7 @@ class NativeNoteTabsTests(unittest.TestCase):
         self.dialog.find_note = MagicMock(return_value=None)
         self.dialog.set_editor_enabled = MagicMock()
         self.dialog.refresh_list = MagicMock()
-        self.dialog.notes_list = Gtk.ListBox()
+        self.dialog.notes_list = Gtk.ListView()
         self.dialog.editor_content = lambda: self.dialog.text_view.get_buffer().get_text(
             self.dialog.text_view.get_buffer().get_start_iter(),
             self.dialog.text_view.get_buffer().get_end_iter(), True,
@@ -662,69 +723,43 @@ class NoteHierarchyTests(unittest.TestCase):
                     Gdk.DragAction.MOVE if condition == "valid" else Gdk.DragAction(0))
 
     def test_nested_rows_hide_descendants_and_search_reveals_them(self):
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=self.categories, servers=[]))
         note = normalize_note("id", "Needle", "Body", "Leaf")
-        dialog.presenter = NotesPresenter(lambda: [note], lambda: self.categories, lambda: [])
-        dialog.search_entry = MagicMock()
-        dialog.search_entry.get_text.return_value = ""
-        dialog.notes_list = MagicMock()
-        dialog.notes_list.get_first_child.return_value = None
-        dialog.editor_tabs = {}
-        dialog.selected_note_id = "id"
-        dialog.selected_draft_key = None
-        dialog.active_editor_tab_key = "id"
-        dialog.server_filter_id = None
-        dialog.scope_mode = "personal"
-        dialog.translate = lambda key: key
-        dialog.expanded_note_sections = {"personal"}
-        dialog.expanded_server_groups = set()
+        dialog = make_note_tree_dialog([note], self.categories)
         dialog.collapsed_note_categories = {(None, "Project"), (None, "Child")}
-        dialog.close_note_context_menu = dialog.close_category_context_menu = lambda: None
-        dialog.append_note_tree_header = lambda *_args, **_kwargs: None
-        dialog.append_note_category_header = MagicMock()
-        dialog.append_note_row = MagicMock(return_value=SimpleNamespace(note_id="id"))
         dialog.refresh_list()
-        self.assertEqual([call.args[0] for call in dialog.append_note_category_header.call_args_list],
-                         ["Other", "Project"])
-        dialog.append_note_row.assert_not_called()
-        dialog.append_note_category_header.reset_mock()
-        dialog.search_entry.get_text.return_value = "Needle"
+        visible = lambda: [dialog.notes_tree_model.get_row(i)
+                          for i in range(dialog.notes_tree_model.get_n_items())]
+        self.assertEqual([row.get_item().category for row in visible()
+                          if row.get_item().kind == "category"], ["Other", "Project"])
+        self.assertFalse(any(row.get_item().kind == "note" for row in visible()))
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "Needle")
         dialog.refresh_list()
-        self.assertEqual(dialog.append_note_category_header.call_args_list, [
-            call("Project", 0, False, server_id=None, level=1),
-            call("Child", 0, False, server_id=None, level=2),
-            call("Leaf", 1, False, server_id=None, level=3),
-        ])
-        dialog.append_note_row.assert_called_once()
-        # Deep trees are rendered iteratively, including beyond Python's recursion limit.
-        self.categories[:] = [NoteCategory(str(index), parent=str(index - 1) if index else None)
-                              for index in range(1100)]
-        note.category = "1099"
-        dialog.search_entry.get_text.return_value = ""
-        dialog.collapsed_note_categories.clear()
-        dialog.append_note_category_header.reset_mock()
+        self.assertEqual([(row.get_item().category, row.get_depth()) for row in visible()
+                          if row.get_item().kind == "category"],
+                         [("Project", 1), ("Child", 2), ("Leaf", 3)])
+        self.assertEqual([row.get_item().note_id for row in visible()
+                          if row.get_item().kind == "note"], ["id"])
+        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
         dialog.refresh_list()
-        self.assertEqual(dialog.append_note_category_header.call_count, 1100)
-        self.assertEqual(dialog.append_note_category_header.call_args.kwargs["level"], 1100)
+        self.assertFalse(any(row.get_item().kind == "note" for row in visible()))
+        self.assertEqual(dialog.collapsed_note_categories, {(None, "Project"), (None, "Child")})
 
     def test_real_category_headers_have_private_drag_targets_and_sources(self):
         if not Gtk.init_check() or Gdk.Display.get_default() is None:
             self.skipTest("GTK widget integration requires a graphical display")
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.notes_list = Gtk.ListBox()
-        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
-        dialog.append_note_category_header("Child", 1, False, server_id=None, level=2)
-        button = dialog.notes_list.get_first_child().get_child()
-        controllers = button.observe_controllers()
+        dialog = make_note_tree_dialog()
+        node = NotesTreeNode("category", "Child", category="Child", count=1)
+        content = bind_note_tree_node(self, dialog, node)
+        controllers = content.observe_controllers()
         sources = [controllers.get_item(i) for i in range(controllers.get_n_items())
                    if isinstance(controllers.get_item(i), Gtk.DragSource)]
         targets = [controllers.get_item(i) for i in range(controllers.get_n_items())
                    if isinstance(controllers.get_item(i), Gtk.DropTargetAsync)]
         self.assertEqual(len(sources), 1)
         self.assertEqual(len(targets), 2)
-        self.assertTrue(any(target.get_formats().contain_mime_type(NOTE_CATEGORY_DND_MIME_TYPE)
-                            for target in targets))
+        mime_types = {mime_type for target in targets
+                      for mime_type in target.get_property("formats").get_mime_types()}
+        self.assertEqual(mime_types, {NOTE_CATEGORY_DND_MIME_TYPE, NOTE_ROW_DND_MIME_TYPE})
 
 
 class NotesDomainTests(unittest.TestCase):
@@ -903,13 +938,11 @@ class NotesDomainTests(unittest.TestCase):
             NoteCategory("Ops", "server-b"), NoteCategory("Unused"),
         ])
 
-    def test_note_validation_timestamps_and_search(self):
+    def test_note_validation_and_timestamps(self):
         note = normalize_note("one", "  Runbook ", " Restart service ", "Ops", now="2026-10-02T12:00:00+00:00")
         self.assertEqual(note.title, "Runbook")
         self.assertEqual(note.content, " Restart service ")
         self.assertEqual(note.created_at, "2026-10-02T12:00:00+00:00")
-        self.assertTrue(note_matches_query(note, "restart"))
-        self.assertFalse(note_matches_query(note, "database"))
         with self.assertRaises(NoteError):
             normalize_note("two", " ", "text")
         with self.assertRaises(NoteError):
@@ -960,6 +993,8 @@ class NotesDomainTests(unittest.TestCase):
 
         self.assertEqual([item.note.id for item in presenter.items()], ["new", "old"])
         self.assertEqual([item.note.id for item in presenter.items("backup")], ["new"])
+        self.assertEqual([item.note.id for item in presenter.items("  RESTART  ")], ["old"])
+        self.assertEqual(presenter.items("missing content"), [])
 
     def test_presenter_tree_nests_personal_categories_and_only_servers_with_notes(self):
         personal = normalize_note("personal", "Checklist", "Inspect", "Ops")
@@ -1375,47 +1410,77 @@ class NoteListContextMenuTests(unittest.TestCase):
         self.window.set_default_size(320, 240)
         self.panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.panel.append(Gtk.Label(label="Notes list"))
-        self.notes_list = Gtk.ListBox()
-        self.panel.append(self.notes_list)
         self.host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.host.append(Gtk.Label(label="Notes workspace"))
         self.host.append(self.panel)
         self.window.set_child(self.host)
-        self.window.present()
         self.addCleanup(self.destroy_window)
         self.notes = [Note("one", "First note", "First body"),
                       Note("two", "Second note", "Second body", "Ops", "server-one")]
         self.original_notes = tuple(self.notes)
-        self.rows = [self.make_row(note) for note in self.notes]
         self.dialog = NotesDialogs.__new__(NotesDialogs)
         self.dialog.window = self.window
         self.dialog.notes_list_panel = self.panel
-        self.dialog.notes_list = self.notes_list
         self.dialog.notes_context_popover = None
         self.dialog.selected_note_id = "one"
+        self.dialog.selected_draft_key = None
         self.dialog.active_editor_tab_key = "one"
+        self.dialog.scope_mode = "personal"
+        self.dialog.server_filter_id = None
+        self.dialog.loading_note_list = False
+        self.dialog.set_notes_scope = MagicMock()
         self.dialog.store = SimpleNamespace(
             read_only=False, encryption_locked=False, data=SimpleNamespace(notes=self.notes),
         )
         self.labels = {"edit": "Edit", "rename": "Rename", "clone": "Clone",
                        "properties": "Properties", "delete": "Delete"}
         self.dialog.translate = lambda key: self.labels[key.removeprefix("notes_")]
+        self.tree_root = Gio.ListStore.new(NotesTreeNode)
+        self.dialog.notes_tree_model = Gtk.TreeListModel.new(
+            self.tree_root, False, False, self.dialog.create_note_tree_children,
+        )
+        self.dialog.notes_tree_selection = Gtk.SingleSelection.new(self.dialog.notes_tree_model)
+        self.dialog.notes_tree_selection.set_autoselect(False)
+        self.dialog.notes_tree_selection.set_can_unselect(True)
+        self.dialog.notes_tree_selection.connect("notify::selected-item", self.dialog.on_note_tree_selected)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", self.dialog.setup_note_tree_item)
+        factory.connect("bind", self.dialog.bind_note_tree_item)
+        factory.connect("unbind", self.dialog.unbind_note_tree_item)
+        self.notes_list = Gtk.ListView.new(self.dialog.notes_tree_selection, factory)
+        self.dialog.notes_list = self.notes_list
+        self.panel.append(self.notes_list)
+        self.window.present()
         self.commands = {name: MagicMock() for name in self.labels}
         for name, method in (("edit", "load_editor"), ("rename", "prompt_note_rename"),
                              ("clone", "clone_note"), ("properties", "show_note_properties"),
                              ("delete", "confirm_delete_note")):
             setattr(self.dialog, method, self.commands[name])
+        self.rows = [self.make_row(note) for note in self.notes]
         self.drain_events()
 
     drain_events = staticmethod(NoteTabContextMenuTests.drain_events)
 
     def make_row(self, note):
-        row = Gtk.ListBoxRow()
-        row.note_id = note.id
-        row.set_child(Gtk.Label(label=note.title))
-        row.set_size_request(280, 36)
-        self.notes_list.append(row)
-        return row
+        self.tree_root.append(NotesTreeNode(
+            "note", note.title, note_id=note.id, category=note.category, server_id=note.server_id,
+        ))
+        self.drain_events()
+        return self.row_for_note(note.id)
+
+    def row_for_note(self, note_id):
+        pending = [self.notes_list]
+        while pending:
+            widget = pending.pop()
+            if isinstance(widget, Gtk.TreeExpander):
+                content = widget.get_child()
+                if getattr(content, "note_id", None) == note_id:
+                    return content
+            child = widget.get_first_child()
+            while child is not None:
+                pending.append(child)
+                child = child.get_next_sibling()
+        self.fail(f"Native row not bound for {note_id}")
 
     def destroy_window(self):
         self.dialog.dispose_note_context_menu()
@@ -1424,8 +1489,10 @@ class NoteListContextMenuTests(unittest.TestCase):
 
     def open_menu(self, row=None, x=20, y=12):
         gesture = MagicMock()
-        self.dialog.on_note_context_pressed(gesture, 1, x, y, row or self.rows[1])
+        row = row or self.row_for_note("two")
+        self.dialog.on_note_tree_context_pressed(gesture, 1, x, y, row, row.note_id)
         gesture.set_state.assert_called_once_with(Gtk.EventSequenceState.CLAIMED)
+        self.drain_events()
         menu = self.dialog.notes_context_popover
         self.assertIsInstance(menu, Gtk.PopoverMenu)
         return menu
@@ -1449,7 +1516,7 @@ class NoteListContextMenuTests(unittest.TestCase):
         previous = None
         for x in (8, 180):
             with self.subTest(x=x):
-                valid, point = self.rows[1].compute_point(self.host, Graphene.Point().init(x, 12))
+                valid, point = self.row_for_note("two").compute_point(self.host, Graphene.Point().init(x, 12))
                 self.assertTrue(valid)
                 menu = self.open_menu(x=x)
                 if previous is not None:
@@ -1468,7 +1535,8 @@ class NoteListContextMenuTests(unittest.TestCase):
                 previous = menu
         self.dialog.dispose_note_context_menu()
         self.assertIsNone(menu.get_parent())
-        self.assertEqual(list(self.dialog.iter_note_rows()), self.rows)
+        self.assertEqual(self.tree_root.get_n_items(), 2)
+        self.assertEqual([self.tree_root.get_item(i).note_id for i in range(2)], ["one", "two"])
 
     def test_native_entries_defer_each_command_for_the_clicked_note(self):
         for name, command in self.commands.items():
@@ -1562,20 +1630,22 @@ class NoteListContextMenuTests(unittest.TestCase):
                     self.reset_commands()
 
     def test_selection_can_rebuild_the_clicked_row_without_losing_target_or_anchor(self):
-        original = self.rows[1]
+        original = self.row_for_note("two")
         valid, point = original.compute_point(self.host, Graphene.Point().init(90, 12))
         self.assertTrue(valid)
         replacement = []
 
-        def rebuild(_list, row):
-            if row is original:
-                self.dialog.selected_note_id = "two"
-                self.notes_list.remove(original)
-                replacement.append(self.make_row(self.notes[1]))
+        def rebuild(selection, _param):
+            selected = selection.get_selected_item()
+            if not replacement and selected is not None and selected.get_item().note_id == "two":
+                node = NotesTreeNode("note", "Rebuilt second", note_id="two", server_id="server-one")
+                replacement.append(node)
+                self.tree_root.splice(1, 1, [node])
+                selection.set_selected(1)
 
-        self.notes_list.connect("row-selected", rebuild)
+        self.dialog.notes_tree_selection.connect("notify::selected-item", rebuild)
         menu = self.open_menu(original, x=90)
-        self.assertIs(self.notes_list.get_selected_row(), replacement[0])
+        self.assertIs(self.dialog.notes_tree_selection.get_selected_item().get_item(), replacement[0])
         valid, rect = menu.get_pointing_to()
         self.assertTrue(valid)
         self.assertEqual((rect.x, rect.y), (int(point.x), int(point.y)))
@@ -1595,7 +1665,7 @@ class NoteListContextMenuTests(unittest.TestCase):
 
     def test_missing_notes_and_draft_rows_do_not_open_a_menu(self):
         for note_id in (None, "deleted"):
-            row = Gtk.ListBoxRow()
+            row = Gtk.Box()
             row.note_id = note_id
             self.dialog.show_note_context_menu(row)
             self.assertIsNone(self.dialog.notes_context_popover)
@@ -1703,31 +1773,21 @@ class NotesDialogSignalTests(unittest.TestCase):
         collapse_button.set_tooltip_text.assert_called_once_with("notes_collapse_all")
 
     def test_only_named_category_rows_get_context_menu_controls(self):
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.notes_list = MagicMock()
-        dialog.translate = lambda key: "{count} notes" if key == "notes_category_count" else key
-
-        with patch("termia.notes_dialogs.Gtk") as gtk:
-            dialog.append_note_category_header("Ops", 2, False, server_id=None, level=1)
-            dialog.append_note_category_header("", 0, False, server_id=None, level=1)
-
-        self.assertEqual(gtk.GestureClick.call_count, 1)
-        self.assertEqual(gtk.EventControllerKey.new.call_count, 1)
-        self.assertEqual(dialog.notes_list.append.call_count, 2)
-
-    def test_note_context_menu_rows_use_gtk_selection_states(self):
-        menu = MagicMock()
-
-        with patch("termia.notes_dialogs.Gtk") as gtk:
-            NotesDialogs.append_notes_context_menu_item(
-                menu, "Delete note", lambda: None,
-            )
-
-        gtk.ListBoxRow.return_value.set_child.assert_called_once_with(gtk.Label.return_value)
-        gtk.ListBoxRow.return_value.set_focusable.assert_called_once_with(False)
-        gtk.Label.return_value.add_css_class.assert_not_called()
-        gtk.GestureClick.new.return_value.set_button.assert_called_once_with(1)
-        menu.append.assert_called_once_with(gtk.ListBoxRow.return_value)
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
+        dialog = make_note_tree_dialog()
+        for category in ("Ops", ""):
+            with self.subTest(category=category):
+                content = bind_note_tree_node(self, dialog, NotesTreeNode(
+                    "category", category or "Uncategorized", category=category,
+                ))
+                controllers = content.observe_controllers()
+                items = [controllers.get_item(i) for i in range(controllers.get_n_items())]
+                context_clicks = [item for item in items
+                                  if isinstance(item, Gtk.GestureClick) and item.get_button() == 3]
+                keys = [item for item in items if isinstance(item, Gtk.EventControllerKey)]
+                self.assertEqual(len(context_clicks), int(bool(category)))
+                self.assertEqual(len(keys), int(bool(category)))
 
     def test_category_context_menu_has_keyboard_shortcuts(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -1767,20 +1827,6 @@ class NotesDialogSignalTests(unittest.TestCase):
 
         self.assertEqual(dialog.expanded_server_groups, {"server-id"})
         dialog.set_notes_scope.assert_called_once_with("server", "server-id")
-
-    def test_notes_context_surfaces_reuse_main_menu_style(self):
-        popover, panel = MagicMock(), MagicMock()
-
-        NotesDialogs.style_notes_menu(popover, panel)
-
-        popover.add_css_class.assert_called_once_with("termia-menu-popover")
-        popover.set_has_arrow.assert_called_once_with(False)
-        panel.add_css_class.assert_called_once_with("termia-menu-panel")
-        self.assertEqual(
-            [getattr(panel, f"set_margin_{side}").call_args.args[0]
-             for side in ("top", "bottom", "start", "end")],
-            [6, 6, 6, 6],
-        )
 
     def test_creation_controls_enable_only_after_a_server_is_selected(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -2215,7 +2261,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.server_filter_id = "server-id"
         dialog.add_editor_tab = created.append
         dialog.activate_editor_tab = activated.append
-        dialog.notes_list = SimpleNamespace(unselect_all=lambda: None)
+        dialog.notes_tree_selection = Gtk.SingleSelection.new(None)
         dialog.refresh_list = MagicMock()
         dialog.selected_note_id = None
         dialog.selected_draft_key = None
@@ -2414,76 +2460,33 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(len(dialog.editor_tabs), 1)
 
     def test_empty_list_refresh_does_not_hide_active_editor_tab(self):
-        empty_state_calls = []
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.notes_list = SimpleNamespace(
-            get_first_child=lambda: None,
-            unselect_all=lambda: None,
-        )
-        dialog.server_filter_id = None
-        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
-        dialog.translate = lambda key: key
-        dialog.store = SimpleNamespace(data=SimpleNamespace(note_categories=[], servers=[]))
-        dialog.collapsed_note_categories = set()
-        dialog.presenter = SimpleNamespace(
-            tree=lambda *_args: SimpleNamespace(personal_categories=(), servers=()),
-        )
-        dialog.expanded_note_sections = {"personal", "servers"}
-        dialog.expanded_server_groups = set()
-        dialog.append_note_tree_header = lambda *_args, **_kwargs: None
-        dialog.detail_stack = SimpleNamespace(get_visible_child_name=lambda: "editor")
+        dialog = make_note_tree_dialog()
         dialog.active_editor_tab_key = "draft-active"
-        dialog.selected_note_id = None
-        dialog.close_note_context_menu = lambda: None
-        dialog.show_empty_state = lambda: empty_state_calls.append(True)
-
         dialog.refresh_list()
-
-        self.assertEqual(empty_state_calls, [])
+        self.assertEqual(dialog.notes_tree_model.get_n_items(), 2)
+        self.assertEqual(dialog.notes_tree_selection.get_selected(), Gtk.INVALID_LIST_POSITION)
+        dialog.show_empty_state.assert_not_called()
+        self.assertEqual(dialog.active_editor_tab_key, "draft-active")
 
     def test_server_tree_shows_uncategorized_with_unsaved_draft(self):
-        tab = NoteEditorTab(
-            "draft-server", None, "New note", "", "server-id", "",
+        tab = NoteEditorTab("draft-server", None, "New note", "", "server-id", "")
+        dialog = make_note_tree_dialog(
+            servers=[SimpleNamespace(id="server-id", name="Build host")], tabs=[tab],
         )
-        draft_row = SimpleNamespace(draft_key=tab.key, note_id=None)
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.notes_list = MagicMock()
-        dialog.notes_list.get_first_child.return_value = None
-        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
-        dialog.store = SimpleNamespace(data=SimpleNamespace(
-            servers=[SimpleNamespace(id="server-id", name="Build host")],
-        ))
-        dialog.presenter = SimpleNamespace(tree=lambda query, server_ids: (
-            self.assertEqual(query, ""),
-            self.assertEqual(server_ids, {"server-id"}),
-            SimpleNamespace(personal_categories=(), servers=(SimpleNamespace(
-                id="server-id", name="Build host", categories=(),
-            ),)),
-        )[2])
         dialog.scope_mode = "server"
         dialog.server_filter_id = "server-id"
-        dialog.editor_tabs = {tab.key: tab}
-        dialog.selected_note_id = None
-        dialog.selected_draft_key = tab.key
-        dialog.active_editor_tab_key = tab.key
-        dialog.loading_note_list = False
-        dialog.expanded_note_sections = {"servers"}
         dialog.expanded_server_groups = {"server-id"}
-        dialog.collapsed_note_categories = set()
-        dialog.translate = lambda key: key
-        dialog.close_note_context_menu = MagicMock()
-        dialog.close_category_context_menu = MagicMock()
-        dialog.append_note_tree_header = MagicMock()
-        dialog.append_note_category_header = MagicMock()
-        dialog.append_note_draft_row = MagicMock(return_value=draft_row)
-
+        dialog.selected_draft_key = tab.key
         dialog.refresh_list()
-
-        dialog.append_note_category_header.assert_called_once_with(
-            "", 1, False, server_id="server-id", level=2,
-        )
-        dialog.append_note_draft_row.assert_called_once_with(tab, 3)
-        dialog.notes_list.select_row.assert_called_once_with(draft_row)
+        rows = [dialog.notes_tree_model.get_row(i)
+                for i in range(dialog.notes_tree_model.get_n_items())]
+        categories = [row for row in rows if row.get_item().kind == "category"]
+        self.assertEqual([(row.get_item().category, row.get_item().count, row.get_depth())
+                          for row in categories], [("", 1, 2)])
+        selected = dialog.notes_tree_selection.get_selected_item()
+        self.assertEqual(selected.get_item().draft_key, tab.key)
+        self.assertEqual(selected.get_item().server_id, "server-id")
+        self.assertEqual(selected.get_depth(), 3)
 
     def test_presenter_includes_servers_with_empty_categories_and_active_scope(self):
         presenter = NotesPresenter(
@@ -2509,36 +2512,14 @@ class NotesDialogSignalTests(unittest.TestCase):
         )
 
     def test_refresh_does_not_auto_select_first_note(self):
-        note = Note("personal-note", "Personal", "Body")
-        item = SimpleNamespace(note=note)
-        row = SimpleNamespace(note_id=note.id)
-        notes_list = MagicMock()
-        notes_list.get_first_child.return_value = None
-        dialog = NotesDialogs.__new__(NotesDialogs)
-        dialog.notes_list = notes_list
-        dialog.search_entry = SimpleNamespace(get_text=lambda: "")
-        dialog.translate = lambda key: key
-        dialog.store = SimpleNamespace(data=SimpleNamespace(servers=[]))
-        dialog.presenter = SimpleNamespace(tree=lambda *_args: SimpleNamespace(
-            personal_categories=(SimpleNamespace(name="Ops", items=(item,)),),
-            servers=(),
-        ))
-        dialog.collapsed_note_categories = set()
-        dialog.expanded_note_sections = {"personal", "servers"}
-        dialog.expanded_server_groups = set()
-        dialog.append_note_tree_header = MagicMock()
-        dialog.append_note_category_header = MagicMock()
-        dialog.append_note_row = MagicMock(return_value=row)
-        dialog.close_note_context_menu = MagicMock()
-        dialog.close_category_context_menu = MagicMock()
-        dialog.selected_note_id = None
-        dialog.loading_note_list = False
+        note = Note("personal-note", "Personal", "Body", "Ops")
+        dialog = make_note_tree_dialog([note], [NoteCategory("Ops")])
         dialog.active_editor_tab_key = None
-        dialog.show_empty_state = MagicMock()
-
         dialog.refresh_list()
-
-        notes_list.select_row.assert_not_called()
+        nodes = [dialog.notes_tree_model.get_row(i).get_item()
+                 for i in range(dialog.notes_tree_model.get_n_items())]
+        self.assertTrue(any(node.note_id == note.id for node in nodes))
+        self.assertEqual(dialog.notes_tree_selection.get_selected(), Gtk.INVALID_LIST_POSITION)
         self.assertIsNone(dialog.selected_note_id)
         dialog.show_empty_state.assert_called_once_with()
 

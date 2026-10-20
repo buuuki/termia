@@ -21,8 +21,6 @@ def add_dialog_action_button(
     dialog: Gtk.Dialog,
     label: str,
     response: Gtk.ResponseType,
-    *,
-    last: bool = False,
 ) -> Gtk.Button:
     """Add a dialog action and apply Termia's shared action-area layout."""
     button = dialog.add_button(label, response)

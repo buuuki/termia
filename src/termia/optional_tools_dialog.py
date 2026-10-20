@@ -40,7 +40,7 @@ class OptionalToolsDialog:
             dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
         )
         save = add_dialog_action_button(
-            dialog, self.translate("save"), Gtk.ResponseType.OK, last=True,
+            dialog, self.translate("save"), Gtk.ResponseType.OK,
         )
         save.set_sensitive(not self.store.read_only and not self.store.encryption_locked)
 

@@ -110,7 +110,7 @@ class UpdateDialog(Gtk.Window):
             confirmation, self.t("cancel"), Gtk.ResponseType.CANCEL,
         )
         add_dialog_action_button(
-            confirmation, self.t("update_install"), Gtk.ResponseType.OK, last=True,
+            confirmation, self.t("update_install"), Gtk.ResponseType.OK,
         )
         confirmation.set_default_response(Gtk.ResponseType.CANCEL)
         label = Gtk.Label(label=self.t("update_confirm").format(version=self.result.release.label), wrap=True)

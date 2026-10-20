@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Removed
+
+- Drop write-only terminal session/pane timer-ID fields while retaining all
+  GLib timer scheduling and lifecycle callbacks (`#367`).
+
+- Remove the unused dialog-button `last` parameter and test-only note-search
+  and singular host-key parsing helpers; exercise the active presenter and
+  plural parser instead (`#367`).
+
+- Remove the legacy Notes list renderer, row/header builders, old row-context
+  handler and orphaned category CSS; migrate their behavior checks to the
+  native GTK tree (`#367`).
+
+- Retire test-only custom Notes menu helpers and the old tab-overflow click
+  handler with their three obsolete tests; retain native-menu coverage (`#367`).
+
+- Remove confirmed unused Notes helpers, the superseded prompt settings method,
+  an unregistered session-disconnect handler, unused imports and orphaned menu
+  CSS; record the evidence and deferred cleanup candidates (`#367`).
+
 ### Changed
 
 - Use `Gtk.Notebook` for terminal tabs, with native selection and overflow

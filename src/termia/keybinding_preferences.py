@@ -102,7 +102,6 @@ class KeybindingPreferencesMixin:
             dialog,
             self.t("keybindings_restore_defaults"),
             Gtk.ResponseType.APPLY,
-            last=True,
         )
         content = dialog.get_content_area()
         content.set_margin_top(16)

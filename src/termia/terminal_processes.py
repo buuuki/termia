@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import os
-import signal
 from dataclasses import dataclass, replace
 from pathlib import Path
 

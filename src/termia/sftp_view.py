@@ -300,7 +300,7 @@ class SFTPWindow(Gtk.Window):
         dialog = Gtk.FileChooserDialog(title=self.t("sftp_select"), transient_for=self, modal=True, action=action)
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         add_dialog_action_button(
-            dialog, self.t("sftp_select"), Gtk.ResponseType.OK, last=True,
+            dialog, self.t("sftp_select"), Gtk.ResponseType.OK,
         )
         dialog.set_select_multiple(not directory)
         self.dialogs.add(dialog)
@@ -329,7 +329,7 @@ class SFTPWindow(Gtk.Window):
         dialog = Gtk.Dialog(transient_for=self, modal=True, title="SFTP")
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         add_dialog_action_button(
-            dialog, self.t("sftp_continue"), Gtk.ResponseType.OK, last=True,
+            dialog, self.t("sftp_continue"), Gtk.ResponseType.OK,
         )
         content = dialog.get_content_area()
         content.append(Gtk.Label(label=message, wrap=True, selectable=True))

@@ -16,7 +16,6 @@ from .connection_history_presenter import ConnectionHistoryPresenter
 from .connection_history_view import ConnectionHistoryDialog
 from .builtin_sftp import SFTPTool
 from .builtin_tools import BuiltInTools
-from .file_transfer import FileTransferController
 from .transfer_lifecycle import ManagedTransfer
 from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
