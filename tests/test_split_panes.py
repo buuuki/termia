@@ -2,7 +2,10 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from gi.repository import GObject
+
 from termia.split_panes import Gtk, SplitPaneController
+from termia.ui_state import SignalConnections
 
 
 class FakeWidget:
@@ -25,12 +28,21 @@ class FakeWidget:
         self.classes.append(name)
 
 
-class FakeTerminal:
-    def __init__(self) -> None:
+class FakeTerminal(GObject.Object):
+    __gsignals__ = {'map': (GObject.SignalFlags.RUN_LAST, None, ())}
+
+    def __init__(self, *, mapped=True) -> None:
+        super().__init__()
+        self.mapped = mapped
         self.focused = False
+        self.focus_count = 0
+
+    def get_mapped(self):
+        return self.mapped
 
     def grab_focus(self):
         self.focused = True
+        self.focus_count += 1
 
 
 class FakePaned(FakeWidget):
@@ -110,6 +122,32 @@ class FakeRoot(FakeWidget):
 
 
 class SplitPaneControllerTests(unittest.TestCase):
+    def test_unmapped_split_focus_waits_for_mapping_and_is_cancelled_on_retirement(self):
+        for retire in (False, True):
+            with self.subTest(retire_before_mapping=retire):
+                target = FakeWidget(width=400, height=200)
+                root = FakeRoot(target)
+                terminal = FakeTerminal(mapped=False)
+                container = FakeWidget()
+                signals = SignalConnections()
+                session = SimpleNamespace(pane_for_terminal=lambda _terminal:
+                                          SimpleNamespace(ui_signals=signals))
+                controller = SplitPaneController(
+                    lambda _session: terminal,
+                    lambda _session, selected: container if selected is terminal else target,
+                    root.replace,
+                )
+                with patch('termia.split_panes.Gtk.Paned', FakePaned):
+                    controller.split_terminal(session, object(), 'right')
+                self.assertFalse(terminal.focused)
+                if retire:
+                    signals.disconnect()
+                terminal.mapped = True
+                terminal.emit('map')
+                terminal.emit('map')
+                self.assertEqual(terminal.focus_count, 0 if retire else 1)
+                signals.disconnect()
+
     def controller(self, target, new_terminal, new_pane, ancestor, outer_ancestor):
         def replace_terminal(_target, replacement):
             ancestor.position = 17

@@ -17,8 +17,9 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
   local-terminal profiles, workspaces and notes, with keyboard navigation.
 - Work with multiple tabs, detachable windows, and terminal split panes that
   can connect independently to different SSH servers or local terminals.
-- Reach terminal tabs that do not fit using GTK's arrow buttons or the tab
-  list. Browse the connections tree with keyboard navigation and expandable
+- Reach terminal tabs that do not fit using the automatically hiding horizontal
+  scrollbar or the down-arrow tab list, refreshed when opened.
+  Browse the connections tree with keyboard navigation and expandable
   groups; drag regular server rows between groups or into Ungrouped.
 - The active terminal tab uses a background highlight without a blue underline;
   hovering an inactive tab produces a softer highlight.

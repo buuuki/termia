@@ -50,7 +50,6 @@ a standard GTK control does not justify crossing those boundaries.
 | 9 | Note-list item context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; note identity and write guards |
 | 10 | Notes category context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; category identity and write guards |
 | 11 | Notes editor-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; saved-note and draft identity |
-| 12 | Terminal tab bar | `Gtk.Notebook` | `src/termia/app.py`, `src/termia/tabs.py`; GTK owns selection and overflow arrows, while Termia retains private drag reordering, tab actions, session lifecycle, and the standard overflow menu |
 | 13 | Notes editor tab bar | `Gtk.Notebook` | `src/termia/notes_dialogs.py`; shared editor, draft identity, save guards, close action, and tab menu |
 | 14 | Connections tree | `Gtk.TreeListModel`, `Gtk.TreeExpander`, `Gtk.ListView`, and `Gtk.SingleSelection` | `src/termia/sidebar.py`, `src/termia/sidebar_projection.py`; Termia supplies projected identities, filtering, expansion preferences, context actions, and private group drop targets; GTK owns selection, disclosure, and navigation |
 | 15 | Notes tree | `Gtk.TreeListModel`, `Gtk.TreeExpander`, `Gtk.ListView`, and `Gtk.SingleSelection` | `src/termia/notes_dialogs.py`; Notes supplies hierarchy data, scope actions, saved expansion, menus, and private drag targets |
@@ -69,19 +68,19 @@ an additional runtime package; it is not a control built into GTK 4 itself.
 
 | # | Surface | Current composition and responsibility | Source | Review status |
 |---:|---|---|---|---|
+| 12 | Terminal tabs | `Gtk.Box`, `Gtk.Stack`, `Gtk.ScrolledWindow` and native buttons; Termia owns tab selection and reordering | `src/termia/app.py`, `src/termia/tabs.py` | Explicitly approved laboratory design under #374; preserve overlay scrolling, down-arrow selector and tab appearance |
 | 17 | Shortcut capture control | `Gtk.Box`, buttons, and key controllers; Termia captures and validates assignments | `src/termia/keybinding_preferences.py` | Retain as a justified custom capture: GTK 4 has no supported standalone recorder with equivalent behavior |
 | 18 | Grouped temporary notifications | `Gtk.Overlay`, `Gtk.Revealer`, frame, icon, and label; Termia owns grouping, severity, and timing | `src/termia/app.py`, `src/termia/notifications.py` | Retain as a justified composition of standard GTK widgets; GTK has no equivalent grouped notification control |
 | 19 | Startup unlock panel | In-window `Gtk.Overlay` with `Gtk.PasswordEntry`; Termia owns blocking, focus, and unlock flow | `src/termia/app.py` | Retain as a justified composition of standard GTK widgets; no single GTK 4 control preserves the full in-window interaction |
 
-Items 12 and 14 use standard widgets with Termia-owned behavior as recorded
-above; issue #360 tracks their validation and adoption. Terminal tab drag uses
-Termia's private MIME format rather than GTK's native notebook drag payload.
-Native notebook reordering is disabled. Termia owns the drag preview, hit testing,
-and deferred page reordering; GTK still owns page selection and overflow.
-Scoped CSS changes to tab spacing, colors, close buttons, and rounded
-content-width sidebar selection do not replace those underlying GTK controls.
-Items 17–19 have documented reasons for retaining their current compositions. These decisions do not
-authorize custom replacements where an appropriate standard control exists.
+Item 12 retains the laboratory composition by explicit requester decision under
+#374: its horizontal overlay scrollbar, down-arrow selector, tab close buttons
+and drag appearance take precedence over the Notebook trial from #360. The
+tradeoff is Termia-owned tab selection, geometry, drag reordering and reveal,
+covered by tab, lifecycle and pointer regressions. GTK still owns the scrollbar
+and native popover menu; this approval does not extend to other custom controls.
+Item 14 retains its native GTK control. Items 17–19 have documented reasons for
+retaining their current compositions.
 
 ### Item 17: justified capture exception
 

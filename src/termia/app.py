@@ -49,7 +49,7 @@ from .statistics_collector import StatisticsCollector
 from .statistics_view import StatisticsDialog
 from .styles import build_application_css
 from .tab_lifecycle_actions import TabLifecycleActions
-from .tabs import TabsMixin
+from .tabs import TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
 from .terminal_menus import TerminalMenusMixin
 from .terminal_menu_actions import TerminalMenuActions
 from .terminal_processes import TerminalProcess
@@ -515,6 +515,7 @@ class TermiaWindow(
         if not self.notes_dialogs.prepare_shutdown():
             return
         self.shutdown_in_progress = True
+        self.stop_tab_drag_scroll()
         self.shutdown_deadline = monotonic() + SHUTDOWN_CLEANUP_DEADLINE_SECONDS
         self.shutdown_force_sent = False
         self.shutdown_transfers = tuple(self.file_transfer_controllers)
@@ -797,27 +798,57 @@ class TermiaWindow(
         self.info_label.set_xalign(0)
         self.info_label.set_wrap(True)
 
-        self.terminal_notebook = Gtk.Notebook()
-        self.terminal_notebook.add_css_class("termia-terminal-notebook")
-        self.terminal_notebook.set_scrollable(True)
-        self.terminal_notebook.set_show_border(False)
-        self.terminal_notebook.set_show_tabs(False)
-        self.terminal_notebook.set_hexpand(True)
-        self.terminal_notebook.set_vexpand(True)
-        self.terminal_notebook.connect("switch-page", self.on_terminal_page_switched)
-        self.terminal_notebook.connect("page-reordered", self.on_terminal_page_reordered)
-        self.install_terminal_tab_drop_target()
+        self.session_tab_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        self.session_tab_controls.add_css_class("termia-session-tab-controls")
+        self.session_tab_controls.set_visible(False)
+
+        self.session_tab_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        self.session_tab_bar.set_homogeneous(True)
+        self.session_tab_bar.add_css_class("termia-session-tabs")
+        self.session_tab_bar.set_hexpand(True)
+        tab_bar_drop = Gtk.DropTargetAsync.new(
+            Gdk.ContentFormats.new([TERMINAL_TAB_DND_MIME_TYPE]), Gdk.DragAction.MOVE
+        )
+        tab_bar_drop.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        tab_bar_drop.connect("accept", self.on_tab_bar_drop_accept)
+        tab_bar_drop.connect("drag-motion", self.on_tab_bar_drop_motion)
+        tab_bar_drop.connect("drag-leave", self.on_tab_bar_drop_leave)
+        tab_bar_drop.connect("drop", self.on_tab_bar_drop)
+
+        self.session_tab_scroller = Gtk.ScrolledWindow()
+        self.session_tab_scroller.add_css_class("termia-session-tab-scroller")
+        self.session_tab_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        self.session_tab_scroller.set_overlay_scrolling(True)
+        self.session_tab_scroller.set_propagate_natural_width(False)
+        self.session_tab_scroller.set_min_content_width(0)
+        self.session_tab_scroller.set_hexpand(True)
+        self.session_tab_scroller.set_child(self.session_tab_bar)
+        self.session_tab_scroller.add_controller(tab_bar_drop)
+        self.session_tab_scroller.get_hadjustment().connect(
+            "changed", self.on_tab_scroll_adjustment_changed
+        )
+        self.session_tab_scroller.get_hadjustment().connect(
+            "notify::page-size", self.on_tab_scroll_adjustment_changed
+        )
+        self.session_tab_scroller.get_hadjustment().connect(
+            "notify::upper", self.on_tab_scroll_adjustment_changed
+        )
+        self.session_tab_controls.append(self.session_tab_scroller)
 
         self.tab_overflow_button = Gtk.MenuButton()
         self.tab_overflow_button.add_css_class("termia-tab-overflow-button")
-        self.tab_overflow_button.add_css_class("flat")
-        overflow_icon = Gtk.Image.new_from_icon_name("view-more-symbolic")
-        overflow_icon.set_pixel_size(14)
-        self.tab_overflow_button.set_child(overflow_icon)
+        self.tab_overflow_button.set_has_frame(False)
+        self.tab_overflow_button.set_direction(Gtk.ArrowType.DOWN)
         self.tab_overflow_button.set_tooltip_text(self.t("tab"))
-        self.terminal_notebook.set_action_widget(self.tab_overflow_button, Gtk.PackType.END)
-        detail.append(self.terminal_notebook)
-        self.rebuild_tab_overflow_popover()
+        self.session_tab_controls.append(self.tab_overflow_button)
+        detail.append(self.session_tab_controls)
+
+        self.terminal_stack = Gtk.Stack()
+        self.terminal_stack.add_css_class("termia-terminal-stack")
+        self.terminal_stack.set_hexpand(True)
+        self.terminal_stack.set_vexpand(True)
+        detail.append(self.terminal_stack)
+        self.initialize_tab_overflow_menu()
 
         self._build_unlock_panel(window_overlay)
 
@@ -969,15 +1000,15 @@ class TermiaWindow(
             None,
         )
         if active_session is not None:
-            if self.terminal_notebook.get_show_tabs():
+            if self.session_tab_controls.get_visible():
                 active_session.tab_label.set_focusable(True)
-                regions.append((active_session.tab_label, active_session.tab_label))
+                regions.append((self.session_tab_bar, active_session.tab_label))
             terminal = (
                 active_session.split_terminals[-1]
                 if active_session.split_terminals
                 else active_session.terminal
             )
-            regions.append((active_session.page, terminal))
+            regions.append((self.terminal_stack, terminal))
 
         if not regions:
             return False

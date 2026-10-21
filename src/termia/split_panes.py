@@ -128,7 +128,19 @@ class SplitPaneController:
         if ancestor_positions:
             self.restore_ancestor_positions(ancestor_positions)
             GLib.idle_add(self.restore_ancestor_positions, ancestor_positions)
-        new_terminal.grab_focus()
+        if new_terminal.get_mapped():
+            new_terminal.grab_focus()
+        else:
+            # GTK must realize the paned before recording its weak focus
+            # pointers. A background split may be retired without mapping.
+            pane = session.pane_for_terminal(new_terminal)
+            handler = [None]
+
+            def focus_mapped(widget: Vte.Terminal) -> None:
+                widget.disconnect(handler[0])
+                widget.grab_focus()
+
+            handler[0] = pane.ui_signals.connect(new_terminal, "map", focus_mapped)
         return new_terminal
 
     @staticmethod

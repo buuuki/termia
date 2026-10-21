@@ -4,6 +4,15 @@
 
 ### Fixed
 
+- Release retired tab/pane signal handlers without dropping pending process-exit
+  accounting, defer split focus until mapping, and cover native widget lifetimes
+  (`#374`).
+
+- Restore the approved terminal tab strip with an automatically hiding horizontal
+  scrollbar and a persistent native overflow menu refreshed only when opened.
+  Retain private drag reordering, edge scrolling, active-tab reveal and the
+  laboratory tab appearance (`#374`).
+
 - Propagate mandatory setup-check failures so source upgrades install missing
   dependencies instead of reporting false success; cover setup failures and
   document Debian/Git Docker compatibility trials on Ubuntu 24.04 and 26.04
@@ -38,12 +47,11 @@
 - Organize Help into translated sections covering current workflows and show
   the user's configured application shortcuts (`#369`).
 
-- Use `Gtk.Notebook` for terminal tabs, with native selection and overflow
-  arrows, tabs sharing the header width, a highlighted active tab without the
-  native blue underline, stable selected-tab colors on hover,
-  and a softer inactive-tab hover. Retain private drag reordering without a
-  notebook-wide drop highlight, the overflow menu, detached windows, split
-  panes, and terminal lifecycle callbacks (`#360`).
+- Keep the terminal tab strip as an explicitly approved composition of GTK
+  boxes, buttons, a scrolled window and a stack. Share available tab width,
+  preserve theme-derived selection and hover colors, and retain detached
+  windows, split panes and lifecycle callbacks (`#374`; supersedes the terminal
+  Notebook trial from `#360`).
 
 - Use a native GTK tree model, expanders, list view, and single selection for
   connections, preserving nested groups, search, context actions, expansion
