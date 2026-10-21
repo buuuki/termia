@@ -20,6 +20,14 @@ code, report the reason, alternatives, and affected behavior and obtain explicit
 requester confirmation. Preserve the relevant checks below for both existing
 and proposed controls.
 
+## Optional Docker Laboratory
+
+The reviewed lifecycle/memory laboratory and Spanish setup instructions are
+in [tools/ssh-lifecycle-lab/README.md](../tools/ssh-lifecycle-lab/README.md).
+This continuation snapshot is separate from the required suite. Historical
+measurements refer to their documented commits, not to a new run of the
+snapshot. Generate fresh synthetic credentials and keep raw outputs untracked.
+
 ## Protected Behaviors
 
 ### Project License

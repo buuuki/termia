@@ -1,0 +1,16 @@
+# Generated authentication material and build copies
+synthetic
+synthetic.pub
+client-context/
+# Raw observations and diagnostic outputs
+observations/
+monitor.stop
+*.log
+*.json
+*.tmp
+*.so
+*.so.*
+core
+core.*
+__pycache__/
+*.py[cod]

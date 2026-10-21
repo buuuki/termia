@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Preserve reviewed Docker lifecycle, transfer, and memory laboratory scripts
+  and Spanish setup/evidence documentation, excluding generated credentials
+  and raw artifacts (`#377`).
+
 ### Fixed
 
 - Propagate mandatory setup-check failures so source upgrades install missing
