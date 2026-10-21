@@ -104,6 +104,33 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    def test_retirement_releases_ui_but_preserves_live_child_exit_and_foreign_handlers(self):
+        from gi.repository import GObject
+
+        class Emitter(GObject.Object):
+            __gsignals__ = {
+                'changed': (GObject.SignalFlags.RUN_LAST, None, ()),
+                'child-exited': (GObject.SignalFlags.RUN_LAST, None, (int,)),
+            }
+
+        terminal = Emitter()
+        pane = make_pane(terminal, 'retired', process=TerminalProcess(42, 42, 42, 'synthetic'))
+        ui, external, exited = Mock(), Mock(), Mock()
+        pane.ui_signals.connect(terminal, 'changed', ui)
+        terminal.connect('changed', external)
+        pane.exit_handler_id = terminal.connect('child-exited', exited)
+        pane.retire()
+        terminal.emit('changed')
+        terminal.emit('child-exited', 0)
+        ui.assert_not_called()
+        external.assert_called_once()
+        exited.assert_called_once()
+        pane.child_process = None
+        pane.retire()
+        terminal.emit('child-exited', 0)
+        exited.assert_called_once()
+        self.assertIsNone(pane.exit_handler_id)
+
     @unittest.skipUnless(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"),
                          "GTK display unavailable")
     def test_real_vte_split_retries_process_each_child_exit_once(self):

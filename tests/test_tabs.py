@@ -1,4 +1,5 @@
 import unittest
+import gc
 import time
 import shutil
 import subprocess
@@ -13,6 +14,35 @@ from gi.repository import Gio, GObject
 from termia.session_registry import SessionRegistry
 from termia.tab_lifecycle_actions import TabLifecycleActions
 from termia.tabs import Gdk, GLib, Graphene, Gtk, TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
+
+
+def install_tab_strip(host, window):
+    host.session_tab_controls = Gtk.Box()
+    host.session_tab_bar = Gtk.Box(homogeneous=True)
+    host.session_tab_bar.set_hexpand(True)
+    host.session_tab_scroller = Gtk.ScrolledWindow(hexpand=True)
+    host.session_tab_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+    host.session_tab_scroller.set_overlay_scrolling(True)
+    host.session_tab_scroller.set_child(host.session_tab_bar)
+    target = Gtk.DropTargetAsync.new(
+        Gdk.ContentFormats.new([TERMINAL_TAB_DND_MIME_TYPE]), Gdk.DragAction.MOVE)
+    target.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+    for signal, callback in (("accept", host.on_tab_bar_drop_accept),
+                             ("drag-motion", host.on_tab_bar_drop_motion),
+                             ("drag-leave", host.on_tab_bar_drop_leave),
+                             ("drop", host.on_tab_bar_drop)):
+        target.connect(signal, callback)
+    host.session_tab_scroller.add_controller(target)
+    host.session_tab_scroller.get_hadjustment().connect("changed", host.on_tab_scroll_adjustment_changed)
+    host.session_tab_controls.append(host.session_tab_scroller)
+    host.tab_overflow_button = Gtk.MenuButton(direction=Gtk.ArrowType.DOWN)
+    host.session_tab_controls.append(host.tab_overflow_button)
+    host.terminal_stack = Gtk.Stack(vexpand=True)
+    content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+    content.append(host.session_tab_controls)
+    content.append(host.terminal_stack)
+    window.set_child(content)
+    host.initialize_tab_overflow_menu()
 
 
 class NativeOverflowMenuTests(unittest.TestCase):
@@ -35,7 +65,8 @@ class NativeOverflowMenuTests(unittest.TestCase):
                 tab_label=label, page=Gtk.Box(), detached_window=None))
         self.host.session_registry = SessionRegistry(self.sessions)
         self.host.visible_sessions_in_tab_order = lambda: self.sessions
-        self.host.visible_terminal_page = lambda: self.sessions[1].page
+        self.host.terminal_stack = SimpleNamespace(get_visible_child=lambda: self.sessions[1].page)
+        self.host.initialize_tab_overflow_menu()
         self.host.set_active_session = MagicMock()
 
     def drain(self):
@@ -43,7 +74,8 @@ class NativeOverflowMenuTests(unittest.TestCase):
             GLib.MainContext.default().iteration(False)
 
     def test_all_long_titles_order_state_and_selection_are_preserved(self):
-        self.host.rebuild_tab_overflow_popover()
+        self.button.popup()
+        self.drain()
         menu = self.button.get_popover()
         self.assertIsInstance(menu, Gtk.PopoverMenu)
         model = menu.get_menu_model()
@@ -68,7 +100,8 @@ class NativeOverflowMenuTests(unittest.TestCase):
         self.host.set_active_session.assert_called_once_with("39")
 
     def test_removed_or_detached_session_cannot_be_selected_from_stale_menu(self):
-        self.host.rebuild_tab_overflow_popover()
+        self.button.popup()
+        self.drain()
         menu = self.button.get_popover()
         menu.activate_action("tab-overflow.select", GLib.Variant("s", "2"))
         self.sessions[2].detached_window = object()
@@ -79,6 +112,30 @@ class NativeOverflowMenuTests(unittest.TestCase):
         self.drain()
         self.host.set_active_session.assert_not_called()
 
+    def test_invalidations_do_not_rebuild_until_open_and_reuse_one_popover(self):
+        menu = self.button.get_popover()
+        self.assertEqual(menu.get_menu_model().get_n_items(), 0)
+        with patch.object(self.host, "refresh_tab_overflow_menu", wraps=self.host.refresh_tab_overflow_menu) as refresh:
+            for _ in range(200):
+                self.host.invalidate_tab_overflow_menu()
+            refresh.assert_not_called()
+            self.button.popup()
+            self.drain()
+            refresh.assert_called_once()
+            self.assertIs(self.button.get_popover(), menu)
+            self.button.popdown()
+            self.sessions[0].title = "Renamed"
+            self.sessions[0].tab_label.get_first_child().set_label("Renamed")
+            self.sessions.reverse()
+            self.host.invalidate_tab_overflow_menu()
+            self.assertEqual(refresh.call_count, 1)
+            self.button.popup()
+            self.drain()
+            self.assertEqual(refresh.call_count, 2)
+            labels = [menu.get_menu_model().get_item_attribute_value(i, "label", None).unpack() for i in range(40)]
+            self.assertEqual(labels, [item.title for item in self.sessions])
+            self.assertIs(self.button.get_popover(), menu)
+
 
 class PrivateTabDragTests(unittest.TestCase):
     def setUp(self):
@@ -88,7 +145,14 @@ class PrivateTabDragTests(unittest.TestCase):
         self.host.tab_drag_session_id = self.session.id
         self.host.tab_drag = object()
         self.host.reorder_dragged_tab_at_bar_x = MagicMock()
-        self.host.tab_drop_is_in_header = MagicMock(return_value=True)
+        self.host.session_tab_bar = object()
+        adjustment = SimpleNamespace(get_page_size=lambda: 400)
+        self.host.session_tab_scroller = SimpleNamespace(
+            compute_point=lambda *_args: (True, Graphene.Point().init(100, 0)),
+            get_hadjustment=lambda: adjustment)
+        self.host.visible_sessions_in_tab_order = lambda: [self.session]
+        self.host.schedule_active_tab_reveal = MagicMock()
+        self.host.invalidate_tab_overflow_menu = MagicMock()
         self.host.set_active_session = MagicMock()
         self.drop = MagicMock()
         self.drop.get_drag.return_value = self.host.tab_drag
@@ -119,26 +183,23 @@ class PrivateTabDragTests(unittest.TestCase):
                         self.host.session_registry.register(self.session)
         self.drop.read_async.assert_not_called()
 
-    def test_separate_drag_preview_keeps_grab_point_without_coloring_source(self):
-        for x in (7, 173):
-            with self.subTest(grab_x=x):
-                tab = MagicMock()
-                self.session.tab_label = tab
-                source = MagicMock()
-                preview = MagicMock()
-                drag = MagicMock()
-                icon = MagicMock()
-                self.host.on_tab_drag_prepare(source, x, 9, self.session.id, tab)
-                with patch.object(self.host, "build_tab_drag_preview", return_value=preview), \
-                     patch.object(Gtk.DragIcon, "get_for_drag", return_value=icon):
-                    self.host.on_tab_drag_begin(source, drag, self.session.id, tab)
-                icon.set_child.assert_called_once_with(preview)
-                drag.set_hotspot.assert_called_once_with(x, 9)
-                tab.add_css_class.assert_called_once_with("dragging")
-                self.host.reorder_dragged_tab_at_bar_x.assert_not_called()
-                self.host.on_tab_drag_end(source, self.host.tab_drag, False, self.session.id)
-                self.assertIsNone(self.host.tab_drag_hotspot)
-                tab.remove_css_class.assert_called_once_with("dragging")
+    def test_drag_icon_uses_tab_paintable_and_clears_drag_state(self):
+        tab = MagicMock()
+        tab.get_allocated_width.return_value = 120
+        tab.get_allocated_height.return_value = 32
+        self.session.tab_label = tab
+        source, drag = MagicMock(), MagicMock()
+        paintable = MagicMock()
+        with patch.object(Gtk.WidgetPaintable, "new", return_value=paintable):
+            self.host.on_tab_drag_begin(source, drag, self.session.id, tab)
+        source.set_icon.assert_called_once_with(paintable, 60, 16)
+        tab.add_css_class.assert_called_once_with("dragging")
+        self.host.invalidate_tab_overflow_menu.reset_mock()
+        self.host.on_tab_drag_end(source, drag, False, self.session.id)
+        self.assertIsNone(self.host.tab_drag)
+        self.assertIsNone(self.host.tab_drag_session_id)
+        self.host.invalidate_tab_overflow_menu.assert_not_called()
+        tab.remove_css_class.assert_called_once_with("dragging")
 
     def test_async_drop_validates_payload_and_lifetime_after_drag_end(self):
         for condition in ("valid", "wrong-id", "invalid-utf8", "stale", "deleted", "detached", "shutdown", "read-error"):
@@ -183,44 +244,36 @@ class PrivateTabDragTests(unittest.TestCase):
                 stream.read_bytes_async.assert_not_called()
 
     def test_motion_reorders_only_the_current_local_drag(self):
-        self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 20, 0), Gdk.DragAction.MOVE)
-        self.host.reorder_dragged_tab_at_bar_x.assert_not_called()
-        while GLib.MainContext.default().pending():
-            GLib.MainContext.default().iteration(False)
-        self.host.reorder_dragged_tab_at_bar_x.assert_called_once_with(None, 20, self.session.id)
+        self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 100, 0), Gdk.DragAction.MOVE)
+        self.host.reorder_dragged_tab_at_bar_x.assert_called_once_with(None, 100)
+        self.host.invalidate_tab_overflow_menu.assert_not_called()
         self.drop.get_drag.return_value = object()
-        self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 20, 0), Gdk.DragAction(0))
+        self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 100, 0), Gdk.DragAction(0))
         self.assertEqual(self.host.reorder_dragged_tab_at_bar_x.call_count, 1)
 
-    def test_pending_motion_coalesces_and_revalidates_after_native_event(self):
-        for reason in ("latest", "leave", "end", "removed", "replaced", "foreign", "shutdown"):
-            with self.subTest(reason=reason):
-                self.setUp()
-                self.host.on_tab_bar_drop_motion(None, self.drop, 20, 0)
-                self.host.on_tab_bar_drop_motion(None, self.drop, 80, 0)
-                if reason == "leave":
-                    self.host.on_tab_bar_drop_leave()
-                elif reason == "end":
-                    self.host.tab_drag = None
-                elif reason == "removed":
-                    self.host.session_registry.remove(self.session.id)
-                elif reason == "replaced":
-                    self.host.session_registry.remove(self.session.id)
-                    self.host.session_registry.register(SimpleNamespace(id=self.session.id, detached_window=None))
-                elif reason == "foreign":
-                    self.drop.get_drag.return_value = object()
-                elif reason == "shutdown":
-                    self.host.shutdown_in_progress = True
-                self.host.reorder_dragged_tab_at_bar_x.assert_not_called()
-                while GLib.MainContext.default().pending():
-                    GLib.MainContext.default().iteration(False)
-                if reason == "latest":
-                    self.host.reorder_dragged_tab_at_bar_x.assert_called_once_with(None, 80, self.session.id)
-                else:
-                    self.host.reorder_dragged_tab_at_bar_x.assert_not_called()
+    def test_drag_end_invalidates_only_when_visual_order_changed(self):
+        first = self.session
+        first.tab_label = MagicMock()
+        second = SimpleNamespace(id="second", tab_label=MagicMock())
+        self.host.tab_drag_initial_order = (first.id, second.id)
+        self.host.visible_sessions_in_tab_order = lambda: [second, first]
+        self.host.on_tab_drag_end(None, self.host.tab_drag, False, first.id)
+        self.host.invalidate_tab_overflow_menu.assert_called_once_with()
+        self.assertIsNone(self.host.tab_drag_initial_order)
 
-    def test_drop_over_terminal_content_does_not_reorder_tabs(self):
-        self.host.tab_drop_is_in_header.return_value = False
+    def test_autoscroll_revalidates_drag_and_leave_cancels_its_timer(self):
+        self.host.tab_drag_scroll_context = (None, self.drop, 2, 0)
+        self.drop.get_drag.return_value = object()
+        self.assertEqual(self.host.scroll_tabs_during_drag(), GLib.SOURCE_REMOVE)
+        self.assertIsNone(self.host.tab_drag_scroll_context)
+        self.host.tab_drag_scroll_id = GLib.timeout_add(60000, lambda: GLib.SOURCE_REMOVE)
+        timer = self.host.tab_drag_scroll_id
+        self.host.on_tab_bar_drop_leave()
+        self.assertIsNone(self.host.tab_drag_scroll_id)
+        self.assertIsNone(GLib.MainContext.default().find_source_by_id(timer))
+
+    def test_drop_without_valid_strip_coordinates_is_rejected(self):
+        self.host.session_tab_scroller.compute_point = lambda *_args: (False, None)
         self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 20, 200), Gdk.DragAction(0))
         self.assertFalse(self.host.on_tab_bar_drop(None, self.drop, 20, 200))
         self.host.reorder_dragged_tab_at_bar_x.assert_not_called()
@@ -229,7 +282,7 @@ class PrivateTabDragTests(unittest.TestCase):
     def test_real_async_stream_reorders_widgets_and_preserves_visual_order(self):
         if not Gtk.init_check() or Gdk.Display.get_default() is None:
             self.skipTest("GTK widget integration requires a graphical display")
-        notebook = Gtk.Notebook()
+        notebook = Gtk.Box()
         window = Gtk.Window()
         window.set_default_size(600, 200)
         window.set_child(notebook)
@@ -239,16 +292,18 @@ class PrivateTabDragTests(unittest.TestCase):
             label = Gtk.Label(label=session_id)
             label.set_size_request(100, 30)
             page = Gtk.Box()
-            notebook.append_page(page, label)
+            notebook.append(label)
             sessions.append(SimpleNamespace(id=session_id, page=page, tab_label=label, detached_window=None))
         window.present()
         deadline = time.monotonic() + 0.2
         while time.monotonic() < deadline:
             GLib.MainContext.default().iteration(False)
             time.sleep(0.001)
-        self.host.terminal_notebook = notebook
+        self.host.session_tab_bar = notebook
+        self.host.session_tab_scroller.compute_point = lambda _bar, point: (True, point)
         self.host.session_registry = SessionRegistry(sessions)
         self.host.tab_drag_session_id = "third"
+        self.host.visible_sessions_in_tab_order = TabsMixin.visible_sessions_in_tab_order.__get__(self.host)
         self.host.reorder_dragged_tab_at_bar_x = TabsMixin.reorder_dragged_tab_at_bar_x.__get__(self.host)
         valid, bounds = sessions[0].tab_label.compute_bounds(notebook)
         self.assertTrue(valid)
@@ -734,6 +789,7 @@ class CloseTabTests(unittest.TestCase):
             page=page,
             connected=True,
             detached_window=None,
+            retire=MagicMock(),
         )
         remaining_session = SimpleNamespace(
             id="remaining",
@@ -786,6 +842,7 @@ class CloseTabTests(unittest.TestCase):
         self.assertIs(host.disconnected, session)
         self.assertIs(host.removed, session)
         self.assertIs(host.terminated, session)
+        session.retire.assert_called_once_with()
         self.assertEqual(host.cancelled_transfers, (session.id, True))
         self.assertIsNone(host.session_registry.get(session.id))
         self.assertIs(host.session_registry.get(remaining_session.id), remaining_session)
@@ -821,29 +878,27 @@ class TabOverflowTests(unittest.TestCase):
         class Host(TabsMixin):
             def __init__(self) -> None:
                 self.session_registry = SessionRegistry([first, detached, second])
-                pages = [second.page, detached.page, first.page]
-                self.terminal_notebook = SimpleNamespace(get_n_pages=lambda: len(pages), get_nth_page=pages.__getitem__)
+                labels = [second_tab, detached_tab, first_tab]
+                for index, label in enumerate(labels):
+                    label.get_next_sibling = lambda index=index: labels[index+1] if index+1 < len(labels) else None
+                self.session_tab_bar = SimpleNamespace(get_first_child=lambda: labels[0])
 
         self.assertEqual(Host().visible_sessions_in_tab_order(), [second, first])
 
-class NativeTerminalNotebookTests(unittest.TestCase):
+class TerminalTabStripTests(unittest.TestCase):
     def setUp(self):
         if not Gtk.init_check() or Gdk.Display.get_default() is None:
             self.skipTest("GTK widget integration requires a graphical display")
         self.window = Gtk.Window()
         self.window.set_default_size(400, 220)
         self.host = TabsMixin()
-        self.host.terminal_notebook = Gtk.Notebook(scrollable=True)
-        self.host.install_terminal_tab_drop_target()
         self.host.t = lambda key: key
-        self.host.tab_overflow_button = Gtk.MenuButton()
-        self.host.terminal_notebook.set_action_widget(self.host.tab_overflow_button, Gtk.PackType.END)
-        self.window.set_child(self.host.terminal_notebook)
         self.host.session_registry = SessionRegistry()
         self.host.sync_window_title_with_visible_session = lambda: None
-        self.host.terminal_notebook.connect("switch-page", self.host.on_terminal_page_switched)
+        install_tab_strip(self.host, self.window)
         self.window.present()
         self.addCleanup(self.window.destroy)
+        self.addCleanup(self.host.stop_tab_drag_scroll)
 
     def add_session(self, name):
         page = Gtk.Box()
@@ -862,68 +917,54 @@ class NativeTerminalNotebookTests(unittest.TestCase):
             GLib.MainContext.default().iteration(False)
             time.sleep(0.001)
 
-    def test_drag_preview_preserves_exterior_size_and_grab_point(self):
-        from termia.styles import build_application_css
-        provider = Gtk.CssProvider()
-        provider.load_from_data(build_application_css("#001b33", "#008712", 1))
-        display = Gdk.Display.get_default()
-        Gtk.StyleContext.add_provider_for_display(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        self.addCleanup(Gtk.StyleContext.remove_provider_for_display, display, provider)
-        self.host.terminal_notebook.add_css_class("termia-terminal-notebook")
+    def test_scrollbar_overlay_and_private_drag_keep_selected_tab(self):
         session = self.add_session("First")
         self.add_session("Second")
         self.drain()
-        tab = session.tab_label
-        valid, bounds = tab.get_parent().compute_bounds(tab)
-        self.assertTrue(valid)
-        self.assertGreater(bounds.get_width(), tab.get_width())
-        preview_window = Gtk.Window()
-        self.addCleanup(preview_window.destroy)
-        drag = MagicMock()
-        icon = MagicMock()
-        icon.set_child.side_effect = preview_window.set_child
-        self.host.on_tab_drag_prepare(None, 7, 9, session.id, tab)
-        with patch.object(Gtk.DragIcon, "get_for_drag", return_value=icon):
-            self.host.on_tab_drag_begin(MagicMock(), drag, session.id, tab)
-        preview_window.present()
-        self.drain()
-        preview = preview_window.get_child()
-        self.assertEqual(preview.get_width(), round(bounds.get_width()))
-        self.assertEqual(preview.get_height(), round(bounds.get_height()))
-        drag.set_hotspot.assert_called_once_with(int(7 - bounds.get_x()), int(9 - bounds.get_y()))
-        self.host.on_tab_drag_end(None, drag, False, session.id)
+        self.assertTrue(self.host.session_tab_scroller.get_overlay_scrolling())
+        self.assertEqual(self.host.session_tab_scroller.get_policy(),
+                         (Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER))
+        self.host.on_tab_drag_begin(MagicMock(), MagicMock(), session.id, session.tab_label)
+        self.assertIs(self.host.visible_terminal_page(), session.page)
+        self.assertTrue(session.tab_label.has_css_class("dragging"))
+        self.host.on_tab_drag_end(None, self.host.tab_drag, False, session.id)
+        self.assertFalse(session.tab_label.has_css_class("dragging"))
 
-    def test_native_selection_order_and_removed_page_focus(self):
+    def test_selection_order_and_removed_page_focus(self):
         first = self.add_session("first")
         second = self.add_session("second")
-        self.assertTrue(self.host.terminal_notebook.get_show_tabs())
-        self.host.terminal_notebook.set_current_page(0)
+        self.assertTrue(self.host.session_tab_controls.get_visible())
+        self.host.set_active_session("first")
         self.drain()
         self.assertIs(self.host.visible_terminal_page(), first.page)
         self.assertTrue(self.window.get_focus().is_ancestor(first.terminal))
-        self.host.terminal_notebook.reorder_child(first.page, 1)
+        self.host.session_tab_bar.reorder_child_after(first.tab_label, second.tab_label)
         self.assertEqual(self.host.visible_sessions_in_tab_order(), [second, first])
         self.host.set_active_session("second")
         self.host.remove_session_from_main_view(second)
+        self.host.session_registry.remove(second.id)
+        self.host.update_session_tab_bar_visibility()
+        self.host.set_active_session("first")
         self.drain()
         self.assertIs(self.host.visible_terminal_page(), first.page)
-        self.assertFalse(self.host.terminal_notebook.get_show_tabs())
+        self.assertFalse(self.host.session_tab_controls.get_visible())
         self.assertTrue(self.window.get_focus().is_ancestor(first.terminal))
 
     def test_forty_tabs_native_overflow_selection_and_empty_state(self):
         sessions = [self.add_session(str(i)) for i in range(40)]
         self.drain()
         self.assertTrue(self.host.tab_overflow_button.get_visible())
-        self.assertTrue(self.host.terminal_notebook.get_scrollable())
+        self.assertTrue(self.host.session_tab_scroller.get_hscrollbar() is not None)
         self.host.set_active_session("0")
         self.assertIs(self.host.visible_terminal_page(), sessions[0].page)
         self.host.set_active_session("39")
         self.assertIs(self.host.visible_terminal_page(), sessions[-1].page)
         for session in sessions:
             self.host.remove_session_from_main_view(session)
+            self.host.session_registry.remove(session.id)
         self.drain()
         self.assertIsNone(self.host.visible_terminal_page())
-        self.assertEqual(self.host.terminal_notebook.get_n_pages(), 0)
+        self.assertEqual(self.host.terminal_stack.get_pages().get_n_items(), 0)
 
     def test_overflow_selector_tracks_native_tab_visibility_after_resize(self):
         self.window.set_default_size(800, 220)
@@ -944,14 +985,14 @@ class NativeTerminalNotebookTests(unittest.TestCase):
         first, second = [self.add_session(name) for name in ("first", "second")]
         self.drain()
         def tab_bounds(session):
-            valid, bounds = session.tab_label.get_parent().compute_bounds(self.host.terminal_notebook)
+            valid, bounds = session.tab_label.compute_bounds(self.host.session_tab_bar)
             self.assertTrue(valid)
             return bounds
         original_width = tab_bounds(first).get_width()
         self.assertAlmostEqual(original_width, tab_bounds(second).get_width(), delta=1)
         self.assertLessEqual(tab_bounds(first).get_x(), 16)
         self.assertGreaterEqual(tab_bounds(second).get_x() + tab_bounds(second).get_width(),
-                                self.host.terminal_notebook.get_width() - 16)
+                                self.host.session_tab_bar.get_width() - 16)
         third = self.add_session("third")
         self.drain()
         widths = [tab_bounds(item).get_width() for item in (first, second, third)]
@@ -959,7 +1000,7 @@ class NativeTerminalNotebookTests(unittest.TestCase):
         self.assertLessEqual(max(widths) - min(widths), 1)
         self.assertLessEqual(tab_bounds(first).get_x(), 16)
         self.assertGreaterEqual(tab_bounds(third).get_x() + tab_bounds(third).get_width(),
-                                self.host.terminal_notebook.get_width() - 16)
+                                self.host.session_tab_bar.get_width() - 16)
 
     def test_pointer_drag_reorders_private_notebook_tabs(self):
         if not shutil.which("xdotool"):
@@ -1011,7 +1052,7 @@ class NativeTerminalNotebookTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-class TerminalNotebookApplicationTests(unittest.TestCase):
+class TerminalTabStripApplicationTests(unittest.TestCase):
     def test_local_split_detach_reattach_and_close_keep_process_ownership(self):
         if not Gtk.init_check() or Gdk.Display.get_default() is None:
             self.skipTest("GTK application integration requires a graphical display")
@@ -1038,7 +1079,7 @@ class TerminalNotebookApplicationTests(unittest.TestCase):
                 try:
                     first = window.open_process_terminal_tab("First", ["/bin/sh"], None)
                     second = window.open_process_terminal_tab("Second", ["/bin/sh"], None)
-                    NativeTerminalNotebookTests.drain(self)
+                    TerminalTabStripTests.drain(self)
                     processes = [first.child_process, second.child_process]
                     self.assertTrue(all(terminal_process_is_active(item) for item in processes))
                     pane = window.split_terminal_pane(first, first.terminal, "horizontal")
@@ -1048,10 +1089,10 @@ class TerminalNotebookApplicationTests(unittest.TestCase):
                     window.move_terminal_tab_focus(first, 1)
                     self.assertIs(window.visible_terminal_page(), second.page)
                     window.detach_tab(FakePopover(), first)
-                    self.assertEqual(window.terminal_notebook.get_n_pages(), 1)
+                    self.assertEqual(window.terminal_stack.get_pages().get_n_items(), 1)
                     self.assertIs(first.page.get_root(), first.detached_window)
                     self.assertEqual(len(first.panes), 2)
-                    NativeTerminalNotebookTests.drain(self)
+                    TerminalTabStripTests.drain(self)
                     if shutil.which("xdotool"):
                         import gi
                         gi.require_version("GdkX11", "4.0")
@@ -1062,7 +1103,7 @@ class TerminalNotebookApplicationTests(unittest.TestCase):
                         xid = GdkX11.X11Surface.get_xid(detached.get_surface())
                         subprocess.run(["xdotool", "mousemove", "--window", str(xid),
                                         str(int(point.x)), str(int(point.y)), "click", "3"], check=True)
-                        NativeTerminalNotebookTests.drain(self)
+                        TerminalTabStripTests.drain(self)
                     else:
                         window.on_terminal_right_click(None, 1, 20, 20, first, first.terminal)
                     menu = window._terminal_context_menus[first.detached_window]
@@ -1079,10 +1120,10 @@ class TerminalNotebookApplicationTests(unittest.TestCase):
                     reattach = entry(menu, window.t("reattach_tab"))
                     self.assertIsNotNone(reattach)
                     reattach.emit("clicked")
-                    NativeTerminalNotebookTests.drain(self)
-                    NativeTerminalNotebookTests.drain(self)
+                    TerminalTabStripTests.drain(self)
+                    TerminalTabStripTests.drain(self)
                     self.assertIsNone(first.detached_window)
-                    self.assertEqual(window.terminal_notebook.get_n_pages(), 2)
+                    self.assertEqual(window.terminal_stack.get_pages().get_n_items(), 2)
                     self.assertIs(first.page.get_root(), window)
                     self.assertTrue(all(terminal_process_is_active(item) for item in processes))
                     self.assertTrue(window.cycle_main_focus(1))
@@ -1090,9 +1131,9 @@ class TerminalNotebookApplicationTests(unittest.TestCase):
                     window.close_tab(second.id, second.page, disconnect=True)
                     deadline = time.monotonic() + 2
                     while any(terminal_process_is_active(item) for item in processes) and time.monotonic() < deadline:
-                        NativeTerminalNotebookTests.drain(self)
+                        TerminalTabStripTests.drain(self)
                     self.assertFalse(any(terminal_process_is_active(item) for item in processes))
-                    self.assertEqual(window.terminal_notebook.get_n_pages(), 0)
+                    self.assertEqual(window.terminal_stack.get_pages().get_n_items(), 0)
                 finally:
                     if shutil.which("xdotool"):
                         subprocess.run(["xdotool", "mouseup", "1", "mouseup", "3", "mousemove", "0", "0"],
@@ -1110,7 +1151,7 @@ class TerminalNotebookApplicationTests(unittest.TestCase):
                             session.detached_window = None
                     window.destroy()
                     store.close()
-                    NativeTerminalNotebookTests.drain(self)
+                    TerminalTabStripTests.drain(self)
 
 
 def exercise_overflow_drag():
@@ -1121,7 +1162,7 @@ def exercise_overflow_drag():
     gi.require_version("GdkX11", "4.0")
     from gi.repository import GdkX11
 
-    case = NativeTerminalNotebookTests("test_native_selection_order_and_removed_page_focus")
+    case = TerminalTabStripTests("test_selection_order_and_removed_page_focus")
     case.setUp()
     try:
         case.window.set_default_size(800, 220)

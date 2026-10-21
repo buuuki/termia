@@ -55,7 +55,8 @@ the mixins:
   `sidebar_drag_server_id`, and `active_context_popover`.
 - Main UI widgets: `body`, `sidebar`, `search_entry`, `server_list`,
   `server_scroller`, `summary_label`, `title_label`, `info_label`,
-  `terminal_notebook` (a native `Gtk.Notebook`).
+  `terminal_stack` (`Gtk.Stack`), `session_tab_bar` (`Gtk.Box`),
+  `session_tab_scroller` (`Gtk.ScrolledWindow`) and `session_tab_controls`.
 - Header widgets: sidebar, new-tab, menu, read-only, add, expand, and collapse
   controls.
 
@@ -189,6 +190,17 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TerminalSessionsMixin`
 
+- Each `TerminalPane` owns its Termia UI handler IDs through `SignalConnections`,
+  using native weak emitter references. Retiring a tab or removing a pane
+  disconnects those UI handlers; its separately owned `child-exited` handler
+  survives a live child and is released only after final history/accounting.
+  A retained disconnected/reconnect pane keeps its interactions until retired.
+- Tab labels similarly own their interaction handlers. Detaching/reparenting
+  does not retire a session; final tab closure does. GTK internal handlers and
+  captured process identities are not disposed through the UI signal owner.
+- New split terminals receive focus only after mapping. Their pane owns the
+  pending map handler, so retirement cancels it before a never-mapped split can
+  leave GTK weak focus pointers referring into a destroyed paned container.
 - Reads: `store`, `session_registry`, `toast_label`, terminal-menu
   callbacks, and terminal-font resolution.
 - Writes: `TerminalSession` objects held in `session_registry`. Each session owns
@@ -211,26 +223,24 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TabsMixin`
 
-- Reads: `store`, `session_registry`, `tab_lifecycle_actions`, and
-  `terminal_notebook`.
+- A single native `Gtk.PopoverMenu` owns the overflow actions; callbacks hold
+  weak host/popover references. Its `show` callback refreshes the model only
+  when entries changed, and updates active selection. Invalidating stale UI
+  dismisses an open menu without rebuilding it.
+- Reads: `store`, `session_registry`, `tab_lifecycle_actions`, `terminal_stack`,
+  `session_tab_bar`, `session_tab_scroller` and `session_tab_controls`.
 - Writes: drag state and the GTK placement of session pages and labels.
-- `visible_terminal_page()` resolves the native notebook's current page for
-  terminal keyboard dispatch and focus cycling. Notebook order is the source
-  for keyboard tab order, workspace snapshots, and close-neighbor selection.
-  GTK owns page selection, tab visibility, and overflow arrows. Termia retains
-  its private tab drag format and reorders notebook pages with it; built-in
-  notebook dragging is disabled. Private drag motion is coalesced and deferred
-  until GTK finishes the current event, avoiding reentrant native tab
-  enter/leave and hover-switch timer handling. Queued moves revalidate the
-  originating drag and session, cancel on leaving the target or ending the
-  drag, and use only mapped tab geometry. A child-process pointer test covers
-  repeated drag moves with overflow without letting a GTK abort terminate the
-  entire suite. Page-switch focus callbacks revalidate page
-  identity and session ownership before focusing a terminal.
-- The floating `Gtk.DragIcon` preview is a separate GTK composition measured
-  from the full native tab bounds, with the grab point translated from the inner
-  label. Its appearance is independent of the dimmed source label; these visual
-  effects do not change reorder thresholds or terminal-process ownership.
+- `visible_terminal_page()` resolves the stack's visible child. Label order in
+  `session_tab_bar` defines keyboard navigation, workspace snapshots and
+  close-neighbor selection. Termia owns tab selection and private drag
+  reordering; GTK owns scrolling and the native overflow menu interaction.
+- Drag motion changes label placement without refreshing the overflow menu.
+  Drag end compares initial and final order and invalidates only a changed
+  order. A bounded edge-scroll timer revalidates the drag and stops on leave,
+  drop, drag end, removal or shutdown. Deferred active-tab reveal is suppressed
+  during drag. Async drops revalidate payload, session and shutdown state.
+- The drag source uses `Gtk.WidgetPaintable` for its icon. The source tab uses
+  scoped dragging color and opacity; no notebook-specific preview is created.
 - Cross-mixin dependencies: terminal context actions and shared dialog helpers.
   Terminal creation, confirmation, disconnection, and split-process cleanup
   are supplied explicitly through `TabLifecycleActions`.

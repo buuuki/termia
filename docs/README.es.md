@@ -19,8 +19,9 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Trabajar con varias pestañas, ventanas independientes y paneles de terminal
   divididos que pueden conectarse de forma independiente a distintos servidores
   SSH o terminales locales.
-- Acceder a las pestañas de terminal que no caben mediante las flechas de GTK
-  o la lista de pestañas. Navegar por el árbol de conexiones con el teclado y
+- Acceder a las pestañas de terminal que no caben mediante la barra horizontal
+  que se oculta automáticamente o la lista de la flecha hacia abajo, actualizada
+  al abrirla. Navegar por el árbol de conexiones con el teclado y
   desplegar grupos; arrastrar servidores entre grupos o a Sin grupo.
 - La pestaña de terminal activa tiene el fondo resaltado, sin línea azul;
   al pasar el ratón por una pestaña inactiva, el resaltado es más suave.
