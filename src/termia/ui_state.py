@@ -31,7 +31,7 @@ class SignalConnections:
         for reference, handler in handlers:
             emitter = reference()
             if emitter is not None and emitter.handler_is_connected(handler):
-                emitter.disconnect(handler)
+                GObject.Object.disconnect(emitter, handler)
 
 
 @dataclass

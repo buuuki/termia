@@ -847,6 +847,14 @@ and proposed controls.
 
 ### Native SFTP explorer
 
+- Repeatedly open and close SFTP, including its first opening in a fresh process.
+  After workers stop, native window/control/dialog references must be released
+  and the host must unregister each explorer exactly once. Keep the original
+  optional-dependency error available without retaining its import traceback.
+  Verify both password-prompt dismissal and explorer closure with a prompt open.
+  Reconnect and cancellation must remain usable until permanent closure;
+  unsuccessful worker cleanup must retain host ownership for shutdown checks.
+
 - Single-click a directory: it must remain selected in the current path and be
   downloadable. Double-click it to navigate inside. Use arrows to focus a row
   and Enter to open a directory; activating a regular file must not navigate.

@@ -15,6 +15,14 @@ from threading import Event, Lock
 
 import paramiko
 
+# Paramiko 2.12 keeps an optional Invoke import error at module scope. Its
+# traceback retains the first SFTP launch and its UI through import frames.
+# Preserve the optional-feature error, without retaining the import stack.
+_invoke_import_error = getattr(paramiko.config, "invoke_import_error", None)
+if isinstance(_invoke_import_error, ImportError):
+    _invoke_import_error.__traceback__ = None
+del _invoke_import_error
+
 from .sftp_service import (
     AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, IncompleteTransfer, RemoteEntry,
     UnknownHost, child_path,

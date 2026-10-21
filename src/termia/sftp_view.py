@@ -22,6 +22,7 @@ from .sftp_service import (
     AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, SFTPService,
     UnknownHost, child_path,
 )
+from .ui_state import SignalConnections
 
 
 def format_file_size(size: int) -> str:
@@ -47,7 +48,10 @@ class SFTPWindow(Gtk.Window):
         self.owner_session_id = owner_session_id
         self.service = None
         self.disposed = False
+        self.ui_released = False
+        self.ui_signals = SignalConnections()
         self.dialogs = set()
+        self.dialog_signals = {}
         self.transfer_active = False
         self.connection_ready = False
         self.stop_source = 0
@@ -62,7 +66,7 @@ class SFTPWindow(Gtk.Window):
         box.append(self.toolbar)
         self.button("sftp_up", lambda: self.navigate(posixpath.dirname(self.path) or "/"))
         self.location = Gtk.Entry(text=self.path, hexpand=True)
-        self.location.connect("activate", lambda *_: self.navigate(self.location.get_text()))
+        self.ui_signals.connect(self.location, "activate", lambda *_: self.navigate(self.location.get_text()))
         self.toolbar.append(self.location)
         self.button("sftp_refresh", lambda: self.navigate(self.path))
         self.actions = Gtk.Box(spacing=6)
@@ -75,7 +79,7 @@ class SFTPWindow(Gtk.Window):
         self.button("sftp_delete", self.delete_selected, self.actions)
         self.rows = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
         self.rows.set_activate_on_single_click(False)
-        self.rows.connect("row-activated", self.activate_row)
+        self.ui_signals.connect(self.rows, "row-activated", self.activate_row)
         scroll = Gtk.ScrolledWindow(vexpand=True)
         scroll.set_child(self.rows)
         box.append(scroll)
@@ -91,12 +95,12 @@ class SFTPWindow(Gtk.Window):
         self.cancel_button = self.button("cancel", self.cancel, controls)
         self.reconnect_button = self.button("sftp_reconnect", self.connect_backend, controls)
         self.disconnect_button = self.button("disconnect", self.disconnect, controls)
-        self.connect("close-request", self.close_requested)
+        self.ui_signals.connect(self, "close-request", self.close_requested)
         self.connect_backend()
 
     def button(self, key, callback, box=None):
         button = Gtk.Button(label=self.t(key))
-        button.connect("clicked", lambda *_: callback())
+        self.ui_signals.connect(button, "clicked", lambda *_: callback())
         (box if box is not None else self.toolbar).append(button)
         return button
 
@@ -304,17 +308,17 @@ class SFTPWindow(Gtk.Window):
         )
         dialog.set_select_multiple(not directory)
         self.dialogs.add(dialog)
+        signals = self.dialog_signals[dialog] = SignalConnections()
         def response(current, result):
             paths = []
             if result == Gtk.ResponseType.OK:
                 files = current.get_files()
                 paths = [Path(files.get_item(i).get_path()) for i in range(files.get_n_items())
                          if files.get_item(i).get_path()]
-            self.dialogs.discard(current)
-            current.destroy()
+            self.release_dialog(current)
             if paths and not self.disposed:
                 callback(paths)
-        dialog.connect("response", response)
+        signals.connect(dialog, "response", response)
         dialog.present()
 
     def prompt(self, key, callback, secret=False):
@@ -336,18 +340,43 @@ class SFTPWindow(Gtk.Window):
         if entry is not None:
             content.append(entry)
         self.dialogs.add(dialog)
+        signals = self.dialog_signals[dialog] = SignalConnections()
         def response(current, result):
             value = entry.get_text() if entry is not None else ""
             if entry is not None:
                 entry.set_text("")
-            self.dialogs.discard(current)
-            current.destroy()
+            self.release_dialog(current)
             if result == Gtk.ResponseType.OK and not self.disposed:
                 callback(value)
             elif not self.disposed:
                 self.status.set_text(previous_status)
-        dialog.connect("response", response)
+        signals.connect(dialog, "response", response)
         dialog.present()
+
+    def release_dialog(self, dialog):
+        self.dialogs.discard(dialog)
+        signals = self.dialog_signals.pop(dialog, None)
+        if signals is not None:
+            signals.disconnect()
+        dialog.destroy()
+
+    def release_closed_ui(self):
+        """Retire UI handlers only after the service has verifiably stopped."""
+        if self.ui_released:
+            return
+        if not self.disposed or not self.service.stopped:
+            return
+        self.ui_released = True
+        self.ui_signals.disconnect()
+        for dialog in tuple(self.dialogs):
+            self.release_dialog(dialog)
+        self.window_group.remove_window(self)
+        on_closed, self.on_closed = self.on_closed, None
+        try:
+            if on_closed is not None:
+                on_closed(self)
+        finally:
+            self.destroy()
 
     def cancel(self):
         self.reconnect_pending = False
@@ -367,8 +396,7 @@ class SFTPWindow(Gtk.Window):
             if service.stopped:
                 self.stop_source = 0
                 if self.disposed:
-                    self.on_closed(self)
-                    self.destroy()
+                    self.release_closed_ui()
                 elif self.reconnect_pending:
                     self.reconnect_pending = False
                     self.connect_backend()
@@ -418,8 +446,7 @@ class SFTPWindow(Gtk.Window):
             self.reconnect_pending = False
             self.service.close()
             for dialog in tuple(self.dialogs):
-                dialog.destroy()
-            self.dialogs.clear()
+                self.release_dialog(dialog)
             self.endpoint = replace(self.endpoint, password="")
             self.set_visible(False)
             self.monitor_stop()
