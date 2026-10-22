@@ -6,7 +6,7 @@ import subprocess
 LAB_FILES = (
     'lab/boot.sh', 'lab/desktop.py', 'lab/launcher.py', 'lab/sample_process.py',
     'lab/seed_profile.py', 'lab/lifecycle/entry.py', 'lab/lifecycle/probe.py',
-    'lab/lifecycle/memory_probe.py', 'probes/probe.py',
+    'lab/lifecycle/memory_probe.py', 'probes/probe.py', 'probes/results.py',
 )
 SERVER_FILES = ('Dockerfile.server', 'observe.py', 'remote_job.py', 'server_entry.py')
 

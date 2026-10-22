@@ -11,6 +11,10 @@
 
 ### Fixed
 
+- Fail Docker laboratory diagnostics when resource cleanup fails or visual
+  probes leave terminal processes running; cover cleanup outcomes and reject
+  previously completed manifests with cleanup errors (`#377`).
+
 - Keep connection headers expandable without selecting them, retain compact
   rounded object selection and remove pressed-row inset shadows. Add native
   arrows to tab/server/group menus, clear initial menu highlighting, restore

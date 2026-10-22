@@ -1,9 +1,12 @@
 """Publication boundaries: no private/generated inputs enter Docker contexts."""
+from contextlib import redirect_stdout
 import importlib.util
+import io
+import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 LAB = Path(__file__).resolve().parents[1] / 'tools/docker-lab'
 spec = importlib.util.spec_from_file_location('termia_lab_context', LAB / 'context.py')
@@ -12,6 +15,9 @@ spec.loader.exec_module(context)
 control_spec = importlib.util.spec_from_file_location('termia_lab_control', LAB / 'lab/tools.py')
 control = importlib.util.module_from_spec(control_spec)
 control_spec.loader.exec_module(control)
+results_spec = importlib.util.spec_from_file_location('termia_lab_results', LAB / 'probes/results.py')
+results = importlib.util.module_from_spec(results_spec)
+results_spec.loader.exec_module(results)
 
 
 class DockerLabContextTests(unittest.TestCase):
@@ -92,6 +98,65 @@ class DockerLabContextTests(unittest.TestCase):
             self.assertIn('--read-only', command)
             self.assertIn('no-new-privileges', command)
             self.assertFalse(any('docker.sock' in item or 'SSH_AUTH_SOCK=' in item for item in command))
+
+
+class DockerLabResultTests(unittest.TestCase):
+    def test_worker_cleanup_outcome_is_persisted_and_controls_wait(self):
+        for fails in (False, True):
+            with self.subTest(cleanup_fails=fails), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                manifest_path = directory / 'manifest.json'
+                manifest_path.write_text(json.dumps(dict(
+                    state='starting', source_sha256='synthetic-source',
+                )))
+                process = Mock(returncode=0)
+                process.poll.return_value = 0
+                failure = RuntimeError('synthetic cleanup failure') if fails else None
+                with (
+                    patch.object(control, 'fingerprint', return_value='synthetic-source'),
+                    patch.object(control, 'exists', side_effect=[False, True]),
+                    patch.object(control, 'owned', return_value={}),
+                    patch.object(control, 'client_command', return_value=['synthetic-command']),
+                    patch.object(control.subprocess, 'Popen', return_value=process),
+                    patch.object(control, 'docker', side_effect=failure) as docker,
+                    redirect_stdout(io.StringIO()),
+                ):
+                    control.worker('diagnostic', directory, 'menus')
+                docker.assert_called_once_with('stop', '-t', '10', control.CLIENT)
+                manifest = json.loads(manifest_path.read_text())
+                self.assertEqual(manifest['state'], 'failed' if fails else 'completed')
+                self.assertEqual(manifest['exit_code'], 0)
+                self.assertEqual(bool(manifest.get('cleanup_error')), fails)
+                with patch.object(control, 'job', return_value=dict(directory=str(directory))), \
+                        redirect_stdout(io.StringIO()):
+                    if fails:
+                        with self.assertRaisesRegex(RuntimeError, 'did not complete successfully'):
+                            control.wait_for_diagnostic()
+                    else:
+                        control.wait_for_diagnostic()
+
+    def test_wait_rejects_legacy_completed_manifest_with_cleanup_error(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / 'manifest.json').write_text(json.dumps(dict(
+                state='completed', cleanup_error='synthetic cleanup failure',
+            )))
+            with patch.object(control, 'job', return_value=dict(directory=str(directory))), \
+                    redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(RuntimeError, 'did not complete successfully'):
+                    control.wait_for_diagnostic()
+
+    def test_visual_cleanup_fails_for_survivors_and_preserves_workload_failure(self):
+        for completed in (False, True):
+            for window_closed, children in ((True, 0), (True, 1), (False, 0)):
+                with self.subTest(completed=completed, closed=window_closed, children=children):
+                    result = dict(completed=completed)
+                    results.record_cleanup(result, window_closed=window_closed,
+                                           running_children=children)
+                    self.assertEqual(result['completed'], completed and window_closed and children == 0)
+                    self.assertEqual(result['cleanup'], dict(
+                        window_closed=window_closed, running_children=children,
+                    ))
 
 
 if __name__ == '__main__':

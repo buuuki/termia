@@ -366,6 +366,7 @@ def worker(kind, directory, mode):
                     docker('stop', '-t', '10', name)
                 except Exception as error:
                     manifest['cleanup_error'] = str(error)
+                    manifest['state'] = 'failed'
         manifest['source_unchanged'] = fingerprint() == manifest['source_sha256']
         if not manifest['source_unchanged'] and manifest['state'] == 'completed':
             manifest['state'] = 'invalid-source-changed'
@@ -445,7 +446,7 @@ def wait_for_diagnostic():
             raise RuntimeError('Diagnostic worker exited without a final manifest')
         time.sleep(.5)
     print(json.dumps(manifest, indent=2))
-    if manifest['state'] != 'completed':
+    if manifest['state'] != 'completed' or manifest.get('cleanup_error'):
         raise RuntimeError('Diagnostic did not complete successfully; inspect its results')
 
 

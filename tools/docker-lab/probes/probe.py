@@ -13,6 +13,8 @@ import traceback
 import weakref
 from unittest.mock import patch
 
+from results import record_cleanup
+
 MODE = sys.argv[1]
 BACKEND = sys.argv[2] if len(sys.argv) > 2 else 'x11'
 OUT = Path(os.environ.get('TERMIA_PROBE_OUTPUT', str(Path(__file__).resolve().parent))) / (MODE + '-' + BACKEND)
@@ -362,8 +364,10 @@ finally:
             if not any(terminal_process_is_active(p) for p in processes):
                 break
         window.destroy()
-        result['cleanup'] = dict(window_closed=not window.get_visible(),
-                                 running_children=sum(terminal_process_is_active(p) for p in processes))
+        record_cleanup(
+            result, window_closed=not window.get_visible(),
+            running_children=sum(terminal_process_is_active(p) for p in processes),
+        )
     if weston is not None:
         weston.terminate()
         weston.wait(timeout=5)
