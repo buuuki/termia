@@ -343,13 +343,15 @@ class TerminalProcessTests(unittest.TestCase):
 
     @patch("termia.terminal_sessions.GLib.timeout_add")
     @patch("termia.terminal_sessions.signal_terminal_process", return_value=True)
-    def test_shutdown_uses_only_the_global_forced_termination_pass(self, signal_process, timeout_add) -> None:
+    @patch("termia.terminal_sessions.snapshot_terminal_process", side_effect=lambda process: process)
+    def test_shutdown_uses_only_the_global_forced_termination_pass(self, snapshot, signal_process, timeout_add) -> None:
         process = TerminalProcess(pid=42, process_group_id=99, session_id=500, start_time="42")
         host = TerminalSessionsMixin()
         host.shutdown_in_progress = True
 
         self.assertTrue(host.terminate_terminal_process(process))
 
+        snapshot.assert_called_once_with(process)
         signal_process.assert_called_once_with(process, signal.SIGTERM)
         timeout_add.assert_not_called()
 
