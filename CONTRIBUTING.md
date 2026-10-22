@@ -67,6 +67,11 @@ publish the release, and create the next development branch from the updated
 
 ## Validation
 
+For an isolated browser desktop and SSH/memory/lifecycle diagnostics, see the
+Docker laboratory guides in [English](tools/docker-lab/README.md),
+[Spanish](tools/docker-lab/README.es.md) and [Catalan](tools/docker-lab/README.ca.md).
+Docker is optional for normal development and does not replace the checks below.
+
 At minimum, run syntax checks for touched Python and shell files. For a broad validation pass, run:
 
 ```bash

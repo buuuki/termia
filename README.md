@@ -285,8 +285,8 @@ APT installs its GTK, VTE, GtkSourceView, Python, SSH, and encryption dependenci
 Connection group headers expand/collapse without becoming selected objects;
 selection stays compact around the chosen object's icon and name. Context
 menus support arrow-key navigation, Enter and Escape. The development
-[Docker laboratory guide](docs/DOCKER_LABORATORY.md) records the visual,
-memory and lifecycle investigations behind these interactions.
+[Docker laboratory guide](tools/docker-lab/README.md) explains how to reproduce
+the browser desktop and visual, memory and lifecycle tests on another PC.
 
 The `Configuration` menu is split into `General`, `Terminal`, `Keybindings`, and `Security`:
 

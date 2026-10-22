@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Publish a portable Docker laboratory with a browser desktop, optional Zenity
+  manager, runtime-generated SSH fixtures and lifecycle/memory/visual probes.
+  Include matching English, Spanish and Catalan setup guides, allowlisted build
+  contexts and privacy regression coverage (`#377`).
+
 ### Fixed
 
 - Keep connection headers expandable without selecting them, retain compact

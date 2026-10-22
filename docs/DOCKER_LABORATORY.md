@@ -7,13 +7,19 @@ sidebar and menu work in [#380](https://github.com/buuuki/termia/issues/380).
 
 ## What is available
 
-The laboratory package is local and ignored by Git. Its scripts, images,
-archives and raw evidence are **not distributed by this document**. A fresh
-clone has the supported test commands below, but needs the separate laboratory
-package to use the Docker desktop and diagnostic controller.
-Publishing reusable harnesses from a clean checkout remains the separate scope
-of [#377](https://github.com/buuuki/termia/issues/377). This operational record
-does not mark that tooling publication as complete.
+The portable package is published under `tools/docker-lab/` through
+[#377](https://github.com/buuuki/termia/issues/377). Start with its
+[English](../tools/docker-lab/README.md),
+[Spanish](../tools/docker-lab/README.es.md) or
+[Catalan](../tools/docker-lab/README.ca.md) guide to reproduce it on another PC.
+Credentials and results are generated locally and ignored; they are not part
+of the published package.
+
+The sections below preserve the investigation record of the earlier local
+package. Its `.local` paths, fixed container names and archive provenance are
+historical, not the installation instructions for the new portable package.
+The portable version reads the checkout source and uses names derived from its
+path, fresh build contexts and runtime-generated credentials.
 
 | Component | Purpose |
 | --- | --- |

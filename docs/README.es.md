@@ -268,8 +268,9 @@ icono; APT instala las dependencias de GTK, VTE, GtkSourceView, Python, SSH y ci
 Las cabeceras de grupos se despliegan o contraen sin quedar seleccionadas;
 la selección conserva su forma compacta alrededor del icono y nombre del objeto.
 Los menús contextuales permiten navegar con flechas, Enter y Escape. La
-[guía del laboratorio Docker](DOCKER_LABORATORY.md) documenta las pruebas de
-diseño, memoria y ciclos de vida que respaldan estos cambios.
+[guía del laboratorio Docker](../tools/docker-lab/README.es.md) explica cómo
+reproducir el escritorio por navegador y las pruebas de diseño, memoria y
+ciclos de vida en otro PC.
 
 El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguridad`:
 
