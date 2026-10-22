@@ -216,8 +216,10 @@ class ServerGroupWidgetTests(unittest.TestCase):
         root.append(node)
         model = Gtk.TreeListModel.new(root, False, False, lambda item: item.children)
         expander = Gtk.TreeExpander()
-        item = SimpleNamespace(get_item=lambda: model.get_row(0), get_child=lambda: expander)
+        item = SimpleNamespace(get_item=lambda: model.get_row(0), get_child=lambda: expander,
+                               set_selectable=Mock())
         self.host.bind_sidebar_tree_item(None, item)
+        item.set_selectable.assert_called_once_with(kind not in {"group", "section"})
         self.addCleanup(self.host.unbind_sidebar_tree_item, None, item)
         return expander.get_child()
 

@@ -181,6 +181,42 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         self.assertLessEqual(content.get_width(), host.server_list.get_width())
         self.assertEqual(host.selected.item_id, "two")
 
+    def test_headers_toggle_without_replacing_server_selection(self):
+        host = self.host
+        self.select("server", "two")
+        row = SidebarRow("group", "parent", "Parent")
+        token = host.sidebar_model_token
+        tree_row = host.get_group_expander("parent")
+        expanded = tree_row.get_expanded()
+        host.on_sidebar_tree_header_clicked(None, 1, 0, 0, row, token)
+        self.assertEqual(tree_row.get_expanded(), not expanded)
+        self.assertEqual((host.selected.kind, host.selected.item_id), ("server", "two"))
+        # A recycled row must not act on the replacement projection.
+        host.refresh_list()
+        tree_row = host.get_group_expander("parent")
+        expanded = tree_row.get_expanded()
+        host.on_sidebar_tree_header_clicked(None, 1, 0, 0, row, token)
+        self.assertEqual(tree_row.get_expanded(), expanded)
+        current_token = host.sidebar_model_token
+        host.on_sidebar_tree_header_clicked(None, 2, 0, 0, row, current_token)
+        self.assertEqual(tree_row.get_expanded(), expanded)
+
+    def test_keyboard_selection_skips_group_and_section_headers(self):
+        host = self.host
+        for _ in range(len(host.visible_tree_rows) + 2):
+            self.assertTrue(host.move_visible_tree_selection(1))
+            self.assertNotIn(host.selected.kind, {"group", "section"})
+        for _ in range(len(host.visible_tree_rows) + 2):
+            self.assertTrue(host.move_visible_tree_selection(-1))
+            self.assertNotIn(host.selected.kind, {"group", "section"})
+        host.store.data.servers.clear()
+        host.store.data.local_terminals.clear()
+        host.store.data.workspaces.clear()
+        host.refresh_list()
+        self.assertFalse(host.select_visible_tree_row(0))
+        self.assertFalse(host.move_visible_tree_selection(1))
+        self.assertFalse(host.activate_selected_tree_row())
+
     def test_hierarchy_expansion_search_and_selection_survive_refresh(self):
         host = self.host
         self.assertIsInstance(host.server_list, Gtk.ListView)
@@ -315,11 +351,13 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         index = host.get_visible_tree_row_index(SidebarRow("group", "parent", ""))
         host.select_visible_tree_row(index)
         self.drain()
-        self.assertEqual(host.selected.item_id, "parent")
+        self.assertEqual(host.selected.item_id, "two")
+        # Headers can receive disclosure focus without becoming selected.
+        host.focus_sidebar_tree_position(index)
         key("shift+Right")
         self.assertTrue(parent.get_expanded(), str(host.get_focus()))
         key("Down")
-        self.assertEqual(host.selected.item_id, "child")
+        self.assertEqual(host.selected.item_id, "two")
         key("Down")
         self.assertEqual((host.selected.kind, host.selected.item_id), ("server", "one"))
         key("Return")
@@ -327,7 +365,9 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         key("End")
         self.assertEqual(host.selected.item_id, "two")
         key("Home")
-        self.assertEqual(host.selected.item_id, "__workspaces__")
+        self.assertEqual(host.selected.item_id, "two")
+        key("Down")
+        self.assertEqual(host.selected.item_id, "work")
 
     def test_pointer_drag_moves_only_the_targeted_server_into_group(self):
         if not shutil.which("xdotool"):

@@ -265,6 +265,12 @@ icono; APT instala las dependencias de GTK, VTE, GtkSourceView, Python, SSH y ci
 
 ## Notas de uso
 
+Las cabeceras de grupos se despliegan o contraen sin quedar seleccionadas;
+la selección conserva su forma compacta alrededor del icono y nombre del objeto.
+Los menús contextuales permiten navegar con flechas, Enter y Escape. La
+[guía del laboratorio Docker](DOCKER_LABORATORY.md) documenta las pruebas de
+diseño, memoria y ciclos de vida que respaldan estos cambios.
+
 El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguridad`:
 
 - `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, recuperación de la sesión anterior, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto. La recuperación de la sesión anterior está desactivada por defecto.

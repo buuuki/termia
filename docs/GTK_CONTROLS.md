@@ -82,6 +82,15 @@ and native popover menu; this approval does not extend to other custom controls.
 Item 14 retains its native GTK control. Items 17–19 have documented reasons for
 retaining their current compositions.
 
+Under #380, item 14 also supplies nonselectable headers and content-click
+expansion, with scoped flat pressed-row styling and compact object selection.
+Main/tab/server/group/terminal menus clear their initial selected state once;
+terminal menus restore focus after VTE click handling. Nested terminal menus
+leave dismissal to the root and restore parent focus without reopening it.
+These are Termia-owned adjustments around the standard GTK controls, not new
+menu widgets. Tab/server/group arrows are drawn and positioned by GTK.
+See [the laboratory record](DOCKER_LABORATORY.md) for the investigations.
+
 ### Item 17: justified capture exception
 
 `KeybindingCaptureRow` is shared by preferences and the snippet editor. It uses

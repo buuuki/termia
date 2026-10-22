@@ -41,6 +41,19 @@ and proposed controls.
 
 ### Tabs
 
+- Connection group/section headers must toggle expansion without becoming
+  selected objects. Keep object selection compact and rounded, skip headers
+  during keyboard selection, and do not show an inset pressed-row shadow.
+- Main, tab, server, group and terminal menus must open without the initial
+  selected highlight while preserving visible Up/Down keyboard navigation.
+  Test actual right-button press/release on VTE, not only programmatic popup:
+  VTE must not reclaim focus from the menu. Repeat in a split and detached
+  window. Enter must activate once; Escape and outside clicks must dismiss.
+- Leaving terminal Split/Tab submenus must close only the nested panel, retain
+  the same visible root/menu model, and restore parent focus. Right/Left must
+  enter/leave submenus without breaking later outside-click dismissal.
+  Tab/server/group context menus retain GTK's native pointing arrow.
+
 - Repeatedly open and close local/SSH tabs and split panes. Retired sessions,
   native VTE widgets, pages and tab labels must become
   collectible after exit accounting finishes. Preserve history/statistics,

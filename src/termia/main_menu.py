@@ -17,6 +17,21 @@ from .main_menu_actions import MainMenuActions
 from .keybindings import KEYBINDING_ACTIONS, keybinding_label
 
 
+def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
+    """Clear the initial native menu highlight once, preserving later navigation."""
+    if widget.get_css_name() == "modelbutton":
+        widget.unset_state_flags(Gtk.StateFlags.SELECTED)
+        return GLib.SOURCE_REMOVE
+    child = widget.get_first_child()
+    while child is not None:
+        if child.get_css_name() == "modelbutton":
+            child.unset_state_flags(Gtk.StateFlags.SELECTED)
+            return GLib.SOURCE_REMOVE
+        _clear_initial_menu_selection(child)
+        child = child.get_next_sibling()
+    return GLib.SOURCE_REMOVE
+
+
 class MainMenuMixin:
     POPOVER_CALLBACK_DELAY_MS = 100
 
@@ -84,6 +99,7 @@ class MainMenuMixin:
 
         popover.insert_action_group("main-menu", action_group)
         popover.set_menu_model(model)
+        popover.connect("show", lambda source: GLib.idle_add(_clear_initial_menu_selection, source))
         popover.connect("closed", lambda *_args: self.reset_main_menu(popover))
         return popover
 

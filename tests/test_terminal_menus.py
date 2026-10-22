@@ -77,6 +77,27 @@ class NativeTerminalMenuTests(unittest.TestCase):
         actual = model.get_item_attribute_value(index, "accel", None).unpack()
         self.assertEqual(Gtk.accelerator_parse(actual), Gtk.accelerator_parse(expected))
 
+    def test_opening_click_focus_is_restored_without_initial_selection(self):
+        menu = self.open_menu()
+        # VTE's own click handler runs after Termia's gesture callback.
+        self.terminal.grab_focus()
+        self.assertIs(self.window.get_focus(), self.terminal)
+        self.drain()
+        focused = self.window.get_focus()
+        self.assertTrue(focused.is_ancestor(menu))
+        self.assertFalse(focused.get_state_flags() & Gtk.StateFlags.SELECTED)
+        self.assertTrue(menu.child_focus(Gtk.DirectionType.TAB_FORWARD))
+        self.assertIsNot(self.window.get_focus(), focused)
+        self.assertTrue(menu.child_focus(Gtk.DirectionType.TAB_BACKWARD))
+        self.assertIs(self.window.get_focus(), focused)
+
+    def test_closed_menu_does_not_reclaim_focus_from_terminal(self):
+        menu = self.open_menu()
+        menu.popdown()
+        self.terminal.grab_focus()
+        self.drain()
+        self.assertIs(self.window.get_focus(), self.terminal)
+
     def test_model_nested_order_shortcuts_and_optional_actions(self):
         menu = self.open_menu()
         model = menu.get_menu_model()
@@ -227,6 +248,9 @@ class NativeTerminalMenuTests(unittest.TestCase):
 
     def test_leaving_native_submenu_closes_only_child_and_crossing_to_panel_keeps_it(self):
         menu = self.open_menu()
+        root_hides = Mock()
+        menu.connect("hide", root_hides)
+        model = menu.get_menu_model()
         panels = []
         def collect(widget):
             if isinstance(widget, Gtk.Popover) and widget is not menu:
@@ -237,6 +261,7 @@ class NativeTerminalMenuTests(unittest.TestCase):
                 child = child.get_next_sibling()
         collect(menu)
         self.assertEqual(len(panels), 2)
+        self.assertTrue(all(not panel.get_autohide() for panel in panels))
         panel = panels[0]
         row = self.entry(menu, "split")
         def motion(widget):
@@ -255,6 +280,9 @@ class NativeTerminalMenuTests(unittest.TestCase):
         self.assertFalse(panel.get_visible())
         self.assertTrue(menu.get_visible())
         self.assertTrue(menu.get_autohide())
+        root_hides.assert_not_called()
+        self.assertIs(menu.get_menu_model(), model)
+        self.assertIs(self.window.get_focus(), row)
         self.assertIs(menu._termia_target[0], self.session)
         menu.activate_action("terminal-menu.copy", None)
         self.drain(wait=True)

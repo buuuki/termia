@@ -4,6 +4,16 @@
 
 ### Fixed
 
+- Keep connection headers expandable without selecting them, retain compact
+  rounded object selection and remove pressed-row inset shadows. Add native
+  arrows to tab/server/group menus, clear initial menu highlighting, restore
+  terminal-menu keyboard focus after VTE click handling, and close nested
+  Split/Tab menus without hiding and reopening their parent (`#380`).
+
+- Document the local Docker design, memory and lifecycle laboratory, including
+  source provenance, safe operation and the validated menu/focus findings
+  (`#380`).
+
 - Release closed SFTP windows and dialogs after their workers stop, disconnect
   owned native signals without colliding with widget actions, and discard the
   traceback retained by Paramiko's optional Invoke import error (`#375`).

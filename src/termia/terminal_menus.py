@@ -19,6 +19,29 @@ from .terminal_menu_actions import (
 from .ui_state import TerminalSession
 
 
+def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
+    """Clear the initial native menu highlight once, preserving later navigation."""
+    if isinstance(widget, Gtk.PopoverMenu):
+        if not widget.get_visible() or getattr(widget, "_termia_target", None) is None:
+            return GLib.SOURCE_REMOVE
+        # VTE can reclaim focus later in the same button-press event.
+        # Restore it on idle before removing the initial highlight.
+        focused = widget.get_root().get_focus()
+        if focused is None or not focused.is_ancestor(widget):
+            widget.child_focus(Gtk.DirectionType.TAB_FORWARD)
+    if widget.get_css_name() == "modelbutton":
+        widget.unset_state_flags(Gtk.StateFlags.SELECTED)
+        return GLib.SOURCE_REMOVE
+    child = widget.get_first_child()
+    while child is not None:
+        if child.get_css_name() == "modelbutton":
+            child.unset_state_flags(Gtk.StateFlags.SELECTED)
+            return GLib.SOURCE_REMOVE
+        _clear_initial_menu_selection(child)
+        child = child.get_next_sibling()
+    return GLib.SOURCE_REMOVE
+
+
 class TerminalMenusMixin:
     def on_terminal_right_click(
         self, _gesture: Gtk.GestureClick, _n_press: int, x: float, y: float,
@@ -136,6 +159,7 @@ class TerminalMenusMixin:
         rect.width = rect.height = 1
         popover.set_pointing_to(rect)
         popover.popup()
+        GLib.idle_add(_clear_initial_menu_selection, popover)
 
     def on_native_terminal_menu_closed(self, popover: Gtk.PopoverMenu) -> None:
         pending = getattr(popover, "_termia_leave_id", None)
@@ -177,10 +201,6 @@ class TerminalMenusMixin:
                     if getattr(popover, "_termia_hovered", None) is hovered and not hovered:
                         for panel in panels:
                             panel.popdown()
-                        # Closing a nested popover leaves GTK's pointer grab on
-                        # the old menu; refresh the root to restore autohide.
-                        popover.popdown()
-                        popover.popup()
                     return GLib.SOURCE_REMOVE
 
                 popover._termia_leave_id = GLib.timeout_add(120, close_if_outside)
@@ -192,8 +212,22 @@ class TerminalMenusMixin:
             controller.connect("leave", lambda source: changed(source, False, widget))
             widget.add_controller(controller)
 
+        def focus_submenu(panel):
+            panel.child_focus(Gtk.DirectionType.TAB_FORWARD)
+
+        def restore_parent_focus(panel):
+            parent = panel.get_parent()
+            root = parent.get_ancestor(Gtk.Popover) if parent is not None else None
+            if root is not None and root.get_visible():
+                parent.grab_focus()
+
         def visit(widget):
             if isinstance(widget, Gtk.Popover) and widget is not popover:
+                # The root owns dismissal; nested pointer grabs would prevent
+                # outside clicks from closing it after a submenu is hidden.
+                widget.set_autohide(False)
+                widget.connect("show", focus_submenu)
+                widget.connect("closed", restore_parent_focus)
                 panels.append(widget)
                 watch(widget)
             elif isinstance(widget, Gtk.Label) and widget.get_label() in {self.t("split"), self.t("tab")}:

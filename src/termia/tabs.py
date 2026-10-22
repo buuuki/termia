@@ -18,6 +18,21 @@ from .ui_state import SignalConnections, TerminalSession
 TERMINAL_TAB_DND_MIME_TYPE = "application/x-termia-terminal-tab-id"
 
 
+def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
+    """Clear the initial native menu highlight once, preserving later navigation."""
+    if widget.get_css_name() == "modelbutton":
+        widget.unset_state_flags(Gtk.StateFlags.SELECTED)
+        return GLib.SOURCE_REMOVE
+    child = widget.get_first_child()
+    while child is not None:
+        if child.get_css_name() == "modelbutton":
+            child.unset_state_flags(Gtk.StateFlags.SELECTED)
+            return GLib.SOURCE_REMOVE
+        _clear_initial_menu_selection(child)
+        child = child.get_next_sibling()
+    return GLib.SOURCE_REMOVE
+
+
 class TabsMixin:
     TAB_OVERFLOW_EPSILON = 1.0
 
@@ -649,7 +664,7 @@ class TabsMixin:
         action_group = Gio.SimpleActionGroup()
         popover = Gtk.PopoverMenu.new_from_model(None)
         popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
+        popover.set_has_arrow(True)
         popover.set_parent(parent)
         rect = Gdk.Rectangle()
         rect.x, rect.y = int(x), int(y)
@@ -691,6 +706,7 @@ class TabsMixin:
         popover.insert_action_group("tab-menu", action_group)
         popover.set_menu_model(model)
         popover.popup()
+        GLib.idle_add(_clear_initial_menu_selection, popover)
 
     def duplicate_tab(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
