@@ -4,6 +4,10 @@
 
 ### Added
 
+- Publish the observable Ubuntu/XFCE KVM laboratory with real sudo/polkit
+  upgrade trials, generated synthetic credentials, per-stage evidence and
+  English, Spanish and Catalan reproduction guides (`#383`).
+
 - Publish a portable Docker laboratory with a browser desktop, optional Zenity
   manager, runtime-generated SSH fixtures and lifecycle/memory/visual probes.
   Include matching English, Spanish and Catalan setup guides, allowlisted build
