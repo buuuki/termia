@@ -2,7 +2,18 @@
 
 ## Unreleased
 
+### Added
+
+- Publish a portable Docker laboratory with a browser desktop, optional Zenity
+  manager, runtime-generated SSH fixtures and lifecycle/memory/visual probes.
+  Include matching English, Spanish and Catalan setup guides, allowlisted build
+  contexts and privacy regression coverage (`#377`).
+
 ### Fixed
+
+- Fail Docker laboratory diagnostics when resource cleanup fails or visual
+  probes leave terminal processes running; cover cleanup outcomes and reject
+  previously completed manifests with cleanup errors (`#377`).
 
 - Keep connection headers expandable without selecting them, retain compact
   rounded object selection and remove pressed-row inset shadows. Add native

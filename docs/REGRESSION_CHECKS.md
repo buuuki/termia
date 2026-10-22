@@ -22,6 +22,13 @@ and proposed controls.
 
 ## Protected Behaviors
 
+The optional [Docker laboratory](../tools/docker-lab/README.md) provides a
+private browser desktop and synthetic SSH/SFTP/SCP, memory and lifecycle probes.
+When modifying that harness, check its allowlisted contexts, ignored generated
+credentials, resource ownership, translated commands and a clean build/start/
+managed-close smoke trial. Do not use personal SSH profiles or the host desktop.
+Long measurements and release-platform checks remain separate validation work.
+
 ### Project License
 
 - Termia must remain licensed as GNU GPL-3.0-or-later unless the project owner explicitly requests a license change.

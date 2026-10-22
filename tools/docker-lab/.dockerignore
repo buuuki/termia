@@ -1,0 +1,17 @@
+**
+!Dockerfile
+!source/
+!source/**
+!lab/
+!lab/**
+!probes/
+!probes/**
+**/__pycache__/
+**/*.pyc
+**/*.key
+**/*.pem
+**/*.pub
+**/password
+**/synthetic
+**/*.log
+**/.runtime/
