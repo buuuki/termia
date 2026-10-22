@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Release closed SFTP windows and dialogs after their workers stop, disconnect
+  owned native signals without colliding with widget actions, and discard the
+  traceback retained by Paramiko's optional Invoke import error (`#375`).
+
 - Release retired tab/pane signal handlers without dropping pending process-exit
   accounting, defer split focus until mapping, and cover native widget lifetimes
   (`#374`).
