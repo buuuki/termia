@@ -14,13 +14,12 @@ several GB of free disk/RAM. Zenity and `xdg-open` are optional for the manager.
 The image runs Ubuntu 24.04. Builds download packages; runtime SSH networks are
 internal. Windows/macOS and remote Docker daemons are not validated.
 
-Until #377 is merged, use its publication branch. After merge, the active
-release-development branch also contains the package.
+Use the active release-development branch, which contains the published laboratory.
 
 ```bash
 git clone https://github.com/buuuki/termia.git
 cd termia
-git switch maintenance/377-docker-lab
+git switch release/0.6.0-beta.4-dev
 docker info
 bash tools/docker-lab/run.sh prepare
 bash tools/docker-lab/run.sh check
@@ -136,3 +135,86 @@ validation. See [the investigation record](../../docs/DOCKER_LABORATORY.md) and
 If startup fails, inspect `status-desktop`, `logs` and `.runtime/evidence/desktop`.
 If Docker permissions fail, fix access to the local daemon before retrying;
 avoid alternating root/user runs against the same runtime directory.
+
+## Observable Ubuntu VM: real sudo and polkit
+
+The Docker desktop above remains the lightweight X11/Wayland diagnostic lab.
+For interactive OS authorization and installation/upgrade validation, use the
+optional Ubuntu 24.04 VM with XFCE/X11 and its observable test panel.
+
+Requirements: local Linux x86-64, usable `/dev/kvm`, local Docker Engine, Python 3,
+a browser, port 6081, at least 4 GB available RAM and 15 GB available disk.
+Prepare downloads the official Ubuntu cloud image (verified against its HTTPS
+SHA256SUMS), the pinned official beta.3 Debian package, and APT dependencies.
+The guest also needs Internet access for its initial desktop installation.
+Only the VM receives package changes; no host APT or desktop session is used.
+
+From the repository root:
+
+```bash
+python3 tools/docker-lab/vm.py prepare
+python3 tools/docker-lab/vm.py start
+python3 tools/docker-lab/vm.py status
+```
+
+Open the URL printed by `start`, normally
+`http://127.0.0.1:6081/vnc.html?autoconnect=1&resize=scale`.
+Guest initialization can take several minutes; `status` reports its bootstrap
+log until `DESKTOP_READY`. The XFCE panel displays a generated synthetic VM
+password. Trials stay paused until the observer sees that panel and runs:
+
+```bash
+python3 tools/docker-lab/vm.py ready
+```
+
+Use the panel buttons in numbered order. For stages 1 and 2, wait for the actual
+sudo password prompt; cancel stage 1 with Ctrl+C, and enter the displayed VM
+password for stage 2. Stage 3 checks the local candidate using beta.3's actual
+updater. Cancel the graphical authorization in stage 4; authorize it with the VM
+password in stage 5. Stage 6 verifies preserved synthetic groups, servers,
+snippets and notes plus the legacy Notes backup. Do not edit the synthetic
+profile or start another trial while a trial is running.
+
+Equivalent commands queue a trial in the logged-in desktop (they do not bypass
+authorization):
+
+```bash
+python3 tools/docker-lab/vm.py trial source-cancel
+# Complete the visible prompt and inspect status before each following command.
+python3 tools/docker-lab/vm.py trial source-accept
+python3 tools/docker-lab/vm.py trial debian-prepare
+python3 tools/docker-lab/vm.py trial debian-cancel
+python3 tools/docker-lab/vm.py trial debian-accept
+python3 tools/docker-lab/vm.py trial verify
+python3 tools/docker-lab/vm.py show
+python3 tools/docker-lab/vm.py evidence
+```
+
+Per-stage JSON results and console logs are in the guest's
+`/home/lab/termia-lab-evidence`. `evidence` exports an archive and desktop PNG
+under `.runtime/visible-vm/results`. A started command or `running: true` is
+not a passing test: require `running: false` and `passed: true` for each stage.
+`guest /bin/cat /home/lab/termia-lab-evidence/state.json` reads the current
+result; `guest` runs commands locally through QEMU's guest agent, never SSH.
+A guest command times out after 45 seconds and may continue in the VM; inspect
+its processes before retrying a long command.
+
+```bash
+python3 tools/docker-lab/vm.py stop
+python3 tools/docker-lab/vm.py remove
+```
+
+Stop before removing the owned container. Disks and evidence are retained.
+After stop/remove, archive or move `.runtime/visible-vm` out of that path before
+preparing a fresh VM. A prepared runtime is not silently overwritten. No broad
+Docker cleanup is used. `start --port 6082` selects another loopback port.
+
+This is a beta.3 → local beta.4 rehearsal. Only a temporary source copy receives
+candidate version metadata; no Git tags or releases are created. Candidate
+transport is a local fixture; this does not certify a public GitHub download,
+the final release artifact, Ubuntu 26.04 or Wayland. Source snapshots use named
+tracked regular files, including current edits; VM disks, passwords, profiles,
+logs and screenshots remain ignored. Keep all data synthetic. The browser port
+has no authentication and must remain local. The container receives only the
+runtime mount and `/dev/kvm`, with bounded RAM/CPU, no capabilities and no Docker
+socket or personal profile. Images and APT repositories are not pinned snapshots.

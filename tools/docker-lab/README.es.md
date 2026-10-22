@@ -15,13 +15,12 @@ de disco y RAM disponibles. Zenity y `xdg-open` son opcionales para el gestor.
 La imagen usa Ubuntu 24.04. La construcción descarga paquetes; las redes SSH
 de ejecución son internas. No se han validado Windows/macOS ni Docker remoto.
 
-Mientras #377 esté pendiente de fusión, usa su rama de publicación. Después de
-fusionarla, el paquete también estará en la rama activa de desarrollo.
+Usa la rama activa de desarrollo, que contiene el laboratorio publicado.
 
 ```bash
 git clone https://github.com/buuuki/termia.git
 cd termia
-git switch maintenance/377-docker-lab
+git switch release/0.6.0-beta.4-dev
 docker info
 bash tools/docker-lab/run.sh prepare
 bash tools/docker-lab/run.sh check
@@ -138,3 +137,80 @@ y las [comprobaciones de regresión](../../docs/REGRESSION_CHECKS.md).
 Si falla el arranque, revisa `status-desktop`, `logs` y `.runtime/evidence/desktop`.
 Si falla el permiso de Docker, corrige primero el acceso al daemon local;
 evita alternar ejecuciones como root y como usuario en el mismo directorio de resultados.
+
+## VM Ubuntu observable: sudo y polkit reales
+
+Para observar la instalación y actualización con autorización real del sistema,
+usa la VM opcional Ubuntu 24.04 con XFCE/X11. El laboratorio Docker anterior
+sigue disponible para las pruebas ligeras de X11 y Wayland.
+
+Requisitos: Linux x86-64, `/dev/kvm` utilizable, Docker local, Python 3, navegador,
+puerto 6081, 4 GB de RAM disponibles y 15 GB de disco. La preparación descarga
+la imagen oficial de Ubuntu, verifica su SHA256SUMS por HTTPS y descarga el
+paquete beta.3 con hash fijado. La instalación inicial del escritorio necesita
+Internet. No se instalan paquetes ni se utiliza la sesión gráfica del anfitrión.
+
+Desde la raíz del repositorio:
+
+```bash
+python3 tools/docker-lab/vm.py prepare
+python3 tools/docker-lab/vm.py start
+python3 tools/docker-lab/vm.py status
+```
+
+Abre la URL que imprime `start`, normalmente
+`http://127.0.0.1:6081/vnc.html?autoconnect=1&resize=scale`.
+Espera a ver el panel XFCE; la preparación puede tardar varios minutos.
+`status` muestra el progreso hasta `DESKTOP_READY`. El panel muestra la contraseña
+sintética generada para la VM. Cuando estés observándolo, habilita las pruebas:
+
+```bash
+python3 tools/docker-lab/vm.py ready
+```
+
+Pulsa los seis botones del panel en orden. En el primero espera la petición de
+contraseña sudo y cancela con Ctrl+C. En el segundo introduce la contraseña de
+la VM. El tercero verifica el paquete candidato. En el cuarto cancela el diálogo
+gráfico de autorización; en el quinto autorízalo con la contraseña de la VM.
+El sexto comprueba conexiones, grupos, snippets, notas y su copia de seguridad.
+No cambies los datos sintéticos ni lances otra prueba mientras haya una activa.
+También puedes enviar cada fase desde la terminal, esperando su resultado antes
+de continuar:
+
+```bash
+python3 tools/docker-lab/vm.py trial source-cancel
+python3 tools/docker-lab/vm.py trial source-accept
+python3 tools/docker-lab/vm.py trial debian-prepare
+python3 tools/docker-lab/vm.py trial debian-cancel
+python3 tools/docker-lab/vm.py trial debian-accept
+python3 tools/docker-lab/vm.py trial verify
+python3 tools/docker-lab/vm.py show
+python3 tools/docker-lab/vm.py evidence
+```
+
+Exige `running: false` y `passed: true` en el JSON de cada fase; arrancar una
+prueba no significa superarla. Los resultados se guardan en la VM bajo
+`/home/lab/termia-lab-evidence`; `evidence` exporta un archivo y una captura a
+`.runtime/visible-vm/results`. `guest /bin/cat /home/lab/termia-lab-evidence/state.json`
+consulta el estado. `guest` usa el agente local de QEMU, sin SSH; un comando que
+supere 45 segundos puede seguir ejecutándose y debe inspeccionarse antes de repetirlo.
+
+```bash
+python3 tools/docker-lab/vm.py stop
+python3 tools/docker-lab/vm.py remove
+```
+
+Los discos y evidencias se conservan. Tras parar y quitar el contenedor, mueve
+`.runtime/visible-vm` a otro destino antes de preparar una VM nueva. No se
+sobrescribe un laboratorio preparado ni se limpian recursos ajenos.
+Usa `start --port 6082` si necesitas otro puerto local.
+
+Es un ensayo beta.3 → beta.4 local: solo cambia la versión en una copia temporal,
+sin publicar releases ni tags. La descarga candidata usa una fixture local;
+queda validar el artefacto final y la descarga pública. No certifica Ubuntu
+26.04 ni Wayland. Solo se copian archivos versionados permitidos, incluidos sus
+cambios actuales. Discos, contraseñas, datos y capturas quedan ignorados. Usa
+solo datos sintéticos y no expongas el visor, que no tiene autenticación.
+El contenedor recibe únicamente el directorio de ejecución y `/dev/kvm`, con
+recursos limitados y sin capacidades, socket Docker ni perfil personal. Las
+imágenes y los repositorios APT no son instantáneas fijadas.

@@ -2,7 +2,16 @@
 
 ## Unreleased
 
+### Fixed
+
+- Isolate the shutdown termination test from host process sessions so synthetic
+  session IDs cannot cause environment-dependent failures (`#383`, `#385`).
+
 ### Added
+
+- Publish the observable Ubuntu/XFCE KVM laboratory with real sudo/polkit
+  upgrade trials, generated synthetic credentials, per-stage evidence and
+  English, Spanish and Catalan reproduction guides (`#383`).
 
 - Publish a portable Docker laboratory with a browser desktop, optional Zenity
   manager, runtime-generated SSH fixtures and lifecycle/memory/visual probes.

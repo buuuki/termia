@@ -15,13 +15,12 @@ de disc i RAM disponibles. Zenity i `xdg-open` són opcionals per al gestor.
 La imatge utilitza Ubuntu 24.04. La construcció descarrega paquets; les xarxes
 SSH d'execució són internes. No s'han validat Windows/macOS ni Docker remot.
 
-Mentre #377 estigui pendent de fusió, utilitza la branca de publicació. Després
-de fusionar-la, el paquet també serà a la branca activa de desenvolupament.
+Utilitza la branca activa de desenvolupament, que conté el laboratori publicat.
 
 ```bash
 git clone https://github.com/buuuki/termia.git
 cd termia
-git switch maintenance/377-docker-lab
+git switch release/0.6.0-beta.4-dev
 docker info
 bash tools/docker-lab/run.sh prepare
 bash tools/docker-lab/run.sh check
@@ -138,3 +137,80 @@ i les [comprovacions de regressió](../../docs/REGRESSION_CHECKS.md).
 Si falla l'arrencada, revisa `status-desktop`, `logs` i `.runtime/evidence/desktop`.
 Si fallen els permisos de Docker, corregeix l'accés al dimoni local abans de
 reintentar-ho; evita alternar execucions com a root i com a usuari al mateix directori de resultats.
+
+## VM Ubuntu observable: sudo i polkit reals
+
+Per observar la instal·lació i l'actualització amb autorització real del sistema,
+utilitza la VM opcional Ubuntu 24.04 amb XFCE/X11. El laboratori Docker anterior
+continua disponible per a les proves lleugeres X11 i Wayland.
+
+Requisits: Linux x86-64, `/dev/kvm` utilitzable, Docker local, Python 3, navegador,
+port 6081, 4 GB de RAM disponibles i 15 GB de disc. La preparació descarrega la
+imatge oficial d'Ubuntu, verifica SHA256SUMS per HTTPS i descarrega el paquet
+beta.3 amb hash fixat. L'escriptori inicial necessita Internet. No s'instal·len
+paquets ni s'utilitza la sessió gràfica de l'amfitrió.
+
+Des de l'arrel del repositori:
+
+```bash
+python3 tools/docker-lab/vm.py prepare
+python3 tools/docker-lab/vm.py start
+python3 tools/docker-lab/vm.py status
+```
+
+Obre l'URL que imprimeix `start`, normalment
+`http://127.0.0.1:6081/vnc.html?autoconnect=1&resize=scale`.
+Espera a veure el tauler XFCE; la preparació pot trigar uns minuts.
+`status` mostra el progrés fins a `DESKTOP_READY`. El tauler mostra la contrasenya
+sintètica generada per a la VM. Quan l'estiguis observant, habilita les proves:
+
+```bash
+python3 tools/docker-lab/vm.py ready
+```
+
+Prem els sis botons del tauler en ordre. Al primer espera la petició de
+contrasenya sudo i cancel·la amb Ctrl+C. Al segon introdueix la contrasenya de
+la VM. El tercer verifica el paquet candidat. Al quart cancel·la el diàleg
+gràfic d'autorització; al cinquè autoritza'l amb la contrasenya de la VM.
+El sisè comprova connexions, grups, snippets, notes i la còpia de seguretat.
+No canviïs les dades sintètiques ni iniciïs una altra prova mentre n'hi hagi una
+activa. També pots enviar cada fase des de la terminal, esperant-ne el resultat
+abans de continuar:
+
+```bash
+python3 tools/docker-lab/vm.py trial source-cancel
+python3 tools/docker-lab/vm.py trial source-accept
+python3 tools/docker-lab/vm.py trial debian-prepare
+python3 tools/docker-lab/vm.py trial debian-cancel
+python3 tools/docker-lab/vm.py trial debian-accept
+python3 tools/docker-lab/vm.py trial verify
+python3 tools/docker-lab/vm.py show
+python3 tools/docker-lab/vm.py evidence
+```
+
+Exigeix `running: false` i `passed: true` al JSON de cada fase; iniciar una prova
+no significa superar-la. Els resultats es guarden a la VM sota
+`/home/lab/termia-lab-evidence`; `evidence` exporta un arxiu i una captura a
+`.runtime/visible-vm/results`. `guest /bin/cat /home/lab/termia-lab-evidence/state.json`
+consulta l'estat. `guest` utilitza l'agent local de QEMU, sense SSH; una ordre que
+superi 45 segons pot continuar executant-se i cal inspeccionar-la abans de repetir-la.
+
+```bash
+python3 tools/docker-lab/vm.py stop
+python3 tools/docker-lab/vm.py remove
+```
+
+Els discos i les evidències es conserven. Després d'aturar i treure el contenidor,
+mou `.runtime/visible-vm` a una altra destinació abans de preparar una VM nova.
+No se sobreescriu un laboratori preparat ni es netegen recursos aliens.
+Utilitza `start --port 6082` si necessites un altre port local.
+
+És un assaig beta.3 → beta.4 local: només canvia la versió en una còpia temporal,
+sense publicar releases ni tags. La descàrrega candidata utilitza una fixture
+local; resta validar l'artefacte final i la descàrrega pública. No certifica
+Ubuntu 26.04 ni Wayland. Només es copien fitxers versionats permesos, incloent-hi
+els canvis actuals. Discos, contrasenyes, dades i captures queden ignorats.
+Utilitza només dades sintètiques i no exposis el visor, que no té autenticació.
+El contenidor rep únicament el directori d'execució i `/dev/kvm`, amb recursos
+limitats i sense capacitats, sòcol Docker ni perfil personal. Les imatges i els
+repositoris APT no són instantànies fixades.
