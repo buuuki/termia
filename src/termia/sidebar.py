@@ -39,6 +39,21 @@ GROUP_START_CONFIRMATION_THRESHOLD = 10
 SERVER_GROUP_DND_MIME_TYPE = "application/x-termia-server-id"
 
 
+def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
+    """Clear the initial native menu highlight once, preserving later navigation."""
+    if widget.get_css_name() == "modelbutton":
+        widget.unset_state_flags(Gtk.StateFlags.SELECTED)
+        return GLib.SOURCE_REMOVE
+    child = widget.get_first_child()
+    while child is not None:
+        if child.get_css_name() == "modelbutton":
+            child.unset_state_flags(Gtk.StateFlags.SELECTED)
+            return GLib.SOURCE_REMOVE
+        _clear_initial_menu_selection(child)
+        child = child.get_next_sibling()
+    return GLib.SOURCE_REMOVE
+
+
 class SidebarTreeNode(GObject.Object):
     """A projected row with stable identity and native GTK tree children."""
 
@@ -465,6 +480,8 @@ class SidebarMixin:
         tree_row = item.get_item()
         node = tree_row.get_item()
         row = node.row
+        is_header = row.kind in {"group", "section"}
+        item.set_selectable(not is_header)
         expander = item.get_child()
         expander.set_list_row(tree_row)
         expander.set_hide_expander(node.expanded_key is None)
@@ -484,6 +501,11 @@ class SidebarMixin:
         content.sidebar_model_token = self.sidebar_model_token
         content.sidebar_row = row
         expander.set_child(content)
+        if is_header:
+            click = Gtk.GestureClick()
+            click.set_button(1)
+            click.connect("released", self.on_sidebar_tree_header_clicked, row, self.sidebar_model_token)
+            content.add_controller(click)
         self.tree_widgets[(row.kind, row.item_id)] = content
         if row == self.selected:
             self.selected_tree_widget = content
@@ -531,14 +553,22 @@ class SidebarMixin:
             return GLib.SOURCE_REMOVE
         GLib.idle_add(render)
 
+    def on_sidebar_tree_header_clicked(self, _gesture, clicks, _x, _y, row, model_token) -> None:
+        if clicks != 1 or model_token is not self.sidebar_model_token:
+            return
+        tree_row = self.get_group_expander(row.item_id)
+        if tree_row is not None:
+            self.cancel_sidebar_scroll_restore()
+            tree_row.set_expanded(not tree_row.get_expanded())
+
     def on_sidebar_tree_activated(self, _view, position) -> None:
         row = self.sidebar_tree_model.get_row(position)
         if row is None:
             return
-        self.sidebar_tree_selection.set_selected(position)
         if row.get_item().expanded_key is not None:
-            row.set_expanded(not row.get_expanded())
+            return
         else:
+            self.sidebar_tree_selection.set_selected(position)
             self.activate_selected_tree_row()
 
     def on_sidebar_tree_context_pressed(self, gesture, _count, x, y, row, content) -> None:
@@ -553,7 +583,8 @@ class SidebarMixin:
                 return GLib.SOURCE_REMOVE
             index = self.get_visible_tree_row_index(row)
             if index is not None:
-                self.sidebar_tree_selection.set_selected(index)
+                if row.kind not in {"group", "section"}:
+                    self.sidebar_tree_selection.set_selected(index)
                 self.show_row_context_menu(row, root, point.x, point.y)
             return GLib.SOURCE_REMOVE
         GLib.idle_add(open_menu)
@@ -830,6 +861,10 @@ class SidebarMixin:
         if not rows:
             return False
         index = max(0, min(index, len(rows) - 1))
+        selectable = [i for i, row in enumerate(rows) if row.kind not in {"group", "section"}]
+        if not selectable:
+            return False
+        index = next((i for i in selectable if i >= index), selectable[-1])
         self.cancel_sidebar_scroll_restore()
         self.sidebar_tree_selection.set_selected(index)
         self.focus_sidebar_tree_position(index)
@@ -837,19 +872,22 @@ class SidebarMixin:
 
     def move_visible_tree_selection(self, delta: int) -> bool:
         rows = getattr(self, "visible_tree_rows", [])
-        if not rows:
+        selectable = [i for i, row in enumerate(rows) if row.kind not in {"group", "section"}]
+        if not selectable:
             return False
         current_index = self.get_visible_tree_row_index(self.selected) if self.selected is not None else None
         if current_index is None:
-            target_index = 0 if delta >= 0 else len(rows) - 1
+            target_index = selectable[0] if delta >= 0 else selectable[-1]
         else:
-            target_index = max(0, min(current_index + delta, len(rows) - 1))
+            candidates = [i for i in selectable if i > current_index] if delta >= 0 else [
+                i for i in selectable if i < current_index]
+            target_index = (candidates[0] if delta >= 0 else candidates[-1]) if candidates else current_index
         return self.select_visible_tree_row(target_index)
 
     def activate_selected_tree_row(self) -> bool:
         if self.selected is None or self.get_visible_tree_row_index(self.selected) is None:
             first = next((i for i, row in enumerate(getattr(self, "visible_tree_rows", []))
-                          if row.kind != "section"), None)
+                          if row.kind not in {"group", "section"}), None)
             if first is None or not self.select_visible_tree_row(first):
                 return False
         if self.selected is None or self.get_visible_tree_row_index(self.selected) is None:
@@ -1009,6 +1047,7 @@ class SidebarMixin:
         popover.set_pointing_to(rect)
         self.active_context_popover = popover
         popover.popup()
+        GLib.idle_add(_clear_initial_menu_selection, popover)
         self.preserve_sidebar_scroll()
 
     def build_server_context_menu(self) -> Gtk.PopoverMenu:
@@ -1029,7 +1068,7 @@ class SidebarMixin:
             self._server_context_actions[name] = action
         popover = Gtk.PopoverMenu.new_from_model(None)
         popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
+        popover.set_has_arrow(True)
         popover.set_position(Gtk.PositionType.RIGHT)
         popover.insert_action_group("server-menu", actions)
         popover.connect("closed", self.on_context_menu_closed)
@@ -1114,6 +1153,7 @@ class SidebarMixin:
         popover.set_pointing_to(rect)
         self.active_context_popover = popover
         popover.popup()
+        GLib.idle_add(_clear_initial_menu_selection, popover)
         self.preserve_sidebar_scroll()
 
     def build_group_context_menu(self) -> Gtk.PopoverMenu:
@@ -1134,7 +1174,7 @@ class SidebarMixin:
             self._group_context_actions[name] = action
         popover = Gtk.PopoverMenu.new_from_model(None)
         popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
+        popover.set_has_arrow(True)
         popover.set_position(Gtk.PositionType.RIGHT)
         popover.insert_action_group("group-menu", actions)
         popover.connect("closed", self.on_context_menu_closed)

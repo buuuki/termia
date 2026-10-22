@@ -15,6 +15,8 @@ def build_application_css(
     return (
         ".termia-connections-tree { background: transparent; } "
         ".termia-connections-tree > row { padding: 2px 4px; } "
+        ".termia-connections-tree > row:active, "
+        ".termia-connections-tree > row:selected:active { box-shadow: none; } "
         ".termia-connections-tree > row:selected { background: transparent; color: @theme_fg_color; } "
         ".termia-sidebar-object { padding: 2px 6px; border-radius: 4px; } "
         ".termia-connections-tree > row:selected .termia-sidebar-object { "
