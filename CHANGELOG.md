@@ -2,10 +2,9 @@
 
 ## Unreleased
 
-### Fixed
+## 0.6.0-beta.4 - 2026-10-23
 
-- Isolate the shutdown termination test from host process sessions so synthetic
-  session IDs cannot cause environment-dependent failures (`#383`, `#385`).
+Prepared for final validation; release publication is tracked in `#386`.
 
 ### Added
 
@@ -18,65 +17,56 @@
   Include matching English, Spanish and Catalan setup guides, allowlisted build
   contexts and privacy regression coverage (`#377`).
 
-### Fixed
+- Assign a keyboard shortcut to a saved snippet in its compact editor or in
+  keyboard preferences. Share assignments by snippet ID, reject conflicts,
+  respect the focused pane's scope, and retain variable prompts and final
+  preview confirmation. Copies start without shortcuts (`#330`).
 
-- Fail Docker laboratory diagnostics when resource cleanup fails or visual
-  probes leave terminal processes running; cover cleanup outcomes and reject
-  previously completed manifests with cleanup errors (`#377`).
+- Nest note categories by dragging within their Personal/server scope, or
+  return groups to the root via the scope header. Preserve notes and editor
+  tabs, reject cycles and cross-scope drops, and back up older notes files
+  before upgrading to schema 3. Add Expand all / Collapse all controls with
+  search revealing matching notes and their ancestors (`#331`, `#332`).
 
-- Keep connection headers expandable without selecting them, retain compact
-  rounded object selection and remove pressed-row inset shadows. Add native
-  arrows to tab/server/group menus, clear initial menu highlighting, restore
-  terminal-menu keyboard focus after VTE click handling, and close nested
-  Split/Tab menus without hiding and reopening their parent (`#380`).
+- Open the snippet manager as an independent GTK window so terminals remain
+  usable while snippets are managed. Fit fixed-size category tiles into the
+  available width and wrap them into additional rows, align Create snippet to
+  the left, place category actions below Back to snippets, and label the return
+  action clearly (`#346`).
 
-- Document the local Docker design, memory and lifecycle laboratory, including
-  source provenance, safe operation and the validated menu/focus findings
-  (`#380`).
+- Allow each saved SSH server to run a configured command after authentication
+  and keep the remote session open with an interactive shell (`#344`).
 
-- Release closed SFTP windows and dialogs after their workers stop, disconnect
-  owned native signals without colliding with widget actions, and discard the
-  traceback retained by Paramiko's optional Invoke import error (`#375`).
+- Add a hideable notes toolbar with persistent font, size, text color, and
+  background preferences and optional line numbers for the plain-text editor.
+  Use the requested dark editor and gutter colors. Open
+  the modeless notes window in front of its parent while retaining minimize and
+  maximize controls. Keep the compact toolbar's scrollbar clear of its buttons
+  and its visibility independent of the smaller-font notes list (`#328`).
 
-- Release retired tab/pane signal handlers without dropping pending process-exit
-  accounting, defer split focus until mapping, and cover native widget lifetimes
-  (`#374`).
+- Add a dedicated Disconnect action to the SFTP browser, keep Cancel and
+  Reconnect SFTP separate, and align all three actions to the right (`#315`).
 
-- Restore the approved terminal tab strip with an automatically hiding horizontal
-  scrollbar and a persistent native overflow menu refreshed only when opened.
-  Retain private drag reordering, edge scrolling, active-tab reveal and the
-  laboratory tab appearance (`#374`).
+- Allow changing the master password for encrypted connections and notes,
+  verifying the current password and restoring original files if re-encryption
+  fails (`#314`).
 
-- Propagate mandatory setup-check failures so source upgrades install missing
-  dependencies instead of reporting false success; cover setup failures and
-  document Debian/Git Docker compatibility trials on Ubuntu 24.04 and 26.04
-  (`#371`).
-
-- Keep focus on the clicked terminal or split pane when opening its context
-  menu and pasting; render configured Copy, Paste and New tab shortcuts using
-  GTK accelerator syntax, including custom and disabled assignments (`#369`).
-
-### Removed
-
-- Drop write-only terminal session/pane timer-ID fields while retaining all
-  GLib timer scheduling and lifecycle callbacks (`#367`).
-
-- Remove the unused dialog-button `last` parameter and test-only note-search
-  and singular host-key parsing helpers; exercise the active presenter and
-  plural parser instead (`#367`).
-
-- Remove the legacy Notes list renderer, row/header builders, old row-context
-  handler and orphaned category CSS; migrate their behavior checks to the
-  native GTK tree (`#367`).
-
-- Retire test-only custom Notes menu helpers and the old tab-overflow click
-  handler with their three obsolete tests; retain native-menu coverage (`#367`).
-
-- Remove confirmed unused Notes helpers, the superseded prompt settings method,
-  an unregistered session-disconnect handler, unused imports and orphaned menu
-  CSS; record the evidence and deferred cleanup candidates (`#367`).
+- Move saved servers between sidebar groups, nested groups, and Ungrouped by
+  dragging, without changing their identities or open sessions (`#299`).
+- Add restart-applied switch controls for the bundled Statistics and SFTP add-ons.
+  Disabled add-ons are omitted from their menus without deleting stored data
+  (`#304`).
+- Add right-click note actions for editing, cloning, and deleting; cloning saves
+  a new note with the same content, category, and server association (`#289`).
+- Add a separate notes workspace with standalone and server-linked notes,
+  categories, autosave, protected import/export, backup-before-replace
+  behavior, and isolated test-profile copying (`#289`).
 
 ### Changed
+
+- Prepare source version `0.6.0-beta.4`, Debian version `0.6.0~beta.4-1`,
+  translated feature summaries and package-build instructions for final release
+  validation; publication remains pending the review in `#386`.
 
 - Organize Help into translated sections covering current workflows and show
   the user's configured application shortcuts (`#369`).
@@ -117,174 +107,6 @@
 - Use standard GTK popover menus with native arrows for the main menu and
   notes import/export, retaining component-owned actions, optional statistics
   visibility, and write restrictions (`#358`).
-
-### Fixed
-
-- Limit sidebar selection colors to a rounded icon/title block with horizontal
-  padding instead of highlighting the entire row (`#360`).
-
-- Keep floating tab drag previews at the full exterior tab size and original
-  grab point, with the original translucent selection tint and opacity; only
-  dim the source tab left in the bar. Retain existing reorder thresholds (`#360`).
-
-- Restore the connections sidebar's original background and place Reattach to
-  main window directly below Show/Hide status bar in detached terminals (`#360`).
-
-- Reduce terminal-tab label padding and remove the native header's dark bottom
-  border for a more compact tab bar. Suppress the dark bottom shadow when
-  hovering inactive terminal tabs, reduce the gap between tabs, and give close
-  buttons a larger circular hover (`#360`).
-
-- Defer and coalesce private terminal-tab drag reordering until GTK finishes
-  the current event, revalidate queued moves, and ignore hidden tab geometry.
-  Cover rapid repeated moves with overflowing tabs in an isolated process to
-  guard against GTK's notebook hover-timer assertion (`#360`).
-
-- Keep Notes GTK tests safe in headless CI while retaining GtkSourceView
-  integration coverage on a private display (`#360`).
-
-- Keep Notes category rows alive until a left-button drag can start, restoring
-  category moves into other groups in the native tree (`#360`).
-
-- Defer Notes tree selection and context-menu opening until GTK finishes the
-  right-click event, avoiding a crash when targeting another note (`#360`).
-
-- Restore terminal input after leaving the native Split or Tab submenu and
-  dismissing the terminal context menu with an outside click (`#360`).
-
-- Use a standard GTK menu for groups and subgroups, preserving scoped start,
-  subgroup creation, editing and confirmed deletion, write restrictions and
-  popup lifetime across tree rebuilds (`#360`).
-
-- Use a standard GTK menu for servers, Favorites and Recent connections,
-  retaining scoped actions, optional SFTP visibility, write restrictions and
-  sidebar scrolling while rejecting stale targets (`#360`).
-
-- Use a standard, reusable GTK menu for note categories, retaining scoped
-  rename, duplicate and delete actions, keyboard access and write restrictions
-  across tree rebuilds (`#360`).
-
-- Use a standard, reusable GTK menu for saved-note list actions, preserving
-  note targets across row rebuilds and saves, click anchoring and storage
-  permissions (`#360`).
-
-- Use a standard GTK menu anchored to the right-click position on note tabs,
-  preserving rename permissions, focus and popup lifetime around dialogs, and
-  rejecting stale targets (`#360`).
-
-- Anchor the terminal-tab context menu to the right-click position and use a
-  standard GTK menu, retaining tab actions and rejecting stale targets (`#360`).
-
-- Reduce the snippet manager's default width by 25% to 795 logical px while
-  retaining its three columns, actions, and resizable layout (`#330`).
-
-- Open the snippet editor at a compact, resizable 600 × 560 logical px size,
-  constrain selectors with long labels, and restore the manager's previous
-  size after saving, cancelling, or closing the editor (`#355`, `#330`).
-
-- Wait for the previous SFTP service to finish cleanup before reconnecting,
-  retry a failed backend close once off the UI thread, and report exhausted
-  cleanup without discarding unresolved resources or polling indefinitely.
-  Keep a single exit handler across local/SSH split retries and ignore exits
-  from inactive or removed panes (`#319`).
-
-- Retain verified terminal process-group identities through tab disconnection,
-  closure, and application shutdown, including forced cleanup after the leader
-  exits. Observe SCP/SFTP cleanup for a bounded period, and report failed or
-  timed-out cleanup without marking it successful. Reuse captured identities
-  when terminal-exit callbacks run, release expired uncertain sessions, and
-  track the refreshed SCP identity through cancellation (`#351`).
-- Select SFTP directories with one click so they can be downloaded, and open
-  them with a double-click or keyboard activation (`#326`).
-
-### Refactored
-
-- Keep the SFTP explorer independent from terminal windows and scope its modal
-  prompts to SFTP. Coalesce progress updates, show per-file MB and recent MB/s
-  with accumulated MB in a tooltip, format file-list sizes in B/kB/MB/GB,
-  reject unexpected byte counts, classify
-  failures without exposing backend details, preserve connections when cancelling ordinary
-  prompts, and observe asynchronous cancellation/cleanup before reconnecting
-  (`#327`).
-
-### Added
-
-- Assign a keyboard shortcut to a saved snippet in its compact editor or in
-  keyboard preferences. Share assignments by snippet ID, reject conflicts,
-  respect the focused pane's scope, and retain variable prompts and final
-  preview confirmation. Copies start without shortcuts (`#330`).
-
-- Nest note categories by dragging within their Personal/server scope, or
-  return groups to the root via the scope header. Preserve notes and editor
-  tabs, reject cycles and cross-scope drops, and back up older notes files
-  before upgrading to schema 3. Add Expand all / Collapse all controls with
-  search revealing matching notes and their ancestors (`#331`, `#332`).
-
-- Open the snippet manager as an independent GTK window so terminals remain
-  usable while snippets are managed. Fit fixed-size category tiles into the
-  available width and wrap them into additional rows, align Create snippet to
-  the left, place category actions below Back to snippets, and label the return
-  action clearly (`#346`).
-
-- Allow each saved SSH server to run a configured command after authentication
-  and keep the remote session open with an interactive shell (`#344`).
-
-### Fixed
-
-- Use neutral, theme-aware required-field markers and hints in connection and
-  workspace forms, explain the marker in the workspace dialog, and use normal
-  menu text for deleting servers, local terminals, and workspaces (`#342`).
-
-- Use standard GTK controls in the independent Notes window, restore it before
-  presenting, and defer server-menu activation until after popover focus settles
-  on Wayland. Preserve reusable notes and application shutdown (`#339`).
-
-- Keep terminal tabs, note tabs, and saved-note rows private during drag-and-drop
-  so text fields cannot insert their internal IDs. Preserve tab reordering and
-  moving saved notes between categories. Skip the two widget integration checks
-  when no graphical display is available (`#329`).
-
-- Apply the shared action-area insets once in the startup master-password panel,
-  reduce excess button spacing, and show neutral error text while retaining its
-  reserved message row (`#336`).
-
-- Show a line number on a newly created empty note line immediately after
-  pressing Enter, and apply the dark editor background on a fresh profile
-  (`#328`).
-
-### Added
-
-- Add a hideable notes toolbar with persistent font, size, text color, and
-  background preferences and optional line numbers for the plain-text editor.
-  Use the requested dark editor and gutter colors. Open
-  the modeless notes window in front of its parent while retaining minimize and
-  maximize controls. Keep the compact toolbar's scrollbar clear of its buttons
-  and its visibility independent of the smaller-font notes list (`#328`).
-
-- Add a dedicated Disconnect action to the SFTP browser, keep Cancel and
-  Reconnect SFTP separate, and align all three actions to the right (`#315`).
-
-- Allow changing the master password for encrypted connections and notes,
-  verifying the current password and restoring original files if re-encryption
-  fails (`#314`).
-
-### Fixed
-
-- Focus the notes editor after the Notes window opens (`#328`).
-
-- Preserve custom tab titles when saving and restoring the previous session (`#324`).
-
-- Prevent dragging a saved server onto the sidebar search field from inserting
-  its internal ID as search text (`#299`).
-
-- Let System appearance inherit GTK menu, popover, and note-properties surfaces
-  instead of combining a forced light Termia menu with dark desktop controls.
-  Derive GTK's dark variant from GNOME's actual system scheme instead of a
-  fixed false preference, and update it when GNOME changes while Termia is
-  open. Keep isolated test profiles from overriding GTK and GNOME
-  configuration (`#311`).
-
-### Changed
 
 - Add a local sandbox test runner with private Xvfb and D-Bus services so the
   complete GTK and SFTP suite can run without a desktop session. Use software
@@ -351,17 +173,8 @@
   title value. Reduce the outer vertical spacing and pad the details text
   inside its contrasting panel (`#309`).
 
-### Changed
-
 - Document the initial Core and built-in add-on boundaries, their known pilot
   couplings, and the `app.py` composition-root exception (`#306`).
-
-### Refactored
-
-- Move aggregate statistics recording behind a narrow session observer and
-  isolate SFTP launching from terminal-session orchestration (`#304`).
-
-### Changed
 
 - Show the selected server in the notes window title instead of a small in-view
   scope label, and keep the general notes title for the unscoped workspace
@@ -421,20 +234,158 @@
   choice, and clarify that the export password is separate from local storage
   protection (`#289`).
 
-### Added
-
-- Move saved servers between sidebar groups, nested groups, and Ungrouped by
-  dragging, without changing their identities or open sessions (`#299`).
-- Add restart-applied switch controls for the bundled Statistics and SFTP add-ons.
-  Disabled add-ons are omitted from their menus without deleting stored data
-  (`#304`).
-- Add right-click note actions for editing, cloning, and deleting; cloning saves
-  a new note with the same content, category, and server association (`#289`).
-- Add a separate notes workspace with standalone and server-linked notes,
-  categories, autosave, protected import/export, backup-before-replace
-  behavior, and isolated test-profile copying (`#289`).
-
 ### Fixed
+
+- Isolate the shutdown termination test from host process sessions so synthetic
+  session IDs cannot cause environment-dependent failures (`#383`, `#385`).
+
+- Fail Docker laboratory diagnostics when resource cleanup fails or visual
+  probes leave terminal processes running; cover cleanup outcomes and reject
+  previously completed manifests with cleanup errors (`#377`).
+
+- Keep connection headers expandable without selecting them, retain compact
+  rounded object selection and remove pressed-row inset shadows. Add native
+  arrows to tab/server/group menus, clear initial menu highlighting, restore
+  terminal-menu keyboard focus after VTE click handling, and close nested
+  Split/Tab menus without hiding and reopening their parent (`#380`).
+
+- Document the local Docker design, memory and lifecycle laboratory, including
+  source provenance, safe operation and the validated menu/focus findings
+  (`#380`).
+
+- Release closed SFTP windows and dialogs after their workers stop, disconnect
+  owned native signals without colliding with widget actions, and discard the
+  traceback retained by Paramiko's optional Invoke import error (`#375`).
+
+- Release retired tab/pane signal handlers without dropping pending process-exit
+  accounting, defer split focus until mapping, and cover native widget lifetimes
+  (`#374`).
+
+- Restore the approved terminal tab strip with an automatically hiding horizontal
+  scrollbar and a persistent native overflow menu refreshed only when opened.
+  Retain private drag reordering, edge scrolling, active-tab reveal and the
+  laboratory tab appearance (`#374`).
+
+- Propagate mandatory setup-check failures so source upgrades install missing
+  dependencies instead of reporting false success; cover setup failures and
+  document Debian/Git Docker compatibility trials on Ubuntu 24.04 and 26.04
+  (`#371`).
+
+- Keep focus on the clicked terminal or split pane when opening its context
+  menu and pasting; render configured Copy, Paste and New tab shortcuts using
+  GTK accelerator syntax, including custom and disabled assignments (`#369`).
+
+- Limit sidebar selection colors to a rounded icon/title block with horizontal
+  padding instead of highlighting the entire row (`#360`).
+
+- Keep floating tab drag previews at the full exterior tab size and original
+  grab point, with the original translucent selection tint and opacity; only
+  dim the source tab left in the bar. Retain existing reorder thresholds (`#360`).
+
+- Restore the connections sidebar's original background and place Reattach to
+  main window directly below Show/Hide status bar in detached terminals (`#360`).
+
+- Reduce terminal-tab label padding and remove the native header's dark bottom
+  border for a more compact tab bar. Suppress the dark bottom shadow when
+  hovering inactive terminal tabs, reduce the gap between tabs, and give close
+  buttons a larger circular hover (`#360`).
+
+- Investigate GTK Notebook drag timing with deferred moves and isolated
+  overflow stress coverage (`#360`); the final terminal strip uses the approved
+  GTK box/stack composition instead of Notebook, retaining private dragging,
+  edge scrolling and stale-drop guards (`#374`).
+
+- Keep Notes GTK tests safe in headless CI while retaining GtkSourceView
+  integration coverage on a private display (`#360`).
+
+- Keep Notes category rows alive until a left-button drag can start, restoring
+  category moves into other groups in the native tree (`#360`).
+
+- Defer Notes tree selection and context-menu opening until GTK finishes the
+  right-click event, avoiding a crash when targeting another note (`#360`).
+
+- Restore terminal input after leaving the native Split or Tab submenu and
+  dismissing the terminal context menu with an outside click (`#360`).
+
+- Use a standard GTK menu for groups and subgroups, preserving scoped start,
+  subgroup creation, editing and confirmed deletion, write restrictions and
+  popup lifetime across tree rebuilds (`#360`).
+
+- Use a standard GTK menu for servers, Favorites and Recent connections,
+  retaining scoped actions, optional SFTP visibility, write restrictions and
+  sidebar scrolling while rejecting stale targets (`#360`).
+
+- Use a standard, reusable GTK menu for note categories, retaining scoped
+  rename, duplicate and delete actions, keyboard access and write restrictions
+  across tree rebuilds (`#360`).
+
+- Use a standard, reusable GTK menu for saved-note list actions, preserving
+  note targets across row rebuilds and saves, click anchoring and storage
+  permissions (`#360`).
+
+- Use a standard GTK menu anchored to the right-click position on note tabs,
+  preserving rename permissions, focus and popup lifetime around dialogs, and
+  rejecting stale targets (`#360`).
+
+- Anchor the terminal-tab context menu to the right-click position and use a
+  standard GTK menu, retaining tab actions and rejecting stale targets (`#360`).
+
+- Reduce the snippet manager's default width by 25% to 795 logical px while
+  retaining its three columns, actions, and resizable layout (`#330`).
+
+- Open the snippet editor at a compact, resizable 600 × 560 logical px size,
+  constrain selectors with long labels, and restore the manager's previous
+  size after saving, cancelling, or closing the editor (`#355`, `#330`).
+
+- Wait for the previous SFTP service to finish cleanup before reconnecting,
+  retry a failed backend close once off the UI thread, and report exhausted
+  cleanup without discarding unresolved resources or polling indefinitely.
+  Keep a single exit handler across local/SSH split retries and ignore exits
+  from inactive or removed panes (`#319`).
+
+- Retain verified terminal process-group identities through tab disconnection,
+  closure, and application shutdown, including forced cleanup after the leader
+  exits. Observe SCP/SFTP cleanup for a bounded period, and report failed or
+  timed-out cleanup without marking it successful. Reuse captured identities
+  when terminal-exit callbacks run, release expired uncertain sessions, and
+  track the refreshed SCP identity through cancellation (`#351`).
+- Select SFTP directories with one click so they can be downloaded, and open
+  them with a double-click or keyboard activation (`#326`).
+
+- Use neutral, theme-aware required-field markers and hints in connection and
+  workspace forms, explain the marker in the workspace dialog, and use normal
+  menu text for deleting servers, local terminals, and workspaces (`#342`).
+
+- Use standard GTK controls in the independent Notes window, restore it before
+  presenting, and defer server-menu activation until after popover focus settles
+  on Wayland. Preserve reusable notes and application shutdown (`#339`).
+
+- Keep terminal tabs, note tabs, and saved-note rows private during drag-and-drop
+  so text fields cannot insert their internal IDs. Preserve tab reordering and
+  moving saved notes between categories. Skip the two widget integration checks
+  when no graphical display is available (`#329`).
+
+- Apply the shared action-area insets once in the startup master-password panel,
+  reduce excess button spacing, and show neutral error text while retaining its
+  reserved message row (`#336`).
+
+- Show a line number on a newly created empty note line immediately after
+  pressing Enter, and apply the dark editor background on a fresh profile
+  (`#328`).
+
+- Focus the notes editor after the Notes window opens (`#328`).
+
+- Preserve custom tab titles when saving and restoring the previous session (`#324`).
+
+- Prevent dragging a saved server onto the sidebar search field from inserting
+  its internal ID as search text (`#299`).
+
+- Let System appearance inherit GTK menu, popover, and note-properties surfaces
+  instead of combining a forced light Termia menu with dark desktop controls.
+  Derive GTK's dark variant from GNOME's actual system scheme instead of a
+  fixed false preference, and update it when GNOME changes while Termia is
+  open. Keep isolated test profiles from overriding GTK and GNOME
+  configuration (`#311`).
 
 - Show the export/import password prompt correctly with GTK 4 password fields
   instead of calling an unsupported placeholder method (`#289`).
@@ -444,6 +395,39 @@
   discard for incomplete drafts, and keep custom/test notes files beside their
   connection files
   (`#289`).
+
+### Refactored
+
+- Keep the SFTP explorer independent from terminal windows and scope its modal
+  prompts to SFTP. Coalesce progress updates, show per-file MB and recent MB/s
+  with accumulated MB in a tooltip, format file-list sizes in B/kB/MB/GB,
+  reject unexpected byte counts, classify
+  failures without exposing backend details, preserve connections when cancelling ordinary
+  prompts, and observe asynchronous cancellation/cleanup before reconnecting
+  (`#327`).
+
+- Move aggregate statistics recording behind a narrow session observer and
+  isolate SFTP launching from terminal-session orchestration (`#304`).
+
+### Removed
+
+- Drop write-only terminal session/pane timer-ID fields while retaining all
+  GLib timer scheduling and lifecycle callbacks (`#367`).
+
+- Remove the unused dialog-button `last` parameter and test-only note-search
+  and singular host-key parsing helpers; exercise the active presenter and
+  plural parser instead (`#367`).
+
+- Remove the legacy Notes list renderer, row/header builders, old row-context
+  handler and orphaned category CSS; migrate their behavior checks to the
+  native GTK tree (`#367`).
+
+- Retire test-only custom Notes menu helpers and the old tab-overflow click
+  handler with their three obsolete tests; retain native-menu coverage (`#367`).
+
+- Remove confirmed unused Notes helpers, the superseded prompt settings method,
+  an unregistered session-disconnect handler, unused imports and orphaned menu
+  CSS; record the evidence and deferred cleanup candidates (`#367`).
 
 ## 0.6.0-beta.3 - 2026-09-30
 

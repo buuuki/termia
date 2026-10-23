@@ -64,20 +64,29 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
   separately from connection configuration.
 - Customize terminal colors, fonts, local prompts, keybindings, confirmations, session status bars, language, and safe multi-instance behavior.
 
-## What's new in 0.6.0-beta.3
+## What's new in 0.6.0-beta.4
 
-- Create reusable command snippets, organize them in persistent categories,
-  and manage categories independently (including rename, duplicate, and delete).
-- Find snippets across all categories in a three-column manager with category
-  counts, a snippet list, and a read-only command preview.
-- Preview variable-expanded commands and explicitly confirm before sending them
-  to a terminal. Snippets are saved locally in the connections file.
-- Treat a normal SSH shell exit with a nonzero status as a clean closure instead
-  of incorrectly offering reconnection.
-- Explain configuration compatibility and backups when moving between versions.
+This release is being prepared and validated; publication is pending
+[the beta.4 release review](https://github.com/buuuki/termia/issues/386).
 
-The native SFTP explorer and About-based updates were already included in
-0.6.0-beta.2.
+- Keep personal and server-linked Notes in an independent window, with autosave,
+  scoped/nested categories, plain-text appearance controls, native line numbers,
+  and separate protected import/export.
+- Change the master password for encrypted connections and Notes while preserving
+  existing data. Legacy Notes receive a protected backup before schema upgrades.
+- Manage snippets in an independent window, assign scoped keyboard shortcuts,
+  and configure an optional command to run when an SSH connection starts.
+- Enable or disable the bundled Statistics/SFTP tools without deleting their data.
+- Use the approved scrolling terminal tab strip, native menus and connection/Notes
+  trees, with improved keyboard focus, private dragging and session-title restore.
+- Improve terminal/transfer shutdown, release retired terminal and SFTP widgets,
+  and detect missing dependencies correctly when upgrading from source.
+- Reproduce visual, SSH/SFTP/SCP, memory and lifecycle checks in the published
+  Docker laboratory; observe real sudo/polkit upgrade trials in its optional VM.
+
+Beta.4 adds GtkSourceView 5. Back up the profile before upgrading and consult
+[storage compatibility](docs/STORAGE_MIGRATIONS.md) before downgrading. The last
+published package remains beta.3 until beta.4 publication is approved.
 
 ## Help and terminal menu shortcuts
 
@@ -119,7 +128,7 @@ keys, or a password prompt. Verify unknown host fingerprints before accepting;
 changed keys are refused. Entered passwords are held in memory only. OpenSSH
 config aliases, ProxyJump, hardware-key providers, and interactive MFA are not
 covered by this initial backend. SCP remains available. The SFTP feature was
-introduced in beta.2 and remains in beta.3.
+introduced in beta.2 and remains available in beta.4.
 
 ## Download and install (Ubuntu 24.04+)
 
@@ -266,15 +275,15 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-The resulting `termia_0.6.0~beta.3-1_all.deb` is created in the parent directory.
-Development branches may contain newer source changes before Debian metadata is
-updated for the next release; do not distribute such a build as an official
-release package.
+The resulting `termia_0.6.0~beta.4-1_all.deb` is created in the parent directory.
+This checkout prepares beta.4 for final validation. A locally built package is
+not an official published release; use only synthetic profiles until its release
+checks are complete. The public download above remains beta.3 until publication.
 
 Install it with:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.3-1_all.deb
+sudo apt install ../termia_0.6.0~beta.4-1_all.deb
 ```
 
 The Debian package installs the `termia` command, desktop launcher, and icon;

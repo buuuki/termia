@@ -1,3 +1,13 @@
+termia (0.6.0~beta.4-1) unstable; urgency=medium
+
+  * Prepare Termia 0.6.0-beta.4 with saved Notes, scoped and nested categories,
+    master-password changes, snippet shortcuts, and SSH startup commands.
+  * Include GTK interaction, terminal/SFTP lifecycle and memory corrections,
+    runtime dependency checks, and reproducible Docker/VM laboratories.
+  * Align source and Debian versions for final package validation (#386).
+
+ -- Jordi Pons <jpons.git@proton.me>  Fri, 23 Oct 2026 12:00:00 +0200
+
 termia (0.6.0~beta.3-1) unstable; urgency=medium
 
   * Release Termia 0.6.0-beta.3 with command snippets, persistent category

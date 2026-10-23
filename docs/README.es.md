@@ -64,21 +64,30 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Crear notas personales o asociadas a servidores, organizarlas por categorías y editarlas mientras se usan los terminales. Las notas tienen guardado automático e importación/exportación independientes.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
 
-## Novedades de 0.6.0-beta.3
+## Novedades de 0.6.0-beta.4
 
-- Crear snippets de comandos reutilizables, organizarlos en categorías
-  persistentes y gestionar las categorías (renombrar, duplicar y eliminar).
-- Buscar snippets en todas las categorías desde una vista de tres columnas con
-  contadores, lista de snippets y previsualización de solo lectura.
-- Previsualizar los comandos con sus variables y confirmarlos antes de enviarlos
-  al terminal. Los snippets se guardan localmente en el fichero de conexiones.
-- Tratar una salida normal del shell SSH con código distinto de cero como un
-  cierre limpio, sin ofrecer por error la reconexión.
-- Aclarar la compatibilidad de la configuración y las copias de seguridad al
-  cambiar de versión.
+Esta versión está en preparación y validación; su publicación está pendiente de
+[la revisión de beta.4](https://github.com/buuuki/termia/issues/386).
 
-El explorador SFTP y las actualizaciones desde Acerca de ya estaban disponibles
-en 0.6.0-beta.2.
+- Mantener notas personales y de servidores en una ventana independiente, con
+  guardado automático, categorías por ámbito y anidadas, apariencia de texto plano,
+  números de línea nativos e importación/exportación protegidas e independientes.
+- Cambiar la contraseña maestra de conexiones y notas cifradas conservando los
+  datos. Las notas antiguas reciben una copia protegida antes de migrar su esquema.
+- Gestionar snippets en una ventana independiente, asignarles atajos por ámbito
+  y configurar un comando opcional al iniciar una conexión SSH.
+- Activar o desactivar Estadísticas/SFTP sin borrar sus datos.
+- Usar la barra de pestañas desplazable aprobada, menús nativos y árboles de
+  conexiones/notas, con mejoras de foco, arrastre privado y restauración de títulos.
+- Mejorar el cierre de terminales/transferencias, liberar widgets de terminal/SFTP
+  retirados y detectar dependencias ausentes al actualizar desde el código.
+- Reproducir pruebas visuales, SSH/SFTP/SCP, memoria y ciclos de vida en el
+  laboratorio Docker publicado; observar sudo/polkit reales en su VM opcional.
+
+Beta.4 añade GtkSourceView 5. Haz una copia del perfil antes de actualizar y
+consulta [la compatibilidad de almacenamiento](STORAGE_MIGRATIONS.md) antes de
+volver a una versión anterior. El último paquete publicado sigue siendo beta.3
+hasta que se autorice la publicación de beta.4.
 
 ## Explorador SFTP
 
@@ -112,7 +121,7 @@ Paramiko usa el host y la identidad guardados, SSH-agent/claves predeterminadas
 o contraseña en memoria. Confirma las huellas desconocidas; se rechazan claves
 modificadas. No se incluyen alias de OpenSSH, ProxyJump, proveedores de claves
 hardware ni MFA interactivo. SCP sigue disponible. Esta función se introdujo
-en beta.2 y sigue disponible en beta.3.
+en beta.2 y sigue disponible en beta.4.
 
 ## Descargar e instalar (Ubuntu 24.04+)
 
@@ -249,15 +258,15 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fichero `termia_0.6.0~beta.3-1_all.deb` se crea en el directorio padre.
-Las ramas de desarrollo pueden incluir código más reciente antes de actualizar
-los metadatos Debian para la siguiente versión; no distribuyas ese paquete
-como una versión oficial.
+El fichero `termia_0.6.0~beta.4-1_all.deb` se crea en el directorio padre.
+Este código prepara beta.4 para la validación final. Un paquete compilado
+localmente no es una release oficial publicada; usa solo perfiles sintéticos
+hasta completar las comprobaciones. La descarga pública sigue siendo beta.3.
 
 Instálalo con:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.3-1_all.deb
+sudo apt install ../termia_0.6.0~beta.4-1_all.deb
 ```
 
 El paquete Debian instala el comando `termia`, el lanzador de escritorio y el

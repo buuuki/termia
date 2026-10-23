@@ -71,6 +71,13 @@ then create the next `release/<next-version>-dev` branch from the updated
 For the current cycle, `0.6.0-beta.3` is published and
 `release/0.6.0-beta.4-dev` is the active development branch. The next published
 release containing source changes from this branch must be `0.6.0-beta.4`.
+Release preparation may set source and Debian metadata to `0.6.0-beta.4` and
+`0.6.0~beta.4-1` before publication. This does not make a local build an official
+release: final validation, explicit publication approval, the annotated tag and
+GitHub prerelease must still satisfy the consistency checks below. During this
+phase, documentation must distinguish the prepared version from the last
+published download. Track the remaining checks in
+[issue #386](https://github.com/buuuki/termia/issues/386).
 
 ## Release workflow before the first stable version
 
