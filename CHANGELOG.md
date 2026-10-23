@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- Reconnect the original SSH or failed local pane in place without closing
+  sibling splits, replacing their layout, or cancelling unrelated transfers.
+  Ignore obsolete terminal timer callbacks after retries (`#388`).
+
 ## 0.6.0-beta.4 - 2026-10-23
 
 Prepared for final validation; release publication is tracked in `#386`.

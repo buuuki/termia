@@ -263,6 +263,13 @@ Long measurements and release-platform checks remain separate validation work.
 - Failed SSH connections must leave the tab usable and show the reconnect prompt.
 - The reconnect prompt must be readable on both light and dark terminal backgrounds.
 - Pressing Enter on a failed SSH tab must reconnect to the same server.
+- Reconnecting the original SSH pane must preserve its tab, detached window,
+  sibling process identities, nested split sizes and unrelated transfers.
+  Repeat with the server unavailable and then available; retry a failed original
+  local terminal without replacing the tab. Each attempt must produce only one
+  history/statistics result and one effective timer per pane, including retries
+  before an older timer's next tick. Closing during pending startup must prevent
+  a late child spawn; final shutdown must still clean up all managed processes.
 - With the startup local-terminal preference enabled, cancelling the
   encrypted-connections unlock dialog must open exactly one generic local
   terminal in writable and read-only instances; disabling the preference must

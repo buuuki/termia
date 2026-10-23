@@ -66,6 +66,7 @@ class TerminalPane:
     history_port: int = 0
     ui_signals: SignalConnections = field(default_factory=SignalConnections, repr=False)
     retired: bool = False
+    timer_generation: int = 0
 
     def release_exit_handler(self) -> None:
         if self.exit_handler_id is not None:
