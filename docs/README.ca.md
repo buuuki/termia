@@ -64,22 +64,30 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Crear notes personals o associades a servidors, organitzar-les per categories i editar-les mentre s'utilitzen els terminals. Les notes es desen automàticament i tenen importació/exportació independents.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
-## Novetats de 0.6.0-beta.3
+## Novetats de 0.6.0-beta.4
 
-- Crear snippets d'ordres reutilitzables, organitzar-los en categories
-  persistents i gestionar les categories (canviar-ne el nom, duplicar-les i
-  suprimir-les).
-- Cercar snippets a totes les categories des d'una vista de tres columnes amb
-  comptadors, una llista de snippets i una previsualització de només lectura.
-- Previsualitzar les ordres amb les variables i confirmar-les abans d'enviar-les
-  al terminal. Els snippets es desen localment al fitxer de connexions.
-- Tractar una sortida normal del shell SSH amb un codi diferent de zero com un
-  tancament net, sense oferir la reconnexió per error.
-- Aclarir la compatibilitat de la configuració i les còpies de seguretat en
-  canviar de versió.
+Aquesta versió està en preparació i validació; la publicació està pendent de
+[la revisió de beta.4](https://github.com/buuuki/termia/issues/386).
 
-L'explorador SFTP i les actualitzacions des de Quant a ja estaven disponibles a
-0.6.0-beta.2.
+- Mantenir notes personals i de servidors en una finestra independent, amb desament
+  automàtic, categories per àmbit i imbricades, aparença de text pla, números de línia
+  natius i importació/exportació protegides i independents.
+- Canviar la contrasenya mestra de connexions i notes xifrades conservant les dades.
+  Les notes antigues reben una còpia protegida abans de migrar-ne l'esquema.
+- Gestionar snippets en una finestra independent, assignar-hi dreceres per àmbit
+  i configurar una ordre opcional en iniciar una connexió SSH.
+- Activar o desactivar Estadístiques/SFTP sense esborrar-ne les dades.
+- Utilitzar la barra de pestanyes desplaçable aprovada, menús natius i arbres de
+  connexions/notes, amb millores de focus, arrossegament privat i restauració de títols.
+- Millorar el tancament de terminals/transferències, alliberar ginys de terminal/SFTP
+  retirats i detectar dependències absents en actualitzar des del codi.
+- Reproduir proves visuals, SSH/SFTP/SCP, memòria i cicles de vida al laboratori
+  Docker publicat; observar sudo/polkit reals a la seva VM opcional.
+
+Beta.4 afegeix GtkSourceView 5. Fes una còpia del perfil abans d'actualitzar i
+consulta [la compatibilitat d'emmagatzematge](STORAGE_MIGRATIONS.md) abans de tornar
+a una versió anterior. L'últim paquet publicat continua sent beta.3 fins que
+s'autoritzi la publicació de beta.4.
 
 ## Explorador SFTP
 
@@ -113,7 +121,7 @@ Paramiko usa el host i la identitat desats, SSH-agent/claus predeterminades o
 contrasenya en memòria. Confirma les empremtes desconegudes; es rebutgen claus
 modificades. No s'inclouen àlies d'OpenSSH, ProxyJump, proveïdors de claus
 hardware ni MFA interactiu. SCP continua disponible. Aquesta funció es va
-introduir a beta.2 i continua disponible a beta.3.
+introduir a beta.2 i continua disponible a beta.4.
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
@@ -250,15 +258,15 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fitxer `termia_0.6.0~beta.3-1_all.deb` es crea al directori pare.
-Les branques de desenvolupament poden incloure codi més recent abans
-d'actualitzar les metadades Debian per a la versió següent; no distribueixis
-aquest paquet com una versió oficial.
+El fitxer `termia_0.6.0~beta.4-1_all.deb` es crea al directori pare.
+Aquest codi prepara beta.4 per a la validació final. Un paquet compilat
+localment no és una release oficial publicada; utilitza només perfils sintètics
+fins a completar les comprovacions. La descàrrega pública continua sent beta.3.
 
 Instal·la'l amb:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.3-1_all.deb
+sudo apt install ../termia_0.6.0~beta.4-1_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la
