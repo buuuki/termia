@@ -9,6 +9,10 @@
 
 ### Fixed
 
+- Compare Bandit dictionary-password findings by their individual key/value
+  entries so unrelated edits do not reclassify existing findings as new.
+  Preserve detection of changed entries and additional duplicates (`#393`).
+
 - Ask for encrypted connection-import passwords, allow retry/cancellation,
   and retain the target profile's password, storage protection and notes (`#392`).
   Display password feedback using the theme's normal text color.
