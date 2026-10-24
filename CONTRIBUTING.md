@@ -102,6 +102,40 @@ If a check cannot be run, mention that in the pull request with the reason.
 GitHub Actions runs the unittest suite, translation validation, and Python
 syntax checks automatically for every pull request and every push to `main`.
 
+### Ruff and Bandit
+
+Install the development-only tools in a virtual environment, then compare your
+working changes against the release-development branch:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-ci.txt
+PATH="$PWD/.venv/bin:$PATH" python3 scripts/check_static_analysis.py --base origin/release/0.6.0-beta.4-dev
+```
+
+The independent CI job uses the pinned versions in `requirements-ci.txt`.
+It scans Python source in temporary copies without importing the application.
+PRs compare their head with the merge base; pushes to `main` compare with the
+previous push commit, including forced pushes. The local helper compares the
+exact base supplied; use `git merge-base HEAD <target-branch>` as the base if
+your local branch has diverged. Missing history, an initial all-zero push base, invalid
+reports, syntax errors, missing tools or incorrect versions fail the check.
+
+Existing findings remain visible. Only new findings block, including extra
+copies of an existing finding. Source tokens and occurrence counts distinguish
+findings without depending on line numbers. Renamed files are conservatively
+treated as new; removed findings do not grant a budget for different findings.
+This is a regression gate, not a security certification or approval of old debt.
+
+The policy is defined in the helper: Ruff's isolated defaults target Python 3.10,
+including tests, and Bandit excludes `tests/`. Virtual environments are excluded
+from both. Project/user analyzer configuration and inline suppression comments
+cannot weaken this gate. Review policy changes in the helper explicitly;
+rerun both snapshots when updating the tool pins. Local WORKTREE mode includes
+non-ignored new Python files and local deletions; CI uses committed files only.
+Logs list relative paths, rule IDs and severity without source/credential text.
+Exit codes are 0 for no new findings, 1 for new findings, and 2 for analysis errors.
+
 ## Pull Requests
 
 A good pull request includes:

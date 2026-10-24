@@ -1168,6 +1168,14 @@ authorization require separate release-time validation.
 
 ### Standard automated commands
 
+CI also runs `python3 scripts/check_static_analysis.py --base <base-ref> --head <head-ref>`
+with the pinned tools in `requirements-ci.txt`. Validate changes to this gate
+with `python3 scripts/run_sandbox_tests.py tests.test_static_analysis` and a
+real comparison. Existing findings must remain visible; new occurrences and
+tool/report/history errors must fail. Line shifts must not create new findings,
+and duplicate findings, renamed files, deleted files and suppression comments
+must not bypass comparison. See the local setup in `CONTRIBUTING.md`.
+
 While iterating on code, run the affected test module and syntax-check the
 touched Python files. Use non-verbose output by default; rerun only a failing
 module or case with `-v` when its detailed output helps diagnose the failure.
