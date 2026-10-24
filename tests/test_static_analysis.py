@@ -51,6 +51,72 @@ class StaticAnalysisTests(unittest.TestCase):
                 with self.subTest(changed=changed), self.assertRaises(analysis.AnalysisError):
                     analysis.parse_report("ruff", 1, json.dumps([{**finding, **changed}]).encode(), root)
 
+    @unittest.skipUnless(shutil.which("bandit"), "Bandit not installed")
+    def test_bandit_dictionary_entries_ignore_siblings_but_detect_changes(self):
+        original = (
+            "MESSAGES = {\n"
+            "    'password_label': (\n"
+            "        'Synthetic prompt'\n"
+            "    ),\n"
+            "    'unrelated': 'Before',\n"
+            "}\n"
+        )
+        cases = [
+            ("unrelated value", original.replace("'Before'", "'After'"), 0),
+            ("line shift", "\n\n" + original, 0),
+            ("new sibling", original.replace(
+                "}\n", "    'another': 'New entry',\n}\n"
+            ), 0),
+            ("changed key", original.replace(
+                "'password_label'", "'password_caption'"
+            ), 1),
+            ("changed value", original.replace(
+                "'Synthetic prompt'", "'Changed synthetic prompt'"
+            ), 1),
+            ("duplicate", original.replace(
+                "}\n", "    'password_label': 'Synthetic prompt',\n}\n"
+            ), 1),
+        ]
+
+        async def exercise(root):
+            path = root / "messages.py"
+            path.write_text(original, encoding="utf-8")
+            baseline = await analysis.analyze("bandit", root)
+            self.assertEqual(len(baseline), 1)
+            for name, source, expected in cases:
+                with self.subTest(case=name):
+                    path.write_text(source, encoding="utf-8")
+                    proposed = await analysis.analyze("bandit", root)
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        self.assertEqual(
+                            analysis.report_difference(
+                                "bandit", baseline, proposed
+                            ),
+                            expected,
+                        )
+
+            # AST columns count UTF-8 bytes, including preceding Unicode.
+            path.write_text(
+                "MESSAGES = {'é': 'Before', "
+                "'password_label': 'Synthetic prompt'}\n",
+                encoding="utf-8",
+            )
+            baseline = await analysis.analyze("bandit", root)
+            self.assertEqual(len(baseline), 1)
+            path.write_text(
+                "MESSAGES = {'é': 'After', "
+                "'password_label': 'Synthetic prompt'}\n",
+                encoding="utf-8",
+            )
+            proposed = await analysis.analyze("bandit", root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(
+                    analysis.report_difference("bandit", baseline, proposed), 0
+                )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            asyncio.run(exercise(Path(temporary)))
+
     def test_snapshot_rejects_unsafe_destinations(self):
         with tempfile.TemporaryDirectory() as temporary:
             for name in ("../escape.py", "/absolute.py"):

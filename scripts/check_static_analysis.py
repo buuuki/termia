@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import asyncio
 import io
 import json
@@ -100,6 +101,24 @@ def fingerprint(path: str, rule: str, message: str, severity: str, source: str) 
     return path, rule, message, severity, tokens
 
 
+def bandit_dictionary_source(item: dict, source: str) -> str | None:
+    """Identify a B105 dictionary entry without unrelated sibling entries."""
+    if item["test_id"] != "B105":
+        return None
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Dict):
+            continue
+        for key, value in zip(node.keys, node.values):
+            if key is not None and (
+                key.lineno == item["line_number"]
+                and key.col_offset == item.get("col_offset")
+            ):
+                entry = ast.Tuple(elts=[key, value], ctx=ast.Load())
+                return ast.dump(entry, include_attributes=False)
+    return None
+
+
 def parse_report(tool: str, status: int, output: bytes, root: Path) -> list[dict]:
     if status not in (0, 1):
         raise AnalysisError(f"{tool} exited with status {status}")
@@ -116,7 +135,8 @@ def parse_report(tool: str, status: int, output: bytes, root: Path) -> list[dict
             path = Path(item["filename"])
             path = path if path.is_absolute() else root / path
             relative = path.resolve().relative_to(root.resolve()).as_posix()
-            lines = path.read_text(encoding="utf-8").splitlines()
+            source = path.read_text(encoding="utf-8")
+            lines = source.splitlines()
             if tool == "ruff":
                 rule, message, severity = item["code"], item["message"], "unrated"
                 if rule == "invalid-syntax":
@@ -129,10 +149,15 @@ def parse_report(tool: str, status: int, output: bytes, root: Path) -> list[dict
                 start, end = item["line_number"], max(item["line_range"])
             if not isinstance(message, str) or not isinstance(rule, str) or not rule or not 1 <= start <= end <= len(lines):
                 raise AnalysisError(f"Invalid {tool} finding location or rule")
-            key = fingerprint(relative, rule, message, severity, "\n".join(lines[start - 1:end]))
+            finding_source = "\n".join(lines[start - 1:end])
+            if tool == "bandit":
+                entry_source = bandit_dictionary_source(item, source)
+                if entry_source is not None:
+                    finding_source = entry_source
+            key = fingerprint(relative, rule, message, severity, finding_source)
             findings.append({"key": key, "file": relative, "line": start, "rule": rule, "severity": severity})
         return findings
-    except (ValueError, KeyError, TypeError, OSError) as exc:
+    except (ValueError, KeyError, TypeError, OSError, SyntaxError) as exc:
         raise AnalysisError(f"Malformed or incomplete {tool} evidence") from exc
 
 

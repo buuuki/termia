@@ -9,6 +9,10 @@
 
 ### Fixed
 
+- Compare Bandit dictionary-password findings by their individual key/value
+  entries so unrelated edits do not reclassify existing findings as new.
+  Preserve detection of changed entries and additional duplicates (`#393`).
+
 - Reconnect the original SSH or failed local pane in place without closing
   sibling splits, replacing their layout, or cancelling unrelated transfers.
   Ignore obsolete terminal timer callbacks after retries (`#388`).
