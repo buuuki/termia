@@ -306,7 +306,7 @@ class TerminalSessionsMixin:
         )
         self.sync_root_pane_state(session)
         self.update_local_session_directory_title(session)
-        GLib.timeout_add_seconds(1, self.update_session_timer, session)
+        self.start_terminal_timer(session, terminal)
         pane.exit_handler_id = terminal.connect("child-exited", self.on_process_terminal_exited, session)
         session.status_label.set_label(f"{title} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, fallback_working_directory=working_directory)
@@ -643,6 +643,8 @@ class TerminalSessionsMixin:
         session.child_pid = None
         session.child_process = None
         session.connected = True
+        session.active_terminal_ids.add(id(terminal))
+        self.sync_root_pane_state(session)
         session.disconnect_button.set_label(self.t("disconnect"))
         session.disconnect_button.set_sensitive(True)
         session.status_label.set_label(self.t("connecting"))
@@ -733,7 +735,8 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         self.sync_root_pane_state(session)
-        GLib.timeout_add_seconds(1, self.update_session_timer, session)
+        self.start_terminal_timer(session, terminal)
+        root_pane.release_exit_handler()
         root_pane.exit_handler_id = terminal.connect("child-exited", self.on_terminal_exited, server, session)
         self.session_observer.connection_started(server.id)
         session.status_label.set_label(f"{server.name} · PID {child_process.pid}")
@@ -743,6 +746,7 @@ class TerminalSessionsMixin:
     def mark_session_for_reconnect(self, session: TerminalSession, server: Server, toast: str) -> None:
         session.connected = False
         session.pending_reconnect = True
+        session.active_terminal_ids.discard(id(session.terminal))
         self.sync_root_pane_state(session)
         self.show_pane_reconnect_controls(self.pane_state(session, session.terminal))
         self.toast_label.set_error(toast)
@@ -759,23 +763,20 @@ class TerminalSessionsMixin:
             session.pending_reconnect = False
             self.toast_label.set_error(self.t("server_reconnect_missing"))
             return
-        session.pending_reconnect = False
-        self.close_tab(session.id, session.page, disconnect=False)
-        self.open_terminal_tab(server)
+        self.reset_pane_connection_attempt(session)
+        self.reset_pane_connection_attempt(self.pane_state(session, session.terminal))
+        self.update_session_tab_title(session, session.title)
+        self.start_ssh_session(server, session)
 
     def retry_local_terminal_session(self, session: TerminalSession) -> None:
         if not session.pending_reconnect or session.server_id is not None:
             return
-        session.pending_reconnect = False
-        self.close_tab(session.id, session.page, disconnect=False)
-        if session.local_profile_id is None:
-            self.on_open_local_terminal(None)
-            return
         profile = find_local_terminal_profile(self.store.data.local_terminals, session.local_profile_id)
-        if profile is None:
-            self.on_open_local_terminal(None)
-            return
-        self.open_local_terminal_profile(profile)
+        self.reset_pane_connection_attempt(session)
+        self.reset_pane_connection_attempt(self.pane_state(session, session.terminal))
+        session.active_terminal_ids.add(id(session.terminal))
+        self.update_session_tab_title(session, session.title)
+        self.start_local_split_terminal(session, session.terminal, session.terminal, profile=profile)
 
     def mark_pane_for_reconnect(
         self,
@@ -785,8 +786,12 @@ class TerminalSessionsMixin:
     ) -> None:
         pane.connected = False
         pane.pending_reconnect = True
+        if pane.terminal is session.terminal:
+            session.pending_reconnect = True
         self.show_pane_reconnect_controls(pane)
         session.active_terminal_ids.discard(id(pane.terminal))
+        if pane.terminal is session.terminal:
+            session.connected = bool(session.active_terminal_ids)
         prompt = f"  {self.t('reconnect_prompt')}  "
         pane.terminal.feed(f"\r\n\x1b[1;30;48;2;255;213;79m{prompt}\x1b[0m\r\n".encode())
         self.toast_label.set_error(toast)
@@ -802,7 +807,9 @@ class TerminalSessionsMixin:
         pane.disconnect_button.set_label(self.t("close"))
         pane.disconnect_button.set_sensitive(True)
 
-    def reset_pane_connection_attempt(self, pane: TerminalPane) -> None:
+    def reset_pane_connection_attempt(self, pane: TerminalPane | TerminalSession) -> None:
+        if isinstance(pane, TerminalPane):
+            pane.timer_generation += 1
         pane.pending_reconnect = False
         pane.disconnect_requested = False
         pane.disconnect_button.set_label(self.t("disconnect"))
@@ -1503,6 +1510,8 @@ class TerminalSessionsMixin:
         working_directory_override: str | None = None,
     ) -> None:
         pane = self.pane_state(session, terminal)
+        is_root = terminal is session.terminal
+        history_owner = session if is_root else pane
         pane.server_id = None
         pane.local_profile_id = profile.id if profile is not None else None
         pane.title = self.local_terminal_session_title(profile)
@@ -1528,7 +1537,9 @@ class TerminalSessionsMixin:
             if profile is not None
             else self.local_terminal_working_directory(source_terminal, fallback_working_directory)
         )
-        self.store.record_history_start(pane, "local")
+        if is_root:
+            session.started_at = pane.started_at
+        self.store.record_history_start(history_owner, "local")
         try:
             child_process = spawn_terminal_process(
                 terminal,
@@ -1541,7 +1552,7 @@ class TerminalSessionsMixin:
             terminal.feed(f"{message}\r\n".encode())
             pane.connected = False
             pane.status_label.set_label("Error")
-            self.store.record_history_end(pane, "failed", detail=exc.message)
+            self.store.record_history_end(history_owner, "failed", detail=exc.message)
             self.mark_pane_for_reconnect(session, pane, message)
             return
         pane.child_pid = child_process.pid
@@ -1554,10 +1565,19 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         pane.status_label.set_label(f"{pane.title} · PID {child_process.pid}")
-        GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
-        session.split_child_pids[id(terminal)] = child_process.pid
-        session.split_processes[id(terminal)] = child_process
-        self.connect_split_exit_handler(session, pane)
+        if is_root:
+            session.child_pid = child_process.pid
+            session.child_process = child_process
+            session.started_at = pane.started_at
+            session.pending_reconnect = False
+            self.sync_root_pane_state(session)
+            pane.release_exit_handler()
+            pane.exit_handler_id = terminal.connect("child-exited", self.on_process_terminal_exited, session)
+        else:
+            session.split_child_pids[id(terminal)] = child_process.pid
+            session.split_processes[id(terminal)] = child_process
+            self.connect_split_exit_handler(session, pane)
+        self.start_terminal_timer(session, terminal)
         if profile is not None and profile.command_on_start.strip():
             GLib.timeout_add(
                 INITIAL_LOCAL_COMMAND_DELAY_MS,
@@ -1683,7 +1703,7 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         pane.status_label.set_label(f"{server.name} · PID {child_process.pid}")
-        GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
+        self.start_terminal_timer(session, terminal)
         session.split_child_pids[id(terminal)] = child_process.pid
         session.split_processes[id(terminal)] = child_process
         self.connect_split_exit_handler(session, pane)
@@ -2062,6 +2082,21 @@ class TerminalSessionsMixin:
             for terminal in session.split_terminals:
                 self.apply_terminal_settings(terminal)
 
+    def start_terminal_timer(self, session: TerminalSession, terminal: Vte.Terminal) -> None:
+        pane = self.pane_state(session, terminal)
+        pane.timer_generation += 1
+        GLib.timeout_add_seconds(1, self.update_terminal_timer, session, terminal, pane.timer_generation)
+
+    def update_terminal_timer(
+        self, session: TerminalSession, terminal: Vte.Terminal, generation: int,
+    ) -> bool:
+        pane = session.pane_for_terminal(terminal)
+        if pane is None or pane.retired or generation != pane.timer_generation or not pane.connected:
+            return GLib.SOURCE_REMOVE
+        if terminal is session.terminal:
+            return self.update_session_timer(session)
+        return self.update_pane_timer(session, terminal)
+
     def update_session_timer(self, session: TerminalSession) -> bool:
         if not session.connected:
             return GLib.SOURCE_REMOVE
@@ -2230,7 +2265,10 @@ class TerminalSessionsMixin:
             self.store.record_history_end(pane, "disconnected")
             self.remove_terminal_pane_if_split(terminal, session)
         if (
-            len(session.active_terminal_ids) <= 1
+            not (session.active_terminal_ids - {id(terminal)})
+            and not any(
+                other.pending_reconnect for other in session.panes.values() if other is not pane
+            )
             and self.store.data.app.close_tab_on_disconnect
         ):
             self.close_tab(session.id, session.page, disconnect=False)
