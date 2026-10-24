@@ -12,43 +12,52 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from .constants import (
-    APP_THEMES,
-    DEFAULT_NOTES_EDITOR_BACKGROUND,
-    DEFAULT_NOTES_EDITOR_FOREGROUND,
-    DEFAULT_PROMPT_COLOR,
-    DEFAULT_TERMINAL_BACKGROUND,
-    DEFAULT_TERMINAL_FONT_FAMILY,
-    DEFAULT_TERMINAL_FOREGROUND,
-    DEFAULT_SPLIT_SEPARATOR_COLOR,
-    DEFAULT_SPLIT_SEPARATOR_THICKNESS,
-    MAX_SPLIT_SEPARATOR_THICKNESS,
-    HISTORY_FILE,
-    INSTANCE_LOCK_FILE,
-    NOTES_FILE,
-    SETTINGS_FILE,
-    STATISTICS_FILE,
-)
 from .config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
     CONNECTION_STORAGE_MODES,
     CONNECTION_STORAGE_PLAIN,
     InvalidMasterPasswordError,
     MissingMasterPasswordError,
-    connections_payload,
+    StorageLimitError,
     connection_storage_mode_from_payload,
+    connections_payload,
     decoded_connections_payload,
     read_raw_connections_payload,
     snippets_from_payload,
+    storage_json_bytes,
     workspaces_from_payload,
     write_connections_file,
 )
+from .constants import (
+    APP_THEMES,
+    DEFAULT_NOTES_EDITOR_BACKGROUND,
+    DEFAULT_NOTES_EDITOR_FOREGROUND,
+    DEFAULT_PROMPT_COLOR,
+    DEFAULT_SPLIT_SEPARATOR_COLOR,
+    DEFAULT_SPLIT_SEPARATOR_THICKNESS,
+    DEFAULT_TERMINAL_BACKGROUND,
+    DEFAULT_TERMINAL_FONT_FAMILY,
+    DEFAULT_TERMINAL_FOREGROUND,
+    HISTORY_FILE,
+    INSTANCE_LOCK_FILE,
+    MAX_SPLIT_SEPARATOR_THICKNESS,
+    NOTES_FILE,
+    SETTINGS_FILE,
+    STATISTICS_FILE,
+)
 from .debug import log_lock_failure, log_startup_context, log_store_state
 from .i18n import LANGUAGES, detect_system_language
+from .keybindings import (
+    KeybindingError,
+    is_snippet_action,
+    merge_keybindings,
+    normalize_keybindings,
+    snippet_action,
+)
 from .migrations import (
     CURRENT_SCHEMA_VERSION,
-    migrate_connections_payload,
     migrate_app_settings_payload,
+    migrate_connections_payload,
     migrate_embedded_settings_payload,
     migrate_embedded_statistics_payload,
     migrate_history_event_payload,
@@ -56,7 +65,6 @@ from .migrations import (
     migrate_settings_payload,
     migrate_statistics_payload,
 )
-from .keybindings import KeybindingError, is_snippet_action, merge_keybindings, normalize_keybindings, snippet_action
 from .models import (
     DEFAULT_ANSI_PALETTE,
     AppSettings,
@@ -73,16 +81,21 @@ from .models import (
     TerminalSettings,
     Workspace,
 )
-from .snippets import SnippetError, normalize_snippet, normalized_categories, snippet_target_exists
 from .notes import (
     NoteError,
     normalize_note,
     normalized_note_categories,
-    note_category_name,
     note_category_move_allowed,
+    note_category_name,
     timestamp_now,
 )
 from .notes_store import NotesFileStore
+from .snippets import (
+    SnippetError,
+    normalize_snippet,
+    normalized_categories,
+    snippet_target_exists,
+)
 from .terminal_config import normalize_split_layout
 from .ui_state import TerminalPane, TerminalSession
 
@@ -513,7 +526,8 @@ class ConnectionStore:
     ) -> None:
         self.path = path
         self.instance_lock = InstanceWriteLock(lock_path)
-        self.read_only = self.instance_lock.read_only
+        self._read_only = self.instance_lock.read_only
+        self._resource_limit_error = False
         self.settings_store = SettingsStore(settings_path, read_only=self.read_only)
         self.statistics_store = StatisticsStore(statistics_path, read_only=self.read_only)
         self.history_store = ConnectionHistoryStore(history_path, read_only=self.read_only)
@@ -547,7 +561,21 @@ class ConnectionStore:
         self.history_store.finalize_unfinished_entries()
         log_store_state(self)
 
+    @property
+    def resource_limit_error(self) -> bool:
+        return self._resource_limit_error or getattr(getattr(self, "notes_file_store", None), "resource_limit_error", False)
+
+    @property
+    def read_only(self) -> bool:
+        return self._read_only or self.resource_limit_error
+
+    @read_only.setter
+    def read_only(self, value: bool) -> None:
+        self._read_only = value
+
     def load(self) -> None:
+        if self.resource_limit_error:
+            return
         if not self.path.exists():
             self.notes_file_store.load(
                 self.data.app.connection_storage_mode, self.master_password,
@@ -571,6 +599,11 @@ class ConnectionStore:
             file_storage_mode = connection_storage_mode_from_payload(raw_payload)
             payload = decoded_connections_payload(raw_payload, self.master_password)
             payload, connections_migrated = migrate_connections_payload(payload)
+        except StorageLimitError:
+            self._resource_limit_error = True
+            self.notes_file_store.read_only = True
+            self.encryption_locked = False
+            return
         except MissingMasterPasswordError:
             self.encryption_locked = True
             self.encryption_error = ""
@@ -699,7 +732,7 @@ class ConnectionStore:
     def unlock_connections(self, master_password: str) -> bool:
         self.master_password = master_password
         self.load()
-        if self.encryption_locked:
+        if self.encryption_locked or self.resource_limit_error:
             self.master_password = None
             return False
         self.save_settings()
@@ -1137,7 +1170,7 @@ class ConnectionStore:
         if notes_exist:
             read_notes_file(notes_path, current_password)
 
-        connection_bytes = json.dumps(
+        connection_bytes = storage_json_bytes(
             connections_payload(
                 self.data.groups,
                 self.data.servers,
@@ -1148,19 +1181,16 @@ class ConnectionStore:
                 self.data.snippets,
                 self.data.snippet_categories,
             ),
-            indent=2,
-        ).encode("utf-8")
+        )
         notes_bytes = None
         if notes_exist:
-            notes_bytes = json.dumps(
+            notes_bytes = storage_json_bytes(
                 encode_notes_payload(
                     notes_payload(self.data.notes, self.data.note_categories),
                     CONNECTION_STORAGE_ENCRYPTED,
                     new_password,
                 ),
-                indent=2,
-                ensure_ascii=False,
-            ).encode("utf-8")
+            )
 
         paths = [self.path]
         if notes_exist:

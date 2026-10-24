@@ -16,6 +16,10 @@ msgstr ""
 msgid "Show or hide server list"
 msgstr ""
 
+#: src/termia/i18n.py:storage_limit_rejected
+msgid "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia."
+msgstr ""
+
 #: src/termia/i18n.py:snippet_shortcut
 msgid "Keyboard shortcut"
 msgstr ""
@@ -1279,6 +1283,22 @@ msgstr ""
 
 #: src/termia/i18n.py:import_config
 msgid "Import configuration"
+msgstr ""
+
+#: src/termia/i18n.py:import_config_unlock_title
+msgid "Password for this configuration file"
+msgstr ""
+
+#: src/termia/i18n.py:import_config_unlock_detail
+msgid "Enter the password used to encrypt this file. Your current profile password will not change."
+msgstr ""
+
+#: src/termia/i18n.py:import_config_unlock_required
+msgid "Enter the file password."
+msgstr ""
+
+#: src/termia/i18n.py:import_config_unlock_wrong
+msgid "Could not decrypt this file. Check the password and try again."
 msgstr ""
 
 #: src/termia/i18n.py:summary

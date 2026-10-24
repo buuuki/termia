@@ -2251,3 +2251,18 @@ msgstr "Maximizar la ventana de notas"
 
 msgid "Restore notes window size"
 msgstr "Restaurar el tamaño de la ventana de notas"
+
+msgid "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia."
+msgstr "Se ha superado un límite de seguridad del almacenamiento. Los archivos originales no se han modificado y la edición está desactivada. Consulta docs/STORAGE_MIGRATIONS.md para recuperarlos y después reinicia Termia."
+
+msgid "Password for this configuration file"
+msgstr "Contraseña de este archivo de configuración"
+
+msgid "Enter the password used to encrypt this file. Your current profile password will not change."
+msgstr "Introduce la contraseña utilizada para cifrar este archivo. La contraseña de tu perfil actual no cambiará."
+
+msgid "Enter the file password."
+msgstr "Introduce la contraseña del archivo."
+
+msgid "Could not decrypt this file. Check the password and try again."
+msgstr "No se pudo descifrar este archivo. Comprueba la contraseña e inténtalo de nuevo."

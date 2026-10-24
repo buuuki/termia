@@ -298,7 +298,9 @@ class TermiaWindow(
             GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.on_unix_termination_signal)
 
         self._build_ui()
-        if self.store.recovery_messages:
+        if self.store.resource_limit_error:
+            self.toast_label.set_error(self.t("storage_limit_rejected"))
+        elif self.store.recovery_messages:
             self.toast_label.set_label(
                 self.t("config_file_recovered").format(path=self.store.recovery_messages[0])
             )
@@ -394,6 +396,9 @@ class TermiaWindow(
         return translate_key(key, self.store.data.app.language)
 
     def ensure_writable(self) -> bool:
+        if getattr(self.store, "resource_limit_error", False):
+            self.toast_label.set_error(self.t("storage_limit_rejected"))
+            return False
         if self.store.encryption_locked:
             self.toast_label.set_label(self.t("connections_locked"))
             self.request_unlock_connections()
@@ -413,7 +418,9 @@ class TermiaWindow(
         widget.set_sensitive(not write_blocked)
         widget.set_tooltip_text(
             (
-                self.t("connections_locked_tooltip")
+                self.t("storage_limit_rejected")
+                if getattr(self.store, "resource_limit_error", False)
+                else self.t("connections_locked_tooltip")
                 if self.store.encryption_locked
                 else self.t("read_only_mode_tooltip")
             )
@@ -469,6 +476,12 @@ class TermiaWindow(
                 else []
             )
             self.schedule_startup_restore_or_local()
+            return
+        if getattr(self.store, "resource_limit_error", False):
+            self.hide_unlock_panel()
+            self.refresh_translated_chrome()
+            self.refresh_list()
+            self.toast_label.set_error(self.t("storage_limit_rejected"))
             return
         self.unlock_error_label.set_label(self.t("unlock_connections_failed"))
         self.unlock_password_entry.set_text("")

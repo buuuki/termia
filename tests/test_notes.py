@@ -3087,7 +3087,7 @@ class NotesStoreTests(unittest.TestCase):
                         store.move_note_category("Child", "Other")
                 self.assertEqual(store.data.note_categories, before)
                 self.assertEqual((root / "notes.json").read_bytes(), original_file)
-                with patch.object(store, "read_only", True), self.assertRaises(ReadOnlyStoreError):
+                with patch.object(store, "_read_only", True), self.assertRaises(ReadOnlyStoreError):
                     store.move_note_category("Child", None)
                 with patch.object(store, "encryption_locked", True), self.assertRaises(ReadOnlyStoreError):
                     store.move_note_category("Child", None)

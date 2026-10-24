@@ -58,6 +58,9 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 - Organize connections with nested groups, favorites, and a duplicate-free Recent section; find them quickly with `Ctrl+F`. Drag a saved server onto a group, subgroup, or Ungrouped to move it.
 - Store host, user, port, password, private-key settings, and an optional startup command for each SSH connection.
 - Import and export Termia configuration, including basic connections, nested groups, and available credentials from Asbru YAML.
+  Importing an encrypted Termia file asks for its password; cancellation or an
+  incorrect password leaves current data unchanged. The current profile keeps
+  its own storage protection and password.
 - Review connection history and optional local usage statistics, including durations and most-used servers.
 - Keep personal notes or associate notes with servers; organize them with
   categories, edit them alongside terminal sessions, and import/export them

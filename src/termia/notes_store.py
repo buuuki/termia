@@ -7,17 +7,22 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from .config_io import CONNECTION_STORAGE_ENCRYPTED
-from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
+from .config_io import (
+    CONNECTION_STORAGE_ENCRYPTED,
+    InvalidMasterPasswordError,
+    MissingMasterPasswordError,
+    StorageLimitError,
+    read_storage_json,
+)
 from .models import Note, NoteCategory
+from .notes import normalized_note_categories
 from .notes_io import (
+    CURRENT_NOTES_SCHEMA_VERSION,
     atomic_write,
     decode_notes_payload,
     notes_from_payload,
-    CURRENT_NOTES_SCHEMA_VERSION,
     write_notes_file,
 )
-from .notes import normalized_note_categories
 
 
 class NotesFileStore:
@@ -30,18 +35,24 @@ class NotesFileStore:
         self.encryption_locked = False
         self.encryption_error = ""
         self._backup_before_save = False
+        self.resource_limit_error = False
 
     def load(self, storage_mode: str, password: str | None = None) -> None:
+        if self.resource_limit_error:
+            return  # A fresh instance is required after an explicit recovery.
         self.encryption_locked = False
         self.encryption_error = ""
         if not self.path.exists():
             self.notes, self.categories = [], []
             return
         try:
-            raw = json.loads(self.path.read_text(encoding="utf-8"))
+            raw = read_storage_json(self.path)
             payload = decode_notes_payload(raw, password, validate=False)
             notes, categories = notes_from_payload(payload)
             self._backup_before_save = payload.get("schema_version", 0) < CURRENT_NOTES_SCHEMA_VERSION
+        except StorageLimitError:
+            self.resource_limit_error = True
+            return
         except MissingMasterPasswordError:
             self.encryption_locked = True
             return
@@ -55,12 +66,14 @@ class NotesFileStore:
             self.notes, self.categories = [], []
             return
         self.notes, self.categories = notes, categories
-        actual_mode = self.detect_storage_mode()
+        format_name = raw.get("format")
+        actual_mode = (CONNECTION_STORAGE_ENCRYPTED if format_name == "termia-notes-encrypted-v1"
+                       else "obfuscated" if format_name == "termia-notes-obfuscated-v1" else "plain")
         if not self.read_only and actual_mode != storage_mode:
             self.save(storage_mode, password)
 
     def save(self, storage_mode: str, password: str | None = None) -> None:
-        if self.read_only:
+        if self.read_only or self.resource_limit_error:
             return
         if self._backup_before_save:
             self.backup_current_file()
@@ -75,7 +88,7 @@ class NotesFileStore:
 
     def detect_storage_mode(self) -> str:
         try:
-            payload = json.loads(self.path.read_text(encoding="utf-8"))
+            payload = read_storage_json(self.path)
         except (OSError, json.JSONDecodeError):
             return "plain"
         format_name = payload.get("format") if isinstance(payload, dict) else None

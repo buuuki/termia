@@ -23,12 +23,25 @@ from .config_io import (
     ENCRYPTED_CONNECTIONS_CIPHER,
     ENCRYPTED_CONNECTIONS_ITERATIONS,
     ENCRYPTED_CONNECTIONS_KDF,
+    MAX_DECODED_BYTES,
+    MAX_STORAGE_BYTES,
     InvalidMasterPasswordError,
     MissingMasterPasswordError,
+    StorageLimitError,
+    bounded_decompress,
+    check_size,
+    decoded_json_bytes,
     derive_connections_key,
+    encrypted_fields,
+    read_storage_json,
+    storage_json_bytes,
 )
 from .models import Note, NoteCategory
-from .notes import normalize_note, normalized_note_categories, note_category_move_allowed
+from .notes import (
+    normalize_note,
+    normalized_note_categories,
+    note_category_move_allowed,
+)
 
 CURRENT_NOTES_SCHEMA_VERSION = 3
 NOTES_OBFUSCATED_FORMAT = "termia-notes-obfuscated-v1"
@@ -54,7 +67,7 @@ def encode_notes_payload(
     payload: dict[str, Any], storage_mode: str, password: str | None = None,
 ) -> dict[str, Any]:
     mode = storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
-    raw = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    raw = decoded_json_bytes(payload)
     if mode == CONNECTION_STORAGE_OBFUSCATED:
         return {
             "format": NOTES_OBFUSCATED_FORMAT,
@@ -70,7 +83,7 @@ def encode_notes_export(
     notes: list[Note], categories: list[NoteCategory], password: str | None = None,
 ) -> dict[str, Any]:
     payload = notes_payload(notes, categories)
-    raw = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    raw = decoded_json_bytes(payload)
     if password:
         return _encrypted_envelope(raw, password, NOTES_EXPORT_ENCRYPTED_FORMAT)
     return {"format": NOTES_EXPORT_FORMAT, **payload}
@@ -106,21 +119,28 @@ def decode_notes_payload(
         if not isinstance(encoded, str):
             raise ValueError("Obfuscated notes payload is invalid.")
         try:
-            payload = json.loads(zlib.decompress(base64.b64decode(encoded)).decode("utf-8"))
+            if len(encoded) > MAX_STORAGE_BYTES:
+                raise StorageLimitError()
+            payload = json.loads(bounded_decompress(base64.b64decode(encoded, validate=True)).decode("utf-8"))
+        except StorageLimitError:
+            raise
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             raise ValueError("Could not decode obfuscated notes.") from exc
     elif format_name == NOTES_EXPORT_FORMAT:
         payload = {key: value for key, value in raw_payload.items() if key != "format"}
     elif format_name is None:
+        decoded_json_bytes(raw_payload)
         payload = raw_payload
     else:
         raise ValueError("Unsupported notes file format.")
     if not isinstance(payload, dict):
         raise ValueError("Notes payload must contain a JSON object.")
+    decoded_json_bytes(payload)
     return validate_notes_payload(payload) if validate else payload
 
 
 def _decrypt_envelope(payload: dict[str, Any], password: str | None) -> dict[str, Any]:
+    salt_bytes, nonce_bytes, ciphertext = encrypted_fields(payload)
     if not password:
         raise MissingMasterPasswordError("Encrypted notes require a password.")
     if payload.get("cipher") != ENCRYPTED_CONNECTIONS_CIPHER or payload.get("kdf") != ENCRYPTED_CONNECTIONS_KDF:
@@ -133,10 +153,13 @@ def _decrypt_envelope(payload: dict[str, Any], password: str | None) -> dict[str
         raise ValueError("Encrypted notes use invalid KDF settings.")
     try:
         key = derive_connections_key(
-            password, base64.b64decode(salt), iterations,
+            password, salt_bytes, iterations,
         )
-        raw = AESGCM(key).decrypt(base64.b64decode(nonce), base64.b64decode(encoded), None)
+        raw = AESGCM(key).decrypt(nonce_bytes, ciphertext, None)
+        check_size(raw, MAX_DECODED_BYTES)
         decoded = json.loads(raw.decode("utf-8"))
+    except StorageLimitError:
+        raise
     except InvalidTag as exc:
         raise InvalidMasterPasswordError("Could not decrypt notes with this password.") from exc
     except (OSError, ValueError, json.JSONDecodeError) as exc:
@@ -242,7 +265,7 @@ def notes_from_payload(
 def read_notes_file(
     path: Path, password: str | None = None,
 ) -> tuple[list[Note], list[NoteCategory]]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = read_storage_json(path)
     if not isinstance(payload, dict):
         raise ValueError("Notes file must contain a JSON object.")
     return notes_from_payload(decode_notes_payload(payload, password))
@@ -256,7 +279,7 @@ def write_notes_file(
     password: str | None = None,
 ) -> None:
     encoded = encode_notes_payload(notes_payload(notes, categories), storage_mode, password)
-    atomic_write(path, json.dumps(encoded, indent=2, ensure_ascii=False).encode("utf-8"))
+    atomic_write(path, storage_json_bytes(encoded))
 
 
 def export_notes_file(
@@ -264,7 +287,7 @@ def export_notes_file(
     password: str | None = None,
 ) -> None:
     encoded = encode_notes_export(notes, categories, password)
-    atomic_write(path, json.dumps(encoded, indent=2, ensure_ascii=False).encode("utf-8"))
+    atomic_write(path, storage_json_bytes(encoded))
 
 
 def import_notes_file(

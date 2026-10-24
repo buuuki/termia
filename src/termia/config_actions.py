@@ -4,14 +4,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import yaml
 import gi
+import yaml
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, Gtk
 
 from .asbru_import import extract_asbru_connections, merge_asbru_connections
-from .config_io import export_connections_file, load_store_data_from_json, write_connections_file
+from .config_io import (
+    InvalidMasterPasswordError,
+    MissingMasterPasswordError,
+    export_connections_file,
+    load_store_data_from_json,
+    write_connections_file,
+)
 from .constants import (
     CONFIG_DIR,
     DATA_FILE,
@@ -160,16 +166,69 @@ class ConfigActionsMixin:
             if not self.ensure_writable():
                 return
             try:
-                imported = load_store_data_from_json(Path(file.get_path()), self.store.data)
+                self.import_connection_file(Path(file.get_path()))
+            except MissingMasterPasswordError:
+                self.present_connection_import_password(Path(file.get_path()))
             except (OSError, ValueError, TypeError) as exc:
                 self.toast_label.set_error(self.t("import_config_failed").format(error=exc))
-                return
-            self.store.data = imported
-            self.store.detach_orphaned_notes()
-            self.store.save_connections()
-            self.apply_app_theme()
-            self.refresh_list()
-            self.toast_label.set_label(self.t("import_config_success"))
+
+    def import_connection_file(self, path: Path, password: str | None = None) -> bool:
+        if not self.ensure_writable():
+            return False
+        imported = load_store_data_from_json(path, self.store.data, password)
+        if not self.ensure_writable():
+            return False
+        self.store.data = imported
+        self.store.detach_orphaned_notes()
+        self.store.save_connections()
+        self.apply_app_theme()
+        self.refresh_list()
+        self.toast_label.set_label(self.t("import_config_success"))
+        return True
+
+    def present_connection_import_password(self, path: Path) -> None:
+        dialog = Gtk.Dialog(title=self.t("import_config_unlock_title"), transient_for=self, modal=True)
+        dialog.set_resizable(False)
+        dialog.set_default_size(460, -1)
+        self.add_dialog_action_buttons(dialog, self.t("import_config"))
+        content = dialog.get_content_area()
+        content.set_spacing(12)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(content, f"set_margin_{side}")(16)
+        detail = Gtk.Label(label=self.t("import_config_unlock_detail"), wrap=True, xalign=0)
+        content.append(detail)
+        entry = Gtk.PasswordEntry(show_peek_icon=True)
+        entry.connect("activate", lambda _entry: dialog.response(Gtk.ResponseType.OK))
+        content.append(entry)
+        error = Gtk.Label(wrap=True, xalign=0)
+        content.append(error)
+        dialog.connect("response", self.on_connection_import_password_response, path, entry, error)
+        dialog.present()
+        entry.grab_focus()
+
+    def on_connection_import_password_response(
+        self, dialog: Gtk.Dialog, response: Gtk.ResponseType, path: Path,
+        entry: Gtk.PasswordEntry, error: Gtk.Label,
+    ) -> None:
+        if response != Gtk.ResponseType.OK or not self.ensure_writable():
+            entry.set_text("")
+            dialog.destroy()
+            return
+        password = entry.get_text()
+        entry.set_text("")
+        if not password:
+            error.set_label(self.t("import_config_unlock_required"))
+            entry.grab_focus()
+            return
+        try:
+            self.import_connection_file(path, password)
+        except InvalidMasterPasswordError:
+            error.set_label(self.t("import_config_unlock_wrong"))
+            entry.grab_focus()
+            return
+        except (OSError, ValueError, TypeError) as exc:
+            self.toast_label.set_error(self.t("import_config_failed").format(error=exc))
+        dialog.destroy()
 
     def on_import_asbru_config(self) -> None:
         dialog = Gtk.FileDialog(title=self.t("import_asbru"))

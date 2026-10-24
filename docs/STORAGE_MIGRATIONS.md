@@ -20,6 +20,36 @@ the format is an object or event payload.
 
 ## Current schemas
 
+### Resource limits and recovery
+
+Connection imports from the menu request the imported file's password when
+needed. That password is used only to read the file; the target profile keeps
+its current protection mode and master password. Cancelling or entering an
+incorrect password leaves current data intact. The file is validated again
+when the password is submitted, including its resource budgets; a rejected
+import does not put an otherwise healthy current profile into read-only mode.
+
+Connection and notes readers accept files up to 48 MiB, decoded UTF-8 JSON up
+to 32 MiB, and PBKDF2 iteration counts from 100,000 to 2,000,000. Writers keep
+the existing 390,000 iterations and reject output exceeding the size budgets
+before replacing the destination. These limits do not change the schema.
+They apply to plain, obfuscated and encrypted storage and their imports.
+Compressed data must contain exactly one complete stream.
+
+If an existing connection or notes file exceeds a limit, Termia preserves its
+original bytes and does not rename it as corrupt. Editing remains disabled for
+that application instance, including after another load or password attempt.
+Imports exceeding a limit are rejected before replacing the current data.
+
+To recover, close Termia, make an offline backup of both `connections.json`
+and `notes.json` in the active profile, and restore a known compatible backup.
+For legitimate large files, obtain assistance to reduce or convert a copy
+offline within these limits; do not delete records or edit encrypted envelopes
+in place. Restart Termia after recovery. Do not upload files containing
+credentials or private notes. Isolated test instances use their own profile.
+
+### Schema inventory
+
 - `connections.json`: object schema `3`; embedded legacy settings and
   statistics are extracted into their dedicated files, schema `2` adds
   locally stored command snippets and persistent snippet categories, and

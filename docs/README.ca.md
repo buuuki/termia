@@ -60,6 +60,9 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`. Arrossegar un servidor desat a un grup, subgrup o Sense grup per moure'l.
 - Desar host, usuari, port, contrasenya, ruta de clau privada i una ordre opcional en iniciar cada connexió SSH.
 - Importar i exportar configuració de Termia, incloses connexions bàsiques, grups imbricats i credencials disponibles de YAML d'Asbru.
+  En importar un fitxer xifrat de Termia es demana la seva contrasenya; cancel·lar
+  o introduir una contrasenya incorrecta no modifica les dades actuals. El
+  perfil manté la seva pròpia protecció d'emmagatzematge i contrasenya.
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
 - Crear notes personals o associades a servidors, organitzar-les per categories i editar-les mentre s'utilitzen els terminals. Les notes es desen automàticament i tenen importació/exportació independents.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.

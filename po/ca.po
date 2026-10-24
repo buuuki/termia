@@ -2251,3 +2251,18 @@ msgstr "Maximitza la finestra de notes"
 
 msgid "Restore notes window size"
 msgstr "Restaura la mida de la finestra de notes"
+
+msgid "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia."
+msgstr "S'ha superat un límit de seguretat de l'emmagatzematge. Els fitxers originals no s'han modificat i l'edició està desactivada. Consulta docs/STORAGE_MIGRATIONS.md per recuperar-los i després reinicia Termia."
+
+msgid "Password for this configuration file"
+msgstr "Contrasenya d'aquest fitxer de configuració"
+
+msgid "Enter the password used to encrypt this file. Your current profile password will not change."
+msgstr "Introdueix la contrasenya utilitzada per xifrar aquest fitxer. La contrasenya del perfil actual no canviarà."
+
+msgid "Enter the file password."
+msgstr "Introdueix la contrasenya del fitxer."
+
+msgid "Could not decrypt this file. Check the password and try again."
+msgstr "No s'ha pogut desxifrar aquest fitxer. Comprova la contrasenya i torna-ho a provar."

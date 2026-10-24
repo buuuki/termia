@@ -5,7 +5,7 @@ from __future__ import annotations
 import gettext
 import locale
 import os
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 DOMAIN = "termia"
@@ -28,7 +28,7 @@ def normalize_language(language: str | None) -> str:
     return detect_system_language()
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_translation(language: str | None) -> gettext.NullTranslations:
     language = normalize_language(language)
     if language == "en":
@@ -42,6 +42,7 @@ def translate_key(key: str, language: str | None) -> str:
 
 
 MESSAGES = {'servers': 'Show or hide server list',
+ "storage_limit_rejected": "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia.",
  "snippet_shortcut": "Keyboard shortcut",
  "snippet_keybindings": "Snippets",
  "snippet_shortcut_help": "Click to change the combination.",
@@ -381,6 +382,10 @@ MESSAGES = {'servers': 'Show or hide server list',
  'connections_file': 'Import/Export',
  'export_config': 'Export configuration',
  'import_config': 'Import configuration',
+ 'import_config_unlock_title': 'Password for this configuration file',
+ 'import_config_unlock_detail': 'Enter the password used to encrypt this file. Your current profile password will not change.',
+ 'import_config_unlock_required': 'Enter the file password.',
+ 'import_config_unlock_wrong': 'Could not decrypt this file. Check the password and try again.',
  'summary': '{groups} groups · {subgroups} subgroups · {servers} servers',
  'import_asbru': 'Import Ásbrú configuration',
  'clear_config': 'Delete all configuration',
