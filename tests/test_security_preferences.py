@@ -56,7 +56,7 @@ class SecurityPreferencesTests(unittest.TestCase):
             Gtk.ResponseType.OK, store_error=InvalidMasterPasswordError(),
         )
 
-        error.set_label.assert_called_once_with("change_master_password_wrong_current")
+        error.set_label.assert_called_once_with("change_master_credential_wrong_current")
         for entry in entries:
             entry.set_text.assert_called_with("")
         dialog.destroy.assert_not_called()
@@ -74,7 +74,7 @@ class SecurityPreferencesTests(unittest.TestCase):
             confirm="same password", store_error=UnchangedMasterPasswordError(),
         )
 
-        error.set_label.assert_called_once_with("change_master_password_same")
+        error.set_label.assert_called_once_with("change_master_credential_same")
         entries[0].set_text.assert_not_called()
         entries[1].set_text.assert_called_once_with("")
         entries[2].set_text.assert_called_once_with("")
@@ -137,7 +137,7 @@ class SecurityPreferencesUITests(unittest.TestCase):
         button = next(
             widget for widget in self.widgets(settings_dialog)
             if isinstance(widget, Gtk.Button)
-            and widget.get_label() == host.t("change_master_password")
+            and widget.get_label() == host.t("change_master_credential")
         )
 
         button.emit("clicked")
@@ -145,7 +145,7 @@ class SecurityPreferencesUITests(unittest.TestCase):
         dialog = next(
             window for window in Gtk.Window.list_toplevels()
             if isinstance(window, Gtk.Dialog)
-            and window.get_title() == host.t("change_master_password_title")
+            and window.get_title() == host.t("change_master_credential_title")
         )
         self.addCleanup(dialog.destroy)
         entries = [widget for widget in self.widgets(dialog) if isinstance(widget, Gtk.PasswordEntry)]
@@ -158,6 +158,6 @@ class SecurityPreferencesUITests(unittest.TestCase):
 
         self.assertFalse(any(
             isinstance(widget, Gtk.Button)
-            and widget.get_label() == host.t("change_master_password")
+            and widget.get_label() == host.t("change_master_credential")
             for widget in self.widgets(dialog)
         ))

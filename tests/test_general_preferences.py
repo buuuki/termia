@@ -8,6 +8,7 @@ from termia.general_preferences import (
     password_preference_hint_visibility,
     password_preference_sensitivity,
 )
+from termia.i18n import translate_key
 
 
 class GeneralPreferencesNotificationTests(unittest.TestCase):
@@ -72,6 +73,21 @@ class GeneralPreferencesNotificationTests(unittest.TestCase):
         self.assertEqual(messages[0], "theme: Dark")
         self.assertEqual(messages[1], "language: Español")
         self.assertEqual(messages[-1], "debug_mode: Enabled")
+
+    def test_credential_labels_keep_existing_setting_attributes(self) -> None:
+        host = self.host()
+        host.t = lambda key: translate_key(key, "en")
+        previous_values = self.previous_values(host)
+        host.store.data.app.send_password_shortcut = True
+        host.store.data.app.send_password_enter = True
+
+        GeneralPreferencesMixin.notify_general_preference_changes(host, previous_values)
+
+        messages = [call.args[0] for call in host.toast_label.set_label.call_args_list]
+        self.assertEqual(messages, [
+            "Allow sending saved password with shortcut: Enabled",
+            "Send saved password and press Enter: Enabled",
+        ])
 
     def test_non_debug_change_does_not_reconfigure_debug_logging(self) -> None:
         host = self.host()

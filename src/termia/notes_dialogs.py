@@ -2757,7 +2757,7 @@ class NotesDialogs:
             "notes_export_plain", "notes_export_plain_detail",
         )
         self.export_password_choice = self.export_protection_option(
-            "notes_export_password", "notes_export_password_detail",
+            "notes_export_credential", "notes_export_credential_detail",
         )
         self.export_password_choice.set_group(self.export_plain_choice)
         options.append(self.export_plain_choice)
@@ -2823,7 +2823,7 @@ class NotesDialogs:
         if window is not None:
             window.destroy()
         if encrypted:
-            self.ask_password(self.translate("notes_export_password"), self.on_export_password)
+            self.ask_password(self.translate("notes_export_credential"), self.on_export_password)
         else:
             self.choose_export_file(None)
 
@@ -2870,7 +2870,7 @@ class NotesDialogs:
         try:
             notes, categories = import_notes_file(self.import_path, password)
         except MissingMasterPasswordError:
-            self.ask_password(self.translate("notes_import_password"), self.on_import_password)
+            self.ask_password(self.translate("notes_import_credential"), self.on_import_password)
             return
         except (InvalidMasterPasswordError, OSError, ValueError, TypeError) as exc:
             self.show_error(self.translate("notes_import_failed").format(error=exc))
@@ -2955,7 +2955,7 @@ class NotesDialogs:
         content.set_margin_bottom(8)
         content.set_margin_start(14)
         content.set_margin_end(14)
-        password_label = Gtk.Label(label=self.translate("notes_password"))
+        password_label = Gtk.Label(label=self.translate("notes_credential"))
         password_label.set_xalign(0)
         content.append(password_label)
         entry = Gtk.PasswordEntry()
