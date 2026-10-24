@@ -9,6 +9,10 @@
 
 ### Fixed
 
+- Distinguish credential-related UI message identifiers from persisted
+  authentication fields, removing 34 Bandit false positives without changing
+  displayed text, translations, saved settings or shortcut action IDs (`#396`).
+
 - Compare Bandit dictionary-password findings by their individual key/value
   entries so unrelated edits do not reclassify existing findings as new.
   Preserve detection of changed entries and additional duplicates (`#393`).

@@ -1088,13 +1088,13 @@ class TerminalSessionsMixin:
         pane = self.pane_state(session, target)
         server = find_server(self.store.data.servers, pane.server_id) if pane.server_id is not None else None
         if not pane.connected or server is None or not server.password:
-            self.toast_label.set_warning(self.t("send_password_unavailable"))
+            self.toast_label.set_warning(self.t("send_credential_unavailable"))
             return
         payload = server.password.encode()
         if self.store.data.app.send_password_enter:
             payload += b"\r"
         target.feed_child(payload)
-        self.toast_label.set_label(self.t("send_password_sent"))
+        self.toast_label.set_label(self.t("send_credential_sent"))
 
     def split_terminal_pane(
         self,

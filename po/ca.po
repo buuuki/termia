@@ -403,7 +403,7 @@ msgstr "Port SSH"
 msgid "Group"
 msgstr "Grup"
 
-#: src/termia/i18n.py:password
+#: src/termia/i18n.py:credential
 msgid "Password"
 msgstr "Contrasenya"
 
@@ -415,7 +415,7 @@ msgstr "Clau SSH privada"
 msgid "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Ctrl+P."
 msgstr "Host nou: respon al fingerprint en aquest terminal. Després introdueix la contrasenya manualment o amb Ctrl+P."
 
-#: src/termia/i18n.py:password_warning
+#: src/termia/i18n.py:credential_warning
 msgid "Warning: the password will be stored in connections.json. You can switch between plain text and obfuscated storage from Security."
 msgstr "Avís: la contrasenya es desarà a connections.json. Pots canviar entre text pla i ofuscat des de Seguretat."
 
@@ -629,27 +629,27 @@ msgstr "Confirmar abans de desconnectar o tancar una sessió activa"
 msgid "Confirm before closing Termia"
 msgstr "Confirmar per tancar Termia"
 
-#: src/termia/i18n.py:send_password_shortcut
+#: src/termia/i18n.py:send_credential_shortcut
 msgid "Allow sending saved password with shortcut"
 msgstr "Permetre enviar la contrasenya desada amb una drecera"
 
-#: src/termia/i18n.py:send_password_shortcut_unavailable
+#: src/termia/i18n.py:send_credential_shortcut_unavailable
 msgid "Configure the \"Send saved password\" shortcut in Keybindings to enable this option."
 msgstr "Configura la drecera \"Envia la contrasenya desada\" a Dreceres de teclat per activar aquesta opció."
 
-#: src/termia/i18n.py:send_password_enter
+#: src/termia/i18n.py:send_credential_enter
 msgid "Send saved password and press Enter"
 msgstr "Enviar contrasenya i prémer Enter"
 
-#: src/termia/i18n.py:send_password_enter_unavailable
+#: src/termia/i18n.py:send_credential_enter_unavailable
 msgid "Enable \"Allow sending saved password with shortcut\" first."
 msgstr "Activa primer \"Permetre enviar la contrasenya desada amb una drecera\"."
 
-#: src/termia/i18n.py:send_password_sent
+#: src/termia/i18n.py:send_credential_sent
 msgid "Saved password sent to the terminal"
 msgstr "Contrasenya desada enviada al terminal"
 
-#: src/termia/i18n.py:send_password_unavailable
+#: src/termia/i18n.py:send_credential_unavailable
 msgid "This terminal does not have a saved password"
 msgstr "Aquest terminal no té cap contrasenya desada"
 
@@ -753,19 +753,19 @@ msgstr "No s'ha pogut obtenir la petjada del servidor."
 msgid "Could not save the server fingerprint."
 msgstr "No s'ha pogut desar la petjada del servidor."
 
-#: src/termia/i18n.py:send_files_to_server_password_title
+#: src/termia/i18n.py:send_files_to_server_credential_title
 msgid "SCP password required"
 msgstr "Cal la contrasenya per a SCP"
 
-#: src/termia/i18n.py:send_files_to_server_password_detail
+#: src/termia/i18n.py:send_files_to_server_credential_detail
 msgid "Enter the password for {user}@{host}:"
 msgstr "Introduïu la contrasenya per a {user}@{host}:"
 
-#: src/termia/i18n.py:send_files_to_server_password_confirm
+#: src/termia/i18n.py:send_files_to_server_credential_confirm
 msgid "Continue"
 msgstr "Continua"
 
-#: src/termia/i18n.py:send_files_to_server_password_empty
+#: src/termia/i18n.py:send_files_to_server_credential_empty
 msgid "Enter a password."
 msgstr "Introduïu una contrasenya."
 
@@ -825,7 +825,7 @@ msgstr "Augmentar lletra"
 msgid "Decrease font"
 msgstr "Reduir lletra"
 
-#: src/termia/i18n.py:keybinding_action_send_password
+#: src/termia/i18n.py:keybinding_action_send_credential
 msgid "Send saved password"
 msgstr "Enviar contrasenya desada"
 
@@ -995,56 +995,56 @@ msgstr ""
 "\n"
 "Després de llegir aquesta informació, vols continuar amb l'activació del xifratge?"
 
-#: src/termia/i18n.py:master_password_title
+#: src/termia/i18n.py:master_credential_title
 msgid "Set master password"
 msgstr "Definir contrasenya mestra"
 
-#: src/termia/i18n.py:master_password_detail
+#: src/termia/i18n.py:master_credential_detail
 msgid "Choose the master password that will unlock your Termia connections."
 msgstr "Tria la contrasenya mestra que desbloquejarà les connexions de Termia."
 
-#: src/termia/i18n.py:master_password
+#: src/termia/i18n.py:master_credential
 msgid "Master password"
 msgstr "Contrasenya mestra"
 
-#: src/termia/i18n.py:confirm_master_password
+#: src/termia/i18n.py:confirm_master_credential
 msgid "Confirm master password"
 msgstr "Confirma la contrasenya mestra"
 
-#: src/termia/i18n.py:change_master_password
-#: src/termia/i18n.py:change_master_password_title
+#: src/termia/i18n.py:change_master_credential
+#: src/termia/i18n.py:change_master_credential_title
 msgid "Change master password"
 msgstr "Canviar la contrasenya mestra"
 
-#: src/termia/i18n.py:change_master_password_detail
+#: src/termia/i18n.py:change_master_credential_detail
 msgid "Enter the current master password, then choose a new one. Termia will re-encrypt your connections and notes."
 msgstr "Introdueix la contrasenya mestra actual i tria'n una de nova. Termia tornarà a xifrar les connexions i les notes."
 
-#: src/termia/i18n.py:current_master_password
+#: src/termia/i18n.py:current_master_credential
 msgid "Current master password"
 msgstr "Contrasenya mestra actual"
 
-#: src/termia/i18n.py:new_master_password
+#: src/termia/i18n.py:new_master_credential
 msgid "New master password"
 msgstr "Contrasenya mestra nova"
 
-#: src/termia/i18n.py:change_master_password_same
+#: src/termia/i18n.py:change_master_credential_same
 msgid "Choose a new password that differs from the current one."
 msgstr "Tria una contrasenya nova diferent de l'actual."
 
-#: src/termia/i18n.py:change_master_password_current_required
+#: src/termia/i18n.py:change_master_credential_current_required
 msgid "Enter the current master password."
 msgstr "Introdueix la contrasenya mestra actual."
 
-#: src/termia/i18n.py:change_master_password_wrong_current
+#: src/termia/i18n.py:change_master_credential_wrong_current
 msgid "The current master password is incorrect."
 msgstr "La contrasenya mestra actual és incorrecta."
 
-#: src/termia/i18n.py:change_master_password_failed
+#: src/termia/i18n.py:change_master_credential_failed
 msgid "Could not change the master password. Check storage permissions and available disk space, then try again."
 msgstr "No s'ha pogut canviar la contrasenya mestra. Comprova els permisos d'emmagatzematge i l'espai disponible, i torna-ho a provar."
 
-#: src/termia/i18n.py:change_master_password_rollback_failed
+#: src/termia/i18n.py:change_master_credential_rollback_failed
 msgid "The password change failed and Termia could not restore every previous data file. Stop using this profile and recover its files from a backup."
 msgstr "El canvi ha fallat i Termia no ha pogut restaurar tots els fitxers de dades anteriors. Deixa d'utilitzar aquest perfil i recupera els fitxers des d'una còpia de seguretat."
 
@@ -1052,11 +1052,11 @@ msgstr "El canvi ha fallat i Termia no ha pogut restaurar tots els fitxers de da
 msgid "Enable encryption"
 msgstr "Activar xifratge"
 
-#: src/termia/i18n.py:master_password_too_short
+#: src/termia/i18n.py:master_credential_too_short
 msgid "Use at least 8 characters."
 msgstr "Fes servir com a mínim 8 caràcters."
 
-#: src/termia/i18n.py:master_password_mismatch
+#: src/termia/i18n.py:master_credential_mismatch
 msgid "The master passwords do not match."
 msgstr "Les contrasenyes mestres no coincideixen."
 

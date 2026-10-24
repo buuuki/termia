@@ -359,7 +359,7 @@ class FileTransferController:
         state: dict[str, Any],
     ) -> None:
         dialog = Gtk.Dialog(
-            title=self.t("send_files_to_server_password_title"),
+            title=self.t("send_files_to_server_credential_title"),
             transient_for=self.parent,
             modal=True,
         )
@@ -367,7 +367,7 @@ class FileTransferController:
         self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         self.add_dialog_action_button(
             dialog,
-            self.t("send_files_to_server_password_confirm"),
+            self.t("send_files_to_server_credential_confirm"),
             Gtk.ResponseType.OK,
         )
         content = dialog.get_content_area()
@@ -377,7 +377,7 @@ class FileTransferController:
         content.set_margin_end(16)
         content.set_spacing(8)
         detail = Gtk.Label(
-            label=self.t("send_files_to_server_password_detail").format(
+            label=self.t("send_files_to_server_credential_detail").format(
                 user=server.user,
                 host=server.host,
             )
@@ -422,7 +422,7 @@ class FileTransferController:
             return
         secret = password.get_text()
         if not secret:
-            error.set_label(self.t("send_files_to_server_password_empty"))
+            error.set_label(self.t("send_files_to_server_credential_empty"))
             error.set_visible(True)
             password.grab_focus()
             return

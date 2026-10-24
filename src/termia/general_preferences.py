@@ -25,8 +25,8 @@ GENERAL_PREFERENCE_FIELDS = (
     ("audible_bell", "audible_bell"),
     ("confirm_disconnect", "confirm_disconnect"),
     ("confirm_close_app", "confirm_close_app"),
-    ("send_password_shortcut", "send_password_shortcut"),
-    ("send_password_enter", "send_password_enter"),
+    ("send_credential_shortcut", "send_password_shortcut"),
+    ("send_credential_enter", "send_password_enter"),
     ("debug_mode", "debug_enabled"),
 )
 
@@ -80,8 +80,8 @@ class GeneralPreferencesMixin:
             ("audible_bell", self.store.data.app.audible_bell),
             ("confirm_disconnect", self.store.data.app.confirm_disconnect),
             ("confirm_close_app", self.store.data.app.confirm_close_app),
-            ("send_password_shortcut", self.store.data.app.send_password_shortcut),
-            ("send_password_enter", self.store.data.app.send_password_enter),
+            ("send_credential_shortcut", self.store.data.app.send_password_shortcut),
+            ("send_credential_enter", self.store.data.app.send_password_enter),
             ("debug_mode", self.store.data.app.debug_enabled),
         ]
         check_buttons = [Gtk.CheckButton(label=self.t(key)) for key, _ in checks]
@@ -100,12 +100,12 @@ class GeneralPreferencesMixin:
         send_password_shortcut.set_sensitive(shortcut_sensitive)
         send_password_enter.set_sensitive(enter_sensitive)
         shortcut_hint = Gtk.Label(
-            label=self.t("send_password_shortcut_unavailable"), xalign=0
+            label=self.t("send_credential_shortcut_unavailable"), xalign=0
         )
         shortcut_hint.set_wrap(True)
         shortcut_hint.add_css_class("dim-label")
         enter_hint = Gtk.Label(
-            label=self.t("send_password_enter_unavailable"), xalign=0
+            label=self.t("send_credential_enter_unavailable"), xalign=0
         )
         enter_hint.set_wrap(True)
         enter_hint.add_css_class("dim-label")
