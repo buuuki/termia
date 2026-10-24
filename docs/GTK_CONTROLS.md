@@ -14,6 +14,11 @@ Issue [#360](https://github.com/buuuki/termia/issues/360) tracks that comparison
 
 ## Classification
 
+Encrypted connection import uses a standard `Gtk.Dialog` with
+`Gtk.PasswordEntry` and native response buttons in `src/termia/config_actions.py`.
+GTK owns dialog presentation; Termia validates the password, handles retry and
+cancellation, and rechecks storage limits and write permission before import.
+
 - **Standard control:** GTK owns the interaction pattern through a purpose-made
   widget or menu model. Termia may supply actions, data, labels, and scoped
   styling without making the control custom.

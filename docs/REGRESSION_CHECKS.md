@@ -1,5 +1,25 @@
 # Regression Checks and Protected Behaviors
 
+## Storage resource rejection
+
+- Import an encrypted connection export from the menu. Verify the native
+  password dialog, empty/wrong-password retries, cancellation and successful
+  import. Preserve current notes and the target profile's protection/password,
+  including when the imported file uses a different password. Recheck write
+  permission and file budgets after the dialog opens, before changing data.
+  Empty/wrong-password feedback must use the normal theme foreground color.
+
+- Use an isolated profile (`scripts/run_test_instance.sh --fresh`); never use
+  real credentials or notes for rejection tests.
+- Verify ordinary plain, obfuscated and encrypted connections and notes still
+  load, export and import, including older supported schemas.
+- Verify an over-budget synthetic file produces a storage-limit warning,
+  disables editing, preserves original bytes, and creates no `.invalid-*`
+  replacement. Repeated loading and password attempts must keep it protected.
+- Close the instance, restore a compatible synthetic backup and restart;
+  verify editing becomes available. Do not run excessive KDF work: automated
+  boundary tests substitute small budgets or mock derivation.
+
 This document lists Termia behaviors that should be preserved during code changes. A change may intentionally modify one of these behaviors, but the impact must be explicit, reviewed, and documented.
 
 ## Change Policy

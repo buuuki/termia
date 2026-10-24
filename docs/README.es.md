@@ -60,6 +60,9 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 - Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`. Arrastrar un servidor guardado a un grupo, subgrupo o Sin grupo para moverlo.
 - Guardar host, usuario, puerto, contraseña, ruta de clave privada y un comando opcional al iniciar cada conexión SSH.
 - Importar y exportar configuración de Termia, incluidas conexiones básicas, grupos anidados y credenciales disponibles de YAML de Asbru.
+  Al importar un archivo cifrado de Termia se solicita su contraseña; cancelar
+  o introducir una contraseña incorrecta no modifica los datos actuales. El
+  perfil mantiene su propia protección de almacenamiento y contraseña.
 - Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
 - Crear notas personales o asociadas a servidores, organizarlas por categorías y editarlas mientras se usan los terminales. Las notas tienen guardado automático e importación/exportación independientes.
 - Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.

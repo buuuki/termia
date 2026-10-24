@@ -9,6 +9,16 @@
 
 ### Fixed
 
+- Ask for encrypted connection-import passwords, allow retry/cancellation,
+  and retain the target profile's password, storage protection and notes (`#392`).
+  Display password feedback using the theme's normal text color.
+  Use the equivalent functools.cache decorator for translation caching.
+  Name dialog messages for the unlock operation to distinguish UI text from credentials in static analysis.
+
+- Bound connection and notes file sizes, decoded content and encryption work.
+  Preserve rejected originals and disable editing until recovery and restart
+  instead of treating resource limits as corrupt-file recovery (`#392`).
+
 - Reconnect the original SSH or failed local pane in place without closing
   sibling splits, replacing their layout, or cancelling unrelated transfers.
   Ignore obsolete terminal timer callbacks after retries (`#388`).
