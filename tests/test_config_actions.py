@@ -15,6 +15,8 @@ from termia.stores import ConnectionStore
 
 class ConnectionImportTests(unittest.TestCase):
     def setUp(self):
+        if not Gtk.init_check() or Gtk.Settings.get_default() is None:
+            self.skipTest("GTK widget integration requires a graphical display")
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
         self.store = ConnectionStore(

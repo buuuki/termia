@@ -18,6 +18,7 @@
   Display password feedback using the theme's normal text color.
   Use the equivalent functools.cache decorator for translation caching.
   Name dialog messages for the unlock operation to distinguish UI text from credentials in static analysis.
+  Skip import-dialog widget tests when no graphical display is available.
 
 - Bound connection and notes file sizes, decoded content and encryption work.
   Preserve rejected originals and disable editing until recovery and restart
