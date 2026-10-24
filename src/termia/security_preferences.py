@@ -53,7 +53,7 @@ class SecurityPreferencesMixin:
         warning.add_css_class("dim-label")
         content.append(warning)
         if self.store.data.app.connection_storage_mode == CONNECTION_STORAGE_ENCRYPTED:
-            change_password = Gtk.Button(label=self.t("change_master_password"))
+            change_password = Gtk.Button(label=self.t("change_master_credential"))
             change_password.set_halign(Gtk.Align.START)
             change_password.connect(
                 "clicked", self.on_change_master_password_clicked, dialog,
@@ -72,7 +72,7 @@ class SecurityPreferencesMixin:
 
     def present_change_master_password_dialog(self) -> None:
         dialog = Gtk.Dialog(
-            title=self.t("change_master_password_title"),
+            title=self.t("change_master_credential_title"),
             transient_for=self,
             modal=True,
         )
@@ -80,13 +80,13 @@ class SecurityPreferencesMixin:
         dialog.set_default_size(460, -1)
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         add_dialog_action_button(
-            dialog, self.t("change_master_password"), Gtk.ResponseType.OK,
+            dialog, self.t("change_master_credential"), Gtk.ResponseType.OK,
         )
         content = dialog.get_content_area()
         for side in ("top", "bottom", "start", "end"):
             getattr(content, f"set_margin_{side}")(16)
         content.set_spacing(12)
-        detail = Gtk.Label(label=self.t("change_master_password_detail"), xalign=0, wrap=True)
+        detail = Gtk.Label(label=self.t("change_master_credential_detail"), xalign=0, wrap=True)
         content.append(detail)
 
         grid = Gtk.Grid(column_spacing=12, row_spacing=12)
@@ -94,9 +94,9 @@ class SecurityPreferencesMixin:
         new_entry = Gtk.PasswordEntry(show_peek_icon=True)
         confirm_entry = Gtk.PasswordEntry(show_peek_icon=True)
         for row, (key, entry) in enumerate((
-            ("current_master_password", current_entry),
-            ("new_master_password", new_entry),
-            ("confirm_master_password", confirm_entry),
+            ("current_master_credential", current_entry),
+            ("new_master_credential", new_entry),
+            ("confirm_master_credential", confirm_entry),
         )):
             label = Gtk.Label(label=self.t(key), xalign=0)
             grid.attach(label, 0, row, 1, 1)
@@ -133,17 +133,17 @@ class SecurityPreferencesMixin:
         current_password = current_entry.get_text()
         new_password = new_entry.get_text()
         if not current_password:
-            error.set_label(self.t("change_master_password_current_required"))
+            error.set_label(self.t("change_master_credential_current_required"))
             current_entry.grab_focus()
             return
         if len(new_password) < 8:
-            error.set_label(self.t("master_password_too_short"))
+            error.set_label(self.t("master_credential_too_short"))
             new_entry.set_text("")
             confirm_entry.set_text("")
             new_entry.grab_focus()
             return
         if new_password != confirm_entry.get_text():
-            error.set_label(self.t("master_password_mismatch"))
+            error.set_label(self.t("master_credential_mismatch"))
             new_entry.set_text("")
             confirm_entry.set_text("")
             new_entry.grab_focus()
@@ -152,18 +152,18 @@ class SecurityPreferencesMixin:
         try:
             self.store.change_master_password(current_password, new_password)
         except InvalidMasterPasswordError:
-            error.set_label(self.t("change_master_password_wrong_current"))
+            error.set_label(self.t("change_master_credential_wrong_current"))
             for entry in (current_entry, new_entry, confirm_entry):
                 entry.set_text("")
             current_entry.grab_focus()
             return
         except MasterPasswordRollbackError:
-            error.set_label(self.t("change_master_password_rollback_failed"))
+            error.set_label(self.t("change_master_credential_rollback_failed"))
             for entry in (current_entry, new_entry, confirm_entry):
                 entry.set_text("")
             return
         except UnchangedMasterPasswordError:
-            error.set_label(self.t("change_master_password_same"))
+            error.set_label(self.t("change_master_credential_same"))
             new_entry.set_text("")
             confirm_entry.set_text("")
             new_entry.grab_focus()
@@ -173,7 +173,7 @@ class SecurityPreferencesMixin:
             dialog.destroy()
             return
         except (OSError, ValueError):
-            error.set_label(self.t("change_master_password_failed"))
+            error.set_label(self.t("change_master_credential_failed"))
             for entry in (current_entry, new_entry, confirm_entry):
                 entry.set_text("")
             current_entry.grab_focus()
@@ -217,7 +217,7 @@ class SecurityPreferencesMixin:
             self.present_master_password_dialog()
 
     def present_master_password_dialog(self) -> None:
-        dialog = Gtk.Dialog(title=self.t("master_password_title"), transient_for=self, modal=True)
+        dialog = Gtk.Dialog(title=self.t("master_credential_title"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
@@ -231,7 +231,7 @@ class SecurityPreferencesMixin:
         content.set_margin_start(16)
         content.set_margin_end(16)
         content.set_spacing(12)
-        detail = Gtk.Label(label=self.t("master_password_detail"))
+        detail = Gtk.Label(label=self.t("master_credential_detail"))
         detail.set_xalign(0)
         detail.set_wrap(True)
         content.append(detail)
@@ -242,9 +242,9 @@ class SecurityPreferencesMixin:
         confirm_entry.set_show_peek_icon(True)
         confirm_entry.connect("activate", lambda _entry: dialog.response(Gtk.ResponseType.OK))
         grid = Gtk.Grid(column_spacing=12, row_spacing=12)
-        password_label = Gtk.Label(label=self.t("master_password"))
+        password_label = Gtk.Label(label=self.t("master_credential"))
         password_label.set_xalign(0)
-        confirm_label = Gtk.Label(label=self.t("confirm_master_password"))
+        confirm_label = Gtk.Label(label=self.t("confirm_master_credential"))
         confirm_label.set_xalign(0)
         grid.attach(password_label, 0, 0, 1, 1)
         grid.attach(password_entry, 1, 0, 1, 1)
@@ -268,11 +268,11 @@ class SecurityPreferencesMixin:
             return
         password = password_entry.get_text()
         if len(password) < 8:
-            error.set_label(self.t("master_password_too_short"))
+            error.set_label(self.t("master_credential_too_short"))
             password_entry.grab_focus()
             return
         if password != confirm_entry.get_text():
-            error.set_label(self.t("master_password_mismatch"))
+            error.set_label(self.t("master_credential_mismatch"))
             confirm_entry.set_text("")
             confirm_entry.grab_focus()
             return

@@ -2648,7 +2648,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
                 self.assertEqual(destroyed, [True])
                 if encrypted:
-                    self.assertEqual(password_prompts, [("notes_export_password", dialog.on_export_password)])
+                    self.assertEqual(password_prompts, [("notes_export_credential", dialog.on_export_password)])
                     self.assertEqual(file_choices, [])
                 else:
                     self.assertEqual(password_prompts, [])

@@ -1149,7 +1149,7 @@ class TerminalPaneStateTests(unittest.TestCase):
                 self.toast_label = SimpleNamespace(set_label=lambda _label: None)
 
             def t(self, key):
-                return {"send_password_unavailable": "Unavailable", "send_password_sent": "Sent"}[key]
+                return {"send_credential_unavailable": "Unavailable", "send_credential_sent": "Sent"}[key]
 
         Host().send_saved_password(session, split_terminal)
 

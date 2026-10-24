@@ -188,7 +188,7 @@ class SFTPWindow(Gtk.Window):
             )
         elif isinstance(error, AuthenticationRequired):
             self.status.set_text(self.t("sftp_reconnect_required"))
-            self.prompt("sftp_password", self.use_password, secret=True)
+            self.prompt("sftp_credential", self.use_password, secret=True)
         elif isinstance(error, HostKeyChanged):
             self.status.set_text(self.t("sftp_key_changed"))
         elif isinstance(error, Cancelled):

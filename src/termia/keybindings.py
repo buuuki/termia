@@ -29,7 +29,7 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
     ("next_tab", "keybinding_action_next_tab"),
     ("font_increase", "keybinding_action_font_increase"),
     ("font_decrease", "keybinding_action_font_decrease"),
-    ("send_password", "keybinding_action_send_password"),
+    ("send_password", "keybinding_action_send_credential"),
     ("filter_servers", "keybinding_action_filter_servers"),
     ("toggle_sidebar", "keybinding_action_toggle_sidebar"),
     ("toggle_main_menu", "keybinding_action_toggle_main_menu"),

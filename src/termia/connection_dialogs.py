@@ -157,7 +157,7 @@ class ConnectionDialogsMixin:
             (self.t("ssh_user"), user_entry, True),
             (self.t("ssh_port"), port_spin, False),
             (self.t("group"), group_combo, False),
-            (self.t("password"), password_entry, False),
+            (self.t("credential"), password_entry, False),
             (self.t("public_key"), public_key_entry, False),
             (self.t("run_command_on_start"), run_command_entry, False),
             (self.t("split"), split_layout_combo, False),
@@ -171,7 +171,7 @@ class ConnectionDialogsMixin:
 
         dialog.get_content_area().append(grid)
         warning = Gtk.Label()
-        warning.set_markup(f"<i>{GLib.markup_escape_text(self.t('password_warning'))}</i>")
+        warning.set_markup(f"<i>{GLib.markup_escape_text(self.t('credential_warning'))}</i>")
         warning.set_wrap(True)
         warning.set_xalign(0)
         warning.set_margin_start(16)
