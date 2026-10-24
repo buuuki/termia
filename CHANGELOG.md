@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Run pinned Ruff and Bandit checks in CI, showing existing findings and
+  blocking new diagnostics or failed analysis against the Git baseline (`#390`).
+
 ### Fixed
 
 - Reconnect the original SSH or failed local pane in place without closing
