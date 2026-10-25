@@ -169,11 +169,11 @@ exclusivamente Debian de la misma versión de la aplicación.
 
 ### Paquete publicado
 
-Descarga [termia_0.6.0~beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0~beta.4-1_all.deb)
+Descarga [termia_0.6.0.beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0.beta.4-1_all.deb)
 e instálalo con APT, que resolverá las dependencias necesarias:
 
 ```bash
-sudo apt install ./termia_0.6.0~beta.4-1_all.deb
+sudo apt install ./termia_0.6.0.beta.4-1_all.deb
 ```
 
 ## Descargar e instalar desde el código fuente
