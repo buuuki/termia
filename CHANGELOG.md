@@ -12,6 +12,9 @@
 
 ### Fixed
 
+- Update CI checkout, Python setup and artifact actions to Node.js 24 releases
+  while preserving the existing quality checks and coverage reports.
+
 - Distinguish credential-related UI message identifiers from persisted
   authentication fields, removing 34 Bandit false positives without changing
   displayed text, translations, saved settings or shortcut action IDs (`#396`).
