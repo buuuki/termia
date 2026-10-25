@@ -1194,7 +1194,11 @@ with `python3 scripts/run_sandbox_tests.py tests.test_static_analysis` and a
 real comparison. Existing findings must remain visible; new occurrences and
 tool/report/history errors must fail. Line shifts must not create new findings,
 and duplicate findings, renamed files, deleted files and suppression comments
-must not bypass comparison. See the local setup in `CONTRIBUTING.md`.
+must not bypass comparison. The first legacy-base promotion must require the
+documented immutable adoption/release/head ancestry, report its effective base,
+and reject missing or divergent history and warnings reintroduced after the
+approved release baseline. Ordinary comparisons must retain their original
+base. See the local setup in `CONTRIBUTING.md`.
 
 While iterating on code, run the affected test module and syntax-check the
 touched Python files. Use non-verbose output by default; rerun only a failing
