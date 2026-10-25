@@ -500,15 +500,48 @@ class NoteHierarchyTests(unittest.TestCase):
         window.set_default_size(360, 180)
         window.set_child(view)
         dialog.window = window
-        window.present()
+        source = None
+        point = None
 
         def drain():
             while GLib.MainContext.default().pending():
                 GLib.MainContext.default().iteration(False)
 
-        drain()
+        def wait_for(condition, phase):
+            deadline = time.monotonic() + 2
+            while not condition():
+                if time.monotonic() >= deadline:
+                    self.fail(
+                        f"Timed out waiting for {phase}: "
+                        f"window_mapped={window.get_mapped()}, "
+                        f"view_size=({view.get_width()}, {view.get_height()}), "
+                        f"source_mapped={source.get_mapped() if source is not None else None}, "
+                        f"source_size={(source.get_width(), source.get_height()) if source is not None else None}, "
+                        f"point={(point.x, point.y) if point is not None else None}, "
+                        f"origin={getattr(dialog, 'category_group_drag_origin', None)}, "
+                        f"drag_begin_calls={dialog.on_category_group_drag_begin.call_count}, "
+                        f"header_click_calls={dialog.on_note_tree_header_clicked.call_count}"
+                    )
+                GLib.MainContext.default().iteration(False)
+                time.sleep(0.005)
+
+        def pointer(*args):
+            subprocess.run(["xdotool", *args], check=True, stdout=subprocess.DEVNULL)
+            drain()
+
+        def reset_pointer_and_close():
+            try:
+                pointer("mouseup", "1")
+                pointer("mousemove", "0", "0")
+            finally:
+                window.close()
+                drain()
+
+        self.addCleanup(reset_pointer_and_close)
+        window.present()
+        wait_for(lambda: window.get_mapped() and view.get_width() > 0 and view.get_height() > 0,
+                 "mapped and allocated list")
         widgets = [view]
-        source = None
         while widgets:
             widget = widgets.pop()
             if isinstance(widget, Gtk.TreeExpander):
@@ -521,27 +554,24 @@ class NoteHierarchyTests(unittest.TestCase):
                 widgets.append(child)
                 child = child.get_next_sibling()
         self.assertIsNotNone(source)
+        wait_for(lambda: source.get_mapped() and source.get_width() > 0 and source.get_height() > 0,
+                 "mapped and allocated source row")
         valid, point = source.compute_point(window, Graphene.Point().init(35, source.get_height() / 2))
         self.assertTrue(valid)
+        window.get_display().sync()
         xid = GdkX11.X11Surface.get_xid(window.get_surface())
-        def pointer(*args):
-            subprocess.run(["xdotool", *args], check=True, stdout=subprocess.DEVNULL)
-            drain()
-        def reset_pointer_and_close():
-            pointer("mouseup", "1")
-            pointer("mousemove", "0", "0")
-            window.close()
-            drain()
-        self.addCleanup(reset_pointer_and_close)
         pointer("mousemove", "--window", str(xid), str(int(point.x)), str(int(point.y)))
         pointer("mousedown", "1")
         self.assertFalse(dialog.on_note_tree_header_clicked.called)
         for offset in (12, 24, 48, 80):
             pointer("mousemove", "--window", str(xid), str(int(point.x + offset)), str(int(point.y)))
+            # Pace the gesture; completion is checked separately with a deadline.
             time.sleep(0.03)
             drain()
+        wait_for(lambda: dialog.on_category_group_drag_begin.called, "native drag-begin")
         self.assertTrue(dialog.on_category_group_drag_begin.called)
         pointer("mouseup", "1")
+        wait_for(lambda: getattr(dialog, "category_group_drag", None) is None, "native drag-end")
         dialog.on_note_tree_header_clicked.assert_not_called()
 
     def test_move_validation_rejects_cycles_missing_and_cross_scope_parents(self):

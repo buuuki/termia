@@ -9,6 +9,9 @@
 
 ### Fixed
 
+- Wait for native GTK readiness and drag lifecycle signals in the Notes category
+  pointer test, with bounded waits and timeout diagnostics (`#413`).
+
 - Correct beta.4 public download links and installation filenames to match
   GitHub's release asset name (`#386`).
 
