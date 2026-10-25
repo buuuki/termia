@@ -5,9 +5,13 @@ from __future__ import annotations
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk
+gi.require_version("Gdk", "4.0")
+from gi.repository import Gdk, Gtk, Pango
 
-from .keybindings import DEFAULT_KEYBINDINGS, KEYBINDING_ACTIONS, keybinding_from_event, keybinding_label, normalize_keybinding
+from .keybindings import (
+    DEFAULT_KEYBINDINGS, KEYBINDING_ACTIONS, KeybindingError,
+    keybinding_from_event, keybinding_label, normalize_keybinding, snippet_action,
+)
 from .stores import ReadOnlyStoreError
 
 
@@ -51,6 +55,10 @@ class KeybindingCaptureRow(Gtk.Box):
         else:
             self._capture_button.set_label(keybinding_label(self._accelerator, self._disabled_label))
             self._capture_button.remove_css_class("suggested-action")
+        label = self._capture_button.get_child()
+        label.set_ellipsize(Pango.EllipsizeMode.END)
+        label.set_max_width_chars(24)
+        self._capture_button.set_tooltip_text(self._capture_button.get_label())
 
     def on_capture_clicked(self, _button: Gtk.Button) -> None:
         self._capturing = True
@@ -68,6 +76,10 @@ class KeybindingCaptureRow(Gtk.Box):
     def on_key_pressed(self, _controller: Gtk.EventControllerKey, keyval: int, _keycode: int, state: object) -> bool:
         if not self._capturing:
             return False
+        if keyval == Gdk.KEY_Escape:
+            self._capturing = False
+            self.update_label()
+            return True
         accelerator = keybinding_from_event(keyval, state)
         if not accelerator:
             return True
@@ -84,8 +96,13 @@ class KeybindingPreferencesMixin:
         dialog = Gtk.Dialog(title=self.t("keybindings"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(520, -1)
-        self.add_dialog_action_buttons(dialog, self.t("save"))
-        self.add_dialog_action_button(dialog, self.t("keybindings_restore_defaults"), Gtk.ResponseType.APPLY)
+        self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
+        self.add_dialog_action_button(dialog, self.t("save"), Gtk.ResponseType.OK)
+        self.add_dialog_action_button(
+            dialog,
+            self.t("keybindings_restore_defaults"),
+            Gtk.ResponseType.APPLY,
+        )
         content = dialog.get_content_area()
         content.set_margin_top(16)
         content.set_margin_bottom(16)
@@ -100,6 +117,7 @@ class KeybindingPreferencesMixin:
         grid = Gtk.Grid(column_spacing=12, row_spacing=10)
         grid.set_margin_end(8)
         rows: list[tuple[str, KeybindingCaptureRow]] = []
+        previous = self.store.data.app.keybindings.copy()
         for index, (action, label_key) in enumerate(KEYBINDING_ACTIONS):
             label = Gtk.Label(label=self.t(label_key))
             label.set_xalign(0)
@@ -110,20 +128,38 @@ class KeybindingPreferencesMixin:
             rows.append((action, row))
             grid.attach(label, 0, index, 1, 1)
             grid.attach(row, 1, index, 1, 1)
+        index = len(KEYBINDING_ACTIONS)
+        heading = Gtk.Label(label=self.t("snippet_keybindings"), xalign=0)
+        heading.add_css_class("heading")
+        grid.attach(heading, 0, index, 2, 1)
+        for index, snippet in enumerate(sorted(self.store.data.snippets, key=lambda item: item.name.casefold()), index + 1):
+            action = snippet_action(snippet.id)
+            label = Gtk.Label(label=snippet.name, xalign=0)
+            label.set_ellipsize(Pango.EllipsizeMode.END)
+            label.set_max_width_chars(24)
+            label.set_tooltip_text(snippet.name)
+            row = KeybindingCaptureRow(
+                previous.get(action, ""), self.t("keybinding_disabled"),
+                self.t("keybinding_capture_prompt"), self.t("keybinding_clear"),
+            )
+            rows.append((action, row))
+            grid.attach(label, 0, index, 1, 1)
+            grid.attach(row, 1, index, 1, 1)
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_max_content_height(560)
         scroller.set_propagate_natural_height(True)
         scroller.set_child(grid)
         content.append(scroller)
-        dialog.connect("response", self.on_keybindings_settings_response, rows)
+        dialog.connect("response", self.on_keybindings_settings_response, rows, previous)
         dialog.present()
 
     def on_keybindings_settings_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType,
-                                         rows: list[tuple[str, KeybindingCaptureRow]]) -> None:
+                                         rows: list[tuple[str, KeybindingCaptureRow]],
+                                         previous: dict[str, str]) -> None:
         if response == Gtk.ResponseType.APPLY:
             for action, row in rows:
-                row.set_accelerator(DEFAULT_KEYBINDINGS[action])
+                row.set_accelerator(DEFAULT_KEYBINDINGS.get(action, ""))
             return
         if response == Gtk.ResponseType.OK:
             keybindings = {action: row.get_accelerator() for action, row in rows}
@@ -132,7 +168,10 @@ class KeybindingPreferencesMixin:
                 self.toast_label.set_warning(self.t("keybindings_conflict").format(shortcut=conflict))
                 return
             try:
-                self.store.update_keybindings(keybindings)
+                self.store.update_keybindings(keybindings, previous=previous)
+            except KeybindingError as exc:
+                self.toast_label.set_warning(self.t(str(exc)).format(shortcut=exc.shortcut))
+                return
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
                 dialog.destroy()

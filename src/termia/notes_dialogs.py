@@ -1,0 +1,3028 @@
+# SPDX-FileCopyrightText: 2026 Jordi Pons
+# SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+from uuid import uuid4
+
+import gi
+
+gi.require_version("Gio", "2.0")
+gi.require_version("Gdk", "4.0")
+gi.require_version("Graphene", "1.0")
+gi.require_version("Gtk", "4.0")
+gi.require_version("GtkSource", "5")
+gi.require_version("Pango", "1.0")
+from gi.repository import Gdk, Gio, GLib, GObject, Graphene, Gtk, GtkSource, Pango
+
+from .constants import (
+    DEFAULT_NOTES_EDITOR_BACKGROUND,
+    DEFAULT_NOTES_EDITOR_FOREGROUND,
+)
+from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
+from .dialog_actions import add_dialog_action_button, configure_action_area
+from .models import Note, NoteCategory
+from .notes import NoteError, normalized_note_categories, note_category_move_allowed
+from .notes_io import export_notes_file, import_notes_file
+from .notes_presenter import NoteTreeCategory, NotesPresenter
+
+NOTE_ROW_DND_MIME_TYPE = "application/x-termia-note-id"
+NOTE_CATEGORY_DND_MIME_TYPE = "application/x-termia-note-category"
+
+
+def format_note_timestamp(value: str) -> str:
+    """Render stored ISO timestamps without fractional seconds."""
+    if not value:
+        return ""
+    try:
+        timestamp = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    return timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def create_notes_text_view(show_line_numbers: bool) -> GtkSource.View:
+    """Build the plain-text Notes editor with GtkSource's native line numbers."""
+    GtkSource.init()
+    buffer = GtkSource.Buffer()
+    buffer.set_highlight_syntax(False)
+    buffer.set_highlight_matching_brackets(False)
+    scheme_manager = GtkSource.StyleSchemeManager.new()
+    scheme_manager.append_search_path(str(Path(__file__).parent / "assets"))
+    scheme = scheme_manager.get_scheme("termia-notes")
+    if scheme is None:
+        raise RuntimeError("Termia Notes style scheme is unavailable")
+    buffer.set_style_scheme(scheme)
+    text_view = GtkSource.View.new_with_buffer(buffer)
+    text_view.set_show_line_numbers(show_line_numbers)
+    text_view.set_auto_indent(False)
+    text_view.set_smart_backspace(False)
+    text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+    text_view.set_monospace(False)
+    text_view.set_left_margin(12)
+    text_view.set_right_margin(12)
+    text_view.set_top_margin(12)
+    text_view.set_bottom_margin(12)
+    return text_view
+
+
+@dataclass
+class NoteEditorTab:
+    key: str
+    note_id: str | None
+    title: str
+    category: str
+    server_id: str | None
+    content: str
+    dirty: bool = False
+    status: str = ""
+    label_widget: Gtk.Label | None = None
+    scope_icon_widget: Gtk.Image | None = None
+    container_widget: Gtk.Widget | None = None
+    page_widget: Gtk.Widget | None = None
+
+
+class NotesTreeNode(GObject.Object):
+    """Stable note identity and children for GTK's native tree model."""
+
+    def __init__(
+        self, kind: str, title: str, icon_name: str = "", count: int = 0,
+        *, note_id: str | None = None, draft_key: str | None = None,
+        category: str = "", server_id: str | None = None,
+    ) -> None:
+        super().__init__()
+        self.kind = kind
+        self.title = title
+        self.icon_name = icon_name
+        self.count = count
+        self.note_id = note_id
+        self.draft_key = draft_key
+        self.category = category
+        self.server_id = server_id
+        self.children = Gio.ListStore.new(NotesTreeNode)
+
+
+class NotesDialogs:
+    """Reusable modeless notes workspace and its dialogs."""
+
+    AUTOSAVE_DELAY_MS = 700
+
+    def __init__(
+        self,
+        parent: Gtk.Window,
+        store: Any,
+        presenter: NotesPresenter,
+        translate,
+        ensure_writable,
+        show_error,
+        show_toast,
+    ) -> None:
+        self.parent = parent
+        self.store = store
+        self.presenter = presenter
+        self.translate = translate
+        self.ensure_writable = ensure_writable
+        self.show_error = show_error
+        self.show_toast = show_toast
+        self.window: Gtk.Window | None = None
+        self.export_protection_window: Gtk.Window | None = None
+        self.notes_context_popover: Gtk.Popover | None = None
+        self._note_context_menu: Gtk.PopoverMenu | None = None
+        self._note_context_menu_target = None
+        self.category_context_popover: Gtk.Popover | None = None
+        self._category_context_menu: Gtk.PopoverMenu | None = None
+        self._category_context_menu_target = None
+        self.tab_context_popover: Gtk.Popover | None = None
+        self._note_tab_menu: Gtk.PopoverMenu | None = None
+        self._note_tab_menu_target = None
+        self.current_note_id: str | None = None
+        self.selected_note_id: str | None = None
+        self.selected_draft_key: str | None = None
+        self.server_filter_id: str | None = None
+        self.scope_mode = "personal"
+        self.expanded_note_sections = {"personal"}
+        self.expanded_server_groups: set[str] = set()
+        self.last_search_query = ""
+        self.autosave_id: int | None = None
+        self.loading_editor = False
+        self.loading_search = False
+        self.editor_dirty = False
+        self.editor_tabs: dict[str, NoteEditorTab] = {}
+        self.active_editor_tab_key: str | None = None
+        self.loading_note_list = False
+        self.notes_list_visible = True
+        self.collapsed_note_categories: set[tuple[str | None, str]] = set()
+
+    def show_manager(self, server_id: str | None = None) -> None:
+        if self.store.encryption_locked:
+            self.ensure_writable()
+            return
+        opening_window = self.window is None or not self.window.get_visible()
+        self.ensure_window()
+        self.window.unminimize()
+        if not self.set_notes_scope(
+            "server" if server_id else "personal", server_id,
+        ):
+            self.window.present()
+            return
+        self.window.present()
+        if opening_window and not self.store.read_only:
+            draft = next(
+                (tab for tab in self.editor_tabs.values()
+                 if tab.note_id is None and tab.server_id == server_id),
+                None,
+            )
+            if draft is not None:
+                if self.active_editor_tab_key != draft.key:
+                    self.activate_editor_tab(draft.key)
+                self.text_view.grab_focus()
+            else:
+                self.create_note()
+        if opening_window:
+            GLib.idle_add(self.focus_active_editor)
+
+    def focus_active_editor(self) -> bool:
+        menus = (getattr(self, "tab_context_popover", None),
+                 getattr(self, "notes_context_popover", None),
+                 getattr(self, "category_context_popover", None))
+        if (
+            self.window is not None
+            and self.window.get_visible()
+            and self.window.is_active()
+            and self.active_editor_tab_key is not None
+            and self.text_view.get_editable()
+            and not any(menu is not None and menu.get_visible() for menu in menus)
+        ):
+            self.text_view.grab_focus()
+        return GLib.SOURCE_REMOVE
+
+    def on_notes_window_active(self, window: Gtk.Window, *_args) -> None:
+        if window.is_active():
+            GLib.idle_add(self.focus_active_editor)
+
+    def ensure_window(self) -> None:
+        if self.window is not None:
+            return
+        window = Gtk.Window(
+            title=self.translate("notes_title"),
+            application=self.parent.get_application(),
+        )
+        window.set_modal(False)
+        window.set_default_size(1240, 660)
+        window.add_css_class("termia-notes-window")
+        window.connect("close-request", self.on_close_request)
+        window.connect("notify::is-active", self.on_notes_window_active)
+        self.window = window
+
+        header = Gtk.HeaderBar()
+        header.set_show_title_buttons(True)
+        window.set_titlebar(header)
+        header_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        # Match the sidebar's first button inside the window's content inset.
+        header_actions.set_margin_start(8)
+        header.pack_start(header_actions)
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(root, f"set_margin_{side}")(14)
+        window.set_child(root)
+
+        self.toggle_notes_list_button = Gtk.Button()
+        self.toggle_notes_list_button.connect("clicked", lambda *_: self.toggle_notes_list())
+        header_actions.append(self.toggle_notes_list_button)
+
+        self.add_button = Gtk.Button(icon_name="tab-new-symbolic")
+        self.add_button.connect("clicked", lambda *_: self.create_note())
+        header_actions.append(self.add_button)
+
+        self.import_export_popover = self.build_import_export_menu()
+        self.import_export_menu_button = Gtk.MenuButton(icon_name="view-more-symbolic")
+        self.import_export_menu_button.set_tooltip_text(
+            self.translate("notes_import_export_options")
+        )
+        self.import_export_menu_button.set_popover(self.import_export_popover)
+        header_actions.append(self.import_export_menu_button)
+
+        paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        paned.set_position(330)
+        paned.set_vexpand(True)
+        root.append(paned)
+
+        list_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        list_panel.set_vexpand(True)
+        self.notes_tree_root = Gio.ListStore.new(NotesTreeNode)
+        self.notes_tree_model = Gtk.TreeListModel.new(
+            self.notes_tree_root, False, False, self.create_note_tree_children,
+        )
+        self.notes_tree_selection = Gtk.SingleSelection.new(self.notes_tree_model)
+        self.notes_tree_selection.set_autoselect(False)
+        self.notes_tree_selection.set_can_unselect(True)
+        self.notes_tree_selection.connect("notify::selected-item", self.on_note_tree_selected)
+        note_factory = Gtk.SignalListItemFactory()
+        note_factory.connect("setup", self.setup_note_tree_item)
+        note_factory.connect("bind", self.bind_note_tree_item)
+        note_factory.connect("unbind", self.unbind_note_tree_item)
+        self.notes_list = Gtk.ListView.new(self.notes_tree_selection, note_factory)
+        self.notes_list.connect("activate", self.on_note_tree_activated)
+        self.notes_list.add_css_class("termia-notes-list")
+        creation_controls = self.build_creation_controls()
+        list_panel.append(creation_controls)
+        self.search_entry = Gtk.SearchEntry()
+        self.search_entry.set_size_request(300, -1)
+        self.search_entry.set_margin_end(6)
+        self.search_entry.set_placeholder_text(self.translate("notes_search"))
+        self.search_entry.connect("search-changed", self.on_search_changed)
+        list_panel.append(self.search_entry)
+
+        list_scroller = Gtk.ScrolledWindow()
+        list_scroller.set_vexpand(True)
+        list_scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        list_scroller.set_child(self.notes_list)
+        list_panel.append(list_scroller)
+        paned.set_start_child(list_panel)
+        self.notes_list_panel = list_panel
+        self.notes_list_paned = paned
+        self.notes_list_width = 330
+        self.update_notes_list_toggle()
+
+        detail_area = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.editor_notebook = Gtk.Notebook()
+        self.editor_notebook.add_css_class("termia-notes-notebook")
+        self.editor_notebook.set_scrollable(True)
+        self.editor_notebook.set_show_border(False)
+        self.editor_notebook.set_hexpand(True)
+        self.editor_notebook.set_vexpand(True)
+        self.editor_notebook.connect("switch-page", self.on_editor_notebook_switch_page)
+        self.editor_notebook.connect("page-reordered", self.on_editor_notebook_page_reordered)
+        self.editor_tabs_bar = self.editor_notebook
+        self._syncing_editor_notebook = False
+        self.toolbar_toggle = Gtk.ToggleButton(icon_name="view-reveal-symbolic")
+        self.toolbar_toggle.set_tooltip_text(self.translate("notes_toolbar"))
+        self.editor_notebook.set_action_widget(self.toolbar_toggle, Gtk.PackType.END)
+
+        self.detail_stack = Gtk.Stack()
+        self.detail_stack.set_hexpand(True)
+        self.detail_stack.set_vexpand(True)
+        detail_area.append(self.detail_stack)
+        paned.set_end_child(detail_area)
+
+        empty = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        empty.set_valign(Gtk.Align.CENTER)
+        self.empty_label = Gtk.Label()
+        self.empty_label.add_css_class("dim-label")
+        empty.append(self.empty_label)
+        self.detail_stack.add_named(empty, "empty")
+
+        editor_workspace = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        editor = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        text_view = create_notes_text_view(True)
+        buffer = text_view.get_buffer()
+        buffer.connect("changed", self.on_editor_changed)
+        self.text_view = text_view
+        self.build_editor_toolbar(editor)
+        text_scroller = Gtk.ScrolledWindow()
+        text_scroller.add_css_class("termia-notes-editor")
+        text_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        text_scroller.set_vexpand(True)
+        text_scroller.set_child(text_view)
+        editor.append(text_scroller)
+
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        configure_action_area(footer)
+        self.status_label = Gtk.Label()
+        self.status_label.set_xalign(0)
+        self.status_label.set_hexpand(True)
+        footer.append(self.status_label)
+        self.modified_label = Gtk.Label()
+        self.modified_label.add_css_class("dim-label")
+        footer.append(self.modified_label)
+        self.save_button = Gtk.Button(label=self.translate("save"))
+        self.save_button.connect("clicked", lambda *_: self.save_editor())
+        footer.append(self.save_button)
+        self.delete_button = Gtk.Button(label=self.translate("notes_delete"))
+        self.delete_button.add_css_class("destructive-action")
+        self.delete_button.connect("clicked", lambda *_: self.confirm_delete_note())
+        footer.append(self.delete_button)
+        self.close_editor_button = Gtk.Button(label=self.translate("close_tab"))
+        self.close_editor_button.connect("clicked", lambda *_: self.close_active_editor_tab())
+        footer.append(self.close_editor_button)
+        editor.append(footer)
+        editor_workspace.append(editor)
+        self.editor_workspace = editor_workspace
+        self.detail_stack.add_named(self.editor_notebook, "editor")
+        self.note_detail_inset_widgets = (self.editor_notebook, empty, editor)
+        self.update_note_detail_inset()
+
+        self.configure_write_controls()
+        self.set_editor_enabled(False)
+        self.detail_stack.set_visible_child_name("empty")
+
+    def build_editor_toolbar(self, editor: Gtk.Box) -> None:
+        settings = self.store.data.app.notes_editor
+        toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        toolbar.add_css_class("termia-notes-toolbar")
+        self.line_numbers_button = Gtk.ToggleButton(label="123")
+        self.line_numbers_button.set_focus_on_click(False)
+        self.line_numbers_button.set_tooltip_text(self.translate("notes_line_numbers"))
+        self.line_numbers_button.set_active(settings.get("line_numbers", True))
+        self.line_numbers_button.connect("toggled", self.on_line_numbers_toggled)
+        toolbar.append(self.line_numbers_button)
+        self.text_view.set_show_line_numbers(settings.get("line_numbers", True))
+        font = Gtk.ComboBoxText()
+        font.set_tooltip_text(self.translate("font_size"))
+        font.append("", self.translate("theme_system"))
+        names = sorted({family.get_name() for family in self.text_view.get_pango_context().list_families()})
+        if settings.get("font") and settings["font"] not in names:
+            names.append(settings["font"])
+        for name in names:
+            font.append(name, name)
+        for cell in font.get_cells():
+            cell.set_property("ellipsize", Pango.EllipsizeMode.END)
+            cell.set_property("width-chars", 12)
+            cell.set_property("max-width-chars", 14)
+        font.set_active_id(settings.get("font", ""))
+        font.connect("changed", lambda widget: self.update_editor_appearance({"font": widget.get_active_id() or ""}))
+        toolbar.append(font)
+        size = Gtk.SpinButton.new_with_range(6, 72, 1)
+        size.set_value(settings.get("size", 12))
+        size.set_width_chars(3)
+        size.set_tooltip_text(self.translate("font_size"))
+        size.connect("value-changed", lambda widget: self.update_editor_appearance({"size": widget.get_value_as_int()}))
+        toolbar.append(size)
+        for key, fallback in (
+            ("foreground", DEFAULT_NOTES_EDITOR_FOREGROUND),
+            ("background", DEFAULT_NOTES_EDITOR_BACKGROUND),
+        ):
+            color = Gtk.ColorButton()
+            rgba = Gdk.RGBA()
+            rgba.parse(settings.get(key) or fallback)
+            color.set_rgba(rgba)
+            color.set_title(self.translate(key))
+            color.set_tooltip_text(self.translate(key) + " · " + self.translate("notes_editor_appearance"))
+            color.connect("color-set", lambda widget, name=key: self.update_editor_appearance({name: widget.get_rgba().to_string()}))
+            toolbar.append(color)
+        self.editor_toolbar = Gtk.ScrolledWindow()
+        self.editor_toolbar.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        self.editor_toolbar.set_overlay_scrolling(False)
+        self.editor_toolbar.set_propagate_natural_height(True)
+        self.editor_toolbar.set_child(toolbar)
+        editor.append(self.editor_toolbar)
+        self.toolbar_toggle.set_active(settings.get("visible", True))
+        self.editor_toolbar.set_visible(self.toolbar_toggle.get_active())
+        self.toolbar_toggle.connect("toggled", self.on_toolbar_toggled)
+        self.editor_css_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            self.text_view.get_display(), self.editor_css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+        )
+        self.apply_editor_appearance(settings)
+
+    def on_line_numbers_toggled(self, button: Gtk.ToggleButton) -> None:
+        enabled = button.get_active()
+        self.text_view.set_show_line_numbers(enabled)
+        self.update_editor_appearance({"line_numbers": enabled})
+
+    def on_toolbar_toggled(self, button: Gtk.ToggleButton) -> None:
+        visible = button.get_active()
+        self.editor_toolbar.set_visible(visible)
+        self.update_editor_appearance({"visible": visible})
+
+    def update_editor_appearance(self, values: dict[str, Any]) -> None:
+        settings = {**self.store.data.app.notes_editor, **values}
+        # Read-only instances may customize their view without writing settings.
+        if not self.store.read_only and not self.store.encryption_locked:
+            self.store.update_notes_editor(values)
+            settings = self.store.data.app.notes_editor
+        else:
+            self.store.data.app.notes_editor = settings
+        self.apply_editor_appearance(settings)
+
+    def apply_editor_appearance(self, settings: dict[str, Any]) -> None:
+        font = settings.get("font", "").replace("\\", "\\\\").replace('"', '\\"')
+        rules = [f"font-size: {settings.get('size', 12)}pt;"]
+        if font:
+            rules.append(f'font-family: "{font}";')
+        foreground = settings.get("foreground") or DEFAULT_NOTES_EDITOR_FOREGROUND
+        rules.append(f"color: {foreground};")
+        css = ".termia-notes-editor textview {" + "".join(rules) + "}"
+        css += (
+            ".termia-notes-toolbar button {padding: 2px 5px; min-width: 20px; min-height: 22px;}"
+            ".termia-notes-toolbar spinbutton {min-height: 26px;}"
+            ".termia-notes-toolbar spinbutton button {padding: 2px; min-width: 14px;}"
+            ".termia-notes-list label {font-size: 0.9em;}"
+        )
+        background = settings.get("background") or DEFAULT_NOTES_EDITOR_BACKGROUND
+        css += ".termia-notes-editor, .termia-notes-editor textview, .termia-notes-editor textview text {background-color: " + background + ";}"
+        self.editor_css_provider.load_from_data(css.encode())
+
+    def set_notes_scope(self, mode: str, server_id: str | None = None) -> bool:
+        if mode not in ("personal", "server"):
+            return False
+        self.expanded_note_sections = getattr(
+            self, "expanded_note_sections", {"personal"}
+        )
+        self.expanded_server_groups = getattr(self, "expanded_server_groups", set())
+        if mode == "personal":
+            server_id = None
+        elif server_id and not any(
+            server.id == server_id for server in self.store.data.servers
+        ):
+            server_id = None
+        if not self.save_active_editor_if_valid():
+            return False
+        self.capture_active_editor_tab()
+        self.scope_mode = mode
+        self.server_filter_id = server_id
+        self.selected_note_id = None
+        self.selected_draft_key = None
+        if mode == "personal":
+            self.expanded_note_sections.add("personal")
+        else:
+            self.expanded_note_sections.add("servers")
+            if server_id:
+                self.expanded_server_groups = {server_id}
+            else:
+                self.expanded_server_groups.clear()
+        self.loading_search = True
+        try:
+            self.search_entry.set_text("")
+        finally:
+            self.loading_search = False
+        self.last_search_query = ""
+        self.update_creation_controls()
+        self.update_window_title(server_id if mode == "server" else None)
+        self.set_import_export_actions_visible(mode == "personal")
+        self.refresh_list()
+
+        if mode == "server" and server_id is None:
+            matching_tab = None
+        else:
+            target_server_id = server_id if mode == "server" else None
+            matching_tab = next(
+                (
+                    tab for tab in self.editor_tabs.values()
+                    if tab.server_id == target_server_id
+                ),
+                None,
+            )
+        if matching_tab is not None:
+            self.activate_editor_tab(matching_tab.key)
+        else:
+            had_active_tab = getattr(self, "active_editor_tab_key", None) is not None
+            self.active_editor_tab_key = None
+            self.current_note_id = None
+            self.editor_dirty = False
+            if had_active_tab:
+                self.loading_editor = True
+                try:
+                    self.text_view.get_buffer().set_text("")
+                    self.modified_label.set_label("")
+                    self.status_label.set_label(self.translate("notes_select_or_create"))
+                    self.set_editor_enabled(False)
+                    self.show_empty_state()
+                finally:
+                    self.loading_editor = False
+            for tab in self.editor_tabs.values():
+                self.update_editor_tab_label(tab)
+        return True
+
+    def build_creation_controls(self) -> Gtk.Box:
+        controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        controls.set_halign(Gtk.Align.START)
+        self.category_add_button = Gtk.Button(icon_name="list-add-symbolic")
+        self.category_add_button.set_tooltip_text(self.translate("notes_category_add"))
+        self.category_add_button.connect(
+            "clicked",
+            lambda *_: self.prompt_category_edit(
+                "add", server_id=self.server_filter_id if self.scope_mode == "server" else None,
+            ),
+        )
+        controls.append(self.category_add_button)
+        for icon, key, expand in (
+            ("pan-down-symbolic", "notes_expand_all", True),
+            ("pan-up-symbolic", "notes_collapse_all", False),
+        ):
+            button = Gtk.Button(icon_name=icon)
+            button.set_tooltip_text(self.translate(key))
+            button.connect("clicked", lambda _button, value=expand: self.set_all_note_groups_expanded(value))
+            controls.append(button)
+        self.update_creation_controls()
+        return controls
+
+    def set_all_note_groups_expanded(self, expanded: bool) -> None:
+        """Bulk navigation changes view state only, including in read-only mode."""
+        self.expanded_note_sections = {"personal", "servers"} if expanded else set()
+        self.expanded_server_groups = {
+            server.id for server in self.store.data.servers
+        } if expanded else set()
+        self.collapsed_note_categories = set() if expanded else {
+            (item.server_id, item.name) for item in self.store.data.note_categories
+        }
+        selected = (self.selected_note_id, self.selected_draft_key)
+        self.refresh_list(self.selected_note_id)
+        self.selected_note_id, self.selected_draft_key = selected
+
+    def update_creation_controls(self) -> None:
+        add_button = getattr(self, "add_button", None)
+        category_button = getattr(self, "category_add_button", None)
+        if add_button is None:
+            return
+        server_scope = getattr(self, "scope_mode", "personal") == "server"
+        server_id = getattr(self, "server_filter_id", None)
+        store = getattr(self, "store", None)
+        writable = not getattr(store, "read_only", False) and not getattr(
+            store, "encryption_locked", False
+        )
+        enabled = writable and (not server_scope or server_id is not None)
+        add_button.set_tooltip_text(
+            self.translate("notes_create_for_server")
+            if server_scope and server_id else self.translate("notes_create")
+        )
+        if hasattr(add_button, "set_sensitive"):
+            add_button.set_sensitive(enabled)
+        if category_button is not None and hasattr(category_button, "set_sensitive"):
+            category_button.set_sensitive(enabled)
+
+    def build_import_export_menu(self) -> Gtk.PopoverMenu:
+        """Keep menu presentation and command dispatch within the notes component."""
+        model = Gio.Menu()
+        model.append(self.translate("notes_export"), "notes-transfer.export")
+        model.append(self.translate("notes_import"), "notes-transfer.import")
+        actions = Gio.SimpleActionGroup()
+        self.export_action = Gio.SimpleAction.new("export", None)
+        self.export_action.connect(
+            "activate",
+            lambda *_: self.run_import_export_action(self.choose_export_protection),
+        )
+        actions.add_action(self.export_action)
+        self.import_action = Gio.SimpleAction.new("import", None)
+        self.import_action.connect(
+            "activate", lambda *_: self.run_import_export_action(self.start_import),
+        )
+        actions.add_action(self.import_action)
+        popover = Gtk.PopoverMenu.new_from_model(model)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(True)
+        popover.insert_action_group("notes-transfer", actions)
+        return popover
+
+    def configure_write_controls(self) -> None:
+        writable = not self.store.read_only and not self.store.encryption_locked
+        for widget in (
+            self.category_add_button,
+            self.add_button,
+            self.text_view,
+            self.save_button,
+            self.delete_button,
+        ):
+            widget.set_sensitive(writable)
+        self.set_import_export_actions_visible(self.scope_mode == "personal")
+
+    def set_import_export_actions_visible(self, visible: bool) -> None:
+        self.import_action.set_enabled(
+            visible and not self.store.read_only and not self.store.encryption_locked
+        )
+        self.export_action.set_enabled(visible and not self.store.encryption_locked)
+        self.import_export_menu_button.set_visible(visible)
+
+    def run_import_export_action(self, callback) -> None:
+        self.import_export_popover.popdown()
+        GLib.idle_add(callback)
+
+    def update_notes_list_toggle(self) -> None:
+        if not hasattr(self, "toggle_notes_list_button"):
+            return
+        self.toggle_notes_list_button.set_icon_name(
+            "sidebar-hide-symbolic" if self.notes_list_visible else "sidebar-show-symbolic"
+        )
+        self.toggle_notes_list_button.set_tooltip_text(self.translate(
+            "notes_hide_list" if self.notes_list_visible else "notes_show_list"
+        ))
+
+    def save_active_editor_if_valid(self) -> bool:
+        if not self.editor_dirty:
+            return True
+        if not hasattr(self, "text_view"):
+            return self.save_editor()
+        if self.editor_content().strip():
+            return self.save_editor()
+        self.cancel_autosave()
+        self.capture_active_editor_tab()
+        return True
+
+    def toggle_notes_list(self) -> None:
+        if self.notes_list_visible:
+            position = self.notes_list_paned.get_position()
+            if position > 64:
+                self.notes_list_width = position
+            self.notes_list_visible = False
+            self.notes_list_paned.set_start_child(None)
+        else:
+            self.notes_list_visible = True
+            self.notes_list_paned.set_start_child(self.notes_list_panel)
+            self.notes_list_paned.set_position(self.notes_list_width)
+        self.update_note_detail_inset()
+        self.update_notes_list_toggle()
+
+    def update_note_detail_inset(self) -> None:
+        inset = 6 if self.notes_list_visible else 0
+        for widget in self.note_detail_inset_widgets:
+            widget.set_margin_start(inset)
+
+    def on_search_changed(self, *_args) -> None:
+        if self.loading_search:
+            return
+        query = self.search_entry.get_text()
+        if not self.save_active_editor_if_valid():
+            self.loading_search = True
+            try:
+                self.search_entry.set_text(self.last_search_query)
+            finally:
+                self.loading_search = False
+            return
+        self.last_search_query = query
+        self.refresh_list()
+
+    def update_window_title(self, server_id: str | None) -> None:
+        if getattr(self, "scope_mode", "personal") == "personal":
+            title = self.translate("notes_title")
+        elif server_id is None:
+            title = self.translate("notes_server_scope")
+        else:
+            servers = getattr(getattr(self.store, "data", None), "servers", ())
+            server = next(
+                (item for item in servers if item.id == server_id),
+                None,
+            )
+            server_name = server.name if server else self.translate("notes_unknown_server")
+            title = self.translate("notes_for_server").format(name=server_name)
+        self.window.set_title(title)
+
+    def refresh_list(self, selected_id: str | None = None) -> None:
+        if not hasattr(self, "notes_list"):
+            return
+        was_loading = getattr(self, "loading_note_list", False)
+        self.loading_note_list = True
+        try:
+            self._refresh_note_tree(selected_id)
+        finally:
+            self.loading_note_list = was_loading
+
+    @staticmethod
+    def create_note_tree_children(node: NotesTreeNode) -> Gio.ListModel | None:
+        return node.children if node.children.get_n_items() else None
+
+    def _refresh_note_tree(self, selected_id: str | None = None) -> None:
+        self.close_note_context_menu()
+        self.close_category_context_menu()
+        selected_id = selected_id if selected_id is not None else self.selected_note_id
+        selected_draft_key = self.selected_draft_key
+        query = self.search_entry.get_text().strip()
+        tabs = tuple(self.editor_tabs.values())
+        drafts_by_scope: dict[str | None, list[NoteEditorTab]] = {}
+        for tab in tabs:
+            if tab.note_id is None:
+                drafts_by_scope.setdefault(tab.server_id, []).append(tab)
+        server_ids = {key for key in drafts_by_scope if key is not None}
+        if self.scope_mode == "server" and self.server_filter_id is not None:
+            server_ids.add(self.server_filter_id)
+        tree = self.presenter.tree(query, server_ids)
+        server_names = {server.id: server.name for server in self.store.data.servers}
+
+        def matching_drafts(scope_id: str | None) -> list[NoteEditorTab]:
+            drafts = drafts_by_scope.get(scope_id, [])
+            if not query:
+                return drafts
+            name = server_names.get(scope_id or "", "")
+            needle = query.casefold()
+            return [
+                tab for tab in drafts
+                if needle in " ".join((tab.title, tab.content, tab.category, name)).casefold()
+            ]
+
+        def categories_for(categories, scope_id: str | None) -> Gio.ListStore:
+            drafts = matching_drafts(scope_id)
+            by_name = {item.name: item for item in categories}
+            stored = {
+                item.name: item for item in self.store.data.note_categories
+                if item.server_id == scope_id
+            }
+            for tab in drafts:
+                name = tab.category or ""
+                seen = set()
+                while name not in seen:
+                    seen.add(name)
+                    if name not in by_name:
+                        item = stored.get(name)
+                        by_name[name] = NoteTreeCategory(name, (), item.parent if item else None)
+                    item = stored.get(name)
+                    if item is None or item.parent is None:
+                        break
+                    name = item.parent
+            children: dict[str | None, list[NoteTreeCategory]] = {}
+            for category in by_name.values():
+                parent = category.parent if category.parent in by_name else None
+                children.setdefault(parent, []).append(category)
+            for siblings in children.values():
+                siblings.sort(key=lambda item: (item.name != "", item.name.casefold()))
+
+            def make_category(category: NoteTreeCategory) -> NotesTreeNode:
+                own_drafts = [tab for tab in drafts if (tab.category or "") == category.name]
+                node = NotesTreeNode(
+                    "category", category.name or self.translate("notes_uncategorized"),
+                    "view-list-symbolic" if not category.name else "folder-symbolic",
+                    len(category.items) + len(own_drafts), category=category.name,
+                    server_id=scope_id,
+                )
+                for item in category.items:
+                    node.children.append(NotesTreeNode(
+                        "note", item.note.title, note_id=item.note.id,
+                        category=category.name, server_id=scope_id,
+                    ))
+                for tab in own_drafts:
+                    node.children.append(NotesTreeNode(
+                        "draft", tab.title, draft_key=tab.key,
+                        category=category.name, server_id=scope_id,
+                    ))
+                return node
+
+            model = Gio.ListStore.new(NotesTreeNode)
+            stack = [(category, model) for category in reversed(children.get(None, ()))]
+            while stack:
+                category, parent_model = stack.pop()
+                node = make_category(category)
+                parent_model.append(node)
+                stack.extend(
+                    (child, node.children)
+                    for child in reversed(children.get(category.name, ()))
+                )
+            return model
+
+        personal = NotesTreeNode(
+            "scope", self.translate("notes_personal_scope"), "avatar-default-symbolic",
+            sum(len(item.items) for item in tree.personal_categories) + len(matching_drafts(None)),
+        )
+        personal.children = categories_for(tree.personal_categories, None)
+        servers = NotesTreeNode(
+            "scope", self.translate("notes_server_scope"), "network-server-symbolic",
+            sum(len(item.items) for server in tree.servers for item in server.categories)
+            + sum(len(matching_drafts(server.id)) for server in tree.servers),
+            server_id="servers",
+        )
+        for server in tree.servers:
+            node = NotesTreeNode(
+                "server", server.name or self.translate("notes_unknown_server"),
+                "network-server-symbolic",
+                sum(len(item.items) for item in server.categories)
+                + len(matching_drafts(server.id)), server_id=server.id,
+            )
+            node.children = categories_for(server.categories, server.id)
+            servers.children.append(node)
+        root = Gio.ListStore.new(NotesTreeNode)
+        root.append(personal)
+        root.append(servers)
+        model = Gtk.TreeListModel.new(root, False, False, self.create_note_tree_children)
+        position = 0
+        while position < model.get_n_items():
+            row = model.get_row(position)
+            node = row.get_item()
+            if node.kind == "scope":
+                expanded = node.server_id in self.expanded_note_sections if node.server_id else "personal" in self.expanded_note_sections
+            elif node.kind == "server":
+                expanded = node.server_id in self.expanded_server_groups
+            elif node.kind == "category":
+                expanded = (node.server_id, node.category) not in self.collapsed_note_categories
+            else:
+                expanded = False
+            if node.children.get_n_items() and (expanded or bool(query)):
+                row.set_expanded(True)
+            position += 1
+        self.notes_tree_root = root
+        self.notes_tree_model = model
+        self._note_tree_wired_rows = set()
+        self.notes_tree_selection.set_model(model)
+        self.wire_note_tree_rows()
+        model.connect("items-changed", self.on_note_tree_items_changed)
+        selected_position = Gtk.INVALID_LIST_POSITION
+        for position in range(model.get_n_items()):
+            node = model.get_row(position).get_item()
+            if (node.note_id and node.note_id == selected_id) or (
+                node.draft_key and node.draft_key == selected_draft_key
+            ):
+                selected_position = position
+                break
+        self.notes_tree_selection.set_selected(selected_position)
+        if selected_position == Gtk.INVALID_LIST_POSITION:
+            self.selected_note_id = None
+            self.selected_draft_key = None
+        if self.active_editor_tab_key is None:
+            if selected_position == Gtk.INVALID_LIST_POSITION:
+                self.show_empty_state()
+            else:
+                self.show_idle_workspace()
+
+    def wire_note_tree_rows(self) -> bool:
+        position = 0
+        while position < self.notes_tree_model.get_n_items():
+            row = self.notes_tree_model.get_row(position)
+            if row not in self._note_tree_wired_rows:
+                row.connect("notify::expanded", self.on_note_tree_row_expanded)
+                self._note_tree_wired_rows.add(row)
+                node = row.get_item()
+                if node.kind == "category":
+                    expand = (node.server_id, node.category) not in self.collapsed_note_categories
+                elif node.kind == "server":
+                    expand = node.server_id in self.expanded_server_groups
+                elif node.kind == "scope":
+                    expand = (node.server_id or "personal") in self.expanded_note_sections
+                else:
+                    expand = False
+                if node.children.get_n_items() and (expand or self.search_entry.get_text().strip()):
+                    was_loading = self.loading_note_list
+                    self.loading_note_list = True
+                    try:
+                        row.set_expanded(True)
+                    finally:
+                        self.loading_note_list = was_loading
+            position += 1
+        return GLib.SOURCE_REMOVE
+
+    def on_note_tree_items_changed(self, *_args) -> None:
+        GLib.idle_add(self.wire_note_tree_rows)
+
+    def on_note_tree_row_expanded(self, row: Gtk.TreeListRow, *_args) -> None:
+        if self.loading_note_list:
+            return
+        node = row.get_item()
+        if node is None:
+            return
+        if self.search_entry.get_text().strip() and not row.get_expanded():
+            row.set_expanded(True)
+            return
+        if node.kind == "scope":
+            key = node.server_id or "personal"
+            (self.expanded_note_sections.add if row.get_expanded() else self.expanded_note_sections.discard)(key)
+        elif node.kind == "server":
+            (self.expanded_server_groups.add if row.get_expanded() else self.expanded_server_groups.discard)(node.server_id)
+        elif node.kind == "category":
+            key = (node.server_id, node.category)
+            (self.collapsed_note_categories.discard if row.get_expanded() else self.collapsed_note_categories.add)(key)
+
+    def setup_note_tree_item(self, _factory, list_item: Gtk.ListItem) -> None:
+        expander = Gtk.TreeExpander()
+        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        content.set_margin_start(4)
+        content.set_margin_end(8)
+        content.set_margin_top(4)
+        content.set_margin_bottom(4)
+        icon = Gtk.Image()
+        title = Gtk.Label(xalign=0)
+        title.set_ellipsize(Pango.EllipsizeMode.END)
+        title.set_hexpand(True)
+        count = Gtk.Label()
+        count.add_css_class("dim-label")
+        content.append(icon)
+        content.append(title)
+        content.append(count)
+        expander.set_child(content)
+        list_item.set_child(expander)
+        list_item.set_focusable(False)
+
+    def bind_note_tree_item(self, _factory, list_item: Gtk.ListItem) -> None:
+        row = list_item.get_item()
+        node = row.get_item()
+        expander = list_item.get_child()
+        content = expander.get_child()
+        icon = content.get_first_child()
+        title = icon.get_next_sibling()
+        count = title.get_next_sibling()
+        expander.set_list_row(row)
+        expander.set_hide_expander(node.kind in ("note", "draft"))
+        icon.set_visible(bool(node.icon_name))
+        if node.icon_name:
+            icon.set_from_icon_name(node.icon_name)
+        title.set_label(node.title)
+        title.set_tooltip_text(node.title)
+        title.remove_css_class("heading")
+        title.remove_css_class("dim-label")
+        if node.kind in ("scope", "server", "category"):
+            title.add_css_class("heading")
+        elif node.kind == "draft":
+            title.add_css_class("dim-label")
+        count.set_visible(node.kind in ("scope", "server", "category"))
+        if count.get_visible():
+            count.set_label(self.translate("notes_category_count").format(count=node.count))
+        list_item.set_selectable(node.kind in ("note", "draft"))
+        content.note_id = node.note_id
+        content.draft_key = node.draft_key
+        content._note_tree_controllers = []
+
+        def add(controller):
+            content.add_controller(controller)
+            content._note_tree_controllers.append(controller)
+
+        if node.kind == "note":
+            context = Gtk.GestureClick()
+            context.set_button(3)
+            context.connect("pressed", self.on_note_tree_context_pressed, content, node.note_id)
+            add(context)
+            source = Gtk.DragSource.new()
+            source.set_actions(Gdk.DragAction.MOVE)
+            source.connect("prepare", self.on_note_drag_prepare, node.note_id)
+            source.connect("drag-begin", self.on_note_drag_begin, content)
+            source.connect("drag-end", self.on_note_drag_end, content)
+            add(source)
+        elif node.kind in ("scope", "server", "category"):
+            click = Gtk.GestureClick()
+            click.set_button(1)
+            # A press must leave the row intact until Gtk.DragSource can claim a drag.
+            click.connect("released", self.on_note_tree_header_clicked, node)
+            add(click)
+            if node.kind == "category":
+                target = Gtk.DropTargetAsync.new(
+                    Gdk.ContentFormats.new([NOTE_ROW_DND_MIME_TYPE]), Gdk.DragAction.MOVE,
+                )
+                target.connect("accept", self.on_note_category_drop_accept)
+                target.connect("drag-motion", self.on_note_category_drop_motion, content)
+                target.connect("drag-leave", self.on_note_category_drop_leave, content)
+                target.connect("drop", self.on_note_category_drop, node.category)
+                add(target)
+            if node.kind in ("scope", "server") or (node.kind == "category" and node.category):
+                destination = (None if node.kind == "scope" and node.server_id is None
+                               else node.server_id)
+                parent = node.category if node.kind == "category" else None
+                if node.kind != "scope" or node.server_id is None:
+                    target = self.add_category_group_drop_target(content, destination, parent)
+                    content._note_tree_controllers.append(target)
+            if node.kind == "category" and node.category:
+                source = Gtk.DragSource.new()
+                source.set_actions(Gdk.DragAction.MOVE)
+                source.connect("prepare", self.on_category_group_drag_prepare, node.category, node.server_id)
+                source.connect("drag-begin", self.on_category_group_drag_begin, content)
+                source.connect("drag-end", self.on_category_group_drag_end, content)
+                add(source)
+                context = Gtk.GestureClick()
+                context.set_button(3)
+                context.connect("pressed", self.on_category_context_pressed,
+                                node.category, content, node.server_id)
+                add(context)
+                context_key = Gtk.EventControllerKey.new()
+                context_key.connect(
+                    "key-pressed", self.on_category_context_key_pressed,
+                    node.category, content, node.server_id,
+                )
+                add(context_key)
+
+    def unbind_note_tree_item(self, _factory, list_item: Gtk.ListItem) -> None:
+        expander = list_item.get_child()
+        content = expander.get_child()
+        for controller in getattr(content, "_note_tree_controllers", ()):
+            content.remove_controller(controller)
+        content._note_tree_controllers = []
+        content.note_id = None
+        content.draft_key = None
+        expander.set_list_row(None)
+
+    def on_note_tree_header_clicked(self, _gesture, clicks, _x, _y, node) -> None:
+        if clicks > 1:
+            return
+        if node.kind == "scope":
+            self.on_note_section_clicked(node.server_id or "personal")
+        elif node.kind == "server":
+            self.on_server_tree_node_clicked(node.server_id)
+        else:
+            self.toggle_note_category(node.category, node.server_id)
+
+    def on_note_tree_selected(self, _selection, _param) -> None:
+        if self.loading_note_list:
+            return
+        row = self.notes_tree_selection.get_selected_item()
+        if row is None:
+            return
+        node = row.get_item()
+        window = self.window
+
+        def apply_selection() -> bool:
+            current = self.notes_tree_selection.get_selected_item()
+            if self.window is window and current is not None and current.get_item() is node:
+                self.on_note_selected(None, node)
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(apply_selection)
+
+    def on_note_tree_activated(self, _view, position: int) -> None:
+        row = self.notes_tree_model.get_row(position)
+        if row is None:
+            return
+        node = row.get_item()
+        if node.kind in ("note", "draft"):
+            self.on_note_row_activated(None, node)
+        # TreeExpander owns header activation and disclosure-key handling.
+
+    def on_note_tree_context_pressed(self, gesture, _clicks, x, y, content, note_id) -> None:
+        if content.note_id != note_id:
+            return
+        valid, point = content.compute_point(
+            self.window.get_child(), Graphene.Point().init(x, y),
+        )
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        if not valid:
+            return
+        window = self.window
+
+        def open_menu() -> bool:
+            if self.window is not window or not window.get_visible() or self.find_note(note_id) is None:
+                return GLib.SOURCE_REMOVE
+            for position in range(self.notes_tree_model.get_n_items()):
+                node = self.notes_tree_model.get_row(position).get_item()
+                if node.note_id == note_id:
+                    self.notes_tree_selection.set_selected(position)
+                    self.on_note_selected(None, node)
+                    self.show_note_context_menu(content, point, note_id=note_id)
+                    break
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(open_menu)
+
+    def unselect_note_list(self) -> None:
+        if hasattr(self, "notes_tree_selection"):
+            self.notes_tree_selection.set_selected(Gtk.INVALID_LIST_POSITION)
+
+    def on_note_section_clicked(self, section: str) -> None:
+        if section == "personal":
+            if self.scope_mode != "personal":
+                self.set_notes_scope("personal")
+                return
+        elif self.scope_mode != "server" or self.server_filter_id is not None:
+            self.set_notes_scope("server", None)
+            return
+        self.toggle_note_section(section)
+
+    def toggle_note_section(self, section: str) -> None:
+        if section in self.expanded_note_sections:
+            self.expanded_note_sections.remove(section)
+        else:
+            self.expanded_note_sections.add(section)
+        self.refresh_list(self.selected_note_id)
+
+    def on_server_tree_node_clicked(self, server_id: str) -> None:
+        expanded = server_id in self.expanded_server_groups
+        if self.scope_mode != "server" or self.server_filter_id != server_id:
+            if expanded:
+                self.expanded_server_groups.discard(server_id)
+            else:
+                self.expanded_server_groups = {server_id}
+            self.set_notes_scope("server", server_id)
+            return
+        if expanded:
+            self.expanded_server_groups.discard(server_id)
+        else:
+            self.expanded_server_groups = {server_id}
+        self.refresh_list(self.selected_note_id)
+
+    def add_category_group_drop_target(self, button, server_id, parent) -> None:
+        target = Gtk.DropTargetAsync.new(
+            Gdk.ContentFormats.new([NOTE_CATEGORY_DND_MIME_TYPE]), Gdk.DragAction.MOVE,
+        )
+        target.connect("accept", self.on_category_group_drop_accept, server_id, parent)
+        target.connect("drag-motion", self.on_category_group_drop_motion, button, server_id, parent)
+        target.connect("drag-leave", self.on_note_category_drop_leave, button)
+        target.connect("drop", self.on_category_group_drop, server_id, parent)
+        button.add_controller(target)
+        return target
+
+    def on_category_group_drag_prepare(self, _source, _x, _y, name, server_id):
+        if self.store.read_only or self.store.encryption_locked:
+            return None
+        if not self.store.has_note_category(name, server_id):
+            return None
+        self.category_group_drag_origin = (server_id, name)
+        self.category_group_drag_token = str(uuid4())
+        return Gdk.ContentProvider.new_for_bytes(
+            NOTE_CATEGORY_DND_MIME_TYPE,
+            GLib.Bytes.new(self.category_group_drag_token.encode("utf-8")),
+        )
+
+    def on_category_group_drag_begin(self, source, drag, button) -> None:
+        self.category_group_drag = drag
+        self.pending_note_drop = None
+        button.add_css_class("dragging")
+        source.set_icon(Gtk.WidgetPaintable.new(button), 0, 0)
+
+    def on_category_group_drag_end(self, _source, _drag, _delete_data, button) -> None:
+        button.remove_css_class("dragging")
+        self.category_group_drag = None
+        self.category_group_drag_origin = None
+        self.category_group_drag_token = None
+
+    def on_category_group_drop_accept(self, _target, drop, server_id, parent) -> bool:
+        origin = getattr(self, "category_group_drag_origin", None)
+        return bool(
+            origin is not None and origin[0] == server_id
+            and not self.store.read_only and not self.store.encryption_locked
+            and getattr(self, "category_group_drag", None) is not None
+            and drop.get_drag() == self.category_group_drag
+            and drop.get_formats().contain_mime_type(NOTE_CATEGORY_DND_MIME_TYPE)
+            and note_category_move_allowed(self.store.data.note_categories, origin[1], parent, server_id)
+        )
+
+    def on_category_group_drop_motion(self, target, drop, _x, _y, button, server_id, parent):
+        accepted = self.on_category_group_drop_accept(target, drop, server_id, parent)
+        if accepted:
+            button.add_css_class("drop-target")
+        else:
+            button.remove_css_class("drop-target")
+        return Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0)
+
+    def on_category_group_drop(self, target, drop, _x, _y, server_id, parent) -> bool:
+        if not self.on_category_group_drop_accept(target, drop, server_id, parent):
+            return False
+        self.read_private_note_drop(
+            drop, NOTE_CATEGORY_DND_MIME_TYPE, self.category_group_drag_token,
+            (server_id, self.category_group_drag_origin[1], parent),
+        )
+        return True
+
+    def move_category_group(self, server_id, name, parent) -> bool:
+        if not self.ensure_writable():
+            return False
+        try:
+            self.store.move_note_category(name, parent, server_id)
+        except (NoteError, OSError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return False
+        # Reveal the new location without touching any editor contents or tabs.
+        if server_id is None:
+            self.expanded_note_sections.add("personal")
+        else:
+            self.expanded_note_sections.add("servers")
+            self.expanded_server_groups.add(server_id)
+        parents = {item.name: item.parent for item in self.store.data.note_categories
+                   if item.server_id == server_id}
+        while parent is not None:
+            self.collapsed_note_categories.discard((server_id, parent))
+            parent = parents.get(parent)
+        self.refresh_list(self.selected_note_id)
+        return True
+
+    def on_note_drag_prepare(
+        self, _source: Gtk.DragSource, _x: float, _y: float, note_id: str
+    ) -> Gdk.ContentProvider | None:
+        if self.find_note(note_id) is None or self.store.read_only or self.store.encryption_locked:
+            return None
+        return Gdk.ContentProvider.new_for_bytes(
+            NOTE_ROW_DND_MIME_TYPE, GLib.Bytes.new(note_id.encode("utf-8"))
+        )
+
+    def on_note_drag_begin(
+        self, source: Gtk.DragSource, _drag: Gdk.Drag, row: Gtk.Widget
+    ) -> None:
+        self.note_row_drag_id = row.note_id
+        self.note_row_drag = _drag
+        self.pending_note_drop = None
+        row.add_css_class("dragging")
+        source.set_icon(
+            Gtk.WidgetPaintable.new(row),
+            row.get_allocated_width() // 2,
+            row.get_allocated_height() // 2,
+        )
+
+    def on_note_drag_end(
+        self, _source: Gtk.DragSource, _drag: Gdk.Drag,
+        _delete_data: bool, row: Gtk.Widget,
+    ) -> None:
+        row.remove_css_class("dragging")
+        self.note_row_drag_id = None
+        self.note_row_drag = None
+
+    def on_note_category_drop_accept(self, _target: Gtk.DropTargetAsync, drop: Gdk.Drop) -> bool:
+        note_id = getattr(self, "note_row_drag_id", None)
+        return bool(
+            note_id is not None and self.find_note(note_id) is not None
+            and not self.store.read_only and not self.store.encryption_locked
+            and getattr(self, "note_row_drag", None) is not None
+            and drop.get_drag() == self.note_row_drag
+            and drop.get_formats().contain_mime_type(NOTE_ROW_DND_MIME_TYPE)
+        )
+
+    def on_note_category_drop_motion(
+        self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, _x: float, _y: float, button: Gtk.Button
+    ) -> Gdk.DragAction:
+        if not self.on_note_category_drop_accept(target, drop):
+            button.remove_css_class("drop-target")
+            return Gdk.DragAction(0)
+        button.add_css_class("drop-target")
+        return Gdk.DragAction.MOVE
+
+    def on_note_category_drop_leave(
+        self, _target: Gtk.DropTargetAsync, _drop: Gdk.Drop, button: Gtk.Button
+    ) -> None:
+        button.remove_css_class("drop-target")
+
+    def on_note_category_drop(
+        self, target: Gtk.DropTargetAsync, drop: Gdk.Drop, _x: float, _y: float,
+        category: str,
+    ) -> bool:
+        if not self.on_note_category_drop_accept(target, drop):
+            return False
+        self.read_private_note_drop(drop, NOTE_ROW_DND_MIME_TYPE, self.note_row_drag_id, category)
+        return True
+
+    def read_private_note_drop(self, drop, mime_type: str, expected_id: str, destination) -> None:
+        # Capture accepted drag state: drag-end can run before asynchronous reads finish.
+        token = object()
+        self.pending_note_drop = token
+        context = (drop, mime_type, expected_id, destination, self.window, token)
+        drop.read_async(
+            [mime_type], GLib.PRIORITY_DEFAULT, None, self.on_private_note_drop_read, context
+        )
+
+    def on_private_note_drop_read(self, drop, result, context) -> None:
+        try:
+            stream, mime_type = drop.read_finish(result)
+        except GLib.Error:
+            self.finish_private_note_drop(context, False)
+            return
+        if stream is None or mime_type != context[1]:
+            if stream is not None:
+                stream.close_async(GLib.PRIORITY_DEFAULT, None, None)
+            self.finish_private_note_drop(context, False)
+            return
+        stream.read_bytes_async(
+            256, GLib.PRIORITY_DEFAULT, None, self.on_private_note_drop_bytes_read, context
+        )
+
+    def on_private_note_drop_bytes_read(self, stream, result, context) -> None:
+        _drop, mime_type, expected_id, destination, window, token = context
+        try:
+            received_id = stream.read_bytes_finish(result).get_data().decode("utf-8")
+        except (GLib.Error, UnicodeError):
+            received_id = None
+        finally:
+            stream.close_async(GLib.PRIORITY_DEFAULT, None, None)
+        accepted = bool(
+            getattr(self, "pending_note_drop", None) is token
+            and received_id == expected_id and self.window is window
+            and window is not None and window.get_visible()
+            and not self.store.encryption_locked
+        )
+        if accepted and mime_type == NOTE_CATEGORY_DND_MIME_TYPE:
+            accepted = not self.store.read_only and self.move_category_group(*destination)
+        elif accepted and mime_type == NOTE_ROW_DND_MIME_TYPE:
+            accepted = (
+                not self.store.read_only and self.find_note(expected_id) is not None
+                and self.move_note_to_category(expected_id, destination)
+            )
+        else:
+            accepted = False
+        self.finish_private_note_drop(context, accepted)
+
+    def finish_private_note_drop(self, context, accepted: bool) -> None:
+        drop, _mime_type, _expected_id, _destination, _window, token = context
+        if getattr(self, "pending_note_drop", None) is token:
+            self.pending_note_drop = None
+        drop.finish(Gdk.DragAction.MOVE if accepted else Gdk.DragAction(0))
+
+    def move_note_to_category(self, note_id: str, category: str) -> bool:
+        if not self.ensure_writable():
+            return False
+        if self.editor_dirty:
+            if self.editor_content().strip():
+                if not self.save_editor(refresh=False):
+                    return False
+            else:
+                self.cancel_autosave()
+                self.capture_active_editor_tab()
+        note = self.find_note(note_id)
+        if note is None:
+            return False
+        if category and not self.store.has_note_category(category, note.server_id):
+            return False
+        if note.category == category:
+            return True
+        try:
+            self.store.update_note(
+                note.id, note.title, note.content, category, note.server_id
+            )
+        except (NoteError, OSError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return False
+        updated_note = self.find_note(note.id)
+        for tab in self.editor_tabs.values():
+            if tab.note_id == note.id:
+                tab.category = category
+        if updated_note is not None and self.current_note_id == note.id:
+            self.modified_label.set_label(
+                self.translate("notes_modified").format(
+                    date=format_note_timestamp(updated_note.modified_at)
+                )
+            )
+        self.refresh_list(note.id)
+        display_category = category or self.translate("notes_uncategorized")
+        self.show_toast(
+            self.translate("notes_moved_to_category").format(category=display_category)
+        )
+        return True
+
+    def toggle_note_category(
+        self, category: str, scope_id: str | None = None,
+    ) -> None:
+        target_mode = "server" if scope_id else "personal"
+        if (
+            getattr(self, "scope_mode", "personal") != target_mode
+            or self.server_filter_id != (scope_id if scope_id else None)
+        ):
+            self.set_notes_scope(target_mode, scope_id)
+            return
+        key = (scope_id, category or "")
+        if key in self.collapsed_note_categories:
+            self.collapsed_note_categories.remove(key)
+        else:
+            self.collapsed_note_categories.add(key)
+        self.refresh_list(self.selected_note_id)
+
+    def on_category_context_pressed(
+        self, gesture: Gtk.GestureClick, _presses: int, x: float, y: float,
+        category: str, button: Gtk.Button, server_id: str | None = None,
+    ) -> None:
+        self.show_category_context_menu(category, button, server_id, (x, y))
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+
+    def on_category_context_key_pressed(
+        self, _controller: Gtk.EventControllerKey, keyval: int, _keycode: int,
+        state: Gdk.ModifierType, category: str, button: Gtk.Button,
+        server_id: str | None = None,
+    ) -> bool:
+        if keyval == Gdk.KEY_Menu or (
+            keyval == Gdk.KEY_F10 and state & Gdk.ModifierType.SHIFT_MASK
+        ):
+            self.show_category_context_menu(category, button, server_id)
+            return True
+        return False
+
+    def show_category_context_menu(
+        self, category: str, button: Gtk.Button, server_id: str | None = None,
+        position: tuple[float, float] | None = None,
+    ) -> None:
+        if not self.store.has_note_category(category, server_id):
+            return
+        valid, point = button.compute_point(
+            self.window.get_child(), Graphene.Point().init(
+                *(position if position is not None else
+                  (button.get_width() / 2, button.get_height() / 2)),
+            ),
+        )
+        if not valid:
+            return
+        self.close_category_context_menu()
+        popover = getattr(self, "_category_context_menu", None)
+        if popover is None:
+            popover = self.build_category_context_menu()
+            self._category_context_menu = popover
+        model = Gio.Menu()
+        for action, label_key in (
+            ("rename", "notes_category_rename"),
+            ("duplicate", "notes_category_duplicate"),
+            ("delete", "notes_category_delete"),
+        ):
+            model.append(self.translate(label_key), f"note-category.{action}")
+            self._category_context_actions[action].set_enabled(
+                not self.store.read_only and not self.store.encryption_locked,
+            )
+        popover.set_menu_model(model)
+        self._category_context_menu_target = (category, server_id, self.window)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(point.x), int(point.y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
+        self.category_context_popover = popover
+        popover.popup()
+
+    def build_category_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        self._category_context_actions = {}
+
+        def activate_action(_action, _parameter, name) -> None:
+            target = self._category_context_menu_target
+            self._category_context_menu_target = None
+            if target is not None:
+                category, server_id, window = target
+                if self.window is window:
+                    self.on_category_context_action(name, category, server_id)
+
+        for name in ("rename", "duplicate", "delete"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", activate_action, name)
+            actions.add_action(action)
+            self._category_context_actions[name] = action
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.insert_action_group("note-category", actions)
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_category_context_menu_closed)
+        # Category buttons are replaced when the tree is rebuilt.
+        popover.set_parent(self.window.get_child())
+        return popover
+
+    def on_category_context_menu_closed(self, popover: Gtk.Popover) -> None:
+        if self.category_context_popover is popover:
+            self.category_context_popover = None
+        target = self._category_context_menu_target
+
+        def clear_target() -> bool:
+            if self._category_context_menu_target is target:
+                self._category_context_menu_target = None
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(clear_target)
+
+    def close_category_context_menu(self) -> None:
+        popover = getattr(self, "category_context_popover", None)
+        if popover is None:
+            return
+        self.category_context_popover = None
+        popover.popdown()
+
+    def dispose_category_context_menu(self) -> None:
+        self.close_category_context_menu()
+        self._category_context_menu_target = None
+        popover = getattr(self, "_category_context_menu", None)
+        if popover is not None:
+            popover.insert_action_group("note-category", None)
+            popover.unparent()
+            self._category_context_menu = None
+            self._category_context_actions = {}
+
+    def on_category_context_action(
+        self, action: str, category: str, server_id: str | None = None,
+    ) -> None:
+        window = self.window
+        self.close_category_context_menu()
+
+        def dispatch_if_current() -> bool:
+            if (
+                self.window is not window or window is None
+                or not window.get_visible()
+                or self.notes_list_panel.get_root() is not window
+                or self.store.read_only or self.store.encryption_locked
+                or not self.store.has_note_category(category, server_id)
+            ):
+                return GLib.SOURCE_REMOVE
+            if action in ("rename", "duplicate"):
+                self.prompt_category_edit(action, category, server_id)
+            elif action == "delete":
+                self.confirm_delete_category(category, server_id)
+            return GLib.SOURCE_REMOVE
+
+        GLib.timeout_add(100, dispatch_if_current)
+
+    def on_note_selected(self, _view: Gtk.ListView | None, row: NotesTreeNode | None) -> None:
+        if row is None:
+            return
+        if self.loading_note_list:
+            return
+        draft_key = getattr(row, "draft_key", None)
+        if draft_key:
+            if draft_key == getattr(self, "selected_draft_key", None):
+                return
+            self.selected_note_id = None
+            self.selected_draft_key = draft_key
+            self.activate_editor_tab(draft_key)
+            return
+        note_id = getattr(row, "note_id", None)
+        if not note_id or note_id == self.selected_note_id:
+            return
+        note = self.find_note(note_id)
+        if note is None:
+            return
+        target_mode = "server" if note.server_id else "personal"
+        if (
+            getattr(self, "scope_mode", "personal") != target_mode
+            or self.server_filter_id != (note.server_id if note.server_id else None)
+        ):
+            self.set_notes_scope(target_mode, note.server_id)
+        self.selected_note_id = note.id
+        self.selected_draft_key = None
+        if getattr(self, "active_editor_tab_key", None) is None:
+            self.show_idle_workspace()
+
+    def on_note_row_activated(
+        self, _view: Gtk.ListView | None, row: NotesTreeNode,
+    ) -> None:
+        draft_key = getattr(row, "draft_key", None)
+        if draft_key:
+            self.activate_editor_tab(draft_key)
+            return
+        note_id = getattr(row, "note_id", None)
+        note = self.find_note(note_id) if note_id else None
+        if note is not None:
+            self.load_editor(note)
+
+    def show_note_context_menu(
+        self, row: Gtk.Widget, point: Graphene.Point | None = None,
+        *, note_id: str | None = None,
+    ) -> None:
+        note = self.find_note(note_id or getattr(row, "note_id", None))
+        if note is None:
+            return
+        if point is None:
+            valid, point = row.compute_point(
+                self.window.get_child(),
+                Graphene.Point().init(row.get_width() / 2, row.get_height() / 2),
+            )
+            if not valid:
+                return
+        self.close_note_context_menu()
+        popover = getattr(self, "_note_context_menu", None)
+        if popover is None:
+            popover = self.build_note_context_menu()
+            self._note_context_menu = popover
+        model = Gio.Menu()
+        for action, label_key in (
+            ("edit", "notes_edit"),
+            ("rename", "notes_rename"),
+            ("clone", "notes_clone"),
+            ("properties", "notes_properties"),
+            ("delete", "notes_delete"),
+        ):
+            model.append(self.translate(label_key), f"note-list.{action}")
+            self._note_context_actions[action].set_enabled(
+                not self.store.encryption_locked
+                and (action == "properties" or not self.store.read_only)
+            )
+        popover.set_menu_model(model)
+        self._note_context_menu_target = (note.id, self.window)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(point.x), int(point.y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
+        self.notes_context_popover = popover
+        popover.popup()
+
+    def build_note_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        self._note_context_actions = {}
+
+        def activate_action(_action, _parameter, name) -> None:
+            target = self._note_context_menu_target
+            self._note_context_menu_target = None
+            if target is not None:
+                note_id, window = target
+                if self.window is window and self.find_note(note_id) is not None:
+                    self.on_note_context_action(name, note_id)
+
+        for name in ("edit", "rename", "clone", "properties", "delete"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", activate_action, name)
+            actions.add_action(action)
+            self._note_context_actions[name] = action
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.insert_action_group("note-list", actions)
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_note_context_menu_closed)
+        # Rows are rebuilt and the list panel can be hidden; the workspace
+        # content persists until the Notes window is shut down.
+        popover.set_parent(self.window.get_child())
+        return popover
+
+    def on_note_context_menu_closed(self, popover: Gtk.Popover) -> None:
+        if self.notes_context_popover is popover:
+            self.notes_context_popover = None
+        target = self._note_context_menu_target
+
+        def clear_target() -> bool:
+            if self._note_context_menu_target is target:
+                self._note_context_menu_target = None
+            return GLib.SOURCE_REMOVE
+
+        # GTK closes native entries before dispatching their action.
+        GLib.idle_add(clear_target)
+
+    def close_note_context_menu(self) -> None:
+        popover = getattr(self, "notes_context_popover", None)
+        if popover is None:
+            return
+        self.notes_context_popover = None
+        popover.popdown()
+
+    def dispose_note_context_menu(self) -> None:
+        self.close_note_context_menu()
+        self._note_context_menu_target = None
+        popover = getattr(self, "_note_context_menu", None)
+        if popover is not None:
+            popover.insert_action_group("note-list", None)
+            popover.unparent()
+            self._note_context_menu = None
+            self._note_context_actions = {}
+
+    def on_note_context_action(self, action: str, note_id: str) -> None:
+        window = self.window
+        self.close_note_context_menu()
+
+        def dispatch_if_current() -> bool:
+            # Saving replaces Note objects; the persisted ID is their identity.
+            note = self.find_note(note_id)
+            if (
+                note is None
+                or self.window is not window or window is None
+                or not window.get_visible()
+                or self.notes_list_panel.get_root() is not window
+                or self.store.encryption_locked
+                or (action != "properties" and self.store.read_only)
+            ):
+                return GLib.SOURCE_REMOVE
+            if action == "edit":
+                self.load_editor(note)
+            elif action == "clone":
+                self.clone_note(note_id)
+            elif action == "rename":
+                self.prompt_note_rename(note_id)
+            elif action == "properties":
+                self.show_note_properties(note_id)
+            elif action == "delete":
+                self.confirm_delete_note(note_id)
+            return GLib.SOURCE_REMOVE
+
+        # Release the popup's input grab before editing or opening a dialog.
+        GLib.timeout_add(100, dispatch_if_current)
+
+    def note_property_rows(self, note: Note) -> list[tuple[str, str]]:
+        server_name = self.translate("notes_standalone")
+        if note.server_id:
+            server_name = next(
+                (server.name for server in self.store.data.servers if server.id == note.server_id),
+                self.translate("notes_unknown_server"),
+            )
+        line_count = len(note.content.splitlines())
+        if note.content.endswith(("\n", "\r")):
+            line_count += 1
+        created = format_note_timestamp(note.created_at) or "—"
+        modified = format_note_timestamp(note.modified_at) or "—"
+        return [
+            (self.translate("name"), note.title),
+            (
+                self.translate("notes_category"),
+                note.category or self.translate("notes_uncategorized"),
+            ),
+            (self.translate("notes_association"), server_name),
+            (self.translate("notes_property_created"), created),
+            (self.translate("notes_property_modified"), modified),
+            (self.translate("notes_property_lines"), str(line_count)),
+            (self.translate("notes_property_characters"), str(len(note.content))),
+            (
+                self.translate("notes_property_size"),
+                self.translate("notes_property_bytes").format(
+                    count=len(note.content.encode("utf-8"))
+                ),
+            ),
+        ]
+
+    def show_note_properties(self, note_id: str) -> None:
+        note = self.find_note(note_id)
+        if note is None:
+            return
+        dialog = Gtk.Window(
+            title=self.translate("notes_properties"),
+            transient_for=self.window,
+            modal=False,
+        )
+        dialog.set_resizable(False)
+        dialog.add_css_class("termia-note-properties")
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        content.set_margin_top(6)
+        content.set_margin_bottom(6)
+        content.set_margin_start(10)
+        content.set_margin_end(10)
+        content.set_vexpand(False)
+        details = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        details.add_css_class("termia-note-properties-content")
+        grid = Gtk.Grid(column_spacing=12, row_spacing=4)
+        for index, (name, value) in enumerate(self.note_property_rows(note)):
+            name_label = Gtk.Label(label=name)
+            name_label.set_xalign(0)
+            name_label.set_valign(Gtk.Align.START)
+            name_label.set_wrap(True)
+            name_label.set_max_width_chars(20)
+            name_label.add_css_class("dim-label")
+            value_label = Gtk.Label(label=value)
+            value_label.set_xalign(0)
+            value_label.set_wrap(True)
+            value_label.set_max_width_chars(40)
+            grid.attach(name_label, 0, index, 1, 1)
+            grid.attach(value_label, 1, index, 1, 1)
+        details.append(grid)
+        content.append(details)
+        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        actions.set_halign(Gtk.Align.END)
+        close_button = Gtk.Button(label=self.translate("close"))
+        close_button.connect("clicked", lambda *_: dialog.destroy())
+        actions.append(close_button)
+        configure_action_area(actions)
+        content.append(actions)
+        dialog.set_child(content)
+        dialog.set_size_request(440, -1)
+        dialog.present()
+
+    def on_note_tab_context_pressed(
+        self, gesture: Gtk.GestureClick, _presses: int, x: float, y: float,
+        key: str,
+    ) -> None:
+        self.show_note_tab_context_menu(key, x, y)
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+
+    def show_note_tab_context_menu(
+        self, key: str, x: float | None = None, y: float | None = None,
+    ) -> None:
+        tab = self.editor_tabs.get(key)
+        if tab is None or tab.container_widget is None:
+            return
+        parent = tab.container_widget
+        point = Graphene.Point().init(
+            x if x is not None else parent.get_width() / 2,
+            y if y is not None else parent.get_height() / 2,
+        )
+        valid, point = parent.compute_point(self.editor_tabs_bar, point)
+        if not valid:
+            return
+        self.close_note_tab_context_menu()
+        popover = getattr(self, "_note_tab_menu", None)
+        if popover is None:
+            popover = self.build_note_tab_context_menu()
+            self._note_tab_menu = popover
+        model = Gio.Menu()
+        model.append(self.translate("notes_rename"), "note-tab.rename")
+        popover.set_menu_model(model)
+        self._note_tab_menu_target = (key, tab, parent, self.window)
+        self._note_tab_rename_action.set_enabled(
+            not self.store.read_only and not self.store.encryption_locked
+        )
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = int(point.x), int(point.y)
+        rect.width = rect.height = 1
+        popover.set_pointing_to(rect)
+        self.tab_context_popover = popover
+        popover.popup()
+
+    def build_note_tab_context_menu(self) -> Gtk.PopoverMenu:
+        actions = Gio.SimpleActionGroup()
+        rename = Gio.SimpleAction.new("rename", None)
+
+        def activate_rename(*_args) -> None:
+            target = self._note_tab_menu_target
+            self._note_tab_menu_target = None
+            if target is None:
+                return
+            key, tab, parent, window = target
+            if (
+                self.editor_tabs.get(key) is tab
+                and tab.container_widget is parent
+                and self.window is window
+            ):
+                self.on_note_tab_rename_action(key)
+
+        rename.connect("activate", activate_rename)
+        actions.add_action(rename)
+        self._note_tab_rename_action = rename
+        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover.add_css_class("termia-menu-popover")
+        popover.set_has_arrow(False)
+        popover.insert_action_group("note-tab", actions)
+        popover.set_position(Gtk.PositionType.BOTTOM)
+        popover.connect("closed", self.on_note_tab_context_menu_closed)
+        # One native popup belongs to the Notes workspace, not to a tab that
+        # can be removed while GTK is returning focus from its rename dialog.
+        popover.set_parent(self.editor_tabs_bar)
+        return popover
+
+    def on_note_tab_rename_action(self, key: str) -> None:
+        tab = self.editor_tabs.get(key)
+        parent = tab.container_widget if tab is not None else None
+        window = self.window
+        self.close_note_tab_context_menu()
+
+        def rename_if_current() -> bool:
+            if (
+                tab is not None
+                and self.editor_tabs.get(key) is tab
+                and tab.container_widget is parent
+                and parent is not None
+                and self.window is window
+                and window is not None
+                and window.get_visible()
+                and parent.get_root() is window
+                and not self.store.read_only
+                and not self.store.encryption_locked
+            ):
+                self.prompt_editor_tab_rename(key)
+            return GLib.SOURCE_REMOVE
+
+        # Let GTK release the closing popup's input grab before opening a dialog.
+        GLib.timeout_add(100, rename_if_current)
+
+    def on_note_tab_context_menu_closed(self, popover: Gtk.Popover) -> None:
+        if self.tab_context_popover is popover:
+            self.tab_context_popover = None
+        target = self._note_tab_menu_target
+
+        def clear_target() -> bool:
+            # Native entries close before activating their action. A newer
+            # opening must retain its own target when this callback runs.
+            if self._note_tab_menu_target is target:
+                self._note_tab_menu_target = None
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(clear_target)
+
+    def close_note_tab_context_menu(self) -> None:
+        popover = getattr(self, "tab_context_popover", None)
+        if popover is None:
+            return
+        self.tab_context_popover = None
+        popover.popdown()
+
+    def dispose_note_tab_context_menu(self) -> None:
+        self.close_note_tab_context_menu()
+        self._note_tab_menu_target = None
+        popover = getattr(self, "_note_tab_menu", None)
+        if popover is not None:
+            popover.insert_action_group("note-tab", None)
+            popover.unparent()
+            self._note_tab_menu = None
+
+    def show_note_rename_dialog(self, title: str, response_callback, *callback_args) -> None:
+        dialog = Gtk.Dialog(
+            title=self.translate("notes_rename"), transient_for=self.window, modal=True
+        )
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("save"), Gtk.ResponseType.OK,
+        )
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        content = dialog.get_content_area()
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+        entry = Gtk.Entry()
+        entry.set_text(title)
+        entry.set_activates_default(True)
+        content.append(entry)
+        dialog.connect("response", response_callback, entry, *callback_args)
+        dialog.present()
+        entry.grab_focus()
+        entry.select_region(0, -1)
+
+    def prompt_note_rename(self, note_id: str) -> None:
+        if not self.ensure_writable() or not self.save_active_editor_if_valid():
+            return
+        note = self.find_note(note_id)
+        if note is not None:
+            self.show_note_rename_dialog(
+                note.title, self.on_note_rename_response, note.id
+            )
+
+    def on_note_rename_response(
+        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry, note_id: str
+    ) -> None:
+        title = entry.get_text().strip()
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK:
+            return
+        if not title:
+            self.show_error(self.translate("notes_title_required"))
+            return
+        if not self.save_active_editor_if_valid():
+            return
+        note = self.find_note(note_id)
+        if note is None:
+            return
+        self.persist_note_title(note, title)
+
+    def prompt_editor_tab_rename(self, key: str) -> None:
+        if not self.ensure_writable():
+            return
+        tab = self.editor_tabs.get(key)
+        if tab is not None:
+            self.show_note_rename_dialog(
+                tab.title, self.on_editor_tab_rename_response, tab.key
+            )
+
+    def on_editor_tab_rename_response(
+        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry, key: str
+    ) -> None:
+        title = entry.get_text().strip()
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK:
+            return
+        if not title:
+            self.show_error(self.translate("notes_title_required"))
+            return
+        tab = self.editor_tabs.get(key)
+        if tab is None:
+            return
+        if tab.note_id is not None:
+            if not self.save_active_editor_if_valid():
+                return
+            note = self.find_note(tab.note_id)
+            if note is not None:
+                self.persist_note_title(note, title)
+            return
+        tab.title = title
+        if tab.content.strip():
+            tab.dirty = True
+            if key == self.active_editor_tab_key:
+                self.editor_dirty = True
+                self.schedule_autosave()
+        self.update_editor_tab_label(tab)
+
+    def persist_note_title(self, note: Note, title: str) -> None:
+        try:
+            self.store.update_note(
+                note.id, title, note.content, note.category, note.server_id
+            )
+        except (NoteError, OSError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return
+        updated = self.find_note(note.id)
+        if updated is None:
+            return
+        for tab in self.editor_tabs.values():
+            if tab.note_id == updated.id:
+                tab.title = updated.title
+                self.update_editor_tab_label(tab)
+        self.refresh_list(updated.id)
+        self.show_toast(self.translate("notes_renamed"))
+
+    def clone_note(self, note_id: str) -> None:
+        if not self.ensure_writable():
+            return
+        if not self.save_active_editor_if_valid():
+            return
+        note = self.find_note(note_id)
+        if note is None:
+            return
+        title = note.title + self.translate("notes_clone_suffix")
+        try:
+            cloned = self.store.add_note(
+                title, note.content, note.category, note.server_id,
+            )
+        except (NoteError, OSError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return
+        self.selected_note_id = cloned.id
+        self.refresh_list(cloned.id)
+        self.show_toast(self.translate("notes_clone_success"))
+
+    def find_note(self, note_id: str) -> Note | None:
+        return next((note for note in self.store.data.notes if note.id == note_id), None)
+
+    def show_idle_workspace(self) -> None:
+        self.empty_label.set_label(self.translate("notes_double_click_to_open"))
+        self.detail_stack.set_visible_child_name("empty")
+
+    def show_empty_state(self) -> None:
+        if self.search_entry.get_text():
+            message = self.translate("notes_empty")
+        elif getattr(self, "scope_mode", "personal") == "server" and self.server_filter_id is None:
+            message = self.translate("notes_choose_server_empty")
+        elif getattr(self, "scope_mode", "personal") == "server":
+            message = self.translate("notes_empty_server")
+        else:
+            message = self.translate("notes_empty_personal")
+        self.empty_label.set_label(message)
+        self.detail_stack.set_visible_child_name("empty")
+
+    def load_editor(self, note: Note) -> None:
+        if self.store.encryption_locked:
+            self.ensure_writable()
+            return
+        existing = next((tab for tab in self.editor_tabs.values() if tab.note_id == note.id), None)
+        if existing is not None:
+            self.activate_editor_tab(existing.key)
+            return
+        tab = NoteEditorTab(
+            key=note.id,
+            note_id=note.id,
+            title=note.title,
+            category=note.category,
+            server_id=note.server_id,
+            content=note.content,
+            status=self.translate("notes_saved"),
+        )
+        self.add_editor_tab(tab)
+        self.activate_editor_tab(tab.key)
+
+    def create_editor_tab(self) -> None:
+        key = f"draft-{uuid4().hex}"
+        scope_mode = getattr(self, "scope_mode", "personal")
+        server_id = self.server_filter_id if scope_mode == "server" else None
+        tab = NoteEditorTab(
+            key=key,
+            note_id=None,
+            title=self.next_note_title(server_id),
+            category="",
+            server_id=server_id,
+            content="",
+            status=self.translate("notes_start_typing"),
+        )
+        self.add_editor_tab(tab)
+        self.activate_editor_tab(tab.key)
+        self.selected_note_id = None
+        self.selected_draft_key = tab.key
+        if server_id is None:
+            self.expanded_note_sections.add("personal")
+        else:
+            self.expanded_note_sections.add("servers")
+            self.expanded_server_groups = {server_id}
+        self.loading_note_list = True
+        try:
+            self.unselect_note_list()
+        finally:
+            self.loading_note_list = False
+        self.refresh_list()
+
+    def next_note_title(self, server_id: str | None) -> str:
+        base = self.translate("notes_new_tab")
+        existing = {
+            note.title.casefold()
+            for note in self.store.data.notes
+            if note.server_id == (server_id or None)
+        }
+        existing.update(
+            tab.title.casefold()
+            for tab in self.editor_tabs.values()
+            if tab.server_id == (server_id or None)
+        )
+        if base.casefold() not in existing:
+            return base
+        suffix = 2
+        while f"{base} {suffix}".casefold() in existing:
+            suffix += 1
+        return f"{base} {suffix}"
+
+    def add_editor_tab(self, tab: NoteEditorTab) -> None:
+        self.editor_tabs[tab.key] = tab
+        tab_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        tab_box.set_hexpand(False)
+        tab_box.set_size_request(150, -1)
+        tab_box.set_focusable(True)
+        scope_icon = Gtk.Image.new_from_icon_name(
+            "network-server-symbolic" if tab.server_id else "avatar-default-symbolic"
+        )
+        scope_icon.add_css_class("dim-label")
+        scope_icon.set_can_target(False)
+        label = Gtk.Label()
+        label.add_css_class("termia-tab-title")
+        label.set_hexpand(True)
+        label.set_ellipsize(3)
+        label.set_width_chars(10)
+        label.set_max_width_chars(14)
+        label.set_can_target(False)
+        close_button = Gtk.Button(icon_name="window-close-symbolic")
+        close_button.add_css_class("termia-tab-close")
+        close_button.set_has_frame(False)
+        close_button.set_tooltip_text(self.translate("notes_close_tab"))
+        close_button.connect("clicked", lambda _button, key=tab.key: self.close_editor_tab(key))
+        right_click = Gtk.GestureClick.new()
+        right_click.set_button(3)
+        right_click.connect("pressed", self.on_note_tab_context_pressed, tab.key)
+        tab_box.add_controller(right_click)
+        tab_box.append(scope_icon)
+        tab_box.append(label)
+        tab_box.append(close_button)
+        tab.label_widget = label
+        tab.scope_icon_widget = scope_icon
+        tab.container_widget = tab_box
+        self.update_editor_tab_label(tab)
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        tab.page_widget = page
+        self._syncing_editor_notebook = True
+        try:
+            self.editor_notebook.append_page(page, tab_box)
+            self.editor_notebook.set_tab_reorderable(page, True)
+        finally:
+            self._syncing_editor_notebook = False
+
+    def update_editor_tab_label(self, tab: NoteEditorTab) -> None:
+        if tab.label_widget is None:
+            return
+        title = tab.title.strip() or self.translate("notes_new_tab")
+        tab.label_widget.set_label(f"{title}{' •' if tab.dirty else ''}")
+        if tab.container_widget is not None:
+            is_server_note = tab.server_id is not None
+            if hasattr(tab.container_widget, "set_tooltip_text"):
+                tab.container_widget.set_tooltip_text(
+                    self.note_tab_tooltip(tab, is_server_note)
+                )
+        if tab.scope_icon_widget is not None:
+            tab.scope_icon_widget.set_from_icon_name(
+                "network-server-symbolic" if tab.server_id else "avatar-default-symbolic"
+            )
+
+    def note_tab_tooltip(self, tab: NoteEditorTab, is_server_note: bool) -> str:
+        title = tab.title.strip() or self.translate("notes_new_tab")
+        if not is_server_note:
+            return self.translate("notes_tab_personal_tooltip").format(title=title)
+        server = next(
+            (
+                item for item in getattr(self.store.data, "servers", ())
+                if item.id == tab.server_id
+            ),
+            None,
+        )
+        server_name = server.name if server else self.translate("notes_unknown_server")
+        return self.translate("notes_tab_server_tooltip").format(
+            server=server_name, title=title,
+        )
+
+    def on_editor_notebook_switch_page(
+        self, _notebook: Gtk.Notebook, page: Gtk.Widget, _page_num: int,
+    ) -> None:
+        if self._syncing_editor_notebook:
+            return
+        tab = next((item for item in self.editor_tabs.values() if item.page_widget is page), None)
+        if tab is None:
+            return
+        self.activate_editor_tab(tab.key)
+        if self.active_editor_tab_key != tab.key:
+            GLib.idle_add(self.restore_editor_notebook_page, self.active_editor_tab_key)
+
+    def restore_editor_notebook_page(self, key: str | None) -> bool:
+        if self.active_editor_tab_key == key:
+            self.select_editor_notebook_page(key)
+        return GLib.SOURCE_REMOVE
+
+    def select_editor_notebook_page(self, key: str | None) -> bool:
+        tab = self.editor_tabs.get(key) if key is not None else None
+        if tab is None or tab.page_widget is None:
+            return GLib.SOURCE_REMOVE
+        index = self.editor_notebook.page_num(tab.page_widget)
+        if index < 0 or index == self.editor_notebook.get_current_page():
+            return GLib.SOURCE_REMOVE
+        self._syncing_editor_notebook = True
+        try:
+            self.editor_notebook.set_current_page(index)
+        finally:
+            self._syncing_editor_notebook = False
+        return GLib.SOURCE_REMOVE
+
+    def on_editor_notebook_page_reordered(
+        self, _notebook: Gtk.Notebook, _page: Gtk.Widget, _page_num: int,
+    ) -> None:
+        self.sync_editor_tab_order()
+
+    def sync_editor_tab_order(self) -> None:
+        ordered: dict[str, NoteEditorTab] = {}
+        for index in range(self.editor_notebook.get_n_pages()):
+            child = self.editor_notebook.get_nth_page(index)
+            tab = next(
+                (item for item in self.editor_tabs.values() if item.page_widget is child),
+                None,
+            )
+            if tab is not None:
+                ordered[tab.key] = tab
+        ordered.update(
+            (key, tab) for key, tab in self.editor_tabs.items() if key not in ordered
+        )
+        self.editor_tabs = ordered
+
+    def capture_active_editor_tab(self) -> None:
+        key = getattr(self, "active_editor_tab_key", None)
+        if key is None or key not in self.editor_tabs:
+            return
+        tab = self.editor_tabs[key]
+        tab.note_id = self.current_note_id
+        tab.content = self.editor_content()
+        tab.dirty = self.editor_dirty
+        tab.status = self.status_label.get_label()
+        self.update_editor_tab_label(tab)
+
+    def activate_editor_tab(self, key: str, save_previous: bool = True) -> None:
+        tab = self.editor_tabs.get(key)
+        if tab is None:
+            return
+        target_mode = "server" if tab.server_id else "personal"
+        if (
+            self.scope_mode != target_mode
+            or self.server_filter_id != (tab.server_id if target_mode == "server" else None)
+        ):
+            if not self.set_notes_scope(target_mode, tab.server_id):
+                return
+            if self.active_editor_tab_key == key:
+                return
+        if key == getattr(self, "active_editor_tab_key", None):
+            for current_tab in self.editor_tabs.values():
+                self.update_editor_tab_label(current_tab)
+            self.detail_stack.set_visible_child_name("editor")
+            if hasattr(self, "editor_notebook"):
+                self.select_editor_notebook_page(key)
+            return
+        if self.active_editor_tab_key is not None:
+            if (
+                save_previous
+                and self.editor_dirty
+                and self.editor_content().strip()
+            ):
+                if not self.save_editor():
+                    for current_tab in self.editor_tabs.values():
+                        self.update_editor_tab_label(current_tab)
+                    return
+            self.cancel_autosave()
+            self.capture_active_editor_tab()
+        self.active_editor_tab_key = key
+        if hasattr(self, "editor_workspace") and tab.page_widget is not None:
+            parent = self.editor_workspace.get_parent()
+            if parent is not tab.page_widget:
+                if parent is not None:
+                    parent.remove(self.editor_workspace)
+                tab.page_widget.append(self.editor_workspace)
+        if hasattr(self, "editor_notebook"):
+            self.select_editor_notebook_page(key)
+        for current_tab in self.editor_tabs.values():
+            self.update_editor_tab_label(current_tab)
+        note = self.find_note(tab.note_id) if tab.note_id else None
+        if note is not None and not tab.dirty:
+            tab.title = note.title
+            tab.category = note.category
+            tab.server_id = note.server_id
+            tab.content = note.content
+            tab.status = self.translate("notes_saved")
+        self.loading_editor = True
+        try:
+            self.current_note_id = tab.note_id
+            self.selected_note_id = tab.note_id
+            self.editor_dirty = tab.dirty
+            self.text_view.get_buffer().set_text(tab.content)
+            self.modified_label.set_label(
+                self.translate("notes_modified").format(
+                    date=format_note_timestamp(note.modified_at)
+                ) if note else ""
+            )
+            self.status_label.set_label(tab.status)
+            self.set_editor_enabled(True)
+            self.detail_stack.set_visible_child_name("editor")
+        finally:
+            self.loading_editor = False
+        self.capture_active_editor_tab()
+        self.refresh_list(tab.note_id)
+        if tab.note_id is None:
+            self.loading_note_list = True
+            try:
+                self.unselect_note_list()
+            finally:
+                self.loading_note_list = False
+        if self.editor_dirty and self.editor_content().strip():
+            self.schedule_autosave()
+
+    def close_editor_tab(self, key: str) -> None:
+        tab = self.editor_tabs.get(key)
+        if tab is None:
+            return
+        if key == getattr(self, "active_editor_tab_key", None):
+            self.cancel_autosave()
+            self.capture_active_editor_tab()
+        if tab.dirty:
+            dialog = Gtk.AlertDialog(message=self.translate("notes_close_unsaved_message"))
+            dialog.set_buttons([
+                self.translate("notes_save_and_close"),
+                self.translate("notes_close_without_saving"),
+                self.translate("notes_keep_editing"),
+            ])
+            dialog.set_cancel_button(2)
+            dialog.set_default_button(2)
+            dialog.choose(self.window, None, self.on_close_editor_tab_response, key)
+            return
+        self.remove_editor_tab(key)
+
+    def close_active_editor_tab(self) -> None:
+        if self.active_editor_tab_key is not None:
+            self.close_editor_tab(self.active_editor_tab_key)
+
+    def on_close_editor_tab_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, key: str) -> None:
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        if response == 0:
+            self.save_editor_tab_and_close(key)
+        elif response == 1:
+            self.remove_editor_tab(key)
+
+    def save_editor_tab_and_close(self, key: str) -> None:
+        tab = self.editor_tabs.get(key)
+        if tab is None:
+            return
+        if key == self.active_editor_tab_key:
+            self.capture_active_editor_tab()
+        if not tab.content.strip():
+            # Empty drafts are intentionally not persisted. Emptying an existing
+            # note must not erase its previous saved content.
+            self.remove_editor_tab(key)
+            return
+        try:
+            if tab.note_id is None:
+                note = self.store.add_note(
+                    tab.title, tab.content, tab.category, tab.server_id
+                )
+                tab.note_id = note.id
+            else:
+                self.store.update_note(
+                    tab.note_id, tab.title, tab.content, tab.category, tab.server_id
+                )
+                note = self.find_note(tab.note_id)
+            if note is None:
+                raise NoteError("The note no longer exists.")
+        except (OSError, NoteError, RuntimeError, ValueError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return
+        tab.dirty = False
+        tab.status = self.translate("notes_saved")
+        self.selected_note_id = note.id
+        self.update_editor_tab_label(tab)
+        self.refresh_list(note.id)
+        if key == self.active_editor_tab_key:
+            self.current_note_id = note.id
+            self.editor_dirty = False
+        self.remove_editor_tab(key)
+
+    def remove_editor_tab(self, key: str) -> None:
+        tab = self.editor_tabs.pop(key, None)
+        if tab is None:
+            return
+        if getattr(self, "selected_draft_key", None) == key:
+            self.selected_draft_key = None
+        self.close_note_tab_context_menu()
+        was_active = key == self.active_editor_tab_key
+        if was_active:
+            self.cancel_autosave()
+            self.active_editor_tab_key = None
+            self.current_note_id = None
+            self.editor_dirty = False
+        if tab.page_widget is not None and hasattr(self, "editor_notebook"):
+            if hasattr(self, "editor_workspace") and self.editor_workspace.get_parent() is tab.page_widget:
+                tab.page_widget.remove(self.editor_workspace)
+            index = self.editor_notebook.page_num(tab.page_widget)
+            if index >= 0:
+                self._syncing_editor_notebook = True
+                try:
+                    self.editor_notebook.remove_page(index)
+                finally:
+                    self._syncing_editor_notebook = False
+        if not was_active:
+            self.refresh_list()
+            return
+        next_tab = next(reversed(self.editor_tabs.values()), None)
+        if next_tab is not None:
+            self.activate_editor_tab(next_tab.key, save_previous=False)
+        else:
+            self.clear_editor()
+            if not self.selected_note_id:
+                self.show_empty_state()
+            else:
+                self.show_idle_workspace()
+        self.refresh_list()
+
+    def clear_editor(self) -> None:
+        if not hasattr(self, "text_view"):
+            return
+        self.cancel_autosave()
+        self.loading_editor = True
+        try:
+            self.editor_dirty = False
+            self.text_view.get_buffer().set_text("")
+            self.modified_label.set_label("")
+            self.status_label.set_label(self.translate("notes_select_or_create"))
+            self.set_editor_enabled(False)
+            self.show_idle_workspace()
+        finally:
+            self.loading_editor = False
+
+    def set_editor_enabled(self, enabled: bool) -> None:
+        writable = enabled and not self.store.read_only and not self.store.encryption_locked
+        self.text_view.set_sensitive(enabled)
+        self.text_view.set_editable(writable)
+        self.text_view.set_cursor_visible(writable)
+        self.save_button.set_sensitive(writable)
+        self.delete_button.set_sensitive(writable and self.current_note_id is not None)
+
+    def create_note(self) -> None:
+        if not self.ensure_writable():
+            return
+        if getattr(self, "scope_mode", "personal") == "server" and self.server_filter_id is None:
+            self.show_error(self.translate("notes_choose_server_empty"))
+            return
+        self.create_editor_tab()
+        self.text_view.grab_focus()
+
+    def on_editor_changed(self, *_args) -> None:
+        if self.loading_editor:
+            return
+        self.editor_dirty = True
+        if not self.editor_content().strip():
+            self.cancel_autosave()
+            self.status_label.set_label(self.translate("notes_empty_not_saved"))
+            self.capture_active_editor_tab()
+            return
+        self.schedule_autosave()
+        self.capture_active_editor_tab()
+
+    def schedule_autosave(self) -> None:
+        if self.store.read_only or self.store.encryption_locked:
+            return
+        self.cancel_autosave()
+        self.status_label.set_label(self.translate("notes_saving"))
+        self.autosave_id = GLib.timeout_add(self.AUTOSAVE_DELAY_MS, self.on_autosave_timeout)
+
+    def cancel_autosave(self) -> None:
+        if self.autosave_id is not None:
+            GLib.source_remove(self.autosave_id)
+            self.autosave_id = None
+
+    def on_autosave_timeout(self) -> bool:
+        self.autosave_id = None
+        self.save_editor()
+        return GLib.SOURCE_REMOVE
+
+    def editor_content(self) -> str:
+        buffer = self.text_view.get_buffer()
+        return buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True)
+
+    def save_editor(self, *, refresh: bool = True) -> bool:
+        self.cancel_autosave()
+        if not self.editor_dirty and self.current_note_id is not None:
+            self.status_label.set_label(self.translate("notes_saved"))
+            return True
+        content = self.editor_content()
+        tab = self.editor_tabs.get(self.active_editor_tab_key)
+        if tab is None:
+            return False
+        if not content.strip():
+            self.status_label.set_label(self.translate("notes_empty_not_saved"))
+            return True
+        try:
+            if self.current_note_id is None:
+                note = self.store.add_note(
+                    tab.title, content, tab.category, tab.server_id
+                )
+                self.current_note_id = note.id
+            else:
+                self.store.update_note(
+                    self.current_note_id, tab.title, content,
+                    tab.category, tab.server_id,
+                )
+                note = self.find_note(self.current_note_id)
+            self.status_label.set_label(self.translate("notes_saved"))
+            self.editor_dirty = False
+            self.selected_note_id = self.current_note_id
+            if note is not None:
+                tab.title = note.title
+            self.capture_active_editor_tab()
+            if note is not None:
+                self.modified_label.set_label(
+                    self.translate("notes_modified").format(
+                        date=format_note_timestamp(note.modified_at)
+                    )
+                )
+            if refresh:
+                self.refresh_list(self.current_note_id)
+            self.set_editor_enabled(True)
+            return True
+        except (OSError, NoteError, RuntimeError, ValueError):
+            self.status_label.set_label(self.translate("notes_save_failed"))
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return False
+
+    def on_close_request(self, _window: Gtk.Window) -> bool:
+        self.pending_note_drop = None
+        self.close_note_context_menu()
+        self.close_category_context_menu()
+        self.close_note_tab_context_menu()
+        if not self.save_active_editor_if_valid():
+            self.window.present()
+            return True
+        self.cancel_autosave()
+        self.capture_active_editor_tab()
+        self.window.set_visible(False)
+        return True
+
+    def confirm_delete_note(self, note_id: str | None = None) -> None:
+        if not self.save_active_editor_if_valid():
+            return
+        note_id = note_id or self.current_note_id or self.selected_note_id
+        if not note_id or not self.ensure_writable():
+            return
+        note = self.find_note(note_id)
+        if note is None:
+            return
+        dialog = Gtk.AlertDialog(
+            message=self.translate("notes_delete_confirm").format(name=note.title),
+        )
+        dialog.set_buttons([self.translate("cancel"), self.translate("notes_delete")])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(0)
+        dialog.choose(self.window, None, self.on_delete_note_response, note.id)
+
+    def on_delete_note_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, note_id: str) -> None:
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        if response != 1:
+            return
+        try:
+            self.store.delete_note(note_id)
+        except (OSError, RuntimeError):
+            self.show_error(self.translate("notes_save_failed_detail"))
+            return
+        for tab in tuple(self.editor_tabs.values()):
+            if tab.note_id == note_id:
+                self.remove_editor_tab(tab.key)
+        self.selected_note_id = None
+        self.refresh_list()
+
+    def prompt_category_edit(
+        self, mode: str, original: str | None = None,
+        server_id: str | None = None,
+    ) -> None:
+        if mode not in ("add", "rename", "duplicate"):
+            return
+        if mode != "add" and not self.store.has_note_category(original, server_id):
+            return
+        if not self.ensure_writable() or not self.save_active_editor_if_valid():
+            return
+        title_key = {
+            "add": "notes_category_add",
+            "rename": "notes_category_rename",
+            "duplicate": "notes_category_duplicate",
+        }[mode]
+        dialog = Gtk.Dialog(
+            title=self.translate(title_key), transient_for=self.window, modal=True
+        )
+        dialog.set_default_size(360, -1)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("save"), Gtk.ResponseType.OK,
+        )
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        content = dialog.get_content_area()
+        for side in ("top", "bottom", "start", "end"):
+            getattr(content, f"set_margin_{side}")(12)
+        entry = Gtk.Entry()
+        entry.set_placeholder_text(self.translate("notes_category_name"))
+        if mode == "rename":
+            entry.set_text(original)
+        elif mode == "duplicate":
+            entry.set_text(f"{original} {self.translate('snippet_copy_suffix')}")
+        entry.set_activates_default(True)
+        content.append(entry)
+        dialog.connect(
+            "response", self.on_category_edit_response,
+            entry, mode, original, server_id,
+        )
+        dialog.present()
+        entry.grab_focus()
+        entry.set_position(-1)
+
+    def on_category_edit_response(
+        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry,
+        mode: str, original: str | None, server_id: str | None = None,
+    ) -> None:
+        name = entry.get_text()
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK:
+            return
+        if not self.ensure_writable() or not self.save_active_editor_if_valid():
+            return
+        if mode != "add" and not self.store.has_note_category(original, server_id):
+            return
+        try:
+            if mode == "add":
+                self.store.add_note_category(name, server_id)
+            elif mode == "rename":
+                self.store.rename_note_category(original, name, server_id)
+            elif mode == "duplicate":
+                self.store.duplicate_note_category(original, name, server_id)
+            else:
+                return
+        except (NoteError, OSError, RuntimeError) as exc:
+            self.show_error(
+                self.translate(str(exc)) if isinstance(exc, NoteError)
+                else self.translate("notes_save_failed_detail")
+            )
+            return
+        self.sync_open_note_categories()
+        self.refresh_current_editor_metadata()
+        self.refresh_list()
+
+    def sync_open_note_categories(self) -> None:
+        for tab in self.editor_tabs.values():
+            if tab.note_id:
+                note = self.find_note(tab.note_id)
+                if note is not None:
+                    tab.category = note.category
+
+    def refresh_current_editor_metadata(self) -> None:
+        note = self.find_note(self.current_note_id) if self.current_note_id else None
+        if note:
+            self.modified_label.set_label(
+                self.translate("notes_modified").format(
+                    date=format_note_timestamp(note.modified_at)
+                )
+            )
+
+    def confirm_delete_category(
+        self, name: str, server_id: str | None = None,
+    ) -> None:
+        if not self.store.has_note_category(name, server_id):
+            return
+        if not self.ensure_writable() or not self.save_active_editor_if_valid():
+            return
+        count = sum(
+            note.category == name and note.server_id == (server_id or None)
+            for note in self.store.data.notes
+        )
+        dialog = Gtk.AlertDialog(
+            message=self.translate("notes_category_delete_confirm").format(name=name, count=count),
+        )
+        dialog.set_buttons([self.translate("cancel"), self.translate("notes_category_delete")])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(0)
+        dialog.choose(
+            self.window, None, self.on_delete_category_response, name, server_id,
+        )
+
+    def on_delete_category_response(
+        self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult,
+        name: str, server_id: str | None = None,
+    ) -> None:
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        if response != 1:
+            return
+        if not self.ensure_writable():
+            return
+        try:
+            self.store.delete_note_category(name, server_id)
+        except (NoteError, OSError, RuntimeError) as exc:
+            self.show_error(
+                self.translate(str(exc)) if isinstance(exc, NoteError)
+                else self.translate("notes_save_failed_detail")
+            )
+            return
+        self.sync_open_note_categories()
+        self.refresh_current_editor_metadata()
+        self.refresh_list()
+
+    def choose_export_protection(self) -> None:
+        if not self.save_active_editor_if_valid():
+            return
+        if self.export_protection_window is not None:
+            self.export_protection_window.present()
+            return
+
+        window = Gtk.Window(
+            title=self.translate("notes_export"), transient_for=self.window,
+        )
+        window.set_modal(True)
+        window.set_resizable(False)
+        window.set_default_size(500, -1)
+        window.connect("close-request", self.on_export_protection_close)
+        self.export_protection_window = window
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(root, f"set_margin_{side}")(18)
+        window.set_child(root)
+
+        explanation = Gtk.Label(label=self.translate("notes_export_protection"))
+        explanation.set_xalign(0)
+        explanation.set_wrap(True)
+        explanation.add_css_class("title-3")
+        root.append(explanation)
+
+        options = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        root.append(options)
+        self.export_plain_choice = self.export_protection_option(
+            "notes_export_plain", "notes_export_plain_detail",
+        )
+        self.export_password_choice = self.export_protection_option(
+            "notes_export_credential", "notes_export_credential_detail",
+        )
+        self.export_password_choice.set_group(self.export_plain_choice)
+        options.append(self.export_plain_choice)
+        options.append(self.export_password_choice)
+
+        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        actions.set_halign(Gtk.Align.END)
+        root.append(actions)
+        cancel = Gtk.Button(label=self.translate("cancel"))
+        cancel.connect("clicked", lambda *_: window.close())
+        actions.append(cancel)
+        self.export_continue_button = Gtk.Button(
+            label=self.translate("notes_export_continue"),
+        )
+        self.export_continue_button.add_css_class("suggested-action")
+        self.export_continue_button.set_sensitive(False)
+        self.export_continue_button.connect(
+            "clicked", self.on_export_protection_continue,
+        )
+        actions.append(self.export_continue_button)
+        configure_action_area(actions)
+        self.export_plain_choice.connect(
+            "toggled", self.on_export_protection_choice_changed,
+        )
+        self.export_password_choice.connect(
+            "toggled", self.on_export_protection_choice_changed,
+        )
+        window.present()
+
+    def export_protection_option(self, title_key: str, detail_key: str) -> Gtk.CheckButton:
+        choice = Gtk.CheckButton()
+        choice.set_hexpand(True)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        title = Gtk.Label(label=self.translate(title_key))
+        title.set_xalign(0)
+        title.set_wrap(True)
+        title.add_css_class("heading")
+        content.append(title)
+        detail = Gtk.Label(label=self.translate(detail_key))
+        detail.set_xalign(0)
+        detail.set_wrap(True)
+        detail.add_css_class("dim-label")
+        content.append(detail)
+        choice.set_child(content)
+        return choice
+
+    def on_export_protection_choice_changed(self, *_args) -> None:
+        selected = (
+            self.export_plain_choice.get_active()
+            or self.export_password_choice.get_active()
+        )
+        self.export_continue_button.set_sensitive(selected)
+
+    def on_export_protection_close(self, window: Gtk.Window) -> bool:
+        if self.export_protection_window is window:
+            self.export_protection_window = None
+        return False
+
+    def on_export_protection_continue(self, *_args) -> None:
+        encrypted = self.export_password_choice.get_active()
+        window = self.export_protection_window
+        self.export_protection_window = None
+        if window is not None:
+            window.destroy()
+        if encrypted:
+            self.ask_password(self.translate("notes_export_credential"), self.on_export_password)
+        else:
+            self.choose_export_file(None)
+
+    def on_export_password(self, password: str | None) -> None:
+        if password:
+            self.choose_export_file(password)
+
+    def choose_export_file(self, password: str | None) -> None:
+        dialog = Gtk.FileDialog(title=self.translate("notes_export"))
+        dialog.set_initial_name("termia-notes.json")
+        dialog.save(self.window, None, self.on_export_file_selected, password)
+
+    def on_export_file_selected(self, dialog: Gtk.FileDialog, result: Gio.AsyncResult, password: str | None) -> None:
+        try:
+            file = dialog.save_finish(result)
+        except GLib.Error:
+            return
+        if not file or not file.get_path():
+            return
+        try:
+            export_notes_file(Path(file.get_path()), self.store.data.notes, self.store.data.note_categories, password)
+            self.show_toast(self.translate("notes_export_success"))
+        except (OSError, ValueError) as exc:
+            self.show_error(self.translate("notes_export_failed").format(error=exc))
+
+    def start_import(self) -> None:
+        if not self.ensure_writable():
+            return
+        if not self.save_active_editor_if_valid():
+            return
+        dialog = Gtk.FileDialog(title=self.translate("notes_import"))
+        dialog.open(self.window, None, self.on_import_file_selected)
+
+    def on_import_file_selected(self, dialog: Gtk.FileDialog, result: Gio.AsyncResult) -> None:
+        try:
+            file = dialog.open_finish(result)
+        except GLib.Error:
+            return
+        if file and file.get_path():
+            self.import_path = Path(file.get_path())
+            self.read_import(None)
+
+    def read_import(self, password: str | None) -> None:
+        try:
+            notes, categories = import_notes_file(self.import_path, password)
+        except MissingMasterPasswordError:
+            self.ask_password(self.translate("notes_import_credential"), self.on_import_password)
+            return
+        except (InvalidMasterPasswordError, OSError, ValueError, TypeError) as exc:
+            self.show_error(self.translate("notes_import_failed").format(error=exc))
+            return
+        server_ids = {server.id for server in self.store.data.servers}
+        detached = 0
+        for note in notes:
+            if note.server_id and note.server_id not in server_ids:
+                note.server_id = None
+                detached += 1
+        categories = normalized_note_categories(
+            [
+                NoteCategory(category.name, None)
+                if category.server_id and category.server_id not in server_ids
+                else category
+                for category in categories
+            ],
+            notes,
+        )
+        self.pending_import = (notes, categories, detached)
+        if self.store.data.notes or self.store.data.note_categories:
+            dialog = Gtk.AlertDialog(
+                message=self.translate("notes_import_existing").format(
+                    notes=len(self.store.data.notes), categories=len(self.store.data.note_categories),
+                ),
+                detail=self.translate("notes_import_backup_detail"),
+            )
+            dialog.set_buttons([
+                self.translate("notes_keep_existing"),
+                self.translate("notes_backup_replace"),
+            ])
+            dialog.set_cancel_button(0)
+            dialog.set_default_button(0)
+            dialog.choose(self.window, None, self.on_import_replace_response)
+        else:
+            self.replace_notes_with_import()
+
+    def on_import_password(self, password: str | None) -> None:
+        if password:
+            self.read_import(password)
+
+    def on_import_replace_response(self, dialog: Gtk.AlertDialog, result: Gio.AsyncResult, _data=None) -> None:
+        try:
+            response = dialog.choose_finish(result)
+        except GLib.Error:
+            return
+        if response == 1:
+            self.replace_notes_with_import()
+
+    def replace_notes_with_import(self) -> None:
+        notes, categories, detached = self.pending_import
+        old_notes = list(self.store.data.notes)
+        old_categories = list(self.store.data.note_categories)
+        try:
+            if old_notes or old_categories:
+                self.store.notes_file_store.backup_current_file()
+            self.store.data.notes = notes
+            self.store.data.note_categories = categories
+            self.store.save_notes()
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.store.data.notes = old_notes
+            self.store.data.note_categories = old_categories
+            self.show_error(self.translate("notes_import_failed").format(error=exc))
+            return
+        self.scope_mode = "personal"
+        self.server_filter_id = None
+        self.selected_note_id = None
+        for tab in tuple(self.editor_tabs.values()):
+            if tab.note_id is not None:
+                self.remove_editor_tab(tab.key)
+        self.set_notes_scope("personal")
+        message = self.translate("notes_import_success").format(count=len(notes))
+        if detached:
+            message = f"{message} {self.translate('notes_import_detached').format(count=detached)}"
+        self.show_toast(message)
+
+    def ask_password(self, title: str, callback) -> None:
+        dialog = Gtk.Dialog(title=title, transient_for=self.window, modal=True)
+        dialog.set_default_size(420, 120)
+        content = dialog.get_content_area()
+        content.set_margin_top(14)
+        content.set_margin_bottom(8)
+        content.set_margin_start(14)
+        content.set_margin_end(14)
+        password_label = Gtk.Label(label=self.translate("notes_credential"))
+        password_label.set_xalign(0)
+        content.append(password_label)
+        entry = Gtk.PasswordEntry()
+        entry.set_show_peek_icon(True)
+        content.append(entry)
+        add_dialog_action_button(
+            dialog, self.translate("cancel"), Gtk.ResponseType.CANCEL,
+        )
+        add_dialog_action_button(
+            dialog, self.translate("continue"), Gtk.ResponseType.ACCEPT,
+        )
+
+        def response(source: Gtk.Dialog, result: int) -> None:
+            password = entry.get_text() if result == Gtk.ResponseType.ACCEPT else None
+            source.destroy()
+            callback(password or None)
+
+        dialog.connect("response", response)
+        dialog.present()
+        entry.grab_focus()
+
+    def show_for_server_after_popover(self, popover: Gtk.Popover, server_id: str) -> None:
+        presented = False
+
+        def present_once(*_args) -> bool:
+            nonlocal presented
+            if not presented:
+                presented = True
+                # Allow the compositor to finish returning focus from the
+                # closing popover before requesting activation of Notes.
+                GLib.timeout_add(100, self._show_server_notes, server_id)
+            return GLib.SOURCE_REMOVE
+
+        popover.connect("closed", present_once)
+        popover.popdown()
+        GLib.timeout_add(150, present_once)
+
+    def _show_server_notes(self, server_id: str) -> bool:
+        self.show_manager(server_id)
+        return GLib.SOURCE_REMOVE
+
+    def shutdown(self) -> None:
+        self.cancel_autosave()
+        self.dispose_note_context_menu()
+        self.dispose_category_context_menu()
+        self.dispose_note_tab_context_menu()
+        if self.window is not None:
+            self.window.destroy()
+
+    def prepare_shutdown(self) -> bool:
+        if self.window is None:
+            return True
+        if self.editor_dirty:
+            self.cancel_autosave()
+            if self.editor_content().strip():
+                if not self.save_editor():
+                    self.window.present()
+                    return False
+        for tab in tuple(self.editor_tabs.values()):
+            if tab.dirty and tab.key != self.active_editor_tab_key:
+                if tab.content.strip():
+                    self.save_editor_tab_and_close(tab.key)
+                    if tab.key in self.editor_tabs:
+                        self.window.present()
+                        return False
+                else:
+                    self.remove_editor_tab(tab.key)
+            elif tab.dirty and not tab.content.strip():
+                self.remove_editor_tab(tab.key)
+        return True

@@ -48,7 +48,7 @@ if [ "${COPY_CURRENT_CONFIG}" -eq 1 ]; then
     SOURCE_STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/termia"
     TARGET_STATE_DIR="${DATA_ROOT}/state/termia"
     mkdir -p "${TARGET_CONFIG_DIR}"
-    for CONFIG_FILE in connections.json settings.json; do
+    for CONFIG_FILE in connections.json notes.json settings.json; do
         if [ -f "${SOURCE_CONFIG_DIR}/${CONFIG_FILE}" ]; then
             cp "${SOURCE_CONFIG_DIR}/${CONFIG_FILE}" "${TARGET_CONFIG_DIR}/${CONFIG_FILE}"
         fi
@@ -72,8 +72,8 @@ echo "PID:     $$"
 
 cd "${REPO_ROOT}"
 exec env \
-    XDG_CONFIG_HOME="${DATA_ROOT}/config" \
-    XDG_STATE_HOME="${DATA_ROOT}/state" \
+    TERMIA_CONFIG_DIR="${DATA_ROOT}/config/termia" \
+    TERMIA_STATE_DIR="${DATA_ROOT}/state" \
     PYTHONFAULTHANDLER="${PYTHONFAULTHANDLER:-1}" \
     PYTHONUNBUFFERED="${PYTHONUNBUFFERED:-1}" \
     G_ENABLE_DIAGNOSTIC="${G_ENABLE_DIAGNOSTIC:-1}" \

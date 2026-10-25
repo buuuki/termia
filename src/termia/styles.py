@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+from .constants import DEFAULT_NOTES_EDITOR_BACKGROUND, DEFAULT_NOTES_EDITOR_FOREGROUND
+
 
 def build_application_css(
-    menu_background: str,
     terminal_background: str,
     split_separator_color: str,
     split_separator_thickness: int,
@@ -12,9 +13,17 @@ def build_application_css(
     thickness = max(1, split_separator_thickness)
     handle_size = max(5, thickness)
     return (
-        f"@define-color termia_menu_bg {menu_background}; "
-        ".termia-tree-item { border-radius: 4px; } "
-        ".termia-server-item, .termia-group-item { padding-top: 2px; padding-bottom: 2px; } "
+        ".termia-connections-tree { background: transparent; } "
+        ".termia-connections-tree > row { padding: 2px 4px; } "
+        ".termia-connections-tree > row:active, "
+        ".termia-connections-tree > row:selected:active { box-shadow: none; } "
+        ".termia-connections-tree > row:selected { background: transparent; color: @theme_fg_color; } "
+        ".termia-sidebar-object { padding: 2px 6px; border-radius: 4px; } "
+        ".termia-connections-tree > row:selected .termia-sidebar-object { "
+        "background: @theme_selected_bg_color; color: @theme_selected_fg_color; } "
+        ".termia-group-drop-target.drop-target { background: alpha(@theme_selected_bg_color, 0.24); "
+        "box-shadow: inset 0 0 0 1px @theme_selected_bg_color; border-radius: 4px; } "
+        ".termia-server-item.dragging { opacity: 0.65; } "
         ".prompt-preset-button { padding: 1px 6px; min-height: 24px; } "
         ".termia-add-icon-badge { background: @theme_bg_color; border-radius: 999px; } "
         "headerbar { background: @headerbar_backdrop_color; border-bottom-width: 0; box-shadow: none; } "
@@ -36,23 +45,27 @@ def build_application_css(
         f".termia-split-pane.horizontal > separator:hover {{ border-left-color: alpha({split_separator_color}, 0.82); }} "
         f".termia-split-pane.vertical > separator:hover {{ border-top-color: alpha({split_separator_color}, 0.82); }} "
         ".termia-read-only-badge { font-weight: 600; } "
-        ".termia-menu-separator { min-height: 0; background: transparent; background-color: transparent; "
-        "border-top: 1px solid rgba(128, 128, 128, 0.35); margin: 4px 12px; } "
-        "popover.termia-menu-popover > contents { background: @termia_menu_bg; "
-        "background-color: @termia_menu_bg; background-image: none; opacity: 1; } "
-        ".termia-menu-panel { background: @termia_menu_bg; "
-        "background-color: @termia_menu_bg; background-image: none; opacity: 1; } "
-        ".termia-menu-panel list { background: transparent; background-color: transparent; } "
         ".termia-tab-label { padding: 7px 10px; margin: 0 2px; border-radius: 8px; "
         "background: transparent; border: 0; box-shadow: none; } "
         ".termia-tab-label:hover { background: alpha(@theme_fg_color, 0.06); } "
         ".termia-tab-label.active { background: alpha(@theme_fg_color, 0.13); } "
         ".termia-tab-label.dragging { background: alpha(@theme_selected_bg_color, 0.25); opacity: 0.72; } "
+        ".termia-notes-notebook, .termia-notes-notebook > header, "
+        ".termia-notes-notebook > header > tabs { background: transparent; border: 0; box-shadow: none; } "
+        ".termia-notes-notebook > header > tabs > tab { border-radius: 8px 8px 0 0; } "
+        ".termia-notes-notebook > header > tabs > tab:checked { background: alpha(@theme_fg_color, 0.13); } "
+        ".termia-notes-editor { border: 1px solid @borders; border-radius: 8px; "
+        f"background-color: {DEFAULT_NOTES_EDITOR_BACKGROUND}; }} "
+        f".termia-notes-editor textview {{ color: {DEFAULT_NOTES_EDITOR_FOREGROUND}; "
+        f"background-color: {DEFAULT_NOTES_EDITOR_BACKGROUND}; }} "
+        ".termia-notes-editor textview text { "
+        f"background-color: {DEFAULT_NOTES_EDITOR_BACKGROUND}; }} "
         ".termia-tab-title { font-size: 1.05em; } "
-        ".termia-tab-close { padding: 0; min-width: 18px; min-height: 18px; } "
+        ".termia-tab-close { padding: 0; min-width: 24px; min-height: 24px; border-radius: 9999px; } "
+        ".termia-tab-close:hover { background: rgba(0, 0, 0, 0.16); box-shadow: none; } "
+        ".termia-tab-close:active { background: rgba(0, 0, 0, 0.24); } "
         ".termia-tab-overflow-button { padding: 0; min-width: 0; min-height: 24px; margin: 1px 0 6px 0; } "
         ".termia-tab-overflow-button > button { padding-left: 1px; padding-right: 1px; min-width: 16px; } "
-        ".termia-tab-overflow-item { padding: 5px 8px; min-width: 110px; } "
         ".termia-status-hide { padding: 0 6px; min-height: 18px; font-size: 0.85em; } "
         ".termia-disconnect-button { padding: 0 6px; min-height: 18px; font-size: 0.85em; } "
         ".stat-card { padding: 10px 12px; border: 1px solid @borders; border-radius: 6px; "
@@ -69,8 +82,6 @@ def build_application_css(
         "flowboxchild.termia-snippet-category-tile:selected > frame.termia-snippet-category-frame { "
         "background: alpha(@theme_selected_bg_color, 0.2); "
         "border-color: @theme_selected_bg_color; color: @theme_fg_color; } "
-        ".termia-tree-item.selected { "
-        "background-color: @theme_selected_bg_color; "
-        "color: @theme_selected_fg_color; } "
-        ".termia-tree-item:focus { outline: none; box-shadow: none; }"
+        ".termia-required-marker { font-size: 1.2em; font-weight: 700; } "
+        ".termia-required-hint { color: alpha(@theme_fg_color, 0.8); } "
     ).encode()

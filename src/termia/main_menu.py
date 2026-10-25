@@ -8,188 +8,103 @@ import gi
 
 gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gdk, GLib, Gtk
+from gi.repository import Gdk, Gio, GLib, Gtk
 
 from .constants import ABOUT_IMAGE, ISSUES_URL
 from . import __version__
+from .dialog_actions import add_dialog_action_button as add_shared_dialog_action_button
 from .main_menu_actions import MainMenuActions
+from .keybindings import KEYBINDING_ACTIONS, keybinding_label
+
+
+def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
+    """Clear the initial native menu highlight once, preserving later navigation."""
+    if widget.get_css_name() == "modelbutton":
+        widget.unset_state_flags(Gtk.StateFlags.SELECTED)
+        return GLib.SOURCE_REMOVE
+    child = widget.get_first_child()
+    while child is not None:
+        if child.get_css_name() == "modelbutton":
+            child.unset_state_flags(Gtk.StateFlags.SELECTED)
+            return GLib.SOURCE_REMOVE
+        _clear_initial_menu_selection(child)
+        child = child.get_next_sibling()
+    return GLib.SOURCE_REMOVE
 
 
 class MainMenuMixin:
     POPOVER_CALLBACK_DELAY_MS = 100
 
-    def build_main_menu(self, actions: MainMenuActions) -> Gtk.Popover:
-        popover = Gtk.Popover()
+    def build_main_menu(
+        self, actions: MainMenuActions, *, write_allowed: bool
+    ) -> Gtk.PopoverMenu:
+        """Present injected commands without accessing stores or feature implementations."""
+        model = Gio.Menu()
+        action_group = Gio.SimpleActionGroup()
+        popover = Gtk.PopoverMenu.new_from_model(None)
         popover.add_css_class("termia-menu-popover")
-        popover.set_has_arrow(False)
-        popover.set_child(self.build_main_menu_content(popover, actions))
-        popover.connect("closed", lambda *_args: self.reset_main_menu(popover, actions))
+        popover.set_has_arrow(True)
+
+        def append_command(
+            menu: Gio.Menu, label: str, name: str, *, requires_write: bool = False
+        ) -> None:
+            callback = getattr(actions, name)
+            if callback is None:
+                return
+            action = Gio.SimpleAction.new(name, None)
+            action.set_enabled(write_allowed or not requires_write)
+            action.connect(
+                "activate",
+                lambda _action, _parameter: self.run_action_after_popover_closed(
+                    popover, callback
+                ),
+            )
+            action_group.add_action(action)
+            menu.append(self.t(label), f"main-menu.{name}")
+
+        preferences = Gio.Menu()
+        for label, name in (
+            ("general", "general_preferences"),
+            ("terminal", "terminal_settings"),
+            ("keybindings", "keybinding_settings"),
+            ("security", "security_settings"),
+        ):
+            append_command(preferences, label, name, requires_write=True)
+        append_command(preferences, "optional_tools", "optional_tools")
+        model.append_section(None, preferences)
+
+        tools = Gio.Menu()
+        append_command(tools, "manage_snippets", "manage_snippets", requires_write=True)
+        append_command(tools, "manage_notes", "manage_notes")
+        append_command(tools, "statistics", "statistics")
+        append_command(tools, "connection_history", "connection_history")
+        model.append_section(None, tools)
+
+        data = Gio.Menu()
+        append_command(data, "data_locations", "data_locations")
+        connections = Gio.Menu()
+        append_command(connections, "export_config", "export_config")
+        append_command(connections, "import_config", "import_config", requires_write=True)
+        append_command(
+            connections, "import_asbru", "import_asbru_config", requires_write=True
+        )
+        append_command(connections, "clear_config", "clear_config", requires_write=True)
+        data.append_submenu(self.t("connections_file"), connections)
+        model.append_section(None, data)
+
+        help_menu = Gio.Menu()
+        append_command(help_menu, "help", "help")
+        append_command(help_menu, "about", "about")
+        model.append_section(None, help_menu)
+
+        popover.insert_action_group("main-menu", action_group)
+        popover.set_menu_model(model)
+        popover.connect("show", lambda source: GLib.idle_add(_clear_initial_menu_selection, source))
+        popover.connect("closed", lambda *_args: self.reset_main_menu(popover))
         return popover
 
-    def build_main_menu_content(
-        self,
-        popover: Gtk.Popover,
-        actions: MainMenuActions,
-    ) -> Gtk.Widget:
-        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        menu.add_css_class("termia-menu-panel")
-        menu.set_margin_top(6)
-        menu.set_margin_bottom(6)
-        menu.set_margin_start(6)
-        menu.set_margin_end(6)
-
-        general = Gtk.Button(label=self.t("general"))
-        general.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            general, popover, actions.general_preferences
-        )
-        self.configure_write_action(general)
-        menu.append(general)
-
-        terminal = Gtk.Button(label=self.t("terminal"))
-        terminal.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            terminal, popover, actions.terminal_settings
-        )
-        self.configure_write_action(terminal)
-        menu.append(terminal)
-
-        keybindings = Gtk.Button(label=self.t("keybindings"))
-        keybindings.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            keybindings, popover, actions.keybinding_settings
-        )
-        self.configure_write_action(keybindings)
-        menu.append(keybindings)
-
-        security = Gtk.Button(label=self.t("security"))
-        security.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            security, popover, actions.security_settings
-        )
-        self.configure_write_action(security)
-        menu.append(security)
-
-        snippets = Gtk.Button(label=self.t("manage_snippets"))
-        snippets.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(snippets, popover, actions.manage_snippets)
-        self.configure_write_action(snippets)
-        menu.append(snippets)
-
-        statistics = Gtk.Button(label=self.t("statistics"))
-        statistics.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(statistics, popover, actions.statistics)
-        menu.append(statistics)
-
-        history = Gtk.Button(label=self.t("connection_history"))
-        history.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            history, popover, actions.connection_history
-        )
-        menu.append(history)
-
-        data_locations = Gtk.Button(label=self.t("data_locations"))
-        data_locations.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            data_locations, popover, actions.data_locations
-        )
-        menu.append(data_locations)
-
-        connections_file = Gtk.Button(label=self.t("connections_file"))
-        connections_file.set_halign(Gtk.Align.FILL)
-        connections_file.connect(
-            "clicked",
-            lambda _button: popover.set_child(
-                self.build_main_connections_menu(popover, actions)
-            ),
-        )
-        menu.append(connections_file)
-
-        help_btn = Gtk.Button(label=self.t("help"))
-        help_btn.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(help_btn, popover, actions.help)
-        menu.append(help_btn)
-
-        about_btn = Gtk.Button(label=self.t("about"))
-        about_btn.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(about_btn, popover, actions.about)
-        menu.append(about_btn)
-        return menu
-
-    def build_main_connections_menu(
-        self,
-        popover: Gtk.Popover,
-        actions: MainMenuActions,
-    ) -> Gtk.Widget:
-        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        menu.add_css_class("termia-menu-panel")
-        menu.set_margin_top(6)
-        menu.set_margin_bottom(6)
-        menu.set_margin_start(6)
-        menu.set_margin_end(6)
-
-        back = Gtk.Button(label=self.t("main_menu"))
-        back.set_halign(Gtk.Align.FILL)
-        back.connect(
-            "clicked",
-            lambda _button: popover.set_child(
-                self.build_main_menu_content(popover, actions)
-            ),
-        )
-        menu.append(back)
-
-        export_config = Gtk.Button(label=self.t("export_config"))
-        export_config.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            export_config, popover, actions.export_config
-        )
-        menu.append(export_config)
-
-        import_config = Gtk.Button(label=self.t("import_config"))
-        import_config.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            import_config, popover, actions.import_config
-        )
-        self.configure_write_action(import_config)
-        menu.append(import_config)
-
-        import_asbru = Gtk.Button(label=self.t("import_asbru"))
-        import_asbru.set_halign(Gtk.Align.FILL)
-        self.connect_main_menu_action(
-            import_asbru, popover, actions.import_asbru_config
-        )
-        self.configure_write_action(import_asbru)
-        menu.append(import_asbru)
-
-        clear_config = Gtk.Button(label=self.t("clear_config"))
-        clear_config.set_halign(Gtk.Align.FILL)
-        clear_config.add_css_class("destructive-action")
-        self.connect_main_menu_action(
-            clear_config, popover, actions.clear_config
-        )
-        self.configure_write_action(clear_config)
-        menu.append(clear_config)
-        return menu
-
-    def connect_main_menu_action(
-        self,
-        button: Gtk.Button,
-        popover: Gtk.Popover,
-        callback: Callable[[], None],
-    ) -> None:
-        button.connect(
-            "clicked",
-            lambda _button: self.run_action_after_popover_closed(
-                popover, callback
-            ),
-        )
-
-    def reset_main_menu(
-        self,
-        popover: Gtk.Popover,
-        actions: MainMenuActions,
-    ) -> None:
-        popover.set_child(self.build_main_menu_content(popover, actions))
+    def reset_main_menu(self, popover: Gtk.PopoverMenu) -> None:
+        popover.set_property("visible-submenu", "main")
 
     def run_action_after_popover_closed(
         self,
@@ -205,24 +120,23 @@ class MainMenuMixin:
         GLib.timeout_add(self.POPOVER_CALLBACK_DELAY_MS, run_callback)
 
     def add_dialog_action_button(
-        self, dialog: Gtk.Dialog, label: str, response: Gtk.ResponseType, *, last: bool = False
+        self, dialog: Gtk.Dialog, label: str, response: Gtk.ResponseType
     ) -> Gtk.Button:
-        button = dialog.add_button(label, response)
-        button.set_margin_end(12 if last else 6)
-        button.set_margin_bottom(12)
-        return button
+        return add_shared_dialog_action_button(
+            dialog, label, response,
+        )
 
     def add_dialog_action_buttons(
         self, dialog: Gtk.Dialog, confirm_label: str, confirm_response: Gtk.ResponseType = Gtk.ResponseType.OK
     ) -> tuple[Gtk.Button, Gtk.Button]:
         cancel = self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
-        confirm = self.add_dialog_action_button(dialog, confirm_label, confirm_response, last=True)
+        confirm = self.add_dialog_action_button(dialog, confirm_label, confirm_response)
         return cancel, confirm
 
     def on_help(self, _button: Gtk.Button) -> None:
         dialog = Gtk.Dialog(title=self.t("help_title"), transient_for=self, modal=True)
-        dialog.set_default_size(620, 440)
-        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
+        dialog.set_default_size(760, 620)
+        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE)
         dialog.connect("response", lambda source, _response: source.destroy())
 
         content = dialog.get_content_area()
@@ -233,12 +147,44 @@ class MainMenuMixin:
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_vexpand(True)
-        label = Gtk.Label(label=self.t("help_content"))
-        label.set_xalign(0)
-        label.set_yalign(0)
-        label.set_wrap(True)
-        label.set_selectable(True)
-        scroller.set_child(label)
+        sections = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+
+        def add_section(title_key: str, body_key: str) -> None:
+            section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            title = Gtk.Label(label=self.t(title_key), xalign=0, wrap=True)
+            title.add_css_class("heading")
+            section.append(title)
+            body = Gtk.Label(label=self.t(body_key), xalign=0, wrap=True, selectable=True)
+            body.set_max_width_chars(80)
+            section.append(body)
+            sections.append(section)
+
+        for title_key, body_key in (
+            ("help_start", "help_start_body"),
+            ("help_terminals", "help_terminals_body"),
+            ("workspaces", "help_workspaces_body"),
+            ("manage_notes", "help_notes_body"),
+            ("manage_snippets", "help_snippets_body"),
+            ("optional_tools", "help_addons_body"),
+            ("security", "help_security_body"),
+            ("update_title", "help_updates_body"),
+        ):
+            add_section(title_key, body_key)
+        add_section("help_shortcuts", "help_shortcuts_body")
+        shortcuts = Gtk.Grid(column_spacing=24, row_spacing=8)
+        for row, (action, label_key) in enumerate(KEYBINDING_ACTIONS):
+            name = Gtk.Label(label=self.t(label_key), xalign=0, wrap=True, hexpand=True)
+            value = Gtk.Label(
+                label=keybinding_label(
+                    self.store.data.app.keybindings.get(action, ""), self.t("keybinding_disabled")
+                ),
+                xalign=0, selectable=True,
+            )
+            value.add_css_class("monospace")
+            shortcuts.attach(name, 0, row, 1, 1)
+            shortcuts.attach(value, 1, row, 1, 1)
+        sections.append(shortcuts)
+        scroller.set_child(sections)
         content.append(scroller)
         dialog.present()
 

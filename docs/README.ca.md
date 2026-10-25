@@ -9,10 +9,25 @@ Documentació en castellà: [README.es.md](README.es.md)
 
 ## Funcionalitats
 
+- Obre **Ajuda** des del menú principal per consultar seccions per funció
+  i les dreceres actuals, incloses les desactivades. Els menús del terminal
+  mostren les dreceres de Copiar, Enganxar i Pestanya → Pestanya nova. En
+  enganxar des del menú, el focus torna al terminal o panell premut.
 - Executar connexions SSH i terminals locals en terminals VTE de GTK 4 integrats.
+- Utilitzar menús contextuals estàndard de GTK per a terminals, connexions,
+  grups, perfils locals, espais de treball i notes, amb navegació per teclat.
 - Treballar amb diverses pestanyes, finestres independents i panells de terminal
   dividits que es poden connectar independentment a diferents servidors SSH o
   terminals locals.
+- Accedir a les pestanyes de terminal que no hi caben amb la barra horitzontal
+  que s’oculta automàticament o la llista de la fletxa cap avall, actualitzada
+  en obrir-la. Navegar per l'arbre de connexions amb el teclat i
+  desplegar grups; arrossegar servidors entre grups o a Sense grup.
+- La pestanya de terminal activa té el fons ressaltat, sense línia blava;
+  en passar el ratolí per una pestanya inactiva, el ressaltat és més suau.
+- La selecció de la barra lateral ressalta la icona i el nom amb cantonades
+  lleugerament arrodonides. En un terminal separat, Tornar a acoblar a la finestra
+  principal és just sota l'opció de barra d'estat del menú contextual del terminal.
 - Desar dissenys de divisió per servidor SSH o perfil de terminal local per reobrir un espai de treball preparat.
 - Desar espais de treball amb diverses pestanyes i, si s'activa l'opció
   corresponent, restaurar la sessió anterior en iniciar. La restauració està
@@ -25,49 +40,93 @@ Documentació en castellà: [README.es.md](README.es.md)
 - Desar snippets d'ordres reutilitzables per categoria i limitar-los a tots
   els terminals, un grup o un servidor; previsualitzar les variables abans
   d'enviar-los explícitament al terminal seleccionat. Gestionar-los des d'una
-  vista de tres columnes amb categories i comptadors, llista de snippets,
-  previsualització de l'ordre en només lectura i cerca global. Crear, canviar el
-  nom, duplicar i suprimir categories per separat; quan se suprimeix una
-  categoria, els seus snippets passen a Sense categoria.
+  finestra independent amb tres columnes: categories i comptadors, llista de
+  snippets, previsualització de l'ordre en només lectura i cerca global. Els
+  terminals continuen disponibles mentre és oberta. Les targetes de categoria
+  mantenen la mida i ocupen tantes columnes com hi caben; passen a una altra
+  fila si falta espai. Usa **Torna als snippets** per tornar des de la gestió
+  de categories. Pots crear, canviar el nom, duplicar i suprimir categories per
+  separat; quan se suprimeix una categoria, els seus snippets passen a Sense
+  categoria.
+  Assigna una drecera opcional al costat de Disponibilitat a l'editor del
+  snippet o a la secció Snippets de les preferències de teclat. Tots dos editen
+  la mateixa assignació; es rebutgen conflictes i cal Ctrl, Alt o Super.
+  Amb un terminal enfocat, la drecera obre les variables/previsualització per
+  a aquell panell si coincideix el seu àmbit; confirma abans d'enviar. Les
+  còpies no tenen drecera. Es desen als ajustos locals de teclat, separats de
+  les exportacions de connexions; versions anteriors poden descartar-les en
+  desar els ajustos de teclat.
 - Mantenir les dades de connexió en local amb emmagatzematge en text pla, ofuscat o xifrat opcional protegit per una contrasenya mestra.
-- Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`.
-- Desar host, usuari, port, contrasenya i ruta de clau privada de cada connexió SSH.
+- Organitzar connexions amb grups imbricats, favorits i una secció Recent sense duplicats; trobar-les ràpidament amb `Ctrl+F`. Arrossegar un servidor desat a un grup, subgrup o Sense grup per moure'l.
+- Desar host, usuari, port, contrasenya, ruta de clau privada i una ordre opcional en iniciar cada connexió SSH.
 - Importar i exportar configuració de Termia, incloses connexions bàsiques, grups imbricats i credencials disponibles de YAML d'Asbru.
+  En importar un fitxer xifrat de Termia es demana la seva contrasenya; cancel·lar
+  o introduir una contrasenya incorrecta no modifica les dades actuals. El
+  perfil manté la seva pròpia protecció d'emmagatzematge i contrasenya.
 - Consultar l'historial de connexions i estadístiques locals opcionals d'ús, incloses durades i servidors més usats.
+- Crear notes personals o associades a servidors, organitzar-les per categories i editar-les mentre s'utilitzen els terminals. Les notes es desen automàticament i tenen importació/exportació independents.
 - Personalitzar colors i tipus de lletra del terminal, prompts locals, dreceres, confirmacions, barres d'estat de sessió, idioma i comportament segur amb diverses instàncies.
 
-## Novetats de 0.6.0-beta.3
+## Novetats de 0.6.0-beta.4
 
-- Crear snippets d'ordres reutilitzables, organitzar-los en categories
-  persistents i gestionar les categories (canviar-ne el nom, duplicar-les i
-  suprimir-les).
-- Cercar snippets a totes les categories des d'una vista de tres columnes amb
-  comptadors, una llista de snippets i una previsualització de només lectura.
-- Previsualitzar les ordres amb les variables i confirmar-les abans d'enviar-les
-  al terminal. Els snippets es desen localment al fitxer de connexions.
-- Tractar una sortida normal del shell SSH amb un codi diferent de zero com un
-  tancament net, sense oferir la reconnexió per error.
-- Aclarir la compatibilitat de la configuració i les còpies de seguretat en
-  canviar de versió.
+Beta.4 és una versió preliminar. Consulta
+[la revisió de la release](https://github.com/buuuki/termia/issues/386) per conèixer les validacions i limitacions.
 
-L'explorador SFTP i les actualitzacions des de Quant a ja estaven disponibles a
-0.6.0-beta.2.
+- Mantenir notes personals i de servidors en una finestra independent, amb desament
+  automàtic, categories per àmbit i imbricades, aparença de text pla, números de línia
+  natius i importació/exportació protegides i independents.
+- Canviar la contrasenya mestra de connexions i notes xifrades conservant les dades.
+  Les notes antigues reben una còpia protegida abans de migrar-ne l'esquema.
+- Gestionar snippets en una finestra independent, assignar-hi dreceres per àmbit
+  i configurar una ordre opcional en iniciar una connexió SSH.
+- Reconnectar un panell SSH o local fallit conservant els altres splits.
+- Demanar la contrasenya en importar connexions xifrades i conservar la
+  protecció del perfil actual; limitar la mida i el treball de xifratge.
+- Activar o desactivar Estadístiques/SFTP sense esborrar-ne les dades.
+- Utilitzar la barra de pestanyes desplaçable aprovada, menús natius i arbres de
+  connexions/notes, amb millores de focus, arrossegament privat i restauració de títols.
+- Millorar el tancament de terminals/transferències, alliberar ginys de terminal/SFTP
+  retirats i detectar dependències absents en actualitzar des del codi.
+- Reproduir proves visuals, SSH/SFTP/SCP, memòria i cicles de vida al laboratori
+  Docker publicat; observar sudo/polkit reals a la seva VM opcional.
+
+Beta.4 afegeix GtkSourceView 5. Fes una còpia del perfil abans d'actualitzar i
+consulta [la compatibilitat d'emmagatzematge](STORAGE_MIGRATIONS.md) abans de tornar
+a una versió anterior.
 
 ## Explorador SFTP
 
 Obre **Explora fitxers (SFTP)** des del menú d'un servidor o panell SSH.
 Instal·la les dependències amb `scripts/termia-setup.sh install`. La finestra
 independent permet navegar, pujar fitxers/carpetes, baixar, crear carpetes,
-canviar noms i suprimir fitxers o carpetes buides. No sobreescriu destinacions
+canviar noms i suprimir fitxers o carpetes buides. Les mides de la llista es
+mostren en B, kB, MB o GB segons correspongui. Un clic selecciona un fitxer
+o carpeta per baixar-lo; un doble clic en una carpeta o Enter amb la seva fila
+enfocada permet obrir-la. No sobreescriu destinacions
 existents ni transfereix enllaços simbòlics. Cancel·lar desconnecta SFTP;
-reconnecta per continuar. Poden quedar fitxers remots o carpetes incomplets.
-El progrés és per fitxer. Tancar la pestanya propietària o Termia tanca SFTP.
+fes servir **Reconnecta SFTP** per continuar. **Desconnectar** tanca la finestra
+i la seva connexió SFTP independent, fins i tot durant una transferència.
+Cancel·lar, Reconnecta SFTP i Desconnectar apareixen a la dreta. Poden quedar
+fitxers remots o carpetes incomplets. La finestra SFTP pot quedar darrere del
+terminal; els seus diàlegs només bloquegen SFTP. El progrés mostra el fitxer
+actual en MB, la velocitat recent en MB/s i els fitxers completats. El tooltip
+mostra els MB acumulats de l'operació, sense repetir-los a la barra. La velocitat
+usa una finestra recent de tres segons que continua entre fitxers. El total
+d'una carpeta és desconegut perquè la transferència comença sense recórrer
+abans tot l'arbre.
+Una diferència inesperada en el nombre de bytes fa fallar la transferència;
+això no verifica sumes de comprovació. Cancel·lar un diàleg de canvi de nom o
+supressió conserva la connexió. Tancar la pestanya propietària o Termia demana
+la neteja d'SFTP sense bloquejar GTK. La reconnexió espera que acabin el
+treballador i la tasca de tancament. Si la neteja continua pendent després de
+30 segons, s'indica que no s'ha verificat; aquest termini no garanteix que
+acabi una crida bloquejada del sistema operatiu o de xarxa.
 
 Paramiko usa el host i la identitat desats, SSH-agent/claus predeterminades o
 contrasenya en memòria. Confirma les empremtes desconegudes; es rebutgen claus
 modificades. No s'inclouen àlies d'OpenSSH, ProxyJump, proveïdors de claus
 hardware ni MFA interactiu. SCP continua disponible. Aquesta funció es va
-introduir a beta.2 i continua disponible a beta.3.
+introduir a beta.2 i continua disponible a beta.4.
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
@@ -90,6 +149,19 @@ de desenvolupament, canvis locals i historials divergents requereixen una
 actualització manual. Després executa `scripts/termia-setup.sh install` per
 verificar les dependències i reinicia Termia manualment.
 
+Per actualitzar **des del codi beta.3 a beta.4**, executa aquest setup **abans
+de reiniciar**: beta.4 incorpora GtkSourceView 5 (`gir1.2-gtksource-5` a Ubuntu).
+L'actualitzador només canvia el codi, no instal·la paquets del sistema. Després
+d'avançar el repositori, s'executa el setup acabat de baixar de beta.4, amb la
+detecció de dependències corregida. Si falten dependències, a Ubuntu utilitza
+`sudo apt-get update` i `sudo apt-get install` i pot demanar la contrasenya de
+sudo. Si ja estan disponibles, no necessita sudo. El llançador s'instal·la al
+directori de dades de l'usuari. Els paquets Debian resolen les dependències
+mitjançant APT.
+
+L'[informe de compatibilitat Docker](DOCKER_UPGRADE_VALIDATION.md) descriu les
+proves a Ubuntu 24.04 i 26.04 i les seves limitacions.
+
 Es poden cancel·lar consultes i baixades. Un cop iniciada la instal·lació, cal
 deixar-la acabar; tancar Termia no atura el gestor de paquets. Aquesta funció
 s'inclou al paquet beta.2 i no actualitza revisions exclusivament Debian de la
@@ -97,11 +169,11 @@ mateixa versió de l'aplicació.
 
 ### Paquet publicat
 
-Descarrega [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
+Descarrega [termia_0.6.0~beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0~beta.4-1_all.deb)
 i instal·la'l amb APT, que resoldrà les dependències necessàries:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.3-1_all.deb
+sudo apt install ./termia_0.6.0~beta.4-1_all.deb
 ```
 
 ## Descarregar i instal·lar des del codi font
@@ -133,6 +205,8 @@ L'instal·lador verifica el resultat després d'instal·lar. També intenta inst
 Si la comprovació indica que falta el namespace `Vte 3.91`, falta el paquet
 d'introspecció GTK 4 VTE. En Debian, Ubuntu o Linux Mint el paquet necessari és
 `gir1.2-vte-3.91`.
+L'editor de Notes també necessita GtkSourceView 5 (`gir1.2-gtksource-5`
+en Debian, Ubuntu i Linux Mint); l'instal·lador i el paquet Debian l'instal·len.
 
 També pots executar Termia directament des del repositori:
 
@@ -147,9 +221,9 @@ perfil aïllat. Utilitza una configuració, estat i bloqueig d'escriptura propis
 ./scripts/run_test_instance.sh --copy-current-config review
 ```
 
-L'opció copia les connexions, ajustos, historial de connexions, estadístiques i
-el registre de depuració al perfil de proves. Els canvis fets allà mai no
-modifiquen les dades habituals de Termia.
+L'opció copia les connexions, notes, ajustos, historial de connexions,
+estadístiques i el registre de depuració al perfil de proves. Els canvis fets
+allà mai no modifiquen les dades habituals de Termia.
 
 Termia pot migrar fitxers de configuració compatibles de versions anteriors.
 Quan una versió més nova desa una configuració, una versió anterior pot deixar
@@ -189,31 +263,106 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fitxer `termia_0.6.0~beta.3-1_all.deb` es crea al directori pare.
-Les branques de desenvolupament poden incloure codi més recent abans
-d'actualitzar les metadades Debian per a la versió següent; no distribueixis
-aquest paquet com una versió oficial.
+El fitxer `termia_0.6.0~beta.4-1_all.deb` es crea al directori pare.
+Els paquets compilats localment són independents dels fitxers oficials enllaçats més amunt.
 
 Instal·la'l amb:
 
 ```bash
-sudo apt install ../termia_0.6.0~beta.3-1_all.deb
+sudo apt install ../termia_0.6.0~beta.4-1_all.deb
 ```
 
 El paquet Debian instal·la l'ordre `termia`, el llançador d'escriptori i la
-icona; APT instal·la les dependències de GTK, VTE, Python, SSH i xifratge.
+icona; APT instal·la les dependències de GTK, VTE, GtkSourceView, Python, SSH i xifratge.
 
 ## Notes d'ús
+
+Les capçaleres de grups es despleguen o repleguen sense quedar seleccionades;
+la selecció manté la forma compacta al voltant de la icona i el nom de l'objecte.
+Els menús contextuals permeten navegar amb fletxes, Retorn i Esc. La
+[guia del laboratori Docker](../tools/docker-lab/README.ca.md) explica com
+reproduir l'escriptori al navegador i les proves de disseny, memòria i
+cicles de vida en un altre PC.
 
 El menú `Configuració` es divideix en `General`, `Terminal`, `Dreceres` i `Seguretat`:
 
 - `General` controla tema, idioma, confirmacions, comportament en iniciar, recuperació de la sessió anterior, dreceres de contrasenya i barra d'estat de sessió, que comença amagada per defecte. La recuperació de la sessió anterior està desactivada per defecte.
 - `Terminal` combina l'aparença del VTE i el prompt local amb una única vista prèvia. Els canvis d'aparença s'apliquen a terminals oberts; els del prompt només a Bash locals nous o duplicacions i mai injecten ordres en shells locals actius ni sessions SSH. Les instal·lacions noves comencen amb JetBrains Mono i la paleta Polaris.
+- Edita un servidor SSH desat per definir `Executa una ordre en iniciar`. Termia l'executa després d'autenticar i manté la sessió oberta amb un shell interactiu quan acaba. S'executa cada vegada que s'inicia una sessió amb aquest perfil, incloses les duplicades o restaurades.
 - `Dreceres` mostra les dreceres actives i permet gravar combinacions per a accions com filtrar servidors, mostrar la llista, obrir un terminal local, navegar pel focus, copiar, enganxar, canviar de pestanya, ampliar la lletra i enviar la contrasenya desada. `Ctrl+F` enfoca el filtre, `Ctrl+Shift+B` mostra o amaga la llista, `F10` obre o tanca el menú principal, `Ctrl+Shift+T` obre un terminal local i `Ctrl+F6`/`Ctrl+Shift+F6` recorre les regions principals. Les altres tecles de funció sense modificadors s'envien a les aplicacions del terminal.
 - `Ctrl+Esquerra`, `Ctrl+Dreta`, `Ctrl+Amunt` i `Ctrl+Avall` mouen el focus
   entre panells dividits segons la direcció visual. Es poden reassignar o
   desactivar si una aplicació del terminal necessita aquestes combinacions.
-- `Seguretat` controla el mode d'emmagatzematge de connexions.
+- `Seguretat` controla el mode d'emmagatzematge de connexions. En els perfils
+  xifrats també permet canviar la contrasenya mestra; Termia verifica la
+  contrasenya actual i torna a xifrar les connexions i les notes.
+- `Gestiona les notes` obre una finestra reutilitzable que no bloqueja els
+  terminals. Les notes es desen com a text pla; caràcters com `**`, `#` i les
+  cometes inverses es conserven literalment. La barra només ofereix controls
+  d'aparença: lletra, mida, color del text, fons i un commutador persistent per
+  a la numeració de línies, activada per defecte. L'editor fa servir el fons
+  `#001B33` i text blanc; el marge estàndard de GtkSourceView mostra números
+  `#0065BF` sobre `#000D1A`.
+  Aquests ajustos i la visibilitat de la barra es desen com a preferències
+  independents del contingut.
+  Notes fa servir una finestra independent i no modal, amb els mateixos controls
+  GTK que la principal. En obrir-la es restaura i es presenta; pots portar
+  qualsevol de les dues al davant. Tancar Notes n'oculta l'espai per reutilitzar-lo;
+  sortir de Termia desa els canvis i tanca totes dues finestres.
+  Les pestanyes fan servir el quadern GTK estàndard per seleccionar-les, reordenar-les i accedir a les que no hi caben.
+  El botó al costat de les pestanyes mostra o amaga la barra compacta;
+  la llista, amb text més petit, manté la posició. En mode de només lectura, els
+  ajustos duren aquella sessió.
+  També hi ha un botó **Desa**. En obrir la finestra es crea un esborrany nou o es reprèn
+  un de pendent del mateix context; en mode de només lectura no es creen esborranys.
+  Els esborranys buits no s'emmagatzemen; en tancar-ne un amb canvis sense desar,
+  es pregunta què cal fer. El botó **Tanca la pestanya** de l'editor segueix el
+  mateix diàleg de desar, descartar o continuar editant que la X de la pestanya.
+  La llista organitza les notes en un arbre: **Personals** conté les categories
+  personals i **Servidors** conté els servidors amb notes o categories desades,
+  a més del servidor en què s'està treballant. En desplegar-lo se'n mostren les
+  notes i categories; les categories buides desades també són visibles. Un
+  esborrany «Nota nova» apareix temporalment a «Sense categoria» i només es desa
+  quan s'hi escriu contingut. Les categories pertanyen al seu àmbit i es poden
+  repetir entre notes personals i servidors. Arrossega una categoria sobre una
+  altra per niar-la, o sobre la capçalera Personals/del servidor per tornar-la
+  a l'arrel. No es permet moure-la entre àmbits ni sobre ella mateixa o un
+  descendent. Els noms continuen sent únics dins de cada àmbit. Canviar-ne el
+  nom conserva els subgrups; suprimir-la puja els subgrups un nivell i mou les
+  seves pròpies notes a «Sense categoria». Duplicar copia només les seves notes,
+  al costat de l'original. Sobre el cercador, **Desplega tots els grups de notes**
+  i **Replega tots els grups de notes** actuen sobre tot l'arbre sense alterar
+  les notes ni els editors. La cerca mostra temporalment els resultats i els
+  grups avantpassats; en netejar-la es recupera l'estat de desplegament triat.
+  «Sense categoria» apareix si hi ha
+  notes sense categoria o un esborrany actiu en aquell àmbit. La llista té
+  cerca global i files
+  compactes; el diàleg compacte de Propietats mostra, entre altres dades, la
+  categoria desada de cada nota. Un clic selecciona la nota i un doble clic l'obre en una
+  pestanya d'edició. La pestanya seleccionada té un fons ressaltat que
+  s'adapta al tema i conserva la línia blava de GTK. L'àrea d'escriptura té un
+  fons i una vora diferenciats que s'adapten al tema. Els menús contextuals de
+  notes i Propietats comparteixen
+  la superfície i l'estil del menú principal de Termia. Els controls a
+  l'esquerra de la barra de títol amaguen la
+  llista i obren el menú d'importació/exportació. El botó de nota nova es manté
+  a la barra superior al costat del control de la llista, fins i tot quan
+  s'amaga. Sobre el cercador, un botó crea categories. Amb un clic dret sobre
+  una categoria pots canviar-ne el nom,
+  duplicar-la amb les seves notes o suprimir-la. El gestor del menú principal
+  mostra l'arbre complet i ofereix importar i exportar. Obrir les
+  notes des d'un servidor el desplega i amaga importar/exportar.
+  Les pestanyes mostren una icona de l'àmbit i, en passar el cursor per una nota
+  de servidor, se'n veu el nom. Els títols nous es numeren per àmbit (Nota nova,
+  Nota nova 2, etc.). Les notes poden ser personals o associades a un servidor. En
+  suprimir un servidor, les notes es conserven com a personals. La importació
+  substitueix les notes després d'oferir una còpia de seguretat. Abans
+  d'exportar, Termia explica que triar «Sense contrasenya» crea un fitxer de
+  text pla llegible, mentre que triar una contrasenya xifra l'exportació i
+  caldrà introduir-la per importar les notes. Fes clic dret en una nota per
+  editar-la, canviar-ne el nom, clonar-la, veure'n les propietats o suprimir-la.
+  En clonar, es desa una còpia amb una identitat nova i el mateix contingut i
+  associacions.
 - Fes servir el botó amb forma de terminal de la barra lateral per crear un nou perfil de terminal local; apareix a la llista com una connexió i s'obre en una terminal incrustada en activar-lo.
 - Si una altra instància de Termia ja té el bloqueig d'escriptura, una finestra nova s'obre en mode només lectura, mostra un indicador a la capçalera, desactiva les accions que escriuen i continua permetent navegar, connectar i exportar la configuració.
 - Si actives la restauració de la sessió anterior a `General`, en tancar Termia
@@ -255,8 +404,9 @@ Termia s'ha provat en Ubuntu 24.04.4 LTS amb kernel Linux
 
 ## Base d'execució compatible
 
-Termia requereix Python 3.10 o posterior, GTK 4.0/GDK 4.0 i l'espai
-d'introspecció de VTE per a GTK 4, `Vte 3.91`. L'entorn actual de validació
+Termia requereix Python 3.10 o posterior, GTK 4.0/GDK 4.0, GtkSourceView 5
+(`GtkSource 5`) i l'espai d'introspecció de VTE per a GTK 4, `Vte 3.91`.
+L'entorn actual de validació
 proporciona GTK 4.14.5 i VTE 0.76.0. Les comprovacions de compatibilitat per a
 mètodes GTK opcionals com `set_handle_menubar_accel` i
 `set_show_separators` són intencionades, perquè les distribucions poden
@@ -268,6 +418,7 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 
 ```text
 ~/.config/termia/connections.json   # grups, servidors i snippets desats si estan disponibles
+~/.config/termia/notes.json        # notes i categories
 ~/.config/termia/settings.json      # configuració de l'aplicació i del terminal
 ~/.config/termia/instance.lock      # bloqueig d'escriptor únic per al mode multiinstància
 ~/.local/state/termia/connections-history.jsonl
@@ -275,17 +426,17 @@ Les connexions, preferències i estadístiques es desen fora del repositori:
 ~/.local/state/termia/last-session.json  # només si s'activa la restauració
 ```
 
-Les contrasenyes desades s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla, ofuscat o xifrat amb una contrasenya mestra des de les preferències de Seguretat. Quan el xifratge està activat, Termia demana la contrasenya mestra en arrencar i no pot recuperar les dades de connexió si aquesta contrasenya es perd. Les contrasenyes importades des d'Ásbrú es desaran igual quan el YAML d'origen les exposi al camp `pass`.
+Les contrasenyes desades i les ordres d'inici per servidor s'emmagatzemen a `connections.json`; el fitxer es pot mantenir en text pla, ofuscat o xifrat amb una contrasenya mestra des de les preferències de Seguretat. Una ordre d'inici s'executa automàticament cada vegada que s'inicia una sessió amb el seu perfil SSH. Tracta-la com a configuració executable, no hi incloguis secrets i protegeix les exportacions, que poden contenir ordres i contrasenyes. Quan el xifratge està activat, Termia demana la contrasenya mestra en arrencar i no pot recuperar les dades de connexió si aquesta contrasenya es perd. A Seguretat pots canviar-la; Termia verifica la contrasenya actual i torna a xifrar les connexions i les notes. Les notes es desen a part a `notes.json` i segueixen el mateix mode de protecció local; no s'inclouen en importar o exportar connexions. Les notes exportades sense contrasenya són JSON sense xifrar i llegible; si tries una contrasenya per a l'exportació, el fitxer es xifra i aquesta contrasenya cal per importar-lo. Aquesta contrasenya d'exportació és independent de la contrasenya mestra. Tracta els fitxers exportats com a dades sensibles. Les contrasenyes importades des d'Ásbrú es desaran igual quan el YAML d'origen les exposi al camp `pass`.
 Els fitxers de connexions exportats també poden contenir credencials.
-Els comptadors locals agregats es desen per separat a `statistics.json`, venen desactivats per defecte i es poden activar o desactivar des de les preferències generals. Quan hi ha diversos processos de Termia oberts al mateix temps, només la instància que manté `instance.lock` escriu connexions, ajustos o estadístiques; les següents romanen en només lectura per evitar corrompre aquests fitxers.
+Els comptadors locals agregats es desen per separat a `statistics.json` i venen desactivats per defecte. Des de **Complements** al menú principal pots activar o desactivar les Estadístiques i l'explorador SFTP. Els canvis s'apliquen en reiniciar Termia; desactivar un complement n'amaga les accions, però no n'esborra les dades. Quan hi ha diversos processos de Termia oberts al mateix temps, només la instància que manté `instance.lock` escriu connexions, ajustos o estadístiques; les següents romanen en només lectura per evitar corrompre aquests fitxers.
 L'historial es desa a part a `connections-history.jsonl`; la secció Recent de
 la barra lateral s'obté de les connexions SSH correctes d'aquest historial.
 
-Termia no registra les ordres escrites o executades als terminals, la seva
-sortida, el contingut del porta-retalls ni comptadors d'ordres o pulsacions.
-Els snippets, quan estan disponibles, són plantilles d'ordres que l'usuari desa
-expressament a `connections.json`; no són un historial d'ordres executades.
-Quan estan activades, les estadístiques només registren connexions agregades,
+Termia no registra un historial de les ordres escrites o executades als
+terminals, la seva sortida, el contingut del porta-retalls ni comptadors
+d'ordres o pulsacions. Els snippets i les ordres d'inici per servidor són
+configuració que l'usuari desa a `connections.json`, no un historial d'ordres
+executades. Quan estan activades, les estadístiques només registren connexions agregades,
 ús per servidor i durada de sessions; s'escriuen com a màxim cada 30 segons,
 en finalitzar sessions i en tancar Termia. Consulta
 [../SECURITY.md](../SECURITY.md).

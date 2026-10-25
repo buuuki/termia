@@ -3,11 +3,12 @@
 """UI-independent SFTP contracts and serialized, cancellable execution."""
 from __future__ import annotations
 
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import Event, Thread
-from time import monotonic
+from threading import Event, Lock, Thread
+from time import monotonic, sleep
 from typing import Protocol, Any
 import posixpath
 
@@ -27,6 +28,20 @@ class RemoteEntry:
     size: int
     modified: int
     mode: int
+
+
+@dataclass(frozen=True)
+class TransferProgress:
+    name: str
+    current: int
+    total: int | None
+    files_completed: int
+    bytes_transferred: int
+    bytes_per_second: float = 0.0
+
+
+class IncompleteTransfer(Exception):
+    pass
 
 
 class Cancelled(Exception):
@@ -63,9 +78,20 @@ class SFTPBackend(Protocol):
     def mkdir(self, path: str) -> None: ...
     def rename(self, source: str, target: str) -> None: ...
     def delete(self, path: str) -> None: ...
-    def upload(self, local: Path, remote: str, progress: Callable[[int, int], None]) -> None: ...
-    def download(self, remote: str, local: Path, progress: Callable[[int, int], None]) -> None: ...
+    def upload(self, local: Path, remote: str, progress: TransferReporter) -> None: ...
+    def download(self, remote: str, local: Path, progress: TransferReporter) -> None: ...
     def close(self) -> None: ...
+
+
+class TransferReporter(Protocol):
+    """Per-file bytes; finished is emitted only after both files close safely.
+
+    A directory reports total=None without incrementing the completed-file count.
+    Discovery is streamed; there is deliberately no pre-scan of the tree.
+    """
+
+    def __call__(self, current: int, total: int | None, *,
+                 name: str = "", finished: bool = False) -> None: ...
 
 
 class SFTPService:
@@ -83,31 +109,71 @@ class SFTPService:
         self.closed = False
         self.cancelled = Event()
         self.worker: Thread | None = None
+        self.close_worker: Thread | None = None
+        self.cleanup_failed = False
+
+    @property
+    def stopped(self) -> bool:
+        """A verified result, not merely a request to cancel. Never joins GTK."""
+        return (self.cancelled.is_set() and not self.cleanup_failed
+                and not (self.worker and self.worker.is_alive())
+                and not (self.close_worker and self.close_worker.is_alive()))
 
     def submit(self, operation, done, failed, progress=None) -> None:
         if self.closed or self.busy or self.cancelled.is_set():
             raise RuntimeError("SFTP service unavailable")
         self.busy = True
         last_progress = 0.0
+        progress_lock = Lock()
+        latest = None
+        queued = False
+        completed_files = completed_bytes = 0
+        # Sample at most four times a second, retaining a three-second window.
+        # Operation-wide bytes keep the rate continuous across file boundaries.
+        samples = deque([(monotonic(), 0)])
 
-        def deliver(callback, *args):
-            if not self.closed:
-                callback(*args)
+        def deliver_progress():
+            nonlocal latest, queued
+            with progress_lock:
+                value, latest = latest, None
+                queued = False
+            if value is not None and not self.closed and not self.cancelled.is_set():
+                progress(value)
             return False
 
-        def report(current, total):
-            nonlocal last_progress
+        def report(current, total, *, name="", finished=False):
+            nonlocal last_progress, latest, queued, completed_files, completed_bytes
             if self.cancelled.is_set():
                 raise Cancelled()
             now = monotonic()
-            if progress and (now - last_progress >= 0.1 or current == total):
-                last_progress = now
-                self.dispatch(deliver, progress, current, total)
+            with progress_lock:
+                operation_bytes = completed_bytes + current
+                if finished:
+                    completed_files += 1
+                    completed_bytes = operation_bytes
+                while len(samples) > 1 and samples[1][0] <= now - 3:
+                    samples.popleft()
+                elapsed = now - samples[0][0]
+                rate = max(0, operation_bytes - samples[0][1]) / elapsed if elapsed > 0 else 0.0
+                if now - samples[-1][0] >= 0.25:
+                    samples.append((now, operation_bytes))
+                latest = TransferProgress(name, current, total, completed_files, operation_bytes, rate)
+                schedule = progress and not queued and now - last_progress >= 0.1
+                if schedule:
+                    queued = True
+                    last_progress = now
+            if schedule:
+                self.dispatch(deliver_progress)
 
         def finish(callback, value):
             self.busy = False
             if not self.closed:
-                callback(value)
+                if self.cancelled.is_set():
+                    failed(Cancelled())
+                else:
+                    if progress:
+                        deliver_progress()
+                    callback(value)
             return False
 
         def run():
@@ -126,8 +192,38 @@ class SFTPService:
         self.worker.start()
 
     def cancel(self) -> None:
+        if self.cancelled.is_set():
+            return
         self.cancelled.set()
-        self.backend.close()
+
+        def stop_backend():
+            failures = 0
+
+            def close_backend():
+                nonlocal failures
+                while True:
+                    try:
+                        self.backend.close()
+                        return True
+                    except Exception:
+                        if failures:
+                            self.cleanup_failed = True
+                            return False
+                        failures += 1
+                        # One recovery attempt, on this same worker. Repeated
+                        # cancel/close requests must not create more closers.
+                        sleep(0.05)
+
+            # Retry while setup is running: the first close may precede creation
+            # of Paramiko's transport. The last close runs after the worker exits.
+            while self.worker is not None and self.worker.is_alive():
+                if not close_backend():
+                    return
+                self.worker.join(0.05)
+            close_backend()
+
+        self.close_worker = Thread(target=stop_backend, name="termia-sftp-close", daemon=True)
+        self.close_worker.start()
 
     def close(self) -> None:
         self.closed = True

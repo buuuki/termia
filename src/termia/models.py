@@ -33,6 +33,7 @@ class Server:
     password: str = ""
     public_key: str = ""
     split_layout: str = "none"
+    command_on_start: str = ""
 
 
 @dataclass
@@ -81,6 +82,26 @@ class CommandSnippet:
 
 
 @dataclass
+class Note:
+    id: str
+    title: str
+    content: str
+    category: str = ""
+    server_id: str | None = None
+    created_at: str = ""
+    modified_at: str = ""
+
+
+@dataclass(frozen=True)
+class NoteCategory:
+    """A note category owned by personal notes or one saved server."""
+
+    name: str
+    server_id: str | None = None
+    parent: str | None = None
+
+
+@dataclass
 class TerminalSettings:
     font_family: str = DEFAULT_TERMINAL_FONT_FAMILY
     font_size: int = 13
@@ -112,7 +133,9 @@ class AppSettings:
     send_password_enter: bool = False
     connection_storage_mode: str = "plain"
     statistics_enabled: bool = False
+    sftp_enabled: bool = True
     debug_enabled: bool = False
+    notes_editor: dict[str, Any] = field(default_factory=dict)
     keybindings: dict[str, str] = field(default_factory=lambda: DEFAULT_KEYBINDINGS.copy())
 
 
@@ -172,6 +195,8 @@ class StoreData:
     workspaces: list[Workspace] = field(default_factory=list)
     snippets: list[CommandSnippet] = field(default_factory=list)
     snippet_categories: list[str] = field(default_factory=list)
+    notes: list[Note] = field(default_factory=list)
+    note_categories: list[NoteCategory] = field(default_factory=list)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     app: AppSettings = field(default_factory=AppSettings)
     statistics: StatisticsSettings = field(default_factory=StatisticsSettings)

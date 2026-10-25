@@ -23,11 +23,10 @@ GENERAL_PREFERENCE_FIELDS = (
     ("show_sidebar_on_startup", "show_sidebar_on_startup"),
     ("show_session_status_bar", "show_session_status_bar"),
     ("audible_bell", "audible_bell"),
-    ("statistics_enabled", "statistics_enabled"),
     ("confirm_disconnect", "confirm_disconnect"),
     ("confirm_close_app", "confirm_close_app"),
-    ("send_password_shortcut", "send_password_shortcut"),
-    ("send_password_enter", "send_password_enter"),
+    ("send_credential_shortcut", "send_password_shortcut"),
+    ("send_credential_enter", "send_password_enter"),
     ("debug_mode", "debug_enabled"),
 )
 
@@ -79,19 +78,18 @@ class GeneralPreferencesMixin:
             ("show_sidebar_on_startup", self.store.data.app.show_sidebar_on_startup),
             ("show_session_status_bar", self.store.data.app.show_session_status_bar),
             ("audible_bell", self.store.data.app.audible_bell),
-            ("statistics_enabled", self.store.data.app.statistics_enabled),
             ("confirm_disconnect", self.store.data.app.confirm_disconnect),
             ("confirm_close_app", self.store.data.app.confirm_close_app),
-            ("send_password_shortcut", self.store.data.app.send_password_shortcut),
-            ("send_password_enter", self.store.data.app.send_password_enter),
+            ("send_credential_shortcut", self.store.data.app.send_password_shortcut),
+            ("send_credential_enter", self.store.data.app.send_password_enter),
             ("debug_mode", self.store.data.app.debug_enabled),
         ]
         check_buttons = [Gtk.CheckButton(label=self.t(key)) for key, _ in checks]
         for button, (_, active) in zip(check_buttons, checks):
             button.set_active(active)
             button.set_halign(Gtk.Align.START)
-        send_password_shortcut = check_buttons[10]
-        send_password_enter = check_buttons[11]
+        send_password_shortcut = check_buttons[9]
+        send_password_enter = check_buttons[10]
         shortcut_sensitive, enter_sensitive = password_preference_sensitivity(
             self.store.data.app.keybindings,
             send_password_shortcut.get_active(),
@@ -102,12 +100,12 @@ class GeneralPreferencesMixin:
         send_password_shortcut.set_sensitive(shortcut_sensitive)
         send_password_enter.set_sensitive(enter_sensitive)
         shortcut_hint = Gtk.Label(
-            label=self.t("send_password_shortcut_unavailable"), xalign=0
+            label=self.t("send_credential_shortcut_unavailable"), xalign=0
         )
         shortcut_hint.set_wrap(True)
         shortcut_hint.add_css_class("dim-label")
         enter_hint = Gtk.Label(
-            label=self.t("send_password_enter_unavailable"), xalign=0
+            label=self.t("send_credential_enter_unavailable"), xalign=0
         )
         enter_hint.set_wrap(True)
         enter_hint.add_css_class("dim-label")
@@ -131,7 +129,7 @@ class GeneralPreferencesMixin:
         )
 
         rows: list[tuple[str, Gtk.Widget]] = [(self.t("theme"), theme_combo), (self.t("language"), language_combo)]
-        rows.extend(("", button) for button in check_buttons[:10])
+        rows.extend(("", button) for button in check_buttons[:9])
         shortcut_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         shortcut_box.set_hexpand(True)
         shortcut_box.append(send_password_shortcut)
@@ -170,11 +168,12 @@ class GeneralPreferencesMixin:
                     close_tab_on_disconnect=values[0], close_tab_on_ssh_exit=values[1],
                     open_local_terminal_on_startup=values[2], show_sidebar_on_startup=values[4],
                     restore_sessions_on_startup=values[3],
-                    show_session_status_bar=values[5], audible_bell=values[6], statistics_enabled=values[7],
-                    confirm_disconnect=values[8], confirm_close_app=values[9],
-                    send_password_shortcut=values[10], send_password_enter=values[11],
+                    show_session_status_bar=values[5], audible_bell=values[6],
+                    statistics_enabled=self.store.data.app.statistics_enabled,
+                    confirm_disconnect=values[7], confirm_close_app=values[8],
+                    send_password_shortcut=values[9], send_password_enter=values[10],
                     connection_storage_mode=self.store.data.app.connection_storage_mode,
-                    debug_enabled=values[12],
+                    debug_enabled=values[11],
                     keybindings=self.store.data.app.keybindings,
                 ))
             except ReadOnlyStoreError:
@@ -188,7 +187,6 @@ class GeneralPreferencesMixin:
                     self.pending_session_snapshot = []
                     self.session_snapshot_store.clear()
             self.apply_app_theme()
-            self.install_tree_styles()
             if previous_values["audible_bell"] != self.store.data.app.audible_bell:
                 self.apply_terminal_settings_to_open_tabs()
             self.apply_session_status_bar_visibility_to_open_tabs()

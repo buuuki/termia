@@ -12,39 +12,52 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from .constants import (
-    APP_THEMES,
-    DEFAULT_PROMPT_COLOR,
-    DEFAULT_TERMINAL_BACKGROUND,
-    DEFAULT_TERMINAL_FONT_FAMILY,
-    DEFAULT_TERMINAL_FOREGROUND,
-    DEFAULT_SPLIT_SEPARATOR_COLOR,
-    DEFAULT_SPLIT_SEPARATOR_THICKNESS,
-    MAX_SPLIT_SEPARATOR_THICKNESS,
-    HISTORY_FILE,
-    INSTANCE_LOCK_FILE,
-    SETTINGS_FILE,
-    STATISTICS_FILE,
-)
 from .config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
     CONNECTION_STORAGE_MODES,
     CONNECTION_STORAGE_PLAIN,
     InvalidMasterPasswordError,
     MissingMasterPasswordError,
+    StorageLimitError,
     connection_storage_mode_from_payload,
+    connections_payload,
     decoded_connections_payload,
     read_raw_connections_payload,
     snippets_from_payload,
+    storage_json_bytes,
     workspaces_from_payload,
     write_connections_file,
 )
+from .constants import (
+    APP_THEMES,
+    DEFAULT_NOTES_EDITOR_BACKGROUND,
+    DEFAULT_NOTES_EDITOR_FOREGROUND,
+    DEFAULT_PROMPT_COLOR,
+    DEFAULT_SPLIT_SEPARATOR_COLOR,
+    DEFAULT_SPLIT_SEPARATOR_THICKNESS,
+    DEFAULT_TERMINAL_BACKGROUND,
+    DEFAULT_TERMINAL_FONT_FAMILY,
+    DEFAULT_TERMINAL_FOREGROUND,
+    HISTORY_FILE,
+    INSTANCE_LOCK_FILE,
+    MAX_SPLIT_SEPARATOR_THICKNESS,
+    NOTES_FILE,
+    SETTINGS_FILE,
+    STATISTICS_FILE,
+)
 from .debug import log_lock_failure, log_startup_context, log_store_state
 from .i18n import LANGUAGES, detect_system_language
+from .keybindings import (
+    KeybindingError,
+    is_snippet_action,
+    merge_keybindings,
+    normalize_keybindings,
+    snippet_action,
+)
 from .migrations import (
     CURRENT_SCHEMA_VERSION,
-    migrate_connections_payload,
     migrate_app_settings_payload,
+    migrate_connections_payload,
     migrate_embedded_settings_payload,
     migrate_embedded_statistics_payload,
     migrate_history_event_payload,
@@ -52,7 +65,6 @@ from .migrations import (
     migrate_settings_payload,
     migrate_statistics_payload,
 )
-from .keybindings import normalize_keybindings
 from .models import (
     DEFAULT_ANSI_PALETTE,
     AppSettings,
@@ -61,18 +73,42 @@ from .models import (
     ConnectionHistoryEvent,
     Group,
     LocalTerminalProfile,
+    Note,
+    NoteCategory,
     Server,
     StatisticsSettings,
     StoreData,
     TerminalSettings,
     Workspace,
 )
-from .snippets import SnippetError, normalize_snippet, normalized_categories, snippet_target_exists
+from .notes import (
+    NoteError,
+    normalize_note,
+    normalized_note_categories,
+    note_category_move_allowed,
+    note_category_name,
+    timestamp_now,
+)
+from .notes_store import NotesFileStore
+from .snippets import (
+    SnippetError,
+    normalize_snippet,
+    normalized_categories,
+    snippet_target_exists,
+)
 from .terminal_config import normalize_split_layout
 from .ui_state import TerminalPane, TerminalSession
 
 
 class ReadOnlyStoreError(RuntimeError):
+    pass
+
+
+class MasterPasswordRollbackError(RuntimeError):
+    pass
+
+
+class UnchangedMasterPasswordError(ValueError):
     pass
 
 
@@ -383,7 +419,7 @@ class SettingsStore:
     def __init__(self, path: Path, *, read_only: bool = False) -> None:
         self.path = path
         self.read_only = read_only
-        self.app = AppSettings()
+        self.app = normalize_app_settings(AppSettings())
         self.terminal = TerminalSettings()
         self.recovery_messages: list[str] = []
         self.load()
@@ -436,6 +472,20 @@ def backup_invalid_file(path: Path, read_only: bool = False) -> Path | None:
 
 def normalize_app_settings(app: AppSettings) -> AppSettings:
     app.keybindings = normalize_keybindings(app.keybindings)
+    values = app.notes_editor if isinstance(app.notes_editor, dict) else {}
+    size = values.get("size", 12)
+    app.notes_editor = {
+        "font": values.get("font") if isinstance(values.get("font"), str) else "",
+        "size": max(6, min(size, 72)) if isinstance(size, int) and not isinstance(size, bool) else 12,
+        "foreground": normalize_css_color(
+            values.get("foreground", ""), DEFAULT_NOTES_EDITOR_FOREGROUND
+        ) if isinstance(values.get("foreground", ""), str) else DEFAULT_NOTES_EDITOR_FOREGROUND,
+        "background": normalize_css_color(
+            values.get("background", ""), DEFAULT_NOTES_EDITOR_BACKGROUND
+        ) if isinstance(values.get("background", ""), str) else DEFAULT_NOTES_EDITOR_BACKGROUND,
+        "visible": values.get("visible") if isinstance(values.get("visible"), bool) else True,
+        "line_numbers": values.get("line_numbers") if isinstance(values.get("line_numbers"), bool) else True,
+    }
     return app
 
 
@@ -472,17 +522,24 @@ class ConnectionStore:
         statistics_path: Path = STATISTICS_FILE,
         lock_path: Path = INSTANCE_LOCK_FILE,
         history_path: Path = HISTORY_FILE,
+        notes_path: Path | None = None,
     ) -> None:
         self.path = path
         self.instance_lock = InstanceWriteLock(lock_path)
-        self.read_only = self.instance_lock.read_only
+        self._read_only = self.instance_lock.read_only
+        self._resource_limit_error = False
         self.settings_store = SettingsStore(settings_path, read_only=self.read_only)
         self.statistics_store = StatisticsStore(statistics_path, read_only=self.read_only)
         self.history_store = ConnectionHistoryStore(history_path, read_only=self.read_only)
+        self.notes_file_store = NotesFileStore(
+            notes_path if notes_path is not None else path.with_name(NOTES_FILE.name),
+            read_only=self.read_only,
+        )
         self.recovery_messages: list[str] = [
             *self.settings_store.recovery_messages,
             *self.statistics_store.recovery_messages,
             *self.history_store.recovery_messages,
+            *self.notes_file_store.recovery_messages,
         ]
         self.encryption_locked = False
         self.encryption_error = ""
@@ -504,15 +561,37 @@ class ConnectionStore:
         self.history_store.finalize_unfinished_entries()
         log_store_state(self)
 
+    @property
+    def resource_limit_error(self) -> bool:
+        return self._resource_limit_error or getattr(getattr(self, "notes_file_store", None), "resource_limit_error", False)
+
+    @property
+    def read_only(self) -> bool:
+        return self._read_only or self.resource_limit_error
+
+    @read_only.setter
+    def read_only(self, value: bool) -> None:
+        self._read_only = value
+
     def load(self) -> None:
+        if self.resource_limit_error:
+            return
         if not self.path.exists():
+            self.notes_file_store.load(
+                self.data.app.connection_storage_mode, self.master_password,
+            )
             self.data = StoreData(
                 local_terminals=[],
                 snippets=[],
+                notes=self.notes_file_store.notes,
+                note_categories=self.notes_file_store.categories,
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
             )
+            self.detach_orphaned_notes()
+            self.encryption_locked = self.notes_file_store.encryption_locked
+            self.encryption_error = self.notes_file_store.encryption_error
             return
 
         try:
@@ -520,12 +599,19 @@ class ConnectionStore:
             file_storage_mode = connection_storage_mode_from_payload(raw_payload)
             payload = decoded_connections_payload(raw_payload, self.master_password)
             payload, connections_migrated = migrate_connections_payload(payload)
+        except StorageLimitError:
+            self._resource_limit_error = True
+            self.notes_file_store.read_only = True
+            self.encryption_locked = False
+            return
         except MissingMasterPasswordError:
             self.encryption_locked = True
             self.encryption_error = ""
             self.data = StoreData(
                 local_terminals=[],
                 snippets=[],
+                notes=[],
+                note_categories=[],
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
@@ -538,6 +624,8 @@ class ConnectionStore:
             self.data = StoreData(
                 local_terminals=[],
                 snippets=[],
+                notes=[],
+                note_categories=[],
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
@@ -547,13 +635,24 @@ class ConnectionStore:
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
             backup = backup_invalid_file(self.path, self.read_only)
             self.recovery_messages.append(str(backup or self.path))
+            self.notes_file_store.load(
+                self.settings_store.app.connection_storage_mode,
+                self.master_password,
+            )
+            for message in self.notes_file_store.recovery_messages:
+                if message not in self.recovery_messages:
+                    self.recovery_messages.append(message)
             self.data = StoreData(
                 local_terminals=[],
                 snippets=[],
+                notes=self.notes_file_store.notes,
+                note_categories=self.notes_file_store.categories,
                 terminal=self.settings_store.terminal,
                 app=self.settings_store.app,
                 statistics=self.statistics_store.data,
             )
+            self.encryption_locked = self.notes_file_store.encryption_locked
+            self.encryption_error = self.notes_file_store.encryption_error
             return
         self.encryption_locked = False
         self.encryption_error = ""
@@ -586,6 +685,7 @@ class ConnectionStore:
         groups = [Group(**item) for item in payload.get("groups", [])]
         servers = [Server(**item) for item in payload.get("servers", [])]
         snippets = snippets_from_payload(payload.get("snippets", []), groups, servers)
+        self.notes_file_store.load(app.connection_storage_mode, self.master_password)
         self.data = StoreData(
             groups=groups,
             servers=servers,
@@ -593,10 +693,19 @@ class ConnectionStore:
             workspaces=workspaces_from_payload(payload.get("workspaces", [])),
             snippets=snippets,
             snippet_categories=normalized_categories(payload.get("snippet_categories"), snippets),
+            notes=self.notes_file_store.notes,
+            note_categories=self.notes_file_store.categories,
             terminal=terminal,
             app=app,
             statistics=self.statistics_store.data,
         )
+        for message in self.notes_file_store.recovery_messages:
+            if message not in self.recovery_messages:
+                self.recovery_messages.append(message)
+        if self.notes_file_store.encryption_locked:
+            self.encryption_locked = True
+            self.encryption_error = self.notes_file_store.encryption_error
+        self.detach_orphaned_notes()
         split_layouts_normalized = self.normalize_split_layouts()
         repaired = self.repair_references()
         if (
@@ -623,7 +732,7 @@ class ConnectionStore:
     def unlock_connections(self, master_password: str) -> bool:
         self.master_password = master_password
         self.load()
-        if self.encryption_locked:
+        if self.encryption_locked or self.resource_limit_error:
             self.master_password = None
             return False
         self.save_settings()
@@ -673,6 +782,282 @@ class ConnectionStore:
             self.data.snippets,
             self.data.snippet_categories,
         )
+        live_actions = {snippet_action(snippet.id) for snippet in self.data.snippets}
+        keybindings = {
+            action: value for action, value in self.data.app.keybindings.items()
+            if not is_snippet_action(action) or action in live_actions
+        }
+        if keybindings != self.data.app.keybindings:
+            self.data.app.keybindings = keybindings
+            self.save_settings()
+
+    def save_notes(self) -> None:
+        if self.read_only or self.encryption_locked:
+            return
+        self.notes_file_store.replace_data(
+            self.data.notes,
+            self.data.note_categories,
+        )
+        self.notes_file_store.save(
+            self.data.app.connection_storage_mode,
+            self.master_password,
+        )
+
+    def _snapshot_notes(self) -> tuple[list[Note], list[NoteCategory]]:
+        return list(self.data.notes), list(self.data.note_categories)
+
+    def _restore_notes(
+        self, snapshot: tuple[list[Note], list[NoteCategory]],
+    ) -> None:
+        self.data.notes, self.data.note_categories = snapshot
+        self.notes_file_store.replace_data(self.data.notes, self.data.note_categories)
+
+    def add_note(
+        self,
+        title: str,
+        content: str,
+        category: str = "",
+        server_id: str | None = None,
+    ) -> Note:
+        self.ensure_writable()
+        category = category.strip()
+        category = note_category_name(
+            self.data.note_categories, category, server_id,
+        ) or category
+        note = normalize_note(str(uuid4()), title, content, category, server_id)
+        if note.server_id and not any(server.id == note.server_id for server in self.data.servers):
+            raise NoteError("note_server_missing")
+        snapshot = self._snapshot_notes()
+        if category and note_category_name(
+            self.data.note_categories, category, server_id,
+        ) is None:
+            self.data.note_categories = normalized_note_categories(
+                [*self.data.note_categories, NoteCategory(category, server_id)],
+                self.data.notes,
+            )
+        self.data.notes.append(note)
+        try:
+            self.save_notes()
+        except Exception:
+            self._restore_notes(snapshot)
+            raise
+        return note
+
+    def update_note(
+        self,
+        note_id: str,
+        title: str,
+        content: str,
+        category: str,
+        server_id: str | None,
+    ) -> None:
+        self.ensure_writable()
+        category = category.strip()
+        category = note_category_name(
+            self.data.note_categories, category, server_id,
+        ) or category
+        snapshot = self._snapshot_notes()
+        for index, existing in enumerate(self.data.notes):
+            if existing.id != note_id:
+                continue
+            updated = normalize_note(
+                note_id, title, content, category, server_id,
+                existing.created_at, now=timestamp_now(),
+            )
+            if updated.server_id and not any(server.id == updated.server_id for server in self.data.servers):
+                raise NoteError("note_server_missing")
+            self.data.notes[index] = updated
+            if category and note_category_name(
+                self.data.note_categories, category, server_id,
+            ) is None:
+                self.data.note_categories = normalized_note_categories(
+                    [*self.data.note_categories, NoteCategory(category, server_id)],
+                    self.data.notes,
+                )
+            try:
+                self.save_notes()
+            except Exception:
+                self._restore_notes(snapshot)
+                raise
+            return
+        raise NoteError("note_missing")
+
+    def delete_note(self, note_id: str) -> None:
+        self.ensure_writable()
+        snapshot = self._snapshot_notes()
+        self.data.notes = [note for note in self.data.notes if note.id != note_id]
+        try:
+            self.save_notes()
+        except Exception:
+            self._restore_notes(snapshot)
+            raise
+
+    def detach_orphaned_notes(self) -> int:
+        server_ids = {server.id for server in self.data.servers}
+        updated = []
+        detached = 0
+        for note in self.data.notes:
+            if note.server_id and note.server_id not in server_ids:
+                note = replace(note, server_id=None, modified_at=timestamp_now())
+                detached += 1
+            updated.append(note)
+        categories = normalized_note_categories(
+            [
+                NoteCategory(category.name, None)
+                if category.server_id and category.server_id not in server_ids
+                else category
+                for category in self.data.note_categories
+            ],
+            updated,
+        )
+        if detached or categories != self.data.note_categories:
+            self.data.notes = updated
+            self.data.note_categories = categories
+            self.save_notes()
+        return detached
+
+    def add_note_category(self, name: str, server_id: str | None = None) -> None:
+        self.ensure_writable()
+        name = name.strip()
+        if not name:
+            raise NoteError("note_category_required")
+        if server_id and not any(server.id == server_id for server in self.data.servers):
+            raise NoteError("note_server_missing")
+        if note_category_name(self.data.note_categories, name, server_id) is not None:
+            raise NoteError("note_category_exists")
+        snapshot = self._snapshot_notes()
+        self.data.note_categories.append(NoteCategory(name, server_id))
+        try:
+            self.save_notes()
+        except Exception:
+            self._restore_notes(snapshot)
+            raise
+
+    def has_note_category(self, name: str, server_id: str | None = None) -> bool:
+        return note_category_name(self.data.note_categories, name, server_id) is not None
+
+    def move_note_category(
+        self, name: str, parent: str | None, server_id: str | None = None,
+    ) -> None:
+        self.ensure_writable()
+        if not note_category_move_allowed(self.data.note_categories, name, parent, server_id):
+            raise NoteError("note_category_missing")
+        snapshot = self._snapshot_notes()
+        self.data.note_categories = [
+            replace(item, parent=parent)
+            if item.name == name and item.server_id == server_id else item
+            for item in self.data.note_categories
+        ]
+        try:
+            self.save_notes()
+        except Exception:
+            self._restore_notes(snapshot)
+            raise
+
+    def rename_note_category(
+        self, old_name: str, new_name: str, server_id: str | None = None,
+    ) -> None:
+        self.ensure_writable()
+        canonical_old = note_category_name(
+            self.data.note_categories, old_name, server_id,
+        )
+        if canonical_old is None:
+            raise NoteError("note_category_missing")
+        new_name = new_name.strip()
+        if not new_name:
+            raise NoteError("note_category_required")
+        existing_new = note_category_name(
+            self.data.note_categories, new_name, server_id,
+        )
+        if existing_new is not None and existing_new != canonical_old:
+            raise NoteError("note_category_exists")
+        if canonical_old == new_name:
+            return
+        snapshot = self._snapshot_notes()
+        self.data.note_categories = [
+            replace(item,
+                    name=new_name if item.name == canonical_old else item.name,
+                    parent=new_name if item.parent == canonical_old else item.parent)
+            if item.server_id == (server_id or None)
+            else item
+            for item in self.data.note_categories
+        ]
+        self.data.notes = [
+            replace(note, category=new_name, modified_at=timestamp_now())
+            if note.category == canonical_old and note.server_id == (server_id or None)
+            else note
+            for note in self.data.notes
+        ]
+        try:
+            self.save_notes()
+        except Exception:
+            self._restore_notes(snapshot)
+            raise
+
+    def duplicate_note_category(
+        self, name: str, new_name: str, server_id: str | None = None,
+    ) -> None:
+        self.ensure_writable()
+        canonical_name = note_category_name(
+            self.data.note_categories, name, server_id,
+        )
+        if canonical_name is None:
+            raise NoteError("note_category_missing")
+        new_name = new_name.strip()
+        if not new_name:
+            raise NoteError("note_category_required")
+        if note_category_name(self.data.note_categories, new_name, server_id) is not None:
+            raise NoteError("note_category_exists")
+        snapshot = self._snapshot_notes()
+        stamp = timestamp_now()
+        copies = [
+            replace(note, id=str(uuid4()), category=new_name, created_at=stamp, modified_at=stamp)
+            for note in self.data.notes
+            if note.category == canonical_name and note.server_id == (server_id or None)
+        ]
+        parent = next(item.parent for item in self.data.note_categories
+                      if item.name == canonical_name and item.server_id == (server_id or None))
+        self.data.note_categories.append(NoteCategory(new_name, server_id, parent))
+        self.data.notes.extend(copies)
+        try:
+            self.save_notes()
+        except Exception:
+            self._restore_notes(snapshot)
+            raise
+
+    def delete_note_category(
+        self, name: str, server_id: str | None = None,
+    ) -> None:
+        self.ensure_writable()
+        canonical_name = note_category_name(
+            self.data.note_categories, name, server_id,
+        )
+        if canonical_name is None:
+            raise NoteError("note_category_missing")
+        snapshot = self._snapshot_notes()
+        parent = next(item.parent for item in self.data.note_categories
+                      if item.name == canonical_name and item.server_id == (server_id or None))
+        self.data.note_categories = [
+            replace(category, parent=parent)
+            if category.server_id == (server_id or None) and category.parent == canonical_name
+            else category
+            for category in self.data.note_categories
+            if not (
+                category.name == canonical_name
+                and category.server_id == (server_id or None)
+            )
+        ]
+        self.data.notes = [
+            replace(note, category="", modified_at=timestamp_now())
+            if note.category == canonical_name and note.server_id == (server_id or None)
+            else note
+            for note in self.data.notes
+        ]
+        try:
+            self.save_notes()
+        except Exception:
+            self._restore_notes(snapshot)
+            raise
 
     def save_settings(self) -> None:
         if self.read_only:
@@ -720,6 +1105,8 @@ class ConnectionStore:
     def update_connection_storage_mode(self, storage_mode: str, master_password: str | None = None) -> None:
         self.ensure_writable()
         requested = storage_mode if storage_mode in CONNECTION_STORAGE_MODES else CONNECTION_STORAGE_PLAIN
+        previous_mode = self.data.app.connection_storage_mode
+        previous_password = self.master_password
         if requested == CONNECTION_STORAGE_ENCRYPTED:
             if master_password:
                 self.master_password = master_password
@@ -727,9 +1114,107 @@ class ConnectionStore:
                 raise MissingMasterPasswordError("Encrypted connections require a master password.")
         else:
             self.master_password = None
+        from .notes_io import atomic_write
+
+        snapshots = {
+            path: path.read_bytes() if path.exists() else None
+            for path in (self.path, self.notes_file_store.path, self.settings_store.path)
+        }
         self.data.app.connection_storage_mode = requested
-        self.save_settings()
-        self.save_connections()
+        try:
+            self.save_connections()
+            self.save_notes()
+            self.save_settings()
+        except Exception:
+            self.data.app.connection_storage_mode = previous_mode
+            self.master_password = previous_password
+            for path, contents in snapshots.items():
+                if contents is None:
+                    try:
+                        path.unlink()
+                    except FileNotFoundError:
+                        pass
+                else:
+                    atomic_write(path, contents)
+            self.settings_store.app = self.data.app
+            raise
+
+    def change_master_password(
+        self, current_password: str, new_password: str,
+    ) -> None:
+        """Re-encrypt connections and notes with a verified replacement password."""
+        self.ensure_writable()
+        if self.data.app.connection_storage_mode != CONNECTION_STORAGE_ENCRYPTED:
+            raise ValueError("The connection store is not encrypted.")
+        if len(new_password) < 8:
+            raise ValueError("Master passwords must contain at least 8 characters.")
+
+        raw_connections = read_raw_connections_payload(self.path)
+        if connection_storage_mode_from_payload(raw_connections) != CONNECTION_STORAGE_ENCRYPTED:
+            raise ValueError("Connections are not stored in encrypted format.")
+        decoded_connections_payload(raw_connections, current_password)
+        if current_password == new_password:
+            raise UnchangedMasterPasswordError(
+                "The new master password must differ from the current password."
+            )
+
+        from .notes_io import (
+            atomic_write,
+            encode_notes_payload,
+            notes_payload,
+            read_notes_file,
+        )
+
+        notes_path = self.notes_file_store.path
+        notes_exist = notes_path.exists()
+        if notes_exist:
+            read_notes_file(notes_path, current_password)
+
+        connection_bytes = storage_json_bytes(
+            connections_payload(
+                self.data.groups,
+                self.data.servers,
+                self.data.local_terminals,
+                CONNECTION_STORAGE_ENCRYPTED,
+                new_password,
+                self.data.workspaces,
+                self.data.snippets,
+                self.data.snippet_categories,
+            ),
+        )
+        notes_bytes = None
+        if notes_exist:
+            notes_bytes = storage_json_bytes(
+                encode_notes_payload(
+                    notes_payload(self.data.notes, self.data.note_categories),
+                    CONNECTION_STORAGE_ENCRYPTED,
+                    new_password,
+                ),
+            )
+
+        paths = [self.path]
+        if notes_exist:
+            paths.append(notes_path)
+        snapshots = {path: path.read_bytes() for path in paths}
+        previous_password = self.master_password
+        try:
+            atomic_write(self.path, connection_bytes)
+            if notes_bytes is not None:
+                atomic_write(notes_path, notes_bytes)
+        except Exception as error:
+            self.master_password = previous_password
+            rollback_errors = []
+            for path, contents in snapshots.items():
+                try:
+                    atomic_write(path, contents)
+                except Exception as rollback_error:
+                    rollback_errors.append(rollback_error)
+            if rollback_errors:
+                raise MasterPasswordRollbackError(
+                    "Master password change failed and storage rollback was incomplete."
+                ) from error
+            raise
+        self.master_password = new_password
 
     def add_group(self, name: str, parent_id: str | None = None) -> Group:
         self.ensure_writable()
@@ -763,6 +1248,13 @@ class ConnectionStore:
         removed_server_ids = {
             server.id for server in self.data.servers if server.group_id in group_ids
         }
+        notes_changed = False
+        for index, note in enumerate(self.data.notes):
+            if note.server_id in removed_server_ids:
+                self.data.notes[index] = replace(
+                    note, server_id=None, modified_at=timestamp_now(),
+                )
+                notes_changed = True
         self.data.servers = [server for server in self.data.servers if server.id not in removed_server_ids]
         self.data.snippets = [
             snippet for snippet in self.data.snippets
@@ -772,6 +1264,8 @@ class ConnectionStore:
             )
         ]
         self.save_connections()
+        if notes_changed:
+            self.save_notes()
 
     def add_server(
         self,
@@ -784,6 +1278,7 @@ class ConnectionStore:
         password: str = "",
         public_key: str = "",
         split_layout: str = "none",
+        command_on_start: str = "",
     ) -> Server:
         self.ensure_writable()
         server = Server(
@@ -797,6 +1292,7 @@ class ConnectionStore:
             password=password,
             public_key=public_key,
             split_layout=normalize_split_layout(split_layout),
+            command_on_start=command_on_start.strip(),
         )
         self.data.servers.append(server)
         self.save_connections()
@@ -814,6 +1310,7 @@ class ConnectionStore:
         password: str = "",
         public_key: str = "",
         split_layout: str = "none",
+        command_on_start: str = "",
     ) -> None:
         self.ensure_writable()
         for server in self.data.servers:
@@ -827,6 +1324,7 @@ class ConnectionStore:
                 server.password = password
                 server.public_key = public_key
                 server.split_layout = normalize_split_layout(split_layout)
+                server.command_on_start = command_on_start.strip()
                 break
         self.save_connections()
 
@@ -838,6 +1336,28 @@ class ConnectionStore:
                 break
         self.save_connections()
 
+    def can_move_server_to_group(self, server_id: str, group_id: str | None) -> bool:
+        if self.read_only or self.encryption_locked:
+            return False
+        server = next((item for item in self.data.servers if item.id == server_id), None)
+        if server is None or server.group_id == group_id:
+            return False
+        return group_id is None or any(group.id == group_id for group in self.data.groups)
+
+    def move_server_to_group(self, server_id: str, group_id: str | None) -> bool:
+        self.ensure_writable()
+        if not self.can_move_server_to_group(server_id, group_id):
+            return False
+        server = next(item for item in self.data.servers if item.id == server_id)
+        previous_group_id = server.group_id
+        server.group_id = group_id
+        try:
+            self.save_connections()
+        except Exception:
+            server.group_id = previous_group_id
+            raise
+        return True
+
     def delete_server(self, server_id: str) -> None:
         self.ensure_writable()
         self.data.servers = [server for server in self.data.servers if server.id != server_id]
@@ -845,7 +1365,21 @@ class ConnectionStore:
             snippet for snippet in self.data.snippets
             if not (snippet.scope == "server" and snippet.target_id == server_id)
         ]
+        self.data.notes = [
+            replace(note, server_id=None, modified_at=timestamp_now())
+            if note.server_id == server_id else note
+            for note in self.data.notes
+        ]
+        self.data.note_categories = normalized_note_categories(
+            [
+                NoteCategory(category.name, None)
+                if category.server_id == server_id else category
+                for category in self.data.note_categories
+            ],
+            self.data.notes,
+        )
         self.save_connections()
+        self.save_notes()
 
     def add_local_terminal(
         self,
@@ -939,17 +1473,23 @@ class ConnectionStore:
 
     def add_snippet(
         self, name: str, content: str, category: str = "", scope: str = "global", target_id: str = "",
+        *, shortcut: str = "",
     ) -> CommandSnippet:
         self.ensure_writable()
         snippet = normalize_snippet(str(uuid4()), name, content, category, scope, target_id)
         if not snippet_target_exists(snippet, self.data.groups, self.data.servers):
             raise SnippetError("snippet_scope_target_required")
+        keybindings = merge_keybindings(self.data.app.keybindings, {snippet_action(snippet.id): shortcut})
         self.data.snippets.append(snippet)
         self.save_connections()
+        if shortcut:
+            self.data.app.keybindings = keybindings
+            self.save_settings()
         return snippet
 
     def update_snippet(
         self, snippet_id: str, name: str, content: str, category: str = "", scope: str = "global", target_id: str = "",
+        *, shortcut: str | None = None, previous_shortcut: str | None = None,
     ) -> None:
         self.ensure_writable()
         updated = normalize_snippet(snippet_id, name, content, category, scope, target_id)
@@ -957,9 +1497,19 @@ class ConnectionStore:
             raise SnippetError("snippet_scope_target_required")
         for index, snippet in enumerate(self.data.snippets):
             if snippet.id == snippet_id:
+                action = snippet_action(snippet_id)
+                keybindings = merge_keybindings(
+                    self.data.app.keybindings,
+                    {action: shortcut} if shortcut is not None else {},
+                    {action: previous_shortcut} if previous_shortcut is not None else None,
+                )
                 self.data.snippets[index] = updated
                 self.save_connections()
+                if keybindings != self.data.app.keybindings:
+                    self.data.app.keybindings = keybindings
+                    self.save_settings()
                 return
+        raise KeybindingError("keybindings_changed")
 
     def delete_snippet(self, snippet_id: str) -> None:
         self.ensure_writable()
@@ -1063,24 +1613,6 @@ class ConnectionStore:
         )
         self.save_settings()
 
-    def update_prompt_settings(self, enabled: bool, template: str, color: str) -> None:
-        self.ensure_writable()
-        current = self.data.terminal
-        self.data.terminal = TerminalSettings(
-            font_family=current.font_family,
-            font_size=current.font_size,
-            foreground=current.foreground,
-            background=current.background,
-            split_separator_color=current.split_separator_color,
-            split_separator_thickness=current.split_separator_thickness,
-            ls_colors=current.ls_colors,
-            ansi_palette=current.ansi_palette or DEFAULT_ANSI_PALETTE.copy(),
-            prompt_enabled=enabled,
-            prompt_template=template if template.strip() else r"\u@\h:\w\$ ",
-            prompt_color=color.strip() or DEFAULT_PROMPT_COLOR,
-        )
-        self.save_settings()
-
     def update_app_settings(self, app: AppSettings) -> None:
         self.ensure_writable()
         current = self.data.app
@@ -1099,13 +1631,36 @@ class ConnectionStore:
             send_password_shortcut=app.send_password_shortcut,
             send_password_enter=app.send_password_enter,
             connection_storage_mode=current.connection_storage_mode,
-            statistics_enabled=app.statistics_enabled,
+            statistics_enabled=current.statistics_enabled,
+            sftp_enabled=current.sftp_enabled,
             debug_enabled=app.debug_enabled,
+            notes_editor=current.notes_editor.copy(),
             keybindings=normalize_keybindings(current.keybindings),
         )
         self.save_settings()
 
-    def update_keybindings(self, keybindings: dict[str, str]) -> None:
+    def update_notes_editor(self, values: dict[str, Any]) -> None:
         self.ensure_writable()
-        self.data.app.keybindings = normalize_keybindings(keybindings)
+        candidate = replace(self.data.app, notes_editor={**self.data.app.notes_editor, **values})
+        self.data.app = normalize_app_settings(candidate)
+        self.save_settings()
+
+    def update_optional_tools(self, *, statistics_enabled: bool, sftp_enabled: bool) -> None:
+        self.ensure_writable()
+        self.data.app.statistics_enabled = statistics_enabled
+        self.data.app.sftp_enabled = sftp_enabled
+        self.save_settings()
+
+    def update_keybindings(self, keybindings: dict[str, str], *, previous: dict[str, str] | None = None) -> None:
+        self.ensure_writable()
+        live_actions = {snippet_action(snippet.id) for snippet in self.data.snippets}
+        for action, value in keybindings.items():
+            if is_snippet_action(action) and action not in live_actions and value:
+                if previous is None or value != previous.get(action, ""):
+                    raise KeybindingError("keybindings_changed")
+        current = {action: value for action, value in self.data.app.keybindings.items()
+                   if not is_snippet_action(action) or action in live_actions}
+        updates = {action: value for action, value in keybindings.items()
+                   if not is_snippet_action(action) or action in live_actions}
+        self.data.app.keybindings = merge_keybindings(current, updates, previous)
         self.save_settings()

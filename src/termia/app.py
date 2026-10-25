@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import argparse
 import signal
+from time import monotonic
 
 import gi
 
@@ -13,7 +14,8 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 from .config_actions import ConfigActionsMixin
 from .connection_history_presenter import ConnectionHistoryPresenter
 from .connection_history_view import ConnectionHistoryDialog
-from .file_transfer import FileTransferController
+from .builtin_sftp import SFTPTool
+from .builtin_tools import BuiltInTools
 from .transfer_lifecycle import ManagedTransfer
 from .connection_dialogs import ConnectionDialogsMixin
 from .constants import (
@@ -25,6 +27,7 @@ from .constants import (
     STATE_DIR,
 )
 from .debug import configure_debug_logging, log_event, log_startup_context, log_store_state
+from .dialog_actions import configure_action_area
 from .i18n import translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
@@ -32,22 +35,56 @@ from .main_menu_actions import MainMenuActions
 from .notifications import NOTIFICATION_ICONS, GroupedNotificationLabel, NotificationSeverity
 from .preferences import PreferencesMixin
 from .session_registry import SessionRegistry
+from .session_observer import NoOpSessionObserver
 from .session_snapshot import SessionSnapshotStore
 from .snippet_dialogs import SnippetDialogs
 from .snippet_presenter import SnippetPresenter
+from .notes_dialogs import NotesDialogs
+from .notes_presenter import NotesPresenter
+from .optional_tools_dialog import OptionalToolsDialog
 from .stores import ConnectionStore
 from .sidebar import SidebarMixin
 from .statistics_presenter import StatisticsPresenter
+from .statistics_collector import StatisticsCollector
 from .statistics_view import StatisticsDialog
 from .styles import build_application_css
 from .tab_lifecycle_actions import TabLifecycleActions
-from .tabs import TabsMixin
+from .tabs import TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
 from .terminal_menus import TerminalMenusMixin
 from .terminal_menu_actions import TerminalMenuActions
+from .terminal_processes import TerminalProcess
 from .terminal_sessions import TerminalSessionsMixin
 from .ui_state import RowObject
 
 TOAST_VISIBLE_SECONDS = 5
+SHUTDOWN_CLEANUP_DEADLINE_SECONDS = 30
+
+
+def gnome_interface_settings() -> Gio.Settings | None:
+    source = Gio.SettingsSchemaSource.get_default()
+    if source is None:
+        return None
+    schema = source.lookup("org.gnome.desktop.interface", True)
+    if schema is None or not schema.has_key("color-scheme"):
+        return None
+    try:
+        return Gio.Settings.new_full(schema, None, None)
+    except GLib.Error:
+        return None
+
+
+def system_prefers_dark_theme(settings: Gio.Settings | None = None) -> bool | None:
+    settings = settings or gnome_interface_settings()
+    if settings is None:
+        return None
+    try:
+        color_scheme = settings.get_string("color-scheme")
+    except GLib.Error:
+        return None
+    return {
+        "prefer-dark": True,
+        "prefer-light": False,
+    }.get(color_scheme)
 
 
 def build_add_badged_icon(icon_name: str) -> Gtk.Overlay:
@@ -84,6 +121,16 @@ class TermiaWindow(
             self.set_handle_menubar_accel(False)
 
         self.store = ConnectionStore(DATA_FILE)
+        self.connect_system_theme_changes()
+        self.builtin_tools = BuiltInTools.from_settings(self.store.data.app)
+        self.session_observer = (
+            StatisticsCollector(
+                lambda: self.store.data.statistics,
+                self.store.save_statistics,
+            )
+            if self.builtin_tools.statistics
+            else NoOpSessionObserver()
+        )
         self.session_snapshot_store = SessionSnapshotStore(
             SESSION_SNAPSHOT_FILE,
             read_only=self.store.read_only,
@@ -110,6 +157,9 @@ class TermiaWindow(
         self.toast_label.set_margin_top(10)
         self.toast_label.set_margin_bottom(10)
         self.toast_hide_id: int | None = None
+        self.optional_tools_dialog = OptionalToolsDialog(
+            self, self.store, self.t, self.toast_label.set_label
+        )
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
             self.t,
@@ -135,22 +185,33 @@ class TermiaWindow(
         if self.store.read_only:
             self.set_title(f"Termia ({self.t('read_only_badge')})")
         self.apply_app_theme()
-        self.install_tree_styles()
         self.selected: RowObject | None = None
         self.selected_tree_widget: Gtk.Widget | None = None
         self.group_expanded_state: dict[str, bool] = {}
         self.collapse_groups_on_startup = True
         self.tree_widgets: dict[tuple[str, str], Gtk.Widget] = {}
+        self.sidebar_drag_server_id: str | None = None
         self.active_context_popover: Gtk.Popover | None = None
         self.session_registry = SessionRegistry()
-        self.run_connections = 0
-        self.statistics_presenter = StatisticsPresenter(
-            lambda: self.store.data.statistics,
-            lambda: self.store.data.servers,
-            lambda: self.run_connections,
-            self.t,
-        )
-        self.statistics_dialog = StatisticsDialog(self, self.statistics_presenter, self.t)
+        self.statistics_dialog = None
+        if self.builtin_tools.statistics:
+            statistics_presenter = StatisticsPresenter(
+                lambda: self.store.data.statistics,
+                lambda: self.store.data.servers,
+                lambda: self.session_observer.run_connections,
+                self.t,
+            )
+            self.statistics_dialog = StatisticsDialog(self, statistics_presenter, self.t)
+        self.sftp_tool = None
+        if self.builtin_tools.sftp:
+            self.sftp_tool = SFTPTool(
+                lambda session: self if session is None else self.window_for_session(session),
+                self.session_registry.contains,
+                lambda: self.shutdown_in_progress,
+                self.register_file_transfer,
+                self.unregister_file_transfer,
+                self.t,
+            )
         self.snippet_presenter = SnippetPresenter(
             lambda: self.store.data.snippets,
             lambda: self.store.data.groups,
@@ -161,6 +222,21 @@ class TermiaWindow(
             self,
             self.store,
             self.snippet_presenter,
+            self.t,
+            self.ensure_writable,
+            self.toast_label.set_error,
+            self.toast_label.set_label,
+        )
+        self.terminal_shortcut_handler = self.snippet_dialogs.on_terminal_shortcut
+        self.notes_presenter = NotesPresenter(
+            lambda: self.store.data.notes,
+            lambda: self.store.data.note_categories,
+            lambda: self.store.data.servers,
+        )
+        self.notes_dialogs = NotesDialogs(
+            self,
+            self.store,
+            self.notes_presenter,
             self.t,
             self.ensure_writable,
             self.toast_label.set_error,
@@ -177,8 +253,10 @@ class TermiaWindow(
             terminal_settings=lambda: self.on_terminal_settings(None),
             keybinding_settings=lambda: self.on_keybindings_settings(None),
             security_settings=lambda: self.on_security_settings(None),
+            optional_tools=self.optional_tools_dialog.show,
             manage_snippets=self.snippet_dialogs.show_manager,
-            statistics=self.statistics_dialog.show,
+            manage_notes=self.notes_dialogs.show_manager,
+            statistics=self.statistics_dialog.show if self.statistics_dialog is not None else None,
             connection_history=self.connection_history_dialog.show,
             data_locations=self.on_data_locations,
             export_config=self.on_export_config,
@@ -194,9 +272,9 @@ class TermiaWindow(
             copy=self.copy_terminal_selection,
             paste=self.paste_terminal_clipboard,
             send_files=self.on_send_files_to_server,
-            browse_files=self.on_browse_sftp,
+            browse_files=self.sftp_tool.browse if self.sftp_tool is not None else None,
             configure=self.configure_terminal_from_menu,
-            session_statistics=self.show_session_statistics,
+            session_statistics=self.show_enabled_session_statistics if self.statistics_dialog is not None else None,
             split=self.split_terminal_from_menu,
             split_connection=self.show_split_connection_dialog,
             rename_tab=self.show_rename_tab_dialog,
@@ -206,17 +284,23 @@ class TermiaWindow(
             close_tab=self.close_tab_from_terminal_menu,
             run_snippet=self.snippet_dialogs.show_picker,
         )
-        self.stats_save_id: int | None = None
         self.close_confirmation_pending = False
         self.shutdown_in_progress = False
         self.file_transfer_controllers: set[ManagedTransfer] = set()
+        self.shutdown_transfers: tuple[ManagedTransfer, ...] = ()
+        self.orphaned_terminal_processes: set[TerminalProcess] = set()
+        self.shutdown_terminal_processes: tuple[TerminalProcess, ...] = ()
+        self.shutdown_deadline = 0.0
+        self.shutdown_force_sent = False
         self.connect("close-request", self.on_main_window_close_request)
         self.connect("destroy", lambda *_args: self.store.close())
         if hasattr(GLib, "unix_signal_add"):
             GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.on_unix_termination_signal)
 
         self._build_ui()
-        if self.store.recovery_messages:
+        if self.store.resource_limit_error:
+            self.toast_label.set_error(self.t("storage_limit_rejected"))
+        elif self.store.recovery_messages:
             self.toast_label.set_label(
                 self.t("config_file_recovered").format(path=self.store.recovery_messages[0])
             )
@@ -312,6 +396,9 @@ class TermiaWindow(
         return translate_key(key, self.store.data.app.language)
 
     def ensure_writable(self) -> bool:
+        if getattr(self.store, "resource_limit_error", False):
+            self.toast_label.set_error(self.t("storage_limit_rejected"))
+            return False
         if self.store.encryption_locked:
             self.toast_label.set_label(self.t("connections_locked"))
             self.request_unlock_connections()
@@ -331,7 +418,9 @@ class TermiaWindow(
         widget.set_sensitive(not write_blocked)
         widget.set_tooltip_text(
             (
-                self.t("connections_locked_tooltip")
+                self.t("storage_limit_rejected")
+                if getattr(self.store, "resource_limit_error", False)
+                else self.t("connections_locked_tooltip")
                 if self.store.encryption_locked
                 else self.t("read_only_mode_tooltip")
             )
@@ -388,6 +477,12 @@ class TermiaWindow(
             )
             self.schedule_startup_restore_or_local()
             return
+        if getattr(self.store, "resource_limit_error", False):
+            self.hide_unlock_panel()
+            self.refresh_translated_chrome()
+            self.refresh_list()
+            self.toast_label.set_error(self.t("storage_limit_rejected"))
+            return
         self.unlock_error_label.set_label(self.t("unlock_connections_failed"))
         self.unlock_password_entry.set_text("")
         self.unlock_password_entry.grab_focus()
@@ -430,16 +525,40 @@ class TermiaWindow(
     def begin_main_window_shutdown(self) -> None:
         if self.shutdown_in_progress:
             return
+        if not self.notes_dialogs.prepare_shutdown():
+            return
         self.shutdown_in_progress = True
+        self.stop_tab_drag_scroll()
+        self.shutdown_deadline = monotonic() + SHUTDOWN_CLEANUP_DEADLINE_SECONDS
+        self.shutdown_force_sent = False
+        self.shutdown_transfers = tuple(self.file_transfer_controllers)
         log_event("application.shutdown_started", sessions=len(self.session_registry.sessions()))
         self.snippet_dialogs.shutdown()
+        self.notes_dialogs.shutdown()
         self.cancel_file_transfers(close_dialog=True)
         self.save_session_snapshot_before_close()
         self.save_history_before_close()
-        self.save_statistics_before_close()
+        self.session_observer.shutdown(self.session_registry.sessions())
         self.prepare_terminal_sessions_for_shutdown()
         self.terminate_open_terminal_processes()
         GLib.timeout_add(500, self.finish_main_window_shutdown)
+
+    def register_file_transfer(self, transfer: ManagedTransfer) -> None:
+        self.file_transfer_controllers.add(transfer)
+
+    def show_enabled_session_statistics(self, popover, session, terminal) -> None:
+        if self.statistics_dialog is None:
+            return
+        popover.popdown()
+        pane = self.pane_state(session, terminal)
+        server_connections = (
+            self.store.data.statistics.server_connections.get(pane.server_id, 0)
+            if pane.server_id is not None
+            else 0
+        )
+        self.statistics_dialog.show_session(
+            self.window_for_session(session), server_connections
+        )
 
     def save_session_snapshot_before_close(self) -> None:
         if self.store.read_only or not self.store.data.app.restore_sessions_on_startup:
@@ -454,8 +573,36 @@ class TermiaWindow(
         )
 
     def finish_main_window_shutdown(self) -> bool:
-        self.terminate_open_terminal_processes(force=True)
-        log_event("application.shutdown_finished")
+        if not self.shutdown_force_sent:
+            self.terminate_open_terminal_processes(force=True)
+            self.shutdown_force_sent = True
+        pending_processes = self.pending_shutdown_terminal_processes()
+        transfer_states = tuple(
+            transfer.shutdown_cleanup_state() for transfer in self.shutdown_transfers
+        )
+        pending_transfers = transfer_states.count("pending")
+        failed_transfers = transfer_states.count("failed")
+        timed_out = monotonic() >= self.shutdown_deadline and (
+            pending_processes or pending_transfers
+        )
+        if (pending_processes or pending_transfers) and not timed_out:
+            return GLib.SOURCE_CONTINUE
+
+        if timed_out:
+            outcome = "timed_out"
+        elif failed_transfers:
+            outcome = "failed"
+        else:
+            outcome = "stopped"
+        if outcome != "stopped":
+            log_event(
+                "application.shutdown_cleanup_unverified",
+                outcome=outcome,
+                terminal_processes=len(pending_processes),
+                transfers_pending=pending_transfers,
+                transfers_failed=failed_transfers,
+            )
+        log_event("application.shutdown_finished", cleanup=outcome)
         application = self.get_application()
         if application is not None:
             application.quit()
@@ -463,33 +610,52 @@ class TermiaWindow(
 
     def apply_app_theme(self) -> None:
         settings = Gtk.Settings.get_default()
-        if settings is None:
-            return
-        theme = self.store.data.app.theme
-        settings.set_property("gtk-application-prefer-dark-theme", theme == "dark")
+        if settings is not None:
+            theme = self.store.data.app.theme
+            if theme == "system":
+                prefers_dark = system_prefers_dark_theme(
+                    getattr(self, "_gnome_interface_settings", None)
+                )
+                if prefers_dark is None:
+                    settings.reset_property("gtk-application-prefer-dark-theme")
+                else:
+                    settings.set_property("gtk-application-prefer-dark-theme", prefers_dark)
+            else:
+                settings.set_property("gtk-application-prefer-dark-theme", theme == "dark")
+        self.install_tree_styles()
+
+    def connect_system_theme_changes(self) -> None:
+        self._gnome_interface_settings = gnome_interface_settings()
+        if self._gnome_interface_settings is not None:
+            self._gnome_interface_settings.connect(
+                "changed::color-scheme",
+                self.on_system_color_scheme_changed,
+            )
+
+    def on_system_color_scheme_changed(self, *_args: object) -> None:
+        if self.store.data.app.theme == "system":
+            self.apply_app_theme()
 
     def install_tree_styles(self) -> None:
         display = Gdk.Display.get_default()
         if display is None:
             return
-        gtk_settings = Gtk.Settings.get_default()
-        prefer_dark = bool(
-            gtk_settings.get_property("gtk-application-prefer-dark-theme")
-        ) if gtk_settings is not None else False
-        menu_bg = "#3a3a3a" if self.store.data.app.theme == "dark" or prefer_dark else "#f6f6f6"
         terminal_settings = self.store.data.terminal
         provider = Gtk.CssProvider()
         provider.load_from_data(
             build_application_css(
-                menu_bg,
                 terminal_settings.background,
                 terminal_settings.split_separator_color,
                 terminal_settings.split_separator_thickness,
             )
         )
+        previous_provider = getattr(self, "_application_css_provider", None)
+        if previous_provider is not None:
+            Gtk.StyleContext.remove_provider_for_display(display, previous_provider)
         Gtk.StyleContext.add_provider_for_display(
             display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
+        self._application_css_provider = provider
 
     def _build_ui(self) -> None:
         window_overlay = Gtk.Overlay()
@@ -526,7 +692,10 @@ class TermiaWindow(
         menu_button = Gtk.MenuButton()
         self.main_menu_button = menu_button
         menu_button.set_tooltip_text(self.t("main_menu"))
-        menu_button.set_popover(self.build_main_menu(self.main_menu_actions))
+        menu_button.set_popover(self.build_main_menu(
+            self.main_menu_actions,
+            write_allowed=not (self.store.read_only or self.store.encryption_locked),
+        ))
         menu_button.set_child(Gtk.Image.new_from_icon_name("open-menu-symbolic"))
         header_actions.append(menu_button)
         header.pack_start(header_actions)
@@ -609,8 +778,7 @@ class TermiaWindow(
         self.search_entry.connect("search-changed", lambda _entry: self.refresh_list())
         sidebar.append(self.search_entry)
 
-        self.server_list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.server_list.set_focusable(False)
+        self.server_list = self.create_sidebar_tree()
 
         scroller = Gtk.ScrolledWindow()
         self.server_scroller = scroller
@@ -651,21 +819,24 @@ class TermiaWindow(
         self.session_tab_bar.set_homogeneous(True)
         self.session_tab_bar.add_css_class("termia-session-tabs")
         self.session_tab_bar.set_hexpand(True)
-        tab_bar_drop = Gtk.DropTarget.new(str, Gdk.DragAction.MOVE)
-        tab_bar_drop.set_preload(True)
+        tab_bar_drop = Gtk.DropTargetAsync.new(
+            Gdk.ContentFormats.new([TERMINAL_TAB_DND_MIME_TYPE]), Gdk.DragAction.MOVE
+        )
         tab_bar_drop.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-        tab_bar_drop.connect("motion", self.on_tab_bar_drop_motion)
+        tab_bar_drop.connect("accept", self.on_tab_bar_drop_accept)
+        tab_bar_drop.connect("drag-motion", self.on_tab_bar_drop_motion)
+        tab_bar_drop.connect("drag-leave", self.on_tab_bar_drop_leave)
         tab_bar_drop.connect("drop", self.on_tab_bar_drop)
-        self.session_tab_bar.add_controller(tab_bar_drop)
 
         self.session_tab_scroller = Gtk.ScrolledWindow()
         self.session_tab_scroller.add_css_class("termia-session-tab-scroller")
         self.session_tab_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
-        self.session_tab_scroller.set_overlay_scrolling(False)
+        self.session_tab_scroller.set_overlay_scrolling(True)
         self.session_tab_scroller.set_propagate_natural_width(False)
         self.session_tab_scroller.set_min_content_width(0)
         self.session_tab_scroller.set_hexpand(True)
         self.session_tab_scroller.set_child(self.session_tab_bar)
+        self.session_tab_scroller.add_controller(tab_bar_drop)
         self.session_tab_scroller.get_hadjustment().connect(
             "changed", self.on_tab_scroll_adjustment_changed
         )
@@ -679,10 +850,8 @@ class TermiaWindow(
 
         self.tab_overflow_button = Gtk.MenuButton()
         self.tab_overflow_button.add_css_class("termia-tab-overflow-button")
-        self.tab_overflow_button.add_css_class("flat")
-        overflow_icon = Gtk.Image.new_from_icon_name("view-more-symbolic")
-        overflow_icon.set_pixel_size(14)
-        self.tab_overflow_button.set_child(overflow_icon)
+        self.tab_overflow_button.set_has_frame(False)
+        self.tab_overflow_button.set_direction(Gtk.ArrowType.DOWN)
         self.tab_overflow_button.set_tooltip_text(self.t("tab"))
         self.session_tab_controls.append(self.tab_overflow_button)
         detail.append(self.session_tab_controls)
@@ -692,71 +861,9 @@ class TermiaWindow(
         self.terminal_stack.set_hexpand(True)
         self.terminal_stack.set_vexpand(True)
         detail.append(self.terminal_stack)
-        self.rebuild_tab_overflow_popover()
+        self.initialize_tab_overflow_menu()
 
-        unlock_scrim = Gtk.Box()
-        self.unlock_scrim = unlock_scrim
-        unlock_scrim.set_halign(Gtk.Align.FILL)
-        unlock_scrim.set_valign(Gtk.Align.FILL)
-        unlock_scrim.set_hexpand(True)
-        unlock_scrim.set_vexpand(True)
-        unlock_scrim.set_visible(False)
-        window_overlay.add_overlay(unlock_scrim)
-
-        unlock_panel = Gtk.Frame()
-        self.unlock_panel = unlock_panel
-        unlock_panel.add_css_class("background")
-        unlock_panel.add_css_class("card")
-        unlock_panel.set_halign(Gtk.Align.CENTER)
-        unlock_panel.set_valign(Gtk.Align.CENTER)
-        unlock_panel.set_size_request(420, -1)
-        unlock_panel.set_margin_top(20)
-        unlock_panel.set_margin_bottom(20)
-        unlock_panel.set_margin_start(20)
-        unlock_panel.set_margin_end(20)
-        unlock_panel.set_visible(False)
-
-        unlock_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        unlock_content.set_margin_top(20)
-        unlock_content.set_margin_bottom(20)
-        unlock_content.set_margin_start(20)
-        unlock_content.set_margin_end(20)
-        unlock_panel.set_child(unlock_content)
-
-        unlock_title = Gtk.Label(label=self.t("unlock_connections_title"))
-        unlock_title.set_xalign(0)
-        unlock_title.add_css_class("title-2")
-        unlock_content.append(unlock_title)
-
-        unlock_detail = Gtk.Label(label=self.t("unlock_connections_detail"))
-        unlock_detail.set_xalign(0)
-        unlock_detail.set_wrap(True)
-        unlock_content.append(unlock_detail)
-
-        unlock_password_entry = Gtk.PasswordEntry()
-        self.unlock_password_entry = unlock_password_entry
-        unlock_password_entry.set_show_peek_icon(True)
-        unlock_password_entry.connect("activate", self.on_unlock_connections_requested)
-        unlock_content.append(unlock_password_entry)
-
-        unlock_error = Gtk.Label()
-        self.unlock_error_label = unlock_error
-        unlock_error.set_xalign(0)
-        unlock_error.set_wrap(True)
-        unlock_error.add_css_class("error")
-        unlock_content.append(unlock_error)
-
-        unlock_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        unlock_actions.set_halign(Gtk.Align.END)
-        cancel_button = Gtk.Button(label=self.t("cancel"))
-        cancel_button.connect("clicked", self.on_unlock_connections_cancelled)
-        unlock_actions.append(cancel_button)
-        unlock_button = Gtk.Button(label=self.t("unlock"))
-        unlock_button.add_css_class("suggested-action")
-        unlock_button.connect("clicked", self.on_unlock_connections_requested)
-        unlock_actions.append(unlock_button)
-        unlock_content.append(unlock_actions)
-        window_overlay.add_overlay(unlock_panel)
+        self._build_unlock_panel(window_overlay)
 
         toast_revealer = Gtk.Revealer()
         self.toast_revealer = toast_revealer
@@ -780,6 +887,74 @@ class TermiaWindow(
         toast_frame.set_child(toast_content)
         toast_revealer.set_child(toast_frame)
         window_overlay.add_overlay(toast_revealer)
+
+    def _build_unlock_panel(self, window_overlay: Gtk.Overlay) -> None:
+        unlock_scrim = Gtk.Box()
+        self.unlock_scrim = unlock_scrim
+        unlock_scrim.set_halign(Gtk.Align.FILL)
+        unlock_scrim.set_valign(Gtk.Align.FILL)
+        unlock_scrim.set_hexpand(True)
+        unlock_scrim.set_vexpand(True)
+        unlock_scrim.set_visible(False)
+        window_overlay.add_overlay(unlock_scrim)
+
+        unlock_panel = Gtk.Frame()
+        self.unlock_panel = unlock_panel
+        unlock_panel.add_css_class("background")
+        unlock_panel.add_css_class("card")
+        unlock_panel.set_halign(Gtk.Align.CENTER)
+        unlock_panel.set_valign(Gtk.Align.CENTER)
+        unlock_panel.set_size_request(420, -1)
+        unlock_panel.set_margin_top(20)
+        unlock_panel.set_margin_bottom(20)
+        unlock_panel.set_margin_start(20)
+        unlock_panel.set_margin_end(20)
+        unlock_panel.set_visible(False)
+
+        unlock_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        unlock_panel.set_child(unlock_content)
+
+        # Form padding must not add a second inset around the shared action row.
+        unlock_form = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        unlock_form.set_margin_top(16)
+        unlock_form.set_margin_start(16)
+        unlock_form.set_margin_end(16)
+        unlock_content.append(unlock_form)
+
+        unlock_title = Gtk.Label(label=self.t("unlock_connections_title"))
+        unlock_title.set_xalign(0)
+        unlock_title.add_css_class("title-2")
+        unlock_form.append(unlock_title)
+
+        unlock_detail = Gtk.Label(label=self.t("unlock_connections_detail"))
+        unlock_detail.set_xalign(0)
+        unlock_detail.set_wrap(True)
+        unlock_form.append(unlock_detail)
+
+        unlock_password_entry = Gtk.PasswordEntry()
+        self.unlock_password_entry = unlock_password_entry
+        unlock_password_entry.set_show_peek_icon(True)
+        unlock_password_entry.connect("activate", self.on_unlock_connections_requested)
+        unlock_form.append(unlock_password_entry)
+
+        unlock_error = Gtk.Label()
+        self.unlock_error_label = unlock_error
+        unlock_error.set_xalign(0)
+        unlock_error.set_wrap(True)
+        unlock_form.append(unlock_error)
+
+        unlock_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        unlock_actions.set_halign(Gtk.Align.END)
+        cancel_button = Gtk.Button(label=self.t("cancel"))
+        cancel_button.connect("clicked", self.on_unlock_connections_cancelled)
+        unlock_actions.append(cancel_button)
+        unlock_button = Gtk.Button(label=self.t("unlock"))
+        unlock_button.add_css_class("suggested-action")
+        unlock_button.connect("clicked", self.on_unlock_connections_requested)
+        unlock_actions.append(unlock_button)
+        configure_action_area(unlock_actions)
+        unlock_content.append(unlock_actions)
+        window_overlay.add_overlay(unlock_panel)
 
     def on_window_key_pressed(
         self,
@@ -828,7 +1003,7 @@ class TermiaWindow(
         if self.sidebar_visible:
             regions.append((self.sidebar, self.search_entry))
 
-        visible_page = self.terminal_stack.get_visible_child()
+        visible_page = self.visible_terminal_page()
         active_session = next(
             (
                 session
@@ -838,7 +1013,7 @@ class TermiaWindow(
             None,
         )
         if active_session is not None:
-            if self.session_tab_bar.get_visible():
+            if self.session_tab_controls.get_visible():
                 active_session.tab_label.set_focusable(True)
                 regions.append((self.session_tab_bar, active_session.tab_label))
             terminal = (
@@ -868,7 +1043,10 @@ class TermiaWindow(
         self.new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
         self.main_menu_button.set_tooltip_text(self.t("main_menu"))
         self.main_menu_button.set_popover(
-            self.build_main_menu(self.main_menu_actions)
+            self.build_main_menu(
+                self.main_menu_actions,
+                write_allowed=not (self.store.read_only or self.store.encryption_locked),
+            )
         )
         self.read_only_badge.set_label(self.t("read_only_badge"))
         if self.store.read_only:

@@ -48,10 +48,6 @@ def parse_scanned_host_keys(output: str, host: str, port: int) -> list[ScannedHo
     return scanned_keys
 
 
-def parse_scanned_host_key(output: str, host: str, port: int) -> ScannedHostKey | None:
-    return next(iter(parse_scanned_host_keys(output, host, port)), None)
-
-
 def default_known_hosts_files() -> tuple[Path, Path]:
     return (Path.home() / ".ssh" / "known_hosts", Path.home() / ".ssh" / "known_hosts2")
 

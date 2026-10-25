@@ -1,3 +1,17 @@
+termia (0.6.0~beta.4-1) unstable; urgency=medium
+
+  * Prepare Termia 0.6.0-beta.4 with saved Notes, scoped and nested categories,
+    master-password changes, snippet shortcuts, and SSH startup commands.
+  * Include GTK interaction, terminal/SFTP lifecycle and memory corrections,
+    runtime dependency checks, and reproducible Docker/VM laboratories.
+  * Align source and Debian versions for final package validation (#386).
+  * Reconnect sessions without replacing sibling splits; bound storage input
+    and prompt for encrypted configuration-import credentials.
+  * Include pinned quality checks, unittest branch coverage and Node.js 24 CI.
+  * Declare Git as a build dependency without changing runtime dependencies.
+
+ -- Jordi Pons <jpons.git@proton.me>  Sun, 25 Oct 2026 11:50:22 +0100
+
 termia (0.6.0~beta.3-1) unstable; urgency=medium
 
   * Release Termia 0.6.0-beta.3 with command snippets, persistent category

@@ -27,3 +27,16 @@ version = { attr = "termia.__version__" }
 
 [tool.setuptools.package-data]
 termia = ["assets/*", "locale/*/LC_MESSAGES/*.mo"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/termia"]
+relative_files = true
+patch = ["subprocess"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+
+[tool.coverage.html]
+directory = "htmlcov"

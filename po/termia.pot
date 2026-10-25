@@ -16,6 +16,30 @@ msgstr ""
 msgid "Show or hide server list"
 msgstr ""
 
+#: src/termia/i18n.py:storage_limit_rejected
+msgid "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_shortcut
+msgid "Keyboard shortcut"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_keybindings
+msgid "Snippets"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_shortcut_help
+msgid "Click to change the combination."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_shortcut_modifier_required
+msgid "Snippet shortcuts must include Ctrl, Alt or Super."
+msgstr ""
+
+#: src/termia/i18n.py:keybindings_changed
+msgid "Shortcuts changed in another window. Reopen this form and try again."
+msgstr ""
+
 #: src/termia/i18n.py:update_title
 msgid "Termia updates"
 msgstr ""
@@ -173,7 +197,7 @@ msgstr ""
 msgid "Verify this fingerprint through a trusted channel before accepting. Save this host key?"
 msgstr ""
 
-#: src/termia/i18n.py:sftp_password
+#: src/termia/i18n.py:sftp_credential
 msgid "SSH password or private-key passphrase (not saved)"
 msgstr ""
 
@@ -203,8 +227,61 @@ msgstr ""
 
 #: src/termia/i18n.py:sftp_continue
 #: src/termia/i18n.py:continue
-#: src/termia/i18n.py:send_files_to_server_password_confirm
+#: src/termia/i18n.py:send_files_to_server_credential_confirm
+#: src/termia/i18n.py:notes_export_continue
 msgid "Continue"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_progress
+msgid "{name} · {size} · {speed} MB/s · {files} files completed"
+msgstr ""
+
+#: src/termia/i18n.py:sftp_progress_total
+msgid "Operation total: {transferred} MB transferred (overall size unknown)."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_incomplete
+msgid "The source size changed or the transfer ended before all expected bytes were received. Transfer failed."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_timeout
+msgid "The SFTP operation timed out."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_connection_lost
+msgid "The SFTP connection was lost."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_exists
+msgid "The destination already exists. Choose another name or location; nothing was overwritten."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_permission
+msgid "Permission denied or destination is read-only."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_no_space
+msgid "The destination has insufficient free space or its quota was exceeded."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_not_found
+msgid "The source or destination directory no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_unsupported
+msgid "Unsupported file type, invalid filename or directory nesting limit exceeded. Symbolic links are not transferred."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_partial
+msgid "Partial remote files or newly created directories may remain."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_stopping
+msgid "SFTP cleanup is still pending. Worker termination has not been verified."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_cleanup_failed
+msgid "SFTP cleanup failed after retrying. Connection closure has not been verified; reconnect is disabled."
 msgstr ""
 
 #: src/termia/i18n.py:open_local_terminal_tooltip
@@ -442,7 +519,8 @@ msgstr ""
 msgid "Group"
 msgstr ""
 
-#: src/termia/i18n.py:password
+#: src/termia/i18n.py:credential
+#: src/termia/i18n.py:notes_credential
 msgid "Password"
 msgstr ""
 
@@ -454,7 +532,7 @@ msgstr ""
 msgid "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Ctrl+P."
 msgstr ""
 
-#: src/termia/i18n.py:password_warning
+#: src/termia/i18n.py:credential_warning
 msgid "Warning: the password will be stored in connections.json. You can switch between plain text and obfuscated storage from Security."
 msgstr ""
 
@@ -463,7 +541,7 @@ msgid "Name, host, and SSH user are required."
 msgstr ""
 
 #: src/termia/i18n.py:required_field
-msgid "* Required field"
+msgid "Fields marked with an asterisk (*) are required."
 msgstr ""
 
 #: src/termia/i18n.py:reconnect_prompt
@@ -698,27 +776,27 @@ msgstr ""
 msgid "Confirm before closing Termia"
 msgstr ""
 
-#: src/termia/i18n.py:send_password_shortcut
+#: src/termia/i18n.py:send_credential_shortcut
 msgid "Allow sending saved password with shortcut"
 msgstr ""
 
-#: src/termia/i18n.py:send_password_shortcut_unavailable
+#: src/termia/i18n.py:send_credential_shortcut_unavailable
 msgid "Configure the \"Send saved password\" shortcut in Keybindings to enable this option."
 msgstr ""
 
-#: src/termia/i18n.py:send_password_enter
+#: src/termia/i18n.py:send_credential_enter
 msgid "Send saved password and press Enter"
 msgstr ""
 
-#: src/termia/i18n.py:send_password_enter_unavailable
+#: src/termia/i18n.py:send_credential_enter_unavailable
 msgid "Enable \"Allow sending saved password with shortcut\" first."
 msgstr ""
 
-#: src/termia/i18n.py:send_password_sent
+#: src/termia/i18n.py:send_credential_sent
 msgid "Saved password sent to the terminal"
 msgstr ""
 
-#: src/termia/i18n.py:send_password_unavailable
+#: src/termia/i18n.py:send_credential_unavailable
 msgid "This terminal does not have a saved password"
 msgstr ""
 
@@ -826,15 +904,15 @@ msgstr ""
 msgid "Could not save the server fingerprint."
 msgstr ""
 
-#: src/termia/i18n.py:send_files_to_server_password_title
+#: src/termia/i18n.py:send_files_to_server_credential_title
 msgid "SCP password required"
 msgstr ""
 
-#: src/termia/i18n.py:send_files_to_server_password_detail
+#: src/termia/i18n.py:send_files_to_server_credential_detail
 msgid "Enter the password for {user}@{host}:"
 msgstr ""
 
-#: src/termia/i18n.py:send_files_to_server_password_empty
+#: src/termia/i18n.py:send_files_to_server_credential_empty
 msgid "Enter a password."
 msgstr ""
 
@@ -890,7 +968,7 @@ msgstr ""
 msgid "Decrease font"
 msgstr ""
 
-#: src/termia/i18n.py:keybinding_action_send_password
+#: src/termia/i18n.py:keybinding_action_send_credential
 msgid "Send saved password"
 msgstr ""
 
@@ -1050,31 +1128,68 @@ msgid ""
 "After reading this information, do you want to continue enabling encryption?"
 msgstr ""
 
-#: src/termia/i18n.py:master_password_title
+#: src/termia/i18n.py:master_credential_title
 msgid "Set master password"
 msgstr ""
 
-#: src/termia/i18n.py:master_password_detail
+#: src/termia/i18n.py:master_credential_detail
 msgid "Choose the master password that will unlock your Termia connections."
 msgstr ""
 
-#: src/termia/i18n.py:master_password
+#: src/termia/i18n.py:master_credential
 msgid "Master password"
 msgstr ""
 
-#: src/termia/i18n.py:confirm_master_password
+#: src/termia/i18n.py:confirm_master_credential
 msgid "Confirm master password"
+msgstr ""
+
+#: src/termia/i18n.py:change_master_credential
+#: src/termia/i18n.py:change_master_credential_title
+msgid "Change master password"
+msgstr ""
+
+#: src/termia/i18n.py:change_master_credential_detail
+msgid "Enter the current master password, then choose a new one. Termia will re-encrypt your connections and notes."
+msgstr ""
+
+#: src/termia/i18n.py:current_master_credential
+msgid "Current master password"
+msgstr ""
+
+#: src/termia/i18n.py:new_master_credential
+msgid "New master password"
+msgstr ""
+
+#: src/termia/i18n.py:change_master_credential_same
+msgid "Choose a new password that differs from the current one."
+msgstr ""
+
+#: src/termia/i18n.py:change_master_credential_current_required
+msgid "Enter the current master password."
+msgstr ""
+
+#: src/termia/i18n.py:change_master_credential_wrong_current
+msgid "The current master password is incorrect."
+msgstr ""
+
+#: src/termia/i18n.py:change_master_credential_failed
+msgid "Could not change the master password. Check storage permissions and available disk space, then try again."
+msgstr ""
+
+#: src/termia/i18n.py:change_master_credential_rollback_failed
+msgid "The password change failed and Termia could not restore every previous data file. Stop using this profile and recover its files from a backup."
 msgstr ""
 
 #: src/termia/i18n.py:enable_encryption
 msgid "Enable encryption"
 msgstr ""
 
-#: src/termia/i18n.py:master_password_too_short
+#: src/termia/i18n.py:master_credential_too_short
 msgid "Use at least 8 characters."
 msgstr ""
 
-#: src/termia/i18n.py:master_password_mismatch
+#: src/termia/i18n.py:master_credential_mismatch
 msgid "The master passwords do not match."
 msgstr ""
 
@@ -1115,7 +1230,7 @@ msgid "Data Locations"
 msgstr ""
 
 #: src/termia/i18n.py:data_locations_detail
-msgid "Termia uses these local paths for configuration, connection data, history, statistics, and the write lock."
+msgid "Termia uses these local paths for configuration, connection data, notes, history, statistics, and the write lock."
 msgstr ""
 
 #: src/termia/i18n.py:config_directory
@@ -1124,6 +1239,10 @@ msgstr ""
 
 #: src/termia/i18n.py:connections_file_path
 msgid "Connections file"
+msgstr ""
+
+#: src/termia/i18n.py:notes_file_path
+msgid "Notes file"
 msgstr ""
 
 #: src/termia/i18n.py:settings_file_path
@@ -1164,6 +1283,22 @@ msgstr ""
 
 #: src/termia/i18n.py:import_config
 msgid "Import configuration"
+msgstr ""
+
+#: src/termia/i18n.py:import_config_unlock_title
+msgid "Password for this configuration file"
+msgstr ""
+
+#: src/termia/i18n.py:import_config_unlock_detail
+msgid "Enter the password used to encrypt this file. Your current profile password will not change."
+msgstr ""
+
+#: src/termia/i18n.py:import_config_unlock_required
+msgid "Enter the file password."
+msgstr ""
+
+#: src/termia/i18n.py:import_config_unlock_wrong
+msgid "Could not decrypt this file. Check the password and try again."
 msgstr ""
 
 #: src/termia/i18n.py:summary
@@ -1602,7 +1737,7 @@ msgid "Ásbrú: imported {groups} groups and {servers} servers"
 msgstr ""
 
 #: src/termia/i18n.py:clear_confirm
-msgid "Delete all groups, servers, local terminals, and workspaces? This action cannot be undone."
+msgid "Delete all groups, servers, local terminals, and workspaces? Notes are stored separately and will be kept."
 msgstr ""
 
 #: src/termia/i18n.py:rename_tab
@@ -1649,25 +1784,52 @@ msgstr ""
 msgid "Termia Help"
 msgstr ""
 
-#: src/termia/i18n.py:help_content
-msgid ""
-"Termia is an SSH connection manager with embedded terminals.\n"
-"\n"
-"Main features:\n"
-"- Organize servers into groups and subgroups.\n"
-"- Create, edit, delete, clone and filter SSH connections.\n"
-"- Mark servers as favorites for quick access from a dedicated section.\n"
-"- Open connections and local terminals from the sidebar in embedded, compact and detachable tabs.\n"
-"- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
-"- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
-"- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
-"- Configure general options, the VTE terminal, split separators and the PS1 prompt separately.\n"
-"- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
-"- View a local connection history with timestamps, outcomes and durations.\n"
-"- Import and export configurations, including basic imports from Ásbrú.\n"
-"\n"
-"Quick start:\n"
-"Use the sidebar icons to create groups, servers or local terminal profiles. Double-click a server or local terminal profile to connect. Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
+#: src/termia/i18n.py:help_start
+msgid "Getting started"
+msgstr ""
+
+#: src/termia/i18n.py:help_start_body
+msgid "Create groups, SSH servers and local terminal profiles from the sidebar. Double-click a server or profile to open it. Use search, Favorites and Recent to find connections; right-click an item for its available actions."
+msgstr ""
+
+#: src/termia/i18n.py:help_terminals
+msgid "Terminals, tabs and split panes"
+msgstr ""
+
+#: src/termia/i18n.py:help_terminals_body
+msgid "Right-click a terminal for copy, paste, connection actions and the Split and Tab submenus. Split panes keep independent terminals. Tabs can be renamed, duplicated, reordered or moved to a separate window; use the terminal menu to reattach a detached tab. The status bar can be shown or hidden per pane. Use preferences to configure terminal appearance, keybindings and split separators."
+msgstr ""
+
+#: src/termia/i18n.py:help_workspaces_body
+msgid "Save a workspace to reopen its terminal layout later. Closing a tab or pane ends its managed terminal processes; closing Termia also stops its managed processes. Restoring a layout starts sessions again, rather than preserving running processes."
+msgstr ""
+
+#: src/termia/i18n.py:help_notes_body
+msgid "Open Notes from the main menu for personal or server-associated notes. Organize them in categories and subcategories, search them and open several editor tabs. Changes are saved automatically; empty notes are not saved. Import and export are separate from connection configuration. Notes are never executed in terminals."
+msgstr ""
+
+#: src/termia/i18n.py:help_snippets_body
+msgid "Save reusable command snippets, organize them in categories and restrict their scope where needed. Review commands and variables before execution. Snippet shortcuts can be assigned in preferences; they apply to eligible active terminal panes."
+msgstr ""
+
+#: src/termia/i18n.py:help_addons_body
+msgid "Enable or disable Statistics and the SFTP browser in Add-ons, then restart Termia. Disabling an add-on does not delete its data. Statistics records connection counts and durations, not terminal commands. SFTP provides file browsing and transfers when enabled."
+msgstr ""
+
+#: src/termia/i18n.py:help_security_body
+msgid "Use Security preferences to configure local storage protection. Obfuscation is not encryption. Encrypted storage requires a master password, which cannot be recovered if lost. Connection exports may contain credentials: keep them private. Notes exports can use a separate password. Importing notes replaces existing notes after validation and backup."
+msgstr ""
+
+#: src/termia/i18n.py:help_updates_body
+msgid "Open About and choose Check for updates to consult official releases. Automatic installation depends on the installation type and compatible release assets; development checkouts or local changes may require a manual update. Installation can request administrator authorization. Restart Termia after a successful update."
+msgstr ""
+
+#: src/termia/i18n.py:help_shortcuts
+msgid "Your keyboard shortcuts"
+msgstr ""
+
+#: src/termia/i18n.py:help_shortcuts_body
+msgid "These are your current application shortcuts, including custom assignments. Change them in preferences. Disabled combinations are not handled by Termia. Snippet-specific assignments are managed separately in preferences."
 msgstr ""
 
 #: src/termia/i18n.py:about_content
@@ -1678,6 +1840,411 @@ msgstr ""
 msgid "Manage snippets"
 msgstr ""
 
+#: src/termia/i18n.py:manage_notes
+msgid "Manage notes"
+msgstr ""
+
+#: src/termia/i18n.py:optional_tools
+msgid "Add-ons"
+msgstr ""
+
+#: src/termia/i18n.py:optional_tools_restart
+msgid "Restart Termia to apply add-on changes. Disabling an add-on does not delete its data."
+msgstr ""
+
+#: src/termia/i18n.py:sftp_tool
+msgid "SFTP browser"
+msgstr ""
+
+#: src/termia/i18n.py:notes_title
+msgid "Notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_toolbar
+msgid "Show or hide the notes toolbar"
+msgstr ""
+
+#: src/termia/i18n.py:notes_minimize_window
+msgid "Minimize notes window"
+msgstr ""
+
+#: src/termia/i18n.py:notes_maximize_window
+msgid "Maximize notes window"
+msgstr ""
+
+#: src/termia/i18n.py:notes_restore_window
+msgid "Restore notes window size"
+msgstr ""
+
+#: src/termia/i18n.py:notes_line_numbers
+msgid "Show or hide line numbers"
+msgstr ""
+
+#: src/termia/i18n.py:notes_editor_appearance
+msgid "Editor appearance (not stored in note text)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_personal_scope
+msgid "Personal"
+msgstr ""
+
+#: src/termia/i18n.py:notes_server_scope
+msgid "Servers"
+msgstr ""
+
+#: src/termia/i18n.py:notes_choose_server
+msgid "Choose a server"
+msgstr ""
+
+#: src/termia/i18n.py:notes_choose_server_empty
+msgid "Choose a server to see its notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_personal
+msgid "No personal notes yet."
+msgstr ""
+
+#: src/termia/i18n.py:notes_tab_personal_tooltip
+msgid "Personal note: {title}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_tab_server_tooltip
+msgid "Server: {server} · {title}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_hide_list
+msgid "Hide note list"
+msgstr ""
+
+#: src/termia/i18n.py:notes_show_list
+msgid "Show note list"
+msgstr ""
+
+#: src/termia/i18n.py:notes_new_tab
+msgid "New note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_close_tab
+msgid "Close note tab"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_export_options
+msgid "Import or export notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_search
+msgid "Search notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_manage_categories
+msgid "Manage note categories"
+msgstr ""
+
+#: src/termia/i18n.py:notes_create
+msgid "Create note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_create_for_server
+msgid "Create server note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_edit
+msgid "Edit note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_rename
+msgid "Rename note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_properties
+msgid "Properties"
+msgstr ""
+
+#: src/termia/i18n.py:notes_title_required
+msgid "The note name cannot be empty."
+msgstr ""
+
+#: src/termia/i18n.py:notes_renamed
+msgid "Note renamed."
+msgstr ""
+
+#: src/termia/i18n.py:notes_moved_to_category
+msgid "Moved note to {category}."
+msgstr ""
+
+#: src/termia/i18n.py:notes_clone
+msgid "Clone note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_clone_suffix
+msgid " (copy)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_clone_success
+msgid "Note cloned."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export
+msgid "Export notes…"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import
+msgid "Import notes…"
+msgstr ""
+
+#: src/termia/i18n.py:notes_uncategorized
+#: src/termia/i18n.py:snippet_uncategorized
+msgid "Uncategorized"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category
+#: src/termia/i18n.py:snippet_category
+msgid "Category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_association
+msgid "Server"
+msgstr ""
+
+#: src/termia/i18n.py:notes_standalone
+msgid "Personal notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_server_group
+msgid "Server notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_unknown_server
+msgid "Unavailable server"
+msgstr ""
+
+#: src/termia/i18n.py:notes_for_server
+msgid "Notes for {name}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_modified
+msgid "Modified {date}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_created
+msgid "Created"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_modified
+msgid "Last modified"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_lines
+msgid "Lines"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_characters
+msgid "Characters"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_size
+msgid "Content size (UTF-8)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_property_bytes
+msgid "{count} bytes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty
+msgid "No matching notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_all
+msgid "No notes yet."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_server
+msgid "No notes for this server yet."
+msgstr ""
+
+#: src/termia/i18n.py:notes_double_click_to_open
+msgid "Double-click a note to open it in a tab."
+msgstr ""
+
+#: src/termia/i18n.py:notes_saved
+msgid "Saved"
+msgstr ""
+
+#: src/termia/i18n.py:notes_saving
+msgid "Saving…"
+msgstr ""
+
+#: src/termia/i18n.py:notes_save_failed
+msgid "Could not save"
+msgstr ""
+
+#: src/termia/i18n.py:notes_save_failed_detail
+msgid "The note could not be saved. Your changes are still in the editor; check the storage location and try again."
+msgstr ""
+
+#: src/termia/i18n.py:notes_select_or_create
+msgid "Select a note or create one."
+msgstr ""
+
+#: src/termia/i18n.py:notes_start_typing
+msgid "Start typing. Changes are saved automatically."
+msgstr ""
+
+#: src/termia/i18n.py:notes_empty_not_saved
+msgid "Empty notes are not saved."
+msgstr ""
+
+#: src/termia/i18n.py:notes_close_unsaved_message
+msgid "This note has unsaved changes. What would you like to do?"
+msgstr ""
+
+#: src/termia/i18n.py:notes_save_and_close
+msgid "Save and close"
+msgstr ""
+
+#: src/termia/i18n.py:notes_close_without_saving
+msgid "Close without saving"
+msgstr ""
+
+#: src/termia/i18n.py:notes_keep_editing
+msgid "Keep editing"
+msgstr ""
+
+#: src/termia/i18n.py:notes_delete
+msgid "Delete note"
+msgstr ""
+
+#: src/termia/i18n.py:notes_delete_confirm
+msgid "Delete note “{name}”? This action cannot be undone."
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_add
+#: src/termia/i18n.py:snippet_category_add
+msgid "Add category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_expand_all
+msgid "Expand all note groups"
+msgstr ""
+
+#: src/termia/i18n.py:notes_collapse_all
+msgid "Collapse all note groups"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_rename
+#: src/termia/i18n.py:snippet_category_rename
+msgid "Rename category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_duplicate
+#: src/termia/i18n.py:snippet_category_duplicate
+msgid "Duplicate category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_delete
+#: src/termia/i18n.py:snippet_category_delete
+msgid "Delete category"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_name
+msgid "Category name"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_count
+msgid "{count} notes"
+msgstr ""
+
+#: src/termia/i18n.py:notes_category_delete_confirm
+msgid "Delete category “{name}”? Its {count} notes will move to Uncategorized."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_protection
+msgid "Choose how the exported notes file will be protected."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_plain
+msgid "Export without a password (plain text)"
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_plain_detail
+msgid "The file will not be encrypted. Anyone who can access it can read the notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_credential
+msgid "Encrypt export with a password"
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_credential_detail
+msgid "The file will be encrypted. You will need this password to import it."
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_credential
+msgid "Password for this notes file"
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_success
+msgid "Notes exported."
+msgstr ""
+
+#: src/termia/i18n.py:notes_export_failed
+msgid "Could not export notes: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_failed
+msgid "Could not import notes: {error}"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_existing
+msgid "Termia already has {notes} notes and {categories} categories."
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_backup_detail
+msgid "Replace them with the selected file after creating a backup of the current notes, or keep the existing notes?"
+msgstr ""
+
+#: src/termia/i18n.py:notes_keep_existing
+msgid "Keep existing"
+msgstr ""
+
+#: src/termia/i18n.py:notes_backup_replace
+msgid "Back up and replace"
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_detached
+msgid "{count} notes were imported as personal notes because their server no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:notes_import_success
+msgid "Imported {count} notes."
+msgstr ""
+
+#: src/termia/i18n.py:notes_view_server
+msgid "View server notes"
+msgstr ""
+
+#: src/termia/i18n.py:note_category_required
+#: src/termia/i18n.py:snippet_category_required
+msgid "A category name is required."
+msgstr ""
+
+#: src/termia/i18n.py:note_category_exists
+#: src/termia/i18n.py:snippet_category_exists
+msgid "A category with this name already exists."
+msgstr ""
+
+#: src/termia/i18n.py:note_category_missing
+#: src/termia/i18n.py:snippet_category_missing
+msgid "The selected category no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:note_missing
+msgid "The selected note no longer exists."
+msgstr ""
+
+#: src/termia/i18n.py:note_server_missing
+msgid "The selected server no longer exists."
+msgstr ""
+
 #: src/termia/i18n.py:run_snippet
 msgid "Run snippet…"
 msgstr ""
@@ -1686,36 +2253,16 @@ msgstr ""
 msgid "Manage categories"
 msgstr ""
 
-#: src/termia/i18n.py:snippet_category_add
-msgid "Add category"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_rename
-msgid "Rename category"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_duplicate
-msgid "Duplicate category"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_delete
-msgid "Delete category"
-msgstr ""
-
 #: src/termia/i18n.py:snippet_category_delete_confirm
 msgid "Delete category \"{name}\"? Snippets in this category ({count}) will move to Uncategorized."
 msgstr ""
 
-#: src/termia/i18n.py:snippet_category_exists
-msgid "A category with this name already exists."
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_missing
-msgid "The selected category no longer exists."
-msgstr ""
-
 #: src/termia/i18n.py:snippet_back_to_categories
 msgid "All categories"
+msgstr ""
+
+#: src/termia/i18n.py:snippet_back_to_manager
+msgid "Back to snippets"
 msgstr ""
 
 #: src/termia/i18n.py:snippet_select_preview
@@ -1728,10 +2275,6 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_category_count
 msgid "{count} snippets"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_uncategorized
-msgid "Uncategorized"
 msgstr ""
 
 #: src/termia/i18n.py:snippet_new_category
@@ -1772,14 +2315,6 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_delete_confirm
 msgid "Delete snippet \"{name}\"? This action cannot be undone."
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category
-msgid "Category"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_category_required
-msgid "A category name is required."
 msgstr ""
 
 #: src/termia/i18n.py:snippet_scope

@@ -34,6 +34,37 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 - Update the README and localized documentation when documented user-facing behavior changes.
 - When UI text changes, update English, Spanish, and Catalan catalogs unless the string is intentionally language-specific.
 
+## Architecture Boundaries
+
+- Evolve Termia incrementally around a cohesive Core and trusted, built-in
+  optional add-ons. This is an internal architecture, not a public plugin API.
+- `src/termia/app.py` is the composition root and the only approved place for
+  importing and assembling concrete add-on implementations. Other Core modules
+  must not depend directly on those implementations; pass narrow, explicit
+  contracts or callbacks instead.
+- Add-ons should receive only the host capabilities and data they need. Prefer
+  focused protocols and immutable data over passing `TermiaWindow`, complete
+  terminal sessions, connection stores, or other broad internal objects.
+- Apply these boundaries to every task, including unrelated bug fixes. If the
+  affected code currently crosses a boundary, report the coupling and preserve
+  behavior; do not expand the coupling or perform an unrequested refactor.
+- Before modifying code, identify the affected responsibilities and whether the
+  change touches Core, an add-on, or their integration boundary; consider likely
+  regressions. If the requested change conflicts with an architectural boundary,
+  explain the conflict and propose an approach before proceeding.
+- Before changing code that touches a shared contract or optional behavior,
+  review `docs/architecture/overview.md` and `docs/architecture/addons.md`;
+  check `docs/WINDOW_MIXIN_CONTRACTS.md` before moving window/mixin behavior.
+- Preserve behavior and stored data when an add-on is disabled. Do not
+  introduce external plugins, hot reload, sandboxing, marketplaces, or a
+  general plugin manager without an explicitly reviewed issue.
+- Keep architecture documentation aligned with the implementation. Distinguish
+  approved rules from observed implementation and unresolved questions; a
+  documented current dependency is not automatically an approved exception.
+- Changes to Core/add-on boundaries must include regression coverage for the
+  affected Core behavior and the add-on enabled and disabled. Consult the
+  architecture and regression documents before changing a shared contract.
+
 ## Changelog
 
 - Every code change must update `CHANGELOG.md` under `Unreleased`, including internal refactors, tests, build changes, and maintenance work.
@@ -68,6 +99,29 @@ an unchanged successful command. If later edits can affect its coverage, rerun
 the relevant check; rerun the full suite only when the later change warrants
 it. For documentation-only changes, validate the affected documentation,
 links, and documented commands without running unrelated application tests.
+Inside a restricted Codex sandbox, run unittest through
+`python3 scripts/run_sandbox_tests.py` so GTK and SFTP tests use a private
+display and session bus with local TCP sockets. Pass module names after the
+script for focused runs. Do not use the developer's desktop session or elevate
+tests to bypass the sandbox. GitHub Actions uses the same runner with coverage.
+
+To measure the existing unittest suite, use the available Coverage.py command:
+
+```bash
+coverage erase
+coverage run scripts/run_sandbox_tests.py
+coverage combine
+coverage report
+coverage html
+coverage json -o htmlcov/coverage.json
+```
+
+For a focused measurement, pass unittest module names after the runner path.
+Measure all production Python under `src/termia`, including unimported modules.
+Do not add pytest, production exclusions or minimum percentages to improve
+results. Report global and per-module line/branch coverage, skipped tests,
+important missing paths and subprocess/native-library limitations. HTML reports
+and machine-readable results belong in ignored `htmlcov/`, not Git history.
 
 When UI behavior changes, run an isolated test instance and review the relevant
 manual regression sections:
@@ -78,6 +132,20 @@ scripts/run_test_instance.sh --fresh
 
 ## GTK/VTE Notes
 
+- Use standard GTK controls for Termia UI interactions when GTK provides an
+  appropriate control. Do not replace an existing standard GTK control with a
+  custom implementation, or introduce a custom implementation for an interaction
+  covered by a standard control, without first explaining the reason, affected
+  behavior, alternatives, and regression risks to the requester and obtaining
+  explicit confirmation. A layout made from GTK boxes, buttons, and CSS is still
+  a custom control when Termia implements the control's interaction itself.
+- Consult [the GTK control inventory](docs/GTK_CONTROLS.md) before changing a
+  listed surface. Keep its standard/custom classification and source references
+  current. Existing custom compositions are recorded as current implementation,
+  not as blanket approval to add more or to replace them without review.
+- Apply this GTK control policy within the Core/add-on boundaries above. A
+  standard widget choice does not authorize new concrete add-on dependencies in
+  Core or broader contracts between components.
 - Keep terminal keyboard shortcuts centralized in terminal session handling unless a feature clearly belongs elsewhere.
 - Be careful with GTK popovers and dialogs; opening dialogs from popovers can require closing or deferring the popover first.
 - Treat every VTE child as a managed terminal process. Launch it through `terminal_processes.spawn_terminal_process()` and retain its captured identity instead of storing or signalling an unvalidated PID.
@@ -103,3 +171,6 @@ Before opening or merging a PR, confirm:
 - Validation commands were run, or any skipped checks are explicitly noted.
 - `CHANGELOG.md` was updated under `Unreleased`.
 - The PR description includes a concise summary, test notes, and `Closes #<issue>` when applicable.
+- For changes to Core/add-on boundaries, the PR describes the architectural
+  impact, affected components or contracts, regression coverage, and known
+  risks.

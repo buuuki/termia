@@ -1,5 +1,25 @@
 # Regression Checks and Protected Behaviors
 
+## Storage resource rejection
+
+- Import an encrypted connection export from the menu. Verify the native
+  password dialog, empty/wrong-password retries, cancellation and successful
+  import. Preserve current notes and the target profile's protection/password,
+  including when the imported file uses a different password. Recheck write
+  permission and file budgets after the dialog opens, before changing data.
+  Empty/wrong-password feedback must use the normal theme foreground color.
+
+- Use an isolated profile (`scripts/run_test_instance.sh --fresh`); never use
+  real credentials or notes for rejection tests.
+- Verify ordinary plain, obfuscated and encrypted connections and notes still
+  load, export and import, including older supported schemas.
+- Verify an over-budget synthetic file produces a storage-limit warning,
+  disables editing, preserves original bytes, and creates no `.invalid-*`
+  replacement. Repeated loading and password attempts must keep it protected.
+- Close the instance, restore a compatible synthetic backup and restart;
+  verify editing becomes available. Do not run excessive KDF work: automated
+  boundary tests substitute small budgets or mock derivation.
+
 This document lists Termia behaviors that should be preserved during code changes. A change may intentionally modify one of these behaviors, but the impact must be explicit, reviewed, and documented.
 
 ## Change Policy
@@ -13,7 +33,21 @@ When a requested change touches a protected behavior:
 
 Protected behavior does not mean the code cannot change. It means regressions should not happen silently.
 
+For UI changes, consult the [GTK control policy and inventory](GTK_CONTROLS.md).
+Use a standard GTK control when one is appropriate. Before replacing one with a
+custom composition, or implementing a standard control's interaction in custom
+code, report the reason, alternatives, and affected behavior and obtain explicit
+requester confirmation. Preserve the relevant checks below for both existing
+and proposed controls.
+
 ## Protected Behaviors
+
+The optional [Docker laboratory](../tools/docker-lab/README.md) provides a
+private browser desktop and synthetic SSH/SFTP/SCP, memory and lifecycle probes.
+When modifying that harness, check its allowlisted contexts, ignored generated
+credentials, resource ownership, translated commands and a clean build/start/
+managed-close smoke trial. Do not use personal SSH profiles or the host desktop.
+Long measurements and release-platform checks remain separate validation work.
 
 ### Project License
 
@@ -34,10 +68,89 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Tabs
 
-- Connection and local terminal tabs must remain visibly and reliably reorderable with left-button drag in the custom tab bar.
+- Connection group/section headers must toggle expansion without becoming
+  selected objects. Keep object selection compact and rounded, skip headers
+  during keyboard selection, and do not show an inset pressed-row shadow.
+- Main, tab, server, group and terminal menus must open without the initial
+  selected highlight while preserving visible Up/Down keyboard navigation.
+  Test actual right-button press/release on VTE, not only programmatic popup:
+  VTE must not reclaim focus from the menu. Repeat in a split and detached
+  window. Enter must activate once; Escape and outside clicks must dismiss.
+- Leaving terminal Split/Tab submenus must close only the nested panel, retain
+  the same visible root/menu model, and restore parent focus. Right/Left must
+  enter/leave submenus without breaking later outside-click dismissal.
+  Tab/server/group context menus retain GTK's native pointing arrow.
+
+- Repeatedly open and close local/SSH tabs and split panes. Retired sessions,
+  native VTE widgets, pages and tab labels must become
+  collectible after exit accounting finishes. Preserve history/statistics,
+  reconnect controls for retained panes, private tab dragging, sibling sessions
+  and optional SFTP cleanup. Exercise detached/reattached tabs and close the
+  application with live connections and an active transfer. Compare settled
+  memory across repeated cycles; distinguish allocator warm-up from retained
+  objects rather than requiring identical RSS values.
+  Create a split in a background tab and close it before showing it; then
+  create another, show it, and verify the new pane receives focus only once.
+
+- Focus a sidebar control, then right-click a terminal or split and choose
+  Paste. Press Enter: input must reach that terminal, not activate the sidebar
+  or its toggle. Repeat in a detached window. Preserve VTE selection and any
+  shell-owned paste highlighting rather than forcibly clearing it.
+- Terminal context menus must show the current Copy, Paste and Tab → New tab
+  assignments. Change and disable them in keyboard preferences, reopen the
+  menu, and verify updated labels or no label for a disabled assignment.
+  Other commands must not display unrelated shortcuts (split focus is not
+  split creation). Check keyboard activation and menu dismissal still work.
+- Terminal tabs, note tabs (including drafts), and saved-note rows must offer
+  only their distinct private drag formats. Drag each onto the server filter,
+  notes search, note editor, and another application's text field: no internal
+  ID may be inserted. Ordinary typing, paste, and dragging real selected text
+  into editable fields must still work. Reject foreign drags, wrong formats,
+  deleted objects, and stale asynchronous drops without moving other objects.
+- Reorder terminal and note tabs after these rejected drops, and move saved
+  notes between categories and Uncategorized. Retain active selection, content,
+  server associations, keyboard order, and read-only/locked-storage guards.
+- Connection and local terminal tabs must remain visibly and reliably reorderable
+  with left-button private drag in the approved GTK tab strip. Reject GTK's
+  built-in notebook drag format and foreign/private-format drags from other windows.
 - Left-clicking a tab title must select that session without stealing focus from the terminal after selection.
+- Moving the pointer over the active tab must leave its selected background
+  unchanged. An inactive tab must receive a softer, theme-derived hover on its
+  outer tab surface, without another hover background on the inner label.
+  Hovering an inactive terminal tab must not introduce a dark bottom line.
+  The active terminal tab must have no native blue underline; its highlighted
+  background is the selection indicator. Check focused/unfocused windows in
+  System, Light, and Dark appearance.
+- Terminal tabs must retain compact vertical spacing, readable titles and usable
+  close buttons, without a dark bottom border beneath the tab strip.
+- Tab close buttons must retain a circular dark hover without stretching.
+  The drag icon must use the source tab's paintable with the laboratory
+  theme-selection tint and 72% opacity. Reordering must preserve the selected
+  session. Retain 7 px vertical label padding and 4 px between neighboring tabs.
+- Attached tabs must share the available header width equally, shrinking as
+  more tabs are opened until the readable minimum requires horizontal scrolling.
+  Retain this layout after reordering, detaching and reattaching.
+- In a detached terminal, Reattach to main window must appear in the first
+  context menu immediately below Show/Hide status bar, outside the Tab submenu.
+- The connections list background must match the surrounding sidebar in light
+  and dark appearance. Selection must highlight only the icon/title block with
+  slightly rounded corners and space before/after its content, not the whole
+  row. Check short/ellipsized long names and keyboard selection changes.
+- Private tab dragging must highlight the source tab without outlining or
+  illuminating the entire tab strip or header as a drop target. Dropping over
+  terminal content must not reorder tabs or insert a private ID.
+- With at least twelve tabs overflowing a narrow window, drag one repeatedly
+  across the visible tabs, pause at both strip edges to scroll, leave the header
+  and return, then drop. Repeat in both directions without GTK aborts. Scrolling
+  must stop on leaving, ending, dropping or closing the dragged tab. Stale
+  asynchronous drops must not move closed/detached sessions or override a newer
+  drag. Check final order, selected session and content. Intermediate movement
+  must not refresh the overflow list; reopen it to verify the committed order.
 - Drag logic must keep tab order, Ctrl+PageUp/Ctrl+PageDown navigation, and close-next-focus behavior aligned with the visual tab order.
 - Right-click tab actions must keep working: duplicate, detach, and rename.
+- In a detached window, right-click inside the terminal, open the native Tab
+  submenu, and activate Reattach to main window. The command must be present
+  and return the same live session and all split panes to the main tab strip.
 - The close button must only close the intended tab and must not make accidental closure too easy.
 - Closing a tab must focus the terminal in the next active tab when one exists.
 - Detached tabs must be restorable to the main window when their detached window closes.
@@ -56,7 +169,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 - Local terminals must start in the user's home directory unless a future setting explicitly changes it.
 - Local terminal prompt customization must apply to newly opened and duplicated local terminals.
-- SSH sessions must not send arbitrary commands automatically to remote servers.
+- SSH sessions must not send commands automatically unless a non-empty startup
+  command was saved for that server. Run it only after SSH authentication, never
+  into a password or host-key prompt, and keep the session interactive after it
+  finishes. Verify normal, split, duplicated, restored, and reconnected sessions.
 - Command snippets must be stored locally and run only after explicit selection,
   variable entry when required, and confirmation of the final preview. Their
   command text and variable values must never be written to debug logs.
@@ -66,6 +182,10 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   is selected. Category rows must remain uniformly sized, including long names
   and empty categories. Selecting a category filters the list; typing in search
   must search across all categories, even after a category was selected.
+  Its default size is 795 × 560 logical px (25% narrower than the previous
+  1060 px width); all three columns and their actions must fit in every UI
+  language. Manual resizing and returning from the editor must preserve the
+  user's chosen manager size.
   Search spans the top alone; Manage categories appears above the category
   column, Create snippet above the list, and a modest Command preview label
   above the read-only preview. The selection hint appears beneath the list
@@ -78,19 +198,49 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   preserve empty categories, rename all contained snippets, duplicate them
   with new IDs, and move them to Uncategorized on confirmed deletion. The
   category-management page must have no repeated heading; All categories
-  remains at the top, while Cancel sits beside Delete category and both return
-  to the three-column snippet manager. Category management must show uniform
-  icon tiles with names and snippet counts (including zero) across multiple
-  rows; selecting a tile enables Rename, Duplicate, and Delete. The selected
-  highlight must follow the rounded tile rather than the square outer cell,
-  while keyboard focus remains visible in light and dark themes.
+  remains at the top of the manager's category filter, while Back to snippets
+  and Cancel return to the three-column snippet manager. Category management
+  must place Add, Rename, Duplicate, and Delete directly below Back to snippets,
+  with Cancel alone at the bottom right. It must show uniform icon tiles with
+  names and snippet counts (including zero) in 170 × 112 logical px frames.
+  Resizing the window must not change those frame dimensions. The grid uses as
+  many columns as fit and wraps onto additional rows when the window narrows.
+  Selecting a tile enables Rename, Duplicate, and Delete. Create snippet must
+  align with the left edge of the snippet list.
+  The selected highlight must follow the rounded tile rather than the square
+  outer cell, while keyboard focus remains visible in light and dark themes.
 - Snippet variable values must be shell-quoted as individual arguments, and a
   group-scoped snippet must apply to servers in that group and its nested
   subgroups. Invalid or deleted scope targets must never broaden a snippet to
   global availability.
+- Snippet shortcuts must use the same assignment in the editor and keyboard
+  preferences, retain the compact editor, and reject conflicts or stale edits
+  from another window. Require Ctrl, Alt, or Super; ordinary typing and
+  unmodified function keys must continue to reach the terminal. Reset defaults
+  clears snippet shortcuts; cancelling either form must preserve assignments.
+  Shortcuts apply only to a focused, connected, active terminal pane within
+  the snippet's scope, including splits and detached windows. Variables and
+  final preview confirmation remain mandatory; pressing the shortcut alone
+  must never send a command. Recheck availability before sending if the
+  snippet or its target was removed while the preview was open. Renaming
+  preserves assignments, duplication does not copy them, and deleting a
+  snippet or its scope target removes its assignment. Locked/read-only guards
+  must protect edits, and locked credentials must prevent shortcut execution.
 - Repeatedly opening, cancelling, and reusing snippet management and execution
   flows must reuse their existing windows and remain responsive during window
   resizing; these flows must not accumulate top-level GTK surfaces.
+- Creating, editing, or duplicating a snippet must open a compact, resizable
+  editor (600 × 560 logical px by default) with compact category, scope, and
+  target selectors. Long labels must not widen the window. The command field
+  must retain useful editing space, including while creating a category.
+  Saving, cancelling, or closing and reopening must restore the manager's
+  previous size, including a size chosen manually by the user.
+- The snippet manager must use a standard independent GTK window: opening it
+  must leave the main window and terminal sessions usable. Closing it with the
+  window controls or its Close button must hide the reusable window; reopening
+  must restore the manager view without creating another surface. The execution
+  picker must remain modal to its owning terminal window, and application
+  shutdown must destroy both snippet windows.
 - SSH fingerprint prompts must remain visible and interactive in the terminal.
 - Known-host inspection must prefer the configured endpoint (`host` on port 22
   or `[host]:port` otherwise), then mirror OpenSSH's non-standard-port fallback
@@ -133,6 +283,13 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Failed SSH connections must leave the tab usable and show the reconnect prompt.
 - The reconnect prompt must be readable on both light and dark terminal backgrounds.
 - Pressing Enter on a failed SSH tab must reconnect to the same server.
+- Reconnecting the original SSH pane must preserve its tab, detached window,
+  sibling process identities, nested split sizes and unrelated transfers.
+  Repeat with the server unavailable and then available; retry a failed original
+  local terminal without replacing the tab. Each attempt must produce only one
+  history/statistics result and one effective timer per pane, including retries
+  before an older timer's next tick. Closing during pending startup must prevent
+  a late child spawn; final shutdown must still clean up all managed processes.
 - With the startup local-terminal preference enabled, cancelling the
   encrypted-connections unlock dialog must open exactly one generic local
   terminal in writable and read-only instances; disabling the preference must
@@ -146,8 +303,17 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Exiting a split shell with `exit` must remove only that split pane and keep sibling panes usable.
 - Every split pane must retain its own SSH or local-profile identity, process,
   status bar, reconnect state, history entry, statistics, and context actions.
+- Retry the same failed local and SSH split at least three times. Each exit
+  must produce exactly one history result, statistics notification and reconnect
+  transition. An extra exit for an inactive or removed pane must be ignored;
+  sibling panes and the managed-process cleanup path must remain unaffected.
 - Disconnecting one pane must terminate only its managed process; closing the
   tab or Termia must terminate all pane processes.
+- In a local terminal, replace the shell with a test process whose child runs
+  in a separate process group and ignores SIGTERM and SIGHUP. Disconnect the
+  pane or close its tab. After the 500 ms forced-cleanup grace period, both
+  processes must have stopped even if the VTE leader exited first. Unrelated
+  terminals must remain running.
 - Explicitly disconnecting the original/first pane of a multi-pane local or SSH
   tab must remove and collapse that pane just like any later split, keep sibling
   panes usable, and clear its process identity so detached-window, tab, and
@@ -162,6 +328,18 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   `Down`, and `Enter` from the search field.
 - When close-on-exit is enabled, a split tab must close after the last pane exits regardless of whether the original terminal or a split exits last.
 - Closing Termia must terminate every process group in the isolated VTE session for active SSH, local-terminal, and split-pane sessions without signalling unrelated processes.
+- Close Termia while terminal leaders have exited but captured child processes
+  remain. Cleanup must use the captured process birth identities, terminate the
+  remaining owned groups, and avoid signalling a process that reused a PID or
+  session ID. Once all processes are gone, terminal-exit callbacks and expired
+  uncertain identities must not produce a false 30-second shutdown timeout.
+- Close Termia with SCP and SFTP cleanup pending. Shutdown must wait for
+  verified completion or a bounded deadline, then report failed or timed-out
+  cleanup as unverified rather than successful. Repeat with SFTP disabled and
+  confirm ordinary SSH shutdown remains functional.
+- Cancel SCP immediately after launch, including before its isolated session
+  identity was initially captured. Cleanup must retain the refreshed identity
+  and stay pending while its captured children remain after the leader exits.
 
 ### Focus and Keyboard
 
@@ -180,21 +358,96 @@ Protected behavior does not mean the code cannot change. It means regressions sh
   and confirm its key combination reaches the terminal instead.
 - After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. Keyboard navigation must scroll just enough to keep the selected item visible. These keys must still reach the VTE while a terminal has focus.
 - The selected group, subgroup, or server must use a single consistent sidebar selection highlight; selecting a new item must clear the previous highlight. Starting navigation from the server filter must focus the selected row, GTK expander focus must not create a second selector, and `Up` must never leave the list for the sidebar action buttons while an earlier visible row exists. GTK must automatically scroll the focused row into view, while terminal focus must keep sidebar navigation disabled.
+- In the native connections tree, use GTK disclosure keys (`Shift+Right`,
+  `Shift+Left`, `+`, and `-`) and pointer disclosure on nested groups. Collapsing
+  a parent must retain its children's expansion preferences. Search must reveal
+  matching descendants without changing expansion preferences; clearing it
+  must restore the previous state. Expand/collapse all must include hidden
+  descendants. Keep workspace, local, Recent, Favorites, and Ungrouped sections.
+- Scroll a large connection list until rows are recycled. Open server and group
+  context menus on a different selection and verify the clicked identity.
+  Rebuild/filter the tree during a pending private drag: stale row targets and
+  delayed menu openings must be rejected, including read-only/locked guards.
+- Dragging a saved server from its regular sidebar row onto a group, subgroup,
+  or Ungrouped must change only its saved group assignment. Ungrouped remains
+  visible as a drop target when empty. Reject invalid, unchanged, external,
+  read-only, and locked drops. The server filter must reject these drags
+  without inserting the server ID as search text. Do not launch a connection or
+  disturb open sessions, favorites, history, workspace references, keyboard
+  navigation, existing click/context-menu behavior, group expansion, or scroll.
+  Group-scoped snippet availability follows the server's new group.
 
 ### Context Menus and Popovers
 
 - Right-click on servers, groups, terminals, and tabs must show context menus at the expected location.
+- The terminal-tab context menu must anchor to the right-click position within
+  the tab, including after horizontal tab-strip scrolling. Check the left,
+  middle, and right of tabs and near window/screen edges; GTK may adjust the
+  popup to keep it accessible. Duplicate, Move to new window, and Rename must
+  target the clicked tab even when another tab is active. Dismiss/reopen the
+  menu repeatedly and confirm no stale popup remains; if the target closes or
+  detaches before dispatch, its pending action must do nothing.
+- The note-tab context menu must follow the right-click position and rename
+  the clicked saved note or draft even when another tab is active. Rename must
+  be disabled for read-only or locked storage. Dismiss/reopen with Escape and
+  activate Rename by mouse and keyboard; preserve draft content and focus in
+  the rename dialog. Closing or replacing the target, closing Notes, or losing
+  write access before deferred dispatch must not open a stale rename dialog.
+  Saving or cancelling Rename must leave Notes usable; reopen the menu on
+  another tab without GTK warnings or crashes. Reuse one hidden popup and
+  release it when the Notes workspace shuts down.
 - Opening dialogs from popovers must close or defer the popover first to avoid GTK grabbing-popup hangs.
+- The saved-note list menu must offer Edit, Rename, Clone, Properties and
+  Delete at the click position, preserving the target if selection rebuilds
+  its row. Only Properties is enabled in read-only storage; locked storage
+  disables every command. Recheck permissions and note identity before
+  deferred dispatch. Exercise all actions on synthetic notes, cancel deletion,
+  rename/save/reopen, and hide/show or filter the list; no stale row, popup or
+  dialog may survive. Notes owns and reuses the popup until workspace shutdown.
 - Context menus must not cause sidebar scroll jumps or horizontal scroll movement.
+- Note category menus must use native GTK entries for Rename, Duplicate and
+  Delete in the clicked category's Personal/server scope. Check right-click
+  anchoring and keyboard opening with Menu or Shift+F10, Escape and reopening.
+  Read-only or locked storage disables all three actions. A pending command
+  must be rejected if its category disappears, permissions change, Notes closes
+  or the list panel is removed. Rebuilding the tree must preserve a valid
+  scoped target. Cancel and save category dialogs, then reopen the reusable
+  menu without GTK warnings; release it only at workspace shutdown.
 - Context menu actions must operate on the selected/right-clicked item, not a stale selection.
 - The terminal context menu must show `Show session status bar` when the
   selected pane bar is hidden and `Hide session status bar` when it is visible;
   toggling it must not change sibling panes or the global default.
 - Terminal context menus must keep the translated `Split` submenu above the `Tab` submenu, with a visual separator before the split actions.
 - Terminal context-menu submenus must share the same hover behavior: open on pointer movement over the submenu row, stay usable while moving into the submenu panel, close when leaving the row and panel, and never close the whole terminal menu unexpectedly.
-- Future terminal context-menu submenus must use the shared nested-menu helper instead of building independent popovers with custom hover behavior.
+- Terminal menus must use native nested GTK menu models. The shared leave
+  controller must close only the child submenu when the pointer leaves both
+  its entry and its panel; the main menu must remain usable. After opening
+  `Split` and `Tab` without selecting an action, click the terminal background:
+  the menu must disappear and a further click must reach the terminal. Repeat
+  after reopening the menu and with `Escape`. Cancel a dialog
+  and reopen a submenu, including from detached windows and non-active split
+  panes. Removed/replaced panes, closed sessions and shutdown must reject any
+  pending command. Optional SFTP, statistics and snippet entries must follow
+  their injected callbacks; server actions must resolve the current server.
+- Local-terminal profile and saved-workspace menus must retain their existing
+  action order, read-only restrictions and the clicked saved object. Recheck
+  object existence and permissions before delayed dispatch. Exercise all
+  commands on synthetic objects, including workspace deletion cancellation,
+  repeated reopening after list rebuilds and switching between menu kinds.
+- The native tab overflow menu must retain visual tab order and full long
+  titles, wrapping them within the popup and indicating the active session.
+  Selecting a removed or detached session from an older popup must do nothing.
 
 ### Server Tree
+
+- Server, Favorite and Recent connection menus must share native GTK entries
+  anchored to the click. Preserve favorite toggling, Connect, View notes, Edit,
+  Clone, Send files, optional Browse files (SFTP), and Delete on the clicked
+  server. In read-only mode disable only mutations; locked storage rejects all
+  commands. Recheck the server, permissions, shutdown state and optional SFTP
+  availability before dispatch. Escape/reopen and opening a dialog must leave
+  the reusable menu and sidebar scroll position intact across row rebuilds.
+  Group, workspace and local-profile menus retain their existing behavior.
 
 - The icon-only sidebar actions for creating a group, server, or local terminal
   and for expanding or collapsing all groups must expose their translated
@@ -204,6 +457,15 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Creation tooltips must distinguish opening an immediate local terminal from
   creating an SSH connection or a reusable local-terminal profile.
 - Groups and subgroups must preserve expanded/collapsed state when editing servers or refreshing the list.
+- Group and subgroup context menus must use native GTK entries for Start,
+  New subgroup, Edit and Delete, anchored to the click. Start must retain the
+  current descendant-server selection, tab-capacity checks and confirmation
+  above ten connections. Read-only storage allows Start but disables mutations;
+  locked storage disables all commands. Revalidate the group and permissions
+  before deferred dispatch. Cancel and accept dialogs using synthetic groups,
+  preserve unrelated groups, and reopen after tree rebuilds without stale
+  targets or scrolling jumps. Switching between server and group menus must
+  keep their targets and cached popups independent until window destruction.
 - The server tree must not jump to the top when selecting or right-clicking entries.
 - Filtering must include matching servers, groups, and subgroups.
 - Group server counts must include servers inside subgroups.
@@ -215,11 +477,22 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - New plain `connections.json` writes must contain only groups and servers; app and terminal preferences must be written to `settings.json`.
 - Obfuscated connection storage must decode back to the same groups, servers, passwords, and private key paths, and switching modes must rewrite the file immediately.
 - Encrypted connection storage must require a master password on startup, preserve groups, servers, passwords, and private key paths after unlock, allow canceling activation before setting a password, and never silently recover data if the master password is lost.
+- Changing an encrypted profile's master password must verify the current
+  password and re-encrypt both connections and notes. The new password must
+  unlock both files and the old password must unlock neither. Cancelling,
+  entering a wrong current password, or failing either file write must preserve
+  both original files; read-only instances must reject the action.
 - The startup master-password prompt must be an in-window modal layer rather
   than a separate desktop window, so it always stays inside Termia on single-
   and multi-monitor desktops and blocks the underlying controls until it is
   unlocked or cancelled. Window-management actions must remain available so
   the locked window can still be moved, minimized, maximized, or closed.
+- The startup unlock panel must apply the shared action-row insets only once:
+  Cancel/Unlock use 16 px bottom/right insets and 8 px between buttons. Keep
+  form padding separate, retain the error-message row when empty, and render
+  its text with the normal theme foreground rather than the red error class.
+  Check readability in light/dark themes, failed and successful unlock, Enter,
+  Escape, cancellation, and focus without using real credentials in tests.
 - Import/export configuration must preserve groups, subgroups, servers, SSH user, port, host, password, and private key path where available.
 - Importing Asbru configuration must not add unwanted suffixes such as `- copy`.
 - Launching a second Termia process must open a separate window and leave the new instance in read-only mode instead of writing shared config files concurrently.
@@ -229,12 +502,280 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Passwords are currently stored in the JSON file by explicit project decision; warnings and documentation must remain accurate until storage changes.
 - Security preferences must clearly warn before enabling encryption that Termia will ask for the master password on every startup and that lost master passwords cannot be recovered.
 
+### Notes
+
+- In the native Notes tree, use pointer and keyboard disclosure on personal,
+  server, and nested category rows. Select and open saved notes and drafts;
+  with one note open and selected, right-click a different note. Repeat across
+  Personal and server scopes, after scrolling and rebuilding the list. Right-click
+  a category too.
+  The menu must act on the visible target, and selection must follow GTK rows.
+- Drag a category into another in the same Personal/server scope, move its
+  subtree to another parent, and drop it onto the scope header to return it
+  to the root. Check indentation, drop highlighting, restart persistence,
+  unchanged notes and open editors. Starting a drag must not first toggle or
+  rebuild the source category row. Reject self, descendant, cross-scope,
+  external, encrypted-locked, and read-only drops without mutation. Category
+  drags must offer only the private format, never insert names or IDs into text.
+- Rename a parent and check its children stay attached. Delete a group and
+  check its children move up one level while its own notes become Uncategorized.
+  Duplicate a nested group and check its own notes are copied beside it.
+- Use Expand all / Collapse all above search with empty, large, personal,
+  server, and nested trees. Keep selection, editor tabs, and drafts intact;
+  both controls remain usable in read-only mode. Search must reveal matching
+  notes and ancestors even after Collapse all; clearing search restores the
+  chosen expansion state. Individual expanders remain usable.
+- Load an existing schema 1/2 notes file and verify groups start at the root.
+  On its first save, check the original backup is created before the schema 3
+  replacement. Repeat with plain, obfuscated, encrypted, and read-only storage;
+  verify a failed backup/write or an invalid hierarchy preserves original data.
+
+- The notes toolbar must sit below the native `Gtk.Notebook` tabs and remain restorable from the
+  notebook header toggle when hidden. Toolbar visibility must not move the notes list
+  or search entry. Their vertical position stays fixed independently of the editor.
+  When horizontal scrolling is needed, reserve space below the controls instead
+  of covering them. Keep toolbar controls compact and list text slightly smaller.
+- Notes are plain text. Verify that typing and saving preserves Markdown-looking
+  punctuation such as `**`, `#`, and backticks, along with Unicode, spaces, and
+  line breaks. Existing note content must remain unchanged when opened and saved.
+  Opening Notes must focus the active editor after the window is presented.
+- The notes toolbar must contain only appearance controls and must not alter
+  note text. Font family, size, foreground, background, line-number visibility,
+  and toolbar visibility must remain persistent preferences across restart and
+  unrelated preference changes. The editor defaults to a white foreground on
+  `#001B33`; line numbers default on and use `#0065BF` on `#000D1A`. Existing
+  custom editor colors must remain unchanged. Check the default colors with a
+  fresh isolated profile before any appearance setting has been saved. In
+  read-only instances, appearance changes may apply for that session but must
+  not persist.
+  The notes window must be an independent, modeless application window using
+  the same standard GTK title controls as the main window, including theme
+  colors, hover/pressed feedback, transitions, and desktop button order. Reopen
+  it after minimizing and after closing it, via the main menu and a server
+  context menu; it must regain focus without remaining minimized. Verify on
+  Wayland that closing the server popover does not reclaim focus from Notes.
+  Selecting the main window must allow it in front of Notes. Closing Notes
+  must preserve its reusable workspace; closing Termia must save and destroy
+  Notes through the existing shutdown path. Note-list titles must use normal
+  font weight. Verify
+  that line numbers align with logical lines while editing, wrapping, and
+  scrolling; after pressing Enter, the new empty line must be numbered before
+  any text is entered. Verify that the native GtkSourceView gutter changes width
+  as the note crosses 9 and 99 lines, and that the toggle persists. Hide/restore
+  the toolbar, restart and confirm preferences persist, and check keyboard
+  navigation, narrow windows,
+  light/dark themes, encrypted storage, and notes export/import with punctuation
+  preserved literally.
+
+- Notes and categories must persist in `notes.json`, separately from
+  `connections.json`; changing connection storage mode must protect notes using
+  the same selected mode and master password.
+- The notes workspace must be modeless and reusable: keep it open while
+  switching focus to and typing in an embedded or detached terminal.
+- The notes window must provide normal minimize, maximize, and close controls.
+- The notes writing area must remain visibly distinct from the surrounding
+  workspace, with a readable background and border in both light and dark
+  themes; text must not sit directly against the edge.
+- Notes must autosave non-empty text changes without a separate autosave
+  preference. A completely empty draft must not be persisted. If an existing
+  note is emptied, its prior saved content must remain intact until an explicit
+  non-empty edit is saved or the note is deleted.
+- Keep the notes-list toggle, New note button, and Import/Export overflow menu,
+  in that order, on the left side of the notes window title bar. Hiding the
+  list must remove the pane and category button, while New note remains
+  available; align the tab and editor left edges. Restoring the list must
+  return it to its
+  previous width and restore a small, visible inset beside the divider
+  (about 6 px).
+  Place the Add category icon above global search and the category-grouped note
+  tree in the sidebar. Keep it aligned with the list toggle. Both New note and
+  Add category must remain usable when no categories exist.
+  Search must span all categories, and there must be no category filter
+  dropdown. Keep search at a stable vertical position when toggling the toolbar,
+  and keep the same 6 px inset on both sides of the list divider at the default
+  and resized sidebar widths. Hide Import/Export for server-scoped notes.
+  Selecting the Servers root or expanding a category must not automatically
+  select a note or populate the editor. Disable category/note creation at the
+  Servers root with no server selected, and enable both when a server branch is
+  selected. Preserve an explicit note selection during list refreshes.
+  Server associations must remain intact when editing saved notes. In a
+  read-only instance, opening
+  a note must still allow reading
+  and selecting its text without enabling edits.
+- The sidebar must show a hierarchical tree: Personal contains personal
+  categories; Servers contains servers with notes or saved categories, plus
+  the currently selected server scope, with its categories and notes beneath
+  it. Omit other servers without notes or categories. Server branches should start collapsed so
+  large server collections do not flood the list; search must find servers by
+  name as well as notes by title, body, or category. Selecting a server or
+  personal category sets the creation scope without mixing categories. Scope
+  changes preserve open tabs and drafts. Categories are scoped independently,
+  so the same name can exist personally and on multiple servers. Show persistent
+  empty categories only in their own scope; show Uncategorized when that scope
+  has uncategorized notes or an active unsaved draft. Show each empty draft as a
+  temporary New note row beneath its scope's Uncategorized category; do not
+  persist it until it contains text. Category rows must expand/collapse and accept
+  drag-and-drop; dropping updates only the note and its open tabs. Rows fit on
+  one line; note rows show titles, while server rows identify their server.
+  New note titles are numbered
+  within the selected scope (New note, New note 2, etc.). Tabs show a
+  personal/server icon; hovering or focusing a server-note
+  tab identifies its server. Keep the notebook tabs and editor aligned when the
+  sidebar is hidden. Tab close icons must appear inside the tab card and remain
+  independently clickable.
+- Note editors must support multiple open tabs. New note titles are numbered
+  within their scope (“New note”, “New note 2”, and so on). The active tab
+  must have a theme-derived highlighted background and retain GTK's blue
+  selection underline; inactive tabs remain distinct and GTK keyboard focus
+  remains visible. Tabs must be reorderable by
+  dragging without changing note content or saved associations. Right-click an
+  open tab and a note in the sidebar; each menu must offer Rename, and renaming
+  must persist while updating all open tabs for the same note. Opening a note
+  already in a tab
+  must activate that tab rather than opening a duplicate. Switching tabs must
+  preserve each note's title, content, category, server association, and dirty
+  state; autosave and explicit Save must only affect the intended note. Closing
+  an incomplete unsaved draft must require confirmation. Closing a clean tab
+  using its close icon must close only that tab, including immediately after
+  saving; closing a dirty tab must offer Save and close,
+  Close without saving, and Keep editing. Switching between unsaved draft tabs
+  when the persisted note list is empty must keep the newly selected editor
+  visible without requiring a second click.
+- Main-menu notes management must show the complete tree, with a search field
+  wide enough for roughly 30 letters and import/export actions. Opening notes
+  from a server must expand its tree branch and hide Import/Export. In the
+  general view, omit servers without notes or saved categories; when opening a
+  specific server with no notes, include that server and its active draft.
+  Opening the hidden notes window must focus a new empty draft for the selected
+  scope, or resume an existing draft for that scope without adding a duplicate.
+  Re-presenting an already visible window must not add a draft; read-only
+  instances must not create drafts. Empty drafts must remain unpersisted.
+  Search belongs above the note tree in the sidebar, below the category button.
+  The Import/Export overflow menu stays in the title bar and is
+  visible only while Personal is the active creation scope. New-note numbering
+  must be independent in Personal and each server scope. Empty
+  views must show a useful message instead of a disabled editor. Single-clicking
+  a note must only select it; double-clicking opens its editor in a tab,
+  activating an existing tab instead of duplicating it. Selecting another note
+  must not replace or visually disagree with the active editor. Verify the idle
+  workspace explains that double-click opens a note.
+- Verify standalone notes and server-linked notes can be created, searched,
+  edited, and deleted. Create a category with the button above search, then
+  right-click its folder row to rename, duplicate, or delete it. The context
+  menu must also open with Menu or Shift+F10 while the row button has focus.
+  Uncategorized and Server notes must not have category-management menus.
+  Existing categories persist; duplicating a category duplicates its notes
+  with new IDs; deleting a category moves its notes to Uncategorized. Renaming
+  or deleting a category must update already-open note tabs without restoring
+  the old category on the next autosave.
+- Right-click notes in the list and confirm the menu offers Edit, Rename,
+  Clone, Properties, and Delete. Properties must remain available in read-only
+  mode and show title, category, associated server or Personal notes, creation
+  and modification dates in local time without fractional seconds, line and
+  character counts, and UTF-8 content size. The Properties window must use its
+  natural content height, with Close in a bottom row inset from the edges and no
+  large blank area beneath it. Check that the details text has padding inside
+  its contrasting background and that the outer top and bottom margins are
+  compact.
+  Opening Properties must not briefly highlight Delete or select the title
+  value. Keep the bottom inset compact. The title bar and outer frame use the
+  menu surface, while the inner details panel uses the window surface in both
+  light and dark themes.
+  Clone a note and verify the copy
+  has a new identity, a “(copy)” title suffix, the same content/category/server
+  association, and is saved immediately.
+- Verify the note, category, tab, and Import/Export context menus use the same
+  theme-aware popover surface and button treatment as the main menu.
+- Rename an open note tab and confirm the current title is selected in the
+  rename field so typing replaces it immediately.
+- Toggle the notes list off and on; verify the toggle stays at the far left of
+  the title bar and the new-note button remains beside it. The list pane and
+  category button disappear completely; the category button returns above
+  search when the list is restored. While hidden,
+  the left edges of the note tabs and editor must align; restoring the list
+  returns its previous width and the
+  normal content inset. Confirm the overflow menu follows the list toggle,
+  contains Import and Export in the general view, and is hidden in server-scoped
+  notes. With several notes, verify the list fills the panel height and shows
+  multiple rows before scrolling. Open
+  enough note tabs to overflow and confirm that GTK's notebook arrows make
+  every tab reachable without obscuring titles in light and dark themes.
+  Open two existing notes and one draft in
+  tabs; verify the close icon is visually inside each tab and works
+  independently. Switch among the tabs while editing,
+  reorder them by dragging, and verify each retains its own content without a
+  colored outline around the entire tab bar. Confirm
+  opening an already open note activates its existing tab, and Save/autosave
+  affect only that note. Closing a clean tab must close only that tab. Close a
+  dirty tab and test Save and close, Close without saving, and Keep editing.
+  The editor's Close tab button must follow the same behavior as the tab's X;
+  neither can undo changes that were already saved automatically.
+  Confirm the active tab highlight follows the selected note. With no saved
+  notes, switch between multiple unsaved drafts and verify each editor appears
+  on the first click. Hide the sidebar and verify the tab row and text editor
+  share the same left edge.
+  While editing one note, right-click another and confirm edits are saved before
+  its context menu opens and the clicked note remains selected.
+- Edit an existing note and create a new note; confirm autosave status and
+  modified timestamp update, and that the list sorts by most recently modified.
+  Displayed dates must use local `YYYY-MM-DD HH:MM:SS` format without the `T`
+  separator or fractional seconds; stored timestamps must retain their original
+  precision.
+  Confirm new note titles are numbered within their scope (“New note”,
+  “New note 2”, etc.), and there are no title,
+  category, server, or autosave-toggle controls in the editor. Start typing and
+  verify content saves automatically. Leave a new draft empty and verify no
+  record is created. Empty an existing note and verify its previous saved text
+  remains until explicitly deleted or non-empty content is restored.
+  Drag a note onto another category and onto Uncategorized; verify list grouping
+  updates and an already-open editor keeps the new category after autosaving.
+  Confirm the explicit Save button persists server-linked notes even before the
+  autosave delay. Close an incomplete draft tab and confirm Keep editing
+  preserves it while Close without saving removes only that draft.
+  Open server notes from a sidebar context menu and confirm the notes window
+  receives focus after the popover closes and remains modeless.
+  Confirm a long category name stays within its folder row and does not widen
+  the notes sidebar.
+  Force a save failure and confirm the editor retains the unsaved text when
+  switching notes or closing the notes window.
+- Delete a server, delete a group containing servers, clear connection
+  configuration, and replace connections through import. Notes must be kept;
+  associations to removed servers become personal notes.
+- Export notes without protection and with a separate password. Import both,
+  reject wrong passwords and malformed/future schemas without changing local
+  notes, and verify orphaned server associations are detached.
+  The export choice must explain that no password means readable, unencrypted
+  JSON, while an export password encrypts the file and is required for import.
+  Confirm this password is independent of the local master password.
+  Choosing password protection must open a masked password prompt and then the
+  file-save chooser; importing a protected file must show the same password
+  prompt without a GTK error.
+- When notes already exist, cancel import or choose Keep existing and confirm
+  the current notes remain unchanged. Choose Back up and replace and confirm a
+  protected backup exists before replacement; an unwritable backup location
+  must leave the current file unchanged.
+- Test notes in plain, obfuscated, encrypted, and read-only configurations;
+  do not expose note text in logs or terminal input.
+- `scripts/run_test_instance.sh --copy-current-config <profile>` must copy
+  `notes.json` into the isolated profile without changing the original file.
+  The test profile must redirect only Termia data, preserving the desktop GTK
+  configuration and appearance.
+
 ### Application Appearance and Themes
 
 - Configured application colors and theme styling must remain consistent after UI changes.
+- System follows GNOME's active appearance, while Light and Dark request the
+  corresponding GTK variant. None of these built-in modes may impose a
+  Termia-specific menu, dialog, button, text, selection, or error color.
 - Header bar, main menu, configuration menu, statistics menu, popovers, sidebars, tabs, buttons, selected rows, warning text, and dialogs must remain readable in light, dark, system, and any custom app themes.
 - Tab colors, borders, spacing, close button contrast, selected tab state, and hover/active states must remain visually clear.
 - Context menus and popovers must use readable foreground/background colors and must not inherit terminal colors.
+- Required asterisks in server, local-terminal, workspace-name, and split-connection
+  forms must match normal label text. The explanatory hint in server,
+  local-terminal, and workspace-name forms must remain readable as secondary
+  text. Sidebar Delete server, Delete local terminal, and Delete workspace
+  actions must use normal menu text while real validation errors retain their
+  error styling.
 - Sidebar group/server selection colors must remain readable and must preserve the distinction between folders/groups and server entries.
 - New CSS rules must be scoped to Termia classes where practical and must not unintentionally override GTK/VTE internals.
 - Split pane dividers have two deliberately different visual parts that must be
@@ -278,11 +819,14 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Font size shortcuts must update existing open terminals.
 - LS color customization must continue to reduce overly bright directory/file colors.
 - Tab labels should show short and medium names without unnecessary truncation, and provide a tooltip with the full title.
-- The terminal tab strip must keep tabs at a readable width, show its compact
-  horizontal scrollbar only when tabs overflow, and never widen the window or
-  collapse/change the selected server-sidebar width.
+- The terminal tab strip must keep tabs at a readable width and use an overlay
+  horizontal scrollbar that hides automatically when idle. It must never widen
+  the window or collapse/change the selected server-sidebar width.
 - The tab overflow control must list every attached tab in visual order, show
   full titles, indicate the active tab, and support keyboard activation.
+- Reuse one native overflow popover. Refresh its entries only when opening it;
+  selection, title changes and intermediate drag moves must not rebuild it.
+  Open it after a reorder, rename, close and detach to verify the current list.
 
 ### Connection History
 
@@ -295,9 +839,29 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 - Statistics collection must remain lightweight and should not continuously write to disk on every keypress.
 - Statistics must be disabled by default and must not record command or keystroke counters, even when enabled.
-- Disabling statistics from General preferences must stop new aggregate connection and duration counters from being recorded or flushed.
+- Disabling Statistics from **Add-ons** must stop new aggregate connection
+  and duration counters from being recorded or flushed after the next restart.
 - Global and current-run connection counters must remain separate.
 - Per-session statistics must correspond to the selected terminal pane.
+- Statistics remains disabled by default. When it is off, its main and terminal
+  menu actions must be absent, and no aggregate statistics writes may occur.
+- The SFTP browser remains on by default. Disabling it must hide both sidebar
+  and terminal-menu actions without disabling SCP or changing saved credentials.
+- Optional-tool changes take effect only after restart and must never delete
+  statistics data or interrupt existing SFTP transfers.
+
+### Optional built-in tools
+
+- In an isolated test profile, toggle Statistics and SFTP in Add-ons,
+  restart Termia, and verify the main, server, and terminal menus reflect each
+  choice. Re-enable both, restart, and verify their previous data remains.
+- With Statistics enabled, open and close local, SSH, and split panes; verify
+  connection counts, duration counts, current-run counts, and shutdown flushes
+  without duplicate records. Repeat with Statistics disabled and verify no
+  counters change.
+- With SFTP enabled, open it from both server and terminal context menus;
+  closing the owner session must still cancel its transfer. Disabling it must
+  not affect SCP or terminal operation.
 
 ## Manual Regression Checklist
 
@@ -330,6 +894,59 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 
 ### Native SFTP explorer
 
+- Repeatedly open and close SFTP, including its first opening in a fresh process.
+  After workers stop, native window/control/dialog references must be released
+  and the host must unregister each explorer exactly once. Keep the original
+  optional-dependency error available without retaining its import traceback.
+  Verify both password-prompt dismissal and explorer closure with a prompt open.
+  Reconnect and cancellation must remain usable until permanent closure;
+  unsuccessful worker cleanup must retain host ownership for shutdown checks.
+
+- Single-click a directory: it must remain selected in the current path and be
+  downloadable. Double-click it to navigate inside. Use arrows to focus a row
+  and Enter to open a directory; activating a regular file must not navigate.
+- Check file-list sizes around the 1000-byte, MB and GB boundaries, including
+  empty files. Units adapt to the size without changing the original byte count
+  or the existing MB/MB/s transfer indicators.
+- Open an isolated profile with `scripts/run_test_instance.sh --fresh`. During
+  a long transfer, return to the terminal window, type into a local terminal,
+  switch tabs and move SFTP behind the main window. Confirm that an SFTP-only
+  modal prompt does not grab unrelated windows and that no transfer is stopped
+  merely by moving focus. Check both sidebar- and pane-owned explorers.
+- Transfer mixed trees with empty files/directories and many tiny files. Check
+  the current filename, per-file MB, recent MB/s and completed-file count.
+  Accumulated operation MB appear in the tooltip without being repeated in the
+  bar. Confirm the speed continues across files, reacts to slower progress and
+  resets for a new operation, including empty files and zero elapsed time.
+  The whole-tree total is deliberately unknown; no pre-scan is
+  required. The final completion state must be delivered even if intermediate
+  progress is coalesced, without flooding the GTK loop.
+- Simulate early EOF and sources growing beyond their expected size; neither
+  may report success. Remove a partial failed local file while retaining earlier
+  completed files/directories. Byte counts do not prove checksum integrity.
+- Check safe messages for existing destinations, permissions/read-only targets,
+  missing paths, timeouts, disconnection, unsupported files and space/quota
+  errors where the server supplies a recognizable code. Cancel rename/delete
+  prompts and verify the original status and live connection are retained.
+- Use slow synthetic connection/close operations to verify that cancellation
+  and disconnect leave GTK responsive. No queued progress or success may appear
+  after cancellation, and reconnect stays disabled until both operation and
+  close workers have exited. Repeated close is safe; setup that creates its
+  transport after the first cancel must be closed again. A 30-second cleanup
+  warning is an unverified result, not proof that a blocked OS call terminated.
+- Reconnect an idle explorer while its synthetic backend closes slowly. No
+  replacement backend may be created before the previous service is verified
+  stopped. Repeated reconnect requests must create only one replacement, and
+  closing/cancelling the explorer while waiting must cancel the queued reconnect.
+  Queued old-service callbacks must not update the replacement window state.
+- Inject a synthetic backend close failure: cleanup gets one automatic retry
+  on the same close worker, without blocking GTK or starting concurrent closers.
+  A successful retry permits reconnect/closure. A second failure must show a
+  translated cleanup-failed message and keep reconnect disabled. The window's
+  periodic monitor must stop; even if the window is hidden, retain its host
+  registration and report failed/pending cleanup accurately during application
+  shutdown. Never report successful resource release on failure or timeout.
+
 - From the saved-server menu and from each SSH pane of a mixed split, open
   `Browse files (SFTP)` and check the correct endpoint. Terminal size, divider
   positions, application CSS, and existing SCP actions must remain unchanged.
@@ -345,6 +962,11 @@ Protected behavior does not mean the code cannot change. It means regressions sh
 - Cancel during connection and transfer. Reconnect explicitly and repeat the
   operation; no old callbacks may affect the new session. Partial remote files
   or newly created directories may remain, as explained by the status message.
+- Confirm Cancel, Reconnect SFTP, and Disconnect appear in that order on the
+  right. Cancel is available only while busy; Reconnect SFTP is available when
+  idle; Disconnect remains available in both states. Disconnect while idle and
+  during a transfer; each must close the SFTP window and transport, suppress
+  late callbacks, and leave unrelated SSH sessions usable.
 - Close the explorer, its owning tab (also after detaching), and Termia during
   a transfer. Confirm the SFTP transport closes and no worker remains after the
   bounded network timeout. Unrelated terminals and sidebar-owned explorers must
@@ -364,8 +986,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Open Termia and confirm a local terminal opens if the preference is enabled.
 - Open two local terminals and reorder their tabs with the mouse.
 - At 1280, 1366, 1920, and 2560 logical pixels, open enough tabs to overflow
-  with the sidebar visible and hidden. Confirm the compact horizontal scrollbar
-  appears only while needed, the window and sidebar widths remain unchanged,
+  with the sidebar visible and hidden. Confirm the horizontal overlay scrollbar
+  and down-arrow selector are available while needed, the window and sidebar widths remain unchanged,
   and every tab is reachable from the strip and overflow control.
 - With exactly two tabs whose titles fit, confirm the overflow selector is
   hidden. Reduce the window width or lengthen a tab title until the strip
@@ -478,6 +1100,12 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Open an SSH session, a local terminal, and a split pane; close Termia and confirm their local child processes do not remain after a brief grace period.
 - Right-click a server/group in the tree and open the context menu.
 - Edit a server and confirm collapsed groups stay collapsed.
+- Drag a saved server between root groups, a nested group, and Ungrouped while
+  that section is empty; confirm counts, saved assignment after restart, and
+  group-scoped snippets. Try the current group, a filtered sidebar, a collapsed
+  destination, and read-only/locked instances. Verify regular clicks,
+  double-click connection launch, right-click menus, keyboard navigation,
+  expanded groups, scroll position, and open sessions still behave correctly.
 - Search for a group, subgroup, and server in the sidebar filter.
 - Confirm the Recent section appears above Favorites, shows the 10 most recently connected servers without duplicates, and updates after new SSH connections.
 - Open connection history, search for an SSH server, toggle local-terminal entries, and confirm row contents remain unchanged.
@@ -500,6 +1128,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   appears (after unlocking encrypted connections when enabled), restoring the
   tab order, saved identities, split directions, and divider positions as new
   processes. Confirm terminal output and the old processes are not restored.
+- Rename one of those tabs before closing Termia and confirm its custom title
+  appears on the matching tab after choosing `Restore session`.
 - In a fresh profile, confirm `Restore the previous session when Termia starts`
   is disabled in `General`; create and close sessions, reopen Termia, and
   confirm no restoration prompt appears. Enable it, repeat the close/reopen
@@ -524,7 +1154,51 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   same action is silent. Verify the default is disabled in a fresh profile.
 - Confirm terminal ANSI colors, prompt colors, and the reconnect prompt are readable on both light and dark terminal backgrounds.
 
+### Help
+
+Open the main menu's Help action and check section headings, scrolling,
+readable wrapped text, Close, and configured/disabled shortcut labels in
+English, Spanish and Catalan. Reopen after editing keyboard preferences;
+the list must reflect the latest values. Check small window sizes and
+light/dark appearance. Start an isolated instance with
+`scripts/run_test_instance.sh --fresh`.
+
 ## Automated Checks
+
+### Setup and upgrade compatibility
+
+Missing Python/GI, SSH or sshpass dependencies must make `run_checks()` fail
+when invoked as an `if` condition. Setup must install missing dependencies,
+recheck them, and never create a launcher or report successful installation
+after a package-manager or post-install verification failure. Optional font
+fallback must remain non-blocking.
+
+The focused check is:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_setup_script
+```
+
+The [Docker upgrade report](DOCKER_UPGRADE_VALIDATION.md) records Debian and Git
+trials on Ubuntu 24.04 and 26.04. Repeat affected integration scenarios when
+changing packaging, dependency detection or source-update behavior. Do not run
+setup against the developer's host as a regression test: it can invoke sudo and
+install packages. Official release assets, HTTPS transport and desktop privilege
+authorization require separate release-time validation.
+
+### Standard automated commands
+
+CI also runs `python3 scripts/check_static_analysis.py --base <base-ref> --head <head-ref>`
+with the pinned tools in `requirements-ci.txt`. Validate changes to this gate
+with `python3 scripts/run_sandbox_tests.py tests.test_static_analysis` and a
+real comparison. Existing findings must remain visible; new occurrences and
+tool/report/history errors must fail. Line shifts must not create new findings,
+and duplicate findings, renamed files, deleted files and suppression comments
+must not bypass comparison. The first legacy-base promotion must require the
+documented immutable adoption/release/head ancestry, report its effective base,
+and reject missing or divergent history and warnings reintroduced after the
+approved release baseline. Ordinary comparisons must retain their original
+base. See the local setup in `CONTRIBUTING.md`.
 
 While iterating on code, run the affected test module and syntax-check the
 touched Python files. Use non-verbose output by default; rerun only a failing
@@ -533,11 +1207,42 @@ module or case with `-v` when its detailed output helps diagnose the failure.
 After a code implementation is stable and before opening the PR, run at minimum:
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests
-python3 -m py_compile run_termia.py scripts/compile_translations.py src/termia/*.py tests/*.py
+python3 scripts/run_sandbox_tests.py
+python3 -m py_compile run_termia.py scripts/compile_translations.py scripts/run_sandbox_tests.py src/termia/*.py tests/*.py
 bash -n scripts/termia-setup.sh
 scripts/compile_translations.py --check
 ```
+
+Run the test command from the repository root inside the Codex `termia_tests`
+workspace sandbox. That profile needs local TCP socket access for the synthetic
+SFTP transport, Xvfb, and D-Bus. The runner requires `Xvfb`, `xauth`, and
+`dbus-daemon`; it creates temporary home, Xauthority, display, and session-bus
+files, then removes them after the test process exits. It uses its own X11 and
+D-Bus services, not the developer's desktop session. It selects software
+rendering because the virtual display has no DRI3 device. To run a specific
+module, pass its name after the script, for example:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_sftp_protocol tests.test_optional_tools_ui
+```
+
+The usual `dbus-run-session -- xvfb-run` wrappers require Unix sockets and may
+fail with `EPERM` in this sandbox. A plain `PYTHONPATH=src python3 -m unittest
+discover -s tests` remains available on unrestricted developer systems. CI uses
+the same private runner with Coverage.py. If the runner
+reports missing commands, install the corresponding system packages before
+retrying. If it cannot start a local display or bus, confirm that the active
+Codex profile permits loopback TCP sockets before changing the tests.
+
+For a fresh line/branch coverage baseline, use the commands in
+[Contributing: Coverage with unittest](../CONTRIBUTING.md#coverage-with-unittest).
+Keep unittest and its existing test modules and runner. Coverage subprocess
+measurement must include the child test process, preserve the unittest exit
+status and keep GTK/SFTP resources isolated. Confirm all production modules
+appear in the reports, including those never imported. Review terminal/VTE
+cleanup, orphan handling, SSH/SFTP shutdown, GTK signal disposal and add-on
+enabled/disabled paths. Record gaps and skipped tests without adding a minimum
+percentage or treating unexecuted/native code as verified.
 
 If translations changed, run `scripts/compile_translations.py` before its
 `--check` mode. Do not repeat an unchanged successful command. If subsequent

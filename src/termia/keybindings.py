@@ -29,7 +29,7 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
     ("next_tab", "keybinding_action_next_tab"),
     ("font_increase", "keybinding_action_font_increase"),
     ("font_decrease", "keybinding_action_font_decrease"),
-    ("send_password", "keybinding_action_send_password"),
+    ("send_password", "keybinding_action_send_credential"),
     ("filter_servers", "keybinding_action_filter_servers"),
     ("toggle_sidebar", "keybinding_action_toggle_sidebar"),
     ("toggle_main_menu", "keybinding_action_toggle_main_menu"),
@@ -43,6 +43,59 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
 )
 
 _MODIFIER_ORDER = ("Ctrl", "Shift", "Alt", "Super")
+SNIPPET_ACTION_PREFIX = "snippet:"
+
+
+class KeybindingError(ValueError):
+    def __init__(self, message: str, shortcut: str = "") -> None:
+        super().__init__(message)
+        self.shortcut = shortcut
+
+
+def snippet_action(snippet_id: str) -> str:
+    return f"{SNIPPET_ACTION_PREFIX}{snippet_id}"
+
+
+def is_snippet_action(action: str) -> bool:
+    return isinstance(action, str) and action.startswith(SNIPPET_ACTION_PREFIX) and len(action) > len(SNIPPET_ACTION_PREFIX)
+
+
+def validate_keybindings(keybindings: dict[str, str]) -> None:
+    seen: set[str] = set()
+    for action, shortcut in keybindings.items():
+        shortcut = normalize_keybinding(shortcut)
+        if not shortcut:
+            continue
+        if is_snippet_action(action) and not any(
+            modifier in shortcut.split("+")[:-1] for modifier in ("Ctrl", "Alt", "Super")
+        ):
+            raise KeybindingError("snippet_shortcut_modifier_required")
+        # +/- actions without Shift also match shifted variants in VTE dispatch.
+        conflict_key = shortcut.replace("Shift+", "") if shortcut.endswith(("+", "-")) else shortcut
+        if conflict_key in seen:
+            raise KeybindingError("keybindings_conflict", shortcut)
+        seen.add(conflict_key)
+
+
+def merge_keybindings(current: dict[str, str], updates: dict[str, str],
+                      previous: dict[str, str] | None = None) -> dict[str, str]:
+    """Merge edited actions only; do not overwrite a newer edit from another window."""
+    result = normalize_keybindings(current)
+    for action, value in updates.items():
+        if action not in DEFAULT_KEYBINDINGS and not is_snippet_action(action):
+            continue
+        value = normalize_keybinding(value)
+        if previous is not None:
+            before = normalize_keybinding(previous.get(action, ""))
+            if value == before:
+                continue
+            if result.get(action, "") != before:
+                raise KeybindingError("keybindings_changed")
+        result[action] = value
+    validate_keybindings(result)
+    return result
+
+
 _MODIFIER_ALIASES = {
     "ctrl": "Ctrl",
     "control": "Ctrl",
@@ -57,9 +110,11 @@ _KEY_ALIASES = {
     "pageup": "PageUp",
     "page_up": "PageUp",
     "prior": "PageUp",
+    "kp_page_up": "PageUp",
     "pagedown": "PageDown",
     "page_down": "PageDown",
     "next": "PageDown",
+    "kp_page_down": "PageDown",
     "plus": "+",
     "equal": "+",
     "kp_add": "+",
@@ -67,9 +122,13 @@ _KEY_ALIASES = {
     "underscore": "-",
     "kp_subtract": "-",
     "left": "Left",
+    "kp_left": "Left",
     "right": "Right",
+    "kp_right": "Right",
     "up": "Up",
+    "kp_up": "Up",
     "down": "Down",
+    "kp_down": "Down",
 }
 _KEYVAL_ALIASES = {
     "PageUp": {"page_up", "kp_page_up"},
@@ -164,12 +223,47 @@ def normalize_keybindings(keybindings: dict[str, str] | None) -> dict[str, str]:
     for action in DEFAULT_KEYBINDINGS:
         value = normalize_keybinding(str(keybindings.get(action, normalized[action])))
         normalized[action] = value
+    for action, value in keybindings.items():
+        if is_snippet_action(action) and isinstance(value, str):
+            normalized[action] = normalize_keybinding(value)
     return normalized
 
 
 def keybinding_label(accelerator: str, disabled_label: str) -> str:
     normalized = normalize_keybinding(accelerator)
     return normalized or disabled_label
+
+
+def keybinding_accelerator(accelerator: str) -> str:
+    """Convert a stored shortcut to GTK's menu accelerator syntax."""
+    normalized = normalize_keybinding(accelerator)
+    if not normalized:
+        return ""
+
+    from gi.repository import Gdk, Gtk
+
+    if normalized.endswith("+"):
+        modifiers = normalized[:-1].rstrip("+").split("+")
+        key = "+"
+    else:
+        *modifiers, key = normalized.split("+")
+    if len(key) == 1:
+        keyval = Gdk.keyval_to_lower(Gdk.unicode_to_keyval(ord(key)))
+    else:
+        keyval = Gdk.keyval_from_name({"PageUp": "Page_Up", "PageDown": "Page_Down"}.get(key, key))
+    if not keyval or keyval == Gdk.KEY_VoidSymbol:
+        return ""
+    masks = {
+        "Ctrl": Gdk.ModifierType.CONTROL_MASK,
+        "Shift": Gdk.ModifierType.SHIFT_MASK,
+        "Alt": Gdk.ModifierType.ALT_MASK,
+        "Super": Gdk.ModifierType.SUPER_MASK,
+    }
+    state = Gdk.ModifierType(0)
+    for modifier in modifiers:
+        if modifier:
+            state |= masks[modifier]
+    return Gtk.accelerator_name(keyval, state)
 
 
 def is_unmodified_function_key(keyval: int, state: object) -> bool:

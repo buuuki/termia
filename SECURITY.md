@@ -13,10 +13,22 @@ The connection file can be kept as plain text, obfuscated, or encrypted from
 file; encrypted storage uses a master password and asks for it each time Termia
 starts. If the master password is lost, Termia cannot recover the encrypted
 connection data. The file is written with permissions `0600`, but you should
-still not publish, commit, or share it. Prefer SSH keys where possible.
+still not publish, commit, or share it. Prefer SSH keys where possible. A
+per-server startup command is also stored with connection settings and runs
+automatically on each session start. Treat it as executable configuration; do
+not put secrets in it. Exported connection files can contain these commands as
+well as passwords, so handle them as sensitive files.
 
 Exported configuration files can also contain passwords. Treat them as sensitive
 files, even when the local connection file uses obfuscated storage.
+Notes are stored separately in `~/.config/termia/notes.json` and follow the
+connection storage protection mode selected in Security preferences. Notes may
+contain sensitive information; file permissions are restricted to the current
+user. The export choice explains that without an export password the file is
+unencrypted, readable JSON; choosing a separate export password encrypts it,
+and that password is required for import. It is independent of the master
+password used for local storage. Handle exported files as sensitive data.
+Notes are never executed or sent to SSH sessions by Termia.
 Connection history in `~/.local/state/termia/connections-history.jsonl` can
 contain host names, user names, and session metadata, but not terminal commands
 or output. Keep it private as well.

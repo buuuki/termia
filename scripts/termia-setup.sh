@@ -35,6 +35,7 @@ PACKAGE_HINTS = {
     "Gdk": "gir1.2-gtk-4.0",
     "Pango": "gir1.2-pango-1.0",
     "Vte": "gir1.2-vte-3.91",
+    "GtkSource": "gir1.2-gtksource-5",
 }
 
 
@@ -43,7 +44,7 @@ def fail(message):
     print("Run ./scripts/termia-setup.sh install to install Termia dependencies.", file=sys.stderr)
     print(
         "Debian/Ubuntu/Linux Mint package hint: sudo apt install python3-gi "
-        "gir1.2-gtk-4.0 gir1.2-vte-3.91 python3-yaml python3-cryptography python3-paramiko "
+        "gir1.2-gtk-4.0 gir1.2-vte-3.91 gir1.2-gtksource-5 python3-yaml python3-cryptography python3-paramiko "
         "openssh-client sshpass",
         file=sys.stderr,
     )
@@ -61,6 +62,7 @@ requirements = [
     ("Gdk", "4.0"),
     ("Pango", "1.0"),
     ("Vte", "3.91"),
+    ("GtkSource", "5"),
 ]
 for namespace, version in requirements:
     try:
@@ -72,9 +74,9 @@ for namespace, version in requirements:
         )
 
 try:
-    from gi.repository import Gtk, Gdk, Pango, Vte
+    from gi.repository import Gtk, Gdk, GtkSource, Pango, Vte
 except (ImportError, ValueError) as exc:
-    fail(f"Could not load GTK/VTE bindings: {exc}")
+    fail(f"Could not load GTK/VTE/GtkSourceView bindings: {exc}")
 
 try:
     import cryptography
@@ -112,9 +114,9 @@ check_terminal_font() {
 }
 
 run_checks() {
-  check_python_modules
-  check_command ssh openssh-client
-  check_command sshpass sshpass
+  check_python_modules || return
+  check_command ssh openssh-client || return
+  check_command sshpass sshpass || return
   echo "ssh and sshpass clients OK"
   check_terminal_font
 }
@@ -158,6 +160,7 @@ install_packages() {
       python3-cryptography \
       gir1.2-gtk-4.0 \
       gir1.2-vte-3.91 \
+      gir1.2-gtksource-5 \
       openssh-client \
       sshpass \
       desktop-file-utils
@@ -171,6 +174,7 @@ install_packages() {
       python3-cryptography \
       gtk4 \
       vte291-gtk4 \
+      gtksourceview5 \
       openssh-clients \
       sshpass \
       desktop-file-utils
@@ -184,13 +188,14 @@ install_packages() {
       python-cryptography \
       gtk4 \
       vte4 \
+      gtksourceview5 \
       openssh \
       sshpass \
       desktop-file-utils
     install_optional_font_package ttf-jetbrains-mono sudo pacman -S --needed ttf-jetbrains-mono
   else
     echo "Could not detect apt-get, dnf, or pacman." >&2
-    echo "Install manually: Python 3, PyGObject, GTK 4, VTE GTK 4, openssh-client, sshpass, and desktop-file-utils." >&2
+    echo "Install manually: Python 3, PyGObject, GTK 4, VTE GTK 4, GtkSourceView 5, openssh-client, sshpass, and desktop-file-utils." >&2
     exit 1
   fi
 }
@@ -248,7 +253,7 @@ confirm_install() {
 Termia setup will:
   - install missing runtime packages with the detected system package manager;
   - request sudo privileges when package installation requires them;
-  - verify Python, GTK 4, VTE, ssh, and sshpass;
+  - verify Python, GTK 4, VTE, GtkSourceView 5, ssh, and sshpass;
   - install a user-local application launcher and icon.
 
 No settings, connections, statistics, or existing system packages are removed.

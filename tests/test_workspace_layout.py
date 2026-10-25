@@ -149,5 +149,5 @@ class WorkspaceLayoutTests(unittest.TestCase):
         with patch("termia.workspace_layout.os.readlink", return_value="/srv/project"):
             tab = capture_workspace_tab(session, include_local_context=False)
 
-        self.assertNotIn("title", tab)
+        self.assertEqual(tab["title"], "Project shell")
         self.assertNotIn("working_directory", tab["layout"])

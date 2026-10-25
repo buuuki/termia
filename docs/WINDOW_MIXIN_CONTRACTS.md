@@ -7,6 +7,11 @@ new components inherit from the window.
 The purpose of the inventory is to make dependencies visible before mixins are
 replaced gradually with explicit controllers and services.
 
+For the broader Core/add-on direction and approved dependency rules, see the
+[architecture overview](architecture/overview.md). This document remains the
+detailed reference for current window and mixin contracts; documented current
+couplings are observations, not automatic exceptions to those rules.
+
 ## Shared window services
 
 Most mixins expect the window to provide some combination of these services:
@@ -33,22 +38,33 @@ receive only the services they use.
 the mixins:
 
 - Persistence and feedback: `store`, `toast_label`.
-- Session state: `session_registry`, `run_connections`, `stats_save_id`.
+- Session state: `session_registry` and an injected `session_observer` for
+  optional lifecycle consumers. The Statistics observer owns its run counter
+  and pending save timer.
 - Explicit actions: `main_menu_actions`, `terminal_menu_actions`, and
   `tab_lifecycle_actions`.
+- Terminal keyboard dispatch: `terminal_shortcut_handler(keyval, modifiers,
+  session, terminal) -> bool`, composed in `app.py` with the snippet dialog
+  adapter. The terminal mixin calls this only after existing terminal actions
+  and does not import snippet UI implementations. The adapter checks focus,
+  pane availability, scope, and assignments, then reuses variables/preview;
+  it must not send a command without explicit confirmation. This remains a
+  GTK session-level contract, not a new generic add-on API.
 - Sidebar selection: `selected`, `selected_tree_widget`,
   `group_expanded_state`, `collapse_groups_on_startup`, `tree_widgets`, and
-  `active_context_popover`.
+  `sidebar_drag_server_id`, and `active_context_popover`.
 - Main UI widgets: `body`, `sidebar`, `search_entry`, `server_list`,
   `server_scroller`, `summary_label`, `title_label`, `info_label`,
-  `session_tab_bar`, and `terminal_stack`.
+  `terminal_stack` (`Gtk.Stack`), `session_tab_bar` (`Gtk.Box`),
+  `session_tab_scroller` (`Gtk.ScrolledWindow`) and `session_tab_controls`.
 - Header widgets: sidebar, new-tab, menu, read-only, add, expand, and collapse
   controls.
 
 Some mixins add transient state after construction:
 
-- `SidebarMixin`: `group_expanders`, `sidebar_projection`,
-  `visible_tree_rows`, `scroll_restore_id`, `sidebar_visible`, and
+- `SidebarMixin`: `sidebar_tree_root`, `sidebar_tree_model`,
+  `sidebar_tree_selection`, `sidebar_projection`, `visible_tree_rows`,
+  `sidebar_model_token`, `scroll_restore_id`, `sidebar_visible`, and
   `sidebar_width`.
 - `TabsMixin`: `tab_drag_session_id`.
 - `TerminalSessionsMixin`: updates `run_connections` and `stats_save_id`.
@@ -81,7 +97,8 @@ Some mixins add transient state after construction:
   mixin.
 - Extracted component: `MainMenuActions` defines the actions supplied by the
   application composition root. The menu builder no longer discovers
-  configuration, preference, history, or statistics callbacks on the window.
+  configuration, preference, history, statistics, or notes callbacks on the
+  window.
 
 ### Preference mixins
 
@@ -114,6 +131,16 @@ keybinding dialogs have comparatively small contracts.
 - Architectural note: this is both a renderer and a controller. Projection,
   selection/navigation, rendering, and context actions are separate
   responsibilities despite sharing one mixin.
+- GTK's tree model, expanders, list view, and single selection own disclosure,
+  selection, scrolling, and in-view navigation. Termia provides projected row
+  identities, filtering and expansion preferences, existing action dispatch,
+  and private server-to-group drags. Recycled rows and deferred callbacks are
+  checked against the current model generation. GTK model reads and expansion
+  persistence wait until expansion notifications finish; disappearing child
+  rows must not overwrite their saved expansion preferences.
+- Owns reusable native menus for servers, groups, local profiles and saved
+  workspaces. Each dispatch revalidates the captured object ID and permissions;
+  menu construction no longer supplies generic custom rows to other mixins.
 
 ### `ConnectionHistoryDialog`
 
@@ -133,11 +160,27 @@ keybinding dialogs have comparatively small contracts.
   values, and server ranking. `StatisticsDialog` owns only GTK dialog and
   widget construction.
 
+### `NotesDialogs`
+
+- Composed with the parent window, `ConnectionStore`, `NotesPresenter`, a
+  translation callback, writable guard, error callback, and toast callback.
+- Owns the reusable modeless notes/category windows and import/export flows;
+  it does not inherit `TermiaWindow` or manage terminal sessions.
+- `NotesPresenter` owns the personal/server/category tree, search filtering,
+  server labels, and note ordering; `ConnectionStore` owns note persistence and
+  per-scope category rules. `NotesDialogs` owns tree expansion, creation scope,
+  and tab identity.
+
 ### `TerminalMenusMixin`
 
 - Reads: `store` and the explicitly composed `TerminalMenuActions` callback
   set.
-- Window services: translation and context-menu construction.
+- Window services: translation and the session registry for target validation.
+- Owns one reusable native context menu per owning window, including native
+  Split and Tab submenu models. Commands retain the clicked session and pane;
+  their lifetime and owning window are checked before deferred dispatch.
+  A shared pointer-leave controller closes the nested child and refreshes the
+  root menu so its outside-click dismissal and terminal input remain active.
 - Cross-mixin dependencies: none for action dispatch; session splitting and
   disconnection, file transfer, tab operations, terminal copy/paste,
   preferences, status visibility, and statistics are supplied as callbacks.
@@ -147,10 +190,20 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TerminalSessionsMixin`
 
-- Reads: `store`, `session_registry`, `terminal_stack`, `toast_label`, terminal-menu
+- Each `TerminalPane` owns its Termia UI handler IDs through `SignalConnections`,
+  using native weak emitter references. Retiring a tab or removing a pane
+  disconnects those UI handlers; its separately owned `child-exited` handler
+  survives a live child and is released only after final history/accounting.
+  A retained disconnected/reconnect pane keeps its interactions until retired.
+- Tab labels similarly own their interaction handlers. Detaching/reparenting
+  does not retire a session; final tab closure does. GTK internal handlers and
+  captured process identities are not disposed through the UI signal owner.
+- New split terminals receive focus only after mapping. Their pane owns the
+  pending map handler, so retirement cancels it before a never-mapped split can
+  leave GTK weak focus pointers referring into a destroyed paned container.
+- Reads: `store`, `session_registry`, `toast_label`, terminal-menu
   callbacks, and terminal-font resolution.
-- Writes: `run_connections` and `stats_save_id`; it also mutates
-  `TerminalSession` objects held in `session_registry`. Each session owns
+- Writes: `TerminalSession` objects held in `session_registry`. Each session owns
   explicit `TerminalPane` state for every VTE pane, including its connection
   identity, managed process, status widgets, reconnect state, history, and
   statistics timing.
@@ -158,6 +211,10 @@ keybinding dialogs have comparatively small contracts.
   closing, terminal menus, and terminal preferences. Tab-triggered duplication,
   disconnection, confirmation, and split cleanup are exposed through the
   explicitly composed `TabLifecycleActions` contract.
+- Optional-tool boundary: connection start, pane finish, immediate flush, and
+  shutdown are delivered to `session_observer`; the disabled implementation is
+  a no-op. SFTP launch is delegated to the bundled SFTP tool through optional
+  menu actions rather than implemented in this mixin.
 - Architectural note: process launching, terminal views, split panes, and file
   transfer are already delegated to focused modules, but lifecycle
   orchestration still depends directly on tab and window state. Terminal
@@ -166,9 +223,24 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TabsMixin`
 
-- Reads: `store`, `session_registry`, `tab_lifecycle_actions`,
-  `session_tab_bar`, and `terminal_stack`.
+- A single native `Gtk.PopoverMenu` owns the overflow actions; callbacks hold
+  weak host/popover references. Its `show` callback refreshes the model only
+  when entries changed, and updates active selection. Invalidating stale UI
+  dismisses an open menu without rebuilding it.
+- Reads: `store`, `session_registry`, `tab_lifecycle_actions`, `terminal_stack`,
+  `session_tab_bar`, `session_tab_scroller` and `session_tab_controls`.
 - Writes: drag state and the GTK placement of session pages and labels.
+- `visible_terminal_page()` resolves the stack's visible child. Label order in
+  `session_tab_bar` defines keyboard navigation, workspace snapshots and
+  close-neighbor selection. Termia owns tab selection and private drag
+  reordering; GTK owns scrolling and the native overflow menu interaction.
+- Drag motion changes label placement without refreshing the overflow menu.
+  Drag end compares initial and final order and invalidates only a changed
+  order. A bounded edge-scroll timer revalidates the drag and stops on leave,
+  drop, drag end, removal or shutdown. Deferred active-tab reveal is suppressed
+  during drag. Async drops revalidate payload, session and shutdown state.
+- The drag source uses `Gtk.WidgetPaintable` for its icon. The source tab uses
+  scoped dragging color and opacity; no notebook-specific preview is created.
 - Cross-mixin dependencies: terminal context actions and shared dialog helpers.
   Terminal creation, confirmation, disconnection, and split-process cleanup
   are supplied explicitly through `TabLifecycleActions`.

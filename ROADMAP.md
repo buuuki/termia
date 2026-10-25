@@ -14,16 +14,18 @@ include new features, fixes, and improvements that belong to the current
 release scope. Increment the trailing beta number for each published
 iteration, as defined in `docs/VERSIONING.md`.
 
-`0.6.0-beta.3` adds reusable command snippets and persistent category
-management. It also fixes SSH tabs after normal nonzero shell exits and
-documents configuration compatibility. The native SFTP explorer and About-based
-updates were already released in beta.2; saved notes (issue #289) are not part
-of beta.3. See `CHANGELOG.md` for the complete release details.
+`0.6.0-beta.4` is the current release target, tracked in
+[issue #386](https://github.com/buuuki/termia/issues/386). It adds saved Notes,
+master-password changes, snippet shortcuts, SSH startup commands and optional
+built-in tools, together with GTK interaction, process/transfer lifecycle and
+memory fixes. It also includes the Docker/VM laboratories.
+See `CHANGELOG.md` for the detailed changes; this is still a beta,
+not an RC or stable release.
 
-After beta.3 is published, create `release/0.6.0-beta.4-dev` from the updated
-`main` branch for any further changes in this prerelease line. New feature and
-bugfix branches must start from the active release-development branch and target
-it with their pull requests. `main` remains the latest published release line.
+The active development branch is `release/0.6.0-beta.4-dev`, created from
+`main` after beta.3 was published. New feature and bugfix branches must start
+from it and target it with their pull requests. `main` remains the latest
+published release line.
 
 `0.6.0-beta.2` was published after completing the following checks:
 

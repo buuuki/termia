@@ -80,22 +80,20 @@ class ConnectionDialogsMixin:
             self.refresh_list()
         dialog.destroy()
 
-    def build_form_label(self, label_text: str, required: bool = False) -> Gtk.Label:
-        label = Gtk.Label()
-        label.set_xalign(0)
-        if required:
-            escaped = GLib.markup_escape_text(label_text)
-            label.set_markup(f"{escaped} <span foreground='#ff5f57' size='large'><b>*</b></span>")
-        else:
-            label.set_text(label_text)
-        return label
+    def build_form_label(self, label_text: str, required: bool = False) -> Gtk.Widget:
+        label = Gtk.Label(label=label_text, xalign=0)
+        if not required:
+            return label
+        container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        container.append(label)
+        marker = Gtk.Label(label="*")
+        marker.add_css_class("termia-required-marker")
+        container.append(marker)
+        return container
 
     def build_required_hint(self) -> Gtk.Label:
-        label = Gtk.Label()
-        label.set_xalign(0)
-        label.set_markup(
-            f"<span size='medium' foreground='#ff5f57'><b>{GLib.markup_escape_text(self.t('required_field'))}</b></span>"
-        )
+        label = Gtk.Label(label=self.t("required_field"), xalign=0)
+        label.add_css_class("termia-required-hint")
         return label
 
     def build_split_layout_combo(self, selected_layout: str = "none") -> Gtk.ComboBoxText:
@@ -127,9 +125,10 @@ class ConnectionDialogsMixin:
         password_entry = Gtk.PasswordEntry()
         password_entry.set_show_peek_icon(True)
         public_key_entry = Gtk.Entry()
+        run_command_entry = Gtk.Entry()
         split_layout_combo = self.build_split_layout_combo(server.split_layout if server else "none")
         favorite_check = Gtk.CheckButton(label=self.t("favorite_server"))
-        for widget in (name_entry, host_entry, user_entry, port_spin, group_combo, password_entry, public_key_entry, split_layout_combo):
+        for widget in (name_entry, host_entry, user_entry, port_spin, group_combo, password_entry, public_key_entry, run_command_entry, split_layout_combo):
             widget.set_hexpand(True)
             widget.set_size_request(260, -1)
         favorite_check.set_halign(Gtk.Align.START)
@@ -147,6 +146,7 @@ class ConnectionDialogsMixin:
             group_combo.set_active_id(server.group_id or "")
             password_entry.set_text(server.password)
             public_key_entry.set_text(server.public_key)
+            run_command_entry.set_text(server.command_on_start)
             favorite_check.set_active(server.favorite)
         else:
             port_spin.set_value(22)
@@ -157,8 +157,9 @@ class ConnectionDialogsMixin:
             (self.t("ssh_user"), user_entry, True),
             (self.t("ssh_port"), port_spin, False),
             (self.t("group"), group_combo, False),
-            (self.t("password"), password_entry, False),
+            (self.t("credential"), password_entry, False),
             (self.t("public_key"), public_key_entry, False),
+            (self.t("run_command_on_start"), run_command_entry, False),
             (self.t("split"), split_layout_combo, False),
             ("", favorite_check, False),
         ]
@@ -170,7 +171,7 @@ class ConnectionDialogsMixin:
 
         dialog.get_content_area().append(grid)
         warning = Gtk.Label()
-        warning.set_markup(f"<i>{GLib.markup_escape_text(self.t('password_warning'))}</i>")
+        warning.set_markup(f"<i>{GLib.markup_escape_text(self.t('credential_warning'))}</i>")
         warning.set_wrap(True)
         warning.set_xalign(0)
         warning.set_margin_start(16)
@@ -189,6 +190,7 @@ class ConnectionDialogsMixin:
                 "group": group_combo,
                 "password": password_entry,
                 "public_key": public_key_entry,
+                "command_on_start": run_command_entry,
                 "split_layout": split_layout_combo,
                 "favorite": favorite_check,
             },
@@ -210,6 +212,7 @@ class ConnectionDialogsMixin:
         group_id = widgets["group"].get_active_id() or None
         password = widgets["password"].get_text()
         public_key = widgets["public_key"].get_text().strip()
+        command_on_start = widgets["command_on_start"].get_text().strip()
         split_layout = widgets["split_layout"].get_active_id() or "none"
         favorite = widgets["favorite"].get_active()
 
@@ -234,6 +237,7 @@ class ConnectionDialogsMixin:
                         password,
                         public_key,
                         split_layout,
+                        command_on_start,
                     )
                 else:
                     self.store.add_server(
@@ -246,6 +250,7 @@ class ConnectionDialogsMixin:
                         password,
                         public_key,
                         split_layout,
+                        command_on_start,
                     )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))

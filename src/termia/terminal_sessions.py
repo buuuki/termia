@@ -41,6 +41,7 @@ from .terminal_config import (
 from .terminal_processes import (
     TerminalProcess,
     signal_terminal_process,
+    snapshot_terminal_process,
     spawn_terminal_process,
     terminal_process_is_active,
 )
@@ -264,8 +265,9 @@ class TerminalSessionsMixin:
             title_locked=title_locked,
         )
         terminal = session.terminal
-        focus_button.connect("clicked", self.on_hide_pane_status_bar, session, terminal)
-        session.disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, terminal)
+        pane = session.pane_for_terminal(terminal)
+        pane.ui_signals.connect(focus_button, "clicked", self.on_hide_pane_status_bar, session, terminal)
+        pane.ui_signals.connect(session.disconnect_button, "clicked", self.on_request_disconnect_pane, session, terminal)
         self.configure_terminal_interactions(terminal, session)
         self.session_registry.register(session)
         self.add_session_to_main_view(session)
@@ -304,8 +306,8 @@ class TerminalSessionsMixin:
         )
         self.sync_root_pane_state(session)
         self.update_local_session_directory_title(session)
-        session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
-        terminal.connect("child-exited", self.on_process_terminal_exited, session)
+        self.start_terminal_timer(session, terminal)
+        pane.exit_handler_id = terminal.connect("child-exited", self.on_process_terminal_exited, session)
         session.status_label.set_label(f"{title} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, fallback_working_directory=working_directory)
         if initial_command.strip():
@@ -319,9 +321,9 @@ class TerminalSessionsMixin:
     def on_process_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         self.mark_terminal_inactive(terminal, session)
         pane = self.pane_state(session, terminal)
+        self.session_observer.pane_finished(session)
         self.clear_terminal_process_state(session, terminal, pane)
-        self.record_session_duration(session)
-        self.save_statistics_now()
+        self.session_observer.flush()
         result = "disconnected" if pane.disconnect_requested else (
             "closed" if self.child_status_successful(_status) else "failed"
         )
@@ -335,6 +337,8 @@ class TerminalSessionsMixin:
         )
         self.store.record_history_end(session, result)
         pane.connected = False
+        if getattr(pane, "retired", False):
+            pane.release_exit_handler()
         if getattr(self, "shutdown_in_progress", False):
             return
         pane.disconnect_button.set_sensitive(False)
@@ -378,8 +382,9 @@ class TerminalSessionsMixin:
         if not self.can_open_terminal_tabs():
             return None
         session, focus_button = self.create_terminal_session(server.name, server.id, toolbar_margins=True)
-        focus_button.connect("clicked", self.on_hide_pane_status_bar, session, session.terminal)
-        session.disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, session.terminal)
+        pane = session.pane_for_terminal(session.terminal)
+        pane.ui_signals.connect(focus_button, "clicked", self.on_hide_pane_status_bar, session, session.terminal)
+        pane.ui_signals.connect(session.disconnect_button, "clicked", self.on_request_disconnect_pane, session, session.terminal)
         self.configure_terminal_interactions(session.terminal, session)
         self.session_registry.register(session)
         self.add_session_to_main_view(session)
@@ -638,6 +643,8 @@ class TerminalSessionsMixin:
         session.child_pid = None
         session.child_process = None
         session.connected = True
+        session.active_terminal_ids.add(id(terminal))
+        self.sync_root_pane_state(session)
         session.disconnect_button.set_label(self.t("disconnect"))
         session.disconnect_button.set_sensitive(True)
         session.status_label.set_label(self.t("connecting"))
@@ -695,9 +702,18 @@ class TerminalSessionsMixin:
                 self.mark_session_for_reconnect(session, server, message)
                 return
             command = build_ssh_command(server, ssh_path, sshpass_path=sshpass_path)
+            display_command = build_ssh_command(
+                server,
+                ssh_path,
+                sshpass_path=sshpass_path,
+                include_startup_command=False,
+            )
         else:
             command = build_ssh_command(server, ssh_path)
-        terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
+            display_command = build_ssh_command(server, ssh_path, include_startup_command=False)
+        terminal.feed(
+            f"{self.t('ssh_connecting_command').format(command=' '.join(display_command))}\r\n\r\n".encode()
+        )
         terminal.grab_focus()
         try:
             child_process = spawn_terminal_process(terminal, None, command, envv)
@@ -719,9 +735,10 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         self.sync_root_pane_state(session)
-        session.timeout_id = GLib.timeout_add_seconds(1, self.update_session_timer, session)
-        terminal.connect("child-exited", self.on_terminal_exited, server, session)
-        self.record_connection(server.id)
+        self.start_terminal_timer(session, terminal)
+        root_pane.release_exit_handler()
+        root_pane.exit_handler_id = terminal.connect("child-exited", self.on_terminal_exited, server, session)
+        self.session_observer.connection_started(server.id)
         session.status_label.set_label(f"{server.name} · PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, server=server)
         self.toast_label.set_label(self.t("session_opened").format(title=session.title))
@@ -729,6 +746,7 @@ class TerminalSessionsMixin:
     def mark_session_for_reconnect(self, session: TerminalSession, server: Server, toast: str) -> None:
         session.connected = False
         session.pending_reconnect = True
+        session.active_terminal_ids.discard(id(session.terminal))
         self.sync_root_pane_state(session)
         self.show_pane_reconnect_controls(self.pane_state(session, session.terminal))
         self.toast_label.set_error(toast)
@@ -745,23 +763,20 @@ class TerminalSessionsMixin:
             session.pending_reconnect = False
             self.toast_label.set_error(self.t("server_reconnect_missing"))
             return
-        session.pending_reconnect = False
-        self.close_tab(session.id, session.page, disconnect=False)
-        self.open_terminal_tab(server)
+        self.reset_pane_connection_attempt(session)
+        self.reset_pane_connection_attempt(self.pane_state(session, session.terminal))
+        self.update_session_tab_title(session, session.title)
+        self.start_ssh_session(server, session)
 
     def retry_local_terminal_session(self, session: TerminalSession) -> None:
         if not session.pending_reconnect or session.server_id is not None:
             return
-        session.pending_reconnect = False
-        self.close_tab(session.id, session.page, disconnect=False)
-        if session.local_profile_id is None:
-            self.on_open_local_terminal(None)
-            return
         profile = find_local_terminal_profile(self.store.data.local_terminals, session.local_profile_id)
-        if profile is None:
-            self.on_open_local_terminal(None)
-            return
-        self.open_local_terminal_profile(profile)
+        self.reset_pane_connection_attempt(session)
+        self.reset_pane_connection_attempt(self.pane_state(session, session.terminal))
+        session.active_terminal_ids.add(id(session.terminal))
+        self.update_session_tab_title(session, session.title)
+        self.start_local_split_terminal(session, session.terminal, session.terminal, profile=profile)
 
     def mark_pane_for_reconnect(
         self,
@@ -771,8 +786,12 @@ class TerminalSessionsMixin:
     ) -> None:
         pane.connected = False
         pane.pending_reconnect = True
+        if pane.terminal is session.terminal:
+            session.pending_reconnect = True
         self.show_pane_reconnect_controls(pane)
         session.active_terminal_ids.discard(id(pane.terminal))
+        if pane.terminal is session.terminal:
+            session.connected = bool(session.active_terminal_ids)
         prompt = f"  {self.t('reconnect_prompt')}  "
         pane.terminal.feed(f"\r\n\x1b[1;30;48;2;255;213;79m{prompt}\x1b[0m\r\n".encode())
         self.toast_label.set_error(toast)
@@ -788,7 +807,9 @@ class TerminalSessionsMixin:
         pane.disconnect_button.set_label(self.t("close"))
         pane.disconnect_button.set_sensitive(True)
 
-    def reset_pane_connection_attempt(self, pane: TerminalPane) -> None:
+    def reset_pane_connection_attempt(self, pane: TerminalPane | TerminalSession) -> None:
+        if isinstance(pane, TerminalPane):
+            pane.timer_generation += 1
         pane.pending_reconnect = False
         pane.disconnect_requested = False
         pane.disconnect_button.set_label(self.t("disconnect"))
@@ -853,67 +874,6 @@ class TerminalSessionsMixin:
         except ValueError:
             return False
 
-    def schedule_statistics_save(self) -> None:
-        if self.store.data.app.statistics_enabled and self.stats_save_id is None:
-            self.stats_save_id = GLib.timeout_add_seconds(30, self.flush_statistics)
-
-    def save_statistics_before_close(self) -> None:
-        if not self.store.data.app.statistics_enabled:
-            if self.stats_save_id is not None:
-                GLib.source_remove(self.stats_save_id)
-                self.stats_save_id = None
-            return
-        for session in self.session_registry.sessions():
-            self.record_session_duration(session)
-            for pane in session.panes.values():
-                if pane.terminal is not session.terminal:
-                    self.record_pane_duration(pane)
-        if self.stats_save_id is not None:
-            GLib.source_remove(self.stats_save_id)
-            self.stats_save_id = None
-        self.store.save_statistics()
-
-    def flush_statistics(self) -> bool:
-        self.stats_save_id = None
-        if not self.store.data.app.statistics_enabled:
-            return GLib.SOURCE_REMOVE
-        self.store.save_statistics()
-        return GLib.SOURCE_REMOVE
-
-    def save_statistics_now(self) -> None:
-        if self.stats_save_id is not None:
-            GLib.source_remove(self.stats_save_id)
-            self.stats_save_id = None
-        if not self.store.data.app.statistics_enabled:
-            return
-        self.store.save_statistics()
-
-    def record_connection(self, server_id: str) -> None:
-        if not self.store.data.app.statistics_enabled:
-            return
-        stats = self.store.data.statistics
-        stats.connections += 1
-        stats.server_connections[server_id] = stats.server_connections.get(server_id, 0) + 1
-        self.run_connections += 1
-        self.schedule_statistics_save()
-
-    def record_session_duration(self, session: TerminalSession) -> None:
-        self.record_pane_duration(session)
-
-    def record_pane_duration(self, pane: TerminalSession | TerminalPane) -> None:
-        if not self.store.data.app.statistics_enabled:
-            return
-        if pane.duration_recorded or pane.child_pid is None:
-            return
-        pane.duration_recorded = True
-        duration = max(0.0, time.monotonic() - pane.started_at)
-        stats = self.store.data.statistics
-        stats.completed_sessions += 1
-        stats.duration_total += duration
-        stats.duration_min = duration if stats.duration_min is None else min(stats.duration_min, duration)
-        stats.duration_max = max(stats.duration_max, duration)
-        self.schedule_statistics_save()
-
     def save_history_before_close(self) -> None:
         for session in self.session_registry.sessions():
             if session.history_start_recorded and not session.history_end_recorded:
@@ -927,15 +887,16 @@ class TerminalSessionsMixin:
                     self.store.record_history_end(pane, result)
 
     def configure_terminal_interactions(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
+        signals = self.pane_state(session, terminal).ui_signals
         keys = Gtk.EventControllerKey.new()
-        keys.connect("key-pressed", self.on_terminal_key_pressed, session, terminal)
+        signals.connect(keys, "key-pressed", self.on_terminal_key_pressed, session, terminal)
         terminal.add_controller(keys)
         focus = Gtk.EventControllerFocus.new()
-        focus.connect("enter", self.on_terminal_focus_enter, session, terminal)
+        signals.connect(focus, "enter", self.on_terminal_focus_enter, session, terminal)
         terminal.add_controller(focus)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
-        right_click.connect("pressed", self.on_terminal_right_click, session, terminal)
+        signals.connect(right_click, "pressed", self.on_terminal_right_click, session, terminal)
         terminal.add_controller(right_click)
 
     def on_terminal_focus_enter(
@@ -1001,7 +962,7 @@ class TerminalSessionsMixin:
         ):
             self.send_saved_password(session, terminal)
             return True
-        return False
+        return self.terminal_shortcut_handler(keyval, state, session, terminal)
 
     def move_split_pane_focus(
         self,
@@ -1034,7 +995,7 @@ class TerminalSessionsMixin:
         sessions = self.visible_sessions_in_tab_order()
         if len(sessions) <= 1:
             return
-        visible = self.terminal_stack.get_visible_child()
+        visible = self.visible_terminal_page()
         current = 0
         for index, item in enumerate(sessions):
             if item.page is visible or item.id == session.id:
@@ -1127,13 +1088,13 @@ class TerminalSessionsMixin:
         pane = self.pane_state(session, target)
         server = find_server(self.store.data.servers, pane.server_id) if pane.server_id is not None else None
         if not pane.connected or server is None or not server.password:
-            self.toast_label.set_warning(self.t("send_password_unavailable"))
+            self.toast_label.set_warning(self.t("send_credential_unavailable"))
             return
         payload = server.password.encode()
         if self.store.data.app.send_password_enter:
             payload += b"\r"
         target.feed_child(payload)
-        self.toast_label.set_label(self.t("send_password_sent"))
+        self.toast_label.set_label(self.t("send_credential_sent"))
 
     def split_terminal_pane(
         self,
@@ -1506,8 +1467,8 @@ class TerminalSessionsMixin:
             local_profile_id=source.local_profile_id if source is not None else session.local_profile_id,
         )
         session.panes[id(terminal)] = pane
-        focus_button.connect("clicked", self.on_hide_pane_status_bar, session, terminal)
-        disconnect_button.connect("clicked", self.on_request_disconnect_pane, session, terminal)
+        pane.ui_signals.connect(focus_button, "clicked", self.on_hide_pane_status_bar, session, terminal)
+        pane.ui_signals.connect(disconnect_button, "clicked", self.on_request_disconnect_pane, session, terminal)
         self.configure_terminal_interactions(terminal, session)
         session.split_terminals.append(terminal)
         session.active_terminal_ids.add(id(terminal))
@@ -1549,6 +1510,8 @@ class TerminalSessionsMixin:
         working_directory_override: str | None = None,
     ) -> None:
         pane = self.pane_state(session, terminal)
+        is_root = terminal is session.terminal
+        history_owner = session if is_root else pane
         pane.server_id = None
         pane.local_profile_id = profile.id if profile is not None else None
         pane.title = self.local_terminal_session_title(profile)
@@ -1574,7 +1537,9 @@ class TerminalSessionsMixin:
             if profile is not None
             else self.local_terminal_working_directory(source_terminal, fallback_working_directory)
         )
-        self.store.record_history_start(pane, "local")
+        if is_root:
+            session.started_at = pane.started_at
+        self.store.record_history_start(history_owner, "local")
         try:
             child_process = spawn_terminal_process(
                 terminal,
@@ -1587,7 +1552,7 @@ class TerminalSessionsMixin:
             terminal.feed(f"{message}\r\n".encode())
             pane.connected = False
             pane.status_label.set_label("Error")
-            self.store.record_history_end(pane, "failed", detail=exc.message)
+            self.store.record_history_end(history_owner, "failed", detail=exc.message)
             self.mark_pane_for_reconnect(session, pane, message)
             return
         pane.child_pid = child_process.pid
@@ -1600,10 +1565,19 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         pane.status_label.set_label(f"{pane.title} · PID {child_process.pid}")
-        pane.timeout_id = GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
-        session.split_child_pids[id(terminal)] = child_process.pid
-        session.split_processes[id(terminal)] = child_process
-        terminal.connect("child-exited", self.on_split_terminal_exited, session)
+        if is_root:
+            session.child_pid = child_process.pid
+            session.child_process = child_process
+            session.started_at = pane.started_at
+            session.pending_reconnect = False
+            self.sync_root_pane_state(session)
+            pane.release_exit_handler()
+            pane.exit_handler_id = terminal.connect("child-exited", self.on_process_terminal_exited, session)
+        else:
+            session.split_child_pids[id(terminal)] = child_process.pid
+            session.split_processes[id(terminal)] = child_process
+            self.connect_split_exit_handler(session, pane)
+        self.start_terminal_timer(session, terminal)
         if profile is not None and profile.command_on_start.strip():
             GLib.timeout_add(
                 INITIAL_LOCAL_COMMAND_DELAY_MS,
@@ -1693,9 +1667,18 @@ class TerminalSessionsMixin:
                 self.mark_pane_for_reconnect(session, pane, message)
                 return
             command = build_ssh_command(server, ssh_path, sshpass_path=sshpass_path)
+            display_command = build_ssh_command(
+                server,
+                ssh_path,
+                sshpass_path=sshpass_path,
+                include_startup_command=False,
+            )
         else:
             command = build_ssh_command(server, ssh_path)
-        terminal.feed(f"{self.t('ssh_connecting_command').format(command=' '.join(command))}\r\n\r\n".encode())
+            display_command = build_ssh_command(server, ssh_path, include_startup_command=False)
+        terminal.feed(
+            f"{self.t('ssh_connecting_command').format(command=' '.join(display_command))}\r\n\r\n".encode()
+        )
         try:
             child_process = spawn_terminal_process(terminal, None, command, envv)
         except GLib.Error as exc:
@@ -1720,11 +1703,11 @@ class TerminalSessionsMixin:
             pid=child_process.pid,
         )
         pane.status_label.set_label(f"{server.name} · PID {child_process.pid}")
-        pane.timeout_id = GLib.timeout_add_seconds(1, self.update_pane_timer, session, terminal)
+        self.start_terminal_timer(session, terminal)
         session.split_child_pids[id(terminal)] = child_process.pid
         session.split_processes[id(terminal)] = child_process
-        terminal.connect("child-exited", self.on_split_terminal_exited, session)
-        self.record_connection(server.id)
+        self.connect_split_exit_handler(session, pane)
+        self.session_observer.connection_started(server.id)
         if announce:
             self.toast_label.set_label(self.t("session_opened").format(title=server.name))
 
@@ -1742,12 +1725,23 @@ class TerminalSessionsMixin:
             return fallback_working_directory
         return str(Path.home())
 
+    def connect_split_exit_handler(self, session: TerminalSession, pane: TerminalPane) -> None:
+        """A retried VTE keeps one subscription for its owning pane/session."""
+        pane.exit_processed = False
+        if pane.exit_handler_id is None:
+            pane.exit_handler_id = pane.terminal.connect(
+                "child-exited", self.on_split_terminal_exited, session
+            )
+
     def on_split_terminal_exited(self, terminal: Vte.Terminal, _status: int, session: TerminalSession) -> None:
         pane = session.pane_for_terminal(terminal)
+        if pane is None or getattr(pane, "exit_processed", False):
+            return
+        pane.exit_processed = True
         self.mark_terminal_inactive(terminal, session)
         if pane is not None:
+            self.session_observer.pane_finished(pane)
             self.clear_terminal_process_state(session, terminal, pane)
-            self.record_pane_duration(pane)
             clean_exit = (
                 self.ssh_status_is_clean_exit(_status)
                 if pane.server_id is not None
@@ -1766,7 +1760,9 @@ class TerminalSessionsMixin:
             )
             self.store.record_history_end(pane, result)
             pane.connected = False
-        self.save_statistics_now()
+            if getattr(pane, "retired", False):
+                pane.release_exit_handler()
+        self.session_observer.flush()
         if getattr(self, "shutdown_in_progress", False):
             return
         if pane is not None:
@@ -1818,6 +1814,7 @@ class TerminalSessionsMixin:
         self.clear_split_focus_before_replacement(parent)
         self.replace_split_container(parent, sibling)
         session.panes.pop(id(terminal), None)
+        pane.retire()
         log_event(
             "split.removed",
             session_id=session.id,
@@ -1871,12 +1868,36 @@ class TerminalSessionsMixin:
     def mark_terminal_inactive(self, terminal: Vte.Terminal, session: TerminalSession) -> None:
         session.active_terminal_ids.discard(id(terminal))
 
-    @staticmethod
     def clear_terminal_process_state(
+        self,
         session: TerminalSession,
         terminal: Vte.Terminal,
         pane: TerminalPane,
     ) -> None:
+        process = pane.child_process
+        if isinstance(process, TerminalProcess):
+            retained = (
+                *getattr(self, "shutdown_terminal_processes", ()),
+                *getattr(self, "orphaned_terminal_processes", ()),
+            )
+            snapshot = next(
+                (
+                    candidate for candidate in retained
+                    if candidate.pid == process.pid
+                    and candidate.start_time == process.start_time
+                    and candidate.session_members
+                ),
+                None,
+            )
+            termination_pending = snapshot is not None
+            if snapshot is None:
+                snapshot = snapshot_terminal_process(process)
+            if terminal_process_is_active(snapshot):
+                orphaned = getattr(self, "orphaned_terminal_processes", set())
+                orphaned.add(snapshot)
+                self.orphaned_terminal_processes = orphaned
+                if not termination_pending and not getattr(self, "shutdown_in_progress", False):
+                    self.terminate_terminal_process(snapshot)
         pane.child_pid = None
         pane.child_process = None
         if terminal is session.terminal:
@@ -1958,6 +1979,7 @@ class TerminalSessionsMixin:
 
     def paste_terminal_clipboard(self, popover: Gtk.Popover, terminal: Vte.Terminal) -> None:
         popover.popdown()
+        terminal.grab_focus()
         terminal.paste_clipboard()
 
     def configure_terminal_from_menu(
@@ -1967,35 +1989,6 @@ class TerminalSessionsMixin:
     ) -> None:
         popover.popdown()
         self.on_terminal_settings(None, self.window_for_session(session))
-
-    def show_session_statistics(
-        self,
-        popover: Gtk.Popover,
-        session: TerminalSession,
-        terminal: Vte.Terminal,
-    ) -> None:
-        popover.popdown()
-        pane = self.pane_state(session, terminal)
-        server_connections = 0
-        if pane.server_id is not None:
-            server_connections = self.store.data.statistics.server_connections.get(pane.server_id, 0)
-        dialog = Gtk.Dialog(
-            title=self.t("session_statistics"),
-            transient_for=self.window_for_session(session),
-            modal=True,
-        )
-        dialog.set_resizable(False)
-        self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE, last=True)
-        label = Gtk.Label(label=f"{self.t('server_connections')}: {server_connections}")
-        label.set_xalign(0)
-        label.set_selectable(True)
-        label.set_margin_top(12)
-        label.set_margin_bottom(12)
-        label.set_margin_start(12)
-        label.set_margin_end(12)
-        dialog.get_content_area().append(label)
-        dialog.connect("response", lambda current, _response: current.destroy())
-        dialog.present()
 
     def on_send_files_to_server(
         self,
@@ -2020,28 +2013,6 @@ class TerminalSessionsMixin:
             self.file_transfer_controllers = controllers
         controllers.add(controller)
         controller.open_file_selection(server)
-
-    def on_browse_sftp(self, popover, session, server) -> None:
-        from .sftp_service import Endpoint
-        from .sftp_view import SFTPWindow
-
-        popover.popdown()
-        parent = self if session is None else self.window_for_session(session)
-        endpoint = Endpoint(server.host, server.port, server.user, server.public_key, server.password)
-
-        def open_window():
-            if self.shutdown_in_progress:
-                return GLib.SOURCE_REMOVE
-            if session is not None and not self.session_registry.contains(session.id):
-                return GLib.SOURCE_REMOVE
-            window = SFTPWindow(parent, endpoint, server.name, self.t,
-                                self.unregister_file_transfer,
-                                session.id if session is not None else None)
-            self.file_transfer_controllers.add(window)
-            window.present()
-            return GLib.SOURCE_REMOVE
-
-        GLib.idle_add(open_window)
 
     def unregister_file_transfer(self, controller: ManagedTransfer) -> None:
         controllers = getattr(self, "file_transfer_controllers", None)
@@ -2111,6 +2082,21 @@ class TerminalSessionsMixin:
             for terminal in session.split_terminals:
                 self.apply_terminal_settings(terminal)
 
+    def start_terminal_timer(self, session: TerminalSession, terminal: Vte.Terminal) -> None:
+        pane = self.pane_state(session, terminal)
+        pane.timer_generation += 1
+        GLib.timeout_add_seconds(1, self.update_terminal_timer, session, terminal, pane.timer_generation)
+
+    def update_terminal_timer(
+        self, session: TerminalSession, terminal: Vte.Terminal, generation: int,
+    ) -> bool:
+        pane = session.pane_for_terminal(terminal)
+        if pane is None or pane.retired or generation != pane.timer_generation or not pane.connected:
+            return GLib.SOURCE_REMOVE
+        if terminal is session.terminal:
+            return self.update_session_timer(session)
+        return self.update_pane_timer(session, terminal)
+
     def update_session_timer(self, session: TerminalSession) -> bool:
         if not session.connected:
             return GLib.SOURCE_REMOVE
@@ -2138,6 +2124,9 @@ class TerminalSessionsMixin:
         session.split_processes.clear()
 
     def terminate_terminal_process(self, process: TerminalProcess, *, force: bool = False) -> bool:
+        if not force:
+            # Retain verified descendants before SIGTERM can remove the leader.
+            process = snapshot_terminal_process(process)
         signum = signal.SIGKILL if force else signal.SIGTERM
         terminated = signal_terminal_process(process, signum)
         log_event(
@@ -2146,6 +2135,13 @@ class TerminalSessionsMixin:
             signal=signum.name,
             accepted=terminated,
         )
+        if terminated and not force:
+            orphaned = {
+                candidate for candidate in getattr(self, "orphaned_terminal_processes", ())
+                if (candidate.pid, candidate.start_time) != (process.pid, process.start_time)
+            }
+            orphaned.add(process)
+            self.orphaned_terminal_processes = orphaned
         if terminated and not force and not getattr(self, "shutdown_in_progress", False):
             GLib.timeout_add(500, self.force_terminate_terminal_process, process)
         return terminated
@@ -2162,9 +2158,19 @@ class TerminalSessionsMixin:
         return GLib.SOURCE_REMOVE
 
     def prepare_terminal_sessions_for_shutdown(self) -> None:
+        pending_processes: set[TerminalProcess] = {
+            snapshot_terminal_process(process)
+            for process in getattr(self, "orphaned_terminal_processes", ())
+        }
         for session in self.session_registry.sessions():
             session.disconnect_requested = True
             session.pending_reconnect = False
+            process = getattr(session, "child_process", None)
+            if isinstance(process, TerminalProcess):
+                pending_processes.add(snapshot_terminal_process(process))
+            for process in getattr(session, "split_processes", {}).values():
+                if isinstance(process, TerminalProcess):
+                    pending_processes.add(snapshot_terminal_process(process))
             for pane in session.panes.values():
                 pane.disconnect_requested = True
                 pane.pending_reconnect = False
@@ -2173,27 +2179,30 @@ class TerminalSessionsMixin:
                 session_id=session.id,
                 panes=len(session.panes),
             )
+        self.shutdown_terminal_processes = tuple(pending_processes)
+
+    def pending_shutdown_terminal_processes(self) -> tuple[TerminalProcess, ...]:
+        candidates = set(getattr(self, "shutdown_terminal_processes", ()))
+        candidates.update(getattr(self, "orphaned_terminal_processes", ()))
+        pending = tuple(
+            process
+            for process in candidates
+            if terminal_process_is_active(process)
+        )
+        self.shutdown_terminal_processes = pending
+        self.orphaned_terminal_processes = set(pending)
+        return pending
 
     def terminate_open_terminal_processes(self, *, force: bool = False) -> None:
+        if getattr(self, "shutdown_in_progress", False):
+            for process in self.pending_shutdown_terminal_processes():
+                self.terminate_terminal_process(process, force=force)
+            return
         for session in self.session_registry.sessions():
             if session.child_process is not None:
                 self.terminate_terminal_process(session.child_process, force=force)
             for process in tuple(session.split_processes.values()):
                 self.terminate_terminal_process(process, force=force)
-
-    def on_request_disconnect_session(self, _button: Gtk.Button, session: TerminalSession) -> None:
-        if not session.connected:
-            return
-        if not self.store.data.app.confirm_disconnect:
-            self.disconnect_session(session)
-            return
-        self.confirm_session_action(
-            session,
-            self.t("disconnect_session_title"),
-            self.t("disconnect_session_detail").format(title=session.title),
-            self.t("disconnect_session_confirm"),
-            lambda: self.disconnect_session(session),
-        )
 
     def close_pending_reconnect_pane(
         self,
@@ -2256,7 +2265,10 @@ class TerminalSessionsMixin:
             self.store.record_history_end(pane, "disconnected")
             self.remove_terminal_pane_if_split(terminal, session)
         if (
-            len(session.active_terminal_ids) <= 1
+            not (session.active_terminal_ids - {id(terminal)})
+            and not any(
+                other.pending_reconnect for other in session.panes.values() if other is not pane
+            )
             and self.store.data.app.close_tab_on_disconnect
         ):
             self.close_tab(session.id, session.page, disconnect=False)
@@ -2274,8 +2286,8 @@ class TerminalSessionsMixin:
             self.toast_label.set_error(message)
             return
         self.terminate_split_processes(session)
-        self.record_session_duration(session)
-        self.save_statistics_now()
+        self.session_observer.pane_finished(session)
+        self.session_observer.flush()
         session.connected = False
         session.disconnect_button.set_sensitive(False)
         session.status_label.set_label(self.t("session_disconnected_status").format(title=session.title))
@@ -2331,9 +2343,9 @@ class TerminalSessionsMixin:
     ) -> None:
         self.mark_terminal_inactive(terminal, session)
         pane = self.pane_state(session, terminal)
+        self.session_observer.pane_finished(session)
         self.clear_terminal_process_state(session, terminal, pane)
-        self.record_session_duration(session)
-        self.save_statistics_now()
+        self.session_observer.flush()
         clean_exit = self.ssh_status_is_clean_exit(_status)
         result = "disconnected" if pane.disconnect_requested else (
             "closed" if clean_exit else "failed"
@@ -2348,6 +2360,8 @@ class TerminalSessionsMixin:
         )
         self.store.record_history_end(session, result)
         pane.connected = False
+        if getattr(pane, "retired", False):
+            pane.release_exit_handler()
         if getattr(self, "shutdown_in_progress", False):
             return
         pane.disconnect_button.set_sensitive(False)

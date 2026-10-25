@@ -22,6 +22,7 @@ from .terminal_processes import (
     TerminalProcess,
     capture_terminal_process,
     signal_terminal_process,
+    snapshot_terminal_process,
     terminal_process_is_active,
 )
 
@@ -103,6 +104,8 @@ class FileTransferController:
         self.active_state: dict[str, Any] | None = None
         self.inactive_notified = False
         self.cancelled = False
+        self.shutdown_processes: set[TerminalProcess] = set()
+        self.shutdown_cleanup_unverified = False
 
     def open_file_selection(self, server: Server) -> None:
         dialog = Gtk.FileDialog(title=self.t("send_files_to_server"))
@@ -153,7 +156,6 @@ class FileTransferController:
             dialog,
             self.t("send_files_to_server_destination_confirm"),
             Gtk.ResponseType.OK,
-            last=True,
         )
         dialog.set_default_response(Gtk.ResponseType.OK)
 
@@ -357,7 +359,7 @@ class FileTransferController:
         state: dict[str, Any],
     ) -> None:
         dialog = Gtk.Dialog(
-            title=self.t("send_files_to_server_password_title"),
+            title=self.t("send_files_to_server_credential_title"),
             transient_for=self.parent,
             modal=True,
         )
@@ -365,9 +367,8 @@ class FileTransferController:
         self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         self.add_dialog_action_button(
             dialog,
-            self.t("send_files_to_server_password_confirm"),
+            self.t("send_files_to_server_credential_confirm"),
             Gtk.ResponseType.OK,
-            last=True,
         )
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -376,7 +377,7 @@ class FileTransferController:
         content.set_margin_end(16)
         content.set_spacing(8)
         detail = Gtk.Label(
-            label=self.t("send_files_to_server_password_detail").format(
+            label=self.t("send_files_to_server_credential_detail").format(
                 user=server.user,
                 host=server.host,
             )
@@ -421,7 +422,7 @@ class FileTransferController:
             return
         secret = password.get_text()
         if not secret:
-            error.set_label(self.t("send_files_to_server_password_empty"))
+            error.set_label(self.t("send_files_to_server_credential_empty"))
             error.set_visible(True)
             password.grab_focus()
             return
@@ -482,7 +483,6 @@ class FileTransferController:
             dialog,
             self.t("send_files_to_server_fingerprint_accept"),
             Gtk.ResponseType.OK,
-            last=True,
         )
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -547,7 +547,7 @@ class FileTransferController:
         )
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
-        cancel = self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL, last=True)
+        cancel = self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
 
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -648,6 +648,14 @@ class FileTransferController:
                 self.destroy_transfer_dialog(state)
             return
         self.mark_inactive()
+
+    def shutdown_cleanup_state(self) -> str:
+        self.shutdown_processes = {
+            process for process in self.shutdown_processes if terminal_process_is_active(process)
+        }
+        if self.shutdown_processes:
+            return "pending"
+        return "failed" if self.shutdown_cleanup_unverified else "stopped"
 
     @staticmethod
     def destroy_transfer_dialog(state: dict[str, Any]) -> None:
@@ -795,6 +803,8 @@ class FileTransferController:
 
     @staticmethod
     def refresh_process_identity(process: TerminalProcess) -> TerminalProcess:
+        if process.session_members or process.session_unverified:
+            return process
         current = capture_terminal_process(process.pid)
         if process.start_time is not None and current.start_time != process.start_time:
             return process
@@ -803,12 +813,21 @@ class FileTransferController:
     def request_process_termination(self, state: dict[str, Any]) -> None:
         process = state.get("process")
         identity = state.get("process_identity")
+        if isinstance(process, Gio.Subprocess) and not isinstance(identity, TerminalProcess):
+            identity = self.capture_subprocess_identity(process)
         accepted = False
         termination_signal = "SIGTERM"
         if isinstance(identity, TerminalProcess):
-            identity = self.refresh_process_identity(identity)
+            identity = snapshot_terminal_process(self.refresh_process_identity(identity))
             state["process_identity"] = identity
+            self.shutdown_processes = {
+                candidate for candidate in self.shutdown_processes
+                if (candidate.pid, candidate.start_time) != (identity.pid, identity.start_time)
+            }
+            self.shutdown_processes.add(identity)
             accepted = signal_terminal_process(identity, signal.SIGTERM)
+        elif isinstance(process, Gio.Subprocess):
+            self.shutdown_cleanup_unverified = True
         if not accepted and isinstance(process, Gio.Subprocess):
             process.force_exit()
             accepted = True

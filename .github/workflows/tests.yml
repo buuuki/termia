@@ -14,11 +14,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  static-analysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out proposed revision and full baseline history
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up analysis Python
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned analyzers
+        run: python -m pip install -r requirements-ci.txt
+
+      - name: Test comparison and fail on new findings
+        env:
+          ANALYSIS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          ANALYSIS_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          ANALYSIS_EVENT: ${{ github.event_name }}
+        run: |
+          python -m unittest tests.test_static_analysis
+          if [ "$ANALYSIS_EVENT" = pull_request ]; then
+            ANALYSIS_BASE="$(git merge-base "$ANALYSIS_BASE" "$ANALYSIS_HEAD")"
+          fi
+          python scripts/check_static_analysis.py --base "$ANALYSIS_BASE" --head "$ANALYSIS_HEAD"
+
   unittest:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
@@ -36,15 +67,46 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y \
             python3 \
+            python3-venv \
+            xvfb \
+            xauth \
+            dbus \
+            xdotool \
             python3-gi \
             python3-cryptography \
             python3-yaml \
             python3-paramiko \
             gir1.2-gtk-4.0 \
+            gir1.2-gtksource-5 \
             gir1.2-vte-3.91
 
-      - name: Run unit and GTK smoke tests
-        run: PYTHONPATH=src python3 -m unittest discover -s tests -v
+      - name: Install quality tools with access to system GTK
+        run: |
+          python3 -m venv --system-site-packages .venv
+          .venv/bin/python -m pip install -r requirements-ci.txt -r requirements-coverage.txt
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Run unittest with branch coverage and a private GTK display
+        run: |
+          coverage erase
+          coverage run scripts/run_sandbox_tests.py
+
+      - name: Generate console and HTML coverage reports
+        if: ${{ !cancelled() }}
+        run: |
+          coverage combine
+          coverage report
+          coverage html
+          coverage json -o htmlcov/coverage.json
+
+      - name: Preserve coverage reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: unittest-coverage
+          path: htmlcov/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Validate translation catalogs
         run: scripts/compile_translations.py --check

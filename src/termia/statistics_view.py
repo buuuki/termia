@@ -9,6 +9,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
+from .dialog_actions import add_dialog_action_button
 from .statistics_presenter import StatisticCard, StatisticsDashboard
 
 
@@ -29,9 +30,9 @@ class StatisticsDialog:
         dialog = Gtk.Dialog(title=self.translate("statistics_title"), transient_for=self.parent, modal=True)
         dialog.set_resizable(True)
         dialog.set_default_size(620, 520)
-        close_button = dialog.add_button(self.translate("close"), Gtk.ResponseType.CLOSE)
-        close_button.set_margin_end(12)
-        close_button.set_margin_bottom(12)
+        add_dialog_action_button(
+            dialog, self.translate("close"), Gtk.ResponseType.CLOSE,
+        )
 
         content = dialog.get_content_area()
         content.set_margin_top(16)
@@ -69,6 +70,27 @@ class StatisticsDialog:
         dashboard.append(title)
         dashboard.append(self.build_top_servers_list(presentation))
 
+        dialog.connect("response", lambda current, _response: current.destroy())
+        dialog.present()
+
+    def show_session(self, parent: Gtk.Window, server_connections: int) -> None:
+        dialog = Gtk.Dialog(
+            title=self.translate("session_statistics"),
+            transient_for=parent,
+            modal=True,
+        )
+        dialog.set_resizable(False)
+        add_dialog_action_button(
+            dialog, self.translate("close"), Gtk.ResponseType.CLOSE,
+        )
+        label = Gtk.Label(
+            label=f"{self.translate('server_connections')}: {server_connections}"
+        )
+        label.set_xalign(0)
+        label.set_selectable(True)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(label, f"set_margin_{side}")(12)
+        dialog.get_content_area().append(label)
         dialog.connect("response", lambda current, _response: current.destroy())
         dialog.present()
 

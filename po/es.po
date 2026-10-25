@@ -2,6 +2,82 @@
 # Copyright (C) 2026 Jordi Pons
 # This file is distributed under the same license as the Termia package.
 #
+
+msgid "Getting started"
+msgstr "Primeros pasos"
+
+msgid "Create groups, SSH servers and local terminal profiles from the sidebar. Double-click a server or profile to open it. Use search, Favorites and Recent to find connections; right-click an item for its available actions."
+msgstr "Crea grupos, servidores SSH y perfiles de terminal local desde la barra lateral. Haz doble clic en un servidor o perfil para abrirlo. Usa la búsqueda, Favoritos y Recientes para encontrar conexiones; haz clic derecho en un elemento para ver sus acciones."
+
+msgid "Terminals, tabs and split panes"
+msgstr "Terminales, pestañas y paneles divididos"
+
+msgid "Right-click a terminal for copy, paste, connection actions and the Split and Tab submenus. Split panes keep independent terminals. Tabs can be renamed, duplicated, reordered or moved to a separate window; use the terminal menu to reattach a detached tab. The status bar can be shown or hidden per pane. Use preferences to configure terminal appearance, keybindings and split separators."
+msgstr "Haz clic derecho en un terminal para copiar, pegar, acceder a las acciones de conexión y a los submenús Dividir y Pestaña. Cada panel dividido mantiene un terminal independiente. Puedes renombrar, duplicar, reordenar o mover pestañas a otra ventana; usa el menú del terminal para devolverlas a la ventana principal. La barra de estado se puede mostrar u ocultar por panel. Las preferencias permiten configurar la apariencia, los atajos y los separadores."
+
+msgid "Save a workspace to reopen its terminal layout later. Closing a tab or pane ends its managed terminal processes; closing Termia also stops its managed processes. Restoring a layout starts sessions again, rather than preserving running processes."
+msgstr "Guarda un espacio de trabajo para volver a abrir su distribución de terminales. Cerrar una pestaña o panel termina sus procesos de terminal gestionados; cerrar Termia también detiene los procesos que gestiona. Restaurar una distribución inicia nuevas sesiones, no conserva los procesos en ejecución."
+
+msgid "Open Notes from the main menu for personal or server-associated notes. Organize them in categories and subcategories, search them and open several editor tabs. Changes are saved automatically; empty notes are not saved. Import and export are separate from connection configuration. Notes are never executed in terminals."
+msgstr "Abre Notas desde el menú principal para gestionar notas personales o asociadas a servidores. Organízalas en categorías y subcategorías, búscalas y abre varias pestañas de edición. Los cambios se guardan automáticamente; las notas vacías no se guardan. La importación y exportación son independientes de la configuración de conexiones. Las notas nunca se ejecutan en los terminales."
+
+msgid "Save reusable command snippets, organize them in categories and restrict their scope where needed. Review commands and variables before execution. Snippet shortcuts can be assigned in preferences; they apply to eligible active terminal panes."
+msgstr "Guarda fragmentos de comandos reutilizables, organízalos en categorías y restringe su ámbito cuando sea necesario. Revisa los comandos y las variables antes de ejecutarlos. Puedes asignar atajos a los fragmentos en las preferencias; se aplican a los paneles de terminal activos que correspondan a su ámbito."
+
+msgid "Enable or disable Statistics and the SFTP browser in Add-ons, then restart Termia. Disabling an add-on does not delete its data. Statistics records connection counts and durations, not terminal commands. SFTP provides file browsing and transfers when enabled."
+msgstr "Activa o desactiva Estadísticas y el explorador SFTP en Complementos y reinicia Termia. Desactivar un complemento no elimina sus datos. Estadísticas registra cantidades y duraciones de conexiones, no comandos de terminal. SFTP permite explorar y transferir archivos cuando está activado."
+
+msgid "Use Security preferences to configure local storage protection. Obfuscation is not encryption. Encrypted storage requires a master password, which cannot be recovered if lost. Connection exports may contain credentials: keep them private. Notes exports can use a separate password. Importing notes replaces existing notes after validation and backup."
+msgstr "Las preferencias de seguridad permiten proteger el almacenamiento local. La ofuscación no es cifrado. El almacenamiento cifrado requiere una contraseña maestra que no se puede recuperar si se pierde. Las exportaciones de conexiones pueden contener credenciales: mantenlas privadas. Las notas se pueden exportar con una contraseña independiente. Al importar notas se sustituyen las existentes tras validarlas y crear una copia de seguridad."
+
+msgid "Open About and choose Check for updates to consult official releases. Automatic installation depends on the installation type and compatible release assets; development checkouts or local changes may require a manual update. Installation can request administrator authorization. Restart Termia after a successful update."
+msgstr "Abre Acerca de y elige Buscar actualizaciones para consultar las versiones oficiales. La instalación automática depende del tipo de instalación y de los archivos compatibles publicados; las ramas de desarrollo o los cambios locales pueden requerir una actualización manual. La instalación puede solicitar autorización de administrador. Reinicia Termia después de actualizar correctamente."
+
+msgid "Your keyboard shortcuts"
+msgstr "Tus atajos de teclado"
+
+msgid "These are your current application shortcuts, including custom assignments. Change them in preferences. Disabled combinations are not handled by Termia. Snippet-specific assignments are managed separately in preferences."
+msgstr "Estos son los atajos actuales de la aplicación, incluidas tus asignaciones personalizadas. Cámbialos en las preferencias. Termia no intercepta las combinaciones desactivadas. Los atajos de fragmentos se gestionan por separado en las preferencias."
+
+msgid "{name} · {size} · {speed} MB/s · {files} files completed"
+msgstr "{name} · {size} · {speed} MB/s · {files} archivos completados"
+
+msgid "Operation total: {transferred} MB transferred (overall size unknown)."
+msgstr "Total de la operación: {transferred} MB transferidos (tamaño global desconocido)."
+
+msgid "The source size changed or the transfer ended before all expected bytes were received. Transfer failed."
+msgstr "El tamaño del origen cambió o la transferencia terminó antes de recibir todos los bytes esperados. La transferencia ha fallado."
+
+msgid "The SFTP operation timed out."
+msgstr "Se agotó el tiempo de espera de la operación SFTP."
+
+msgid "The SFTP connection was lost."
+msgstr "Se perdió la conexión SFTP."
+
+msgid "The destination already exists. Choose another name or location; nothing was overwritten."
+msgstr "El destino ya existe. Elige otro nombre o ubicación; no se ha sobrescrito nada."
+
+msgid "Permission denied or destination is read-only."
+msgstr "Permiso denegado o destino de solo lectura."
+
+msgid "The destination has insufficient free space or its quota was exceeded."
+msgstr "El destino no tiene suficiente espacio libre o se ha superado su cuota."
+
+msgid "The source or destination directory no longer exists."
+msgstr "El origen o la carpeta de destino ya no existe."
+
+msgid "Unsupported file type, invalid filename or directory nesting limit exceeded. Symbolic links are not transferred."
+msgstr "Tipo de archivo no compatible, nombre no válido o límite de carpetas anidadas superado. No se transfieren enlaces simbólicos."
+
+msgid "Partial remote files or newly created directories may remain."
+msgstr "Pueden quedar archivos remotos o carpetas recién creadas incompletos."
+
+msgid "SFTP cleanup is still pending. Worker termination has not been verified."
+msgstr "La limpieza de SFTP sigue pendiente. No se ha verificado que el proceso de trabajo haya terminado."
+
+msgid "SFTP cleanup failed after retrying. Connection closure has not been verified; reconnect is disabled."
+msgstr "La limpieza de SFTP falló tras reintentarlo. No se ha verificado el cierre de la conexión; la reconexión está desactivada."
+
 msgid "Browse files (SFTP)"
 msgstr "Explorar archivos (SFTP)"
 
@@ -64,6 +140,29 @@ msgstr "¿Eliminar permanentemente el elemento seleccionado? Solo se pueden elim
 
 msgid "Select"
 msgstr "Seleccionar"
+
+#: src/termia/i18n.py:notes_expand_all
+msgid "Expand all note groups"
+msgstr "Expandir todos los grupos de notas"
+
+#: src/termia/i18n.py:notes_collapse_all
+msgid "Collapse all note groups"
+msgstr "Contraer todos los grupos de notas"
+
+msgid "Keyboard shortcut"
+msgstr "Atajo de teclado"
+
+msgid "Snippets"
+msgstr "Snippets"
+
+msgid "Click to change the combination."
+msgstr "Pulsa para cambiar la combinación."
+
+msgid "Snippet shortcuts must include Ctrl, Alt or Super."
+msgstr "Los atajos de snippets deben incluir Ctrl, Alt o Super."
+
+msgid "Shortcuts changed in another window. Reopen this form and try again."
+msgstr "Los atajos han cambiado en otra ventana. Vuelve a abrir este formulario e inténtalo de nuevo."
 
 msgid ""
 msgstr ""
@@ -304,7 +403,7 @@ msgstr "Puerto SSH"
 msgid "Group"
 msgstr "Grupo"
 
-#: src/termia/i18n.py:password
+#: src/termia/i18n.py:credential
 msgid "Password"
 msgstr "Contraseña"
 
@@ -316,7 +415,7 @@ msgstr "Clave SSH privada"
 msgid "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Ctrl+P."
 msgstr "Host nuevo: responde al fingerprint en esta terminal. Después introduce la contraseña manualmente o con Ctrl+P."
 
-#: src/termia/i18n.py:password_warning
+#: src/termia/i18n.py:credential_warning
 msgid "Warning: the password will be stored in connections.json. You can switch between plain text and obfuscated storage from Security."
 msgstr "Aviso: la contraseña se guardará en connections.json. Puedes cambiar entre texto plano y ofuscado desde Seguridad."
 
@@ -325,8 +424,8 @@ msgid "Name, host, and SSH user are required."
 msgstr "Nombre, host y usuario SSH son obligatorios."
 
 #: src/termia/i18n.py:required_field
-msgid "* Required field"
-msgstr "* Campo obligatorio"
+msgid "Fields marked with an asterisk (*) are required."
+msgstr "Los campos marcados con un asterisco (*) son obligatorios."
 
 #: src/termia/i18n.py:reconnect_prompt
 msgid "Press Enter to reconnect."
@@ -530,27 +629,27 @@ msgstr "Confirmar antes de desconectar o cerrar una sesión activa"
 msgid "Confirm before closing Termia"
 msgstr "Confirmar para cerrar Termia"
 
-#: src/termia/i18n.py:send_password_shortcut
+#: src/termia/i18n.py:send_credential_shortcut
 msgid "Allow sending saved password with shortcut"
 msgstr "Permitir enviar la contraseña guardada con un atajo"
 
-#: src/termia/i18n.py:send_password_shortcut_unavailable
+#: src/termia/i18n.py:send_credential_shortcut_unavailable
 msgid "Configure the \"Send saved password\" shortcut in Keybindings to enable this option."
 msgstr "Configura el atajo \"Enviar contraseña guardada\" en Atajos de teclado para activar esta opción."
 
-#: src/termia/i18n.py:send_password_enter
+#: src/termia/i18n.py:send_credential_enter
 msgid "Send saved password and press Enter"
 msgstr "Enviar contraseña y pulsar Enter"
 
-#: src/termia/i18n.py:send_password_enter_unavailable
+#: src/termia/i18n.py:send_credential_enter_unavailable
 msgid "Enable \"Allow sending saved password with shortcut\" first."
 msgstr "Activa primero \"Permitir enviar la contraseña guardada con un atajo\"."
 
-#: src/termia/i18n.py:send_password_sent
+#: src/termia/i18n.py:send_credential_sent
 msgid "Saved password sent to the terminal"
 msgstr "Contraseña guardada enviada a la terminal"
 
-#: src/termia/i18n.py:send_password_unavailable
+#: src/termia/i18n.py:send_credential_unavailable
 msgid "This terminal does not have a saved password"
 msgstr "Esta terminal no tiene una contraseña guardada"
 
@@ -654,19 +753,19 @@ msgstr "No se pudo obtener la huella del servidor."
 msgid "Could not save the server fingerprint."
 msgstr "No se pudo guardar la huella del servidor."
 
-#: src/termia/i18n.py:send_files_to_server_password_title
+#: src/termia/i18n.py:send_files_to_server_credential_title
 msgid "SCP password required"
 msgstr "Se necesita la contraseña para SCP"
 
-#: src/termia/i18n.py:send_files_to_server_password_detail
+#: src/termia/i18n.py:send_files_to_server_credential_detail
 msgid "Enter the password for {user}@{host}:"
 msgstr "Introduce la contraseña para {user}@{host}:"
 
-#: src/termia/i18n.py:send_files_to_server_password_confirm
+#: src/termia/i18n.py:send_files_to_server_credential_confirm
 msgid "Continue"
 msgstr "Continuar"
 
-#: src/termia/i18n.py:send_files_to_server_password_empty
+#: src/termia/i18n.py:send_files_to_server_credential_empty
 msgid "Enter a password."
 msgstr "Introduce una contraseña."
 
@@ -726,7 +825,7 @@ msgstr "Aumentar fuente"
 msgid "Decrease font"
 msgstr "Reducir fuente"
 
-#: src/termia/i18n.py:keybinding_action_send_password
+#: src/termia/i18n.py:keybinding_action_send_credential
 msgid "Send saved password"
 msgstr "Enviar contraseña guardada"
 
@@ -896,31 +995,68 @@ msgstr ""
 "\n"
 "Después de leer esta información, ¿quieres continuar con la activación del cifrado?"
 
-#: src/termia/i18n.py:master_password_title
+#: src/termia/i18n.py:master_credential_title
 msgid "Set master password"
 msgstr "Definir contraseña maestra"
 
-#: src/termia/i18n.py:master_password_detail
+#: src/termia/i18n.py:master_credential_detail
 msgid "Choose the master password that will unlock your Termia connections."
 msgstr "Elige la contraseña maestra que desbloqueará tus conexiones de Termia."
 
-#: src/termia/i18n.py:master_password
+#: src/termia/i18n.py:master_credential
 msgid "Master password"
 msgstr "Contraseña maestra"
 
-#: src/termia/i18n.py:confirm_master_password
+#: src/termia/i18n.py:confirm_master_credential
 msgid "Confirm master password"
 msgstr "Confirmar contraseña maestra"
+
+#: src/termia/i18n.py:change_master_credential
+#: src/termia/i18n.py:change_master_credential_title
+msgid "Change master password"
+msgstr "Cambiar contraseña maestra"
+
+#: src/termia/i18n.py:change_master_credential_detail
+msgid "Enter the current master password, then choose a new one. Termia will re-encrypt your connections and notes."
+msgstr "Introduce la contraseña maestra actual y elige una nueva. Termia volverá a cifrar las conexiones y las notas."
+
+#: src/termia/i18n.py:current_master_credential
+msgid "Current master password"
+msgstr "Contraseña maestra actual"
+
+#: src/termia/i18n.py:new_master_credential
+msgid "New master password"
+msgstr "Nueva contraseña maestra"
+
+#: src/termia/i18n.py:change_master_credential_same
+msgid "Choose a new password that differs from the current one."
+msgstr "Elige una contraseña nueva distinta de la actual."
+
+#: src/termia/i18n.py:change_master_credential_current_required
+msgid "Enter the current master password."
+msgstr "Introduce la contraseña maestra actual."
+
+#: src/termia/i18n.py:change_master_credential_wrong_current
+msgid "The current master password is incorrect."
+msgstr "La contraseña maestra actual es incorrecta."
+
+#: src/termia/i18n.py:change_master_credential_failed
+msgid "Could not change the master password. Check storage permissions and available disk space, then try again."
+msgstr "No se pudo cambiar la contraseña maestra. Comprueba los permisos de almacenamiento y el espacio disponible, e inténtalo de nuevo."
+
+#: src/termia/i18n.py:change_master_credential_rollback_failed
+msgid "The password change failed and Termia could not restore every previous data file. Stop using this profile and recover its files from a backup."
+msgstr "El cambio ha fallado y Termia no pudo restaurar todos los archivos de datos anteriores. Deja de usar este perfil y recupera los archivos desde una copia de seguridad."
 
 #: src/termia/i18n.py:enable_encryption
 msgid "Enable encryption"
 msgstr "Activar cifrado"
 
-#: src/termia/i18n.py:master_password_too_short
+#: src/termia/i18n.py:master_credential_too_short
 msgid "Use at least 8 characters."
 msgstr "Usa al menos 8 caracteres."
 
-#: src/termia/i18n.py:master_password_mismatch
+#: src/termia/i18n.py:master_credential_mismatch
 msgid "The master passwords do not match."
 msgstr "Las contraseñas maestras no coinciden."
 
@@ -961,8 +1097,8 @@ msgid "Data Locations"
 msgstr "Ubicaciones de datos"
 
 #: src/termia/i18n.py:data_locations_detail
-msgid "Termia uses these local paths for configuration, connection data, history, statistics, and the write lock."
-msgstr "Termia usa estas rutas locales para configuración, datos de conexión, historial, estadísticas y bloqueo de escritura."
+msgid "Termia uses these local paths for configuration, connection data, notes, history, statistics, and the write lock."
+msgstr "Termia usa estas rutas locales para configuración, datos de conexión, notas, historial, estadísticas y bloqueo de escritura."
 
 #: src/termia/i18n.py:config_directory
 msgid "Config directory"
@@ -1297,8 +1433,11 @@ msgid "Ásbrú: imported {groups} groups and {servers} servers"
 msgstr "Ásbrú: {groups} grupos y {servers} servidores importados"
 
 #: src/termia/i18n.py:clear_confirm
-msgid "Delete all groups, servers, local terminals, and workspaces? This action cannot be undone."
-msgstr "¿Quieres eliminar todos los grupos, servidores, terminales locales y espacios de trabajo? Esta acción no se puede deshacer."
+msgid "Delete all groups, servers, local terminals, and workspaces? Notes are stored separately and will be kept."
+msgstr "¿Quieres eliminar todos los grupos, servidores, terminales locales y espacios de trabajo? Las notas se guardan por separado y se conservarán."
+
+msgid "The selected server no longer exists."
+msgstr "El servidor seleccionado ya no existe."
 
 #: src/termia/i18n.py:rename_tab
 msgid "Rename tab"
@@ -1344,44 +1483,6 @@ msgstr "Menú principal"
 msgid "Termia Help"
 msgstr "Ayuda de Termia"
 
-#: src/termia/i18n.py:help_content
-msgid ""
-"Termia is an SSH connection manager with embedded terminals.\n"
-"\n"
-"Main features:\n"
-"- Organize servers into groups and subgroups.\n"
-"- Create, edit, delete, clone and filter SSH connections.\n"
-"- Mark servers as favorites for quick access from a dedicated section.\n"
-"- Open connections and local terminals from the sidebar in embedded, compact and detachable tabs.\n"
-"- View a statistics dashboard with global metrics, durations and most used servers, plus per-session statistics.\n"
-"- The session status bar shows status, PID, duration and disconnect controls; it can be enabled from General, hidden per session and restored from the context menu.\n"
-"- Configure terminal keybindings, including copy, paste and sending the saved password.\n"
-"- Configure general options, the VTE terminal, split separators and the PS1 prompt separately.\n"
-"- The local prompt supports color, presets, time, date and live preview without modifying remote sessions.\n"
-"- View a local connection history with timestamps, outcomes and durations.\n"
-"- Import and export configurations, including basic imports from Ásbrú.\n"
-"\n"
-"Quick start:\n"
-"Use the sidebar icons to create groups, servers or local terminal profiles. Double-click a server or local terminal profile to connect. Right-click servers, tabs or terminals to access contextual actions such as duplicate, split panes, disconnect, copy, paste, show the status bar or view statistics."
-msgstr ""
-"Termia es un gestor de conexiones SSH con terminales embebidas.\n"
-"\n"
-"Características principales:\n"
-"- Organiza servidores en grupos y subgrupos.\n"
-"- Crea, edita, elimina, clona y filtra conexiones SSH.\n"
-"- Marca servidores como favoritos para acceder rápidamente desde una sección dedicada.\n"
-"- Abre conexiones y terminales locales desde el panel lateral en pestañas embebidas, compactas y desacoplables.\n"
-"- Usa las acciones contextuales de grupo para iniciar todos los servidores de un grupo o subgrupo.\n"
-"- Muestra un dashboard de estadísticas con métricas globales, duración y servidores más usados, además de estadísticas por sesión.\n"
-"- La barra de estado de sesión muestra estado, PID, tiempo y desconexión; puede mostrarse desde General, ocultarse por sesión y restaurarse desde el menú contextual.\n"
-"- Permite configurar atajos de terminal, incluido copiar, pegar y enviar la contraseña guardada.\n"
-"- Configura por separado opciones generales, terminal VTE, separadores de paneles y prompt PS1.\n"
-"- El prompt local permite color, temas predefinidos, hora, fecha y previsualización sin modificar sesiones remotas.\n"
-"- Muestra un historial local de conexiones con marcas de tiempo, resultados y duraciones.\n"
-"- Importa y exporta configuraciones, incluida la importación básica desde Ásbrú.\n"
-"\n"
-"Uso rápido:\n"
-"Utiliza los iconos del panel lateral para crear grupos, servidores o perfiles de terminal local. Haz doble clic sobre un servidor o perfil de terminal local para conectar. Usa el botón derecho en servidores, pestañas o terminales para ver acciones contextuales como duplicar, dividir paneles, desconectar, copiar, pegar, mostrar la barra de estado o ver estadísticas."
 
 #: src/termia/i18n.py:about_content
 msgid "SSH connection manager with embedded terminals"
@@ -1745,6 +1846,9 @@ msgstr "Vista previa del comando"
 msgid "All categories"
 msgstr "Todas las categorías"
 
+msgid "Back to snippets"
+msgstr "Volver a snippets"
+
 msgid "{count} snippets"
 msgstr "{count} snippets"
 
@@ -1846,3 +1950,319 @@ msgstr "La disponibilidad del snippet no es válida."
 
 msgid "The selected terminal is no longer available."
 msgstr "El terminal seleccionado ya no está disponible."
+
+msgid "Manage notes"
+msgstr "Gestionar notas"
+
+msgid "Notes"
+msgstr "Notas"
+
+msgid "Personal"
+msgstr "Personales"
+
+msgid "Servers"
+msgstr "Servidores"
+
+msgid "Choose a server"
+msgstr "Elige un servidor"
+
+msgid "Choose a server to see its notes."
+msgstr "Elige un servidor para ver sus notas."
+
+msgid "No personal notes yet."
+msgstr "Aún no hay notas personales."
+
+msgid "Personal note: {title}"
+msgstr "Nota personal: {title}"
+
+msgid "Server: {server} · {title}"
+msgstr "Servidor: {server} · {title}"
+
+msgid "Hide note list"
+msgstr "Ocultar lista de notas"
+
+msgid "Show note list"
+msgstr "Mostrar lista de notas"
+
+msgid "New note"
+msgstr "Nota nueva"
+
+msgid "Close note tab"
+msgstr "Cerrar pestaña de nota"
+
+msgid "Import or export notes"
+msgstr "Importar o exportar notas"
+
+msgid "Search notes"
+msgstr "Buscar notas"
+
+msgid "Manage note categories"
+msgstr "Gestionar categorías de notas"
+
+msgid "Create note"
+msgstr "Crear nota"
+
+msgid "Create server note"
+msgstr "Crear nota del servidor"
+
+msgid "Edit note"
+msgstr "Editar nota"
+
+msgid "Rename note"
+msgstr "Renombrar nota"
+
+msgid "Properties"
+msgstr "Propiedades"
+
+msgid "The note name cannot be empty."
+msgstr "El nombre de la nota no puede estar vacío."
+
+msgid "Note renamed."
+msgstr "Nota renombrada."
+
+msgid "Moved note to {category}."
+msgstr "Nota movida a {category}."
+
+msgid "Clone note"
+msgstr "Clonar nota"
+
+msgid " (copy)"
+msgstr " (copia)"
+
+msgid "Note cloned."
+msgstr "Nota clonada."
+
+msgid "This note has unsaved changes. What would you like to do?"
+msgstr "Esta nota tiene cambios sin guardar. ¿Qué quieres hacer?"
+
+msgid "Save and close"
+msgstr "Guardar y cerrar"
+
+msgid "Close without saving"
+msgstr "Cerrar sin guardar"
+
+msgid "Export notes…"
+msgstr "Exportar notas…"
+
+msgid "Import notes…"
+msgstr "Importar notas…"
+
+msgid "All categories"
+msgstr "Todas las categorías"
+
+msgid "Uncategorized"
+msgstr "Sin categoría"
+
+msgid "Category"
+msgstr "Categoría"
+
+msgid "Server"
+msgstr "Servidor"
+
+msgid "Personal notes"
+msgstr "Notas personales"
+
+msgid "Server notes"
+msgstr "Notas de servidor"
+
+msgid "Unavailable server"
+msgstr "Servidor no disponible"
+
+msgid "Notes for {name}"
+msgstr "Notas de {name}"
+
+msgid "Modified {date}"
+msgstr "Modificada {date}"
+
+msgid "Created"
+msgstr "Creada"
+
+msgid "Last modified"
+msgstr "Última modificación"
+
+msgid "Lines"
+msgstr "Líneas"
+
+msgid "Characters"
+msgstr "Caracteres"
+
+msgid "Content size (UTF-8)"
+msgstr "Tamaño del contenido (UTF-8)"
+
+msgid "{count} bytes"
+msgstr "{count} bytes"
+
+msgid "No matching notes."
+msgstr "No hay notas coincidentes."
+
+msgid "No notes yet."
+msgstr "Todavía no hay notas."
+
+msgid "No notes for this server yet."
+msgstr "Todavía no hay notas para este servidor."
+
+msgid "Double-click a note to open it in a tab."
+msgstr "Haz doble clic en una nota para abrirla en una pestaña."
+
+msgid "Saved"
+msgstr "Guardada"
+
+msgid "Saving…"
+msgstr "Guardando…"
+
+msgid "Could not save"
+msgstr "No se pudo guardar"
+
+msgid "The note could not be saved. Your changes are still in the editor; check the storage location and try again."
+msgstr "No se pudo guardar la nota. Los cambios siguen en el editor; comprueba la ubicación de almacenamiento e inténtalo de nuevo."
+
+msgid "Select a note or create one."
+msgstr "Selecciona una nota o crea una nueva."
+
+msgid "Start typing. Changes are saved automatically."
+msgstr "Empieza a escribir. Los cambios se guardan automáticamente."
+
+msgid "Empty notes are not saved."
+msgstr "Las notas vacías no se guardan."
+
+msgid "Keep editing"
+msgstr "Seguir editando"
+
+msgid "Delete note"
+msgstr "Eliminar nota"
+
+msgid "Delete note “{name}”? This action cannot be undone."
+msgstr "¿Eliminar la nota «{name}»? Esta acción no se puede deshacer."
+
+msgid "Add category"
+msgstr "Añadir categoría"
+
+msgid "Rename category"
+msgstr "Cambiar nombre de categoría"
+
+msgid "Duplicate category"
+msgstr "Duplicar categoría"
+
+msgid "Delete category"
+msgstr "Eliminar categoría"
+
+msgid "Category name"
+msgstr "Nombre de categoría"
+
+msgid "{count} notes"
+msgstr "{count} notas"
+
+msgid "Delete category “{name}”? Its {count} notes will move to Uncategorized."
+msgstr "¿Eliminar la categoría «{name}»? Sus {count} notas pasarán a «Sin categoría»."
+
+msgid "Choose how the exported notes file will be protected."
+msgstr "Elige cómo se protegerá el fichero de notas exportado."
+
+msgid "Export without a password (plain text)"
+msgstr "Exportar sin contraseña (texto plano)"
+
+msgid "The file will not be encrypted. Anyone who can access it can read the notes."
+msgstr "El fichero no se cifrará. Cualquiera que tenga acceso podrá leer las notas."
+
+msgid "Encrypt export with a password"
+msgstr "Cifrar la exportación con una contraseña"
+
+msgid "The file will be encrypted. You will need this password to import it."
+msgstr "El fichero se cifrará. Necesitarás esta contraseña para importarlo."
+
+msgid "Continue"
+msgstr "Continuar"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "Password for this notes file"
+msgstr "Contraseña de este fichero de notas"
+
+msgid "Notes exported."
+msgstr "Notas exportadas."
+
+msgid "Could not export notes: {error}"
+msgstr "No se pudieron exportar las notas: {error}"
+
+msgid "Could not import notes: {error}"
+msgstr "No se pudieron importar las notas: {error}"
+
+msgid "Termia already has {notes} notes and {categories} categories."
+msgstr "Termia ya tiene {notes} notas y {categories} categorías."
+
+msgid "Replace them with the selected file after creating a backup of the current notes, or keep the existing notes?"
+msgstr "¿Quieres sustituirlas por el fichero seleccionado tras crear una copia de seguridad, o conservar las notas actuales?"
+
+msgid "Keep existing"
+msgstr "Conservar las actuales"
+
+msgid "Back up and replace"
+msgstr "Crear copia y sustituir"
+
+msgid "{count} notes were imported as personal notes because their server no longer exists."
+msgstr "Se importaron {count} notas como personales porque su servidor ya no existe."
+
+msgid "Imported {count} notes."
+msgstr "Se importaron {count} notas."
+
+msgid "View server notes"
+msgstr "Ver notas del servidor"
+
+msgid "A category name is required."
+msgstr "Se necesita un nombre para la categoría."
+
+msgid "A category with this name already exists."
+msgstr "Ya existe una categoría con este nombre."
+
+msgid "The selected category no longer exists."
+msgstr "La categoría seleccionada ya no existe."
+
+msgid "The selected note no longer exists."
+msgstr "La nota seleccionada ya no existe."
+
+msgid "Notes file"
+msgstr "Fichero de notas"
+
+msgid "Add-ons"
+msgstr "Complementos"
+
+msgid "Restart Termia to apply add-on changes. Disabling an add-on does not delete its data."
+msgstr "Reinicia Termia para aplicar los cambios en los complementos. Desactivar un complemento no borra sus datos."
+
+msgid "SFTP browser"
+msgstr "Explorador SFTP"
+
+msgid "Show or hide the notes toolbar"
+msgstr "Mostrar u ocultar la barra de notas"
+
+
+msgid "Editor appearance (not stored in note text)"
+msgstr "Apariencia del editor (no se guarda en el texto de la nota)"
+
+msgid "Show or hide line numbers"
+msgstr "Mostrar u ocultar los números de línea"
+
+msgid "Minimize notes window"
+msgstr "Minimizar la ventana de notas"
+
+msgid "Maximize notes window"
+msgstr "Maximizar la ventana de notas"
+
+msgid "Restore notes window size"
+msgstr "Restaurar el tamaño de la ventana de notas"
+
+msgid "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia."
+msgstr "Se ha superado un límite de seguridad del almacenamiento. Los archivos originales no se han modificado y la edición está desactivada. Consulta docs/STORAGE_MIGRATIONS.md para recuperarlos y después reinicia Termia."
+
+msgid "Password for this configuration file"
+msgstr "Contraseña de este archivo de configuración"
+
+msgid "Enter the password used to encrypt this file. Your current profile password will not change."
+msgstr "Introduce la contraseña utilizada para cifrar este archivo. La contraseña de tu perfil actual no cambiará."
+
+msgid "Enter the file password."
+msgstr "Introduce la contraseña del archivo."
+
+msgid "Could not decrypt this file. Check the password and try again."
+msgstr "No se pudo descifrar este archivo. Comprueba la contraseña e inténtalo de nuevo."

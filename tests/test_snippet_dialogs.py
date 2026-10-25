@@ -31,10 +31,21 @@ class SnippetDialogTests(unittest.TestCase):
         while context.pending():
             context.iteration(False)
 
+    @staticmethod
+    def settle_window():
+        loop = GLib.MainLoop()
+        GLib.timeout_add(300, lambda: (loop.quit(), False)[1])
+        loop.run()
+
     def make_dialogs(self, parent, data, *, store=None, notice=None):
+        if not hasattr(data, "app"):
+            data.app = SimpleNamespace(keybindings={})
+        if store is not None:
+            store.data = data
+            store.encryption_locked = False
         return SnippetDialogs(
             parent,
-            store or SimpleNamespace(data=data),
+            store or SimpleNamespace(data=data, encryption_locked=False),
             SnippetPresenter(
                 lambda: data.snippets, lambda: data.groups, lambda: data.servers,
                 lambda: getattr(data, "snippet_categories", []),
@@ -49,7 +60,7 @@ class SnippetDialogTests(unittest.TestCase):
     def make_snippet_store(data):
         store = Mock()
 
-        def add_snippet(name, content, category, scope, target_id):
+        def add_snippet(name, content, category, scope, target_id, *, shortcut=""):
             snippet = CommandSnippet(str(len(data.snippets) + 1), name, content, category, scope, target_id)
             data.snippets.append(snippet)
             return snippet
@@ -266,6 +277,8 @@ class SnippetDialogTests(unittest.TestCase):
         grid = state.category_manage_grid
         self.assertTrue(grid.get_homogeneous())
         self.assertEqual(grid.get_halign(), Gtk.Align.START)
+        self.assertFalse(grid.get_hexpand())
+        self.assertEqual(grid.get_max_children_per_line(), 6)
         tiles = [grid.get_child_at_index(index) for index in range(6)]
         self.assertTrue(all(tile is not None for tile in tiles))
         self.assertTrue(all(tile.has_css_class("termia-snippet-category-tile") for tile in tiles))
@@ -290,13 +303,23 @@ class SnippetDialogTests(unittest.TestCase):
         category_page = state.stack.get_visible_child()
         header = category_page.get_first_child()
         back = header.get_first_child()
-        self.assertEqual(back.get_label(), "All categories")
+        self.assertEqual(back.get_label(), "Back to snippets")
         self.assertIsNone(back.get_next_sibling())
 
+        category_actions = header.get_next_sibling()
+        labels = []
+        button = category_actions.get_first_child()
+        while button is not None:
+            labels.append(button.get_label())
+            button = button.get_next_sibling()
+        self.assertEqual(
+            labels,
+            ["Add category", "Rename category", "Duplicate category", "Delete category"],
+        )
         actions = category_page.get_last_child()
         cancel = actions.get_last_child()
         self.assertEqual(cancel.get_label(), "Cancel")
-        self.assertEqual(cancel.get_prev_sibling().get_label(), "Delete category")
+        self.assertIsNone(cancel.get_prev_sibling())
 
         dialogs.on_category_manage_add(Mock(), state)
         state.category_name_entry.set_text("Unsaved")
@@ -385,6 +408,103 @@ class SnippetDialogTests(unittest.TestCase):
         dialogs.on_editor_save(Mock(), state)
         self.assertEqual(data.snippets[-1].category, "__termia_uncategorized__")
         self.assertEqual(state.visible_ids, ["2"])
+
+    def test_editor_is_compact_with_long_labels_and_restores_resized_manager(self):
+        parent = self.make_parent()
+        category = "A very long category name " * 12
+        data = SimpleNamespace(
+            snippets=[CommandSnippet("one", "Example", "true", category)],
+            groups=[], servers=[],
+        )
+        dialogs = self.make_dialogs(parent, data)
+        self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
+        state = dialogs.show_manager()
+        state.window.set_default_size(1140, 640)
+        self.settle_window()
+        manager_size = (state.window.get_width(), state.window.get_height())
+
+        for duplicate in (False, True):
+            dialogs.show_editor(state, "one", duplicate)
+            state.target.append("long", "A very long target name " * 12)
+            state.target.set_active_id("long")
+            state.target.set_visible(True)
+            self.settle_window()
+            self.assertEqual(state.window.get_width(), 600)
+            self.assertEqual(state.window.get_height(), 560)
+            state.shortcut.set_accelerator("Ctrl+Shift+Alt+Super+XF86AudioRaiseVolume")
+            self.settle_window()
+            self.assertEqual(state.window.get_width(), 600)
+            for selector in (state.category, state.scope, state.target):
+                self.assertLessEqual(selector.get_width(), 360)
+                self.assertGreaterEqual(selector.get_width(), 220)
+            self.assertGreater(state.command.get_height(), 100)
+            dialogs.on_new_category(Mock(), state)
+            self.settle_window()
+            self.assertEqual(state.window.get_width(), 600)
+            self.assertGreater(state.command.get_height(), 60)
+            dialogs.on_editor_cancel(Mock(), state)
+            self.settle_window()
+            self.assertEqual((state.window.get_width(), state.window.get_height()), manager_size)
+
+    def test_narrow_manager_keeps_three_columns_and_actions_in_all_languages(self):
+        for language in ("en", "es", "ca"):
+            with self.subTest(language=language):
+                parent = self.make_parent()
+                data = SimpleNamespace(
+                    snippets=[CommandSnippet("one", "A long example name " * 8, "df -h", "Example")],
+                    groups=[], servers=[],
+                )
+                dialogs = self.make_dialogs(parent, data)
+                dialogs.translate = lambda key, lang=language: translate_key(key, lang)
+                try:
+                    state = dialogs.show_manager()
+                    self.settle_window()
+                    self.assertEqual((state.window.get_width(), state.window.get_height()), (795, 560))
+                    state.listing.select_row(state.listing.get_row_at_index(0))
+                    self.settle_window()
+                    self.assertEqual(state.window.get_width(), 795)
+                    for widget in (state.category_scroller, state.list_scroller, state.preview_view):
+                        self.assertGreater(widget.get_width(), 140)
+                    for button in state.actions:
+                        ok, bounds = button.compute_bounds(state.window)
+                        self.assertTrue(ok)
+                        self.assertGreaterEqual(bounds.get_x(), 0)
+                        self.assertLessEqual(bounds.get_x() + bounds.get_width(), 795)
+                        self.assertTrue(button.get_sensitive())
+                finally:
+                    dialogs.shutdown()
+                    parent.destroy()
+
+    def test_editor_save_and_close_restore_manager_size(self):
+        parent = self.make_parent()
+        data = SimpleNamespace(snippets=[], groups=[], servers=[])
+        dialogs = self.make_dialogs(parent, data, store=self.make_snippet_store(data))
+        self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
+        state = dialogs.show_manager()
+        self.settle_window()
+        manager_size = (state.window.get_width(), state.window.get_height())
+        self.assertEqual(manager_size, (795, 560))
+        for widget in (state.category_scroller, state.list_scroller, state.preview_view):
+            self.assertGreater(widget.get_width(), 100)
+        dialogs.show_editor(state, None, False)
+        self.settle_window()
+        state.name.set_text("Example")
+        state.command.get_buffer().set_text("true")
+        dialogs.on_editor_save(Mock(), state)
+        self.settle_window()
+        self.assertEqual((state.window.get_width(), state.window.get_height()), manager_size)
+        self.assertEqual(len(data.snippets), 1)
+
+        dialogs.show_editor(state, None, False)
+        self.settle_window()
+        dialogs.on_manager_close_request(state.window, state)
+        reopened = dialogs.show_manager()
+        self.settle_window()
+        self.assertIs(reopened, state)
+        self.assertEqual(state.stack.get_visible_child_name(), "manager")
+        self.assertEqual((state.window.get_width(), state.window.get_height()), manager_size)
 
     def test_manager_reuses_one_window_during_repeated_editor_cancellation(self):
         parent = self.make_parent()

@@ -73,6 +73,14 @@ class WriteActionTests(unittest.TestCase):
         self.assertFalse(widget.sensitive)
         self.assertEqual(widget.tooltip, "read_only_mode_tooltip")
 
+    def test_storage_rejection_explains_disabled_actions(self) -> None:
+        window = self.window(read_only=True, encryption_locked=False)
+        window.store.resource_limit_error = True
+        widget = self.widget()
+        self.configure_write_action(window, widget)
+        self.assertFalse(widget.sensitive)
+        self.assertEqual(widget.tooltip, "storage_limit_rejected")
+
     def test_action_tooltip_is_restored_after_write_action_is_unblocked(self) -> None:
         widget = self.widget()
 
