@@ -156,10 +156,21 @@ PATH="$PWD/.venv/bin:$PATH" python3 scripts/check_static_analysis.py --base orig
 The independent CI job uses the pinned versions in `requirements-ci.txt`.
 It scans Python source in temporary copies without importing the application.
 PRs compare their head with the merge base; pushes to `main` compare with the
-previous push commit, including forced pushes. The local helper compares the
-exact base supplied; use `git merge-base HEAD <target-branch>` as the base if
-your local branch has diverged. Missing history, an initial all-zero push base, invalid
-reports, syntax errors, missing tools or incorrect versions fail the check.
+previous push commit, including forced pushes. Use
+`git merge-base HEAD <target-branch>` as the local base for a diverged branch.
+
+For the first promotion from a base predating the quality gate, the helper
+requires the immutable history chain: requested base → adoption commit
+`fb584fc2906568cb62cd6f12b0831cd80fec682e` → approved release baseline
+`50e747d1edaf2610aa6b0fdfc98675a8256493bb` → proposed head. It reports the requested
+and effective SHAs and compares against that approved release baseline.
+This preserves fixes made after initial adoption and rejects new occurrences.
+A base at or after adoption keeps its original comparison, including forced
+pushes. Missing history or an incompatible legacy lineage fails closed.
+There is no configurable waiver or rule suppression. Changes to either
+immutable reference require explicit policy review and regression validation.
+
+An initial all-zero push base, invalid reports, syntax errors, missing tools or incorrect versions fail the check.
 
 Existing findings remain visible. Only new findings block, including extra
 copies of an existing finding. Source tokens and occurrence counts distinguish

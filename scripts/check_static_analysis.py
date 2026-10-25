@@ -15,6 +15,9 @@ import tokenize
 from collections import Counter
 from pathlib import Path
 
+QUALITY_ADOPTION_COMMIT = "fb584fc2906568cb62cd6f12b0831cd80fec682e"
+APPROVED_RELEASE_BASELINE = "50e747d1edaf2610aa6b0fdfc98675a8256493bb"
+
 
 class AnalysisError(RuntimeError):
     """Missing evidence or failed tooling must not produce a green check."""
@@ -206,6 +209,35 @@ def read_pins(path: Path) -> dict[str, str]:
     return pins
 
 
+async def is_ancestor(repo: Path, earlier: str, later: str) -> bool:
+    status, _output = await command(
+        ["git", "merge-base", "--is-ancestor", earlier, later], repo,
+    )
+    if status not in (0, 1):
+        raise AnalysisError("Cannot verify quality-baseline history")
+    return status == 0
+
+
+async def comparison_base(repo: Path, base: str, head: str) -> str:
+    if base == head:
+        return base
+    adoption = (await git(
+        repo, "rev-parse", "--verify", "--end-of-options",
+        QUALITY_ADOPTION_COMMIT + "^{commit}",
+    )).decode().strip()
+    if await is_ancestor(repo, adoption, base):
+        return base
+    approved = (await git(
+        repo, "rev-parse", "--verify", "--end-of-options",
+        APPROVED_RELEASE_BASELINE + "^{commit}",
+    )).decode().strip()
+    for earlier, later in ((base, adoption), (adoption, approved), (approved, head)):
+        if not await is_ancestor(repo, earlier, later):
+            raise AnalysisError("Legacy base requires the approved release lineage")
+    print(f"Initial quality adoption: requested_base={base} approved_base={approved}")
+    return approved
+
+
 async def check(base: str, head: str) -> int:
     repo = Path((await git(Path.cwd(), "rev-parse", "--show-toplevel")).decode().strip()).resolve()
     for tool, version in read_pins(Path(__file__).resolve().parents[1] / "requirements-ci.txt").items():
@@ -215,6 +247,7 @@ async def check(base: str, head: str) -> int:
     base_sha = (await git(repo, "rev-parse", "--verify", "--end-of-options", base + "^{commit}")).decode().strip()
     head_sha = (await git(repo, "rev-parse", "--verify", "--end-of-options",
                           ("HEAD" if head == "WORKTREE" else head) + "^{commit}")).decode().strip()
+    base_sha = await comparison_base(repo, base_sha, head_sha)
     with tempfile.TemporaryDirectory(prefix="termia-analysis-") as temporary:
         roots = [Path(temporary) / name for name in ("base", "head")]
         for root in roots:

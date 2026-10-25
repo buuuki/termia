@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Recognize the approved quality baseline during the initial main promotion,
+  with immutable ancestry checks and continued blocking of later diagnostics.
+
 ## 0.6.0-beta.4 - 2026-10-25
 
 Prepared for final validation; release publication is tracked in `#386`.

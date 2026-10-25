@@ -138,6 +138,57 @@ class StaticAnalysisTests(unittest.TestCase):
                  self.assertRaises(analysis.AnalysisError):
                 asyncio.run(analysis.check("HEAD", "WORKTREE"))
 
+    def test_ancestry_errors_cannot_select_a_quality_baseline(self):
+        with patch.object(analysis, "command", return_value=(128, b"")), self.assertRaises(analysis.AnalysisError):
+            asyncio.run(analysis.is_ancestor(Path("."), "a", "b"))
+
+    @unittest.skipUnless(shutil.which("ruff") and shutil.which("bandit"), "Analyzers unavailable")
+    def test_initial_adoption_requires_approved_history_and_blocks_reintroduced_debt(self):
+        async def exercise(root):
+            await analysis.git(root, "init", "-q")
+            source = root / "a.py"
+
+            async def commit(text):
+                source.write_text(text)
+                await analysis.git(root, "add", "a.py")
+                await analysis.git(
+                    root, "-c", "user.name=Synthetic", "-c", "user.email=ci@example.invalid",
+                    "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null",
+                    "commit", "-qm", "synthetic quality history",
+                )
+                return (await analysis.git(root, "rev-parse", "HEAD")).decode().strip()
+
+            base = await commit("print('before')\n")
+            adoption = await commit("print(missing)\n")
+            approved = await commit("print('approved')\n")
+            head = await commit("print(missing)\n")
+            with patch.object(analysis, "QUALITY_ADOPTION_COMMIT", adoption), \
+                 patch.object(analysis, "APPROVED_RELEASE_BASELINE", approved), \
+                 patch.object(analysis.Path, "cwd", return_value=root):
+                self.assertEqual(await analysis.comparison_base(root, approved, head), approved)
+                self.assertEqual(await analysis.comparison_base(root, base, base), base)
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    self.assertEqual(await analysis.comparison_base(root, base, head), approved)
+                self.assertIn(base, output.getvalue())
+                self.assertIn(approved, output.getvalue())
+                with self.assertRaises(analysis.AnalysisError):
+                    await analysis.comparison_base(root, base, adoption)
+                with patch.object(analysis, "QUALITY_ADOPTION_COMMIT", "0" * 40), self.assertRaises(analysis.AnalysisError):
+                    await analysis.comparison_base(root, base, head)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    # A warning fixed after adoption must not regain an old allowance.
+                    self.assertEqual(await analysis.check(base, head), 1)
+                    clean = await commit("print('clean')\n")
+                    self.assertEqual(await analysis.check(base, clean), 0)
+                await analysis.git(root, "checkout", "-q", "--detach", base)
+                unrelated = await commit("print('other lineage')\n")
+                with self.assertRaises(analysis.AnalysisError):
+                    await analysis.comparison_base(root, unrelated, head)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            asyncio.run(exercise(Path(temporary)))
+
     def test_timed_out_child_is_stopped(self):
         with self.assertRaises(asyncio.TimeoutError):
             asyncio.run(analysis.command(
