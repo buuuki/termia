@@ -1186,6 +1186,14 @@ setup against the developer's host as a regression test: it can invoke sudo and
 install packages. Official release assets, HTTPS transport and desktop privilege
 authorization require separate release-time validation.
 
+### Release asset validation
+
+Run `python3 scripts/run_sandbox_tests.py tests.test_release_assets` when changing
+release checks. Cover draft/published state, approved digest, asset cardinality,
+source/tag agreement, prerelease state, README links and release instructions.
+Follow the draft and public-download gates in `VERSIONING.md`; a successful
+check of a local snapshot does not publish or certify later remote changes.
+
 ### Standard automated commands
 
 CI also runs `python3 scripts/check_static_analysis.py --base <base-ref> --head <head-ref>`
