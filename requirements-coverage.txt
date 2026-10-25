@@ -1,0 +1,2 @@
+# Development-only coverage measurement for the existing unittest suite.
+coverage==7.17.0

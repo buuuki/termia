@@ -88,7 +88,7 @@ runs. The `termia_tests` permission profile must allow local TCP sockets, and
 `Xvfb`, `xauth`, and `dbus-daemon` must be installed. See
 [Regression Checks](docs/REGRESSION_CHECKS.md#automated-checks) for details.
 Outside that sandbox, `PYTHONPATH=src python3 -m unittest discover -s tests`
-also works. GitHub Actions retains its existing command.
+also works. GitHub Actions uses the private runner with branch coverage.
 
 When changing English UI text, regenerate `po/termia.pot` with
 `scripts/compile_translations.py --extract`, update both `.po` catalogs, then
@@ -101,6 +101,46 @@ If a check cannot be run, mention that in the pull request with the reason.
 
 GitHub Actions runs the unittest suite, translation validation, and Python
 syntax checks automatically for every pull request and every push to `main`.
+
+### Coverage with unittest
+
+Keep unittest as the main framework; no pytest or pytest-cov is required.
+Coverage runs the test process inside the existing isolated display and bus.
+The installed `coverage` command must use a Python environment with access to
+Termia's runtime dependencies. For a reproducible development environment:
+
+```bash
+python3 -m venv --system-site-packages .venv
+.venv/bin/python -m pip install -r requirements-ci.txt -r requirements-coverage.txt
+export PATH="$PWD/.venv/bin:$PATH"
+```
+
+Run a fresh full measurement from the repository root:
+
+```bash
+coverage erase
+coverage run scripts/run_sandbox_tests.py
+coverage combine
+coverage report
+coverage html
+coverage json -o htmlcov/coverage.json
+```
+
+Open `htmlcov/index.html` for module details and missing branches. A focused
+run can use `coverage run scripts/run_sandbox_tests.py tests.test_terminal_cleanup`;
+its results are not a full-suite baseline. Erase old data before a new baseline.
+All production Python under `src/termia` is included, even if never imported.
+Dependencies, tests and generated reports are outside that measurement scope.
+There is initially no minimum percentage. CI preserves HTML and JSON reports
+for 14 days; test failures and report-generation failures still fail CI.
+
+Coverage records Python lines and branches, including supported Python
+subprocesses. It does not measure native GTK/VTE code, remote SSH execution or
+external programs. Abruptly killed Python children may not flush measurements.
+The wrapper can report no data for its own process because only application
+code is measured; combine the child data before interpreting the reports.
+A percentage does not prove correct signal cleanup, process ownership or
+Core/add-on isolation; review the relevant tests and missing branches.
 
 ### Ruff and Bandit
 
