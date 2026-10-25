@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Correct beta.4 public download links and installation filenames to match
+  GitHub's release asset name (`#386`).
+
 ## 0.6.0-beta.4 - 2026-10-25
 
 Beta prerelease; release validation and limitations are tracked in `#386`.
