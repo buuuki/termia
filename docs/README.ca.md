@@ -79,6 +79,9 @@ Aquesta versió està en preparació i validació; la publicació està pendent 
   Les notes antigues reben una còpia protegida abans de migrar-ne l'esquema.
 - Gestionar snippets en una finestra independent, assignar-hi dreceres per àmbit
   i configurar una ordre opcional en iniciar una connexió SSH.
+- Reconnectar un panell SSH o local fallit conservant els altres splits.
+- Demanar la contrasenya en importar connexions xifrades i conservar la
+  protecció del perfil actual; limitar la mida i el treball de xifratge.
 - Activar o desactivar Estadístiques/SFTP sense esborrar-ne les dades.
 - Utilitzar la barra de pestanyes desplaçable aprovada, menús natius i arbres de
   connexions/notes, amb millores de focus, arrossegament privat i restauració de títols.
