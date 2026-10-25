@@ -1,8 +1,8 @@
 """Generate server identity at runtime; accept only the mounted test fixture."""
 import os
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 fixture = Path('/opt/fixture')
 password = (fixture / 'password').read_text().strip()

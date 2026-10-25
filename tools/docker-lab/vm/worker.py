@@ -1,14 +1,13 @@
 """Visible VM-only trials. Uses installed Termia and real sudo/pkexec."""
+import fcntl
 import hashlib
 import io
-import fcntl
 import json
-import os
-from pathlib import Path
 import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 
 ROOT=Path.home()/'termia-lab-evidence'
 ROOT.mkdir(exist_ok=True)
@@ -38,8 +37,8 @@ def profile_hashes():
 
 
 def prepare_debian():
-    from termia.update_service import ReleaseClient,select_release
     from termia.update_installers import DebianInstaller
+    from termia.update_service import ReleaseClient, select_release
     metadata=json.loads((FIXTURES/'candidate.json').read_text())
     url='https://github.com/buuuki/termia/releases/download/'+metadata['tag']+'/'+metadata['filename']
     class LocalFixture:

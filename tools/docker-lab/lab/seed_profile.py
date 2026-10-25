@@ -2,8 +2,13 @@
 import os
 from pathlib import Path
 
-from termia.constants import (DATA_FILE, SETTINGS_FILE, STATISTICS_FILE,
-                              INSTANCE_LOCK_FILE, HISTORY_FILE)
+from termia.constants import (
+    DATA_FILE,
+    HISTORY_FILE,
+    INSTANCE_LOCK_FILE,
+    SETTINGS_FILE,
+    STATISTICS_FILE,
+)
 from termia.stores import ConnectionStore
 
 

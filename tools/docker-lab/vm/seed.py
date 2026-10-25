@@ -1,6 +1,6 @@
 """Seed only synthetic data using the installed official beta.3 package."""
 import json
-from pathlib import Path
+
 from termia.constants import DATA_FILE
 from termia.stores import ConnectionStore
 

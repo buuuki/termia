@@ -3,7 +3,6 @@
 """Common ownership contract for SCP controllers and SFTP explorers."""
 from typing import Literal, Protocol
 
-
 CleanupState = Literal["pending", "stopped", "failed"]
 
 

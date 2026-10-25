@@ -14,9 +14,11 @@ import weakref
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from probe import DockerLifecycleTests, drain, isolated_command, status
-from termia.terminal_processes import process_session_members, process_start_time
 import gi
+from probe import DockerLifecycleTests, drain, isolated_command, status
+
+from termia.terminal_processes import process_session_members, process_start_time
+
 gi.require_version('GdkX11', '4.0')
 gi.require_version('Graphene', '1.0')
 from gi.repository import GdkX11, Graphene, Gtk

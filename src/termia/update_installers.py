@@ -3,22 +3,28 @@
 """Installation adapters. Commands use argument vectors, never a shell."""
 from __future__ import annotations
 
-from contextlib import contextmanager
-from dataclasses import dataclass
 import fcntl
 import hashlib
 import os
-from pathlib import Path
 import re
 import signal
 import stat
 import subprocess
 import tempfile
-from threading import Event
 import time
+from contextlib import contextmanager
+from dataclasses import dataclass
+from pathlib import Path
+from threading import Event
 from typing import Protocol
 
-from .update_service import Release, ReleaseClient, UpdateError, check_cancel, REPOSITORY
+from .update_service import (
+    REPOSITORY,
+    Release,
+    ReleaseClient,
+    UpdateError,
+    check_cancel,
+)
 
 
 def command(args: list[str], cancel: Event, *, cwd: Path | None = None,

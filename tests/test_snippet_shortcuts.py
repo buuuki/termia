@@ -15,7 +15,10 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gtk
 
 from termia.i18n import translate_key
-from termia.keybinding_preferences import KeybindingCaptureRow, KeybindingPreferencesMixin
+from termia.keybinding_preferences import (
+    KeybindingCaptureRow,
+    KeybindingPreferencesMixin,
+)
 from termia.keybindings import DEFAULT_KEYBINDINGS, snippet_action
 from termia.snippet_dialogs import SnippetDialogs
 from termia.snippet_presenter import SnippetPresenter

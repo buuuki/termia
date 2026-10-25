@@ -1,5 +1,4 @@
 """Host-side operations restricted to resources owned by this checkout."""
-import json
 import os
 import subprocess
 import time

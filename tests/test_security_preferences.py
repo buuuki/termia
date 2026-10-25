@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import gi
+
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 

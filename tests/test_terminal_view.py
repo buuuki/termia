@@ -1,6 +1,7 @@
 import unittest
 
 from gi.repository import Pango
+
 from termia.models import TerminalSettings
 from termia.terminal_view import TerminalViewFactory
 

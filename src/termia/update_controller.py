@@ -3,15 +3,21 @@
 """Asynchronous update lifecycle with an injected UI dispatcher."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
-from pathlib import Path
 import tempfile
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
 from threading import Event, Lock, Thread
-from typing import Callable
 
 from .update_installers import Installation, detect_installation, update_lock
-from .update_service import Release, ReleaseClient, UpdateError, check_cancel, select_release
+from .update_service import (
+    Release,
+    ReleaseClient,
+    UpdateError,
+    check_cancel,
+    select_release,
+)
 
 
 @dataclass(frozen=True)

@@ -1,8 +1,8 @@
 """VM desktop control panel. Trials are gated until the observer is ready."""
 import json
-from pathlib import Path
 import subprocess
 import tkinter as tk
+from pathlib import Path
 
 ROOT=Path.home()/'termia-lab-evidence'
 ROOT.mkdir(exist_ok=True)

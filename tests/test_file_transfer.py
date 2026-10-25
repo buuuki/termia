@@ -1,8 +1,8 @@
 import os
+import shlex
+import signal
 import tempfile
 import unittest
-import signal
-import shlex
 from pathlib import Path
 from unittest.mock import Mock, patch
 

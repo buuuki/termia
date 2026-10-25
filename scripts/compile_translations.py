@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
-import ast
 import argparse
+import ast
 import gettext
 import json
 import struct

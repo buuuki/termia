@@ -357,7 +357,7 @@ class TerminalPaneStateTests(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"),
                          "GTK display unavailable")
     def test_real_vte_split_retries_process_each_child_exit_once(self):
-        from gi.repository import Gtk, GLib, Vte
+        from gi.repository import GLib, Gtk, Vte
 
         # Exercise the SSH start/exit path with a local synthetic child; no
         # SSH host, credentials or real network connection is involved.

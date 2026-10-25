@@ -1,12 +1,19 @@
-import unittest
-import time
 import shutil
 import subprocess
+import time
+import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 from termia.models import Group, LocalTerminalProfile, Server, StoreData, Workspace
-from termia.sidebar import Gdk, GLib, Graphene, Gtk, SERVER_GROUP_DND_MIME_TYPE, SidebarMixin
+from termia.sidebar import (
+    SERVER_GROUP_DND_MIME_TYPE,
+    Gdk,
+    GLib,
+    Graphene,
+    Gtk,
+    SidebarMixin,
+)
 from termia.sidebar_projection import SidebarRow
 
 

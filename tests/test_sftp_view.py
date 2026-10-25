@@ -1,5 +1,5 @@
-import time
 import os
+import time
 import unittest
 from pathlib import Path
 from threading import Event
@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import gi
+
 gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 

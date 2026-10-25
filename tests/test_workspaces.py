@@ -5,8 +5,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from termia.models import LocalTerminalProfile, Server, Workspace
-from termia.sidebar import SidebarMixin
 from termia.session_registry import SessionRegistry
+from termia.sidebar import SidebarMixin
 from termia.terminal_sessions import Gtk, TerminalSessionsMixin
 from termia.workspace_layout import MAX_WORKSPACE_PANES
 

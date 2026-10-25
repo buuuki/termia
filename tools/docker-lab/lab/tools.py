@@ -1,19 +1,18 @@
 """Local controller for isolated diagnostics and passive process observations."""
 import argparse
-from collections import deque
 import datetime
 import fcntl
 import hashlib
 import json
 import os
-from pathlib import Path
-import shutil
+import secrets
 import subprocess
 import sys
+import tempfile
 import threading
 import time
-import secrets
-import tempfile
+from collections import deque
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from context import prepare_context

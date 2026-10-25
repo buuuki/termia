@@ -18,16 +18,16 @@ gi.require_version("GtkSource", "5")
 gi.require_version("Pango", "1.0")
 from gi.repository import Gdk, Gio, GLib, GObject, Graphene, Gtk, GtkSource, Pango
 
+from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .constants import (
     DEFAULT_NOTES_EDITOR_BACKGROUND,
     DEFAULT_NOTES_EDITOR_FOREGROUND,
 )
-from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .dialog_actions import add_dialog_action_button, configure_action_area
 from .models import Note, NoteCategory
 from .notes import NoteError, normalized_note_categories, note_category_move_allowed
 from .notes_io import export_notes_file, import_notes_file
-from .notes_presenter import NoteTreeCategory, NotesPresenter
+from .notes_presenter import NotesPresenter, NoteTreeCategory
 
 NOTE_ROW_DND_MIME_TYPE = "application/x-termia-note-id"
 NOTE_CATEGORY_DND_MIME_TYPE = "application/x-termia-note-category"

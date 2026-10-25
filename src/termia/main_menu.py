@@ -10,11 +10,11 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Gtk
 
-from .constants import ABOUT_IMAGE, ISSUES_URL
 from . import __version__
+from .constants import ABOUT_IMAGE, ISSUES_URL
 from .dialog_actions import add_dialog_action_button as add_shared_dialog_action_button
-from .main_menu_actions import MainMenuActions
 from .keybindings import KEYBINDING_ACTIONS, keybinding_label
+from .main_menu_actions import MainMenuActions
 
 
 def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:

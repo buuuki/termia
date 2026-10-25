@@ -2,7 +2,6 @@
 import hashlib
 import json
 import os
-import signal
 import subprocess
 import time
 import tkinter as tk

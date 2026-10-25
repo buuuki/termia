@@ -5,7 +5,10 @@ from __future__ import annotations
 import unittest
 
 from termia.models import LocalTerminalProfile, Server
-from termia.split_connection_search import build_split_connection_choices, filter_split_connection_choices
+from termia.split_connection_search import (
+    build_split_connection_choices,
+    filter_split_connection_choices,
+)
 
 
 class SplitConnectionSearchTests(unittest.TestCase):

@@ -11,8 +11,8 @@ from termia.migrations import (
     migrate_connections_payload,
     migrate_settings_payload,
 )
-from termia.stores import ConnectionStore, SettingsStore
 from termia.models import AppSettings
+from termia.stores import ConnectionStore, SettingsStore
 
 
 class MigrationTests(unittest.TestCase):

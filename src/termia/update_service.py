@@ -3,13 +3,13 @@
 """Release policy and bounded official downloads. No GTK or installation code."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
-from pathlib import Path
 import re
-from threading import Event
 import time
+from dataclasses import dataclass
+from pathlib import Path
+from threading import Event
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 

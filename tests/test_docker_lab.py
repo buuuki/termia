@@ -1,11 +1,11 @@
 """Publication boundaries: no private/generated inputs enter Docker contexts."""
-from contextlib import redirect_stdout
 import importlib.util
 import io
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 LAB = Path(__file__).resolve().parents[1] / 'tools/docker-lab'

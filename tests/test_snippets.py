@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from termia.models import CommandSnippet, Group, Server
 from termia.keybindings import KeybindingError, snippet_action
+from termia.models import CommandSnippet, Group, Server
 from termia.snippet_presenter import SnippetPresenter
 from termia.snippets import (
     SnippetError,

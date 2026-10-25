@@ -3,7 +3,6 @@ import gc
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
@@ -11,6 +10,7 @@ import tempfile
 import time
 import traceback
 import weakref
+from pathlib import Path
 from unittest.mock import patch
 
 from results import record_cleanup
@@ -44,10 +44,12 @@ if BACKEND == 'wayland':
         time.sleep(.05)
 
 import gi
+
 gi.require_version('Gtk', '4.0')
 gi.require_version('Gdk', '4.0')
 gi.require_version('Graphene', '1.0')
-from gi.repository import Gtk, Gdk, GLib, Graphene
+from gi.repository import Gdk, GLib, Graphene, Gtk
+
 from termia.app import TermiaApp, TermiaWindow
 from termia.stores import ConnectionStore
 from termia.terminal_processes import terminal_process_is_active

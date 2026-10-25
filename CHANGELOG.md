@@ -7,6 +7,11 @@
 - Validate release asset names, approved checksums, package metadata and download
   instructions before publication; document the beta.5 development cycle.
 
+### Changed
+
+- Normalize imports and type annotations, preserve the RowObject re-export, and
+  make terminal-cleanup capture explicit without changing application behavior (`#415`).
+
 ### Fixed
 
 - Wait for native GTK readiness and drag lifecycle signals in the Notes category

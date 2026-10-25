@@ -3,7 +3,11 @@ from types import MethodType, SimpleNamespace
 from unittest.mock import Mock, patch
 
 from termia.app import TOAST_VISIBLE_SECONDS, TermiaWindow
-from termia.notifications import NOTIFICATION_ICONS, GroupedNotificationLabel, NotificationSeverity
+from termia.notifications import (
+    NOTIFICATION_ICONS,
+    GroupedNotificationLabel,
+    NotificationSeverity,
+)
 
 
 class AppToastTests(unittest.TestCase):

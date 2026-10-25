@@ -1,4 +1,9 @@
-import base64,json,socket,sys,time
+import base64
+import json
+import socket
+import sys
+import time
+
 mode=sys.argv[1]
 sock=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
 sock.settimeout(8)
