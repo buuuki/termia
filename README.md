@@ -176,11 +176,11 @@ of the same app version.
 
 ### Published package
 
-Download [termia_0.6.0~beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0~beta.4-1_all.deb)
+Download [termia_0.6.0.beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0.beta.4-1_all.deb)
 and install it with APT, which resolves the required dependencies:
 
 ```bash
-sudo apt install ./termia_0.6.0~beta.4-1_all.deb
+sudo apt install ./termia_0.6.0.beta.4-1_all.deb
 ```
 
 ## Download from source

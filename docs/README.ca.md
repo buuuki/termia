@@ -169,11 +169,11 @@ mateixa versió de l'aplicació.
 
 ### Paquet publicat
 
-Descarrega [termia_0.6.0~beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0~beta.4-1_all.deb)
+Descarrega [termia_0.6.0.beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0.beta.4-1_all.deb)
 i instal·la'l amb APT, que resoldrà les dependències necessàries:
 
 ```bash
-sudo apt install ./termia_0.6.0~beta.4-1_all.deb
+sudo apt install ./termia_0.6.0.beta.4-1_all.deb
 ```
 
 ## Descarregar i instal·lar des del codi font
