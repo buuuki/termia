@@ -69,8 +69,8 @@ Documentación en catalán: [README.ca.md](README.ca.md)
 
 ## Novedades de 0.6.0-beta.4
 
-Esta versión está en preparación y validación; su publicación está pendiente de
-[la revisión de beta.4](https://github.com/buuuki/termia/issues/386).
+Beta.4 es una versión preliminar. Consulta
+[la revisión de la release](https://github.com/buuuki/termia/issues/386) para conocer las validaciones y limitaciones.
 
 - Mantener notas personales y de servidores en una ventana independiente, con
   guardado automático, categorías por ámbito y anidadas, apariencia de texto plano,
@@ -92,8 +92,7 @@ Esta versión está en preparación y validación; su publicación está pendien
 
 Beta.4 añade GtkSourceView 5. Haz una copia del perfil antes de actualizar y
 consulta [la compatibilidad de almacenamiento](STORAGE_MIGRATIONS.md) antes de
-volver a una versión anterior. El último paquete publicado sigue siendo beta.3
-hasta que se autorice la publicación de beta.4.
+volver a una versión anterior.
 
 ## Explorador SFTP
 
@@ -170,11 +169,11 @@ exclusivamente Debian de la misma versión de la aplicación.
 
 ### Paquete publicado
 
-Descarga [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
+Descarga [termia_0.6.0~beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0~beta.4-1_all.deb)
 e instálalo con APT, que resolverá las dependencias necesarias:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.3-1_all.deb
+sudo apt install ./termia_0.6.0~beta.4-1_all.deb
 ```
 
 ## Descargar e instalar desde el código fuente
@@ -265,9 +264,7 @@ dpkg-buildpackage -us -uc -b
 ```
 
 El fichero `termia_0.6.0~beta.4-1_all.deb` se crea en el directorio padre.
-Este código prepara beta.4 para la validación final. Un paquete compilado
-localmente no es una release oficial publicada; usa solo perfiles sintéticos
-hasta completar las comprobaciones. La descarga pública sigue siendo beta.3.
+Los paquetes compilados localmente son independientes de los archivos oficiales enlazados arriba.
 
 Instálalo con:
 

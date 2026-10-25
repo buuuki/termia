@@ -69,8 +69,8 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
 
 ## What's new in 0.6.0-beta.4
 
-This release is being prepared and validated; publication is pending
-[the beta.4 release review](https://github.com/buuuki/termia/issues/386).
+Beta.4 is a prerelease. See the
+[release review](https://github.com/buuuki/termia/issues/386) for validation and limitations.
 
 - Keep personal and server-linked Notes in an independent window, with autosave,
   scoped/nested categories, plain-text appearance controls, native line numbers,
@@ -91,8 +91,7 @@ This release is being prepared and validated; publication is pending
   Docker laboratory; observe real sudo/polkit upgrade trials in its optional VM.
 
 Beta.4 adds GtkSourceView 5. Back up the profile before upgrading and consult
-[storage compatibility](docs/STORAGE_MIGRATIONS.md) before downgrading. The last
-published package remains beta.3 until beta.4 publication is approved.
+[storage compatibility](docs/STORAGE_MIGRATIONS.md) before downgrading.
 
 ## Help and terminal menu shortcuts
 
@@ -177,11 +176,11 @@ of the same app version.
 
 ### Published package
 
-Download [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
+Download [termia_0.6.0~beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0~beta.4-1_all.deb)
 and install it with APT, which resolves the required dependencies:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.3-1_all.deb
+sudo apt install ./termia_0.6.0~beta.4-1_all.deb
 ```
 
 ## Download from source
@@ -282,9 +281,7 @@ dpkg-buildpackage -us -uc -b
 ```
 
 The resulting `termia_0.6.0~beta.4-1_all.deb` is created in the parent directory.
-This checkout prepares beta.4 for final validation. A locally built package is
-not an official published release; use only synthetic profiles until its release
-checks are complete. The public download above remains beta.3 until publication.
+Locally built packages are separate from the official release assets linked above.
 
 Install it with:
 
