@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Validate release asset names, approved checksums, package metadata and download
+  instructions before publication; document the beta.5 development cycle.
+
 ### Fixed
 
 - Correct beta.4 public download links and installation filenames to match

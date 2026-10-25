@@ -68,16 +68,11 @@ state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `release/<next-version>-dev` branch from the updated
 `main`.
 
-For the current cycle, `0.6.0-beta.3` is published and
-`release/0.6.0-beta.4-dev` is the active development branch. The next published
-release containing source changes from this branch must be `0.6.0-beta.4`.
-Release preparation may set source and Debian metadata to `0.6.0-beta.4` and
-`0.6.0~beta.4-1` before publication. This does not make a local build an official
-release: final validation, explicit publication approval, the annotated tag and
-GitHub prerelease must still satisfy the consistency checks below. During this
-phase, documentation must distinguish the prepared version from the last
-published download. Track the remaining checks in
-[issue #386](https://github.com/buuuki/termia/issues/386).
+`0.6.0-beta.4` is published. The active development branch is
+`release/0.6.0-beta.5-dev`; its next source release is `0.6.0-beta.5`.
+Creating that branch does not change application or Debian versions: update
+release metadata only during approved release preparation. The completed beta.4
+review is recorded in [issue #386](https://github.com/buuuki/termia/issues/386).
 
 ## Release workflow before the first stable version
 
@@ -149,8 +144,8 @@ testing candidate is useful, publish one or more prereleases such as
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
 `0.5.0`; its historical tag and release are not renamed. The latest published
-source release is `0.6.0-beta.3`; the active development branch targets the
-next iteration, `0.6.0-beta.4`.
+source release is `0.6.0-beta.4`; the active development branch targets the
+next iteration, `0.6.0-beta.5`.
 
 ## Debian package versions
 
@@ -223,3 +218,38 @@ References:
 
 - [Semantic Versioning 2.0.0](https://semver.org/)
 - [Debian Policy: Version](https://www.debian.org/doc/debian-policy/ch-controlfields.html#version)
+
+## Release asset names and publication gate
+
+Debian package versions use `~` for prereleases. Public GitHub download filenames
+use a period instead: `0.6.0~beta.4-1` inside the package, but
+`termia_0.6.0.beta.4-1_all.deb` as the download name. Keep the local build
+filename unchanged. Before uploading, create a separate copy under the public
+name and confirm its SHA-256 still matches the approved package. Generate
+`SHA256SUMS` against that public filename.
+
+Upload only the approved package and checksums to a draft release. Obtain fresh
+metadata and downloads; use an ignored directory such as
+`tools/docker-lab/.runtime/release-check`. The example uses the published beta.4;
+substitute the approved tag and digest for the release being prepared:
+
+```bash
+gh api repos/buuuki/termia/releases/tags/v0.6.0-beta.4 > tools/docker-lab/.runtime/release-check/release.json
+gh release download v0.6.0-beta.4 --dir tools/docker-lab/.runtime/release-check
+PYTHONPATH=src python3 scripts/check_release_assets.py \
+  --release-json tools/docker-lab/.runtime/release-check/release.json \
+  --assets tools/docker-lab/.runtime/release-check \
+  --sha256 a8f1582fd70eb12510b29522fe164b23e38c0f69850e63a0908de6844fa995b3 \
+  --published
+```
+
+Create the ignored directory first. Omit `--published` for the mandatory draft
+check; it rejects an already published release. Metadata must come from the REST
+endpoint, not `gh release view`, whose JSON field names differ.
+
+Do not publish when the command fails. This is a read-only validation gate,
+not a publishing wrapper: manual GitHub operations can bypass it. Explicit
+publication authorization is still required. After publishing, repeat with fresh
+metadata/downloads in a new empty directory and `--published`. The command
+does not verify the annotated tag target or replace platform/installation tests;
+perform the other release-consistency checks above as well.
