@@ -4,6 +4,9 @@
 
 ### Added
 
+- Measure unittest line and branch coverage with the existing private GTK test
+  runner, console/HTML reports and CI artifacts, without a minimum threshold.
+
 - Run pinned Ruff and Bandit checks in CI, showing existing findings and
   blocking new diagnostics or failed analysis against the Git baseline (`#390`).
 

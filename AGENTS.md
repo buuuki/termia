@@ -103,7 +103,25 @@ Inside a restricted Codex sandbox, run unittest through
 `python3 scripts/run_sandbox_tests.py` so GTK and SFTP tests use a private
 display and session bus with local TCP sockets. Pass module names after the
 script for focused runs. Do not use the developer's desktop session or elevate
-tests to bypass the sandbox. GitHub Actions keeps its existing test command.
+tests to bypass the sandbox. GitHub Actions uses the same runner with coverage.
+
+To measure the existing unittest suite, use the available Coverage.py command:
+
+```bash
+coverage erase
+coverage run scripts/run_sandbox_tests.py
+coverage combine
+coverage report
+coverage html
+coverage json -o htmlcov/coverage.json
+```
+
+For a focused measurement, pass unittest module names after the runner path.
+Measure all production Python under `src/termia`, including unimported modules.
+Do not add pytest, production exclusions or minimum percentages to improve
+results. Report global and per-module line/branch coverage, skipped tests,
+important missing paths and subprocess/native-library limitations. HTML reports
+and machine-readable results belong in ignored `htmlcov/`, not Git history.
 
 When UI behavior changes, run an isolated test instance and review the relevant
 manual regression sections:

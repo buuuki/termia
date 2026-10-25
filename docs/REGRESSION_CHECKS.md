@@ -1224,11 +1224,21 @@ python3 scripts/run_sandbox_tests.py tests.test_sftp_protocol tests.test_optiona
 
 The usual `dbus-run-session -- xvfb-run` wrappers require Unix sockets and may
 fail with `EPERM` in this sandbox. A plain `PYTHONPATH=src python3 -m unittest
-discover -s tests` remains the standard command on unrestricted developer
-systems and in GitHub Actions; the CI workflow is unchanged. If the runner
+discover -s tests` remains available on unrestricted developer systems. CI uses
+the same private runner with Coverage.py. If the runner
 reports missing commands, install the corresponding system packages before
 retrying. If it cannot start a local display or bus, confirm that the active
 Codex profile permits loopback TCP sockets before changing the tests.
+
+For a fresh line/branch coverage baseline, use the commands in
+[Contributing: Coverage with unittest](../CONTRIBUTING.md#coverage-with-unittest).
+Keep unittest and its existing test modules and runner. Coverage subprocess
+measurement must include the child test process, preserve the unittest exit
+status and keep GTK/SFTP resources isolated. Confirm all production modules
+appear in the reports, including those never imported. Review terminal/VTE
+cleanup, orphan handling, SSH/SFTP shutdown, GTK signal disposal and add-on
+enabled/disabled paths. Record gaps and skipped tests without adding a minimum
+percentage or treating unexecuted/native code as verified.
 
 If translations changed, run `scripts/compile_translations.py` before its
 `--check` mode. Do not repeat an unchanged successful command. If subsequent
