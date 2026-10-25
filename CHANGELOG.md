@@ -2,50 +2,17 @@
 
 ## Unreleased
 
-### Added
-
-- Measure unittest line and branch coverage with the existing private GTK test
-  runner, console/HTML reports and CI artifacts, without a minimum threshold.
-
-- Run pinned Ruff and Bandit checks in CI, showing existing findings and
-  blocking new diagnostics or failed analysis against the Git baseline (`#390`).
-
-### Fixed
-
-- Declare Git as a Debian build dependency so update tests can run in a clean
-  package-build environment without adding a runtime dependency.
-
-- Update CI checkout, Python setup and artifact actions to Node.js 24 releases
-  while preserving the existing quality checks and coverage reports.
-
-- Distinguish credential-related UI message identifiers from persisted
-  authentication fields, removing 34 Bandit false positives without changing
-  displayed text, translations, saved settings or shortcut action IDs (`#396`).
-
-- Compare Bandit dictionary-password findings by their individual key/value
-  entries so unrelated edits do not reclassify existing findings as new.
-  Preserve detection of changed entries and additional duplicates (`#393`).
-
-- Ask for encrypted connection-import passwords, allow retry/cancellation,
-  and retain the target profile's password, storage protection and notes (`#392`).
-  Display password feedback using the theme's normal text color.
-  Use the equivalent functools.cache decorator for translation caching.
-  Name dialog messages for the unlock operation to distinguish UI text from credentials in static analysis.
-  Skip import-dialog widget tests when no graphical display is available.
-
-- Bound connection and notes file sizes, decoded content and encryption work.
-  Preserve rejected originals and disable editing until recovery and restart
-  instead of treating resource limits as corrupt-file recovery (`#392`).
-
-- Reconnect the original SSH or failed local pane in place without closing
-  sibling splits, replacing their layout, or cancelling unrelated transfers.
-  Ignore obsolete terminal timer callbacks after retries (`#388`).
-
-## 0.6.0-beta.4 - 2026-10-23
+## 0.6.0-beta.4 - 2026-10-25
 
 Prepared for final validation; release publication is tracked in `#386`.
 
 ### Added
+
+- Measure unittest line and branch coverage with the existing private GTK test
+  runner, console/HTML reports and CI artifacts, without a minimum threshold (`#398`).
+
+- Run pinned Ruff and Bandit checks in CI, showing existing findings and
+  blocking new diagnostics or failed analysis against the Git baseline (`#390`).
 
 - Publish the observable Ubuntu/XFCE KVM laboratory with real sudo/polkit
   upgrade trials, generated synthetic credentials, per-stage evidence and
@@ -274,6 +241,35 @@ Prepared for final validation; release publication is tracked in `#386`.
   protection (`#289`).
 
 ### Fixed
+
+- Declare Git as a Debian build dependency so update tests can run in a clean
+  package-build environment without adding a runtime dependency (`#402`).
+
+- Update CI checkout, Python setup and artifact actions to Node.js 24 releases
+  while preserving the existing quality checks and coverage reports (`#400`).
+
+- Distinguish credential-related UI message identifiers from persisted
+  authentication fields, removing 34 Bandit false positives without changing
+  displayed text, translations, saved settings or shortcut action IDs (`#396`).
+
+- Compare Bandit dictionary-password findings by their individual key/value
+  entries so unrelated edits do not reclassify existing findings as new.
+  Preserve detection of changed entries and additional duplicates (`#393`).
+
+- Ask for encrypted connection-import passwords, allow retry/cancellation,
+  and retain the target profile's password, storage protection and notes (`#392`).
+  Display password feedback using the theme's normal text color.
+  Use the equivalent functools.cache decorator for translation caching.
+  Name dialog messages for the unlock operation to distinguish UI text from credentials in static analysis.
+  Skip import-dialog widget tests when no graphical display is available.
+
+- Bound connection and notes file sizes, decoded content and encryption work.
+  Preserve rejected originals and disable editing until recovery and restart
+  instead of treating resource limits as corrupt-file recovery (`#392`).
+
+- Reconnect the original SSH or failed local pane in place without closing
+  sibling splits, replacing their layout, or cancelling unrelated transfers.
+  Ignore obsolete terminal timer callbacks after retries (`#388`).
 
 - Isolate the shutdown termination test from host process sessions so synthetic
   session IDs cannot cause environment-dependent failures (`#383`, `#385`).

@@ -79,6 +79,9 @@ Esta versión está en preparación y validación; su publicación está pendien
   datos. Las notas antiguas reciben una copia protegida antes de migrar su esquema.
 - Gestionar snippets en una ventana independiente, asignarles atajos por ámbito
   y configurar un comando opcional al iniciar una conexión SSH.
+- Reconectar un panel SSH o local fallido conservando los demás splits.
+- Solicitar la contraseña al importar conexiones cifradas y conservar la
+  protección del perfil actual; limitar el tamaño y el trabajo de cifrado.
 - Activar o desactivar Estadísticas/SFTP sin borrar sus datos.
 - Usar la barra de pestañas desplazable aprobada, menús nativos y árboles de
   conexiones/notas, con mejoras de foco, arrastre privado y restauración de títulos.

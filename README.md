@@ -79,6 +79,9 @@ This release is being prepared and validated; publication is pending
   existing data. Legacy Notes receive a protected backup before schema upgrades.
 - Manage snippets in an independent window, assign scoped keyboard shortcuts,
   and configure an optional command to run when an SSH connection starts.
+- Reconnect an SSH or failed local pane while preserving sibling splits.
+- Prompt for encrypted connection-import passwords and preserve the current
+  profile protection; bound configuration size and encryption work.
 - Enable or disable the bundled Statistics/SFTP tools without deleting their data.
 - Use the approved scrolling terminal tab strip, native menus and connection/Notes
   trees, with improved keyboard focus, private dragging and session-title restore.
