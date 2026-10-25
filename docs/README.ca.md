@@ -69,8 +69,8 @@ Documentació en castellà: [README.es.md](README.es.md)
 
 ## Novetats de 0.6.0-beta.4
 
-Aquesta versió està en preparació i validació; la publicació està pendent de
-[la revisió de beta.4](https://github.com/buuuki/termia/issues/386).
+Beta.4 és una versió preliminar. Consulta
+[la revisió de la release](https://github.com/buuuki/termia/issues/386) per conèixer les validacions i limitacions.
 
 - Mantenir notes personals i de servidors en una finestra independent, amb desament
   automàtic, categories per àmbit i imbricades, aparença de text pla, números de línia
@@ -92,8 +92,7 @@ Aquesta versió està en preparació i validació; la publicació està pendent 
 
 Beta.4 afegeix GtkSourceView 5. Fes una còpia del perfil abans d'actualitzar i
 consulta [la compatibilitat d'emmagatzematge](STORAGE_MIGRATIONS.md) abans de tornar
-a una versió anterior. L'últim paquet publicat continua sent beta.3 fins que
-s'autoritzi la publicació de beta.4.
+a una versió anterior.
 
 ## Explorador SFTP
 
@@ -170,11 +169,11 @@ mateixa versió de l'aplicació.
 
 ### Paquet publicat
 
-Descarrega [termia_0.6.0.beta.3-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.3/termia_0.6.0.beta.3-1_all.deb)
+Descarrega [termia_0.6.0~beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0~beta.4-1_all.deb)
 i instal·la'l amb APT, que resoldrà les dependències necessàries:
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.3-1_all.deb
+sudo apt install ./termia_0.6.0~beta.4-1_all.deb
 ```
 
 ## Descarregar i instal·lar des del codi font
@@ -265,9 +264,7 @@ dpkg-buildpackage -us -uc -b
 ```
 
 El fitxer `termia_0.6.0~beta.4-1_all.deb` es crea al directori pare.
-Aquest codi prepara beta.4 per a la validació final. Un paquet compilat
-localment no és una release oficial publicada; utilitza només perfils sintètics
-fins a completar les comprovacions. La descàrrega pública continua sent beta.3.
+Els paquets compilats localment són independents dels fitxers oficials enllaçats més amunt.
 
 Instal·la'l amb:
 

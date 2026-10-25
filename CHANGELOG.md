@@ -2,14 +2,9 @@
 
 ## Unreleased
 
-### Fixed
-
-- Recognize the approved quality baseline during the initial main promotion,
-  with immutable ancestry checks and continued blocking of later diagnostics.
-
 ## 0.6.0-beta.4 - 2026-10-25
 
-Prepared for final validation; release publication is tracked in `#386`.
+Beta prerelease; release validation and limitations are tracked in `#386`.
 
 ### Added
 
@@ -246,6 +241,9 @@ Prepared for final validation; release publication is tracked in `#386`.
   protection (`#289`).
 
 ### Fixed
+
+- Recognize the approved quality baseline during the initial main promotion,
+  with immutable ancestry checks and continued blocking of later diagnostics (`#406`).
 
 - Declare Git as a Debian build dependency so update tests can run in a clean
   package-build environment without adding a runtime dependency (`#402`).
