@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-import signal
 import shlex
+import signal
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any

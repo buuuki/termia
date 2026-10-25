@@ -1,9 +1,9 @@
 """Real SFTP packets over a local socket pair; no SSH host or credentials."""
 import os
-from pathlib import Path
 import socket
 import tempfile
 import unittest
+from pathlib import Path
 
 import paramiko
 

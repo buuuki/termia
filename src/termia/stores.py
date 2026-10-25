@@ -10,6 +10,7 @@ import time
 from dataclasses import asdict, replace
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from .config_io import (

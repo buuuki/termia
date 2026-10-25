@@ -16,8 +16,12 @@ from gi.repository import Gdk, Gtk, Pango, Vte
 from .debug import log_event
 from .keybinding_preferences import KeybindingCaptureRow
 from .keybindings import (
-    SNIPPET_ACTION_PREFIX, KeybindingError, is_snippet_action, keybinding_matches,
-    snippet_action, validate_keybindings,
+    SNIPPET_ACTION_PREFIX,
+    KeybindingError,
+    is_snippet_action,
+    keybinding_matches,
+    snippet_action,
+    validate_keybindings,
 )
 from .models import CommandSnippet
 from .snippet_presenter import SnippetPresenter

@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock
 
 import gi
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gtk

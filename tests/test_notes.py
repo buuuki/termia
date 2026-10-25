@@ -7,7 +7,9 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
+from typing import get_type_hints
 from unittest.mock import MagicMock, call, patch
+
 from gi.repository import Gio, GLib, GObject
 
 from termia.config_io import (
@@ -18,22 +20,39 @@ from termia.config_io import (
     read_connections_payload,
 )
 from termia.models import Note, NoteCategory
-from termia.notes import NoteError, normalize_note, normalized_note_categories, note_category_move_allowed
+from termia.notes import (
+    NoteError,
+    normalize_note,
+    normalized_note_categories,
+    note_category_move_allowed,
+)
 from termia.notes_dialogs import (
-    Gdk, Graphene, Gtk, GtkSource, NOTE_ROW_DND_MIME_TYPE,
-    NOTE_CATEGORY_DND_MIME_TYPE, NoteEditorTab, NotesDialogs, NotesTreeNode,
-    create_notes_text_view, format_note_timestamp,
+    NOTE_CATEGORY_DND_MIME_TYPE,
+    NOTE_ROW_DND_MIME_TYPE,
+    Gdk,
+    Graphene,
+    Gtk,
+    GtkSource,
+    NoteEditorTab,
+    NotesDialogs,
+    NotesTreeNode,
+    create_notes_text_view,
+    format_note_timestamp,
 )
 from termia.notes_io import (
+    encode_notes_payload,
     export_notes_file,
     import_notes_file,
     read_notes_file,
-    write_notes_file,
     validate_notes_payload,
-    encode_notes_payload,
+    write_notes_file,
 )
 from termia.notes_presenter import NotesPresenter
-from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPasswordError
+from termia.stores import (
+    ConnectionStore,
+    ReadOnlyStoreError,
+    UnchangedMasterPasswordError,
+)
 
 
 def make_note_tree_dialog(notes=(), categories=(), servers=(), tabs=()):
@@ -3091,6 +3110,9 @@ class NotesIOTests(unittest.TestCase):
 
 
 class NotesStoreTests(unittest.TestCase):
+    def test_editor_annotations_support_runtime_introspection(self):
+        self.assertIn("values", get_type_hints(ConnectionStore.update_notes_editor))
+
     def make_store(self, root):
         return ConnectionStore(
             root / "connections.json", root / "settings.json", root / "statistics.json",

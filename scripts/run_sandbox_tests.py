@@ -9,7 +9,6 @@ dbus-run-session wrappers cannot start there, even though loopback TCP works.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import secrets
 import select
 import shutil
@@ -19,7 +18,7 @@ import subprocess
 import sys
 import tempfile
 import time
-
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DBUS_CONFIG = """<!DOCTYPE busconfig PUBLIC

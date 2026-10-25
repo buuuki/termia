@@ -1,6 +1,10 @@
 import unittest
 
-from termia.asbru_import import extract_asbru_connections, merge_asbru_connections, normalize_asbru_name
+from termia.asbru_import import (
+    extract_asbru_connections,
+    merge_asbru_connections,
+    normalize_asbru_name,
+)
 from termia.models import StoreData
 
 

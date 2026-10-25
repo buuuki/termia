@@ -2,6 +2,7 @@ import unittest
 from dataclasses import is_dataclass
 
 from gi.repository import GObject
+
 from termia.ui_state import RowObject
 
 

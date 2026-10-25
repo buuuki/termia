@@ -1,10 +1,9 @@
-import unittest
-import gc
-import time
 import shutil
 import subprocess
-import tempfile
 import sys
+import tempfile
+import time
+import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -13,7 +12,7 @@ from gi.repository import Gio, GObject
 
 from termia.session_registry import SessionRegistry
 from termia.tab_lifecycle_actions import TabLifecycleActions
-from termia.tabs import Gdk, GLib, Graphene, Gtk, TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
+from termia.tabs import TERMINAL_TAB_DND_MIME_TYPE, Gdk, GLib, Graphene, Gtk, TabsMixin
 
 
 def install_tab_strip(host, window):
@@ -1157,6 +1156,7 @@ class TerminalTabStripApplicationTests(unittest.TestCase):
 def exercise_overflow_drag():
     """Run the GTK assertion reproducer in a child process on the private display."""
     import resource
+
     import gi
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     gi.require_version("GdkX11", "4.0")

@@ -1,15 +1,15 @@
-import os
 import gc
-from dataclasses import replace
-from pathlib import Path
+import os
 import signal
 import subprocess
 import sys
 import tempfile
 import time
-from types import SimpleNamespace
 import unittest
 import weakref
+from dataclasses import replace
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import gi
@@ -25,7 +25,6 @@ from termia.tabs import TabsMixin
 from termia.terminal_processes import process_start_time, spawn_terminal_process
 from termia.terminal_sessions import TerminalSessionsMixin
 from termia.ui_state import TerminalPane, TerminalSession
-
 
 RESISTANT_CHILD_COMMAND = """
 import os, signal, sys, time
@@ -110,7 +109,7 @@ class TerminalCleanupIntegrationTests(unittest.TestCase):
                             window.close_tab(session.id, session.page, disconnect=True)
                         return session_refs, widget_refs, panes, accounting
                     session_refs, widget_refs, panes, accounting = open_and_close()
-                    self.wait_until(lambda: all(pane.child_process is None for pane in panes))
+                    self.wait_until(lambda panes=panes: all(pane.child_process is None for pane in panes))
                     self.assertTrue(all(item.history_end_recorded for item in accounting))
                     del panes, accounting
                     def released():

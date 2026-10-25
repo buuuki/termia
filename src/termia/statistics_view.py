@@ -10,7 +10,11 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
 from .dialog_actions import add_dialog_action_button
-from .statistics_presenter import StatisticCard, StatisticsDashboard
+from .statistics_presenter import (
+    StatisticCard,
+    StatisticsDashboard,
+    StatisticsPresenter,
+)
 
 
 class StatisticsDialog:

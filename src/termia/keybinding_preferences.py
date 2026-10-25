@@ -9,8 +9,13 @@ gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gtk, Pango
 
 from .keybindings import (
-    DEFAULT_KEYBINDINGS, KEYBINDING_ACTIONS, KeybindingError,
-    keybinding_from_event, keybinding_label, normalize_keybinding, snippet_action,
+    DEFAULT_KEYBINDINGS,
+    KEYBINDING_ACTIONS,
+    KeybindingError,
+    keybinding_from_event,
+    keybinding_label,
+    normalize_keybinding,
+    snippet_action,
 )
 from .stores import ReadOnlyStoreError
 

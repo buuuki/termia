@@ -1,10 +1,10 @@
 """Safety boundaries for the optional observable VM laboratory."""
 import importlib.util
 import json
-from pathlib import Path
 import tempfile
-from types import SimpleNamespace
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 LAB = Path(__file__).resolve().parents[1] / 'tools/docker-lab'

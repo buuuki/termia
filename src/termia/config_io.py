@@ -14,9 +14,21 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from .models import CommandSnippet, Group, LocalTerminalProfile, Server, StoreData, Workspace
 from .migrations import CURRENT_CONNECTIONS_SCHEMA_VERSION, migrate_connections_payload
-from .snippets import SnippetError, normalize_snippet, normalized_categories, snippet_target_exists
+from .models import (
+    CommandSnippet,
+    Group,
+    LocalTerminalProfile,
+    Server,
+    StoreData,
+    Workspace,
+)
+from .snippets import (
+    SnippetError,
+    normalize_snippet,
+    normalized_categories,
+    snippet_target_exists,
+)
 from .workspace_layout import normalized_workspace_tabs
 
 CONNECTION_STORAGE_PLAIN = "plain"

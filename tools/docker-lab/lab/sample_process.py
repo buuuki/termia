@@ -1,7 +1,7 @@
 """Read metrics for the active laboratory process, without attaching a debugger."""
 import json
-from pathlib import Path
 import time
+from pathlib import Path
 
 root = Path('/evidence')
 run = (root / 'latest.txt').read_text().strip()

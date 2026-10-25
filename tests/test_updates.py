@@ -1,21 +1,32 @@
 import hashlib
 import io
-from pathlib import Path
 import subprocess
 import tempfile
-from threading import Event
 import unittest
+from pathlib import Path
+from threading import Event
 from unittest.mock import Mock
 
-from termia.update_service import (
-    Asset, OfficialRedirects, Release, ReleaseClient, UpdateError, Version,
-    REPOSITORY, allowed_url, select_release,
-)
+from termia.update_controller import CheckResult, UpdateController
 from termia.update_installers import (
-    DebianInstaller, GitInstaller, Installation, command, detect_installation,
+    DebianInstaller,
+    GitInstaller,
+    Installation,
+    command,
+    detect_installation,
     update_lock,
 )
-from termia.update_controller import CheckResult, UpdateController
+from termia.update_service import (
+    REPOSITORY,
+    Asset,
+    OfficialRedirects,
+    Release,
+    ReleaseClient,
+    UpdateError,
+    Version,
+    allowed_url,
+    select_release,
+)
 
 
 def release(tag="v0.6.0-beta.2", **values):

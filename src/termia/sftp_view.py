@@ -3,24 +3,30 @@
 """SFTP window: GTK presentation, with an injected backend factory."""
 from __future__ import annotations
 
+import posixpath
+import stat
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
-import posixpath
-import stat
 from time import monotonic
 
 import gi
+
 gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk, Pango
 
-from .dialog_actions import add_dialog_action_button, configure_action_area
 from .debug import log_event
+from .dialog_actions import add_dialog_action_button, configure_action_area
 from .known_hosts import ScannedHostKey, append_scanned_host_key
 from .sftp_backend import ParamikoBackend, failure_details
 from .sftp_service import (
-    AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, SFTPService,
-    UnknownHost, child_path,
+    AuthenticationRequired,
+    Cancelled,
+    Endpoint,
+    HostKeyChanged,
+    SFTPService,
+    UnknownHost,
+    child_path,
 )
 from .ui_state import SignalConnections
 

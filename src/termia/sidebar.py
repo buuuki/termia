@@ -26,7 +26,8 @@ from .connection_utils import (
     unique_workspace_clone_name,
 )
 from .models import Group, LocalTerminalProfile, Server, Workspace
-from .sidebar_projection import SidebarRow as RowObject, build_sidebar_projection
+from .sidebar_projection import SidebarRow as RowObject
+from .sidebar_projection import build_sidebar_projection
 from .workspace_layout import (
     MAX_WORKSPACE_PANES,
     capture_workspace_tabs,

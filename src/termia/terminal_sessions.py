@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-import signal
 import shlex
+import signal
 import time
 from pathlib import Path
 from typing import Any
@@ -21,18 +21,18 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
 from .connection_utils import find_local_terminal_profile, find_server
+from .debug import log_event
 from .file_transfer import FileTransferController
-from .transfer_lifecycle import ManagedTransfer
 from .keybindings import is_unmodified_function_key, keybinding_matches
 from .known_hosts import inspect_known_host_async
 from .models import LocalTerminalProfile, Server, Workspace
 from .session_commands import build_ssh_command
-from .split_panes import SplitPaneController, directional_pane_neighbor
 from .split_connection_search import (
     SplitConnectionChoice,
     build_split_connection_choices,
     filter_split_connection_choices,
 )
+from .split_panes import SplitPaneController, directional_pane_neighbor
 from .terminal_config import (
     build_local_prompt_shell_command,
     build_terminal_environment,
@@ -46,6 +46,7 @@ from .terminal_processes import (
     terminal_process_is_active,
 )
 from .terminal_view import TerminalViewFactory
+from .transfer_lifecycle import ManagedTransfer
 from .ui_state import TerminalPane, TerminalSession
 from .workspace_layout import (
     MAX_WORKSPACE_PANES,
@@ -56,8 +57,6 @@ from .workspace_layout import (
     workspace_tab_layouts,
     workspace_total_pane_count,
 )
-from .debug import log_event
-
 
 INITIAL_LOCAL_COMMAND_DELAY_MS = 300
 MAX_OPEN_TABS = 40

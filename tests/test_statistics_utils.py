@@ -1,7 +1,11 @@
 import unittest
 
 from termia.models import Server, StatisticsSettings
-from termia.statistics_utils import average_session_duration, format_duration, top_server_statistics
+from termia.statistics_utils import (
+    average_session_duration,
+    format_duration,
+    top_server_statistics,
+)
 
 
 class StatisticsUtilsTests(unittest.TestCase):

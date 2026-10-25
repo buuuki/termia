@@ -12,8 +12,10 @@ from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path.cwd()))
 import gi
+
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gio, GLib
+from gi.repository import GLib
+
 from termia.app import TermiaApp, TermiaWindow
 from termia.file_transfer import FileTransferController, build_scp_commands
 from termia.models import Server
