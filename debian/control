@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Jordi Pons <jpons.git@proton.me>
 Build-Depends: debhelper-compat (= 13),
                dh-python,
+               git,
                gir1.2-gtk-4.0,
                gir1.2-gtksource-5,
                gir1.2-vte-3.91,

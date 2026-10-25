@@ -12,6 +12,9 @@
 
 ### Fixed
 
+- Declare Git as a Debian build dependency so update tests can run in a clean
+  package-build environment without adding a runtime dependency.
+
 - Update CI checkout, Python setup and artifact actions to Node.js 24 releases
   while preserving the existing quality checks and coverage reports.
 
