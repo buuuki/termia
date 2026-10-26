@@ -331,7 +331,7 @@ class WorkspaceOpeningTests(unittest.TestCase):
             (Gtk.Orientation.VERTICAL, 400, 601, 0.75, 451),
         )
 
-        for orientation, width, height, ratio, expected in cases:
+        def exercise_case(orientation, width, height, ratio, expected):
             with self.subTest(orientation=orientation):
                 paned = FakePaned(
                     orientation,
@@ -355,6 +355,9 @@ class WorkspaceOpeningTests(unittest.TestCase):
 
                 self.assertEqual(paned.position, expected)
                 self.assertEqual(paned.handlers, {})
+
+        for orientation, width, height, ratio, expected in cases:
+            exercise_case(orientation, width, height, ratio, expected)
 
     def test_multiple_hidden_workspace_splits_restore_independently(self) -> None:
         outer = FakePaned(Gtk.Orientation.HORIZONTAL)

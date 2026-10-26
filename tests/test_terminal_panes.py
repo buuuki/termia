@@ -3,6 +3,7 @@ import sys
 import time
 import unittest
 from types import SimpleNamespace
+from typing import ClassVar
 from unittest.mock import Mock, patch
 
 from termia.models import Server
@@ -331,7 +332,7 @@ class TerminalPaneStateTests(unittest.TestCase):
         from gi.repository import GObject
 
         class Emitter(GObject.Object):
-            __gsignals__ = {
+            __gsignals__: ClassVar[dict[str, tuple]] = {
                 'changed': (GObject.SignalFlags.RUN_LAST, None, ()),
                 'child-exited': (GObject.SignalFlags.RUN_LAST, None, (int,)),
             }
@@ -361,7 +362,7 @@ class TerminalPaneStateTests(unittest.TestCase):
 
         # Exercise the SSH start/exit path with a local synthetic child; no
         # SSH host, credentials or real network connection is involved.
-        for kind in ("local", "ssh"):
+        def exercise_case(kind):
             with self.subTest(kind=kind):
                 terminal, root_terminal = Vte.Terminal(), FakeTerminal()
                 window = Gtk.Window()
@@ -410,11 +411,14 @@ class TerminalPaneStateTests(unittest.TestCase):
                         host.terminate_terminal_process(pane.child_process, force=True)
                     window.destroy()
 
+        for kind in ("local", "ssh"):
+            exercise_case(kind)
+
     def test_repeated_local_and_ssh_split_retries_deliver_each_exit_once(self):
         from gi.repository import GObject
 
         class SignalTerminal(GObject.Object):
-            __gsignals__ = {"child-exited": (GObject.SignalFlags.RUN_LAST, None, (int,))}
+            __gsignals__: ClassVar[dict[str, tuple]] = {"child-exited": (GObject.SignalFlags.RUN_LAST, None, (int,))}
 
             def feed(self, payload):
                 pass

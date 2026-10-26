@@ -700,7 +700,7 @@ class NoteHierarchyTests(unittest.TestCase):
         self.assertEqual(sum(len(item.items) for item in tree.personal_categories), 1)
 
     def test_bulk_navigation_preserves_selection_tabs_and_never_saves(self):
-        for categories in ([], self.categories):
+        def exercise_case(categories):
             dialog = NotesDialogs.__new__(NotesDialogs)
             dialog.store = SimpleNamespace(read_only=True, data=SimpleNamespace(
                 servers=[SimpleNamespace(id="server")], note_categories=categories))
@@ -718,6 +718,9 @@ class NoteHierarchyTests(unittest.TestCase):
                 self.assertEqual((dialog.selected_note_id, dialog.selected_draft_key), ("selected", "draft"))
                 self.assertEqual(dialog.editor_tabs["active"].content, "Unsaved")
                 self.assertEqual(dialog.active_editor_tab_key, "active")
+
+        for categories in ([], self.categories):
+            exercise_case(categories)
 
     def test_private_category_drag_checks_scope_and_never_offers_text(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -2072,7 +2075,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(selected[4][3], tab.key)
 
     def test_close_tab_responses_route_to_save_discard_or_keep(self):
-        for response, expected in ((0, "save"), (1, "discard"), (2, "keep")):
+        def exercise_case(response, expected):
             with self.subTest(response=response):
                 dialog = NotesDialogs.__new__(NotesDialogs)
                 calls = []
@@ -2086,6 +2089,9 @@ class NotesDialogSignalTests(unittest.TestCase):
                 dialog.on_close_editor_tab_response(Alert(), None, "note-id")
 
                 self.assertEqual(calls, [] if expected == "keep" else [(expected, "note-id")])
+
+        for response, expected in ((0, "save"), (1, "discard"), (2, "keep")):
+            exercise_case(response, expected)
 
     def test_save_and_close_persists_inactive_draft_before_removing_tab(self):
         note = Note("saved-id", "Draft", "Content", "Ops", "server-id", "created", "modified")
@@ -2677,7 +2683,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(messages, ["Note cloned."])
 
     def test_export_protection_choice_routes_to_plain_or_password_flow(self):
-        for encrypted in (False, True):
+        def exercise_case(encrypted):
             with self.subTest(encrypted=encrypted):
                 dialog = NotesDialogs.__new__(NotesDialogs)
                 destroyed = []
@@ -2702,6 +2708,9 @@ class NotesDialogSignalTests(unittest.TestCase):
                 else:
                     self.assertEqual(password_prompts, [])
                     self.assertEqual(file_choices, [None])
+
+        for encrypted in (False, True):
+            exercise_case(encrypted)
 
     def test_initial_selector_signals_do_not_prevent_window_opening(self):
         class EmittingCombo:

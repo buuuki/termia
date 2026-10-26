@@ -1,5 +1,6 @@
 import unittest
 from types import SimpleNamespace
+from typing import ClassVar
 from unittest.mock import patch
 
 from gi.repository import GObject
@@ -29,7 +30,7 @@ class FakeWidget:
 
 
 class FakeTerminal(GObject.Object):
-    __gsignals__ = {'map': (GObject.SignalFlags.RUN_LAST, None, ())}
+    __gsignals__: ClassVar[dict[str, tuple]] = {'map': (GObject.SignalFlags.RUN_LAST, None, ())}
 
     def __init__(self, *, mapped=True) -> None:
         super().__init__()
@@ -123,7 +124,7 @@ class FakeRoot(FakeWidget):
 
 class SplitPaneControllerTests(unittest.TestCase):
     def test_unmapped_split_focus_waits_for_mapping_and_is_cancelled_on_retirement(self):
-        for retire in (False, True):
+        def exercise_case(retire):
             with self.subTest(retire_before_mapping=retire):
                 target = FakeWidget(width=400, height=200)
                 root = FakeRoot(target)
@@ -147,6 +148,9 @@ class SplitPaneControllerTests(unittest.TestCase):
                 terminal.emit('map')
                 self.assertEqual(terminal.focus_count, 0 if retire else 1)
                 signals.disconnect()
+
+        for retire in (False, True):
+            exercise_case(retire)
 
     def controller(self, target, new_terminal, new_pane, ancestor, outer_ancestor):
         def replace_terminal(_target, replacement):
@@ -230,7 +234,7 @@ class SplitPaneControllerTests(unittest.TestCase):
             ("down", Gtk.Orientation.VERTICAL, 401, 261, 130, False),
         )
 
-        for direction, orientation, width, height, expected, new_first in cases:
+        def exercise_case(direction, orientation, width, height, expected, new_first):
             with self.subTest(direction=direction):
                 target_terminal = FakeTerminal()
                 target = FakeWidget(width=width, height=height)
@@ -267,6 +271,9 @@ class SplitPaneControllerTests(unittest.TestCase):
                     target if new_first else new_pane,
                 )
                 timeout_add.assert_not_called()
+
+        for direction, orientation, width, height, expected, new_first in cases:
+            exercise_case(direction, orientation, width, height, expected, new_first)
 
     def test_progressive_second_third_and_fourth_panes_preserve_geometry(self) -> None:
         session = SimpleNamespace()

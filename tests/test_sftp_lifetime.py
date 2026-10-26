@@ -136,7 +136,7 @@ class SFTPLifetimeTests(unittest.TestCase):
 
     def test_repeated_closed_windows_and_controls_are_released(self):
         retired = []
-        for cycle in range(3):
+        def exercise_case(cycle):
             window = self.window()
             retired.extend(widget.weak_ref() for widget in
                            (window, window.location, window.rows, window.disconnect_button))
@@ -149,6 +149,9 @@ class SFTPLifetimeTests(unittest.TestCase):
             del window
             self.wait_for(lambda: all(ref() is None for ref in retired),
                           'Closed native SFTP window or control remains alive')
+
+        for cycle in range(3):
+            exercise_case(cycle)
 
     def test_close_keeps_ui_ownership_until_worker_cleanup_finishes(self):
         window = self.window()
