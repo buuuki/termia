@@ -32,7 +32,8 @@ SERVER_IMAGE = PREFIX + '-server:local'
 LABEL = 'local.termia.tools'
 MODES = ('lifecycle', 'memory', 'memory-trace', 'close-live', 'valgrind',
          'menus', 'churn-disabled', 'churn-enabled', 'behavior-x11', 'behavior-wayland',
-         'smoke-x11', 'smoke-wayland', 'ssh-smoke')
+         'smoke-x11', 'smoke-wayland', 'ssh-smoke',
+         'churn-disabled-wayland', 'churn-enabled-wayland')
 SSH_MODES = MODES[:5] + ('ssh-smoke',)
 
 
@@ -277,7 +278,9 @@ def client_command(directory, mode):
         command = ['python3', '-X', 'faulthandler', '/opt/lab/lifecycle/entry.py', mode]
     else:
         args += ['--network', 'none']
-        probe_mode, backend = (mode.split('-', 1) if mode.startswith(('behavior-', 'smoke-')) else (mode, 'x11'))
+        probe_mode, separator, backend = mode.rpartition('-')
+        if not separator or backend not in ('x11', 'wayland'):
+            probe_mode, backend = mode, 'x11'
         command = ['python3', '-X', 'faulthandler', '/opt/probes/probe.py', probe_mode, backend]
     args += ['--entrypoint', 'bash', IMAGE, '-c',
              'mkdir -p "$HOME" "$XDG_RUNTIME_DIR"; chmod 700 "$HOME" "$XDG_RUNTIME_DIR"; '

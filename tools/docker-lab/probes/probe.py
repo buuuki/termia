@@ -244,8 +244,12 @@ try:
     if BACKEND == 'wayland':
         window.maximize()
     drain(.35)
-    result['runtime'] = dict(gtk=[Gtk.get_major_version(), Gtk.get_minor_version(), Gtk.get_micro_version()],
-                             display=Gdk.Display.get_default().__class__.__name__)
+    result['runtime'] = {
+        'gtk': [Gtk.get_major_version(), Gtk.get_minor_version(), Gtk.get_micro_version()],
+        'display': Gdk.Display.get_default().__gtype__.name,
+    }
+    check(result['runtime']['display'] == ('GdkWaylandDisplay' if BACKEND == 'wayland' else 'GdkX11Display'),
+          'requested graphical backend active')
     if BACKEND == 'x11':
         gi.require_version('GdkX11', '4.0')
         from gi.repository import GdkX11
@@ -300,6 +304,14 @@ try:
             sample = memory('terminal cycle ' + str(cycle + 1), settle=1.15)
             check(sample['registry'] == 0 and sample['running_children'] == 0,
                   'cycle resources stopped ' + str(cycle + 1))
+        release_started = time.monotonic()
+        while any(sample['live'].get(key, 0) for key in ('sessions', 'vte', 'pages', 'labels')):
+            if time.monotonic() - release_started >= 5:
+                break
+            sample = memory('churn release observation', settle=.1)
+        result['churn_release_wait_seconds'] = time.monotonic() - release_started
+        check(not any(sample['live'].get(key, 0) for key in ('sessions', 'vte', 'pages', 'labels')),
+              'closed churn sessions and widgets released')
     elif MODE in ('behavior', 'continuous'):
         sessions = [add_terminal('LAB ' + str(i + 1).zfill(2)) for i in range(16)]
         drain(.5)

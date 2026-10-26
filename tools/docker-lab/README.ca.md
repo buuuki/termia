@@ -92,6 +92,22 @@ bash tools/docker-lab/run.sh status
 | `behavior-x11`, `behavior-wayland` | Arrossegaments i cancel·lacions amb esdeveniments del ratolí |
 | `valgrind` | Diagnòstic d'assignacions natives; molt més lent |
 
+Les ordres existents `churn-disabled` i `churn-enabled` utilitzen X11. Per
+provar ambdós casos com a clients Wayland sobre Weston aïllat:
+
+```bash
+bash tools/docker-lab/run.sh run churn-disabled-wayland
+bash tools/docker-lab/run.sh wait
+bash tools/docker-lab/run.sh run churn-enabled-wayland
+bash tools/docker-lab/run.sh wait
+```
+
+Comprova al `result.json` de cada sonda que `runtime.display` sigui
+`GdkWaylandDisplay`, `completed` sigui true, `retention_detected` sigui false i
+`cleanup.running_children` sigui zero. Revisa les mostres de memòria; acabar
+no demostra absència de fuites. Weston s'executa sobre Xvfb privat; aquestes
+proves no cobreixen GNOME/Mutter. Compara memòria dins del mateix entorn i cas.
+
 Per fer una prova curta de memòria, o cancel·lar el diagnòstic d'aquest clon:
 
 ```bash

@@ -4,6 +4,9 @@
 
 ### Added
 
+- Add isolated Wayland terminal churn diagnostics alongside existing X11 modes,
+  verify the active graphical backend and document memory validation (`#419`).
+
 - Validate release asset names, approved checksums, package metadata and download
   instructions before publication; document the beta.5 development cycle.
 

@@ -90,6 +90,22 @@ bash tools/docker-lab/run.sh status
 | `behavior-x11`, `behavior-wayland` | Repeated pointer drags and cancellations |
 | `valgrind` | Native allocation diagnostics; much slower |
 
+The existing `churn-disabled` and `churn-enabled` commands use X11. To run
+both workloads as Wayland clients on isolated Weston:
+
+```bash
+bash tools/docker-lab/run.sh run churn-disabled-wayland
+bash tools/docker-lab/run.sh wait
+bash tools/docker-lab/run.sh run churn-enabled-wayland
+bash tools/docker-lab/run.sh wait
+```
+
+Check `runtime.display` is `GdkWaylandDisplay` in each probe's `result.json`,
+`completed` is true, `retention_detected` is false and `cleanup.running_children`
+is zero. Review the memory samples; completion alone does not prove no leaks.
+Weston is nested on private Xvfb; these runs do not test GNOME/Mutter.
+Compare memory within the same backend and workload.
+
 For a short memory trial, or to cancel this checkout's current diagnostic:
 
 ```bash

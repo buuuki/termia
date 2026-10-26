@@ -88,6 +88,25 @@ class DockerLabContextTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, 'recurso ajeno'):
                     control.owned('synthetic-foreign-resource', kind)
 
+    def test_churn_backend_selection_preserves_x11_and_isolation(self):
+        for enabled in ('disabled', 'enabled'):
+            for backend in ('x11', 'wayland'):
+                mode = f'churn-{enabled}' + ('-wayland' if backend == 'wayland' else '')
+                with self.subTest(mode=mode):
+                    self.assertIn(mode, control.MODES)
+                    self.assertNotIn(mode, control.SSH_MODES)
+                    command = control.client_command('/tmp/synthetic-evidence', mode)
+                    self.assertEqual(command[-2:], [f'churn-{enabled}', backend])
+                    self.assertEqual(command[command.index('--network') + 1], 'none')
+                    self.assertIn('--read-only', command)
+                    self.assertIn('no-new-privileges', command)
+
+    def test_existing_graphical_modes_keep_their_backend(self):
+        for mode in ('smoke-x11', 'smoke-wayland', 'behavior-x11', 'behavior-wayland'):
+            with self.subTest(mode=mode):
+                command = control.client_command('/tmp/synthetic-evidence', mode)
+                self.assertEqual(command[-2:], mode.rsplit('-', 1))
+
     def test_diagnostic_network_and_mounts_are_isolated(self):
         ordinary = control.client_command('/tmp/synthetic-evidence', 'smoke-x11')
         self.assertEqual(ordinary[ordinary.index('--network') + 1], 'none')
