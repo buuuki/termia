@@ -8,6 +8,7 @@ from threading import Event
 from unittest.mock import Mock
 
 from termia.update_controller import CheckResult, UpdateController
+from termia.update_dependencies import DependencyPlan
 from termia.update_installers import (
     DebianInstaller,
     GitInstaller,
@@ -40,10 +41,14 @@ class ReleasePolicyTests(unittest.TestCase):
         self.assertLess(Version.parse("0.6.0-beta.10"), Version.parse("0.6.0-rc.1"))
         self.assertLess(Version.parse("0.6.0-rc.1"), Version.parse("0.6.0"))
         self.assertEqual(Version.parse("0.5.0-beta"), Version.parse("0.5.0-beta.1"))
+        self.assertLess(Version.parse("0.6.1-dev"), Version.parse("0.6.1-beta"))
+        self.assertIsNone(select_release([release("v0.6.2-beta")], "0.6.1-dev"))
+        self.assertEqual(select_release([release("v0.6.1-beta")], "0.6.0-beta.4").tag,
+                         "v0.6.1-beta")
 
-    def test_prerelease_stays_in_current_application_line(self):
+    def test_prerelease_stays_in_major_minor_and_receives_patch_maintenance(self):
         result = select_release([release("v0.7.0"), release(), release("v0.6.1-beta.1")], "0.6.0-beta.1")
-        self.assertEqual(result.tag, "v0.6.0-beta.2")
+        self.assertEqual(result.tag, "v0.6.1-beta.1")
         self.assertIsNone(select_release([release("v0.6.0-beta.1")], "0.6.0-beta.2-dev"))
 
     def test_stable_can_upgrade_but_never_to_prerelease(self):
@@ -252,7 +257,7 @@ class ControllerTests(unittest.TestCase):
         adapter.prepare.side_effect = prepare
         controller = UpdateController("0.6.0-beta.1", lambda f: None, Mock())
         result = CheckResult(select_release([release()], "0.6.0-beta.1"), Installation(adapter, ""))
-        controller.install(result)
+        controller.prepare_update(result)
         self.assertTrue(entered.wait(5))
         self.assertFalse(controller.check())
         self.assertTrue(controller.stop())
@@ -263,7 +268,8 @@ class ControllerTests(unittest.TestCase):
 
     def test_application_cannot_be_cancelled_and_retains_temp_until_finished(self):
         entered, proceed = Event(), Event()
-        adapter = Mock()
+        adapter = Mock(kind="update_source")
+        adapter.dependencies.return_value = DependencyPlan((), (), (), (), "", True)
         adapter.prepare.side_effect = lambda r, directory, c: directory
         def apply(path, release):
             self.assertTrue(path.exists())
@@ -273,7 +279,10 @@ class ControllerTests(unittest.TestCase):
         adapter.apply.side_effect = apply
         controller = UpdateController("0.6.0-beta.1", lambda f: None, Mock())
         result = CheckResult(select_release([release()], "0.6.0-beta.1"), Installation(adapter, ""))
-        controller.install(result)
+        controller.prepare_update(result)
+        controller.thread.join(5)
+        self.assertIsNotNone(controller.prepared)
+        controller.install(controller.prepared)
         self.assertTrue(entered.wait(5))
         self.assertFalse(controller.stop())
         controller.close()

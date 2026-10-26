@@ -4,6 +4,9 @@
 
 ### Added
 
+- Add an explicitly unvalidated Docker preview of beta.3 upgrade paths for
+  review of the proposed dependency-aware updater (`#428`).
+
 - Add isolated Wayland terminal churn diagnostics alongside existing X11 modes,
   verify the active graphical backend and document memory validation (`#419`).
 
@@ -28,6 +31,11 @@
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
 ### Fixed
+
+- Show update installation type and target requirements, offer assisted or manual
+  dependency installation with copyable commands and rechecks, prevent source
+  upgrades with missing runtime dependencies, verify Debian installation outcomes,
+  and allow beta maintenance updates within the same minor series (`#428`).
 
 - Wait for native GTK readiness and drag lifecycle signals in the Notes category
   pointer test, with bounded waits and timeout diagnostics (`#413`).

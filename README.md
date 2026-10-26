@@ -139,12 +139,34 @@ introduced in beta.2 and remains available in beta.4.
 
 ### Updates
 
+The development updater shows whether Termia is installed from Git, a Debian
+package (.deb), or an unsupported method. It downloads/verifies the target
+before presenting new/changed requirements and locally missing dependencies.
+Choose installation with Termia (system administrator authorization) or manual
+dependency installation. Manual mode provides exact commands, Copy commands,
+and Check and continue; the update remains pending until requirements pass.
+**The updated Termia will not start if mandatory dependencies are missing.**
+
+Assisted dependency planning currently supports Debian/Ubuntu with APT/dpkg.
+For Git, required packages and runtime bindings are checked before the checkout
+changes. For .deb, APT resolves requirements with the package transaction and
+Termia verifies the installed version and requirements afterwards. No downloaded
+setup script is run as root. Keep Termia open while following manual steps;
+closing the update window discards the staged update. System packages installed
+before a later update failure are not automatically removed.
+
+Published beta.4 and earlier updaters retain their previous behavior. For those
+source upgrades, run `bash scripts/termia-setup.sh install` after updating and
+before restarting. Existing beta.4 clients do not discover cross-PATCH beta
+updates automatically; use the release instructions for that first transition.
+
 Open **About → Check for updates** to check official GitHub releases. Beta/RC
-installations stay in their application release line (including its final stable
-release); stable installations only offer newer stable releases. Checking is
+installations using the development updater receive maintenance in the same
+MAJOR.MINOR series (including stable deliveries); stable installations only offer newer stable releases. Checking is
 manual and does not send configuration or SSH data.
 
-**Download and install** asks for confirmation. Debian installations require a
+**Download and review** stages the target before asking how to proceed.
+Debian installations require a
 compatible official package with a GitHub SHA-256 digest, APT, `pkexec` and a
 desktop authentication agent. The package identity and version are checked before
 the system asks for administrator authorization. Missing tools or verification
@@ -153,8 +175,9 @@ metadata leave the official release link available for manual installation.
 Git updates require a clean checkout exactly at its current release tag, on
 `main` or detached at that tag. The updater fetches the selected official tag and
 only fast-forwards; development branches, local changes and divergent histories
-require manual updating. Afterwards, run `scripts/termia-setup.sh install` in the
-checkout to verify runtime dependencies, then restart Termia yourself.
+require manual updating. With the published beta.4 updater, run
+`scripts/termia-setup.sh install` afterwards to verify runtime dependencies
+before restarting Termia.
 
 For **beta.3 → beta.4 source upgrades**, run that setup command **before
 restarting**: beta.4 adds GtkSourceView 5 (`gir1.2-gtksource-5` on Ubuntu).

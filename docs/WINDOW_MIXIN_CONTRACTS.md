@@ -255,13 +255,20 @@ keybinding dialogs have comparatively small contracts.
 - `update_service.py` owns immutable release/version models, release-channel
   policy and bounded HTTPS downloads. It imports neither GTK nor installers.
 - `update_installers.py` defines the `Installer` protocol and Git/Debian
-  adapters. `availability` explains restrictions, `prepare` supports cancellation
-  and stages a verified artifact, and `apply` finishes the confirmed transaction.
+  adapters. `availability` explains restrictions, `prepare` stages a verified
+  artifact, `dependencies` returns a declarative plan, and `apply` finishes the
+  confirmed transaction. `update_dependencies.py` parses bounded runtime
+  relationships, checks package versions and fresh interpreter bindings, and
+  builds native APT arguments/manual commands without executing target scripts.
   Adapters never receive widgets, terminal sessions or connection stores.
 - `update_controller.py` serializes work, owns the cross-profile process lock
   and temporary directory, and dispatches callbacks through an injected function.
-  Closing suppresses queued callbacks and cancels preparation; an application
-  transaction retains a non-daemon worker until the installer exits.
+  Staging and application are separate jobs. Manual dependency mode retains
+  staging and waits for rechecks without holding the process lock; each worker
+  reacquires it and revalidates the target. Closing suppresses queued callbacks
+  and cancels preparation; an application transaction retains a non-daemon worker
+  until the installer exits. Final success requires dependency verification and,
+  for Debian, confirmation of the installed package version.
 - `update_view.py` adds one header-bar action to About using public GTK APIs and
   owns the update/confirmation dialogs. It receives only a GTK parent and a
   translator. It changes no terminal CSS, geometry, keyboard dispatch or storage.

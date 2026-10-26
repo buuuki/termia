@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import gi
 
@@ -8,7 +8,8 @@ gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gtk
 
 from termia.i18n import translate_key
-from termia.update_controller import CheckResult
+from termia.update_controller import CheckResult, PreparedUpdate
+from termia.update_dependencies import DependencyPlan, Requirement
 from termia.update_installers import Installation
 from termia.update_service import Release, Version
 from termia.update_view import UpdateDialog, attach_updates
@@ -70,3 +71,70 @@ class UpdateViewTests(unittest.TestCase):
         self.factory.return_value.applying = True
         self.assertTrue(self.dialog.close_requested(self.dialog))
         self.factory.return_value.close.assert_not_called()
+
+    def dependency_update(self, kind="update_source", missing=True, assisted=True):
+        requirement = ((Requirement("gir1.2-gtksource-5"),),)
+        plan = DependencyPlan(requirement, ("gir1.2-gtksource-5",),
+                              ("gir1.2-gtksource-5",) if missing else (),
+                              ("gir1.2-gtksource-5",) if missing else (),
+                              "sudo apt update\nsudo apt install gir1.2-gtksource-5" if missing else "",
+                              assisted)
+        result = CheckResult(Release("v0.6.1-beta", Version.parse("0.6.1-beta"), None),
+                             Installation(Mock(kind=kind), ""))
+        return PreparedUpdate(result, "synthetic-artifact", plan)
+
+    def test_detected_installation_is_shown_even_before_release_result(self):
+        for kind, expected in (("update_source", "Git"), ("update_debian", ".deb")):
+            self.dialog.completed("installation", Installation(Mock(kind=kind), ""))
+            self.assertIn(expected, self.dialog.installation_label.get_text())
+        self.dialog.completed("installation", Installation(None, "update_unknown_installation"))
+        self.assertIn("unknown", self.dialog.installation_label.get_text())
+
+    def test_missing_dependencies_warn_and_manual_mode_shows_exact_commands(self):
+        prepared = self.dependency_update()
+        self.dialog.completed("done", prepared)
+        self.assertIn("will not start", self.dialog.status.get_text())
+        self.assertIn("gir1.2-gtksource-5", self.dialog.dependency_label.get_text())
+        self.assertTrue(self.dialog.assisted_button.get_visible())
+        self.assertTrue(self.dialog.manual_button.get_visible())
+        self.assertFalse(self.dialog.continue_button.get_visible())
+        self.dialog.show_manual()
+        self.assertIn(prepared.dependencies.manual_commands, self.dialog.manual_label.get_text())
+        self.assertTrue(self.dialog.copy_button.get_visible())
+        self.assertTrue(self.dialog.continue_button.get_visible())
+        self.factory.return_value.install.assert_not_called()
+        self.dialog.apply_prepared(False)
+        self.factory.return_value.install.assert_called_once_with(prepared, assisted=False)
+
+    def test_debian_plan_explains_apt_transaction(self):
+        self.dialog.completed("done", self.dependency_update("update_debian"))
+        self.assertIn("one transaction", self.dialog.status.get_text())
+
+    def test_ready_plan_needs_explicit_continue_without_dependency_install(self):
+        self.dialog.completed("done", self.dependency_update(missing=False))
+        self.assertFalse(self.dialog.assisted_button.get_visible())
+        self.assertFalse(self.dialog.manual_button.get_visible())
+        self.assertTrue(self.dialog.continue_button.get_visible())
+        self.factory.return_value.install.assert_not_called()
+
+    def test_unavailable_assisted_mode_keeps_manual_option(self):
+        self.dialog.completed("done", self.dependency_update(assisted=False))
+        self.assertFalse(self.dialog.assisted_button.get_visible())
+        self.assertTrue(self.dialog.manual_button.get_visible())
+
+    def test_copy_commands_uses_exact_plan_and_does_not_install(self):
+        prepared = self.dependency_update()
+        self.dialog.completed("done", prepared)
+        clipboard = Mock()
+        with patch.object(self.dialog, "get_clipboard", return_value=clipboard):
+            self.dialog.copy_commands()
+        clipboard.set.assert_called_once_with(prepared.dependencies.manual_commands)
+        self.factory.return_value.install.assert_not_called()
+
+    def test_new_check_hides_previous_manual_commands(self):
+        self.dialog.completed("done", self.dependency_update())
+        self.dialog.show_manual()
+        self.dialog.check()
+        self.assertFalse(self.dialog.manual_label.get_visible())
+        self.assertFalse(self.dialog.copy_button.get_visible())
+        self.assertFalse(self.dialog.plan_box.get_visible())

@@ -1730,8 +1730,8 @@ msgid "Release notes"
 msgstr "Notes de la versió"
 
 #: src/termia/i18n.py:update_install
-msgid "Download and install"
-msgstr "Baixa i instal·la"
+msgid "Download and review"
+msgstr "Baixa i revisa"
 
 #: src/termia/i18n.py:update_checking
 msgid "Checking for updates…"
@@ -1746,8 +1746,8 @@ msgid "No newer compatible release is available."
 msgstr "No hi ha cap versió compatible més recent disponible."
 
 #: src/termia/i18n.py:update_confirm
-msgid "Install Termia {version}? Debian installation may request administrator authentication. Once installation starts, let it finish. Restart Termia manually afterwards."
-msgstr "Vols instal·lar Termia {version}? La instal·lació Debian pot demanar autenticació d’administrador. Un cop iniciada la instal·lació, deixa que acabi. Després reinicia Termia manualment."
+msgid "Download and verify Termia {version} to review its dependencies? This step does not install packages or change the checkout."
+msgstr "Vols baixar i verificar Termia {version} per revisar-ne les dependències? Aquest pas no instal·la paquets ni canvia el repositori."
 
 #: src/termia/i18n.py:update_preparing
 msgid "Downloading and verifying the update…"
@@ -1762,8 +1762,8 @@ msgid "Update installed. Restart Termia to use the new version."
 msgstr "Actualització instal·lada. Reinicia Termia per utilitzar la nova versió."
 
 #: src/termia/i18n.py:update_installed_source
-msgid "Source updated. Run scripts/termia-setup.sh install in the checkout to verify dependencies, then restart Termia."
-msgstr "Codi actualitzat. Executa scripts/termia-setup.sh install al repositori per verificar les dependències i després reinicia Termia."
+msgid "Source update installed and required dependencies verified. Restart Termia manually."
+msgstr "Codi actualitzat i dependències necessàries verificades. Reinicia Termia manualment."
 
 #: src/termia/i18n.py:update_cancelling
 msgid "Cancelling…"
@@ -2266,3 +2266,111 @@ msgstr "Introdueix la contrasenya del fitxer."
 
 msgid "Could not decrypt this file. Check the password and try again."
 msgstr "No s'ha pogut desxifrar aquest fitxer. Comprova la contrasenya i torna-ho a provar."
+
+#: src/termia/i18n.py:update_dependency_none
+msgid "None"
+msgstr "Cap"
+
+#: src/termia/i18n.py:update_dependencies_ready
+msgid "Required dependencies are available. Continue to install the update, then restart Termia manually."
+msgstr "Les dependències necessàries estan disponibles. Continua per instal·lar l’actualització i després reinicia Termia manualment."
+
+#: src/termia/i18n.py:update_dependency_summary
+msgid ""
+"New or changed requirements:\n"
+"{added}\n"
+"\n"
+"Missing or unavailable requirements:\n"
+"{missing}"
+msgstr ""
+"Requisits nous o modificats:\n"
+"{added}\n"
+"\n"
+"Requisits que falten o no estan disponibles:\n"
+"{missing}"
+
+#: src/termia/i18n.py:update_dependency_warning
+msgid "The updated Termia will not start if mandatory dependencies are missing. Choose who installs them. The update remains pending until they are verified."
+msgstr "La nova versió de Termia no arrencarà si falten dependències obligatòries. Tria qui les instal·la. L’actualització queda pendent fins que es verifiquin."
+
+#: src/termia/i18n.py:update_plan_expired
+msgid "The update plan changed or expired. Check for updates again and review the new requirements before continuing."
+msgstr "El pla d’actualització ha canviat o ha caducat. Torna a cercar actualitzacions i revisa els requisits abans de continuar."
+
+#: src/termia/i18n.py:update_verification_failed_after_apply
+msgid "The package installation finished, but final verification failed. The package may already be updated. Verify its installed version and dependencies before restarting Termia."
+msgstr "La instal·lació del paquet ha acabat, però la verificació final ha fallat. El paquet pot estar ja actualitzat. Verifica’n la versió instal·lada i les dependències abans de reiniciar Termia."
+
+#: src/termia/i18n.py:update_debian_dependencies
+msgid "APT installs the .deb and resolves its dependencies in one transaction. Administrator authorization is required. Manual dependency installation does not bypass APT checks."
+msgstr "APT instal·la el .deb i resol les dependències en una sola operació. Cal autorització d’administrador. Instal·lar les dependències manualment no omet les comprovacions d’APT."
+
+#: src/termia/i18n.py:update_dependencies_not_ready
+msgid "Dependencies are still unavailable after installation. The source checkout was not updated. Review the package manager and Python environment before retrying."
+msgstr "Les dependències continuen sense estar disponibles després d’instal·lar-les. No s’ha actualitzat el codi. Revisa el gestor de paquets i l’entorn Python abans de tornar-ho a provar."
+
+#: src/termia/i18n.py:update_manual
+msgid "Install dependencies manually"
+msgstr "Instal·la les dependències manualment"
+
+#: src/termia/i18n.py:update_type_unknown
+msgid "Installation type: unknown or unsupported"
+msgstr "Tipus d’instal·lació: desconegut o no compatible"
+
+#: src/termia/i18n.py:update_manual_steps
+msgid ""
+"Run these commands in a terminal:\n"
+"\n"
+"{commands}\n"
+"\n"
+"Then choose Check and continue. Termia will not apply the update while required dependencies are missing."
+msgstr ""
+"Executa aquestes ordres en un terminal:\n"
+"\n"
+"{commands}\n"
+"\n"
+"Després prem Comprova i continua. Termia no aplicarà l’actualització mentre faltin dependències necessàries."
+
+#: src/termia/i18n.py:update_copy_commands
+msgid "Copy commands"
+msgstr "Copia les ordres"
+
+#: src/termia/i18n.py:update_requirements_unavailable
+msgid "The target release requirements could not be read safely. No update was applied. Use the release installation instructions."
+msgstr "No s’han pogut llegir els requisits de la versió de destinació de manera segura. No s’ha aplicat l’actualització. Consulta les instruccions d’instal·lació de la release."
+
+#: src/termia/i18n.py:update_assisted
+msgid "Install with Termia"
+msgstr "Instal·la amb Termia"
+
+#: src/termia/i18n.py:update_dependencies_checking
+msgid "Checking dependencies before applying the update…"
+msgstr "Comprovant les dependències abans d’aplicar l’actualització…"
+
+#: src/termia/i18n.py:update_type_detecting
+msgid "Installation type: detecting…"
+msgstr "Tipus d’instal·lació: detectant…"
+
+#: src/termia/i18n.py:update_type_debian
+msgid "Installation type: Debian package (.deb)"
+msgstr "Tipus d’instal·lació: paquet Debian (.deb)"
+
+#: src/termia/i18n.py:update_dependency_check_failed
+msgid "Dependency verification failed. The update is still pending. Check the system package state and the Python environment used to launch Termia."
+msgstr "La verificació de dependències ha fallat. L’actualització continua pendent. Comprova l’estat dels paquets del sistema i l’entorn Python que inicia Termia."
+
+#: src/termia/i18n.py:update_dependency_platform
+msgid "Dependency planning currently requires Debian/Ubuntu with APT and dpkg. No update was applied. Follow the installation instructions on the release page."
+msgstr "La comprovació de dependències requereix actualment Debian/Ubuntu amb APT i dpkg. No s’ha aplicat l’actualització. Segueix les instruccions d’instal·lació de la pàgina de la release."
+
+#: src/termia/i18n.py:update_dependencies_install_failed
+msgid "Dependency installation failed or administrator authorization was cancelled. The source checkout was not updated; system packages may have changed. Review the package manager and try again."
+msgstr "La instal·lació de dependències ha fallat o s’ha cancel·lat l’autorització d’administrador. No s’ha actualitzat el codi; poden haver canviat paquets del sistema. Revisa el gestor de paquets i torna-ho a provar."
+
+#: src/termia/i18n.py:update_type_source
+msgid "Installation type: Git source repository"
+msgstr "Tipus d’instal·lació: repositori de codi Git"
+
+#: src/termia/i18n.py:update_recheck_continue
+msgid "Check and continue"
+msgstr "Comprova i continua"

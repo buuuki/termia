@@ -18,6 +18,13 @@ from pathlib import Path
 from threading import Event
 from typing import Protocol
 
+from .update_dependencies import (
+    DependencyPlan,
+    dependency_plan,
+    install_dependencies,
+    parse_requirements,
+    source_requirements,
+)
 from .update_service import (
     REPOSITORY,
     Release,
@@ -86,6 +93,8 @@ class Installer(Protocol):
 
     def availability(self, current: str, cancel: Event) -> str: ...
     def prepare(self, release: Release, directory: Path, cancel: Event) -> object: ...
+    def dependencies(self, prepared: object, cancel: Event) -> DependencyPlan: ...
+    def install_dependencies(self, plan: DependencyPlan) -> None: ...
     def apply(self, prepared: object, release: Release) -> None: ...
 
 
@@ -131,6 +140,17 @@ class GitInstaller:
         self.git("merge-base", "--is-ancestor", self.original_head, target, cancel=cancel)
         return target
 
+    def dependencies(self, prepared: object, cancel: Event) -> DependencyPlan:
+        if (self.availability(self.current, cancel)
+                or self.git("rev-parse", "HEAD", cancel=cancel) != self.original_head):
+            raise UpdateError("update_checkout_blocked")
+        required = source_requirements(self.git("show", f"{prepared}:debian/control", cancel=cancel))
+        previous = source_requirements(self.git("show", f"{self.original_head}:debian/control", cancel=cancel))
+        return dependency_plan(required, previous, self.run, cancel)
+
+    def install_dependencies(self, plan: DependencyPlan) -> None:
+        install_dependencies(plan, self.run)
+
     def apply(self, prepared: object, release: Release) -> None:
         if (self.availability(self.current, Event())
                 or self.git("rev-parse", "HEAD") != self.original_head):
@@ -143,6 +163,7 @@ class DebianInstaller:
 
     def __init__(self, client: ReleaseClient, run=command):
         self.client, self.run = client, run
+        self.target_version = ""
 
     def availability(self, current: str, cancel: Event) -> str:
         if not all(Path(path).is_file() for path in ("/usr/bin/pkexec", "/usr/bin/apt-get", "/usr/bin/dpkg-deb")):
@@ -162,16 +183,42 @@ class DebianInstaller:
             raise UpdateError("update_untrusted")
         installed = self.run(["/usr/bin/dpkg-query", "-W", "-f=${Version}", "termia"], cancel)
         self.run(["/usr/bin/dpkg", "--compare-versions", values[1], "gt", installed], cancel)
+        self.target_version = values[1]
         # APT's sandbox user must be able to traverse and read the verified package.
         directory.chmod(0o755)
         path.chmod(0o644)
         return path
 
+    def dependencies(self, prepared: object, cancel: Event) -> DependencyPlan:
+        path = Path(str(prepared))
+        fields = ("Pre-Depends", "Depends")
+        required = [self.run(["/usr/bin/dpkg-deb", "--field", str(path), field], cancel)
+                    for field in fields]
+        previous = [self.run(["/usr/bin/dpkg-query", "-W", f"-f=${{{field}}}", "termia"], cancel)
+                    for field in fields]
+        return dependency_plan(parse_requirements(", ".join(v for v in required if v)),
+                               parse_requirements(", ".join(v for v in previous if v)),
+                               self.run, cancel)
+
+    def install_dependencies(self, plan: DependencyPlan) -> None:
+        # The verified .deb and its requirements are installed in one APT transaction.
+        return None
+
+    def verify_installed(self) -> None:
+        output = self.run(["/usr/bin/dpkg-query", "-W", "-f=${db:Status-Status}\t${Version}",
+                           "termia"], Event())
+        if output != "installed\t" + self.target_version or not self.target_version:
+            raise UpdateError("update_verification_failed_after_apply")
+
+    def verify(self, prepared: object, release: Release) -> None:
+        path = Path(str(prepared))
+        if (not path.is_file() or path.is_symlink() or release.asset is None
+                or hashlib.sha256(path.read_bytes()).hexdigest() != release.asset.sha256):
+            raise UpdateError("update_untrusted")
+
     def apply(self, prepared: object, release: Release) -> None:
         path = Path(str(prepared))
-        # Recheck the downloaded bytes immediately before privilege escalation.
-        if release.asset is None or hashlib.sha256(path.read_bytes()).hexdigest() != release.asset.sha256:
-            raise UpdateError("update_untrusted")
+        self.verify(prepared, release)
         self.run(["/usr/bin/pkexec", "--disable-internal-agent", "/usr/bin/apt-get",
                   "--yes", "--no-remove", "-o", "DPkg::Lock::Timeout=15",
                   "install", str(path)], Event(), applying=True)

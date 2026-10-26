@@ -867,6 +867,27 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### About updates
 
+- Confirm the installation type is shown for Git, .deb and unknown installs,
+  including when no update is available. Review the target's added/changed
+  requirements separately from missing dependencies. Test English, Spanish
+  and Catalan in light/dark appearance and small windows.
+- In a disposable Ubuntu 24.04/26.04 fixture, omit GtkSourceView 5. Download
+  and review must leave the checkout unchanged. Choose manual dependencies:
+  verify the startup warning, exact APT commands, Copy commands and Check and
+  continue. Rechecking before installation must not apply the update; after
+  manual installation it must permit explicit continuation. Closing while
+  waiting must discard staging without changing the checkout.
+- Repeat assisted Git installation with real polkit acceptance/cancellation,
+  package-manager failure, a busy package manager and failed runtime probes.
+  Apply only after verification; do not claim success after errors. Confirm
+  .deb uses APT's transaction and verifies installed version and dependencies.
+  Do not run privileged installation trials on the developer's host.
+- Cover changed/invalid plans, altered package bytes, changed checkout, and
+  close/cancel during preparation/application. Accept legacy numbered beta
+  identifiers, unnumbered beta and cross-PATCH maintenance within MAJOR.MINOR;
+  reject development updates and automatic prereleases for stable users.
+
+
 - Open About and use Check for updates. Keep the existing logo, version,
   license, issue link and native dialog appearance. Check keyboard access,
   light/dark themes, and English/Spanish/Catalan. Terminal and split geometry
@@ -874,8 +895,8 @@ Long measurements and release-platform checks remain separate validation work.
 - Run from the development branch: no downgrade to beta.1 is offered and the
   checkout restriction is explained. Verify no-update, offline, timeout,
   malformed metadata and newer compatible release states using injected clients.
-- Check numeric beta ordering and beta-to-final-stable progression in the same
-  application line. Stable users must never be offered prereleases automatically.
+- Check numeric legacy beta ordering, unnumbered beta maintenance and
+  beta-to-stable progression in the same MAJOR.MINOR series. Stable users must never be offered prereleases automatically.
 - In a disposable clean release checkout, prepare an official tag and confirm a
   fast-forward. Repeat with dirty, development, detached non-release and divergent
   checkouts: refuse without resetting or stashing user files. A fetch may leave

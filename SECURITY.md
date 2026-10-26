@@ -67,7 +67,18 @@ are not killed when the UI closes. Temporary packages are removed afterwards;
 the updater retains a per-user lock across profiles until the operation ends.
 
 Git updates only fast-forward clean release checkouts to a tag fetched from the
-fixed official HTTPS repository. They never reset, stash or force-push. Git hooks
+fixed official HTTPS repository. Requirements are read as bounded declarative
+Debian control metadata from the fetched commit; downloaded Python or setup
+scripts are not executed with privileges. Only validated package names are
+passed to native APT via pkexec after user approval, with removals prohibited.
+Manual dependency mode waits for package/runtime verification before changing
+the checkout. Packages installed before a later failure are not rolled back.
+
+Prepared artifacts are retained while awaiting the user's choice, without
+holding the cross-profile lock during the manual wait. Each worker operation
+reacquires the lock; source identity and package digests are revalidated before
+application. Closing before application discards staging; once a system
+transaction starts it is allowed to finish. They never reset, stash or force-push. Git hooks
 are disabled for updater commands. Git configuration is trusted local state;
 do not run a checkout supplied by an untrusted third party. The fetched tag may
 remain after cancellation, but the working tree is not changed by preparation.

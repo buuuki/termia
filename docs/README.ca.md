@@ -132,12 +132,35 @@ introduir a beta.2 i continua disponible a beta.4.
 
 ### Actualitzacions
 
+L’actualitzador en desenvolupament mostra si Termia prové de Git, d’un paquet
+Debian (.deb) o d’un mètode no compatible. Baixa i verifica la destinació abans
+de mostrar requisits nous/modificats i dependències que falten. Permet
+instal·lar-les amb Termia (amb autorització del sistema) o manualment.
+La via manual mostra les ordres exactes, Copia les ordres i Comprova i continua;
+l’actualització queda pendent fins que es verifiquin els requisits.
+**La nova versió de Termia no arrencarà si falten dependències obligatòries.**
+
+La comprovació assistida admet actualment Debian/Ubuntu amb APT/dpkg. Amb Git,
+es verifiquen els paquets i mòduls necessaris abans de modificar el codi.
+Amb .deb, APT resol les dependències amb el paquet i després es verifiquen
+la versió instal·lada i els requisits. No s’executa com a root l’instal·lador
+baixat. Mantén la finestra oberta durant els passos manuals; tancar-la descarta
+l’actualització preparada. Els paquets instal·lats abans d’un error posterior
+no s’eliminen automàticament.
+
+Els actualitzadors publicats fins a beta.4 conserven el comportament anterior.
+En aquestes actualitzacions des del codi, executa
+`bash scripts/termia-setup.sh install` després d’actualitzar i abans de reiniciar.
+El client beta.4 no descobreix automàticament betes d’un altre PATCH: utilitza
+les instruccions de la release per a aquesta primera transició.
+
 Obre **Quant a → Cerca actualitzacions** per consultar les versions oficials.
-Les betes/RC es mantenen dins la seva línia, inclosa la versió estable final;
+L’actualitzador en desenvolupament manté les betes/RC dins la mateixa sèrie
+MAJOR.MINOR, inclosos pedaços i lliuraments estables;
 les instal·lacions estables només ofereixen versions estables més recents.
 La consulta és manual i no envia configuració ni dades SSH.
 
-**Baixa i instal·la** demana confirmació. Per a Debian es verifica el SHA-256
+**Baixa i revisa** prepara la destinació abans de preguntar com continuar. Per a Debian es verifica el SHA-256
 publicat per GitHub i la identitat i versió del paquet. Calen APT, `pkexec` i un
 agent d’autenticació d’escriptori. Si falten eines o metadades verificables,
 s’ofereix l’enllaç oficial per instal·lar manualment.
@@ -146,8 +169,8 @@ Git només permet actualitzar un repositori net, exactament a l’etiqueta de la
 versió actual, a `main` o separat d’una branca en aquella etiqueta. Baixa
 l’etiqueta oficial seleccionada i només avança sense crear merges. Les branques
 de desenvolupament, canvis locals i historials divergents requereixen una
-actualització manual. Després executa `scripts/termia-setup.sh install` per
-verificar les dependències i reinicia Termia manualment.
+actualització manual. Amb l’actualitzador publicat a beta.4, executa després
+`scripts/termia-setup.sh install` per verificar les dependències abans de reiniciar.
 
 Per actualitzar **des del codi beta.3 a beta.4**, executa aquest setup **abans
 de reiniciar**: beta.4 incorpora GtkSourceView 5 (`gir1.2-gtksource-5` a Ubuntu).

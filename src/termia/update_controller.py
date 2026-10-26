@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from threading import Event, Lock, Thread
 
+from .update_dependencies import DependencyPlan
 from .update_installers import Installation, detect_installation, update_lock
 from .update_service import (
     Release,
@@ -24,6 +25,13 @@ from .update_service import (
 class CheckResult:
     release: Release | None
     installation: Installation
+
+
+@dataclass(frozen=True)
+class PreparedUpdate:
+    result: CheckResult
+    artifact: object
+    dependencies: DependencyPlan
 
 
 class UpdateController:
@@ -45,6 +53,8 @@ class UpdateController:
         self.applying = False
         self.guard = Lock()
         self.thread: Thread | None = None
+        self.prepared: PreparedUpdate | None = None
+        self.directory: tempfile.TemporaryDirectory | None = None
 
     def emit(self, state: str, payload=None) -> None:
         logging.getLogger("termia").debug("event=update.%s", state)
@@ -68,6 +78,8 @@ class UpdateController:
             try:
                 with update_lock():
                     result = operation()
+                    if not self.applying:
+                        check_cancel(self.cancel)
             except UpdateError as error:
                 state, result = "error", str(error)
             except Exception:
@@ -75,6 +87,8 @@ class UpdateController:
             finally:
                 with self.guard:
                     self.busy = self.applying = False
+            if self.closed or self.cancel.is_set():
+                self.discard_prepared()
             self.emit(state, result)
 
         self.thread = Thread(target=work, name="termia-update", daemon=False)
@@ -83,27 +97,85 @@ class UpdateController:
 
     def check(self) -> bool:
         def operation():
-            items = self.client.releases(self.cancel)
+            self.discard_prepared()
             installation = self.detect(self.current, self.client, self.cancel)
+            self.emit("installation", installation)
+            items = self.client.releases(self.cancel)
             check_cancel(self.cancel)
             return CheckResult(select_release(items, self.current), installation)
 
         return self.start(operation)
 
-    def install(self, result: CheckResult) -> bool:
+    def discard_prepared(self) -> None:
+        self.prepared = None
+        if self.directory is not None:
+            self.directory.cleanup()
+            self.directory = None
+
+    def prepare_update(self, result: CheckResult) -> bool:
         def operation():
+            self.discard_prepared()
             adapter, release = result.installation.adapter, result.release
             if adapter is None or release is None or result.installation.reason:
                 raise UpdateError("update_unknown_installation")
-            with tempfile.TemporaryDirectory(prefix="termia-update-") as directory:
-                prepared = adapter.prepare(release, Path(directory), self.cancel)
-                with self.guard:
-                    check_cancel(self.cancel)
-                    self.applying = True
-                self.emit("applying")
-                adapter.apply(prepared, release)
-            return None
+            self.directory = tempfile.TemporaryDirectory(prefix="termia-update-")
+            try:
+                artifact = adapter.prepare(release, Path(self.directory.name), self.cancel)
+                # Revalidate downloaded .deb bytes before presenting their requirements.
+                if adapter.kind == "update_debian":
+                    adapter.verify(artifact, release)
+                plan = adapter.dependencies(artifact, self.cancel)
+                check_cancel(self.cancel)
+                prepared = PreparedUpdate(result, artifact, plan)
+                self.prepared = prepared
+                return prepared
+            except Exception:
+                self.discard_prepared()
+                raise
+        return self.start(operation)
 
+    def install(self, prepared: PreparedUpdate, *, assisted: bool = False) -> bool:
+        def operation():
+            if prepared is not self.prepared:
+                raise UpdateError("update_plan_expired")
+            result = prepared.result
+            adapter, release = result.installation.adapter, result.release
+            if adapter is None or release is None:
+                raise UpdateError("update_unknown_installation")
+            if adapter.kind == "update_debian":
+                adapter.verify(prepared.artifact, release)
+            plan = adapter.dependencies(prepared.artifact, self.cancel)
+            # Never install packages added to the plan after the user's confirmation.
+            if plan.required != prepared.dependencies.required or not set(plan.packages) <= set(prepared.dependencies.packages):
+                raise UpdateError("update_plan_expired")
+            if plan.missing and not assisted:
+                refreshed = PreparedUpdate(result, prepared.artifact, plan)
+                self.prepared = refreshed
+                return refreshed
+            if plan.missing and not plan.assisted_available:
+                raise UpdateError("update_installer_missing")
+            with self.guard:
+                check_cancel(self.cancel)
+                self.applying = True
+            self.emit("applying")
+            if plan.missing and adapter.kind == "update_source":
+                adapter.install_dependencies(plan)
+                plan = adapter.dependencies(prepared.artifact, Event())
+                if plan.missing:
+                    raise UpdateError("update_dependencies_not_ready")
+            adapter.apply(prepared.artifact, release)
+            try:
+                # Source verification is done before apply, while HEAD is still old.
+                # Debian requirements must also pass after the APT transaction.
+                if adapter.kind == "update_debian":
+                    adapter.verify_installed()
+                    remaining = adapter.dependencies(prepared.artifact, Event())
+                    if remaining.missing:
+                        raise UpdateError("update_verification_failed_after_apply")
+            except UpdateError:
+                raise UpdateError("update_verification_failed_after_apply") from None
+            self.discard_prepared()
+            return None
         return self.start(operation)
 
     def stop(self) -> bool:
@@ -118,3 +190,6 @@ class UpdateController:
             self.closed = True
             if not self.applying:
                 self.cancel.set()
+            idle = not self.busy
+        if idle:
+            self.discard_prepared()

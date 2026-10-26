@@ -128,19 +128,26 @@ issue, branch and PR rules.
 
 ### Updater transition gate
 
-The current beta updater only selects candidates with the same
-MAJOR.MINOR.PATCH as the installed version. It will not automatically offer
-`0.6.1-beta` to `0.6.0-beta.4`. This policy does not change that code.
+The development updater selects beta/RC maintenance within the same
+MAJOR.MINOR series, including later PATCH versions and stable deliveries.
+Development versions are not offered updates. Published beta.4 and earlier
+clients retain their original same-MAJOR.MINOR.PATCH filter and will not
+automatically discover `0.6.1-beta`; that first transition requires the
+release's manual installation instructions.
 
 Before relying on automatic cross-patch updates, implement and test release
 selection, package verification and upgrade behavior. Address the installed
 older client's behavior explicitly; a fix in the target release cannot
 retroactively change the updater performing that first upgrade.
 
-The Git updater also does not install new system dependencies. Dependency
-installation and recovery require a separately approved implementation and
-validation. Provide a tested manual upgrade path when older clients cannot
-complete the transition. Do not claim that documentation enables either feature.
+The development Git updater reviews target requirements and offers assisted
+APT installation or copyable manual commands before application. Required
+packages and runtime bindings must pass verification before the checkout
+changes. The .deb adapter uses native APT dependency resolution and verifies
+the installed version and requirements afterwards. Unsupported systems keep
+manual release guidance; no dependency check may silently pass.
+Provide a tested manual path for older clients and complete disposable source
+and package upgrade validation before publishing this behavior.
 
 ## Stable release criteria
 
@@ -269,9 +276,10 @@ counter to Termia's canonical version. Before adopting a development display
 version or publishing under the new convention, verify development/beta/stable
 ordering across Python, Debian and Termia. The current Termia parser accepts
 unnumbered beta but defaults its internal serial to 1, unlike Python's 0.
-It also compares `0.6.1-dev` after `0.6.1-beta`; do not treat the new branch
-name as an already validated application version. Preserve legacy parsing
-until its compatibility has been reviewed.
+Development versions now compare before beta and are excluded from update
+selection. This does not change package metadata or the About development
+marker; verify those representations during release preparation. Legacy
+numbered beta parsing is retained.
 
 Git forbids `~` in branch and tag names. Keep canonical versions and tags
 such as `0.6.1-beta` and `v0.6.1-beta`; use `~` only for the internal
