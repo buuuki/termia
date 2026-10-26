@@ -12,6 +12,9 @@
 
 ### Changed
 
+- Establish `0.6.1-dev` as the active maintenance base and update contributor
+  analysis commands while retaining the previous development branch (`#426`).
+
 - Clarify unnumbered beta versions and plain `X.Y.Z-dev` development branches,
   preserving published history and requiring tooling transition checks (`#424`).
 

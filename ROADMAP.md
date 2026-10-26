@@ -7,7 +7,7 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Current Target: beta maintenance policy transition
+## Current Target: 0.6.1-beta maintenance
 
 Termia remains in beta. Maintenance may increment PATCH while retaining beta
 status; new feature deliveries increment MINOR. New beta deliveries use
@@ -23,13 +23,16 @@ memory fixes. It also includes the Docker/VM laboratories.
 See `CHANGELOG.md` for the detailed changes; this is still a beta,
 not an RC or stable release.
 
-The proposed next maintenance delivery is `0.6.1-beta`, subject to scope,
-branch transition and validation approval. The actual development branch
-remains `release/0.6.0-beta.5-dev`, created from `main` after beta.4.
-Ordinary issue branches continue to use it until the transition is approved.
-The proposed maintenance branch is `0.6.1-dev`; it is not created by this task.
-No branch is renamed and no application/package version changes in this
-documentation task. `main` remains the latest published release line.
+The next maintenance target is `0.6.1-beta`, subject to final scope and
+validation approval. The active development branch is `0.6.1-dev`, created
+at commit `075fd73` from the previous development line. It preserves the
+maintenance, test, diagnostic and policy changes reviewed after beta.4.
+New issue branches start from it and their PRs target it.
+
+The previous branch, `release/0.6.0-beta.5-dev`, is retained as historical
+state, not an active development target. No application/package version has
+changed and no release has been published by this branch transition.
+`main` remains the latest published release line.
 
 Review pending development before allocating it to maintenance or a future
 feature delivery. Cross-patch updater discovery and dependency installation

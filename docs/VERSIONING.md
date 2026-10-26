@@ -86,13 +86,13 @@ state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `<MAJOR.MINOR.PATCH>-dev` branch from the updated
 `main`.
 
-`0.6.0-beta.4` is published. The active development branch is
-`release/0.6.0-beta.5-dev`. During the policy transition, this remains its
-actual name; it does not authorize publishing beta.5 or renaming the branch.
-The proposed next maintenance delivery is `0.6.1-beta`, subject to an
-explicitly approved scope, branch transition and validation. Review pending
-changes individually; do not automatically include them in maintenance or
-move them to `0.7.0`.
+`0.6.0-beta.4` is published. The active maintenance development branch is
+`0.6.1-dev`, created at `075fd73` from the previous development line after
+reviewing its pending maintenance, test, diagnostic and policy changes.
+The next maintenance target is `0.6.1-beta`, subject to final scope and
+validation approval. The former `release/0.6.0-beta.5-dev` branch is retained
+as historical state. Future feature work requires a separately approved
+scope; do not automatically create or allocate work to `0.7.0`.
 Update release metadata only during approved release preparation.
 The completed beta.4 review is recorded in
 [issue #386](https://github.com/buuuki/termia/issues/386).
@@ -205,9 +205,10 @@ criteria are met and its promotion is explicitly approved.
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
 `0.5.0`; its historical tag and release are not renamed. The latest published
-source release is `0.6.0-beta.4`; the active development branch targets the
-policy transition described above. Its existing name,
-`release/0.6.0-beta.5-dev`, remains unchanged until explicit transition approval.
+source release is `0.6.0-beta.4`; the active development branch is
+`0.6.1-dev`, targeting beta maintenance as described above. Historical release
+and branch names remain unchanged. Creating the branch does not change the
+application version or authorize release publication.
 
 ## Debian package versions
 
