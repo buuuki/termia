@@ -54,6 +54,18 @@ exact release version on the development branch, merge it into `main`, tag and
 publish the release, and create the next development branch from the updated
 `main`.
 
+PATCH maintenance is allowed while a delivery remains beta. Keep it separate
+from future features, retaining the beta suffix until readiness is approved.
+An explicitly approved maintenance task may use a release-development branch
+from the published baseline, as described in [Versioning](docs/VERSIONING.md).
+Handle maintenance and future development sequentially; do not work on
+multiple issues/branches or publish multiple open PRs concurrently.
+
+The current branch name remains `release/0.6.0-beta.5-dev` during the policy
+transition. Retargeting, branch changes, release metadata and updater support
+require separate approval; this documentation does not enable cross-patch
+updates or install system dependencies.
+
 ## Code Guidelines
 
 - Follow the existing module boundaries and GTK/VTE patterns.

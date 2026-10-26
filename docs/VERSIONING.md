@@ -22,16 +22,19 @@ Termia versions use `MAJOR.MINOR.PATCH` with an optional prerelease suffix:
 
 Before `1.0.0`:
 
-- While a release remains in prerelease, increment the trailing prerelease
-  number for each published iteration of the same planned application version.
-  New source changes published after `0.5.0-beta.1` therefore become
-  `0.5.0-beta.2`.
-- Increment `PATCH` when accumulated fixes and improvements justify a new
-  application version without introducing an important new feature set. A new
-  prerelease line starts at `.1`, for example `0.5.1-beta.1`.
+- Increment `PATCH` for maintenance of a published delivery, including while
+  it remains in beta. Maintenance contains bug fixes, security fixes and
+  supporting tests, packaging and documentation; exclude unrelated features.
+  For example, `0.6.0-beta.4` may be followed by `0.6.1-beta.1`.
 - Increment `MINOR` for important features, substantial user-facing changes,
   compatibility changes, or a materially expanded release scope. A new line
   starts at `.1`, for example `0.6.0-beta.1`.
+- Increment the trailing beta or RC number for additional public validation
+  iterations of the same planned delivery. It does not replace PATCH
+  maintenance of an already published delivery.
+- Release scope and maturity are independent. A patch may remain beta, and
+  a later patch may become stable after meeting the stable release criteria.
+  For example, `0.7.0-beta.1`, `0.7.1-beta.1`, `0.7.2-beta.1`, then `0.7.3`.
 - A pre-1.0 line can become stable when it satisfies the documented release
   criteria. For example, a future `0.9.0-beta.1` could advance through
   `0.9.0-rc.1` to stable `0.9.0` without renaming the release to `1.0.0`.
@@ -48,8 +51,16 @@ once it meets the release criteria. Publish an `rc` when an additional round
 of public validation would be useful.
 
 Version numbers are updated when preparing a release, not in every feature or
-bug-fix pull request. The release version must describe all changes accumulated
-since the previous release.
+bug-fix pull request. The release version describes the approved scope since
+its published baseline; it need not include unfinished development elsewhere.
+
+Human-readable release titles may use `0.6.1 beta`. Canonical application
+versions retain the full suffix, such as `0.6.1-beta.1`; do not remove its
+serial from technical metadata. An additional validation build of that same
+delivery becomes `0.6.1-beta.2`.
+
+Published versions, tags and package bytes are immutable. Do not rename
+`0.6.0-beta.4` to `0.6.0 beta` or replace its assets with corrected code.
 
 ## Release development branches
 
@@ -61,30 +72,73 @@ dialog may display the development marker so that source checkouts are not
 mistaken for the last published release.
 
 Feature and bugfix branches must be based on the active release-development
-branch, and their pull requests must target that branch. When the release is
-ready, update the application, changelog, Debian metadata, and documentation
-to the exact release version on the development branch. Merge that validated
+branch, and their pull requests must target that branch. An explicitly
+approved maintenance task may instead use a release-development branch
+created from the affected published baseline, excluding pending features.
+Before starting it, finish or explicitly pause the current work. Preserve
+one active issue/branch and one open PR at a time.
+
+When the release is ready, update the application, changelog, Debian metadata,
+and documentation to the exact release version on the development branch. Merge that validated
 state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `release/<next-version>-dev` branch from the updated
 `main`.
 
 `0.6.0-beta.4` is published. The active development branch is
-`release/0.6.0-beta.5-dev`; its next source release is `0.6.0-beta.5`.
-Creating that branch does not change application or Debian versions: update
-release metadata only during approved release preparation. The completed beta.4
-review is recorded in [issue #386](https://github.com/buuuki/termia/issues/386).
+`release/0.6.0-beta.5-dev`. During the policy transition, this remains its
+actual name; it does not authorize publishing beta.5 or renaming the branch.
+The proposed next maintenance delivery is `0.6.1-beta.1`, subject to an
+explicitly approved scope, branch transition and validation. Review pending
+changes individually; do not automatically include them in maintenance or
+move them to `0.7.0`.
+Update release metadata only during approved release preparation.
+The completed beta.4 review is recorded in
+[issue #386](https://github.com/buuuki/termia/issues/386).
 
 ## Release workflow before the first stable version
 
-Until Termia publishes its first stable version, development continues on the
-current prerelease line. For example, while `0.6.0` is still in beta, publish
-successive iterations as `0.6.0-beta.4`, `0.6.0-beta.5`, and so on. Bug fixes
-and other changes intended for that release are included in the next beta
-iteration.
+PATCH maintenance is allowed before the first stable release. Prepare urgent
+corrections from the published baseline without including unfinished features.
+Keep the beta suffix until the delivery meets the stable release criteria;
+a numbering change alone is not evidence of readiness.
 
-Do not start a `0.6.1` patch line while `0.6.0` is still a prerelease. When
-`0.6.0` meets the release criteria, publish it without a prerelease suffix.
-Only then does `0.6.1` become the next patch version for maintenance.
+An illustrative sequence is:
+
+| Canonical version | Meaning |
+| --- | --- |
+| `0.6.0-beta.4` | Existing published baseline, preserved unchanged |
+| `0.6.1-beta.1` | Maintenance of the 0.6 delivery |
+| `0.6.2-beta.1` | Further maintenance |
+| `0.7.0-beta.1` | Next feature delivery |
+| `0.7.1-beta.1` | Maintenance while still beta |
+| `0.7.2-beta.1` | Further maintenance |
+| `0.7.3` | Stable delivery, only after readiness approval |
+
+These are examples, not publication commitments. Publish each maintenance
+delivery with its own changelog, annotated tag, prerelease metadata when
+applicable, verified artifacts and explicit publication approval.
+
+Carry relevant fixes into future development before its next release.
+Preserve commit ancestry needed for Git fast-forward upgrades; validate the
+path from the previous published delivery, not just from a development checkout.
+Perform maintenance and development work sequentially under the repository's
+issue, branch and PR rules.
+
+### Updater transition gate
+
+The current beta updater only selects candidates with the same
+MAJOR.MINOR.PATCH as the installed version. It will not automatically offer
+`0.6.1-beta.1` to `0.6.0-beta.4`. This policy does not change that code.
+
+Before relying on automatic cross-patch updates, implement and test release
+selection, package verification and upgrade behavior. Address the installed
+older client's behavior explicitly; a fix in the target release cannot
+retroactively change the updater performing that first upgrade.
+
+The Git updater also does not install new system dependencies. Dependency
+installation and recovery require a separately approved implementation and
+validation. Provide a tested manual upgrade path when older clients cannot
+complete the transition. Do not claim that documentation enables either feature.
 
 ## Stable release criteria
 
@@ -114,12 +168,15 @@ platforms when all of these conditions are met:
 Known non-blocking issues must be documented, along with a safe workaround
 when one is available.
 
-## Patch releases after a stable version
+## Maintenance branches for beta and stable deliveries
 
-After a stable release, keep its maintenance work separate from development
-for the next feature release. For example, after publishing stable `0.6.0`:
+For both beta and stable deliveries, keep maintenance separate from development
+for the next feature delivery. The following stable example also applies to
+beta deliveries using their canonical version suffixes:
 
 - `main` represents the latest stable release.
+- While the latest delivery is beta, `main` instead represents that published
+  beta; it must not contain unrelated unpublished feature development.
 - `release/0.6.1-dev` is for fixes that will be published as the next patch
   release. It must not accumulate new features intended for `0.7.0`.
 - `release/0.7.0-dev` is for the next feature release.
@@ -138,14 +195,16 @@ preserving the separate release scopes.
 
 A patch can be published directly as `0.6.1` after validation. If a public
 testing candidate is useful, publish one or more prereleases such as
-`0.6.1-beta.1` first; prereleases are optional for patch releases.
+`0.6.1-beta.1` first. A delivery maintained in beta retains its suffix until
+the stable release criteria are met and its promotion is explicitly approved.
 
 ## Current beta baseline
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
 `0.5.0`; its historical tag and release are not renamed. The latest published
 source release is `0.6.0-beta.4`; the active development branch targets the
-next iteration, `0.6.0-beta.5`.
+policy transition described above. Its existing name,
+`release/0.6.0-beta.5-dev`, remains unchanged until explicit transition approval.
 
 ## Debian package versions
 
@@ -168,6 +227,8 @@ version. The mapping is:
 | `0.6.0-beta.2` | `0.6.0~beta.2-1` |
 | `0.6.0-beta.3` | `0.6.0~beta.3-1` |
 | `0.6.0-beta.4` | `0.6.0~beta.4-1` |
+| `0.6.1-beta.1` | `0.6.1~beta.1-1` |
+| `0.7.3` | `0.7.3-1` |
 | `0.9.0-beta.1` | `0.9.0~beta.1-1` |
 | `0.9.0-rc.1` | `0.9.0~rc.1-1` |
 | `0.9.0` | `0.9.0-1` |
@@ -197,6 +258,13 @@ Termia prerelease or application version and reset the Debian revision to
 Python packaging tools may normalize versions such as `0.5.0-beta.2` to the
 PEP 440 form `0.5.0b2`. This is an equivalent package-metadata representation,
 not a separate Termia release version.
+
+Git forbids `~` in branch and tag names. Keep canonical versions and tags
+such as `0.6.1-beta.1` and `v0.6.1-beta.1`; use `~` only for the internal
+Debian prerelease representation. Public download filenames use periods,
+such as `termia_0.6.1.beta.1-1_all.deb`, under the publication gate below.
+The public filename rule is a Termia convention, not a general GitHub ban
+on `~` in every context.
 
 ## Release consistency
 
