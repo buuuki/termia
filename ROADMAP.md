@@ -7,12 +7,12 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Current Target: 0.6.0-beta.N
+## Current Target: beta maintenance policy transition
 
-The `0.6.0` prerelease line remains active. Each published beta iteration may
-include new features, fixes, and improvements that belong to the current
-release scope. Increment the trailing beta number for each published
-iteration, as defined in `docs/VERSIONING.md`.
+Termia remains in beta. Maintenance may increment PATCH while retaining beta
+status; new feature deliveries increment MINOR. Additional validation builds
+of the same planned delivery increment the beta or RC serial. See
+`docs/VERSIONING.md` for the maintenance and transition gates.
 
 `0.6.0-beta.4` is published; its release review is recorded in
 [issue #386](https://github.com/buuuki/termia/issues/386). It adds saved Notes,
@@ -22,10 +22,17 @@ memory fixes. It also includes the Docker/VM laboratories.
 See `CHANGELOG.md` for the detailed changes; this is still a beta,
 not an RC or stable release.
 
-The next target is `0.6.0-beta.5`. The active development branch is
-`release/0.6.0-beta.5-dev`, created from `main` after beta.4 was published. New feature and bugfix branches must start
-from it and target it with their pull requests. `main` remains the latest
-published release line.
+The proposed next maintenance delivery is `0.6.1-beta.1`, subject to scope,
+branch transition and validation approval. The actual development branch
+remains `release/0.6.0-beta.5-dev`, created from `main` after beta.4.
+Ordinary issue branches continue to use it until the transition is approved.
+No branch is renamed and no application/package version changes in this
+documentation task. `main` remains the latest published release line.
+
+Review pending development before allocating it to maintenance or a future
+feature delivery. Cross-patch updater discovery and dependency installation
+remain implementation work; changing policy does not enable those behaviors.
+Remain in beta until the release-readiness criteria are satisfied.
 
 `0.6.0-beta.2` was published after completing the following checks:
 
@@ -46,10 +53,10 @@ published release line.
 - [x] Keep README files, translated documentation, in-app version text,
       changelog, Debian metadata, tag, release, and download links consistent.
 
-Publish another `0.6.0-beta.N` when source changes are required after the
-previous beta has been distributed, including new features within the current
-scope. Packaging-only rebuilds increment only the Debian revision as defined
-in `docs/VERSIONING.md`.
+Publish isolated corrections as PATCH maintenance and reserve MINOR changes
+for new feature deliveries. Preserve the beta suffix when readiness has not
+been established. Packaging-only rebuilds increment only the Debian revision,
+as defined in `docs/VERSIONING.md`.
 
 ## Future features (unscheduled)
 

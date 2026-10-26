@@ -12,6 +12,9 @@
 
 ### Changed
 
+- Allow PATCH maintenance during beta independently of feature development;
+  document transition gates and preserve Git/Debian asset conventions (`#422`).
+
 - Isolate per-case callbacks in tests and laboratory probes, and annotate native
   signal metadata as class state without changing production behavior (`#417`).
 

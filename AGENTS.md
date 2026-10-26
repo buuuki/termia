@@ -29,6 +29,11 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 - Base issue branches on the active release-development branch, such as
   `release/0.6.0-beta.2-dev`. Use `main` only for release preparation and
   maintenance that must apply to the published-release line.
+- Follow `docs/VERSIONING.md` for explicitly approved PATCH maintenance,
+  including beta deliveries. Use a release-development branch from the
+  published baseline when isolation from pending features is required.
+  Work on one issue/branch at a time, keep one open PR, and obtain approval
+  before changing the release target or branch arrangement.
 - Keep each change focused and avoid unrelated refactors or cleanup.
 - Do not commit local user configuration, exported credentials, generated caches, or unrelated cleanup.
 - Update the README and localized documentation when documented user-facing behavior changes.
@@ -75,6 +80,9 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 - Follow `docs/VERSIONING.md` when preparing application releases or Debian
   packages.
+- Treat PATCH/MINOR scope and beta/RC/stable maturity independently. Preserve
+  published versions and the canonical Git, Debian and public asset formats.
+  Do not claim cross-patch updater support until implemented and validated.
 - Increment the Termia prerelease or application version when publishing source
   changes; reserve Debian revision increments for packaging-only changes.
 - Keep the source version, changelog, Debian version, annotated Git tag, GitHub
