@@ -12,6 +12,9 @@
 
 ### Changed
 
+- Clarify unnumbered beta versions and plain `X.Y.Z-dev` development branches,
+  preserving published history and requiring tooling transition checks (`#424`).
+
 - Allow PATCH maintenance during beta independently of feature development;
   document transition gates and preserve Git/Debian asset conventions (`#422`).
 

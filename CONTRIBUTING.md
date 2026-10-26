@@ -46,11 +46,13 @@ python3 run_termia.py
 - Reference issues when appropriate with `Closes #<issue>` in the pull request description, not necessarily in every commit.
 
 The `main` branch represents the latest published release. During an active
-prerelease cycle, the next release has one development branch named with the
-target version and a `-dev` suffix, for example
-`release/0.6.0-beta.5-dev`. Feature and bugfix branches are based on that
-branch and pull requests target it. Once the release is validated, prepare the
-exact release version on the development branch, merge it into `main`, tag and
+prerelease cycle, new development branches use `X.Y.Z-dev`, for example
+`0.6.1-dev`, without `release/`, `beta` or `rc` in the name. A validated
+delivery is published as `0.6.1-beta`, or `0.6.1` after stable readiness
+approval. New beta versions have no serial. Feature and bugfix branches are
+based on the approved active development branch and pull requests target it.
+Once the release is validated, prepare the exact release version on the
+development branch, merge it into `main`, tag and
 publish the release, and create the next development branch from the updated
 `main`.
 

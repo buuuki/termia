@@ -26,8 +26,10 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Development Workflow
 
-- Base issue branches on the active release-development branch, such as
-  `release/0.6.0-beta.2-dev`. Use `main` only for release preparation and
+- Base issue branches on the approved active development branch. New target
+  branches use `X.Y.Z-dev`, such as `0.6.1-dev`, without a `release/` prefix
+  or a maturity suffix. Existing branches remain until transition approval.
+  Use `main` only for release preparation and
   maintenance that must apply to the published-release line.
 - Follow `docs/VERSIONING.md` for explicitly approved PATCH maintenance,
   including beta deliveries. Use a release-development branch from the
@@ -80,6 +82,9 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 - Follow `docs/VERSIONING.md` when preparing application releases or Debian
   packages.
+- New beta versions use `X.Y.Z-beta` without a serial; validated does not
+  mean stable. Publish `X.Y.Z` only after explicit stable readiness approval.
+  Preserve historical numbered betas and validate tooling before transition.
 - Treat PATCH/MINOR scope and beta/RC/stable maturity independently. Preserve
   published versions and the canonical Git, Debian and public asset formats.
   Do not claim cross-patch updater support until implemented and validated.
