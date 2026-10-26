@@ -10,9 +10,10 @@ and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 ## Current Target: beta maintenance policy transition
 
 Termia remains in beta. Maintenance may increment PATCH while retaining beta
-status; new feature deliveries increment MINOR. Additional validation builds
-of the same planned delivery increment the beta or RC serial. See
-`docs/VERSIONING.md` for the maintenance and transition gates.
+status; new feature deliveries increment MINOR. New beta deliveries use
+`-beta` without a serial; new development branches use `X.Y.Z-dev` without
+a `release/` prefix or a maturity suffix. Numbered RCs remain optional.
+See `docs/VERSIONING.md` for the maintenance and transition gates.
 
 `0.6.0-beta.4` is published; its release review is recorded in
 [issue #386](https://github.com/buuuki/termia/issues/386). It adds saved Notes,
@@ -22,10 +23,11 @@ memory fixes. It also includes the Docker/VM laboratories.
 See `CHANGELOG.md` for the detailed changes; this is still a beta,
 not an RC or stable release.
 
-The proposed next maintenance delivery is `0.6.1-beta.1`, subject to scope,
+The proposed next maintenance delivery is `0.6.1-beta`, subject to scope,
 branch transition and validation approval. The actual development branch
 remains `release/0.6.0-beta.5-dev`, created from `main` after beta.4.
 Ordinary issue branches continue to use it until the transition is approved.
+The proposed maintenance branch is `0.6.1-dev`; it is not created by this task.
 No branch is renamed and no application/package version changes in this
 documentation task. `main` remains the latest published release line.
 
