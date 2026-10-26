@@ -289,13 +289,14 @@ try:
         for session in sessions:
             window.close_tab(session.id, session.page, disconnect=True)
     elif MODE.startswith('churn'):
+        def churn(cycle):
+            sessions = [add_terminal('cycle ' + str(cycle) + ' tab ' + str(i)) for i in range(2)]
+            drain(.12)
+            for session in sessions:
+                window.close_tab(session.id, session.page, disconnect=True)
+
         for cycle in range(20):
-            def churn():
-                sessions = [add_terminal('cycle ' + str(cycle) + ' tab ' + str(i)) for i in range(2)]
-                drain(.12)
-                for session in sessions:
-                    window.close_tab(session.id, session.page, disconnect=True)
-            churn()
+            churn(cycle)
             sample = memory('terminal cycle ' + str(cycle + 1), settle=1.15)
             check(sample['registry'] == 0 and sample['running_children'] == 0,
                   'cycle resources stopped ' + str(cycle + 1))

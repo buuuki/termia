@@ -76,7 +76,7 @@ class TerminalCleanupIntegrationTests(unittest.TestCase):
         app = TermiaApp()
         app.set_application_id('local.termia.cleanup')
         app.register(None)
-        for enabled in (False, True):
+        def exercise_case(enabled):
             with self.subTest(optional_tools=enabled), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
                 store = ConnectionStore(root/'connections.json', root/'settings.json',
@@ -91,7 +91,7 @@ class TerminalCleanupIntegrationTests(unittest.TestCase):
                 try:
                     def open_and_close():
                         session_refs, widget_refs, panes, accounting = [], [], [], []
-                        for index in range(2):
+                        def open_session_case(index):
                             session = window.open_process_terminal_tab('Synthetic', ['/bin/sh'], None)
                             terminal = window.split_terminal_pane(session, session.terminal, 'horizontal')
                             window.start_split_child_terminal(session, terminal, session.terminal, None, announce=False)
@@ -107,6 +107,9 @@ class TerminalCleanupIntegrationTests(unittest.TestCase):
                                 self.assertIsNone(accounting[-1].exit_handler_id)
                                 self.assertTrue(session.connected)
                             window.close_tab(session.id, session.page, disconnect=True)
+
+                        for index in range(2):
+                            open_session_case(index)
                         return session_refs, widget_refs, panes, accounting
                     session_refs, widget_refs, panes, accounting = open_and_close()
                     self.wait_until(lambda panes=panes: all(pane.child_process is None for pane in panes))
@@ -124,6 +127,9 @@ class TerminalCleanupIntegrationTests(unittest.TestCase):
                     window.notes_dialogs.shutdown()
                     window.destroy()
                     store.close()
+
+        for enabled in (False, True):
+            exercise_case(enabled)
 
     def wait_until(self, predicate, timeout=3, *, dispatch=True):
         deadline = time.monotonic() + timeout

@@ -9,6 +9,9 @@
 
 ### Changed
 
+- Isolate per-case callbacks in tests and laboratory probes, and annotate native
+  signal metadata as class state without changing production behavior (`#417`).
+
 - Normalize imports and type annotations, preserve the RowObject re-export, and
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
