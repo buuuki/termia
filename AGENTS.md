@@ -26,7 +26,8 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Development Workflow
 
-- Base issue branches on the approved active development branch. New target
+- Base issue branches on the approved active development branch, currently
+  `0.6.1-dev`. New target
   branches use `X.Y.Z-dev`, such as `0.6.1-dev`, without a `release/` prefix
   or a maturity suffix. Existing branches remain until transition approval.
   Use `main` only for release preparation and

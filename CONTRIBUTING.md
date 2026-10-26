@@ -38,7 +38,7 @@ python3 run_termia.py
 ## Branches and Commits
 
 - Start feature and bugfix work from the active release-development branch,
-  currently `release/0.6.0-beta.5-dev`. Use an up-to-date `main` branch only
+  currently `0.6.1-dev`. Use an up-to-date `main` branch only
   for release preparation or work that explicitly targets the published-release
   line.
 - Use descriptive branch names, preferably tied to an issue, for example `feature/14-shortcuts-configuration` or `fix/reconnect-status-message`.
@@ -63,10 +63,11 @@ from the published baseline, as described in [Versioning](docs/VERSIONING.md).
 Handle maintenance and future development sequentially; do not work on
 multiple issues/branches or publish multiple open PRs concurrently.
 
-The current branch name remains `release/0.6.0-beta.5-dev` during the policy
-transition. Retargeting, branch changes, release metadata and updater support
-require separate approval; this documentation does not enable cross-patch
-updates or install system dependencies.
+The active development branch is `0.6.1-dev`; the previous
+`release/0.6.0-beta.5-dev` branch is retained as historical state.
+Further branch changes, release metadata and updater support require separate
+approval. This transition does not enable cross-patch updates or install
+system dependencies.
 
 ## Code Guidelines
 
@@ -164,7 +165,7 @@ working changes against the release-development branch:
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-ci.txt
-PATH="$PWD/.venv/bin:$PATH" python3 scripts/check_static_analysis.py --base origin/release/0.6.0-beta.5-dev
+PATH="$PWD/.venv/bin:$PATH" python3 scripts/check_static_analysis.py --base origin/0.6.1-dev
 ```
 
 The independent CI job uses the pinned versions in `requirements-ci.txt`.
