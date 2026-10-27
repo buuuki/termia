@@ -4,6 +4,9 @@
 
 ### Added
 
+- Show a bounded, read-only live installation log with copy support and
+  administrator authentication kept outside Termia (`#428`).
+
 - Add an explicitly unvalidated Docker preview of beta.3 upgrade paths for
   review of the proposed dependency-aware updater (`#428`).
 
@@ -31,6 +34,10 @@
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
 ### Fixed
+
+- Allow native selection of updater messages and align content/actions with
+  shared dialog insets, without adding a setup-copy button or automatically
+  selecting the version text on opening (`#428`).
 
 - Show update installation type and target requirements, offer assisted or manual
   dependency installation with copyable commands and rechecks, prevent source

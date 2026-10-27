@@ -269,9 +269,18 @@ keybinding dialogs have comparatively small contracts.
   and cancels preparation; an application transaction retains a non-daemon worker
   until the installer exits. Final success requires dependency verification and,
   for Debian, confirmation of the installed package version.
+  Installer `set_output` callbacks carry only plain text, never widgets. Verbose
+  APT/Git operations stream stdout/stderr without retaining the complete output;
+  commands used to parse metadata keep their stdout-only return contract.
+  `update_output.py` removes terminal controls and URLs from complete, bounded
+  lines. The controller coalesces output into one queued callback and a 65,536
+  character tail; a closed view receives no pending output. Authentication
+  remains owned by the desktop agent, not by this stream.
 - `update_view.py` adds one header-bar action to About using public GTK APIs and
   owns the update/confirmation dialogs. It receives only a GTK parent and a
   translator. It changes no terminal CSS, geometry, keyboard dispatch or storage.
+  Its read-only `Gtk.TextView` log retains the same bounded tail, supports copy,
+  and clears on a new check; receiving output must not end the busy state.
 - To add another installation format, implement `Installer` and extend detection;
   keep release selection and widgets independent. Release APIs can be replaced
   through the injected client; tests inject clients/adapters without installing.

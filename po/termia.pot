@@ -84,6 +84,30 @@ msgstr ""
 msgid "Downloading and verifying the update…"
 msgstr ""
 
+#: src/termia/i18n.py:update_log_title
+msgid "Installation details"
+msgstr ""
+
+#: src/termia/i18n.py:update_copy_log
+msgid "Copy log"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_preparing
+msgid "Preparing and verifying the update…"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_dependencies
+msgid "Installing required dependencies…"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_applying
+msgid "Applying the update…"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_verifying
+msgid "Verifying the installed version and dependencies…"
+msgstr ""
+
 #: src/termia/i18n.py:update_applying
 msgid "Installing… Please wait for the installation to finish."
 msgstr ""

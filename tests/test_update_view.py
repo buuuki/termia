@@ -5,7 +5,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, GLib, Gtk
 
 from termia.i18n import translate_key
 from termia.update_controller import CheckResult, PreparedUpdate
@@ -16,6 +16,41 @@ from termia.update_view import UpdateDialog, attach_updates
 
 
 class UpdateViewTests(unittest.TestCase):
+    def test_initial_focus_is_on_check_button_not_selectable_version(self):
+        self.dialog.present()
+        for _ in range(20):
+            GLib.MainContext.default().iteration(False)
+        self.assertIs(self.dialog.get_focus(), self.dialog.check_button)
+        self.assertTrue(self.dialog.status.get_selectable())
+
+    def test_status_messages_remain_selectable_when_text_changes(self):
+        self.assertTrue(self.dialog.status.get_selectable())
+        self.assertTrue(self.dialog.installation_label.get_selectable())
+        command = "bash scripts/termia-setup.sh install"
+        self.dialog.status.set_text(command)
+        self.assertTrue(self.dialog.status.get_selectable())
+        self.assertEqual(self.dialog.status.get_text(), command)
+
+    def test_live_output_keeps_installation_busy_and_can_be_copied(self):
+        self.dialog.working("update_applying")
+        self.dialog.completed("output", "Reading package lists…\n")
+        self.assertTrue(self.dialog.spinner.get_spinning())
+        self.assertFalse(self.dialog.check_button.get_sensitive())
+        self.assertFalse(self.dialog.log_view.get_editable())
+        clipboard = Mock()
+        with patch.object(self.dialog, "get_clipboard", return_value=clipboard):
+            self.dialog.copy_log()
+        clipboard.set.assert_called_once_with("Reading package lists…\n")
+
+    def test_log_is_bounded_and_new_check_clears_previous_output(self):
+        from termia.update_output import MAX_LOG_CHARS
+
+        self.dialog.completed("output", "old" + "x" * MAX_LOG_CHARS)
+        self.assertEqual(self.dialog.log_buffer.get_char_count(), MAX_LOG_CHARS)
+        self.dialog.check()
+        self.assertEqual(self.dialog.log_buffer.get_char_count(), 0)
+        self.assertFalse(self.dialog.log_expander.get_visible())
+
     @classmethod
     def setUpClass(cls):
         Gtk.init()

@@ -66,6 +66,13 @@ APT resolves dependencies and refuses removals. Already-running installations
 are not killed when the UI closes. Temporary packages are removed afterwards;
 the updater retains a per-user lock across profiles until the operation ends.
 
+The read-only installation log displays a bounded, in-memory tail of verbose
+APT/Git stdout and stderr. URLs and terminal control sequences are removed;
+local paths and other identifying output can remain, so review copied logs
+before sharing. Termia does not persist this log or connect its stream to
+authentication input. Commands that return machine-readable metadata are not
+included in the log. Administrator authentication stays with the desktop agent.
+
 Git updates only fast-forward clean release checkouts to a tag fetched from the
 fixed official HTTPS repository. Requirements are read as bounded declarative
 Debian control metadata from the fetched commit; downloaded Python or setup

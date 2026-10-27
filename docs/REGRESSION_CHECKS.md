@@ -1188,6 +1188,22 @@ light/dark appearance. Start an isolated instance with
 
 ### Setup and upgrade compatibility
 
+In About → Check for updates, verify Installation details expands to show live
+APT/Git output while the spinner stays active. Status, installation-type and
+confirmation text must support GTK selection and normal copy shortcuts without
+a dedicated setup-copy button. Opening the dialog must focus Check for updates
+without automatically selecting the version text. Content and actions must align using shared
+dialog insets rather than nested padding.
+Copy log must match the displayed
+tail, remain available after an error, and clear on a new check. Keep the log
+read-only and bounded to 65,536 characters; no output may be used as executable
+input. Confirm stderr is visible, ANSI controls are removed, URLs are hidden
+even across pipe-read boundaries, and large output does not queue unbounded GTK
+callbacks. Cancellation must still stop preparation, not an applying package
+transaction; destroyed windows must not receive output. Check EN/ES/CA text.
+Use a real GNOME session for Ubuntu's native authentication dialog; a terminal
+polkit agent does not validate that interaction.
+
 Missing Python/GI, SSH or sshpass dependencies must make `run_checks()` fail
 when invoked as an `if` condition. Setup must install missing dependencies,
 recheck them, and never create a launcher or report successful installation

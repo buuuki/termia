@@ -130,6 +130,14 @@ introduir a beta.2 i continua disponible a beta.4.
 
 ## Descarregar i instal·lar (Ubuntu 24.04+)
 
+A l'actualitzador en desenvolupament, **Detalls de la instal·lació** mostra les
+fases i la sortida d'APT/Git en temps real en un registre desplegable de només
+lectura. **Copia el registre** copia els darrers 65.536 caràcters; una nova
+comprovació el buida. S'oculten els URL, però pot contenir camins locals o noms
+de repositoris: revisa'l abans de compartir-lo. No es desa automàticament.
+La contrasenya d'administrador s'introdueix únicament al diàleg
+d'autenticació de l'Ubuntu.
+
 ### Actualitzacions
 
 L’actualitzador en desenvolupament mostra si Termia prové de Git, d’un paquet

@@ -21,6 +21,10 @@ package, without GtkSourceView 5. Preparation exports tracked application files
 only; its build context stays under ignored `.runtime/`. No local credentials
 are exported. Preparation refuses to overwrite an existing context.
 
+Original mode makes its status text selectable and uses 16-pixel content insets
+for manual copying and layout review. These presentation adjustments do not
+change the historical updater, requirement handling or installation behavior.
+
 The panel displays a generated **synthetic** password for `lab`. The terminal
 polkit agent requests that password for assisted APT; another terminal is
 available for manual commands. Container polkit/session integration still needs

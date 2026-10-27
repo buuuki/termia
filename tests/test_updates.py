@@ -232,6 +232,23 @@ class InstallerTests(unittest.TestCase):
 
 
 class ControllerTests(unittest.TestCase):
+    def test_output_queue_is_bounded_and_close_suppresses_delivery(self):
+        from termia.update_output import MAX_LOG_CHARS
+
+        queued, notifications = [], Mock()
+        controller = UpdateController("0.6.0-beta.3", queued.append, notifications)
+        for _ in range(100):
+            controller.report_output("x" * 4096)
+        self.assertEqual(len(queued), 1)
+        self.assertEqual(len(controller.pending_output), MAX_LOG_CHARS)
+        queued.pop()()
+        notifications.assert_called_once_with("output", "x" * MAX_LOG_CHARS)
+        notifications.reset_mock()
+        controller.report_output("late output")
+        controller.close()
+        queued.pop()()
+        notifications.assert_not_called()
+
     def test_close_suppresses_queued_callbacks(self):
         queued, notifications = [], Mock()
         controller = UpdateController("0.6.0-beta.1", queued.append, notifications,

@@ -3,6 +3,24 @@
 # This file is distributed under the same license as the Termia package.
 #
 
+msgid "Installation details"
+msgstr "Detalls de la instal·lació"
+
+msgid "Copy log"
+msgstr "Copia el registre"
+
+msgid "Preparing and verifying the update…"
+msgstr "S'està preparant i verificant l'actualització…"
+
+msgid "Installing required dependencies…"
+msgstr "S'estan instal·lant les dependències necessàries…"
+
+msgid "Applying the update…"
+msgstr "S'està aplicant l'actualització…"
+
+msgid "Verifying the installed version and dependencies…"
+msgstr "S'estan verificant la versió instal·lada i les dependències…"
+
 msgid "Getting started"
 msgstr "Primers passos"
 

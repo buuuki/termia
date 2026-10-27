@@ -72,6 +72,19 @@ def detect(current,client,cancel):
 def factory(current,dispatch,notify):
     return controller_module.UpdateController(old_version,dispatch,notify,client=client,detect=detect)
 view.UpdateDialog.__init__.__defaults__=(factory,)
+if args.mode=='original':
+    # Presentation-only adjustment: preserve the historical update behavior.
+    original_init=view.UpdateDialog.__init__
+
+    def selectable_init(self,*arguments,**keywords):
+        original_init(self,*arguments,**keywords)
+        self.status.set_selectable(True)
+        self.set_focus(self.check_button)
+        content=self.get_child()
+        for side in ('top','bottom','start','end'):
+            getattr(content,'set_margin_'+side)(16)
+
+    view.UpdateDialog.__init__=selectable_init
 attach=view.attach_updates
 
 def attach_fixture(about,translate):

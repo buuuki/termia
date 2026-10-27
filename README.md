@@ -147,6 +147,13 @@ dependency installation. Manual mode provides exact commands, Copy commands,
 and Check and continue; the update remains pending until requirements pass.
 **The updated Termia will not start if mandatory dependencies are missing.**
 
+**Installation details** shows phases and live package-manager/Git output in a
+read-only, expandable log. Use **Copy log** to copy the latest 65,536 characters;
+starting another check clears it. URLs are hidden, but output can still contain
+local paths or repository names: review it before sharing. Termia does not save
+this log automatically. Administrator passwords belong only in Ubuntu's
+authentication dialog, never in this log.
+
 Assisted dependency planning currently supports Debian/Ubuntu with APT/dpkg.
 For Git, required packages and runtime bindings are checked before the checkout
 changes. For .deb, APT resolves requirements with the package transaction and

@@ -9,29 +9,41 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
 from . import __version__
-from .dialog_actions import add_dialog_action_button, configure_action_area
+from .dialog_actions import (
+    DIALOG_ACTION_INSET_END,
+    DIALOG_ACTION_INSET_START,
+    DIALOG_ACTION_INSET_TOP,
+    add_dialog_action_button,
+    configure_action_area,
+)
 from .update_controller import CheckResult, PreparedUpdate, UpdateController
+from .update_output import MAX_LOG_CHARS
 
 
 class UpdateDialog(Gtk.Window):
     def __init__(self, parent, translate, controller_factory=UpdateController):
         super().__init__(title=translate("update_title"), transient_for=parent, modal=True)
         self.t = translate
-        self.set_default_size(460, -1)
+        self.set_default_size(600, -1)
         self.set_destroy_with_parent(True)
         self.controller = controller_factory(__version__, GLib.idle_add, self.completed)
         self.result = None
         self.installed = False
         self.prepared = None
         self.manual_mode = False
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.set_child(outer)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        for side in ("top", "bottom", "start", "end"):
-            getattr(box, f"set_margin_{side}")(18)
-        self.set_child(box)
-        box.append(Gtk.Label(label=self.t("update_current").format(version=__version__), xalign=0))
-        self.installation_label = Gtk.Label(label=self.t("update_type_detecting"), xalign=0, wrap=True)
+        box.set_margin_top(DIALOG_ACTION_INSET_TOP)
+        box.set_margin_start(DIALOG_ACTION_INSET_START)
+        box.set_margin_end(DIALOG_ACTION_INSET_END)
+        outer.append(box)
+        box.append(Gtk.Label(label=self.t("update_current").format(version=__version__),
+                             xalign=0, selectable=True))
+        self.installation_label = Gtk.Label(label=self.t("update_type_detecting"),
+                                            xalign=0, wrap=True, selectable=True)
         box.append(self.installation_label)
-        self.status = Gtk.Label(label=self.t("update_intro"), xalign=0, wrap=True)
+        self.status = Gtk.Label(label=self.t("update_intro"), xalign=0, wrap=True, selectable=True)
         self.status.set_max_width_chars(60)
         box.append(self.status)
         self.notes = Gtk.LinkButton(label=self.t("update_notes"), uri="https://github.com/buuuki/termia/releases")
@@ -66,10 +78,28 @@ class UpdateDialog(Gtk.Window):
         self.continue_button = Gtk.Button(label=self.t("update_recheck_continue"))
         self.continue_button.connect("clicked", lambda *_: self.apply_prepared(False))
         self.plan_box.append(self.continue_button)
+        self.log_expander = Gtk.Expander(label=self.t("update_log_title"), expanded=True)
+        self.log_expander.set_visible(False)
+        box.append(self.log_expander)
+        log_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.log_expander.set_child(log_box)
+        self.log_view = Gtk.TextView(editable=False, cursor_visible=False, monospace=True,
+                                     wrap_mode=Gtk.WrapMode.WORD_CHAR)
+        self.log_buffer = self.log_view.get_buffer()
+        self.log_end = self.log_buffer.create_mark(None, self.log_buffer.get_end_iter(), False)
+        log_scroller = Gtk.ScrolledWindow()
+        log_scroller.set_min_content_height(140)
+        log_scroller.set_max_content_height(200)
+        log_scroller.set_propagate_natural_height(True)
+        log_scroller.set_child(self.log_view)
+        log_box.append(log_scroller)
+        self.copy_log_button = Gtk.Button(label=self.t("update_copy_log"))
+        self.copy_log_button.connect("clicked", self.copy_log)
+        log_box.append(self.copy_log_button)
         self.spinner = Gtk.Spinner()
         box.append(self.spinner)
         actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        box.append(actions)
+        outer.append(actions)
         self.check_button = Gtk.Button(label=self.t("update_check"))
         self.check_button.connect("clicked", self.check)
         actions.append(self.check_button)
@@ -83,6 +113,7 @@ class UpdateDialog(Gtk.Window):
         configure_action_area(actions)
         self.connect("close-request", self.close_requested)
         self.connect("unrealize", lambda *_: self.controller.close())
+        self.set_focus(self.check_button)
 
     def working(self, key):
         self.status.set_text(self.t(key))
@@ -94,6 +125,8 @@ class UpdateDialog(Gtk.Window):
             button.set_sensitive(False)
 
     def check(self, _button=None):
+        self.log_buffer.set_text("")
+        self.log_expander.set_visible(False)
         self.result = None
         self.prepared = None
         self.manual_mode = False
@@ -106,6 +139,9 @@ class UpdateDialog(Gtk.Window):
         self.controller.check()
 
     def completed(self, state, payload):
+        if state in ("output", "phase"):
+            self.append_log(self.t(payload) + "\n" if state == "phase" else payload)
+            return
         if state == "installation":
             self.show_installation(payload)
             return
@@ -118,6 +154,7 @@ class UpdateDialog(Gtk.Window):
         self.close_button.set_label(self.t("close"))
         self.check_button.set_sensitive(not self.installed)
         if state == "error":
+            self.append_log(self.t(payload) + "\n")
             self.status.set_text(self.t(payload))
             self.install_button.set_visible(False)
             self.plan_box.set_visible(False)
@@ -150,6 +187,20 @@ class UpdateDialog(Gtk.Window):
             self.install_button.set_visible(False)
             key = "update_installed_source" if self.result.installation.adapter.kind == "update_source" else "update_installed"
             self.status.set_text(self.t(key))
+            self.append_log(self.t(key) + "\n")
+
+    def append_log(self, text):
+        self.log_buffer.insert(self.log_buffer.get_end_iter(), text)
+        excess = self.log_buffer.get_char_count() - MAX_LOG_CHARS
+        if excess > 0:
+            self.log_buffer.delete(self.log_buffer.get_start_iter(),
+                                   self.log_buffer.get_iter_at_offset(excess))
+        self.log_expander.set_visible(True)
+        self.log_view.scroll_to_mark(self.log_end, 0.0, False, 0.0, 1.0)
+
+    def copy_log(self, _button=None):
+        self.get_clipboard().set(self.log_buffer.get_text(
+            self.log_buffer.get_start_iter(), self.log_buffer.get_end_iter(), False))
 
     def confirm_install(self, _button):
         if self.result is None or self.controller.busy:
@@ -163,7 +214,8 @@ class UpdateDialog(Gtk.Window):
             confirmation, self.t("update_install"), Gtk.ResponseType.OK,
         )
         confirmation.set_default_response(Gtk.ResponseType.CANCEL)
-        label = Gtk.Label(label=self.t("update_confirm").format(version=self.result.release.label), wrap=True)
+        label = Gtk.Label(label=self.t("update_confirm").format(version=self.result.release.label),
+                          wrap=True, selectable=True)
         label.set_max_width_chars(55)
         for side in ("top", "bottom", "start", "end"):
             getattr(label, f"set_margin_{side}")(16)

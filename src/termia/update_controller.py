@@ -12,6 +12,7 @@ from threading import Event, Lock, Thread
 
 from .update_dependencies import DependencyPlan
 from .update_installers import Installation, detect_installation, update_lock
+from .update_output import MAX_LOG_CHARS
 from .update_service import (
     Release,
     ReleaseClient,
@@ -55,6 +56,28 @@ class UpdateController:
         self.thread: Thread | None = None
         self.prepared: PreparedUpdate | None = None
         self.directory: tempfile.TemporaryDirectory | None = None
+        self.pending_output = ""
+        self.output_queued = False
+
+    def report_output(self, text: str) -> None:
+        with self.guard:
+            if self.closed:
+                return
+            self.pending_output = (self.pending_output + text)[-MAX_LOG_CHARS:]
+            if self.output_queued:
+                return
+            self.output_queued = True
+
+        def deliver():
+            with self.guard:
+                text, self.pending_output = self.pending_output, ""
+                self.output_queued = False
+                closed = self.closed
+            if not closed:
+                self.notify("output", text)
+            return False
+
+        self.dispatch(deliver)
 
     def emit(self, state: str, payload=None) -> None:
         logging.getLogger("termia").debug("event=update.%s", state)
@@ -120,6 +143,8 @@ class UpdateController:
                 raise UpdateError("update_unknown_installation")
             self.directory = tempfile.TemporaryDirectory(prefix="termia-update-")
             try:
+                adapter.set_output(self.report_output)
+                self.emit("phase", "update_log_preparing")
                 artifact = adapter.prepare(release, Path(self.directory.name), self.cancel)
                 # Revalidate downloaded .deb bytes before presenting their requirements.
                 if adapter.kind == "update_debian":
@@ -159,15 +184,18 @@ class UpdateController:
                 self.applying = True
             self.emit("applying")
             if plan.missing and adapter.kind == "update_source":
+                self.emit("phase", "update_log_dependencies")
                 adapter.install_dependencies(plan)
                 plan = adapter.dependencies(prepared.artifact, Event())
                 if plan.missing:
                     raise UpdateError("update_dependencies_not_ready")
+            self.emit("phase", "update_log_applying")
             adapter.apply(prepared.artifact, release)
             try:
                 # Source verification is done before apply, while HEAD is still old.
                 # Debian requirements must also pass after the APT transaction.
                 if adapter.kind == "update_debian":
+                    self.emit("phase", "update_log_verifying")
                     adapter.verify_installed()
                     remaining = adapter.dependencies(prepared.artifact, Event())
                     if remaining.missing:

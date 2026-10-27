@@ -130,6 +130,14 @@ en beta.2 y sigue disponible en beta.4.
 
 ## Descargar e instalar (Ubuntu 24.04+)
 
+En el actualizador en desarrollo, **Detalles de la instalación** muestra las
+fases y la salida de APT/Git en tiempo real en un registro desplegable de solo
+lectura. **Copiar registro** copia los últimos 65.536 caracteres; una nueva
+comprobación lo vacía. Se ocultan las URL, pero puede contener rutas locales o
+nombres de repositorios: revísalo antes de compartirlo. No se guarda
+automáticamente. La contraseña de administrador se introduce únicamente en el
+diálogo de autenticación de Ubuntu.
+
 ### Actualizaciones
 
 El actualizador en desarrollo muestra si Termia procede de Git, de un paquete
