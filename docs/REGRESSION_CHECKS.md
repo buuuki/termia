@@ -1165,6 +1165,44 @@ light/dark appearance. Start an isolated instance with
 
 ## Automated Checks
 
+### Ubuntu 26.04 GNOME base image
+
+For the separate package-only image in `tools/docker-lab/gnome26`, follow its
+[build and inspection commands](../tools/docker-lab/gnome26/README.md).
+Confirm the pinned Ubuntu digest, fixed APT snapshot and restricted build
+context. The full `ubuntu-desktop` metapackage, GNOME Shell, remote desktop,
+systemd, D-Bus, PipeWire and WirePlumber must have installed status, with no
+unfinished dpkg configuration or broken dependencies. Compare the recorded
+package inventory with the installed packages. Keep Snap transitional packages
+distinct from actual installed Snap applications.
+
+Inspect with network disabled, a read-only filesystem, no host mounts and no
+added capabilities. No persistent volumes, exposed ports or running desktops
+are expected at this stage. A successful image build does not validate GNOME
+Shell on Wayland, remote image/input, Termia startup or teardown/reconstruction
+of the future deployment. Require those checks before closing #430.
+
+For the experimental `desktop` target, use the Compose commands in that guide.
+Check the declared private cgroups, `SYS_ADMIN`, per-container AppArmor setting,
+versioned seccomp (Moby default plus `pivot_root` only), loopback-only RDP port
+and absence of host bind mounts, GPU or KVM devices. Verify the declared read-write `/dev/fuse` device and host FUSE
+support; clipboard negotiation must not abort the daemon. Readiness health
+only checks the session socket and RDP listener;
+it does not mean every Ubuntu service is healthy. Keep failed units visible.
+Verify GNOME Shell's actual Wayland log, logind's active remote Wayland session,
+a GTK `GdkWaylandDisplay` probe and a desktop image received through RDP.
+Verify actual dock/application/desktop icons and wallpaper, not only panel
+text or successful authentication. Glycin/bubblewrap must load images with
+sandboxing enabled and without `pivot_root` permission errors.
+With clipboard disabled, send a synthetic text marker by RDP mouse/keyboard to
+the stock text editor, save it and compare the resulting bytes. Reconnect and
+confirm the session/file survive. Destroy the new project's volumes and repeat
+with regenerated credentials and no previous profile marker; retaining Docker
+build cache does not certify a fresh network/package download. Do not alter PAM
+or polkit to make an authorization test pass. Native authorization acceptance,
+clipboard/FUSE, full desktop-service health and Termia integration remain their
+own validation requirements. Never destroy the previous private laboratories.
+
 ### Setup and upgrade compatibility
 
 Missing Python/GI, SSH or sshpass dependencies must make `run_checks()` fail

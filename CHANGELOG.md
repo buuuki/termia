@@ -4,6 +4,13 @@
 
 ### Added
 
+- Add a pinned Ubuntu 26.04 Docker base and experimental GNOME Wayland/RDP
+  desktop with synthetic credentials, a GFX-capable Remmina profile, scoped
+  teardown and input/reconstruction checks; full acceptance remains pending (`#430`).
+
+- Provide the experimental GNOME RDP server with the FUSE device required by
+  clipboard negotiation so ordinary clients do not abort the server (`#430`).
+
 - Add isolated Wayland terminal churn diagnostics alongside existing X11 modes,
   verify the active graphical backend and document memory validation (`#419`).
 
@@ -28,6 +35,9 @@
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
 ### Fixed
+
+- Allow sandboxed GNOME image loaders to use `pivot_root` through a versioned
+  Docker seccomp profile so desktop icons and backgrounds load (`#430`).
 
 - Wait for native GTK readiness and drag lifecycle signals in the Notes category
   pointer test, with bounded waits and timeout diagnostics (`#413`).

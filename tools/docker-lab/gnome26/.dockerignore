@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!.dockerignore
+!ubuntu.sources
+!init.sh
+!configure-rdp.py
+!termia-lab.target
+!termia-lab-rdp.service
+!termia-lab-session.service
+!termia-lab-user-rdp.service
+!after-rdp.conf
+!rendering.conf
+!rdp-probe.sh
