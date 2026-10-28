@@ -1188,6 +1188,17 @@ light/dark appearance. Start an isolated instance with
 
 ### Setup and upgrade compatibility
 
+When code has advanced to the selected release while the older process remains
+open, rechecking must offer dependency review rather than a dirty-checkout error.
+Only a clean main/tag checkout exactly at the selected official release qualifies;
+never relax checks for local edits or development branches. Verify assisted
+installation and manual rechecks with a missing GtkSourceView binding. Update
+windows must allow access to Termia's terminals during manual installation.
+Copy commands using normal selection/copy shortcuts, finish verification, then
+close all Termia windows and reopen. Content and confirmation windows use
+`configure_dialog_content`; action rows use the shared action-area helper.
+
+
 In About → Check for updates, verify Installation details expands to show live
 APT/Git output while the spinner stays active. Status, installation-type and
 confirmation text must support GTK selection and normal copy shortcuts without

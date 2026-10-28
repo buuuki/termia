@@ -148,6 +148,12 @@ La vía manual muestra los comandos exactos, Copiar comandos y Comprobar y
 continuar; la actualización queda pendiente hasta verificar los requisitos.
 **La nueva versión de Termia no arrancará si faltan dependencias obligatorias.**
 
+Si Termia sigue abierto después de actualizar su repositorio Git limpio a la
+versión seleccionada, el actualizador ofrece **Revisar dependencias**. Instala
+las dependencias desde Termia o copia los comandos manuales y abre una consola
+sin cerrar el actualizador. Tras verificar las dependencias, cierra todas las
+ventanas de Termia y vuelve a abrir la aplicación.
+
 La comprobación asistida admite actualmente Debian/Ubuntu con APT/dpkg. En Git,
 se verifican los paquetes y módulos necesarios antes de modificar el código.
 En .deb, APT resuelve las dependencias con el paquete y después se verifican

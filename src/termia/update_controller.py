@@ -11,7 +11,12 @@ from pathlib import Path
 from threading import Event, Lock, Thread
 
 from .update_dependencies import DependencyPlan
-from .update_installers import Installation, detect_installation, update_lock
+from .update_installers import (
+    GitInstaller,
+    Installation,
+    detect_installation,
+    update_lock,
+)
 from .update_output import MAX_LOG_CHARS
 from .update_service import (
     Release,
@@ -26,6 +31,7 @@ from .update_service import (
 class CheckResult:
     release: Release | None
     installation: Installation
+    source_updated: bool = False
 
 
 @dataclass(frozen=True)
@@ -125,7 +131,15 @@ class UpdateController:
             self.emit("installation", installation)
             items = self.client.releases(self.cancel)
             check_cancel(self.cancel)
-            return CheckResult(select_release(items, self.current), installation)
+            release = select_release(items, self.current)
+            source_updated = False
+            adapter = installation.adapter
+            if (release is not None and isinstance(adapter, GitInstaller)
+                    and installation.reason == "update_checkout_blocked"
+                    and adapter.recovery_available(release, self.cancel)):
+                installation = Installation(adapter, "")
+                source_updated = True
+            return CheckResult(release, installation, source_updated)
 
         return self.start(operation)
 
@@ -145,7 +159,8 @@ class UpdateController:
             try:
                 adapter.set_output(self.report_output)
                 self.emit("phase", "update_log_preparing")
-                artifact = adapter.prepare(release, Path(self.directory.name), self.cancel)
+                artifact = (adapter.prepare_recovery(release, self.cancel) if result.source_updated
+                            else adapter.prepare(release, Path(self.directory.name), self.cancel))
                 # Revalidate downloaded .deb bytes before presenting their requirements.
                 if adapter.kind == "update_debian":
                     adapter.verify(artifact, release)

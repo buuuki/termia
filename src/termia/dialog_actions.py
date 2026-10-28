@@ -29,6 +29,15 @@ def add_dialog_action_button(
     return button
 
 
+def configure_dialog_content(content: Gtk.Widget) -> Gtk.Widget:
+    """Align content with the shared action row without nested outer margins."""
+    content.set_margin_top(DIALOG_ACTION_INSET_TOP)
+    content.set_margin_bottom(0)
+    content.set_margin_start(DIALOG_ACTION_INSET_START)
+    content.set_margin_end(DIALOG_ACTION_INSET_END)
+    return content
+
+
 def configure_action_area(action_area: Gtk.Box) -> Gtk.Box:
     """Apply the shared action layout to a row built by an independent window."""
     action_area.set_spacing(DIALOG_ACTION_SPACING)

@@ -113,11 +113,11 @@ msgid "Installing… Please wait for the installation to finish."
 msgstr ""
 
 #: src/termia/i18n.py:update_installed
-msgid "Update installed. Restart Termia to use the new version."
+msgid "Update installed and required dependencies verified. Close all Termia windows, then open Termia again."
 msgstr ""
 
 #: src/termia/i18n.py:update_installed_source
-msgid "Source update installed and required dependencies verified. Restart Termia manually."
+msgid "Source update installed and required dependencies verified. Close all Termia windows, then open Termia again."
 msgstr ""
 
 #: src/termia/i18n.py:update_cancelling
@@ -2513,4 +2513,12 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_terminal_unavailable
 msgid "The selected terminal is no longer available."
+msgstr ""
+
+#: src/termia/i18n.py:update_source_updated
+msgid "The local repository already contains this update. Review and install any missing dependencies before closing Termia."
+msgstr ""
+
+#: src/termia/i18n.py:update_review_dependencies
+msgid "Review dependencies"
 msgstr ""

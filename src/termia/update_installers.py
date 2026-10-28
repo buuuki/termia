@@ -157,6 +157,32 @@ class GitInstaller:
             check_cancel(cancel)
             return "update_checkout_blocked"
 
+    def recovery_available(self, release: Release, cancel: Event) -> bool:
+        """Recognize the selected release already present in a clean checkout."""
+        if self.current.endswith("-dev"):
+            return False
+        try:
+            branch = self.git("rev-parse", "--abbrev-ref", "HEAD", cancel=cancel)
+            if branch not in ("main", "HEAD"):
+                return False
+            if self.git("status", "--porcelain", "--untracked-files=all", cancel=cancel):
+                return False
+            head = self.git("rev-parse", "HEAD", cancel=cancel)
+            target = self.git("rev-parse", f"refs/tags/{release.tag}^{{commit}}", cancel=cancel)
+            return head == target
+        except UpdateError:
+            check_cancel(cancel)
+            return False
+
+    def prepare_recovery(self, release: Release, cancel: Event) -> str:
+        if not self.recovery_available(release, cancel):
+            raise UpdateError("update_checkout_blocked")
+        self.current = release.label
+        if self.availability(self.current, cancel):
+            raise UpdateError("update_checkout_blocked")
+        self.original_head = self.git("rev-parse", "HEAD", cancel=cancel)
+        return self.original_head
+
     def prepare(self, release: Release, directory: Path, cancel: Event) -> str:
         if self.availability(self.current, cancel):
             raise UpdateError("update_checkout_blocked")

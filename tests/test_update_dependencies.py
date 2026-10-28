@@ -203,6 +203,21 @@ class UpdateTransactionTests(unittest.TestCase):
         self.finish()
         self.assertIn(("error", "update_verification_failed_after_apply"), self.events)
 
+    def test_source_recovery_rechecks_dependencies_before_applying(self):
+        self.result = CheckResult(self.result.release, self.result.installation, True)
+        self.adapter.prepare_recovery.return_value = "synthetic-head"
+        prepared = self.prepare()
+        self.adapter.prepare.assert_not_called()
+        self.adapter.prepare_recovery.assert_called_once()
+        self.controller.install(prepared, assisted=False)
+        self.finish()
+        self.adapter.apply.assert_not_called()
+        self.adapter.dependencies.side_effect = [self.missing, self.ready]
+        self.controller.install(self.controller.prepared, assisted=True)
+        self.finish()
+        self.adapter.install_dependencies.assert_called_once()
+        self.adapter.apply.assert_called_once_with("synthetic-head", self.result.release)
+
 
 class AdapterDependencyTests(unittest.TestCase):
     def test_git_metadata_is_read_from_prepared_commit_not_worktree(self):
@@ -231,3 +246,28 @@ class AdapterDependencyTests(unittest.TestCase):
             self.assertEqual(adapter.dependencies("synthetic.deb", Event()), "plan")
         self.assertEqual(planner.call_args.args[0],
                          ((Requirement("basepkg"),), (Requirement("newpkg", ">=", "2"),)))
+
+    def test_git_recovery_rejects_dirty_or_unrelated_checkout(self):
+        release = Release("v0.6.1-beta", Version.parse("0.6.1-beta"), None)
+        for branch, status, head, target, expected in (
+            ("main", "", "target", "target", True),
+            ("HEAD", "", "target", "target", True),
+            ("feature", "", "target", "target", False),
+            ("main", " M synthetic.py", "target", "target", False),
+            ("main", "", "other", "target", False),
+        ):
+            with self.subTest(branch=branch, status=status, head=head):
+                adapter = GitInstaller(Path("/synthetic"), "0.6.0-beta.4")
+                adapter.git = Mock(side_effect=lambda *args, branch=branch, status=status,
+                                          head=head, target=target, **kwargs: (
+                    branch if args[:2] == ("rev-parse", "--abbrev-ref") else
+                    status if args[0] == "status" else
+                    head if args == ("rev-parse", "HEAD") else target))
+                self.assertEqual(adapter.recovery_available(release, Event()), expected)
+
+    def test_source_recovery_does_not_bypass_development_restriction(self):
+        adapter = GitInstaller(Path("/synthetic"), "0.6.1-dev")
+        adapter.git = Mock()
+        release = Release("v0.6.1-beta", Version.parse("0.6.1-beta"), None)
+        self.assertFalse(adapter.recovery_available(release, Event()))
+        adapter.git.assert_not_called()

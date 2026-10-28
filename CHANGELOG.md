@@ -35,6 +35,9 @@
 
 ### Fixed
 
+- Recognize an already-updated clean source checkout, allow dependency recovery
+  without blocking terminal access, and share updater content/action insets (`#428`).
+
 - Allow native selection of updater messages and align content/actions with
   shared dialog insets, without adding a setup-copy button or automatically
   selecting the version text on opening (`#428`).

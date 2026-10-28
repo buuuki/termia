@@ -173,3 +173,24 @@ class UpdateViewTests(unittest.TestCase):
         self.assertFalse(self.dialog.manual_label.get_visible())
         self.assertFalse(self.dialog.copy_button.get_visible())
         self.assertFalse(self.dialog.plan_box.get_visible())
+
+    def test_dependency_recovery_message_and_action_keep_terminal_access(self):
+        prepared = self.dependency_update()
+        result = CheckResult(prepared.result.release, prepared.result.installation, True)
+        self.dialog.completed("done", result)
+        self.assertIn("already contains", self.dialog.status.get_text())
+        self.assertEqual(self.dialog.install_button.get_label(), "Review dependencies")
+        self.assertFalse(self.dialog.get_modal())
+        self.assertTrue(self.dialog.status.get_selectable())
+        self.dialog.confirm_install(None)
+        self.factory.return_value.prepare_update.assert_called_once_with(result)
+
+    def test_content_and_actions_share_outer_insets_without_nested_padding(self):
+        from termia.dialog_actions import DIALOG_ACTION_INSET_END, DIALOG_ACTION_SPACING
+
+        content = self.dialog.get_child().get_first_child()
+        actions = content.get_next_sibling()
+        self.assertEqual(content.get_margin_end(), DIALOG_ACTION_INSET_END)
+        self.assertEqual(actions.get_margin_end(), DIALOG_ACTION_INSET_END)
+        self.assertEqual(content.get_parent().get_margin_end(), 0)
+        self.assertEqual(actions.get_spacing(), DIALOG_ACTION_SPACING)

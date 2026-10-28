@@ -148,6 +148,12 @@ La via manual mostra les ordres exactes, Copia les ordres i Comprova i continua;
 l’actualització queda pendent fins que es verifiquin els requisits.
 **La nova versió de Termia no arrencarà si falten dependències obligatòries.**
 
+Si Termia continua obert després d’actualitzar el repositori Git net a la versió
+seleccionada, l’actualitzador ofereix **Revisar dependències**. Instal·la les
+dependències des de Termia o copia les ordres manuals i obre un terminal sense
+tancar l’actualitzador. Després de verificar les dependències, tanca totes les
+finestres de Termia i torna a obrir l’aplicació.
+
 La comprovació assistida admet actualment Debian/Ubuntu amb APT/dpkg. Amb Git,
 es verifiquen els paquets i mòduls necessaris abans de modificar el codi.
 Amb .deb, APT resol les dependències amb el paquet i després es verifiquen

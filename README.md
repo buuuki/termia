@@ -147,6 +147,12 @@ dependency installation. Manual mode provides exact commands, Copy commands,
 and Check and continue; the update remains pending until requirements pass.
 **The updated Termia will not start if mandatory dependencies are missing.**
 
+When an older Termia process is still running after its clean Git checkout has
+advanced to the selected release, the updater offers **Review dependencies**.
+Install missing dependencies with Termia, or copy the manual commands and use a
+terminal while keeping the update window open. Completion requires dependency
+verification; afterwards close all Termia windows and open the application again.
+
 **Installation details** shows phases and live package-manager/Git output in a
 read-only, expandable log. Use **Copy log** to copy the latest 65,536 characters;
 starting another check clears it. URLs are hidden, but output can still contain

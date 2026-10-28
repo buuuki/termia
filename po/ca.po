@@ -1776,12 +1776,12 @@ msgid "Installing… Please wait for the installation to finish."
 msgstr "Instal·lant… Espera que acabi la instal·lació."
 
 #: src/termia/i18n.py:update_installed
-msgid "Update installed. Restart Termia to use the new version."
-msgstr "Actualització instal·lada. Reinicia Termia per utilitzar la nova versió."
+msgid "Update installed and required dependencies verified. Close all Termia windows, then open Termia again."
+msgstr "Actualització instal·lada i dependències necessàries verificades. Tanca totes les finestres de Termia i torna a obrir l’aplicació."
 
 #: src/termia/i18n.py:update_installed_source
-msgid "Source update installed and required dependencies verified. Restart Termia manually."
-msgstr "Codi actualitzat i dependències necessàries verificades. Reinicia Termia manualment."
+msgid "Source update installed and required dependencies verified. Close all Termia windows, then open Termia again."
+msgstr "Codi actualitzat i dependències necessàries verificades. Tanca totes les finestres de Termia i torna a obrir l’aplicació."
 
 #: src/termia/i18n.py:update_cancelling
 msgid "Cancelling…"
@@ -2392,3 +2392,11 @@ msgstr "Tipus d’instal·lació: repositori de codi Git"
 #: src/termia/i18n.py:update_recheck_continue
 msgid "Check and continue"
 msgstr "Comprova i continua"
+
+#: src/termia/i18n.py:update_source_updated
+msgid "The local repository already contains this update. Review and install any missing dependencies before closing Termia."
+msgstr "El repositori local ja conté aquesta actualització. Revisa i instal·la les dependències que faltin abans de tancar Termia."
+
+#: src/termia/i18n.py:update_review_dependencies
+msgid "Review dependencies"
+msgstr "Revisar dependències"

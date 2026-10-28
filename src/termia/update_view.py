@@ -10,11 +10,9 @@ from gi.repository import GLib, Gtk
 
 from . import __version__
 from .dialog_actions import (
-    DIALOG_ACTION_INSET_END,
-    DIALOG_ACTION_INSET_START,
-    DIALOG_ACTION_INSET_TOP,
     add_dialog_action_button,
     configure_action_area,
+    configure_dialog_content,
 )
 from .update_controller import CheckResult, PreparedUpdate, UpdateController
 from .update_output import MAX_LOG_CHARS
@@ -22,7 +20,7 @@ from .update_output import MAX_LOG_CHARS
 
 class UpdateDialog(Gtk.Window):
     def __init__(self, parent, translate, controller_factory=UpdateController):
-        super().__init__(title=translate("update_title"), transient_for=parent, modal=True)
+        super().__init__(title=translate("update_title"), transient_for=parent, modal=False)
         self.t = translate
         self.set_default_size(600, -1)
         self.set_destroy_with_parent(True)
@@ -34,9 +32,7 @@ class UpdateDialog(Gtk.Window):
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.set_child(outer)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        box.set_margin_top(DIALOG_ACTION_INSET_TOP)
-        box.set_margin_start(DIALOG_ACTION_INSET_START)
-        box.set_margin_end(DIALOG_ACTION_INSET_END)
+        configure_dialog_content(box)
         outer.append(box)
         box.append(Gtk.Label(label=self.t("update_current").format(version=__version__),
                              xalign=0, selectable=True))
@@ -168,7 +164,10 @@ class UpdateDialog(Gtk.Window):
             if release is None:
                 message = self.t("update_current_latest")
             else:
-                message = self.t("update_available").format(version=release.label)
+                message = self.t("update_source_updated") if payload.source_updated else (
+                    self.t("update_available").format(version=release.label))
+                self.install_button.set_label(self.t(
+                    "update_review_dependencies" if payload.source_updated else "update_install"))
                 self.notes.set_uri(release.url)
                 self.notes.set_visible(True)
                 adapter = payload.installation.adapter
@@ -205,6 +204,10 @@ class UpdateDialog(Gtk.Window):
     def confirm_install(self, _button):
         if self.result is None or self.controller.busy:
             return
+        if self.result.source_updated:
+            self.working("update_preparing")
+            self.controller.prepare_update(self.result)
+            return
         confirmation = Gtk.Dialog(title=self.t("update_install"), transient_for=self, modal=True)
         confirmation.set_destroy_with_parent(True)
         add_dialog_action_button(
@@ -217,8 +220,7 @@ class UpdateDialog(Gtk.Window):
         label = Gtk.Label(label=self.t("update_confirm").format(version=self.result.release.label),
                           wrap=True, selectable=True)
         label.set_max_width_chars(55)
-        for side in ("top", "bottom", "start", "end"):
-            getattr(label, f"set_margin_{side}")(16)
+        configure_dialog_content(label)
         confirmation.get_content_area().append(label)
 
         def response(dialog, response_id):
@@ -309,7 +311,10 @@ def attach_updates(about: Gtk.AboutDialog, translate) -> None:
         if dialogs and not dialogs[0].controller.closed:
             dialogs[0].present()
             return
+        was_modal = about.get_modal()
+        about.set_modal(False)
         dialog = UpdateDialog(about, translate)
+        dialog.connect("unrealize", lambda *_: about.set_modal(was_modal) if about.get_visible() else None)
         dialogs[:] = [dialog]
         dialog.present()
         dialog.check()

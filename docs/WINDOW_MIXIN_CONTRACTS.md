@@ -285,6 +285,15 @@ keybinding dialogs have comparatively small contracts.
   keep release selection and widgets independent. Release APIs can be replaced
   through the injected client; tests inject clients/adapters without installing.
 
+
+The update check result records whether the selected official release already
+matches a clean source checkout while an older process is running. Recovery
+preparation revalidates that identity before dependency installation; local edits,
+other branches and development processes remain blocked. Update content and
+confirmation labels share `configure_dialog_content`, separate from action-row
+insets. About temporarily releases modality while its updater is open so manual
+commands can run in Termia terminals.
+
 ### SFTP boundary
 
 - `sftp_service.py` defines immutable endpoint/entry data, typed authentication
