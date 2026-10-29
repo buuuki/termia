@@ -1,0 +1,80 @@
+name: termia-430-gnome26
+
+services:
+  desktop:
+    build:
+      context: .
+      target: desktop
+    image: termia-lab-430-gnome26:local
+    hostname: termia-gnome26
+    platform: linux/amd64
+    labels:
+      local.termia.issue: "430"
+      local.termia.lab.stage: desktop-prototype
+    cgroup: private
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor=unconfined
+      - seccomp=./seccomp-desktop.json
+    devices:
+      - /dev/fuse:/dev/fuse:rw
+    tty: true
+    cpus: 2
+    mem_limit: 4g
+    pids_limit: 4096
+    shm_size: 256m
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
+    ports:
+      - "127.0.0.1:13389:3389"
+    volumes:
+      - profile:/home/lab
+      - credentials:/var/lib/termia-lab
+    stop_signal: SIGRTMIN+3
+    stop_grace_period: 30s
+    restart: "no"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          systemctl is-active --quiet termia-lab-user-rdp.service &&
+          test -S /run/user/1100/wayland-0 &&
+          ss -H -ltn 'sport = :3389' | grep -q .
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  rdp-probe:
+    profiles: [validation]
+    build:
+      context: .
+      target: rdp-probe
+    image: termia-lab-430-rdp-probe:local
+    labels:
+      local.termia.issue: "430"
+      local.termia.lab.stage: rdp-validation
+    depends_on:
+      desktop:
+        condition: service_healthy
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    cpus: 1
+    mem_limit: 1g
+    pids_limit: 256
+    tmpfs:
+      - /tmp:size=512m
+    environment:
+      DISPLAY: ":99"
+      HOME: /tmp/rdp-probe
+    volumes:
+      - credentials:/credentials:ro
+    restart: "no"
+
+volumes:
+  profile:
+  credentials:

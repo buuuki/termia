@@ -7,6 +7,10 @@ SSH/SFTP/SCP y las pruebas de memoria y ciclos de vida desde un clon nuevo. El
 cliente monta el código en solo lectura, sin tu escritorio, agente SSH ni perfil
 personal de Termia.
 
+La [base independiente Ubuntu 26.04 GNOME](gnome26/README.es.md) se está
+construyendo en #430. Su escritorio experimental GNOME Wayland/RDP tiene
+comprobaciones funcionales; faltan Termia y la aceptación completa del laboratorio.
+
 ## Primer arranque en otro PC
 
 Necesitas Linux, Docker Engine local accesible para tu usuario, Git, Python 3,

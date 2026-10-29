@@ -7,6 +7,10 @@ SSH/SFTP/SCP i les proves de memòria i cicles de vida des d'un clon nou. El cli
 munta el codi en només lectura, sense l'escriptori, l'agent SSH ni el perfil
 personal de Termia de l'amfitrió.
 
+La [base independent Ubuntu 26.04 GNOME](gnome26/README.ca.md) s'està
+construint a #430. L'escriptori experimental GNOME Wayland/RDP té comprovacions
+funcionals; falten Termia i l'acceptació completa del laboratori.
+
 ## Primera arrencada en un altre PC
 
 Cal Linux, Docker Engine local accessible per al teu usuari, Git, Python 3,

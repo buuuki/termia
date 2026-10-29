@@ -4,6 +4,23 @@
 
 ### Added
 
+- Include English, Spanish and Catalan desktop language support and native
+  Mozilla Firefox in the Ubuntu 26 GNOME laboratory image (`#430`).
+
+- Persist the GTK laboratory launcher and dock setup in the optional image,
+  and document resuming an existing desktop and rebuilding it from Git (`#430`).
+
+- Add an optional synthetic updater trial image to the GNOME laboratory, with
+  the existing compact GTK 4 controls for #428 and native desktop authorization;
+  integration validation remains required (`#430`).
+
+- Add a pinned Ubuntu 26.04 Docker base and experimental GNOME Wayland/RDP
+  desktop with synthetic credentials, a GFX-capable Remmina profile, scoped
+  teardown and input/reconstruction checks; full acceptance remains pending (`#430`).
+
+- Provide the experimental GNOME RDP server with the FUSE device required by
+  clipboard negotiation so ordinary clients do not abort the server (`#430`).
+
 - Add isolated Wayland terminal churn diagnostics alongside existing X11 modes,
   verify the active graphical backend and document memory validation (`#419`).
 
@@ -11,6 +28,12 @@
   instructions before publication; document the beta.5 development cycle.
 
 ### Changed
+
+- Accept the GNOME Docker laboratory as a baseline for testing Termia, keeping
+  application/updater validation separate and retaining documented limits (`#430`).
+
+- Restrict GNOME updater build inputs to the required fixture scripts so the
+  retired Tkinter panel is never exported (`#430`).
 
 - Establish `0.6.1-dev` as the active maintenance base and update contributor
   analysis commands while retaining the previous development branch (`#426`).
@@ -28,6 +51,15 @@
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
 ### Fixed
+
+- Initialize the laboratory dock through the Ubuntu user session and provide
+  an English UTF-8 desktop baseline while retaining user preferences (`#430`).
+
+- Isolate laboratory trial profiles for older Termia versions using their
+  supported XDG configuration and state directories (`#430`).
+
+- Allow sandboxed GNOME image loaders to use `pivot_root` through a versioned
+  Docker seccomp profile so desktop icons and backgrounds load (`#430`).
 
 - Wait for native GTK readiness and drag lifecycle signals in the Notes category
   pointer test, with bounded waits and timeout diagnostics (`#413`).
