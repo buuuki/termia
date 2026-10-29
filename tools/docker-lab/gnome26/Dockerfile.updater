@@ -8,10 +8,8 @@ RUN echo 'b0b1382abb505ab09f004a6b555f39b8b142c95a7d4dbe01052784f1151b0691  /opt
        git ptyxis /opt/fixtures/beta3.deb \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 COPY review/ /opt/review/
-COPY panel.py launch.py reset.py updater-init.sh UPDATER_COMMIT /opt/upgrade-lab/
+COPY panel.py launch.py reset.py updater-init.sh configure-desktop.py UPDATER_COMMIT /opt/upgrade-lab/
+COPY org.termia.TestingLab.desktop /usr/share/applications/
 COPY termia-lab-updater.service /etc/systemd/system/
 RUN mkdir -p /etc/systemd/system/termia-lab.target.wants \
-    && ln -s /etc/systemd/system/termia-lab-updater.service /etc/systemd/system/termia-lab.target.wants/ \
-    && printf '%s\n' '[Desktop Entry]' 'Type=Application' 'Name=Termia updater laboratory' \
-       'Exec=env GDK_BACKEND=wayland python3 /opt/upgrade-lab/panel.py' \
-       'Icon=utilities-terminal' 'Terminal=false' > /usr/share/applications/termia-updater-lab.desktop
+    && ln -s /etc/systemd/system/termia-lab-updater.service /etc/systemd/system/termia-lab.target.wants/

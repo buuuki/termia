@@ -7,6 +7,47 @@ executat directament amb Docker. Termia i el panell tenen una imatge opcional
 de proves; la integració encara no està validada. Les personalitzacions, optimitzacions i mesures d'aïllament següents es
 revisaran amb el sol·licitant. El laboratori continua incomplet.
 
+## Reobrir l'escriptori existent
+
+Si el contenidor ja existeix en aquest equip, reutilitza'l sense reconstruir-lo.
+Parteix d'un checkout net; desa els canvis locals abans de canviar de branca.
+
+```bash
+git switch maintenance/430-docker-gnome
+git pull --ff-only
+docker start termia-430-gnome26-desktop-1
+docker inspect --format '{{.State.Health.Status}}' termia-430-gnome26-desktop-1
+docker exec termia-430-gnome26-desktop-1 cat /var/lib/termia-lab/password
+remmina -c tools/docker-lab/gnome26/laboratory.remmina
+```
+
+Espera que indiqui `healthy` abans de connectar. Si mostra `starting`, espera
+uns segons i repeteix la consulta; si indica `unhealthy`, consulta els registres.
+Connecta per RDP a **127.0.0.1:13389**, usuari **lab**, domini buit i la contrasenya
+generada. La icona **Laboratorio de pruebas de Termia** de la dock obre el panell
+GTK compacte. Els volums del perfil i les credencials conserven la dock,
+la contrasenya i les dades. Si reapareixen les peticions repetides de contrasenya,
+aplica la solució temporal del primer inici documentada més avall.
+No eliminis els volums per reprendre una sessió existent.
+
+## Si Docker Compose no està disponible
+
+Pots reobrir un contenidor existent amb `docker start` sense Compose.
+Per construir des de zero, descarrega el binari oficial independent al
+directori local ignorat i comprova'n el SHA-256 fixat:
+
+```bash
+mkdir -p tools/docker-lab/.runtime/bin
+curl --fail --location --proto '=https' --proto-redir '=https' \
+  https://github.com/docker/compose/releases/download/v2.40.0/docker-compose-linux-x86_64 \
+  -o tools/docker-lab/.runtime/bin/docker-compose
+printf '%s\n' 'bd5835ccbbf06a42dcb5294c65e34a4634b34447afb9ed6fc7adf18a000e0f99  tools/docker-lab/.runtime/bin/docker-compose' | sha256sum -c -
+chmod 700 tools/docker-lab/.runtime/bin/docker-compose
+```
+
+A les ordres de construcció següents, substitueix `docker compose` per
+`tools/docker-lab/.runtime/bin/docker-compose` si utilitzes aquest binari.
+
 ## Reconstrucció en un altre PC i límits de portabilitat
 
 Les receptes reconstrueixen el sistema sense exportar una imatge, importar un
@@ -95,6 +136,9 @@ validar i no és necessària per reconstruir el sistema. No utilitzar
 | `seccomp-desktop.json`, `LICENSE.seccomp` | Perfil seccomp, permís `pivot_root` i llicència d'origen |
 | `laboratory.remmina` | Perfil humà sense contrasenya desada |
 | `rdp-probe.sh` | Client opcional aïllat per validar RDP |
+| `Dockerfile.updater`, `compose.updater.yaml`, `prepare-updater.sh` | Imatge opcional i preparació d'entrades permeses |
+| `panel.py`, `updater-init.sh`, `termia-lab-updater.service` | Controls GTK recuperats i inici de proves sintètiques |
+| `org.termia.TestingLab.desktop`, `configure-desktop.py` | Llançador del panell i configuració additiva de la dock |
 
 Consultar l'estat sense modificar-lo:
 
@@ -189,13 +233,15 @@ Termia i els controls requereixen aquesta imatge opcional; l'escriptori base no
 els inclou. Construeix primer l'escriptori base i executa des de l'arrel:
 
 ```bash
+git fetch origin fix/428-update-dependencies
+git fetch origin tag v0.6.0-beta.3 tag v0.6.0-beta.4
 bash tools/docker-lab/gnome26/prepare-updater.sh bc3abd444efb8065cf00607ff1ccb743e7ece5bf
 docker compose -f tools/docker-lab/gnome26/compose.yaml -f tools/docker-lab/gnome26/compose.updater.yaml build desktop
 docker compose -f tools/docker-lab/gnome26/compose.yaml -f tools/docker-lab/gnome26/compose.updater.yaml up -d --no-build --wait --wait-timeout 120 desktop
 ```
 
 La recreació interromp RDP, però conserva el perfil i les credencials.
-Obre **Termia updater laboratory** a la graella d'aplicacions del GNOME.
+Obre **Laboratorio de pruebas de Termia** des de la dock o la graella d'aplicacions del GNOME.
 Ofereix Git beta.3 original, beta.3 amb l'actualitzador proposat, Debian i
 reinici. Tanca Termia i restaura la baseline des del panell entre proves.
 La restauració canvia paquets i substitueix només el checkout sintètic de
@@ -214,6 +260,21 @@ No hi facis servir dades personals.
 Si reapareixen les peticions del primer ús, aplica la solució temporal anterior.
 Comprova cancel·lar/acceptar l'autorització nativa, actualitzar Git i Debian i
 reiniciar abans de considerar validada la integració.
+
+### Estat actual de validació
+
+L'escriptori GNOME Wayland/RDP i el panell GTK compacte recuperat s'han provat
+localment. La imatge opcional instal·la el llançador i el fixa a la dock sense
+substituir els preferits existents. Els perfils de prova usen variables XDG
+per a versions antigues de Termia, a més de les variables TERMIA actuals.
+És un estat intermedi del laboratori, no una versió validada de l'actualitzador.
+
+L'acceptació completa de les actualitzacions Git/.deb continua pendent a #428.
+La prova per codi va arribar a beta.4 sense GtkSourceView 5 i després no va arrencar.
+La prova Debian va informar que `gir1.2-gtksource-5` no era instal·lable amb el
+catàleg de paquets actual. Les millores demanades de distribució de la
+finestra d'instal·lació i dels missatges de dependències també continuen
+pendents a #428. Un escriptori operatiu no certifica una actualització correcta.
 
 ## Configuració i limitacions actuals
 

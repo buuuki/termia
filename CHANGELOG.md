@@ -4,6 +4,9 @@
 
 ### Added
 
+- Persist the GTK laboratory launcher and dock setup in the optional image,
+  and document resuming an existing desktop and rebuilding it from Git (`#430`).
+
 - Add an optional synthetic updater trial image to the GNOME laboratory, with
   the existing compact GTK 4 controls for #428 and native desktop authorization;
   integration validation remains required (`#430`).
@@ -42,6 +45,9 @@
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
 ### Fixed
+
+- Isolate laboratory trial profiles for older Termia versions using their
+  supported XDG configuration and state directories (`#430`).
 
 - Allow sandboxed GNOME image loaders to use `pivot_root` through a versioned
   Docker seccomp profile so desktop icons and backgrounds load (`#430`).

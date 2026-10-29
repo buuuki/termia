@@ -7,6 +7,46 @@ directly with Docker. Termia and the control panel have an optional trial image;
 their integration is not yet validated. Runtime hardening and further personalization/optimization still require review with
 the requester. The laboratory is incomplete and is not release validation.
 
+## Reopen the existing desktop
+
+If the container already exists on this computer, reuse it instead of rebuilding.
+Start from a clean checkout; save local changes before switching branches.
+
+```bash
+git switch maintenance/430-docker-gnome
+git pull --ff-only
+docker start termia-430-gnome26-desktop-1
+docker inspect --format '{{.State.Health.Status}}' termia-430-gnome26-desktop-1
+docker exec termia-430-gnome26-desktop-1 cat /var/lib/termia-lab/password
+remmina -c tools/docker-lab/gnome26/laboratory.remmina
+```
+
+Wait for `healthy` before connecting. If it says `starting`, wait a few seconds
+and repeat the inspection command; inspect the container logs if it is unhealthy.
+Use RDP at **127.0.0.1:13389**, user **lab**, no domain, and the generated password.
+The **Laboratorio de pruebas de Termia** dock icon opens the compact GTK panel.
+The profile and credential volumes preserve the dock, password and user data.
+If first-login password prompts recur, use the temporary workaround documented
+below. Do not remove volumes when resuming an existing session.
+
+## If Docker Compose is unavailable
+
+An existing container can be resumed with `docker start` without Compose.
+For a fresh build, install the official standalone Compose binary in the ignored
+local tools directory and verify its fixed SHA-256:
+
+```bash
+mkdir -p tools/docker-lab/.runtime/bin
+curl --fail --location --proto '=https' --proto-redir '=https' \
+  https://github.com/docker/compose/releases/download/v2.40.0/docker-compose-linux-x86_64 \
+  -o tools/docker-lab/.runtime/bin/docker-compose
+printf '%s\n' 'bd5835ccbbf06a42dcb5294c65e34a4634b34447afb9ed6fc7adf18a000e0f99  tools/docker-lab/.runtime/bin/docker-compose' | sha256sum -c -
+chmod 700 tools/docker-lab/.runtime/bin/docker-compose
+```
+
+In the build commands below, replace `docker compose` with
+`tools/docker-lab/.runtime/bin/docker-compose` when using this standalone binary.
+
 ## Reconstruction on another PC and portability limits
 
 The recipes rebuild the system without exporting an image, importing a disk or
@@ -94,6 +134,9 @@ not needed to rebuild the system. Avoid `down --volumes` when retaining data.
 | `seccomp-desktop.json`, `LICENSE.seccomp` | Seccomp profile, `pivot_root` permission and upstream license |
 | `laboratory.remmina` | Human client profile without stored password |
 | `rdp-probe.sh` | Optional isolated RDP validation client |
+| `Dockerfile.updater`, `compose.updater.yaml`, `prepare-updater.sh` | Optional updater image and allowlisted fixture preparation |
+| `panel.py`, `updater-init.sh`, `termia-lab-updater.service` | Recovered GTK controls and synthetic trial initialization |
+| `org.termia.TestingLab.desktop`, `configure-desktop.py` | Panel launcher and additive dock setup |
 
 Read-only status commands:
 
@@ -189,13 +232,15 @@ Termia and its controls require this optional image; the base desktop does not
 include them. Build the base desktop first, then run from the repository root:
 
 ```bash
+git fetch origin fix/428-update-dependencies
+git fetch origin tag v0.6.0-beta.3 tag v0.6.0-beta.4
 bash tools/docker-lab/gnome26/prepare-updater.sh bc3abd444efb8065cf00607ff1ccb743e7ece5bf
 docker compose -f tools/docker-lab/gnome26/compose.yaml -f tools/docker-lab/gnome26/compose.updater.yaml build desktop
 docker compose -f tools/docker-lab/gnome26/compose.yaml -f tools/docker-lab/gnome26/compose.updater.yaml up -d --no-build --wait --wait-timeout 120 desktop
 ```
 
 Recreation interrupts RDP but preserves the existing profile and credentials.
-Open **Termia updater laboratory** in GNOME's application grid. It provides
+Open **Laboratorio de pruebas de Termia** from the dock or GNOME's application grid. It provides
 original Git beta.3, beta.3 with the proposed updater, Debian and restart modes.
 Close Termia and use the panel's baseline reset between trials. That reset
 changes packages and replaces only the synthetic checkout at /home/lab/source.
@@ -214,6 +259,20 @@ Do not store personal data in this lab.
 If first-use prompts recur, use the temporary workaround above. Verify native
 authorization cancellation/acceptance, Git and Debian updates and restart
 before treating the integration as validated.
+
+### Current validation status
+
+The GNOME Wayland/RDP desktop and the recovered compact GTK panel have been
+exercised locally. The optional updater image installs the panel launcher and
+pins it without replacing existing GNOME favorites. Trial profiles use XDG
+variables for older Termia versions as well as the newer TERMIA variables.
+This is an intermediate laboratory checkpoint, not a validated updater release.
+
+Git/.deb end-to-end acceptance remains pending in #428. The source trial reached
+beta.4 without GtkSourceView 5 and then failed to start. The Debian trial reported
+that `gir1.2-gtksource-5` was not installable with its current package metadata.
+The requested installer-layout and dependency-message improvements are also
+pending in #428. Do not interpret a working desktop as a successful upgrade.
 
 ## Deployment and current limitations
 

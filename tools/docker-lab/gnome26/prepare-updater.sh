@@ -37,12 +37,14 @@ download v0.6.0-beta.3 termia_0.6.0.beta.3-1_all.deb beta3.deb \
   b0b1382abb505ab09f004a6b555f39b8b142c95a7d4dbe01052784f1151b0691
 download v0.6.0-beta.4 termia_0.6.0.beta.4-1_all.deb termia_0.6.0.beta.4-1_all.deb \
   a8f1582fd70eb12510b29522fe164b23e38c0f69850e63a0908de6844fa995b3
-for name in Dockerfile.updater updater-init.sh termia-lab-updater.service; do
+for name in Dockerfile.updater updater-init.sh termia-lab-updater.service \
+            configure-desktop.py org.termia.TestingLab.desktop; do
   cp "$here/$name" "$context/$name"
 done
 printf '%s\n' "$commit" > "$context/UPDATER_COMMIT"
 printf '%s\n' '**' '!Dockerfile.updater' '!updater-init.sh' \
   '!termia-lab-updater.service' '!panel.py' '!launch.py' '!reset.py' \
+  '!configure-desktop.py' '!org.termia.TestingLab.desktop' \
   '!UPDATER_COMMIT' '!review/' '!review/**' '!fixtures/' '!fixtures/**' > "$context/.dockerignore"
 find "$context" -type d -exec chmod 755 {} +
 find "$context" -type f -exec chmod 644 {} +

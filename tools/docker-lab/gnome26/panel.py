@@ -50,6 +50,8 @@ def start(command, label, *, exclusive=True, profile=False):
         launcher.set_stdout_file_path(str(directory / "console.log"))
         launcher.setenv("PYTHONUNBUFFERED", "1", True)
         if profile:
+            launcher.setenv("XDG_CONFIG_HOME", str(directory / "config"), True)
+            launcher.setenv("XDG_STATE_HOME", str(directory / "state"), True)
             launcher.setenv("TERMIA_CONFIG_DIR", str(directory / "config"), True)
             launcher.setenv("TERMIA_STATE_DIR", str(directory / "state"), True)
         process = launcher.spawnv(command)
