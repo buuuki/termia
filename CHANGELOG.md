@@ -4,6 +4,10 @@
 
 ### Added
 
+- Add an optional synthetic updater trial image to the GNOME laboratory, with
+  the existing compact GTK 4 controls for #428 and native desktop authorization;
+  integration validation remains required (`#430`).
+
 - Add a pinned Ubuntu 26.04 Docker base and experimental GNOME Wayland/RDP
   desktop with synthetic credentials, a GFX-capable Remmina profile, scoped
   teardown and input/reconstruction checks; full acceptance remains pending (`#430`).
@@ -18,6 +22,9 @@
   instructions before publication; document the beta.5 development cycle.
 
 ### Changed
+
+- Restrict GNOME updater build inputs to the required fixture scripts so the
+  retired Tkinter panel is never exported (`#430`).
 
 - Establish `0.6.1-dev` as the active maintenance base and update contributor
   analysis commands while retaining the previous development branch (`#426`).

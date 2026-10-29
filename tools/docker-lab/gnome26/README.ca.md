@@ -3,8 +3,8 @@
 [English](README.md) · [Español](README.es.md)
 
 La issue #430 disposa d'un prototip funcional de GNOME sobre Wayland amb RDP,
-executat directament amb Docker. Termia i el panell encara no estan integrats.
-Les personalitzacions, optimitzacions i mesures d'aïllament següents es
+executat directament amb Docker. Termia i el panell tenen una imatge opcional
+de proves; la integració encara no està validada. Les personalitzacions, optimitzacions i mesures d'aïllament següents es
 revisaran amb el sol·licitant. El laboratori continua incomplet.
 
 ## Reconstrucció en un altre PC i límits de portabilitat
@@ -159,6 +159,61 @@ L'assistent de benvinguda d'Ubuntu continua habilitat i pot obrir una petició
 nativa d'autenticació per a les opcions de privadesa. No s'han acceptat opcions
 automàticament. Per comprovar l'entrada es va aturar el seu servei de primer
 inici només en aquella sessió, sense deshabilitar-lo ni canviar preferències.
+
+### Peticions repetides de contrasenya en el primer ús
+
+L'assistent de benvinguda va sol·licitar repetidament autorització de privadesa
+en una altra prova de primer ús. Els registres van identificar `gnome-initial-setup`
+sol·licitant `com.ubuntu.whoopsiepreferences.change`; l'agent d'autenticació
+de GNOME també va registrar un error. Va passar abans d'instal·lar Termia.
+
+Com a solució temporal, executa això a l'amfitrió Docker des de l'arrel del repositori:
+
+```bash
+docker compose -f tools/docker-lab/gnome26/compose.yaml exec desktop \
+  runuser -u lab -- env XDG_RUNTIME_DIR=/run/user/1100 \
+  DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1100/bus \
+  systemctl --user stop gnome-initial-setup-first-login.service
+```
+
+Això atura l'assistent només en la sessió actual. No canvia les polítiques
+d'autenticació ni accepta opcions de privadesa. Després d'aturar-lo no es van
+registrar noves sol·licituds durant 20 segons i el sol·licitant va confirmar que
+l'escriptori era usable. No valida l'inici següent ni resol el problema de fons.
+Un contenidor saludable i una connexió Wayland/RDP activa no són suficients per
+validar el primer ús ni l'autorització administrativa.
+
+## Laboratori opcional de l'actualitzador — #428
+
+Termia i els controls requereixen aquesta imatge opcional; l'escriptori base no
+els inclou. Construeix primer l'escriptori base i executa des de l'arrel:
+
+```bash
+bash tools/docker-lab/gnome26/prepare-updater.sh bc3abd444efb8065cf00607ff1ccb743e7ece5bf
+docker compose -f tools/docker-lab/gnome26/compose.yaml -f tools/docker-lab/gnome26/compose.updater.yaml build desktop
+docker compose -f tools/docker-lab/gnome26/compose.yaml -f tools/docker-lab/gnome26/compose.updater.yaml up -d --no-build --wait --wait-timeout 120 desktop
+```
+
+La recreació interromp RDP, però conserva el perfil i les credencials.
+Obre **Termia updater laboratory** a la graella d'aplicacions del GNOME.
+Ofereix Git beta.3 original, beta.3 amb l'actualitzador proposat, Debian i
+reinici. Tanca Termia i restaura la baseline des del panell entre proves.
+La restauració canvia paquets i substitueix només el checkout sintètic de
+/home/lab/source. Fes servir la contrasenya sintètica mostrada per autoritzar.
+
+Els scripts d'inici i restauració de les proves s'exporten individualment;
+el panell GTK prové d'aquest laboratori.
+El panell GTK 4 recuperat i Termia usen Wayland i l'agent polkit natiu del GNOME.
+No s'instal·la cap agent d'autenticació al terminal ni regles PAM/polkit.
+El codi de l'actualitzador prové del commit registrat; es comproven els
+digests dels paquets i les releases usen fixtures locals. Són proves
+beta.3 → beta.4, no una publicació de manteniment ni una actualització validada.
+Cada execució té un perfil sintètic i un registre independents a
+/home/lab/termia-updater-evidence, conservats al volum del perfil.
+No hi facis servir dades personals.
+Si reapareixen les peticions del primer ús, aplica la solució temporal anterior.
+Comprova cancel·lar/acceptar l'autorització nativa, actualitzar Git i Debian i
+reiniciar abans de considerar validada la integració.
 
 ## Configuració i limitacions actuals
 

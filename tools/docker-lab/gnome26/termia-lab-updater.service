@@ -1,0 +1,9 @@
+[Unit]
+Description=Prepare synthetic Termia updater trials
+Requires=termia-lab-user-rdp.service
+After=termia-lab-user-rdp.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash /opt/upgrade-lab/updater-init.sh

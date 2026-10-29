@@ -3,8 +3,8 @@
 [English](README.md) · [Català](README.ca.md)
 
 La issue #430 dispone de un prototipo funcional de GNOME sobre Wayland con
-RDP, ejecutado directamente con Docker. Termia y el panel aún no están
-integrados. Se revisarán contigo las siguientes personalizaciones,
+RDP, ejecutado directamente con Docker. Termia y el panel disponen de una imagen
+opcional de pruebas; su integración aún no está validada. Se revisarán contigo las personalizaciones,
 optimizaciones y medidas de aislamiento. El laboratorio sigue incompleto.
 
 ## Reconstrucción en otro PC y alcance de la portabilidad
@@ -160,6 +160,61 @@ petición nativa de autenticación para sus opciones de privacidad. No se han
 aceptado opciones automáticamente. Para comprobar la entrada se detuvo su
 servicio de primer inicio solo en aquella sesión, sin deshabilitarlo ni
 cambiar las preferencias de privacidad.
+
+### Peticiones repetidas de contraseña en el primer uso
+
+El asistente de bienvenida solicitó repetidamente autorización de privacidad
+en otra prueba de primer uso. Los registros identificaron a `gnome-initial-setup`
+solicitando `com.ubuntu.whoopsiepreferences.change`; el agente de autenticación
+de GNOME también registró un error. Ocurrió antes de instalar Termia.
+
+Como solución temporal, ejecuta esto en el anfitrión Docker desde la raíz del repositorio:
+
+```bash
+docker compose -f tools/docker-lab/gnome26/compose.yaml exec desktop \
+  runuser -u lab -- env XDG_RUNTIME_DIR=/run/user/1100 \
+  DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1100/bus \
+  systemctl --user stop gnome-initial-setup-first-login.service
+```
+
+Esto detiene el asistente solo en la sesión actual. No cambia las políticas de
+autenticación ni acepta opciones de privacidad. Tras detenerlo no se registraron
+nuevas solicitudes durante 20 segundos y el solicitante confirmó que el escritorio
+era usable. No valida el siguiente inicio ni resuelve el fallo de fondo.
+Un contenedor saludable y una conexión Wayland/RDP activa no bastan para validar
+el primer uso ni la autorización administrativa.
+
+## Laboratorio opcional del actualizador — #428
+
+Termia y los controles requieren esta imagen opcional; el escritorio base no
+los incluye. Construye primero el escritorio base y ejecuta desde la raíz:
+
+```bash
+bash tools/docker-lab/gnome26/prepare-updater.sh bc3abd444efb8065cf00607ff1ccb743e7ece5bf
+docker compose -f tools/docker-lab/gnome26/compose.yaml -f tools/docker-lab/gnome26/compose.updater.yaml build desktop
+docker compose -f tools/docker-lab/gnome26/compose.yaml -f tools/docker-lab/gnome26/compose.updater.yaml up -d --no-build --wait --wait-timeout 120 desktop
+```
+
+La recreación interrumpe RDP, pero conserva el perfil y las credenciales.
+Abre **Termia updater laboratory** en la cuadrícula de aplicaciones de GNOME.
+Ofrece Git beta.3 original, beta.3 con el actualizador propuesto, Debian y
+reinicio. Cierra Termia y restaura la baseline desde el panel entre pruebas.
+Esa restauración cambia paquetes y reemplaza solo el checkout sintético de
+/home/lab/source. Usa la contraseña sintética mostrada para autorizar.
+
+Los scripts de inicio y restauración de las pruebas se exportan individualmente;
+el panel GTK procede de este laboratorio.
+El panel GTK 4 recuperado y Termia usan Wayland y el agente polkit nativo de GNOME.
+No se instala un agente de autenticación en terminal ni reglas PAM/polkit.
+El código del actualizador procede del commit registrado; se comprueban los
+digests de los paquetes y las releases usan fixtures locales. Son pruebas
+beta.3 → beta.4, no una publicación de mantenimiento ni una actualización validada.
+Cada ejecución tiene un perfil sintético y un registro independientes en
+/home/lab/termia-updater-evidence, conservados en el volumen del perfil.
+No uses datos personales.
+Si reaparecen las peticiones del primer uso, aplica la solución temporal anterior.
+Comprueba cancelar/aceptar la autorización nativa, actualizar Git y Debian y
+reiniciar antes de considerar validada la integración.
 
 ## Configuración y limitaciones actuales
 
