@@ -20,18 +20,55 @@ LABEL org.opencontainers.image.title="Termia Ubuntu 26.04 desktop laboratory bas
 COPY --from=certificate-bootstrap /bootstrap-ca.crt /tmp/bootstrap-ca.crt
 COPY ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources
 
+ARG FIREFOX_VERSION=159.0~build1
+
+# Mozilla repository key, verified against the published signing fingerprint.
+ADD --checksum=sha256:3ecc63922b7795eb23fdc449ff9396f9114cb3cf186d6f5b53ad4cc3ebfbb11f \
+    https://packages.mozilla.org/apt/repo-signing-key.gpg \
+    /tmp/packages.mozilla.org.asc
+
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get -o Acquire::https::CaInfo=/tmp/bootstrap-ca.crt \
         -o APT::Update::Error-Mode=any update \
     && apt-get -o Acquire::https::CaInfo=/tmp/bootstrap-ca.crt \
         install -y --install-recommends \
         ubuntu-desktop gnome-remote-desktop systemd-sysv dbus ca-certificates \
+        language-pack-en language-pack-gnome-en \
+        language-pack-es language-pack-gnome-es \
+        language-pack-ca language-pack-gnome-ca \
+    && locale-gen en_US.UTF-8 es_ES.UTF-8 ca_ES.UTF-8 \
+    && install -d -m 0755 /etc/apt/keyrings \
+    && install -m 0644 /tmp/packages.mozilla.org.asc \
+        /etc/apt/keyrings/packages.mozilla.org.asc \
+    && printf '%s\n' \
+        'Types: deb' \
+        'URIs: https://packages.mozilla.org/apt' \
+        'Suites: mozilla' \
+        'Components: main' \
+        'Signed-By: /etc/apt/keyrings/packages.mozilla.org.asc' \
+        > /etc/apt/sources.list.d/mozilla.sources \
+    && printf '%s\n' \
+        'Package: firefox firefox-l10n-*' \
+        'Pin: origin packages.mozilla.org' \
+        'Pin-Priority: 1000' \
+        '' \
+        'Package: firefox' \
+        'Pin: release o=Ubuntu' \
+        'Pin-Priority: -1' \
+        > /etc/apt/preferences.d/mozilla \
+    && apt-get -o APT::Update::Error-Mode=any update \
+    && apt-get install -y --no-install-recommends --no-remove \
+        --allow-downgrades \
+        "firefox=${FIREFOX_VERSION}" \
+        "firefox-l10n-es-es=${FIREFOX_VERSION}" \
+        "firefox-l10n-ca=${FIREFOX_VERSION}" \
     && mkdir -p /usr/local/share/termia-lab \
     && dpkg-query -W -f='${Package}\t${Version}\t${Architecture}\t${db:Status-Status}\n' \
         | LC_ALL=C sort > /usr/local/share/termia-lab/packages.tsv \
     && printf '%s\n' '20261027T000000Z' > /usr/local/share/termia-lab/apt-snapshot \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/bootstrap-ca.crt
+    && rm -rf /var/lib/apt/lists/* /tmp/bootstrap-ca.crt \
+        /tmp/packages.mozilla.org.asc
 
 # No desktop startup, user accounts, listening ports, volumes or host integration
 # are configured at this package-installation stage.
@@ -42,7 +79,8 @@ FROM base AS desktop
 LABEL org.opencontainers.image.description="Experimental GNOME Wayland/RDP desktop; Termia integration remains pending." \
     local.termia.lab.stage="desktop-prototype"
 
-RUN useradd --create-home --uid 1100 --shell /bin/bash --groups sudo lab \
+RUN update-locale LANG=en_US.UTF-8 \
+    && useradd --create-home --uid 1100 --shell /bin/bash --groups sudo lab \
     && rm -f /etc/machine-id /var/lib/dbus/machine-id \
     && touch /etc/machine-id \
     && ln -s /etc/machine-id /var/lib/dbus/machine-id \

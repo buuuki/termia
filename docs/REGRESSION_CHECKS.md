@@ -1176,11 +1176,25 @@ unfinished dpkg configuration or broken dependencies. Compare the recorded
 package inventory with the installed packages. Keep Snap transitional packages
 distinct from actual installed Snap applications.
 
+Confirm the English, Spanish and Catalan Ubuntu/GNOME language packs and
+the `en_US.UTF-8`, `es_ES.UTF-8` and `ca_ES.UTF-8` locales are installed.
+Check that Firefox and its Spanish/Catalan language packs match the declared
+initial version and originate from Mozilla's signed repository.
+With a fresh desktop profile, select each session language and verify it
+after the requested session restart. Launch Firefox from the application
+grid, load an HTTPS page and exercise text input through RDP.
+Restart and recreate the container with its profile volume retained;
+verify the selected language and synthetic browser preferences persist.
+Keep these interactive checks separate from successful package installation.
+
 Inspect with network disabled, a read-only filesystem, no host mounts and no
 added capabilities. No persistent volumes, exposed ports or running desktops
-are expected at this stage. A successful image build does not validate GNOME
-Shell on Wayland, remote image/input, Termia startup or teardown/reconstruction
-of the future deployment. Require those checks before closing #430.
+are expected at this stage. A successful image build alone does not validate
+GNOME Shell on Wayland, remote image/input or teardown/reconstruction of the
+desktop deployment. Record those infrastructure observations separately from
+functional application and updater checks, which belong to #428 or their own
+issues. The requester accepted the #430 laboratory baseline on 2026-10-29;
+retain documented limitations without claiming application release validation.
 
 For the experimental `desktop` target, use the Compose commands in that guide.
 Check the declared private cgroups, `SYS_ADMIN`, per-container AppArmor setting,
@@ -1194,6 +1208,16 @@ a GTK `GdkWaylandDisplay` probe and a desktop image received through RDP.
 Verify actual dock/application/desktop icons and wallpaper, not only panel
 text or successful authentication. Glycin/bubblewrap must load images with
 sandboxing enabled and without `pivot_root` permission errors.
+With a fresh isolated test profile, verify the Ubuntu session identity and
+compare its effective defaults with the installed Ubuntu schema overrides:
+window buttons, Yaru themes, fonts, background and keyboard shortcuts.
+Repeat through the laboratory panel and a terminal opened from it; Settings
+must recognize GNOME and applications must inherit the same desktop identity.
+Check the initial `en_US.UTF-8` session locale and user-selected Spanish/Catalan
+across restart and recreation. Keep existing dock and language customizations.
+Inspect extension state with the session unlocked; inactive extensions on the
+lock screen do not establish a loading failure. Verify dock setup waits for the
+Ubuntu user session and reports failure if it cannot become active.
 With clipboard disabled, send a synthetic text marker by RDP mouse/keyboard to
 the stock text editor, save it and compare the resulting bytes. Reconnect and
 confirm the session/file survive. Destroy the new project's volumes and repeat

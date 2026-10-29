@@ -4,6 +4,9 @@
 
 ### Added
 
+- Include English, Spanish and Catalan desktop language support and native
+  Mozilla Firefox in the Ubuntu 26 GNOME laboratory image (`#430`).
+
 - Persist the GTK laboratory launcher and dock setup in the optional image,
   and document resuming an existing desktop and rebuilding it from Git (`#430`).
 
@@ -26,6 +29,9 @@
 
 ### Changed
 
+- Accept the GNOME Docker laboratory as a baseline for testing Termia, keeping
+  application/updater validation separate and retaining documented limits (`#430`).
+
 - Restrict GNOME updater build inputs to the required fixture scripts so the
   retired Tkinter panel is never exported (`#430`).
 
@@ -45,6 +51,9 @@
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
 ### Fixed
+
+- Initialize the laboratory dock through the Ubuntu user session and provide
+  an English UTF-8 desktop baseline while retaining user preferences (`#430`).
 
 - Isolate laboratory trial profiles for older Termia versions using their
   supported XDG configuration and state directories (`#430`).

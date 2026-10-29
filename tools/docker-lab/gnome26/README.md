@@ -2,10 +2,12 @@
 
 [Español](README.es.md) · [Català](README.ca.md)
 
-Issue #430 now has a functional headless GNOME Wayland/RDP prototype, built
-directly with Docker. Termia and the control panel have an optional trial image;
-their integration is not yet validated. Runtime hardening and further personalization/optimization still require review with
-the requester. The laboratory is incomplete and is not release validation.
+Issue #430 provides a headless GNOME Wayland/RDP desktop built directly with
+Docker, plus an optional Termia trial image and GTK control panel. On 2026-10-29
+the requester accepted this environment as a sufficient baseline for testing
+Termia. Functional application and updater validation belong to #428 or their
+own issues. This infrastructure acceptance does not certify a Termia release
+or remove the runtime and portability limitations documented below.
 
 ## Reopen the existing desktop
 
@@ -119,6 +121,45 @@ up and restoring **both** volumes (`profile` and `credentials`) with the desktop
 stopped and ownership/permissions retained. These contain data and secrets;
 keep them out of Git. Cross-host volume migration remains unvalidated and is
 not needed to rebuild the system. Avoid `down --volumes` when retaining data.
+
+## Languages and Firefox
+
+The image includes English, Spanish and Catalan language packs for Ubuntu and
+GNOME, with `en_US.UTF-8`, `es_ES.UTF-8` and `ca_ES.UTF-8` locales.
+Select the session language through Language Support; apply the requested
+session restart to check the result.
+
+Firefox is installed as a native DEB from Mozilla's signed APT repository,
+with Spanish and Catalan translations and English included in the browser.
+The initial version is fixed by `FIREFOX_VERSION` in the Dockerfile.
+Mozilla's repository is separate from the fixed Ubuntu snapshot; rebuilding
+requires that the selected Firefox version remains available.
+
+Open Firefox from the application grid and check an HTTPS page and text input.
+Language packs and Firefox are part of the image. User preferences persist in
+the `profile` volume across container restarts and recreation.
+
+## Ubuntu session defaults
+
+The desktop starts with `en_US.UTF-8`; Language Support can select Spanish or
+Catalan through Ubuntu's existing user settings. Existing profile preferences
+are retained. GDM starts the Ubuntu session, which supplies the Yaru theme,
+Ubuntu fonts, window buttons and keyboard defaults.
+
+Open applications from the GNOME application grid or the panel's dock launcher.
+For a manual panel launch from the host, close its previous instance and run:
+
+```bash
+docker exec termia-430-gnome26-desktop-1 runuser -u lab -- env \
+  XDG_RUNTIME_DIR=/run/user/1100 \
+  DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1100/bus \
+  systemd-run --user --collect --quiet \
+  /usr/bin/python3 /opt/upgrade-lab/panel.py
+```
+
+The user manager supplies the session environment to the panel and its children.
+Dock initialization uses the same mechanism after the Ubuntu session is active.
+Direct `docker exec` launches do not inherit that environment automatically.
 
 ## Configuration map and operation
 

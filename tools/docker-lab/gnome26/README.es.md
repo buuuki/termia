@@ -2,10 +2,13 @@
 
 [English](README.md) · [Català](README.ca.md)
 
-La issue #430 dispone de un prototipo funcional de GNOME sobre Wayland con
-RDP, ejecutado directamente con Docker. Termia y el panel disponen de una imagen
-opcional de pruebas; su integración aún no está validada. Se revisarán contigo las personalizaciones,
-optimizaciones y medidas de aislamiento. El laboratorio sigue incompleto.
+La issue #430 proporciona un escritorio GNOME Wayland/RDP construido directamente
+con Docker, además de una imagen opcional de pruebas de Termia y un panel GTK.
+El 2026-10-29 el solicitante aceptó este entorno como base suficiente para probar
+Termia. La validación funcional de la aplicación y del actualizador corresponde
+a #428 u otras incidencias. Esta aceptación de la infraestructura no certifica
+una versión de Termia ni elimina las limitaciones de ejecución y portabilidad
+documentadas más abajo.
 
 ## Reabrir el escritorio existente
 
@@ -121,6 +124,47 @@ sesión hay que respaldar y restaurar **ambos** volúmenes (`profile` y
 Contienen datos y secretos: no se guardan en Git. La migración de esos volúmenes
 a otro anfitrión todavía no está validada; no es necesaria para reconstruir
 el sistema. No usar `down --volumes` si se quieren conservar esos datos.
+
+## Idiomas y Firefox
+
+La imagen incluye los paquetes de inglés, español y catalán para Ubuntu y
+GNOME, con los locales `en_US.UTF-8`, `es_ES.UTF-8` y `ca_ES.UTF-8`.
+Selecciona el idioma de la sesión desde Language Support; aplica el reinicio
+de sesión que solicite para comprobar el resultado.
+
+Firefox se instala como DEB nativo desde el repositorio APT firmado de Mozilla,
+con traducciones al español y catalán e inglés incluido en el navegador.
+La versión inicial queda fijada mediante `FIREFOX_VERSION` en el Dockerfile.
+El repositorio de Mozilla es independiente del snapshot fijo de Ubuntu;
+reconstruir requiere que siga disponible la versión seleccionada de Firefox.
+
+Abre Firefox desde la cuadrícula de aplicaciones y comprueba una página HTTPS
+y la entrada de texto. Los idiomas y Firefox forman parte de la imagen.
+Las preferencias del usuario persisten en el volumen `profile` al reiniciar
+o recrear el contenedor.
+
+## Valores predeterminados de la sesión Ubuntu
+
+El escritorio inicia con `en_US.UTF-8`; Language Support permite seleccionar
+español o catalán mediante las preferencias de usuario de Ubuntu. Se conservan
+las preferencias del perfil existente. GDM inicia la sesión Ubuntu, que aporta
+Yaru, las fuentes Ubuntu, los botones de ventana y los atajos predeterminados.
+
+Abre las aplicaciones desde la cuadrícula de GNOME o el lanzador del panel en
+la dock. Para abrir el panel manualmente desde el anfitrión, cierra su instancia
+anterior y ejecuta:
+
+```bash
+docker exec termia-430-gnome26-desktop-1 runuser -u lab -- env \
+  XDG_RUNTIME_DIR=/run/user/1100 \
+  DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1100/bus \
+  systemd-run --user --collect --quiet \
+  /usr/bin/python3 /opt/upgrade-lab/panel.py
+```
+
+El gestor de usuario proporciona el entorno de la sesión al panel y sus hijos.
+La inicialización de la dock usa el mismo mecanismo cuando la sesión Ubuntu
+está activa. Lanzar directamente con `docker exec` no hereda ese entorno.
 
 ## Mapa de configuración y operación
 

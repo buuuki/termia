@@ -2,10 +2,13 @@
 
 [English](README.md) · [Español](README.es.md)
 
-La issue #430 disposa d'un prototip funcional de GNOME sobre Wayland amb RDP,
-executat directament amb Docker. Termia i el panell tenen una imatge opcional
-de proves; la integració encara no està validada. Les personalitzacions, optimitzacions i mesures d'aïllament següents es
-revisaran amb el sol·licitant. El laboratori continua incomplet.
+La issue #430 proporciona un escriptori GNOME Wayland/RDP construït directament
+amb Docker, a més d'una imatge opcional de proves de Termia i un panell GTK.
+El 2026-10-29 el sol·licitant va acceptar aquest entorn com a base suficient per
+provar Termia. La validació funcional de l'aplicació i de l'actualitzador correspon
+a #428 o altres incidències. Aquesta acceptació de la infraestructura no certifica
+una versió de Termia ni elimina les limitacions d'execució i portabilitat
+documentades més avall.
 
 ## Reobrir l'escriptori existent
 
@@ -121,6 +124,47 @@ contenidor aturat i preservant permisos i propietaris. Contenen dades i secrets:
 no es desen a Git. La migració de volums a un altre amfitrió continua sense
 validar i no és necessària per reconstruir el sistema. No utilitzar
 `down --volumes` si es volen conservar les dades.
+
+## Idiomes i Firefox
+
+La imatge inclou els paquets d'anglès, castellà i català per a Ubuntu i GNOME,
+amb els locales `en_US.UTF-8`, `es_ES.UTF-8` i `ca_ES.UTF-8`.
+Selecciona l'idioma de la sessió des de Language Support; aplica el reinici
+de sessió que demani per comprovar el resultat.
+
+Firefox s'instal·la com a DEB natiu des del repositori APT signat de Mozilla,
+amb traduccions al castellà i català i anglès inclòs al navegador.
+La versió inicial queda fixada mitjançant `FIREFOX_VERSION` al Dockerfile.
+El repositori de Mozilla és independent del snapshot fix d'Ubuntu;
+reconstruir requereix que continuï disponible la versió seleccionada de Firefox.
+
+Obre Firefox des de la graella d'aplicacions i comprova una pàgina HTTPS
+i l'entrada de text. Els idiomes i Firefox formen part de la imatge.
+Les preferències de l'usuari persisteixen al volum `profile` en reiniciar
+o recrear el contenidor.
+
+## Valors predeterminats de la sessió Ubuntu
+
+L'escriptori inicia amb `en_US.UTF-8`; Language Support permet seleccionar
+castellà o català mitjançant les preferències d'usuari d'Ubuntu. Es conserven
+les preferències del perfil existent. GDM inicia la sessió Ubuntu, que aporta
+Yaru, les fonts Ubuntu, els botons de finestra i les dreceres predeterminades.
+
+Obre les aplicacions des de la graella del GNOME o el llançador del panell a
+la dock. Per obrir el panell manualment des de l'amfitrió, tanca'n la instància
+anterior i executa:
+
+```bash
+docker exec termia-430-gnome26-desktop-1 runuser -u lab -- env \
+  XDG_RUNTIME_DIR=/run/user/1100 \
+  DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1100/bus \
+  systemd-run --user --collect --quiet \
+  /usr/bin/python3 /opt/upgrade-lab/panel.py
+```
+
+El gestor d'usuari proporciona l'entorn de la sessió al panell i als seus fills.
+La inicialització de la dock utilitza el mateix mecanisme quan la sessió Ubuntu
+està activa. Llançar directament amb `docker exec` no hereta aquest entorn.
 
 ## Mapa de configuració i operació
 
