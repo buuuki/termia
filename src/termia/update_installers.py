@@ -26,6 +26,7 @@ from .update_dependencies import (
     dependency_plan,
     install_dependencies,
     parse_requirements,
+    run_apt_transaction,
     source_requirements,
 )
 from .update_output import OutputLines
@@ -283,9 +284,8 @@ class DebianInstaller:
         path = Path(str(prepared))
         self.verify(prepared, release)
         options = {"output": self.output} if self.output is not None else {}
-        self.run(["/usr/bin/pkexec", "--disable-internal-agent", "/usr/bin/apt-get",
-                  "--yes", "--no-remove", "-o", "DPkg::Lock::Timeout=15",
-                  "install", str(path)], Event(), applying=True, **options)
+        run_apt_transaction(["debian", release.asset.sha256,
+                             str(release.asset.size), str(path)], self.run, **options)
 
 
 @dataclass(frozen=True)

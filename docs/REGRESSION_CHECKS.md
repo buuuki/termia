@@ -881,6 +881,12 @@ Long measurements and release-platform checks remain separate validation work.
   package-manager failure, a busy package manager and failed runtime probes.
   Apply only after verification; do not claim success after errors. Confirm
   .deb uses APT's transaction and verifies installed version and dependencies.
+  Start the Debian trial with empty APT lists: refresh must precede installation.
+  For assisted Git and Debian, require one native authorization covering both
+  APT operations. Cancelling it must start neither operation; a failed repository
+  refresh must not reach installation. Reject invalid/symlink packages before
+  APT and verify that changing the original download during refresh cannot
+  alter the protected package installed by the helper. Do not cache passwords.
   Do not run privileged installation trials on the developer's host.
 - Cover changed/invalid plans, altered package bytes, changed checkout, and
   close/cancel during preparation/application. Accept legacy numbered beta

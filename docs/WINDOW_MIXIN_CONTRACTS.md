@@ -260,6 +260,11 @@ keybinding dialogs have comparatively small contracts.
   confirmed transaction. `update_dependencies.py` parses bounded runtime
   relationships, checks package versions and fresh interpreter bindings, and
   builds native APT arguments/manual commands without executing target scripts.
+  Its fixed host-side `update_apt_helper.py` runs through one pkexec request in
+  isolated system Python and performs refresh followed by installation. It has
+  only standard-library imports, validates its data arguments and privately
+  stages a size/digest-verified Debian package before APT. A refresh failure
+  aborts installation; helper output retains the existing bounded log contract.
   Adapters never receive widgets, terminal sessions or connection stores.
 - `update_controller.py` serializes work, owns the cross-profile process lock
   and temporary directory, and dispatches callbacks through an injected function.

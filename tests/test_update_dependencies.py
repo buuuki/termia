@@ -83,14 +83,19 @@ Depends: ${misc:Depends}, ${python3:Depends},
         with self.assertRaisesRegex(UpdateError, "update_dependency_check_failed"):
             runtime_missing(("gir1.2-gtksource-5",), run, Event())
 
-    def test_assisted_only_uses_native_apt_with_no_removals(self):
+    def test_assisted_uses_one_authorization_for_the_fixed_helper(self):
         plan = DependencyPlan((), (), ("pkg",), ("pkg",), "", True)
         run = Mock()
         install_dependencies(plan, run)
-        calls = [c.args[0] for c in run.call_args_list]
-        self.assertEqual(calls[0], ["/usr/bin/pkexec", "--disable-internal-agent", "/usr/bin/apt-get", "update"])
-        self.assertIn("--no-remove", calls[1])
-        self.assertEqual(calls[1][-2:], ["install", "pkg"])
+        run.assert_called_once()
+        arguments = run.call_args.args[0]
+        self.assertEqual(arguments[:5], [
+            "/usr/bin/pkexec", "--disable-internal-agent", "/usr/bin/python3", "-I", "-c",
+        ])
+        helper = Path(__file__).resolve().parents[1] / "src/termia/update_apt_helper.py"
+        self.assertEqual(arguments[5], helper.read_text(encoding="utf-8"))
+        self.assertEqual(arguments[6:], ["packages", "pkg"])
+        self.assertTrue(run.call_args.kwargs["applying"])
         run.side_effect = UpdateError("update_install_failed")
         with self.assertRaisesRegex(UpdateError, "update_dependencies_install_failed"):
             install_dependencies(plan, run)

@@ -58,6 +58,10 @@
 
 ### Fixed
 
+- Use one native authorization for APT refresh and installation in assisted
+  Git/Debian updates, with verified private staging of Debian packages and
+  installation blocked after a failed refresh (`#428`).
+
 - Recognize an already-updated clean source checkout, allow dependency recovery
   without blocking terminal access, and share updater content/action insets (`#428`).
 

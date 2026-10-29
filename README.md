@@ -160,6 +160,13 @@ local paths or repository names: review it before sharing. Termia does not save
 this log automatically. Administrator passwords belong only in Ubuntu's
 authentication dialog, never in this log.
 
+Assisted Git and Debian updates request native administrator authorization once
+for the combined APT refresh and installation. A fixed helper from the running
+Termia version performs both steps without collecting or caching passwords.
+For Debian, it verifies and privately stages the package before refreshing APT.
+A failed refresh or cancelled authorization stops installation; repository
+access is required even when a local package is staged.
+
 Assisted dependency planning currently supports Debian/Ubuntu with APT/dpkg.
 For Git, required packages and runtime bindings are checked before the checkout
 changes. For .deb, APT resolves requirements with the package transaction and

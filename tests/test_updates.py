@@ -208,12 +208,25 @@ class InstallerTests(unittest.TestCase):
         client.download.side_effect = lambda asset, path, cancel: path.write_bytes(data)
         run = Mock(side_effect=["termia", "0.6.0~beta.2-1", "all", "0.6.0~beta.1-1", "", ""])
         adapter = DebianInstaller(client, run)
+        output = Mock()
+        adapter.set_output(output)
         with tempfile.TemporaryDirectory(prefix="termia test ") as directory:
             path = adapter.prepare(candidate, Path(directory), Event())
             adapter.apply(path, candidate)
-            self.assertEqual(run.call_args.args[0][-2:], ["install", str(path)])
-            self.assertEqual(run.call_args.args[0][0], "/usr/bin/pkexec")
+            arguments = run.call_args.args[0]
+            self.assertEqual(arguments[:5], [
+                "/usr/bin/pkexec", "--disable-internal-agent", "/usr/bin/python3", "-I", "-c",
+            ])
+            helper = Path(__file__).resolve().parents[1] / "src/termia/update_apt_helper.py"
+            self.assertEqual(arguments[5], helper.read_text(encoding="utf-8"))
+            self.assertEqual(arguments[6:], [
+                "debian", candidate.asset.sha256, str(len(data)), str(path),
+            ])
+            authorized = [call for call in run.call_args_list
+                          if call.args[0][0] == "/usr/bin/pkexec"]
+            self.assertEqual(len(authorized), 1)
             self.assertTrue(run.call_args.kwargs["applying"])
+            self.assertIs(run.call_args.kwargs["output"], output)
 
     def test_unknown_installation_is_check_only(self):
         result = detect_installation("0.6.0-beta.2", Mock(), Event(), Path("/tmp/unknown/package/update_installers.py"),

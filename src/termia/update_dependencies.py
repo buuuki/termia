@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Declarative Debian runtime requirements. No GTK or privileged scripts."""
+"""Debian requirements and requests to the fixed host-side APT helper. No GTK."""
 from __future__ import annotations
 
 import json
@@ -175,15 +175,22 @@ def dependency_plan(required, previous, run, cancel: Event) -> DependencyPlan:
                           Path("/usr/bin/pkexec").is_file())
 
 
+def run_apt_transaction(arguments: list[str], run, **options) -> None:
+    # Snapshot code from the running installation, never from the target release.
+    try:
+        helper = Path(__file__).with_name("update_apt_helper.py").read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        raise UpdateError("update_installer_missing") from None
+    run(["/usr/bin/pkexec", "--disable-internal-agent", "/usr/bin/python3",
+         "-I", "-c", helper, *arguments], Event(), applying=True, **options)
+
+
 def install_dependencies(plan: DependencyPlan, run) -> None:
     if not plan.packages:
         return
     if not plan.assisted_available:
         raise UpdateError("update_installer_missing")
-    prefix = ["/usr/bin/pkexec", "--disable-internal-agent", "/usr/bin/apt-get"]
     try:
-        run([*prefix, "update"], Event(), applying=True)
-        run([*prefix, "--yes", "--no-remove", "-o", "DPkg::Lock::Timeout=15",
-             "install", *plan.packages], Event(), applying=True)
+        run_apt_transaction(["packages", *plan.packages], run)
     except UpdateError:
         raise UpdateError("update_dependencies_install_failed") from None

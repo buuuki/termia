@@ -154,6 +154,13 @@ dependències des de Termia o copia les ordres manuals i obre un terminal sense
 tancar l’actualitzador. Després de verificar les dependències, tanca totes les
 finestres de Termia i torna a obrir l’aplicació.
 
+Les actualitzacions assistides Git i Debian demanen una sola autorització
+administrativa per renovar APT i instal·lar. Un helper fix de la versió de Termia
+que s'està executant fa els dos passos sense recollir ni desar contrasenyes.
+Per a Debian verifica i prepara una còpia privada del paquet abans de renovar APT.
+Si falla algun repositori o cancel·les l'autorització, la instal·lació s'atura;
+cal accés als repositoris encara que el paquet ja estigui baixat.
+
 La comprovació assistida admet actualment Debian/Ubuntu amb APT/dpkg. Amb Git,
 es verifiquen els paquets i mòduls necessaris abans de modificar el codi.
 Amb .deb, APT resol les dependències amb el paquet i després es verifiquen

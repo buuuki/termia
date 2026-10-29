@@ -62,6 +62,14 @@ signature and does not protect against compromise of the official repository.
 Debian packages require a matching digest, package name, application version,
 architecture and an upgrade over the installed package. The desktop polkit agent
 handles administrator authentication; Termia never collects that password.
+Assisted Git and Debian updates use one pkexec authorization for a fixed helper
+from the running Termia installation, executed by isolated system Python with
+no shell or target-code imports. The helper validates package arguments and
+refreshes signed APT metadata before installation; any refresh failure aborts.
+For Debian, it rejects symlink/non-regular files and verifies the expected size
+and SHA-256 while copying into its own temporary directory before APT runs.
+Only the protected copy is installed, and it is removed when the helper exits.
+No administrator password is collected or cached by Termia.
 APT resolves dependencies and refuses removals. Already-running installations
 are not killed when the UI closes. Temporary packages are removed afterwards;
 the updater retains a per-user lock across profiles until the operation ends.
