@@ -6,6 +6,10 @@ Run the visual desktop, synthetic SSH/SFTP/SCP fixtures, memory diagnostics and
 process-lifecycle tests from a fresh checkout. The source stays read-only inside
 the client; the host desktop, SSH agent and personal Termia profile are not mounted.
 
+The separate [Ubuntu 26.04 GNOME base](gnome26/README.md) is being built in
+issue #430. Its experimental GNOME Wayland/RDP desktop has functional checks;
+Termia integration and full laboratory acceptance remain pending.
+
 ## First start on another PC
 
 Requirements: Linux, a local Docker Engine accessible to your user, Git,

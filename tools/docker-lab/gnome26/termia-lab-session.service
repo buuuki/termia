@@ -1,0 +1,11 @@
+[Unit]
+Description=Create the synthetic GNOME headless user session through GDM
+Requires=gdm.service termia-lab-rdp.service
+After=gdm.service termia-lab-rdp.service systemd-user-sessions.service
+
+[Service]
+Type=simple
+# GDM's default policy authorizes this management operation for root. The
+# graphical session itself runs as lab; no PAM/polkit authorization is bypassed.
+ExecStart=/usr/libexec/gdm-new-session lab --headless
+TimeoutStopSec=20

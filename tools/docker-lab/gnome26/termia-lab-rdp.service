@@ -1,0 +1,10 @@
+[Unit]
+Description=Prepare the synthetic GNOME laboratory user
+Requires=dbus.service systemd-logind.service
+After=dbus.service systemd-logind.service
+Before=gdm.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/python3 /usr/local/lib/termia-lab/configure-rdp.py prepare

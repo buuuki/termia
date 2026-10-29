@@ -1,0 +1,6 @@
+[Unit]
+Description=Experimental Termia GNOME remote desktop laboratory
+Requires=basic.target dbus.service systemd-logind.service systemd-user-sessions.service
+Requires=termia-lab-rdp.service gdm.service termia-lab-session.service termia-lab-user-rdp.service
+After=basic.target
+AllowIsolate=yes

@@ -1,0 +1,7 @@
+services:
+  desktop:
+    build:
+      context: ../.runtime/gnome26-updater/context
+      dockerfile: Dockerfile.updater
+      target: desktop
+    image: termia-lab-430-updater:local
