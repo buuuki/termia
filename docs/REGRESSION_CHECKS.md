@@ -868,15 +868,20 @@ Long measurements and release-platform checks remain separate validation work.
 ### About updates
 
 - Confirm the installation type is shown for Git, .deb and unknown installs,
-  including when no update is available. Review the target's added/changed
-  requirements separately from missing dependencies. Test English, Spanish
-  and Catalan in light/dark appearance and small windows.
+  including when no update is available. After preparation, confirm the top
+  status names missing dependencies and explains automatic installation only
+  when available, or lists all verified requirements when ready. Test English,
+  Spanish and Catalan, light/dark appearance and
+  small windows; retain selectable text and readable layout.
 - In a disposable Ubuntu 24.04/26.04 fixture, omit GtkSourceView 5. Download
-  and review must leave the checkout unchanged. Choose manual dependencies:
-  verify the startup warning, exact APT commands, Copy commands and Check and
-  continue. Rechecking before installation must not apply the update; after
-  manual installation it must permit explicit continuation. Closing while
-  waiting must discard staging without changing the checkout.
+  and review must leave the checkout unchanged. Confirm there is no manual
+  dependency installation button. Missing names must appear at the top, with
+  assisted installation offered when available. Missing requirements and
+  unavailable assisted installation must keep the update pending. Once all
+  requirements are verified, require explicit Update Termia before applying.
+  Use the same final action label with or without missing dependencies; preserve
+  assisted installation only for the missing-dependency case.
+  Closing while waiting must discard staging without changing the checkout.
 - Repeat assisted Git installation with real polkit acceptance/cancellation,
   package-manager failure, a busy package manager and failed runtime probes.
   Apply only after verification; do not claim success after errors. Confirm

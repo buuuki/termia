@@ -52,6 +52,14 @@ msgstr ""
 msgid "Current version: {version}"
 msgstr ""
 
+#: src/termia/i18n.py:update_source_updated
+msgid "The local repository already contains this update. Review and install any missing dependencies before closing Termia."
+msgstr ""
+
+#: src/termia/i18n.py:update_review_dependencies
+msgid "Review dependencies"
+msgstr ""
+
 #: src/termia/i18n.py:update_intro
 msgid "Check official releases for a newer compatible version."
 msgstr ""
@@ -190,12 +198,22 @@ msgid ""
 "{missing}"
 msgstr ""
 
+#: src/termia/i18n.py:update_dependencies_automatic
+msgid ""
+"Updating Termia will automatically install these dependencies:\n"
+"{dependencies}"
+msgstr ""
+
 #: src/termia/i18n.py:update_dependency_warning
-msgid "Dependencies must be satisfied before the update can complete. Choose automatic installation or install them manually and recheck."
+msgid ""
+"Missing dependencies:\n"
+"{dependencies}"
 msgstr ""
 
 #: src/termia/i18n.py:update_dependencies_ready
-msgid "Required dependencies are available. Continue to install the update, then restart Termia manually."
+msgid ""
+"All required dependencies are available:\n"
+"{dependencies}"
 msgstr ""
 
 #: src/termia/i18n.py:update_debian_dependencies
@@ -203,7 +221,8 @@ msgid "APT installs the .deb and resolves its dependencies in one transaction. A
 msgstr ""
 
 #: src/termia/i18n.py:update_assisted
-msgid "Install with Termia"
+#: src/termia/i18n.py:update_recheck_continue
+msgid "Update Termia"
 msgstr ""
 
 #: src/termia/i18n.py:update_manual
@@ -221,10 +240,6 @@ msgstr ""
 
 #: src/termia/i18n.py:update_copy_commands
 msgid "Copy commands"
-msgstr ""
-
-#: src/termia/i18n.py:update_recheck_continue
-msgid "Check and continue"
 msgstr ""
 
 #: src/termia/i18n.py:update_dependencies_checking
@@ -2510,12 +2525,4 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_terminal_unavailable
 msgid "The selected terminal is no longer available."
-msgstr ""
-
-#: src/termia/i18n.py:update_source_updated
-msgid "The local repository already contains this update. Review and install any missing dependencies before closing Termia."
-msgstr ""
-
-#: src/termia/i18n.py:update_review_dependencies
-msgid "Review dependencies"
 msgstr ""

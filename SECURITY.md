@@ -86,11 +86,13 @@ fixed official HTTPS repository. Requirements are read as bounded declarative
 Debian control metadata from the fetched commit; downloaded Python or setup
 scripts are not executed with privileges. Only validated package names are
 passed to native APT via pkexec after user approval, with removals prohibited.
-Manual dependency mode waits for package/runtime verification before changing
-the checkout. Packages installed before a later failure are not rolled back.
+Package/runtime verification must succeed before changing the checkout. The
+update view has no manual-dependency action; missing requirements or unavailable
+assisted installation keep the update pending. Packages installed before a later
+failure are not rolled back.
 
 Prepared artifacts are retained while awaiting the user's choice, without
-holding the cross-profile lock during the manual wait. Each worker operation
+holding the cross-profile lock while awaiting a decision. Each worker operation
 reacquires the lock; source identity and package digests are revalidated before
 application. Closing before application discards staging; once a system
 transaction starts it is allowed to finish. They never reset, stash or force-push. Git hooks

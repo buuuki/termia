@@ -2290,8 +2290,12 @@ msgid "None"
 msgstr "Ninguna"
 
 #: src/termia/i18n.py:update_dependencies_ready
-msgid "Required dependencies are available. Continue to install the update, then restart Termia manually."
-msgstr "Las dependencias necesarias están disponibles. Continúa para instalar la actualización y después reinicia Termia manualmente."
+msgid ""
+"All required dependencies are available:\n"
+"{dependencies}"
+msgstr ""
+"Todas las dependencias necesarias están disponibles:\n"
+"{dependencies}"
 
 #: src/termia/i18n.py:update_dependency_summary
 msgid ""
@@ -2301,9 +2305,21 @@ msgstr ""
 "Dependencias que hay que instalar o reparar:\n"
 "{missing}"
 
+#: src/termia/i18n.py:update_dependencies_automatic
+msgid ""
+"Updating Termia will automatically install these dependencies:\n"
+"{dependencies}"
+msgstr ""
+"Al actualizar Termia se instalarán automáticamente las siguientes dependencias:\n"
+"{dependencies}"
+
 #: src/termia/i18n.py:update_dependency_warning
-msgid "Dependencies must be satisfied before the update can complete. Choose automatic installation or install them manually and recheck."
-msgstr "Las dependencias deben estar satisfechas para completar la actualización. Elige la instalación automática o instálalas manualmente y vuelve a comprobar."
+msgid ""
+"Missing dependencies:\n"
+"{dependencies}"
+msgstr ""
+"Faltan estas dependencias:\n"
+"{dependencies}"
 
 #: src/termia/i18n.py:update_plan_expired
 msgid "The update plan changed or expired. Check for updates again and review the new requirements before continuing."
@@ -2352,8 +2368,9 @@ msgid "The target release requirements could not be read safely. No update was a
 msgstr "No se han podido leer los requisitos de la versión de destino de forma segura. No se ha aplicado la actualización. Consulta las instrucciones de instalación de la release."
 
 #: src/termia/i18n.py:update_assisted
-msgid "Install with Termia"
-msgstr "Instalar con Termia"
+#: src/termia/i18n.py:update_recheck_continue
+msgid "Update Termia"
+msgstr "Actualizar Termia"
 
 #: src/termia/i18n.py:update_dependencies_checking
 msgid "Checking dependencies before applying the update…"
@@ -2382,10 +2399,6 @@ msgstr "La instalación de dependencias ha fallado o se ha cancelado la autoriza
 #: src/termia/i18n.py:update_type_source
 msgid "Installation type: Git source repository"
 msgstr "Tipo de instalación: repositorio de código Git"
-
-#: src/termia/i18n.py:update_recheck_continue
-msgid "Check and continue"
-msgstr "Comprobar y continuar"
 
 #: src/termia/i18n.py:update_source_updated
 msgid "The local repository already contains this update. Review and install any missing dependencies before closing Termia."

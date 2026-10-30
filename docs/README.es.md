@@ -144,15 +144,16 @@ diálogo de autenticación de Ubuntu.
 El actualizador en desarrollo muestra si Termia procede de Git, de un paquete
 Debian (.deb) o de un método no compatible. Descarga y verifica el destino
 antes de mostrar requisitos nuevos/modificados y dependencias que faltan.
-Permite instalarlas con Termia (con autorización del sistema) o manualmente.
-La vía manual muestra los comandos exactos, Copiar comandos y Comprobar y
-continuar; la actualización queda pendiente hasta verificar los requisitos.
+El mensaje superior nombra las dependencias que faltan o enumera los requisitos
+cuando todos están disponibles. Instala las dependencias ausentes con Termia y
+autorización administrativa nativa. No hay botón de instalación manual.
+Si faltan requisitos o la instalación asistida no está disponible, la actualización
+sigue pendiente; utiliza las instrucciones de instalación de la release en ese caso.
 **La nueva versión de Termia no arrancará si faltan dependencias obligatorias.**
 
 Si Termia sigue abierto después de actualizar su repositorio Git limpio a la
 versión seleccionada, el actualizador ofrece **Revisar dependencias**. Instala
-las dependencias desde Termia o copia los comandos manuales y abre una consola
-sin cerrar el actualizador. Tras verificar las dependencias, cierra todas las
+las dependencias desde Termia. Tras verificarlas, cierra todas las
 ventanas de Termia y vuelve a abrir la aplicación.
 
 Las actualizaciones asistidas Git y Debian solicitan una sola autorización
@@ -166,8 +167,8 @@ La comprobación asistida admite actualmente Debian/Ubuntu con APT/dpkg. En Git,
 se verifican los paquetes y módulos necesarios antes de modificar el código.
 En .deb, APT resuelve las dependencias con el paquete y después se verifican
 la versión instalada y los requisitos. No se ejecuta como root el instalador
-descargado. Mantén la ventana abierta durante los pasos manuales; cerrarla
-descarta la actualización preparada. Los paquetes instalados antes de un
+descargado. Cerrar la ventana antes de aplicar descarta la actualización
+preparada. Los paquetes instalados antes de un
 fallo posterior no se eliminan automáticamente.
 
 Los actualizadores publicados hasta beta.4 conservan el comportamiento anterior.

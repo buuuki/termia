@@ -35,6 +35,11 @@
 
 ### Changed
 
+- Remove the manual dependency action from the update window, name missing
+  or fully available requirements, and explain automatic dependency installation
+  when available. Use Update Termia for the final action, preserving verification
+  and explicit confirmation before installation (#428).
+
 - Accept the GNOME Docker laboratory as a baseline for testing Termia, keeping
   application/updater validation separate and retaining documented limits (`#430`).
 

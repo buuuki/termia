@@ -144,15 +144,16 @@ d'autenticació de l'Ubuntu.
 L’actualitzador en desenvolupament mostra si Termia prové de Git, d’un paquet
 Debian (.deb) o d’un mètode no compatible. Baixa i verifica la destinació abans
 de mostrar requisits nous/modificats i dependències que falten. Permet
-instal·lar-les amb Termia (amb autorització del sistema) o manualment.
-La via manual mostra les ordres exactes, Copia les ordres i Comprova i continua;
-l’actualització queda pendent fins que es verifiquin els requisits.
+instal·lar-les amb Termia i autorització administrativa nativa. El missatge
+superior indica les dependències que falten o enumera els requisits quan tots
+estan disponibles. No hi ha botó d’instal·lació manual. Si falten requisits o
+la instal·lació assistida no està disponible, l’actualització continua pendent;
+utilitza les instruccions d’instal·lació de la release en aquest cas.
 **La nova versió de Termia no arrencarà si falten dependències obligatòries.**
 
 Si Termia continua obert després d’actualitzar el repositori Git net a la versió
 seleccionada, l’actualitzador ofereix **Revisar dependències**. Instal·la les
-dependències des de Termia o copia les ordres manuals i obre un terminal sense
-tancar l’actualitzador. Després de verificar les dependències, tanca totes les
+dependències des de Termia. Després de verificar-les, tanca totes les
 finestres de Termia i torna a obrir l’aplicació.
 
 Les actualitzacions assistides Git i Debian demanen una sola autorització
@@ -166,8 +167,8 @@ La comprovació assistida admet actualment Debian/Ubuntu amb APT/dpkg. Amb Git,
 es verifiquen els paquets i mòduls necessaris abans de modificar el codi.
 Amb .deb, APT resol les dependències amb el paquet i després es verifiquen
 la versió instal·lada i els requisits. No s’executa com a root l’instal·lador
-baixat. Mantén la finestra oberta durant els passos manuals; tancar-la descarta
-l’actualització preparada. Els paquets instal·lats abans d’un error posterior
+baixat. Tancar la finestra abans d’aplicar descarta l’actualització preparada.
+Els paquets instal·lats abans d’un error posterior
 no s’eliminen automàticament.
 
 Els actualitzadors publicats fins a beta.4 conserven el comportament anterior.

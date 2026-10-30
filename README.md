@@ -142,15 +142,16 @@ introduced in beta.2 and remains available in beta.4.
 The development updater shows whether Termia is installed from Git, a Debian
 package (.deb), or an unsupported method. It downloads/verifies the target
 before presenting new/changed requirements and locally missing dependencies.
-Choose installation with Termia (system administrator authorization) or manual
-dependency installation. Manual mode provides exact commands, Copy commands,
-and Check and continue; the update remains pending until requirements pass.
+The top status names missing dependencies, or lists the requirements when all
+are available. Install missing dependencies with Termia and native administrator
+authorization. There is no manual-dependency button. Missing requirements or
+unavailable assisted installation keep the update pending; use the release
+installation instructions in that case.
 **The updated Termia will not start if mandatory dependencies are missing.**
 
 When an older Termia process is still running after its clean Git checkout has
 advanced to the selected release, the updater offers **Review dependencies**.
-Install missing dependencies with Termia, or copy the manual commands and use a
-terminal while keeping the update window open. Completion requires dependency
+Install missing dependencies with Termia. Completion requires dependency
 verification; afterwards close all Termia windows and open the application again.
 
 **Installation details** shows phases and live package-manager/Git output in a
@@ -172,8 +173,8 @@ Assisted dependency planning currently supports Debian/Ubuntu with APT/dpkg.
 For Git, required packages and runtime bindings are checked before the checkout
 changes. For .deb, APT resolves requirements with the package transaction and
 Termia verifies the installed version and requirements afterwards. No downloaded
-setup script is run as root. Keep Termia open while following manual steps;
-closing the update window discards the staged update. System packages installed
+setup script is run as root. Closing the update window before application
+discards the staged update. System packages installed
 before a later update failure are not automatically removed.
 
 Published beta.4 and earlier updaters retain their previous behavior. For those

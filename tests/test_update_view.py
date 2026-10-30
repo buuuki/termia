@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from unittest.mock import Mock, patch
 
 import gi
@@ -41,8 +42,7 @@ class UpdateViewTests(unittest.TestCase):
         self.assertFalse(self.dialog.log_expander.get_visible())
 
     def test_dependency_buttons_do_not_stretch_with_window(self):
-        for button in (self.dialog.assisted_button, self.dialog.manual_button,
-                       self.dialog.continue_button):
+        for button in (self.dialog.assisted_button, self.dialog.continue_button):
             self.assertEqual(button.get_halign(), Gtk.Align.START)
             self.assertFalse(button.get_hexpand())
             self.assertEqual(button.get_size_request()[0], 160)
@@ -163,65 +163,110 @@ class UpdateViewTests(unittest.TestCase):
         self.dialog.completed("installation", Installation(None, "update_unknown_installation"))
         self.assertIn("unknown", self.dialog.installation_label.get_text())
 
-    def test_missing_dependencies_warn_and_manual_mode_shows_exact_commands(self):
+    def test_missing_dependencies_are_named_without_a_manual_installation_button(self):
         prepared = self.dependency_update()
         self.dialog.completed("done", prepared)
-        self.assertIn("must be satisfied", self.dialog.status.get_text())
+        self.assertEqual(self.dialog.status.get_text(),
+                         "Updating Termia will automatically install these dependencies:\n"
+                         "gir1.2-gtksource-5")
         log = self.dialog.log_buffer.get_text(
             self.dialog.log_buffer.get_start_iter(), self.dialog.log_buffer.get_end_iter(), False)
         self.assertIn("Update prepared and verified; dependencies checked.", log)
         self.assertEqual(log.count("gir1.2-gtksource-5"), 1)
         self.assertTrue(self.dialog.assisted_button.get_visible())
-        self.assertTrue(self.dialog.manual_button.get_visible())
         self.assertFalse(self.dialog.continue_button.get_visible())
-        self.dialog.show_manual()
-        log = self.dialog.log_buffer.get_text(
-            self.dialog.log_buffer.get_start_iter(), self.dialog.log_buffer.get_end_iter(), False)
-        self.assertIn(prepared.dependencies.manual_commands, log)
-        self.assertTrue(self.dialog.log_expander.get_expanded())
-        self.assertTrue(self.dialog.continue_button.get_visible())
+        buttons = []
+
+        def visit(widget):
+            if isinstance(widget, Gtk.Button):
+                buttons.append(widget.get_label())
+            child = widget.get_first_child()
+            while child is not None:
+                visit(child)
+                child = child.get_next_sibling()
+
+        visit(self.dialog)
+        self.assertNotIn(self.dialog.t("update_manual"), buttons)
         self.factory.return_value.install.assert_not_called()
-        self.dialog.apply_prepared(False)
-        self.factory.return_value.install.assert_called_once_with(prepared, assisted=False)
 
     def test_debian_plan_omits_apt_transaction_message(self):
         self.dialog.completed("done", self.dependency_update("update_debian"))
         self.assertNotIn("APT", self.dialog.status.get_text())
 
-    def test_installation_choices_share_a_horizontal_row(self):
-        row = self.dialog.assisted_button.get_parent()
-        self.assertIs(self.dialog.manual_button.get_parent(), row)
-        self.assertEqual(row.get_orientation(), Gtk.Orientation.HORIZONTAL)
-
-    def test_ready_plan_needs_explicit_continue_without_dependency_install(self):
-        self.dialog.completed("done", self.dependency_update(missing=False))
+    def test_ready_plan_lists_requirements_and_needs_explicit_continue(self):
+        prepared = self.dependency_update(missing=False)
+        plan = replace(prepared.dependencies, required=(
+            (Requirement("python3", ">=", "3.10"),),
+            (Requirement("gir1.2-gtksource-5"),),
+        ))
+        prepared = replace(prepared, dependencies=plan)
+        self.dialog.completed("done", prepared)
+        self.assertEqual(self.dialog.status.get_text(),
+                         "All required dependencies are available:\n"
+                         "python3 (>= 3.10), gir1.2-gtksource-5")
         self.assertFalse(self.dialog.assisted_button.get_visible())
-        self.assertFalse(self.dialog.manual_button.get_visible())
         self.assertTrue(self.dialog.continue_button.get_visible())
         self.factory.return_value.install.assert_not_called()
+        self.dialog.continue_button.emit("clicked")
+        self.factory.return_value.install.assert_called_once_with(prepared, assisted=False)
 
-    def test_unavailable_assisted_mode_keeps_manual_option(self):
+    def test_unavailable_assisted_installation_leaves_missing_update_pending(self):
         self.dialog.completed("done", self.dependency_update(assisted=False))
+        self.assertEqual(self.dialog.status.get_text(),
+                         "Missing dependencies:\ngir1.2-gtksource-5")
         self.assertFalse(self.dialog.assisted_button.get_visible())
-        self.assertTrue(self.dialog.manual_button.get_visible())
-
-    def test_manual_commands_are_in_copyable_log_without_installing(self):
-        prepared = self.dependency_update()
-        self.dialog.completed("done", prepared)
-        self.dialog.show_manual()
-        log = self.dialog.log_buffer.get_text(
-            self.dialog.log_buffer.get_start_iter(), self.dialog.log_buffer.get_end_iter(), False)
-        self.assertIn(prepared.dependencies.manual_commands, log)
-        self.assertFalse(hasattr(self.dialog, "copy_button"))
+        self.assertFalse(self.dialog.continue_button.get_visible())
         self.factory.return_value.install.assert_not_called()
 
-    def test_new_check_hides_previous_manual_commands(self):
+    def test_multiple_missing_dependencies_are_named_without_changing_the_plan(self):
+        prepared = self.dependency_update()
+        plan = replace(prepared.dependencies, missing=(
+            "gir1.2-gtksource-5", "python3-paramiko (>= 2.12)",
+        ))
+        prepared = replace(prepared, dependencies=plan)
+        self.dialog.completed("done", prepared)
+        self.assertEqual(self.dialog.status.get_text(),
+                         "Updating Termia will automatically install these dependencies:\n"
+                         "gir1.2-gtksource-5, python3-paramiko (>= 2.12)")
+        self.assertIs(self.dialog.prepared.dependencies, plan)
+        self.factory.return_value.install.assert_not_called()
+
+    def test_dependency_status_is_localized_and_remains_selectable(self):
+        for language in ("en", "es", "ca"):
+            self.dialog.t = lambda key, language=language: translate_key(key, language)
+            for missing in (True, False):
+                self.dialog.completed("done", self.dependency_update(missing=missing))
+                key = "update_dependencies_automatic" if missing else "update_dependencies_ready"
+                expected = translate_key(key, language).format(dependencies="gir1.2-gtksource-5")
+                self.assertEqual(self.dialog.status.get_text(), expected)
+                self.assertNotIn("{dependencies}", expected)
+                self.assertTrue(self.dialog.status.get_selectable())
+
+    def test_final_action_is_translated_and_preserves_installation_mode(self):
+        for language, label in (("en", "Update Termia"), ("es", "Actualizar Termia"),
+                                ("ca", "Actualitza Termia")):
+            dialog = UpdateDialog(
+                self.parent, lambda key, language=language: translate_key(key, language),
+                self.factory)
+            self.addCleanup(dialog.destroy)
+            for missing in (True, False):
+                prepared = self.dependency_update(missing=missing)
+                dialog.completed("done", prepared)
+                button = dialog.assisted_button if missing else dialog.continue_button
+                self.assertEqual(button.get_label(), label)
+                self.factory.return_value.install.assert_not_called()
+                button.emit("clicked")
+                self.factory.return_value.install.assert_called_once_with(
+                    prepared, assisted=missing)
+                self.factory.return_value.install.reset_mock()
+
+    def test_new_check_clears_previous_dependency_information(self):
         self.dialog.completed("done", self.dependency_update())
-        self.dialog.show_manual()
         self.dialog.check()
         self.assertEqual(self.dialog.log_buffer.get_char_count(), 0)
         self.assertFalse(self.dialog.log_expander.get_visible())
         self.assertFalse(self.dialog.plan_box.get_visible())
+        self.assertEqual(self.dialog.status.get_text(), self.dialog.t("update_checking"))
 
     def test_dependency_recovery_message_and_action_keep_terminal_access(self):
         prepared = self.dependency_update()

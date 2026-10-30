@@ -15,6 +15,7 @@ from .dialog_actions import (
     configure_dialog_content,
 )
 from .update_controller import CheckResult, PreparedUpdate, UpdateController
+from .update_dependencies import requirement_label
 from .update_output import MAX_LOG_CHARS
 
 
@@ -28,7 +29,6 @@ class UpdateDialog(Gtk.Window):
         self.result = None
         self.installed = False
         self.prepared = None
-        self.manual_mode = False
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.set_child(outer)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -54,13 +54,10 @@ class UpdateDialog(Gtk.Window):
         self.assisted_button = Gtk.Button(label=self.t("update_assisted"))
         self.assisted_button.connect("clicked", lambda *_: self.apply_prepared(True))
         choices.append(self.assisted_button)
-        self.manual_button = Gtk.Button(label=self.t("update_manual"))
-        self.manual_button.connect("clicked", self.show_manual)
-        choices.append(self.manual_button)
         self.continue_button = Gtk.Button(label=self.t("update_recheck_continue"))
         self.continue_button.connect("clicked", lambda *_: self.apply_prepared(False))
         self.plan_box.append(self.continue_button)
-        for button in (self.assisted_button, self.manual_button, self.continue_button):
+        for button in (self.assisted_button, self.continue_button):
             configure_content_button(button)
         self.log_expander = Gtk.Expander(label=self.t("update_log_title"), expanded=True)
         self.log_expander.set_visible(False)
@@ -102,7 +99,7 @@ class UpdateDialog(Gtk.Window):
         self.check_button.set_sensitive(False)
         self.install_button.set_sensitive(False)
         self.close_button.set_label(self.t("cancel"))
-        for button in (self.assisted_button, self.manual_button, self.continue_button):
+        for button in (self.assisted_button, self.continue_button):
             button.set_sensitive(False)
 
     def check(self, _button=None):
@@ -112,7 +109,6 @@ class UpdateDialog(Gtk.Window):
         self.log_expander.set_visible(False)
         self.result = None
         self.prepared = None
-        self.manual_mode = False
         self.plan_box.set_visible(False)
         self.install_button.set_visible(False)
         self.notes.set_visible(False)
@@ -208,27 +204,19 @@ class UpdateDialog(Gtk.Window):
         summary = self.t("update_dependency_summary").format(missing=missing)
         self.append_log(self.t("update_prepared") + "\n")
         self.append_log(summary + "\n")
-        self.status.set_text(self.t("update_dependency_warning") if plan.missing
-                             else self.t("update_dependencies_ready"))
+        dependencies = plan.missing or tuple(requirement_label(group) for group in plan.required)
+        key = "update_dependencies_ready"
+        if plan.missing:
+            key = ("update_dependencies_automatic" if plan.assisted_available
+                   else "update_dependency_warning")
+        self.status.set_text(self.t(key).format(
+            dependencies=", ".join(dependencies) or self.t("update_dependency_none")))
         self.install_button.set_visible(False)
         self.plan_box.set_visible(True)
         self.assisted_button.set_visible(bool(plan.missing) and plan.assisted_available)
-        self.manual_button.set_visible(bool(plan.missing))
-        self.continue_button.set_visible(not plan.missing or self.manual_mode)
-        for button in (self.assisted_button, self.manual_button, self.continue_button):
+        self.continue_button.set_visible(not plan.missing)
+        for button in (self.assisted_button, self.continue_button):
             button.set_sensitive(True)
-        if self.manual_mode:
-            self.show_manual()
-
-    def show_manual(self, _button=None):
-        if self.prepared is None:
-            return
-        self.manual_mode = True
-        commands = self.prepared.dependencies.manual_commands
-        self.append_log((self.t("update_manual_steps").format(commands=commands)
-                         if commands else self.t("update_dependencies_ready")) + "\n")
-        self.log_expander.set_expanded(True)
-        self.continue_button.set_visible(True)
 
     def apply_prepared(self, assisted):
         if self.prepared is None or self.controller.busy:
