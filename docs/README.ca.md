@@ -132,7 +132,8 @@ introduir a beta.2 i continua disponible a beta.4.
 
 A l'actualitzador en desenvolupament, **Detalls de la instal·lació** mostra les
 fases i la sortida d'APT/Git en temps real en un registre desplegable de només
-lectura. **Copia el registre** copia els darrers 65.536 caràcters; una nova
+lectura, amb un màxim de 65.536 caràcters. Selecciona text i prem **Ctrl+C**
+per copiar-lo; una nova
 comprovació el buida. S'oculten els URL, però pot contenir camins locals o noms
 de repositoris: revisa'l abans de compartir-lo. No es desa automàticament.
 La contrasenya d'administrador s'introdueix únicament al diàleg

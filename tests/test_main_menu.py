@@ -58,6 +58,22 @@ class FakeDialog:
 
 
 class MainMenuResetTests(unittest.TestCase):
+    def test_about_is_independent_of_main_window(self) -> None:
+        host = MainMenuMixin()
+        host.t = lambda key: key
+        with (
+            patch("termia.main_menu.Gtk.AboutDialog") as about,
+            patch("termia.main_menu.ABOUT_IMAGE") as image,
+            patch("termia.update_view.attach_updates"),
+            patch("termia.main_menu.GLib.idle_add"),
+        ):
+            image.exists.return_value = False
+            host.on_about(None)
+
+        about.assert_called_once_with(modal=False)
+        about.return_value.set_destroy_with_parent.assert_not_called()
+        about.return_value.present.assert_called_once_with()
+
     def test_reset_main_menu_returns_to_top_level_without_replacing_content(self) -> None:
         popover = FakePopover()
         MainMenuMixin().reset_main_menu(popover)

@@ -1273,8 +1273,8 @@ confirmation text must support GTK selection and normal copy shortcuts without
 a dedicated setup-copy button. Opening the dialog must focus Check for updates
 without automatically selecting the version text. Content and actions must align using shared
 dialog insets rather than nested padding.
-Copy log must match the displayed
-tail, remain available after an error, and clear on a new check. Keep the log
+Selecting text and copying with Ctrl+C must match the displayed text,
+remain available after an error, and a new check must clear the log. Keep the log
 read-only and bounded to 65,536 characters; no output may be used as executable
 input. Confirm stderr is visible, ANSI controls are removed, URLs are hidden
 even across pipe-read boundaries, and large output does not queue unbounded GTK
@@ -1382,3 +1382,18 @@ config migration, import/export, and statistics.
 
 The automated equivalent runs in GitHub Actions for every pull request and
 every push to `main`.
+
+### Direct update preparation (#428)
+
+Download and review must prepare the update in the existing updater window
+without an intermediate confirmation. Preparation must not install packages or
+advance the source checkout. Show each pending dependency once, record successful
+preparation only after verification and dependency checks, and retain log output
+on failure. Never apply a Git update with missing requirements; for Debian, retain
+APT dependency resolution and final installed-version/runtime verification.
+
+Dependency summaries and manual command instructions appear in installation
+details, without duplicate content above dependency actions or a separate Copy
+commands or Copy log button. Manual instructions support selection and Ctrl+C;
+a new check clears them. Verify that collapsing installation details keeps footer
+actions at the bottom, and dependency buttons do not stretch on window resize.

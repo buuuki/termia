@@ -189,7 +189,7 @@ class MainMenuMixin:
         dialog.present()
 
     def on_about(self, _button: Gtk.Button) -> None:
-        dialog = Gtk.AboutDialog(transient_for=self, modal=True)
+        dialog = Gtk.AboutDialog(modal=False)
         dialog.set_program_name("Termia")
         dialog.set_version(__version__)
         dialog.set_copyright("Copyright © 2026 Jordi Pons")
@@ -201,7 +201,6 @@ class MainMenuMixin:
             dialog.set_logo(Gdk.Texture.new_from_filename(str(ABOUT_IMAGE)))
         from .update_view import attach_updates
         attach_updates(dialog, self.t)
-        dialog.set_destroy_with_parent(True)
         dialog.present()
         GLib.idle_add(self.clear_about_dialog_selection, dialog)
 

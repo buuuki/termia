@@ -132,7 +132,8 @@ en beta.2 y sigue disponible en beta.4.
 
 En el actualizador en desarrollo, **Detalles de la instalación** muestra las
 fases y la salida de APT/Git en tiempo real en un registro desplegable de solo
-lectura. **Copiar registro** copia los últimos 65.536 caracteres; una nueva
+lectura, con un máximo de 65.536 caracteres. Selecciona texto y pulsa **Ctrl+C**
+para copiarlo; una nueva
 comprobación lo vacía. Se ocultan las URL, pero puede contener rutas locales o
 nombres de repositorios: revísalo antes de compartirlo. No se guarda
 automáticamente. La contraseña de administrador se introduce únicamente en el

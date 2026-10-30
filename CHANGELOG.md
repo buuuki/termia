@@ -58,6 +58,30 @@
 
 ### Fixed
 
+- Separate the successful update message from installation output and clarify
+  the Spanish restart instructions (`#428`).
+
+- Arrange updater installation choices horizontally, hide the check action
+  during review and omit the Debian APT explanation (`#428`).
+
+- Enlarge installation details on first output, keep footer actions at the bottom,
+  apply compact content-button sizing and use native log selection/copy (`#428`).
+
+- Show dependency summaries and manual commands only in installation details,
+  removing the separate command-copy action (`#428`).
+
+- Keep updater installation details below dependency actions with a compact
+  default window width (`#428`).
+
+- Prepare updates directly from Download and review, show a single pending
+  dependency list and record successful preparation without startup warnings (`#428`).
+
+- Use a narrower updater window, compact content spacing and right-aligned
+  footer actions through shared dialog layout helpers (`#428`).
+
+- Make About non-modal and independent of the main window so update
+  dependency commands remain accessible in Termia terminals (`#428`).
+
 - Use one native authorization for APT refresh and installation in assisted
   Git/Debian updates, with verified private staging of Debian packages and
   installation blocked after a failed refresh (`#428`).

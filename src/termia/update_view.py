@@ -10,8 +10,8 @@ from gi.repository import GLib, Gtk
 
 from . import __version__
 from .dialog_actions import (
-    add_dialog_action_button,
     configure_action_area,
+    configure_content_button,
     configure_dialog_content,
 )
 from .update_controller import CheckResult, PreparedUpdate, UpdateController
@@ -22,7 +22,7 @@ class UpdateDialog(Gtk.Window):
     def __init__(self, parent, translate, controller_factory=UpdateController):
         super().__init__(title=translate("update_title"), transient_for=parent, modal=False)
         self.t = translate
-        self.set_default_size(600, -1)
+        self.set_default_size(480, -1)
         self.set_destroy_with_parent(True)
         self.controller = controller_factory(__version__, GLib.idle_add, self.completed)
         self.result = None
@@ -31,8 +31,9 @@ class UpdateDialog(Gtk.Window):
         self.manual_mode = False
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.set_child(outer)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        configure_dialog_content(box)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        configure_dialog_content(box, spacing=8)
+        box.set_vexpand(True)
         outer.append(box)
         box.append(Gtk.Label(label=self.t("update_current").format(version=__version__),
                              xalign=0, selectable=True))
@@ -48,34 +49,22 @@ class UpdateDialog(Gtk.Window):
         self.plan_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.plan_box.set_visible(False)
         box.append(self.plan_box)
-        self.dependency_label = Gtk.Label(xalign=0, wrap=True, selectable=True)
-        self.dependency_label.set_max_width_chars(60)
-        dependency_scroller = Gtk.ScrolledWindow()
-        dependency_scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        dependency_scroller.set_min_content_height(100)
-        dependency_scroller.set_max_content_height(200)
-        dependency_scroller.set_propagate_natural_height(True)
-        dependency_scroller.set_child(self.dependency_label)
-        self.plan_box.append(dependency_scroller)
-        self.manual_label = Gtk.Label(xalign=0, wrap=True, selectable=True)
-        self.manual_label.set_max_width_chars(60)
-        self.manual_label.set_visible(False)
-        self.plan_box.append(self.manual_label)
-        self.copy_button = Gtk.Button(label=self.t("update_copy_commands"))
-        self.copy_button.connect("clicked", self.copy_commands)
-        self.copy_button.set_visible(False)
-        self.plan_box.append(self.copy_button)
+        choices = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.plan_box.append(choices)
         self.assisted_button = Gtk.Button(label=self.t("update_assisted"))
         self.assisted_button.connect("clicked", lambda *_: self.apply_prepared(True))
-        self.plan_box.append(self.assisted_button)
+        choices.append(self.assisted_button)
         self.manual_button = Gtk.Button(label=self.t("update_manual"))
         self.manual_button.connect("clicked", self.show_manual)
-        self.plan_box.append(self.manual_button)
+        choices.append(self.manual_button)
         self.continue_button = Gtk.Button(label=self.t("update_recheck_continue"))
         self.continue_button.connect("clicked", lambda *_: self.apply_prepared(False))
         self.plan_box.append(self.continue_button)
+        for button in (self.assisted_button, self.manual_button, self.continue_button):
+            configure_content_button(button)
         self.log_expander = Gtk.Expander(label=self.t("update_log_title"), expanded=True)
         self.log_expander.set_visible(False)
+        self.log_expander.set_vexpand(True)
         box.append(self.log_expander)
         log_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.log_expander.set_child(log_box)
@@ -84,14 +73,10 @@ class UpdateDialog(Gtk.Window):
         self.log_buffer = self.log_view.get_buffer()
         self.log_end = self.log_buffer.create_mark(None, self.log_buffer.get_end_iter(), False)
         log_scroller = Gtk.ScrolledWindow()
-        log_scroller.set_min_content_height(140)
-        log_scroller.set_max_content_height(200)
-        log_scroller.set_propagate_natural_height(True)
+        log_scroller.set_min_content_height(280)
+        log_scroller.set_vexpand(True)
         log_scroller.set_child(self.log_view)
         log_box.append(log_scroller)
-        self.copy_log_button = Gtk.Button(label=self.t("update_copy_log"))
-        self.copy_log_button.connect("clicked", self.copy_log)
-        log_box.append(self.copy_log_button)
         self.spinner = Gtk.Spinner()
         box.append(self.spinner)
         actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -106,7 +91,7 @@ class UpdateDialog(Gtk.Window):
         self.close_button = Gtk.Button(label=self.t("close"))
         self.close_button.connect("clicked", self.close_or_cancel)
         actions.append(self.close_button)
-        configure_action_area(actions)
+        configure_action_area(actions, align=Gtk.Align.END)
         self.connect("close-request", self.close_requested)
         self.connect("unrealize", lambda *_: self.controller.close())
         self.set_focus(self.check_button)
@@ -121,13 +106,13 @@ class UpdateDialog(Gtk.Window):
             button.set_sensitive(False)
 
     def check(self, _button=None):
+        self.check_button.set_visible(True)
+        self.set_default_size(480, -1)
         self.log_buffer.set_text("")
         self.log_expander.set_visible(False)
         self.result = None
         self.prepared = None
         self.manual_mode = False
-        self.manual_label.set_visible(False)
-        self.copy_button.set_visible(False)
         self.plan_box.set_visible(False)
         self.install_button.set_visible(False)
         self.notes.set_visible(False)
@@ -186,9 +171,11 @@ class UpdateDialog(Gtk.Window):
             self.install_button.set_visible(False)
             key = "update_installed_source" if self.result.installation.adapter.kind == "update_source" else "update_installed"
             self.status.set_text(self.t(key))
-            self.append_log(self.t(key) + "\n")
+            self.append_log("\n" + self.t(key) + "\n")
 
     def append_log(self, text):
+        if not self.log_expander.get_visible():
+            self.set_default_size(640, 620)
         self.log_buffer.insert(self.log_buffer.get_end_iter(), text)
         excess = self.log_buffer.get_char_count() - MAX_LOG_CHARS
         if excess > 0:
@@ -197,40 +184,14 @@ class UpdateDialog(Gtk.Window):
         self.log_expander.set_visible(True)
         self.log_view.scroll_to_mark(self.log_end, 0.0, False, 0.0, 1.0)
 
-    def copy_log(self, _button=None):
-        self.get_clipboard().set(self.log_buffer.get_text(
-            self.log_buffer.get_start_iter(), self.log_buffer.get_end_iter(), False))
-
     def confirm_install(self, _button):
         if self.result is None or self.controller.busy:
             return
-        if self.result.source_updated:
-            self.working("update_preparing")
-            self.controller.prepare_update(self.result)
+        if self.controller.closed:
             return
-        confirmation = Gtk.Dialog(title=self.t("update_install"), transient_for=self, modal=True)
-        confirmation.set_destroy_with_parent(True)
-        add_dialog_action_button(
-            confirmation, self.t("cancel"), Gtk.ResponseType.CANCEL,
-        )
-        add_dialog_action_button(
-            confirmation, self.t("update_install"), Gtk.ResponseType.OK,
-        )
-        confirmation.set_default_response(Gtk.ResponseType.CANCEL)
-        label = Gtk.Label(label=self.t("update_confirm").format(version=self.result.release.label),
-                          wrap=True, selectable=True)
-        label.set_max_width_chars(55)
-        configure_dialog_content(label)
-        confirmation.get_content_area().append(label)
-
-        def response(dialog, response_id):
-            dialog.destroy()
-            if response_id == Gtk.ResponseType.OK and not self.controller.closed:
-                self.working("update_preparing")
-                self.controller.prepare_update(self.result)
-
-        confirmation.connect("response", response)
-        confirmation.present()
+        self.check_button.set_visible(False)
+        self.working("update_preparing")
+        self.controller.prepare_update(self.result)
 
     def show_installation(self, installation):
         kind = installation.adapter.kind if installation.adapter is not None else "unknown"
@@ -243,15 +204,12 @@ class UpdateDialog(Gtk.Window):
         self.result = prepared.result
         self.show_installation(self.result.installation)
         plan = prepared.dependencies
-        none = self.t("update_dependency_none")
-        added = "\n".join(plan.added) or none
-        missing = "\n".join(plan.missing) or none
-        self.dependency_label.set_text(self.t("update_dependency_summary").format(
-            added=added, missing=missing))
+        missing = "\n".join(plan.missing) or self.t("update_dependency_none")
+        summary = self.t("update_dependency_summary").format(missing=missing)
+        self.append_log(self.t("update_prepared") + "\n")
+        self.append_log(summary + "\n")
         self.status.set_text(self.t("update_dependency_warning") if plan.missing
                              else self.t("update_dependencies_ready"))
-        if self.result.installation.adapter.kind == "update_debian":
-            self.status.set_text(self.status.get_text() + "\n\n" + self.t("update_debian_dependencies"))
         self.install_button.set_visible(False)
         self.plan_box.set_visible(True)
         self.assisted_button.set_visible(bool(plan.missing) and plan.assisted_available)
@@ -267,15 +225,10 @@ class UpdateDialog(Gtk.Window):
             return
         self.manual_mode = True
         commands = self.prepared.dependencies.manual_commands
-        self.manual_label.set_text(self.t("update_manual_steps").format(commands=commands)
-                                   if commands else self.t("update_dependencies_ready"))
-        self.manual_label.set_visible(True)
-        self.copy_button.set_visible(bool(commands))
+        self.append_log((self.t("update_manual_steps").format(commands=commands)
+                         if commands else self.t("update_dependencies_ready")) + "\n")
+        self.log_expander.set_expanded(True)
         self.continue_button.set_visible(True)
-
-    def copy_commands(self, _button=None):
-        if self.prepared is not None:
-            self.get_clipboard().set(self.prepared.dependencies.manual_commands)
 
     def apply_prepared(self, assisted):
         if self.prepared is None or self.controller.busy:

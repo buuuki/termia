@@ -16,6 +16,37 @@ from termia.update_view import UpdateDialog, attach_updates
 
 
 class UpdateViewTests(unittest.TestCase):
+    def test_success_log_separates_restart_message_with_blank_line(self):
+        for kind in ("update_source", "update_debian"):
+            self.dialog.result = self.dependency_update(kind).result
+            self.dialog.log_buffer.set_text("Completed task\n")
+            self.dialog.completed("done", None)
+            text = self.dialog.log_buffer.get_text(
+                self.dialog.log_buffer.get_start_iter(),
+                self.dialog.log_buffer.get_end_iter(), False)
+            key = "update_installed_source" if kind == "update_source" else "update_installed"
+            self.assertEqual(text, "Completed task\n\n" + self.dialog.t(key) + "\n")
+
+    def test_window_grows_for_log_and_content_keeps_footer_at_bottom(self):
+        self.assertEqual(self.dialog.get_default_size()[0], 480)
+        self.dialog.completed("output", "Preparing…\n")
+        self.assertEqual(tuple(self.dialog.get_default_size()), (640, 620))
+        self.dialog.log_expander.set_expanded(False)
+        self.assertEqual(tuple(self.dialog.get_default_size()), (640, 620))
+        content = self.dialog.get_child().get_first_child()
+        self.assertTrue(content.get_vexpand())
+        self.assertFalse(hasattr(self.dialog, "copy_log_button"))
+        self.dialog.check()
+        self.assertEqual(self.dialog.get_default_size()[0], 480)
+        self.assertFalse(self.dialog.log_expander.get_visible())
+
+    def test_dependency_buttons_do_not_stretch_with_window(self):
+        for button in (self.dialog.assisted_button, self.dialog.manual_button,
+                       self.dialog.continue_button):
+            self.assertEqual(button.get_halign(), Gtk.Align.START)
+            self.assertFalse(button.get_hexpand())
+            self.assertEqual(button.get_size_request()[0], 160)
+
     def test_initial_focus_is_on_check_button_not_selectable_version(self):
         self.dialog.present()
         for _ in range(20):
@@ -31,16 +62,13 @@ class UpdateViewTests(unittest.TestCase):
         self.assertTrue(self.dialog.status.get_selectable())
         self.assertEqual(self.dialog.status.get_text(), command)
 
-    def test_live_output_keeps_installation_busy_and_can_be_copied(self):
+    def test_live_output_keeps_installation_busy_and_is_selectable(self):
         self.dialog.working("update_applying")
         self.dialog.completed("output", "Reading package lists…\n")
         self.assertTrue(self.dialog.spinner.get_spinning())
         self.assertFalse(self.dialog.check_button.get_sensitive())
         self.assertFalse(self.dialog.log_view.get_editable())
-        clipboard = Mock()
-        with patch.object(self.dialog, "get_clipboard", return_value=clipboard):
-            self.dialog.copy_log()
-        clipboard.set.assert_called_once_with("Reading package lists…\n")
+        self.assertEqual(self.dialog.log_buffer.get_char_count(), len("Reading package lists…\n"))
 
     def test_log_is_bounded_and_new_check_clears_previous_output(self):
         from termia.update_output import MAX_LOG_CHARS
@@ -118,6 +146,16 @@ class UpdateViewTests(unittest.TestCase):
                              Installation(Mock(kind=kind), ""))
         return PreparedUpdate(result, "synthetic-artifact", plan)
 
+    def test_download_and_review_prepares_without_another_dialog_or_installing(self):
+        result = self.dependency_update().result
+        self.dialog.completed("done", result)
+        with patch("termia.update_view.Gtk.Dialog") as confirmation:
+            self.dialog.install_button.emit("clicked")
+        confirmation.assert_not_called()
+        self.factory.return_value.prepare_update.assert_called_once_with(result)
+        self.factory.return_value.install.assert_not_called()
+        self.assertFalse(self.dialog.check_button.get_visible())
+
     def test_detected_installation_is_shown_even_before_release_result(self):
         for kind, expected in (("update_source", "Git"), ("update_debian", ".deb")):
             self.dialog.completed("installation", Installation(Mock(kind=kind), ""))
@@ -128,22 +166,32 @@ class UpdateViewTests(unittest.TestCase):
     def test_missing_dependencies_warn_and_manual_mode_shows_exact_commands(self):
         prepared = self.dependency_update()
         self.dialog.completed("done", prepared)
-        self.assertIn("will not start", self.dialog.status.get_text())
-        self.assertIn("gir1.2-gtksource-5", self.dialog.dependency_label.get_text())
+        self.assertIn("must be satisfied", self.dialog.status.get_text())
+        log = self.dialog.log_buffer.get_text(
+            self.dialog.log_buffer.get_start_iter(), self.dialog.log_buffer.get_end_iter(), False)
+        self.assertIn("Update prepared and verified; dependencies checked.", log)
+        self.assertEqual(log.count("gir1.2-gtksource-5"), 1)
         self.assertTrue(self.dialog.assisted_button.get_visible())
         self.assertTrue(self.dialog.manual_button.get_visible())
         self.assertFalse(self.dialog.continue_button.get_visible())
         self.dialog.show_manual()
-        self.assertIn(prepared.dependencies.manual_commands, self.dialog.manual_label.get_text())
-        self.assertTrue(self.dialog.copy_button.get_visible())
+        log = self.dialog.log_buffer.get_text(
+            self.dialog.log_buffer.get_start_iter(), self.dialog.log_buffer.get_end_iter(), False)
+        self.assertIn(prepared.dependencies.manual_commands, log)
+        self.assertTrue(self.dialog.log_expander.get_expanded())
         self.assertTrue(self.dialog.continue_button.get_visible())
         self.factory.return_value.install.assert_not_called()
         self.dialog.apply_prepared(False)
         self.factory.return_value.install.assert_called_once_with(prepared, assisted=False)
 
-    def test_debian_plan_explains_apt_transaction(self):
+    def test_debian_plan_omits_apt_transaction_message(self):
         self.dialog.completed("done", self.dependency_update("update_debian"))
-        self.assertIn("one transaction", self.dialog.status.get_text())
+        self.assertNotIn("APT", self.dialog.status.get_text())
+
+    def test_installation_choices_share_a_horizontal_row(self):
+        row = self.dialog.assisted_button.get_parent()
+        self.assertIs(self.dialog.manual_button.get_parent(), row)
+        self.assertEqual(row.get_orientation(), Gtk.Orientation.HORIZONTAL)
 
     def test_ready_plan_needs_explicit_continue_without_dependency_install(self):
         self.dialog.completed("done", self.dependency_update(missing=False))
@@ -157,21 +205,22 @@ class UpdateViewTests(unittest.TestCase):
         self.assertFalse(self.dialog.assisted_button.get_visible())
         self.assertTrue(self.dialog.manual_button.get_visible())
 
-    def test_copy_commands_uses_exact_plan_and_does_not_install(self):
+    def test_manual_commands_are_in_copyable_log_without_installing(self):
         prepared = self.dependency_update()
         self.dialog.completed("done", prepared)
-        clipboard = Mock()
-        with patch.object(self.dialog, "get_clipboard", return_value=clipboard):
-            self.dialog.copy_commands()
-        clipboard.set.assert_called_once_with(prepared.dependencies.manual_commands)
+        self.dialog.show_manual()
+        log = self.dialog.log_buffer.get_text(
+            self.dialog.log_buffer.get_start_iter(), self.dialog.log_buffer.get_end_iter(), False)
+        self.assertIn(prepared.dependencies.manual_commands, log)
+        self.assertFalse(hasattr(self.dialog, "copy_button"))
         self.factory.return_value.install.assert_not_called()
 
     def test_new_check_hides_previous_manual_commands(self):
         self.dialog.completed("done", self.dependency_update())
         self.dialog.show_manual()
         self.dialog.check()
-        self.assertFalse(self.dialog.manual_label.get_visible())
-        self.assertFalse(self.dialog.copy_button.get_visible())
+        self.assertEqual(self.dialog.log_buffer.get_char_count(), 0)
+        self.assertFalse(self.dialog.log_expander.get_visible())
         self.assertFalse(self.dialog.plan_box.get_visible())
 
     def test_dependency_recovery_message_and_action_keep_terminal_access(self):

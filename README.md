@@ -154,7 +154,8 @@ terminal while keeping the update window open. Completion requires dependency
 verification; afterwards close all Termia windows and open the application again.
 
 **Installation details** shows phases and live package-manager/Git output in a
-read-only, expandable log. Use **Copy log** to copy the latest 65,536 characters;
+read-only, expandable log containing up to 65,536 characters. Select text and
+press **Ctrl+C** to copy it;
 starting another check clears it. URLs are hidden, but output can still contain
 local paths or repository names: review it before sharing. Termia does not save
 this log automatically. Administrator passwords belong only in Ubuntu's

@@ -76,8 +76,8 @@ msgstr ""
 msgid "No newer compatible release is available."
 msgstr ""
 
-#: src/termia/i18n.py:update_confirm
-msgid "Download and verify Termia {version} to review its dependencies? This step does not install packages or change the checkout."
+#: src/termia/i18n.py:update_prepared
+msgid "Update prepared and verified; dependencies checked."
 msgstr ""
 
 #: src/termia/i18n.py:update_preparing
@@ -186,15 +186,12 @@ msgstr ""
 
 #: src/termia/i18n.py:update_dependency_summary
 msgid ""
-"New or changed requirements:\n"
-"{added}\n"
-"\n"
-"Missing or unavailable requirements:\n"
+"Dependencies to install or repair:\n"
 "{missing}"
 msgstr ""
 
 #: src/termia/i18n.py:update_dependency_warning
-msgid "The updated Termia will not start if mandatory dependencies are missing. Choose who installs them. The update remains pending until they are verified."
+msgid "Dependencies must be satisfied before the update can complete. Choose automatic installation or install them manually and recheck."
 msgstr ""
 
 #: src/termia/i18n.py:update_dependencies_ready

@@ -1761,11 +1761,11 @@ msgstr "La versión {version} está disponible."
 
 #: src/termia/i18n.py:update_current_latest
 msgid "No newer compatible release is available."
-msgstr "No hay una versión compatible más reciente disponible."
+msgstr "No hay actualizaciones"
 
-#: src/termia/i18n.py:update_confirm
-msgid "Download and verify Termia {version} to review its dependencies? This step does not install packages or change the checkout."
-msgstr "¿Descargar y verificar Termia {version} para revisar sus dependencias? Este paso no instala paquetes ni cambia el repositorio."
+#: src/termia/i18n.py:update_prepared
+msgid "Update prepared and verified; dependencies checked."
+msgstr "Actualización preparada y verificada; dependencias comprobadas."
 
 #: src/termia/i18n.py:update_preparing
 msgid "Downloading and verifying the update…"
@@ -1777,11 +1777,11 @@ msgstr "Instalando… Espera a que termine la instalación."
 
 #: src/termia/i18n.py:update_installed
 msgid "Update installed and required dependencies verified. Close all Termia windows, then open Termia again."
-msgstr "Actualización instalada y dependencias necesarias verificadas. Cierra todas las ventanas de Termia y vuelve a abrir la aplicación."
+msgstr "Termia se ha actualizado correctamente! Cierra todas las ventanas de Termia y vuelve a abrir la aplicación"
 
 #: src/termia/i18n.py:update_installed_source
 msgid "Source update installed and required dependencies verified. Close all Termia windows, then open Termia again."
-msgstr "Código actualizado y dependencias necesarias verificadas. Cierra todas las ventanas de Termia y vuelve a abrir la aplicación."
+msgstr "Termia se ha actualizado correctamente! Cierra todas las ventanas de Termia y vuelve a abrir la aplicación"
 
 #: src/termia/i18n.py:update_cancelling
 msgid "Cancelling…"
@@ -2295,21 +2295,15 @@ msgstr "Las dependencias necesarias están disponibles. Continúa para instalar 
 
 #: src/termia/i18n.py:update_dependency_summary
 msgid ""
-"New or changed requirements:\n"
-"{added}\n"
-"\n"
-"Missing or unavailable requirements:\n"
+"Dependencies to install or repair:\n"
 "{missing}"
 msgstr ""
-"Requisitos nuevos o modificados:\n"
-"{added}\n"
-"\n"
-"Requisitos que faltan o no están disponibles:\n"
+"Dependencias que hay que instalar o reparar:\n"
 "{missing}"
 
 #: src/termia/i18n.py:update_dependency_warning
-msgid "The updated Termia will not start if mandatory dependencies are missing. Choose who installs them. The update remains pending until they are verified."
-msgstr "La nueva versión de Termia no arrancará si faltan dependencias obligatorias. Elige quién las instala. La actualización queda pendiente hasta verificarlas."
+msgid "Dependencies must be satisfied before the update can complete. Choose automatic installation or install them manually and recheck."
+msgstr "Las dependencias deben estar satisfechas para completar la actualización. Elige la instalación automática o instálalas manualmente y vuelve a comprobar."
 
 #: src/termia/i18n.py:update_plan_expired
 msgid "The update plan changed or expired. Check for updates again and review the new requirements before continuing."

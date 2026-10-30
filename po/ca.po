@@ -1763,9 +1763,9 @@ msgstr "La versió {version} està disponible."
 msgid "No newer compatible release is available."
 msgstr "No hi ha cap versió compatible més recent disponible."
 
-#: src/termia/i18n.py:update_confirm
-msgid "Download and verify Termia {version} to review its dependencies? This step does not install packages or change the checkout."
-msgstr "Vols baixar i verificar Termia {version} per revisar-ne les dependències? Aquest pas no instal·la paquets ni canvia el repositori."
+#: src/termia/i18n.py:update_prepared
+msgid "Update prepared and verified; dependencies checked."
+msgstr "Actualització preparada i verificada; dependències comprovades."
 
 #: src/termia/i18n.py:update_preparing
 msgid "Downloading and verifying the update…"
@@ -2295,21 +2295,15 @@ msgstr "Les dependències necessàries estan disponibles. Continua per instal·l
 
 #: src/termia/i18n.py:update_dependency_summary
 msgid ""
-"New or changed requirements:\n"
-"{added}\n"
-"\n"
-"Missing or unavailable requirements:\n"
+"Dependencies to install or repair:\n"
 "{missing}"
 msgstr ""
-"Requisits nous o modificats:\n"
-"{added}\n"
-"\n"
-"Requisits que falten o no estan disponibles:\n"
+"Dependències que cal instal·lar o reparar:\n"
 "{missing}"
 
 #: src/termia/i18n.py:update_dependency_warning
-msgid "The updated Termia will not start if mandatory dependencies are missing. Choose who installs them. The update remains pending until they are verified."
-msgstr "La nova versió de Termia no arrencarà si falten dependències obligatòries. Tria qui les instal·la. L’actualització queda pendent fins que es verifiquin."
+msgid "Dependencies must be satisfied before the update can complete. Choose automatic installation or install them manually and recheck."
+msgstr "Les dependències han d’estar satisfetes per completar l’actualització. Tria la instal·lació automàtica o instal·la-les manualment i torna a comprovar."
 
 #: src/termia/i18n.py:update_plan_expired
 msgid "The update plan changed or expired. Check for updates again and review the new requirements before continuing."
