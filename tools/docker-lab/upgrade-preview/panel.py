@@ -1,6 +1,6 @@
 import os
 import subprocess
-import time
+import tempfile
 import tkinter as tk
 from pathlib import Path
 
@@ -16,14 +16,14 @@ def launch(mode):
     if child and child.poll() is None:
         status.set('Cierra Termia y espera antes de iniciar otra prueba.')
         return
-    stamp=str(time.time_ns())
-    directory=Path('/tmp/upgrade-evidence')/stamp
-    directory.mkdir()
+    directory=Path(tempfile.mkdtemp(
+        prefix='trial-', dir=Path(tempfile.gettempdir())/'upgrade-evidence'))
+    stamp=directory.name
     env=os.environ.copy()
     env.update(TERMIA_CONFIG_DIR=str(directory/'config'),TERMIA_STATE_DIR=str(directory/'state'),
                PYTHONUNBUFFERED='1')
     log=(directory/'console.log').open('w')
-    child=subprocess.Popen(['python3','/opt/upgrade-lab/launch.py',mode],env=env,stdout=log,stderr=subprocess.STDOUT)
+    child=subprocess.Popen(['/usr/bin/python3','/opt/upgrade-lab/launch.py',mode],env=env,stdout=log,stderr=subprocess.STDOUT)
     log.close()
     status.set('Modo '+mode+' — abre menú → Acerca de → Buscar actualizaciones. Registro: '+stamp)
 
@@ -31,11 +31,11 @@ def reset():
     if child and child.poll() is None:
         status.set('Cierra Termia antes de restaurar la baseline.')
         return
-    subprocess.Popen(['xterm','-T','Restaurar beta.3 sin GtkSourceView','-e','python3','/opt/upgrade-lab/reset.py'])
+    subprocess.Popen(['/usr/bin/xterm','-T','Restaurar beta.3 sin GtkSourceView','-e','/usr/bin/python3','/opt/upgrade-lab/reset.py'])
     status.set('Restauración en terminal: escribe la contraseña del panel y espera a que termine.')
 
 def terminal():
-    subprocess.Popen(['xterm','-T','Terminal del contenedor — dependencias manuales'])
+    subprocess.Popen(['/usr/bin/xterm','-T','Terminal del contenedor — dependencias manuales'])
 
 row=tk.Frame(root)
 row.pack(fill='x')

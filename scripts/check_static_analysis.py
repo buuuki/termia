@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import ast
 import asyncio
+import hashlib
 import io
 import json
 import re
@@ -17,6 +18,8 @@ from pathlib import Path
 
 QUALITY_ADOPTION_COMMIT = "fb584fc2906568cb62cd6f12b0831cd80fec682e"
 APPROVED_RELEASE_BASELINE = "50e747d1edaf2610aa6b0fdfc98675a8256493bb"
+REVIEW_FILE = ".github/static-analysis-reviews.json"
+REVIEW_RULES = {"B404", "B603", "B606"}
 
 
 class AnalysisError(RuntimeError):
@@ -178,9 +181,119 @@ async def analyze(tool: str, root: Path) -> list[dict]:
     return parse_report(tool, status, output, root)
 
 
-def report_difference(tool: str, baseline: list[dict], proposed: list[dict]) -> int:
+def finding_digest(item: dict) -> str:
+    encoded = json.dumps(item["key"], ensure_ascii=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode()).hexdigest()
+
+
+def context_digest(path: str, data: bytes) -> str:
+    if path.endswith(".py"):
+        def normalize(value):
+            if isinstance(value, ast.AST):
+                fields = [(name, normalize(child)) for name, child in ast.iter_fields(value)
+                          if name != "type_params" or child]
+                return [type(value).__name__, fields]
+            if isinstance(value, list):
+                return [normalize(child) for child in value]
+            return repr(value)
+
+        tree = normalize(ast.parse(data))
+        data = json.dumps(tree, ensure_ascii=True, separators=(",", ":")).encode()
+    return hashlib.sha256(data).hexdigest()
+
+
+def review_path(value) -> str:
+    if (not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_./-]+", value)
+            or Path(value).is_absolute() or ".." in Path(value).parts
+            or Path(value).as_posix() != value or value == "."):
+        raise AnalysisError("Invalid reviewed-source path")
+    return value
+
+
+async def revision_file(repo: Path, ref: str, name: str) -> bytes | None:
+    review_path(name)
+    if ref == "WORKTREE":
+        path = repo / name
+        if not path.exists() and not path.is_symlink():
+            return None
+        if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(repo):
+            raise AnalysisError("Reviewed files must be regular repository files")
+        return path.read_bytes()
+    entry = await git(repo, "ls-tree", "-z", ref, "--", name)
+    if not entry:
+        return None
+    metadata, found = entry.rstrip(b"\0").split(b"\t", 1)
+    if found.decode() != name or metadata.split()[:2] not in (
+            [b"100644", b"blob"], [b"100755", b"blob"]):
+        raise AnalysisError("Reviewed files must be regular Git blobs")
+    return await git(repo, "show", f"{ref}:{name}")
+
+
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise AnalysisError("Duplicate field in static-analysis reviews")
+        result[key] = value
+    return result
+
+
+async def load_reviews(repo: Path, ref: str, source: Path, version: str | None,
+                       *, required: bool = False) -> dict | None:
+    data = await revision_file(repo, ref, REVIEW_FILE)
+    if data is None:
+        if required:
+            raise AnalysisError("Retain the review registry; remove obsolete entries explicitly")
+        return None
+    try:
+        document = json.loads(data, object_pairs_hook=unique_object)
+        if (set(document) != {"schema", "bandit_version", "context", "findings"}
+                or type(document["schema"]) is not int or document["schema"] != 1
+                or not isinstance(document["bandit_version"], str)
+                or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", document["bandit_version"])
+                or (version is not None and document["bandit_version"] != version)
+                or not isinstance(document["context"], dict)
+                or not isinstance(document["findings"], list)):
+            raise AnalysisError("Invalid static-analysis review registry or analyzer version")
+        context = document["context"]
+        for name, expected in context.items():
+            review_path(name)
+            if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+                raise AnalysisError("Invalid reviewed-context digest")
+            content = ((source / name).read_bytes() if name.endswith(".py")
+                       else await revision_file(repo, ref, name))
+            if content is None or context_digest(name, content) != expected:
+                raise AnalysisError("Reviewed context changed; update its documented review")
+        reviews, identifiers = {}, set()
+        fields = {"id", "file", "rule", "severity", "fingerprint", "reason", "reference"}
+        for item in document["findings"]:
+            if not isinstance(item, dict) or set(item) != fields:
+                raise AnalysisError("Invalid reviewed-finding fields")
+            if (not isinstance(item["id"], str) or not re.fullmatch(r"[a-z0-9-]+", item["id"])
+                    or item["id"] in identifiers
+                    or item["rule"] not in REVIEW_RULES
+                    or item["severity"] not in {"LOW/LOW", "LOW/MEDIUM", "LOW/HIGH"}
+                    or not isinstance(item["fingerprint"], str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", item["fingerprint"])
+                    or item["fingerprint"] in reviews
+                    or not isinstance(item["reason"], str) or not item["reason"].strip()
+                    or not isinstance(item["reference"], str)
+                    or not re.fullmatch(r"#[1-9][0-9]*", item["reference"])):
+                raise AnalysisError("Invalid or duplicate reviewed finding")
+            if review_path(item["file"]) not in context or not item["file"].endswith(".py"):
+                raise AnalysisError("Reviewed finding needs its source context")
+            identifiers.add(item["id"])
+            reviews[item["fingerprint"]] = item
+        return reviews
+    except (ValueError, TypeError, KeyError, OSError, SyntaxError) as exc:
+        raise AnalysisError("Invalid review evidence; recheck registry and source context") from exc
+
+
+def report_difference(tool: str, baseline: list[dict], proposed: list[dict],
+                      reviews: dict | None = None) -> int:
     remaining = Counter(item["key"] for item in baseline)
-    new = 0
+    new = blocking = reviewed = 0
+    seen = set()
     for item in proposed:
         key = item["key"]
         existing = remaining[key] > 0
@@ -188,11 +301,31 @@ def report_difference(tool: str, baseline: list[dict], proposed: list[dict]) -> 
             remaining[key] -= 1
         else:
             new += 1
+        status = "existing" if existing else "new"
+        review = reviews.get(finding_digest(item)) if tool == "bandit" and reviews else None
+        if review is not None:
+            identifier = review["id"]
+            if (identifier in seen or any(item[field] != review[field]
+                                          for field in ("file", "rule", "severity"))):
+                raise AnalysisError("Reviewed finding duplicated or its metadata changed")
+            seen.add(identifier)
+            reviewed += 1
+            status = "reviewed"
+        elif not existing:
+            blocking += 1
         # No code, credential literals, absolute paths or workflow commands.
-        print(json.dumps({"tool": tool, "status": "existing" if existing else "new",
-                          **{k: v for k, v in item.items() if k != "key"}}, sort_keys=True))
-    print(f"{tool}: baseline={len(baseline)} proposed={len(proposed)} new={new}")
-    return new
+        record = {"tool": tool, "status": status,
+                  **{k: v for k, v in item.items() if k != "key"}}
+        if review is not None:
+            record["review_id"] = review["id"]
+        print(json.dumps(record, sort_keys=True))
+    if reviews is not None and seen != {item["id"] for item in reviews.values()}:
+        raise AnalysisError("Stale reviewed finding; remove or renew its documented entry")
+    summary = f"{tool}: baseline={len(baseline)} proposed={len(proposed)} new={new}"
+    if reviews is not None:
+        summary += f" reviewed={reviewed} blocking={blocking}"
+    print(summary)
+    return blocking
 
 
 def read_pins(path: Path) -> dict[str, str]:
@@ -240,7 +373,8 @@ async def comparison_base(repo: Path, base: str, head: str) -> str:
 
 async def check(base: str, head: str) -> int:
     repo = Path((await git(Path.cwd(), "rev-parse", "--show-toplevel")).decode().strip()).resolve()
-    for tool, version in read_pins(Path(__file__).resolve().parents[1] / "requirements-ci.txt").items():
+    pins = read_pins(Path(__file__).resolve().parents[1] / "requirements-ci.txt")
+    for tool, version in pins.items():
         status, output = await command([tool, "--version"], repo)
         if status or output.decode().splitlines()[:1] != [f"{tool} {version}"]:
             raise AnalysisError(f"Install the pinned {tool} version from requirements-ci.txt")
@@ -254,10 +388,20 @@ async def check(base: str, head: str) -> int:
             root.mkdir()
         await snapshot(repo, base_sha, roots[0])
         await snapshot(repo, "WORKTREE" if head == "WORKTREE" else head_sha, roots[1])
+        target = "WORKTREE" if head == "WORKTREE" else head_sha
+        prior_registry = await revision_file(repo, base_sha, REVIEW_FILE)
+        prior_reviews = (await load_reviews(repo, base_sha, roots[0], None)
+                         if prior_registry is not None else None)
+        reviews = await load_reviews(repo, target, roots[1], pins["bandit"],
+                                     required=prior_registry is not None)
         new = 0
         for tool in ("ruff", "bandit"):
             before, after = await asyncio.gather(*(analyze(tool, root) for root in roots))
-            new += report_difference(tool, before, after)
+            if tool == "bandit" and prior_reviews:
+                removed = prior_reviews.keys() - (reviews or {}).keys()
+                if removed.intersection(finding_digest(item) for item in after):
+                    raise AnalysisError("Cannot remove a review while its finding remains")
+            new += report_difference(tool, before, after, reviews if tool == "bandit" else None)
         return int(new > 0)
 
 

@@ -182,13 +182,18 @@ and effective SHAs and compares against that approved release baseline.
 This preserves fixes made after initial adoption and rejects new occurrences.
 A base at or after adoption keeps its original comparison, including forced
 pushes. Missing history or an incompatible legacy lineage fails closed.
-There is no configurable waiver or rule suppression. Changes to either
-immutable reference require explicit policy review and regression validation.
+Changes to either immutable reference require explicit policy review and
+regression validation. Individually approved low Bandit findings may be recorded
+in `.github/static-analysis-reviews.json` under the strict rules in
+[Reviewed static-analysis findings](docs/STATIC_ANALYSIS_REVIEWS.md). They remain
+visible and bind the exact occurrence, analyzer version and reviewed context;
+new occurrences and changed validations still block. There are no blanket rule
+exclusions or inline suppressions.
 
 An initial all-zero push base, invalid reports, syntax errors, missing tools or incorrect versions fail the check.
 
-Existing findings remain visible. Only new findings block, including extra
-copies of an existing finding. Source tokens and occurrence counts distinguish
+Existing findings remain visible. New findings block unless individually
+reviewed; extra copies do not inherit that review. Source tokens and occurrence counts distinguish
 findings without depending on line numbers. Renamed files are conservatively
 treated as new; removed findings do not grant a budget for different findings.
 This is a regression gate, not a security certification or approval of old debt.
@@ -200,7 +205,9 @@ cannot weaken this gate. Review policy changes in the helper explicitly;
 rerun both snapshots when updating the tool pins. Local WORKTREE mode includes
 non-ignored new Python files and local deletions; CI uses committed files only.
 Logs list relative paths, rule IDs and severity without source/credential text.
-Exit codes are 0 for no new findings, 1 for new findings, and 2 for analysis errors.
+Exit codes are 0 for no blocking findings, 1 for unreviewed new findings, and 2
+for analysis or review-evidence errors. A reviewed finding is not a resolved
+finding: reports retain introduced, reviewed and blocking counts separately.
 
 ## Pull Requests
 

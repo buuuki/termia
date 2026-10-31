@@ -19,7 +19,15 @@ writable host mount. Only packages inside the disposable container change.
 The build starts from Ubuntu 24.04 and the checksum-verified official beta.3
 package, without GtkSourceView 5. Preparation exports tracked application files
 only; its build context stays under ignored `.runtime/`. No local credentials
-are exported. Preparation refuses to overwrite an existing context.
+are exported. Preparation refuses to overwrite an existing context. Fixture downloads use
+Termia's HTTPS-only official-host redirect policy and retain the pinned SHA-256
+checks. Preview tools use absolute executable paths; this does not rebuild or
+change an already-running laboratory.
+
+Each trial keeps its logs in a uniquely allocated directory beneath
+`/tmp/upgrade-evidence`, with private `0700` permissions even when the process
+has a permissive umask. The panel reports its directory name, and earlier trial
+logs remain available for inspection.
 
 Original mode makes its status text selectable and uses 16-pixel content insets
 for manual copying and layout review. These presentation adjustments do not

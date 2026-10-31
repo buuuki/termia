@@ -35,6 +35,10 @@
 
 ### Changed
 
+- Keep individually reviewed low Bandit findings visible while binding their
+  acceptance to exact occurrences and validated source context; preserve
+  blocking checks for new findings and invalid review evidence (`#428`).
+
 - Remove the manual dependency action from the update window, name missing
   or fully available requirements, and explain automatic dependency installation
   when available. Use Update Termia for the final action, preserving verification
@@ -62,6 +66,10 @@
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
 ### Fixed
+
+- Use absolute executables in updater-preview tools, reuse the official
+  HTTPS/redirect policy for checksum-verified fixture downloads, and retain
+  trial logs in private, uniquely allocated directories (`#428`).
 
 - Separate the successful update message from installation output and clarify
   the Spanish restart instructions (`#428`).

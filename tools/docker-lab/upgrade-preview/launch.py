@@ -93,8 +93,8 @@ view.attach_updates=attach_fixture
 sys.modules['termia.update_view']=view
 # Register an actual polkit terminal agent for this app process and its descendants.
 # The terminal is part of the isolated Docker desktop, never the host session.
-agent=subprocess.Popen(['xterm','-T','Autorización polkit del laboratorio — escribe la contraseña del panel',
-                         '-geometry','90x12+380+740','-e','pkttyagent','--process',str(os.getpid())])
+agent=subprocess.Popen(['/usr/bin/xterm','-T','Autorización polkit del laboratorio — escribe la contraseña del panel',
+                         '-geometry','90x12+380+740','-e','/usr/bin/pkttyagent','--process',str(os.getpid())])
 print(json.dumps({'mode':args.mode,'version':old_version,'updater':package,
                   'transport':'local fixture: official beta.4 bytes and official Git tags',
                   'root':str(source) if args.mode!='debian' else str(old_module)},ensure_ascii=False),flush=True)

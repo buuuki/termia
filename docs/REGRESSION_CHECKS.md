@@ -1320,8 +1320,15 @@ check of a local snapshot does not publish or certify later remote changes.
 CI also runs `python3 scripts/check_static_analysis.py --base <base-ref> --head <head-ref>`
 with the pinned tools in `requirements-ci.txt`. Validate changes to this gate
 with `python3 scripts/run_sandbox_tests.py tests.test_static_analysis` and a
-real comparison. Existing findings must remain visible; new occurrences and
-tool/report/history errors must fail. Line shifts must not create new findings,
+real comparison. Existing and individually reviewed findings must remain visible;
+unreviewed new occurrences and tool/report/history/review-evidence errors must
+fail. Follow `STATIC_ANALYSIS_REVIEWS.md`: exact approved low Bandit cases may
+stop blocking, with no blanket exclusions. Verify duplicate occurrences, changed
+guards or severity, stale entries, unsafe paths, invalid schemas and deleting an
+existing registry cannot pass. Removing entries while their findings remain
+must also fail; committed comparisons must ignore a dirty local
+registry. Preserve the raw introduced count and report reviewed/blocking counts.
+Line shifts must not create new findings,
 and duplicate findings, renamed files, deleted files and suppression comments
 must not bypass comparison. The first legacy-base promotion must require the
 documented immutable adoption/release/head ancestry, report its effective base,
@@ -1387,6 +1394,21 @@ config migration, import/export, and statistics.
 
 The automated equivalent runs in GitHub Actions for every pull request and
 every push to `main`.
+
+### Updater preview tool hardening (#428)
+
+Run `python3 scripts/run_sandbox_tests.py tests.test_upgrade_preview` without
+network access or privileged package operations. Verify that importing the
+preparer has no build/download side effects, approved fixture bytes are accepted,
+and incorrect digests, oversized data, nonofficial URLs and HTTPS downgrades are
+rejected before a package is written or Git is run. Use absolute executables,
+including commands passed through sudo or a terminal, in the preview launcher,
+panel, preparer and shared reset script. Keep the GNOME export's launch markers
+and reset behavior intact; this validation does not rebuild a running laboratory.
+With mocked widgets and child processes, exercise real evidence-directory
+creation under a synthetic temporary parent. Confirm distinct private `0700`
+directories even with a permissive umask, retained logs from previous trials,
+and no directory or child allocation while a trial is already running.
 
 ### Direct update preparation (#428)
 
