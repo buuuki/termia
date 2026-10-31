@@ -330,7 +330,6 @@ class SidebarMixin:
             self.store.recent_server_ids(), query, self.group_expanded_state,
             self.collapse_groups_on_startup,
         )
-        self.sidebar_projection = projection
         root = Gio.ListStore.new(SidebarTreeNode)
 
         def server_node(server, kind="server", icon="network-server-symbolic"):

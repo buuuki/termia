@@ -63,7 +63,7 @@ the mixins:
 Some mixins add transient state after construction:
 
 - `SidebarMixin`: `sidebar_tree_root`, `sidebar_tree_model`,
-  `sidebar_tree_selection`, `sidebar_projection`, `visible_tree_rows`,
+  `sidebar_tree_selection`, `visible_tree_rows`,
   `sidebar_model_token`, `scroll_restore_id`, `sidebar_visible`, and
   `sidebar_width`.
 - `TabsMixin`: `tab_drag_session_id`.

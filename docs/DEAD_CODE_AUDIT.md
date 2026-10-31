@@ -1,6 +1,6 @@
 # Dead-code cleanup audit
 
-Tracking issue: #367. The audit baseline is commit `b6212bc`, after the standard
+Original tracking issue: #367. The audit baseline is commit `b6212bc`, after the standard
 GTK migrations. This record covers the approved cleanup batches; the wider
 audit is not blanket approval to remove every suspected legacy implementation.
 
@@ -15,6 +15,53 @@ counterexample that would prove the candidate is still used.
 The conclusions below apply to in-repository consumers. Accidental reexports
 are not a supported external plugin API. File locations refer to the baseline;
 line numbers change as cleanup progresses.
+
+## Follow-up #437: initial cleanup
+
+The follow-up baseline is `a1085e9` on `0.6.1-dev`. Only the following two
+removals are included in this first approved batch; other audit candidates
+require separate proposals and approval.
+
+| File | Removed element | Evidence and retained behavior |
+| --- | --- | --- |
+| `src/termia/notes_store.py` | `NotesFileStore.detect_storage_mode` | Only its definition remained; no caller, signal, action, or string/dynamic consumer was found in the repository. `load` retains its active format detection, and loading, saving, encryption, backups and migration behavior remain unchanged. |
+| `src/termia/sidebar.py` | `self.sidebar_projection` assignment | The attribute was written once and never read, including through dynamic access. The local `projection`, its construction and the native GTK tree remain unchanged. Remove the stale attribute from `WINDOW_MIXIN_CONTRACTS.md`; retain the projection module and its data. |
+
+These are internal elements, not a public plugin contract. Confidence is high
+for the absence of in-repository consumers. There is no intended UI, data-format,
+Core/add-on boundary or version metadata change. In particular, this batch does
+not remove the flat-row calculations, resources, translation keys, snippet
+controls or updater fields identified as other candidates.
+
+Compare normalized ASTs against this baseline to verify only the approved
+method and assignment were removed. Existing behavior tests cover Notes
+storage, encryption and recovery, and sidebar search, expansion, selection and
+menus; do not add tests merely asserting the absence of these internal names.
+Run the full standard checks once stable. The focused check is:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_notes tests.test_sidebar_navigation tests.test_sidebar_projection tests.test_sidebar_menus
+```
+
+For the isolated manual check, run `./scripts/run_test_instance.sh --fresh`.
+Create and save a note, close and reopen Notes, and verify its content remains.
+Create synthetic connection groups, expand/collapse them, filter the sidebar,
+and verify keyboard selection after clearing the search. No SSH connection,
+container or VM execution is needed for this batch.
+
+Automated validation for this follow-up passed: 185 focused tests and the full
+793-test private sandbox suite, Python compilation, setup-script syntax,
+translation synchronization (615 messages), and whitespace checks. Normalized
+AST comparison confirms exactly the two approved removals and unchanged retained
+code. Ruff remains at 54 findings and Bandit at 157, with no new findings or
+blocking cases; existing reviewed findings remain visible. GTK/VTE deprecation
+and GLib source-ID warnings were observed without test failures. The requester
+confirmed the isolated manual checks for this batch before publication.
+
+## Original audit #367
+
+The batches below retain their original baseline, validation evidence and
+requester decisions.
 
 ## Batch A: confirmed removals
 
