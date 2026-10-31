@@ -210,7 +210,12 @@ Long measurements and release-platform checks remain separate validation work.
   The selected highlight must follow the rounded tile rather than the square
   outer cell, while keyboard focus remains visible in light and dark themes.
 - Snippet variable values must be shell-quoted as individual arguments, and a
-  group-scoped snippet must apply to servers in that group and its nested
+  snippet selected in the execution search must advance to its preview with
+  Enter. Enter in a variable field must open the preview without sending;
+  Enter on the focused preview action must send once. Reopening the picker
+  must restore the selection action, with no sending when no item is selected.
+  Closing or cancelling the picker must disable its default action.
+  Group-scoped snippets must apply to servers in that group and its nested
   subgroups. Invalid or deleted scope targets must never broaden a snippet to
   global availability.
 - Snippet shortcuts must use the same assignment in the editor and keyboard

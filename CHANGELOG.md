@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Let Enter advance snippet selection and variables to the preview, then
+  explicitly send the previewed command once using the focused GTK action (`#433`).
+
 ### Added
 
 - Show a bounded, read-only live installation log with copy support and

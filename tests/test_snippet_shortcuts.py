@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import os
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,7 +13,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Vte", "3.91")
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, GLib, Gtk
 
 from termia.i18n import translate_key
 from termia.keybinding_preferences import (
@@ -70,6 +71,14 @@ class SnippetShortcutTests(unittest.TestCase):
 
     def press(self, key=Gdk.KEY_d, modifiers=Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.ALT_MASK):
         return self.dialogs.on_terminal_shortcut(key, modifiers, self.session, self.terminal)
+
+    @staticmethod
+    def settle_activation():
+        deadline = time.monotonic() + 0.5
+        while time.monotonic() < deadline:
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+            time.sleep(0.01)
 
     def test_capture_clear_and_escape(self):
         row = KeybindingCaptureRow("Ctrl+Alt+D", "Disabled", "Press", "Clear")
@@ -206,6 +215,42 @@ class SnippetShortcutTests(unittest.TestCase):
         self.terminal.feed_child.assert_not_called()
         self.dialogs.on_preview_send(Mock(), state)
         self.terminal.feed_child.assert_called_once_with(b"printf %s 'a b; echo example'\n")
+
+    def test_enter_advances_variables_then_sends_preview_only_once(self):
+        self.store.add_snippet("Example", "printf %s {{value}}", shortcut="Ctrl+Alt+D")
+        self.assertTrue(self.press())
+        self.settle_activation()
+        state = self.dialogs.picker_state
+        entry = state.variable_entries["value"]
+        entry.set_text("synthetic value")
+        entry.emit("activate")
+        self.settle_activation()
+        self.assertEqual(state.stack.get_visible_child_name(), "preview")
+        self.terminal.feed_child.assert_not_called()
+        self.assertIs(state.window.get_focus(), state.window.get_default_widget())
+        state.window.emit("activate-default")
+        self.settle_activation()
+        self.terminal.feed_child.assert_called_once_with(b"printf %s 'synthetic value'\n")
+        self.assertIsNone(state.window.get_default_widget())
+        state.window.emit("activate-default")
+        self.terminal.feed_child.assert_called_once()
+
+    def test_search_enter_requires_selection_and_reopening_restores_default(self):
+        self.store.add_snippet("Example", "true")
+        state = self.dialogs.prepare_picker(self.session, self.terminal)
+        state.window.present()
+        state.search.emit("activate")
+        self.assertEqual(state.stack.get_visible_child_name(), "picker")
+        self.terminal.feed_child.assert_not_called()
+        state.listing.select_row(state.listing.get_row_at_index(0))
+        state.search.emit("activate")
+        self.settle_activation()
+        self.assertEqual(state.stack.get_visible_child_name(), "preview")
+        self.terminal.feed_child.assert_not_called()
+        self.dialogs.hide_picker(state)
+        self.assertIsNone(state.window.get_default_widget())
+        self.assertIs(self.dialogs.prepare_picker(self.session, self.terminal), state)
+        self.assertIs(state.window.get_default_widget(), state.preview_button)
 
     def test_scope_connected_focus_locked_and_deleted_guards(self):
         group = self.store.add_group("Example")

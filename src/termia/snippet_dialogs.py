@@ -1013,6 +1013,7 @@ class SnippetDialogs:
         state.search.set_text("")
         state.stack.set_visible_child_name("picker")
         self.refresh_picker(state)
+        state.window.set_default_widget(state.preview_button)
         return state
 
     def on_terminal_shortcut(self, keyval: int, modifiers: object,
@@ -1105,6 +1106,17 @@ class SnippetDialogs:
         stack.add_named(preview_page, "preview")
 
         state = PickerState(window, stack, search, listing, preview_button, variable_fields, preview_view)
+
+        def update_default_action(*_args) -> None:
+            page = stack.get_visible_child_name()
+            default = {"picker": preview_button, "variables": variables_preview, "preview": send}[page]
+            window.set_default_widget(default)
+            if page == "preview":
+                send.grab_focus()
+
+        stack.connect("notify::visible-child-name", update_default_action)
+        update_default_action()
+        search.connect("activate", lambda *_: window.emit("activate-default"))
         state.selection_handler_id = listing.connect("row-selected", self.on_picker_selected, state)
         search.connect("search-changed", self.on_picker_search, state)
         picker_cancel.connect("clicked", self.on_picker_cancel, state)
@@ -1120,6 +1132,7 @@ class SnippetDialogs:
         state.window.set_visible(False)
         state.window.set_transient_for(self.parent)
         state.stack.set_visible_child_name("picker")
+        state.window.set_default_widget(None)
         state.target = None
         state.context = None
         state.variable_entries.clear()
@@ -1176,6 +1189,7 @@ class SnippetDialogs:
             label = Gtk.Label(label=variable)
             label.set_xalign(0)
             entry = Gtk.Entry()
+            entry.connect("activate", lambda *_: state.window.emit("activate-default"))
             state.variable_entries[variable] = entry
             state.variable_fields.append(label)
             state.variable_fields.append(entry)
