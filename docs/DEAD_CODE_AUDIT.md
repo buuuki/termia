@@ -58,6 +58,73 @@ blocking cases; existing reviewed findings remain visible. GTK/VTE deprecation
 and GLib source-ID warnings were observed without test failures. The requester
 confirmed the isolated manual checks for this batch before publication.
 
+## Follow-up #439: obsolete flat sidebar rows
+
+Baseline: `2767cc8` on `0.6.1-dev`, after the first #437 cleanup. The native
+connections tree reads the projection's eight index/section fields, not its
+`rows` field. The only direct readers of the flat result were assertions in
+`tests/test_sidebar_projection.py`.
+
+This batch removes `SidebarProjection.rows`, `server_connection_text`, the
+nested `is_expanded`, `server_row` and `collect_group_rows` helpers, and the
+flat-row assembly. The builder's `expanded_groups` and
+`collapse_groups_on_startup` parameters served only that assembly, so remove
+them from the signature and its production/test callers as well. The unused
+`group_matches_query` import in the projection module is removed; the native
+tree retains its own active use of group-name matching.
+
+Retain `SidebarRow`, all eight surviving projection fields, their filtering and
+ordering, and the native GTK tree. Expansion preferences remain owned by
+`SidebarMixin.get_group_expanded`, `group_expanded_state` and the native model's
+existing callbacks. No controls, persistence format, Core/add-on boundary or
+version metadata change is intended.
+
+The projection tests now check the actual indexes and filtered section data.
+Native model tests cover the former flat-list visibility expectations through
+startup collapse, retained child expansion, default workspace/local/recent/
+favorite visibility, directory-based profile search, clearing search, ordered
+identities and activation. Existing native hierarchy/search/selection tests
+remain. These tests replace obsolete representation assertions rather than
+merely checking that a name was removed.
+
+An in-memory comparison of the final implementation against the baseline on
+36 synthetic combinations of query and expansion settings preserved all eight
+active projection fields. A normalized AST comparison confirms only the
+approved removals and caller adaptation. Run focused tests with:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_sidebar_projection tests.test_sidebar_navigation tests.test_sidebar_menus tests.test_server_group_move
+```
+
+Run the complete standard checks once stable, with production line/branch
+coverage because tests change. Keep coverage reports local/ignored. For the
+manual check, use `./scripts/run_test_instance.sh --fresh` and synthetic saved
+connection records without connecting to them. Verify nested group collapse,
+startup collapse, search expansion/restoration, section ordering and keyboard
+selection. No live Docker/VM or remote-host trial is part of this batch.
+
+Automated validation passed: 52 focused tests and the full 795-test private
+sandbox suite, with no skipped tests; Python compilation, setup-script syntax,
+translation synchronization (615 messages), and whitespace checks also passed.
+Ruff remains at 54 findings and Bandit at 157, with no new findings or blocking
+cases; 17 existing Bandit findings retain their reviewed status. No analyzer
+rules or review entries changed. GTK/VTE deprecation and GLib source-ID
+warnings were observed without test failures.
+
+Coverage includes all 74 production Python modules, including the unexecuted
+`__main__.py`: global line coverage is 76.04% and branch coverage is 63.61%.
+`sidebar_projection.py` has 100% line and branch coverage; `sidebar.py` has
+70.63% line and 58.26% branch coverage. Per-module results and missing paths
+remain in the ignored `htmlcov/439-sidebar-flat-rows/` HTML/JSON reports.
+Missing sidebar paths include scroll restoration and several context-action
+wrappers. Coverage combines the child test process; it does not establish
+complete native GTK/VTE, process-lifecycle, remote-host or enabled/disabled
+add-on coverage. The requester confirmed the isolated manual check before
+publication.
+
+Other audit candidates remain outside this cleanup and require separate scope
+approval.
+
 ## Original audit #367
 
 The batches below retain their original baseline, validation evidence and

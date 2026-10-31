@@ -327,8 +327,7 @@ class SidebarMixin:
         projection = build_sidebar_projection(
             self.store.data.groups, self.store.data.servers,
             self.store.data.local_terminals, self.store.data.workspaces,
-            self.store.recent_server_ids(), query, self.group_expanded_state,
-            self.collapse_groups_on_startup,
+            self.store.recent_server_ids(), query,
         )
         root = Gio.ListStore.new(SidebarTreeNode)
 
