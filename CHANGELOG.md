@@ -4,6 +4,9 @@
 
 ### Refactored
 
+- Stop computing the obsolete flat sidebar rows; keep native-tree ordering,
+  expansion and search covered through the active GTK model (`#439`).
+
 - Remove an unused Notes storage-mode helper and an unread sidebar projection
   attribute while preserving active storage and native-tree behavior (`#437`).
 

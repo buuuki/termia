@@ -29,13 +29,11 @@ class SidebarProjectionTests(unittest.TestCase):
             "workspaces": self.workspaces,
             "recent_server_ids": ["db", "db", "missing", "web"],
             "query": "",
-            "expanded_groups": {},
-            "collapse_groups_on_startup": False,
         }
         options.update(kwargs)
         return build_sidebar_projection(**options)
 
-    def test_projection_indexes_sections_and_rows_in_one_result(self) -> None:
+    def test_projection_indexes_sections_and_hierarchy(self) -> None:
         projection = self.build()
 
         self.assertEqual([profile.id for profile in projection.local_terminal_profiles], ["a", "z"])
@@ -44,45 +42,31 @@ class SidebarProjectionTests(unittest.TestCase):
         self.assertEqual([server.id for server in projection.favorite_servers], ["web"])
         self.assertEqual([group.id for group in projection.root_groups], ["prod"])
         self.assertEqual([server.id for server in projection.ungrouped_servers], ["loose"])
-        self.assertEqual(
-            [(row.kind, row.item_id) for row in projection.rows],
-            [
-                ("workspace", "workspace"),
-                ("local_terminal", "a"),
-                ("local_terminal", "z"),
-                ("recent", "db"),
-                ("recent", "web"),
-                ("favorite", "web"),
-                ("group", "prod"),
-                ("group", "nested"),
-                ("server", "web"),
-                ("server", "db"),
-                ("server", "loose"),
-            ],
-        )
+        self.assertEqual(projection.children_by_parent, {
+            None: [self.groups[0]], "prod": [self.groups[1]],
+        })
+        self.assertEqual(projection.servers_by_group, {
+            "nested": [self.servers[0]], "prod": [self.servers[1]], None: [self.servers[2]],
+        })
 
-    def test_collapsed_groups_are_hidden_from_navigation_rows(self) -> None:
-        projection = self.build(expanded_groups={"prod": False})
+    def test_server_search_filters_indexes_recent_and_favorite_sections(self) -> None:
+        projection = self.build(query="web")
 
-        self.assertEqual(
-            [(row.kind, row.item_id) for row in projection.rows],
-            [
-                ("workspace", "workspace"),
-                ("local_terminal", "a"),
-                ("local_terminal", "z"),
-                ("recent", "db"),
-                ("recent", "web"),
-                ("favorite", "web"),
-                ("group", "prod"),
-                ("server", "loose"),
-            ],
-        )
+        self.assertEqual(projection.servers_by_group, {"nested": [self.servers[0]]})
+        self.assertEqual([server.id for server in projection.recent_servers], ["web"])
+        self.assertEqual([server.id for server in projection.favorite_servers], ["web"])
+        self.assertEqual([group.id for group in projection.root_groups], ["prod"])
+        self.assertEqual(projection.children_by_parent["prod"], [self.groups[1]])
+        self.assertEqual(projection.ungrouped_servers, [])
+        self.assertEqual(projection.local_terminal_profiles, [])
+        self.assertEqual(projection.workspaces, [])
 
-    def test_query_expands_matching_hierarchy_and_filters_sections(self) -> None:
-        projection = self.build(query="projects", expanded_groups={"prod": False})
+    def test_profile_directory_search_filters_other_sections(self) -> None:
+        projection = self.build(query="projects")
 
         self.assertEqual([profile.id for profile in projection.local_terminal_profiles], ["a"])
         self.assertEqual(projection.workspaces, [])
         self.assertEqual(projection.recent_servers, [])
         self.assertEqual(projection.favorite_servers, [])
-        self.assertEqual([(row.kind, row.item_id) for row in projection.rows], [("local_terminal", "a")])
+        self.assertEqual(projection.servers_by_group, {})
+        self.assertEqual(projection.ungrouped_servers, [])
