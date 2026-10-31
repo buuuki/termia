@@ -1656,9 +1656,9 @@ class ConnectionStore:
         self.ensure_writable()
         live_actions = {snippet_action(snippet.id) for snippet in self.data.snippets}
         for action, value in keybindings.items():
-            if is_snippet_action(action) and action not in live_actions and value:
-                if previous is None or value != previous.get(action, ""):
-                    raise KeybindingError("keybindings_changed")
+            if (is_snippet_action(action) and action not in live_actions and value
+                    and (previous is None or value != previous.get(action, ""))):
+                raise KeybindingError("keybindings_changed")
         current = {action: value for action, value in self.data.app.keybindings.items()
                    if not is_snippet_action(action) or action in live_actions}
         updates = {action: value for action, value in keybindings.items()

@@ -464,11 +464,9 @@ class NotesDialogs:
             self, "expanded_note_sections", {"personal"}
         )
         self.expanded_server_groups = getattr(self, "expanded_server_groups", set())
-        if mode == "personal":
-            server_id = None
-        elif server_id and not any(
+        if mode == "personal" or (server_id and not any(
             server.id == server_id for server in self.store.data.servers
-        ):
+        )):
             server_id = None
         if not self.save_active_editor_if_valid():
             return False
@@ -2269,11 +2267,11 @@ class NotesDialogs:
                 save_previous
                 and self.editor_dirty
                 and self.editor_content().strip()
+                and not self.save_editor()
             ):
-                if not self.save_editor():
-                    for current_tab in self.editor_tabs.values():
-                        self.update_editor_tab_label(current_tab)
-                    return
+                for current_tab in self.editor_tabs.values():
+                    self.update_editor_tab_label(current_tab)
+                return
             self.cancel_autosave()
             self.capture_active_editor_tab()
         self.active_editor_tab_key = key
@@ -3010,10 +3008,9 @@ class NotesDialogs:
             return True
         if self.editor_dirty:
             self.cancel_autosave()
-            if self.editor_content().strip():
-                if not self.save_editor():
-                    self.window.present()
-                    return False
+            if self.editor_content().strip() and not self.save_editor():
+                self.window.present()
+                return False
         for tab in tuple(self.editor_tabs.values()):
             if tab.dirty and tab.key != self.active_editor_tab_key:
                 if tab.content.strip():

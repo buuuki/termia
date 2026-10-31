@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Refactored
+
+- Simplify equivalent dictionary, factory, condition and context-manager
+  expressions in application code, tests and laboratory tools; preserve
+  command strings and retain search joins with stricter input behavior (`#421`).
+
 ### Fixed
 
 - Let Enter advance snippet selection and variables to the preview, then

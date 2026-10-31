@@ -43,7 +43,7 @@ class SnippetPresenter:
         self._snippets = snippets
         self._groups = groups
         self._servers = servers
-        self._categories = categories or (lambda: [])
+        self._categories = categories or list
 
     @staticmethod
     def label(snippet: CommandSnippet) -> str:

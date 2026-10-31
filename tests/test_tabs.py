@@ -4,6 +4,7 @@ import sys
 import tempfile
 import time
 import unittest
+from itertools import pairwise
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -169,17 +170,17 @@ class PrivateTabDragTests(unittest.TestCase):
     def test_accept_rejects_foreign_text_missing_and_detached_sessions(self):
         self.assertTrue(self.host.on_tab_bar_drop_accept(None, self.drop))
         for condition in ("foreign", "text", "deleted", "detached", "shutdown"):
-            with self.subTest(condition=condition):
-                with patch.object(self.host, "tab_drag", object() if condition == "foreign" else self.host.tab_drag), \
-                     patch.object(self.drop, "get_formats", return_value=Gdk.ContentFormats.new(
-                         ["text/plain"] if condition == "text" else [TERMINAL_TAB_DND_MIME_TYPE])), \
-                     patch.object(self.session, "detached_window", object() if condition == "detached" else None), \
-                     patch.object(self.host, "shutdown_in_progress", condition == "shutdown", create=True):
-                    if condition == "deleted":
-                        self.host.session_registry.remove(self.session.id)
-                    self.assertFalse(self.host.on_tab_bar_drop(None, self.drop, 20, 0))
-                    if condition == "deleted":
-                        self.host.session_registry.register(self.session)
+            with (self.subTest(condition=condition),
+                  patch.object(self.host, "tab_drag", object() if condition == "foreign" else self.host.tab_drag),
+                  patch.object(self.drop, "get_formats", return_value=Gdk.ContentFormats.new(
+                      ["text/plain"] if condition == "text" else [TERMINAL_TAB_DND_MIME_TYPE])),
+                  patch.object(self.session, "detached_window", object() if condition == "detached" else None),
+                  patch.object(self.host, "shutdown_in_progress", condition == "shutdown", create=True)):
+                if condition == "deleted":
+                    self.host.session_registry.remove(self.session.id)
+                self.assertFalse(self.host.on_tab_bar_drop(None, self.drop, 20, 0))
+                if condition == "deleted":
+                    self.host.session_registry.register(self.session)
         self.drop.read_async.assert_not_called()
 
     def test_drag_icon_uses_tab_paintable_and_clears_drag_state(self):
@@ -564,7 +565,7 @@ class FakeTab:
 class FakeTabBar:
     def __init__(self, tabs) -> None:
         self.first_child = tabs[0] if tabs else None
-        for current, following in zip(tabs, tabs[1:]):
+        for current, following in pairwise(tabs):
             current.next_sibling = following
 
     def get_first_child(self):

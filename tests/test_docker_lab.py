@@ -71,9 +71,9 @@ class DockerLabContextTests(unittest.TestCase):
             outside = root / 'outside.py'
             outside.write_text('synthetic excluded sentinel')
             (repo / 'src/termia/app.py').symlink_to(outside)
-            with patch.object(context.subprocess, 'check_output', return_value=b'src/termia/app.py\0'):
-                with self.assertRaisesRegex(RuntimeError, 'symlink'):
-                    context.prepare_context(repo, LAB, root / 'context')
+            with (patch.object(context.subprocess, 'check_output', return_value=b'src/termia/app.py\0'),
+                  self.assertRaisesRegex(RuntimeError, 'symlink')):
+                context.prepare_context(repo, LAB, root / 'context')
 
     def test_checked_in_package_has_no_runtime_credentials_or_local_archive(self):
         paths = [p.relative_to(LAB) for p in LAB.rglob('*') if p.is_file()
@@ -84,9 +84,10 @@ class DockerLabContextTests(unittest.TestCase):
 
     def test_foreign_container_and_network_are_rejected_before_mutation(self):
         for kind in ('container', 'network'):
-            with self.subTest(kind=kind), patch.object(control, 'capture', return_value='[{"Labels":{}}]'):
-                with self.assertRaisesRegex(RuntimeError, 'recurso ajeno'):
-                    control.owned('synthetic-foreign-resource', kind)
+            with (self.subTest(kind=kind),
+                  patch.object(control, 'capture', return_value='[{"Labels":{}}]'),
+                  self.assertRaisesRegex(RuntimeError, 'recurso ajeno')):
+                control.owned('synthetic-foreign-resource', kind)
 
     def test_churn_backend_selection_preserves_x11_and_isolation(self):
         for enabled in ('disabled', 'enabled'):
@@ -125,9 +126,9 @@ class DockerLabResultTests(unittest.TestCase):
             with self.subTest(cleanup_fails=fails), tempfile.TemporaryDirectory() as temporary:
                 directory = Path(temporary)
                 manifest_path = directory / 'manifest.json'
-                manifest_path.write_text(json.dumps(dict(
-                    state='starting', source_sha256='synthetic-source',
-                )))
+                manifest_path.write_text(json.dumps({
+                    'state': 'starting', 'source_sha256': 'synthetic-source',
+                }))
                 process = Mock(returncode=0)
                 process.poll.return_value = 0
                 failure = RuntimeError('synthetic cleanup failure') if fails else None
@@ -146,7 +147,7 @@ class DockerLabResultTests(unittest.TestCase):
                 self.assertEqual(manifest['state'], 'failed' if fails else 'completed')
                 self.assertEqual(manifest['exit_code'], 0)
                 self.assertEqual(bool(manifest.get('cleanup_error')), fails)
-                with patch.object(control, 'job', return_value=dict(directory=str(directory))), \
+                with patch.object(control, 'job', return_value={'directory': str(directory)}), \
                         redirect_stdout(io.StringIO()):
                     if fails:
                         with self.assertRaisesRegex(RuntimeError, 'did not complete successfully'):
@@ -157,25 +158,25 @@ class DockerLabResultTests(unittest.TestCase):
     def test_wait_rejects_legacy_completed_manifest_with_cleanup_error(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            (directory / 'manifest.json').write_text(json.dumps(dict(
-                state='completed', cleanup_error='synthetic cleanup failure',
-            )))
-            with patch.object(control, 'job', return_value=dict(directory=str(directory))), \
-                    redirect_stdout(io.StringIO()):
-                with self.assertRaisesRegex(RuntimeError, 'did not complete successfully'):
-                    control.wait_for_diagnostic()
+            (directory / 'manifest.json').write_text(json.dumps({
+                'state': 'completed', 'cleanup_error': 'synthetic cleanup failure',
+            }))
+            with (patch.object(control, 'job', return_value={'directory': str(directory)}),
+                  redirect_stdout(io.StringIO()),
+                  self.assertRaisesRegex(RuntimeError, 'did not complete successfully')):
+                control.wait_for_diagnostic()
 
     def test_visual_cleanup_fails_for_survivors_and_preserves_workload_failure(self):
         for completed in (False, True):
             for window_closed, children in ((True, 0), (True, 1), (False, 0)):
                 with self.subTest(completed=completed, closed=window_closed, children=children):
-                    result = dict(completed=completed)
+                    result = {'completed': completed}
                     results.record_cleanup(result, window_closed=window_closed,
                                            running_children=children)
                     self.assertEqual(result['completed'], completed and window_closed and children == 0)
-                    self.assertEqual(result['cleanup'], dict(
-                        window_closed=window_closed, running_children=children,
-                    ))
+                    self.assertEqual(result['cleanup'], {
+                        'window_closed': window_closed, 'running_children': children,
+                    })
 
 
 if __name__ == '__main__':
