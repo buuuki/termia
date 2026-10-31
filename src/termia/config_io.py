@@ -321,9 +321,9 @@ def snippets_from_payload(
                 item.get("scope", "global") if isinstance(item.get("scope", "global"), str) else "global",
                 item.get("target_id", "") if isinstance(item.get("target_id", ""), str) else "",
             )
-            if groups is not None and servers is not None:
-                if not snippet_target_exists(snippet, groups, servers):
-                    continue
+            if (groups is not None and servers is not None
+                    and not snippet_target_exists(snippet, groups, servers)):
+                continue
             snippets.append(snippet)
         except SnippetError:
             continue

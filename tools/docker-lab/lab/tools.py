@@ -147,15 +147,15 @@ def start(kind, mode=None):
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d-%H%M%S-%f')
         directory = EVIDENCE / f'{stamp}-{mode or kind}'
         directory.mkdir()
-        write_json(directory / 'manifest.json', dict(mode=mode or kind,
-                   source_sha256=fingerprint(), source=str(SOURCE),
-                   created_utc=stamp, state='starting'))
+        write_json(directory / 'manifest.json', {'mode': mode or kind,
+                   'source_sha256': fingerprint(), 'source': str(SOURCE),
+                   'created_utc': stamp, 'state': 'starting'})
         with (directory / 'console.log').open('w') as log:
             process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()),
                 '_worker', kind, str(directory), mode or 'monitor'],
                 stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        write_json(EVIDENCE / (kind + '.json'), dict(pid=process.pid, birth=birth(process.pid),
-                   mode=mode or kind, directory=str(directory)))
+        write_json(EVIDENCE / (kind + '.json'), {'pid': process.pid, 'birth': birth(process.pid),
+                   'mode': mode or kind, 'directory': str(directory)})
         print(f'Iniciado: {directory}')
 
 
@@ -283,9 +283,9 @@ def client_command(directory, mode):
             probe_mode, backend = mode, 'x11'
         command = ['python3', '-X', 'faulthandler', '/opt/probes/probe.py', probe_mode, backend]
     args += ['--entrypoint', 'bash', IMAGE, '-c',
-             'mkdir -p "$HOME" "$XDG_RUNTIME_DIR"; chmod 700 "$HOME" "$XDG_RUNTIME_DIR"; '
+             ('mkdir -p "$HOME" "$XDG_RUNTIME_DIR"; chmod 700 "$HOME" "$XDG_RUNTIME_DIR"; '
              'unset SSH_AUTH_SOCK; export GDK_BACKEND=x11 GSETTINGS_BACKEND=memory; '
-             'exec dbus-run-session -- xvfb-run -a -s "-screen 0 1800x1100x24 -nolisten tcp" "$@"',
+             'exec dbus-run-session -- xvfb-run -a -s "-screen 0 1800x1100x24 -nolisten tcp" "$@"'),
              'termia-diagnostic', *command]
     return ['docker', *map(str, args)]
 

@@ -69,8 +69,8 @@ class ReleasePolicyTests(unittest.TestCase):
     def test_asset_url_must_match_official_release(self):
         item = release()
         name = "termia_0.6.0.beta.2-1_all.deb"
-        asset = dict(name=name, size=10, digest="sha256:" + "a" * 64,
-                     browser_download_url=f"{REPOSITORY}/releases/download/{item['tag_name']}/{name}")
+        asset = {"name": name, "size": 10, "digest": "sha256:" + "a" * 64,
+                 "browser_download_url": f"{REPOSITORY}/releases/download/{item['tag_name']}/{name}"}
         item["assets"] = [asset]
         self.assertIsNotNone(select_release([item], "0.6.0-beta.1").asset)
         asset["browser_download_url"] = "https://example.org/package.deb"
@@ -234,10 +234,8 @@ class InstallerTests(unittest.TestCase):
         self.assertIsNone(result.adapter)
 
     def test_lock_serializes_profiles(self):
-        with update_lock():
-            with self.assertRaisesRegex(UpdateError, "update_busy"):
-                with update_lock():
-                    self.fail("second lock acquired")
+        with update_lock(), self.assertRaisesRegex(UpdateError, "update_busy"), update_lock():
+            self.fail("second lock acquired")
 
     def test_command_does_not_expose_stderr(self):
         with self.assertRaisesRegex(UpdateError, "^update_install_failed$"):

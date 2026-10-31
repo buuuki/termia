@@ -107,7 +107,7 @@ class SnippetDomainTests(unittest.TestCase):
             CommandSnippet("three", "Status", "status", "Operations"),
             CommandSnippet("four", "Notes", "cat notes"),
         ]
-        presenter = SnippetPresenter(lambda: snippets, lambda: [], lambda: [])
+        presenter = SnippetPresenter(lambda: snippets, list, list)
 
         self.assertEqual(
             [(item.key, item.count) for item in presenter.categories()],
@@ -119,7 +119,7 @@ class SnippetDomainTests(unittest.TestCase):
         snippets = [CommandSnippet("one", "Deploy", "deploy", "Release")]
         categories = ["Empty"]
         presenter = SnippetPresenter(
-            lambda: snippets, lambda: [], lambda: [], lambda: categories,
+            lambda: snippets, list, list, lambda: categories,
         )
 
         self.assertEqual(
@@ -134,7 +134,7 @@ class SnippetDomainTests(unittest.TestCase):
             CommandSnippet("two", "Restart", "restart service", "Operations"),
             CommandSnippet("three", "Status", "status", "Operations"),
         ]
-        presenter = SnippetPresenter(lambda: snippets, lambda: [], lambda: [])
+        presenter = SnippetPresenter(lambda: snippets, list, list)
 
         self.assertEqual(
             [item.id for item in presenter.manager_items(query="service")],
@@ -162,7 +162,7 @@ class SnippetDomainTests(unittest.TestCase):
             CommandSnippet("one", "Notes", "cat notes"),
             CommandSnippet("two", "Deploy", "deploy", "Release"),
         ]
-        presenter = SnippetPresenter(lambda: snippets, lambda: [], lambda: [])
+        presenter = SnippetPresenter(lambda: snippets, list, list)
 
         self.assertEqual([item.id for item in presenter.manager_items(category="")], ["one"])
         self.assertEqual([item.label for item in presenter.manager_items(category="")], ["Notes"])

@@ -72,10 +72,10 @@ def launch():
                    '-ex', 'set disable-randomization off',
                    '-ex', 'set print thread-events off', '-ex', 'run', '-ex', 'thread apply all bt full',
                    '-ex', 'info sharedlibrary', '--args', *command]
-    metadata = dict(backend=backend.get(), trace=trace.get(), gdb=debugger.get(), tabs=count,
-                    commit=Path('/opt/termia/BASE_COMMIT').read_text().strip(),
-                    source_sha256=source_fingerprint(), source_mode='live-bind',
-                    ssh_fixture=bool(env.get('LAB_SSH_HOST')))
+    metadata = {'backend': backend.get(), 'trace': trace.get(), 'gdb': debugger.get(), 'tabs': count,
+                'commit': Path('/opt/termia/BASE_COMMIT').read_text().strip(),
+                'source_sha256': source_fingerprint(), 'source_mode': 'live-bind',
+                'ssh_fixture': bool(env.get('LAB_SSH_HOST'))}
     (run_dir/'run.json').write_text(json.dumps(metadata, indent=2)+'\n')
     stream = (run_dir/'console.log').open('w')
     child = subprocess.Popen(command, env=env, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
@@ -87,7 +87,7 @@ def launch():
 def mark():
     if run_dir:
         with (run_dir/'markers.jsonl').open('a') as out:
-            out.write(json.dumps(dict(time_ns=time.time_ns(), label='Marca manual'))+'\n')
+            out.write(json.dumps({'time_ns': time.time_ns(), 'label': 'Marca manual'})+'\n')
         status.set('Marca registrada: '+run_dir.name)
 
 

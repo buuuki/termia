@@ -90,9 +90,8 @@ class FileTransferTests(unittest.TestCase):
 
     def test_rejects_invalid_remote_destinations(self) -> None:
         for destination in ("", "relative/path", "/srv/../root", "/tmp/new\nline", "\x7f/tmp"):
-            with self.subTest(destination=destination):
-                with self.assertRaises(ValueError):
-                    normalize_remote_destination(destination)
+            with self.subTest(destination=destination), self.assertRaises(ValueError):
+                normalize_remote_destination(destination)
 
     def test_formats_remote_destination_for_ssh_and_scp_without_literal_quotes(self) -> None:
         destination = "/srv/reports; touch $HOME & 'quoted'/with spaces"

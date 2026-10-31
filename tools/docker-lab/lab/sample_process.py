@@ -20,9 +20,9 @@ after = (proc / 'stat').read_text().rpartition(')')[2].split()[19]
 args = (proc / 'cmdline').read_bytes().split(b'\0')
 if before != after or b'/opt/lab/launcher.py' not in args:
     raise RuntimeError('La identidad del proceso ha cambiado')
-result = dict(time=time.time(), run=run, pid=pid, birth=before,
-              rss_kib=metrics.get('Rss'), pss_kib=metrics.get('Pss'),
-              private_kib=metrics.get('Private_Clean', 0) + metrics.get('Private_Dirty', 0),
-              fds=len(list((proc / 'fd').iterdir())),
-              threads=len(list((proc / 'task').iterdir())))
+result = {'time': time.time(), 'run': run, 'pid': pid, 'birth': before,
+          'rss_kib': metrics.get('Rss'), 'pss_kib': metrics.get('Pss'),
+          'private_kib': metrics.get('Private_Clean', 0) + metrics.get('Private_Dirty', 0),
+          'fds': len(list((proc / 'fd').iterdir())),
+          'threads': len(list((proc / 'task').iterdir()))}
 print(json.dumps(result))

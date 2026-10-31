@@ -21,22 +21,21 @@ class VisibleLabTests(unittest.TestCase):
             with patch.object(Path, 'home', return_value=Path(temporary)):
                 spec.loader.exec_module(worker)
             for stage in ('source-cancel', 'source-accept'):
-                with self.subTest(stage=stage), \
-                        patch.object(worker, 'version', return_value=worker.OLD), \
-                        patch.object(worker, 'profile_hashes', return_value={}), \
-                        patch.object(worker, 'write_state'), patch('builtins.print'), \
-                        patch.object(worker.subprocess, 'run', side_effect=[
-                            SimpleNamespace(returncode=0),  # sudo invalidation
-                            SimpleNamespace(returncode=1),  # setup failure
-                            SimpleNamespace(returncode=1 if stage == 'source-cancel' else 0),
-                        ]):
-                    with self.assertRaises(AssertionError):
-                        worker.run(stage)
+                with (self.subTest(stage=stage),
+                      patch.object(worker, 'version', return_value=worker.OLD),
+                      patch.object(worker, 'profile_hashes', return_value={}),
+                      patch.object(worker, 'write_state'), patch('builtins.print'),
+                      patch.object(worker.subprocess, 'run', side_effect=[
+                          SimpleNamespace(returncode=0),  # sudo invalidation
+                          SimpleNamespace(returncode=1),  # setup failure
+                          SimpleNamespace(returncode=1 if stage == 'source-cancel' else 0),
+                      ]), self.assertRaises(AssertionError)):
+                    worker.run(stage)
 
     def test_foreign_container_rejected_before_guest_command(self):
-        with patch.object(vm, 'docker', return_value='[{"Config":{"Labels":{}}}]') as docker:
-            with self.assertRaisesRegex(RuntimeError, 'foreign'):
-                vm.guest('/bin/true')
+        with (patch.object(vm, 'docker', return_value='[{"Config":{"Labels":{}}}]') as docker,
+              self.assertRaisesRegex(RuntimeError, 'foreign')):
+            vm.guest('/bin/true')
         self.assertEqual(docker.call_count, 1)
         self.assertEqual(docker.call_args.args[0], 'inspect')
 
@@ -63,9 +62,9 @@ class VisibleLabTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             target = Path(temporary) / 'image'
             target.write_bytes(b'previous verified synthetic image')
-            with patch.object(vm.urllib.request, 'urlopen', return_value=io.BytesIO(b'corrupt')):
-                with self.assertRaisesRegex(RuntimeError, 'checksum'):
-                    vm.download('https://example.invalid/image', target, '0' * 64)
+            with (patch.object(vm.urllib.request, 'urlopen', return_value=io.BytesIO(b'corrupt')),
+                  self.assertRaisesRegex(RuntimeError, 'checksum')):
+                vm.download('https://example.invalid/image', target, '0' * 64)
             self.assertEqual(target.read_bytes(), b'previous verified synthetic image')
 
     def test_start_exposes_only_loopback_and_kvm_without_host_profile(self):
@@ -88,9 +87,9 @@ class VisibleLabTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / 'manifest.json').write_text(json.dumps({'state': 'prepared'}))
-            with patch.object(vm, 'RUNTIME', root), patch.object(vm, 'docker') as docker:
-                with self.assertRaisesRegex(RuntimeError, 'already prepared'):
-                    vm.prepare()
+            with (patch.object(vm, 'RUNTIME', root), patch.object(vm, 'docker') as docker,
+                  self.assertRaisesRegex(RuntimeError, 'already prepared')):
+                vm.prepare()
             docker.assert_not_called()
 
 

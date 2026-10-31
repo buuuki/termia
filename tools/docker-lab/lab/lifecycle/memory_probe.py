@@ -69,17 +69,17 @@ def worker(run):
         m = rollup(os.getpid())
         current, peak = tracemalloc.get_traced_memory() if tracing else (None, None)
         trace_overhead = tracemalloc.get_tracemalloc_memory() if tracing else 0
-        item = dict(run=run, cycle=cycle, phase=phase, pid=os.getpid(), birth=process_start_time(os.getpid()),
-                    rss_kib=m.get('Rss'), pss_kib=m.get('Pss'),
-                    private_kib=m.get('Private_Clean', 0)+m.get('Private_Dirty', 0),
-                    python_current_bytes=current, python_peak_bytes=peak,
-                    trace_overhead_bytes=trace_overhead,
-                    fds=len(list(Path('/proc/self/fd').iterdir())), threads=len(threading.enumerate()),
-                    native_threads=int(Path('/proc/self/status').read_text().split('Threads:')[1].split()[0]),
-                    cgroup=cgroup_memory(),
-                    retired_sessions_alive=sum(ref() is not None for ref in retired_sessions),
-                    retired_vtes_alive=sum(ref() is not None for ref in retired_vtes),
-                    retired_sftp_alive=sum(ref() is not None for ref in retired_sftp))
+        item = {'run': run, 'cycle': cycle, 'phase': phase, 'pid': os.getpid(), 'birth': process_start_time(os.getpid()),
+                'rss_kib': m.get('Rss'), 'pss_kib': m.get('Pss'),
+                'private_kib': m.get('Private_Clean', 0)+m.get('Private_Dirty', 0),
+                'python_current_bytes': current, 'python_peak_bytes': peak,
+                'trace_overhead_bytes': trace_overhead,
+                'fds': len(list(Path('/proc/self/fd').iterdir())), 'threads': len(threading.enumerate()),
+                'native_threads': int(Path('/proc/self/status').read_text().split('Threads:')[1].split()[0]),
+                'cgroup': cgroup_memory(),
+                'retired_sessions_alive': sum(ref() is not None for ref in retired_sessions),
+                'retired_vtes_alive': sum(ref() is not None for ref in retired_vtes),
+                'retired_sftp_alive': sum(ref() is not None for ref in retired_sftp)}
         samples.append(item)
         print('MEMORY_SAMPLE '+json.dumps(item), flush=True)
 
@@ -204,7 +204,7 @@ def worker(run):
                     valid, point = button.compute_point(window, Graphene.Point().init(button.get_width()/2, button.get_height()/2))
                     host.assertTrue(valid)
                     xid = GdkX11.X11Surface.get_xid(window.get_surface())
-                    click_details = dict(xid=xid, x=round(point.x), y=round(point.y), button_classes=list(button.get_css_classes()), manual_disconnects=0, active_connections=4)
+                    click_details = {'xid': xid, 'x': round(point.x), 'y': round(point.y), 'button_classes': list(button.get_css_classes()), 'manual_disconnects': 0, 'active_connections': 4}
                     subprocess.run(['xdotool', 'windowraise', str(xid), 'mousemove', '--window', str(xid), str(round(point.x)), str(round(point.y)), 'click', '1'], check=True)
                 else:
                     window.close()
@@ -221,7 +221,7 @@ def worker(run):
         finally:
             host.cleanup(window, store)
     assert completed_shutdown
-    print('MEMORY_WORKER_RESULT '+json.dumps(dict(run=run, samples=samples, successful_shutdown=True)), flush=True)
+    print('MEMORY_WORKER_RESULT '+json.dumps({'run': run, 'samples': samples, 'successful_shutdown': True}), flush=True)
 
 
 def controller():
@@ -263,7 +263,7 @@ def controller():
         assert item['worker_smaps_after'] == {}
         results.append(item)
         print(f'MEMORY_EXIT run={run}: process reaped, /proc and smaps gone, 0 remote processes/connections', flush=True)
-    print('MEMORY_RESULT '+json.dumps(dict(runs=results, cycles_per_run=0 if args.close_live else args.cycles, payload_bytes=16*1024*1024, python_tracing=not args.no_tracemalloc, close_with_live_connections=args.close_live)), flush=True)
+    print('MEMORY_RESULT '+json.dumps({'runs': results, 'cycles_per_run': 0 if args.close_live else args.cycles, 'payload_bytes': 16*1024*1024, 'python_tracing': not args.no_tracemalloc, 'close_with_live_connections': args.close_live}), flush=True)
 
 
 if __name__ == '__main__':

@@ -76,7 +76,7 @@ refs = collections.defaultdict(list)
 counts = collections.Counter()
 processes = []
 samples = []
-result = dict(mode=MODE, backend=BACKEND, source_sha256=source_hash(), checks=[], samples=samples)
+result = {'mode': MODE, 'backend': BACKEND, 'source_sha256': source_hash(), 'checks': [], 'samples': samples}
 app = None
 window = None
 
@@ -102,7 +102,7 @@ def memory(label, settle=.12):
                    registry=len(window.session_registry.sessions()),
                    running_children=sum(terminal_process_is_active(p) for p in processes))
     samples.append(metrics)
-    print(json.dumps(dict(sample=metrics)), flush=True)
+    print(json.dumps({'sample': metrics}), flush=True)
     return metrics
 
 def add_terminal(title):
@@ -153,9 +153,9 @@ def drag_to_edge(session, left, cancel=False):
     drain(.15)
     adjustment = window.session_tab_scroller.get_hadjustment()
     start = point_in_window(session.tab_label, 24, session.tab_label.get_height() / 2)
-    print(json.dumps(dict(drag_start=dict(point=start, label_size=[session.tab_label.get_width(), session.tab_label.get_height()],
-        offset=adjustment.get_value(), viewport=adjustment.get_page_size(), maximum=adjustment.get_upper()-adjustment.get_page_size(),
-        controllers=[type(c).__name__ for c in session.tab_label.observe_controllers()]))), flush=True)
+    print(json.dumps({'drag_start': {'point': start, 'label_size': [session.tab_label.get_width(), session.tab_label.get_height()],
+        'offset': adjustment.get_value(), 'viewport': adjustment.get_page_size(), 'maximum': adjustment.get_upper()-adjustment.get_page_size(),
+        'controllers': [type(c).__name__ for c in session.tab_label.observe_controllers()]}}), flush=True)
     before = counts['drag_begin']
     move_to(start)
     pointer('mousedown', 1)
@@ -189,8 +189,8 @@ def drag_to_edge(session, left, cancel=False):
             drain(.035)
         else:
             raise AssertionError('Edge drag did not reach destination: ' + json.dumps(
-                dict(left=left, offset=adjustment.get_value(), maximum=adjustment.get_upper()-adjustment.get_page_size(),
-                     order=[s.title for s in window.visible_sessions_in_tab_order()])))
+                {'left': left, 'offset': adjustment.get_value(), 'maximum': adjustment.get_upper()-adjustment.get_page_size(),
+                 'order': [s.title for s in window.visible_sessions_in_tab_order()]}))
         pointer('mouseup', 1)
         drain(.4)
         check(window.visible_sessions_in_tab_order()[0 if left else -1] is session,
@@ -221,7 +221,7 @@ try:
         def trace_call(name, original):
             def call(*args, **kwargs):
                 counts[name] += 1
-                print(json.dumps(dict(callback=name)), flush=True)
+                print(json.dumps({'callback': name}), flush=True)
                 return original(*args, **kwargs)
             return call
         setattr(window, method_name, trace_call(method_name, getattr(window, method_name)))
@@ -254,8 +254,8 @@ try:
         gi.require_version('GdkX11', '4.0')
         from gi.repository import GdkX11
         xid = GdkX11.X11Surface.get_xid(window.get_surface())
-        print(json.dumps(dict(geometry=dict(window=[window.get_width(), window.get_height()],
-                                           surface=[window.get_surface().get_width(), window.get_surface().get_height()]))), flush=True)
+        print(json.dumps({'geometry': {'window': [window.get_width(), window.get_height()],
+                                      'surface': [window.get_surface().get_width(), window.get_surface().get_height()]}}), flush=True)
         pointer('windowfocus', xid)
     else:
         outer = subprocess.check_output(['xdotool', 'search', '--class', 'Weston'], text=True).splitlines()[0]
