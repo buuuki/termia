@@ -4,6 +4,9 @@
 
 ### Refactored
 
+- Remove an unused Notes storage-mode helper and an unread sidebar projection
+  attribute while preserving active storage and native-tree behavior (`#437`).
+
 - Simplify equivalent dictionary, factory, condition and context-manager
   expressions in application code, tests and laboratory tools; preserve
   command strings and retain search joins with stricter input behavior (`#421`).
