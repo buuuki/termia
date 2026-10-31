@@ -13,6 +13,167 @@ from scripts import check_static_analysis as analysis
 
 
 class StaticAnalysisTests(unittest.TestCase):
+    def review_fixture(self, root):
+        code = "import subprocess\n"
+        (root / "a.py").write_text(code)
+        item = {"file": "a.py", "line": 1, "rule": "B404", "severity": "LOW/HIGH",
+                "key": analysis.fingerprint("a.py", "B404", "import warning", "LOW/HIGH", code)}
+        review = {"id": "synthetic-review", "file": "a.py", "rule": "B404",
+                  "severity": "LOW/HIGH", "fingerprint": analysis.finding_digest(item),
+                  "reason": "Synthetic reviewed import", "reference": "#428"}
+        document = {"schema": 1, "bandit_version": "1.9.4",
+                    "context": {"a.py": analysis.context_digest("a.py", code.encode())},
+                    "findings": [review]}
+        path = root / analysis.REVIEW_FILE
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(document))
+        return item, review, document, path
+
+    def test_context_tracks_behavior_and_literals_but_not_layout(self):
+        original = b"if ready:\n    run('a b')\n"
+        shifted = b"# Synthetic comment\n\nif ready:\n  run(\"a b\")\n"
+        digest = analysis.context_digest("a.py", original)
+        self.assertEqual(digest, analysis.context_digest("a.py", shifted))
+        self.assertNotEqual(digest, analysis.context_digest("a.py", b"run('a b')\n"))
+        self.assertNotEqual(digest, analysis.context_digest("a.py", original.replace(b"a b", b"a  b")))
+
+    def test_reviewed_findings_remain_visible_and_do_not_accept_extra_occurrences(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            item, review, _document, _path = self.review_fixture(Path(temporary))
+            reviews = {review["fingerprint"]: review}
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(analysis.report_difference("bandit", [], [item], reviews), 0)
+            row = json.loads(output.getvalue().splitlines()[0])
+            self.assertEqual(row["status"], "reviewed")
+            self.assertEqual(row["review_id"], "synthetic-review")
+            self.assertNotIn("key", row)
+            self.assertIn("new=1 reviewed=1 blocking=0", output.getvalue())
+            other = {**item, "file": "b.py", "key": ("another finding",)}
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(analysis.report_difference("bandit", [], [item, other], reviews), 1)
+                for proposed in ([item, item], [], [{**item, "severity": "HIGH/HIGH"}]):
+                    with self.subTest(proposed=proposed), self.assertRaises(analysis.AnalysisError):
+                        analysis.report_difference("bandit", [], proposed, reviews)
+                with self.assertRaises(analysis.AnalysisError):
+                    analysis.report_difference("ruff", [], [item], reviews)
+
+    def test_review_registry_rejects_invalid_or_overbroad_acceptances(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _item, review, document, path = self.review_fixture(root)
+
+            def load():
+                return asyncio.run(analysis.load_reviews(root, "WORKTREE", root, "1.9.4"))
+
+            self.assertEqual(load(), {review["fingerprint"]: review})
+            variants = [
+                {**document, "schema": True},
+                {**document, "bandit_version": "0.0.0"},
+                {**document, "unknown": True},
+                {**document, "context": {}},
+                {**document, "context": {"../escape.py": "0" * 64}},
+                {**document, "context": {"a.py": "0" * 64}},
+                {**document, "findings": [review, review]},
+            ]
+            for fields in ({"id": "invalid id"}, {"file": "../escape.py"}, {"rule": "B602"},
+                           {"severity": "MEDIUM/HIGH"}, {"reason": ""}, {"reference": "missing"},
+                           {"fingerprint": "invalid"}, {"count": 100}):
+                variants.append({**document, "findings": [{**review, **fields}]})
+            for changed in variants:
+                with self.subTest(document=changed), self.assertRaises(analysis.AnalysisError):
+                    path.write_text(json.dumps(changed))
+                    load()
+            path.write_text('{"schema": 1, "schema": 1}')
+            with self.assertRaises(analysis.AnalysisError):
+                load()
+            path.unlink()
+            self.assertIsNone(load())
+            with self.assertRaises(analysis.AnalysisError):
+                asyncio.run(analysis.load_reviews(root, "WORKTREE", root, "1.9.4", required=True))
+            target = root / "synthetic.json"
+            target.write_text(json.dumps(document))
+            path.symlink_to(target)
+            with self.assertRaises(analysis.AnalysisError):
+                load()
+
+    def test_changing_a_related_guard_invalidates_an_unchanged_finding(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _item, _review, document, path = self.review_fixture(root)
+            guard = root / "guard.py"
+            guard.write_text("allow = True\n")
+            document["context"]["guard.py"] = analysis.context_digest("guard.py", guard.read_bytes())
+            path.write_text(json.dumps(document))
+            asyncio.run(analysis.load_reviews(root, "WORKTREE", root, "1.9.4"))
+            guard.write_text("allow = False\n")
+            with self.assertRaises(analysis.AnalysisError):
+                asyncio.run(analysis.load_reviews(root, "WORKTREE", root, "1.9.4"))
+
+    @unittest.skipUnless(shutil.which("ruff") and shutil.which("bandit"), "Analyzers unavailable")
+    def test_real_review_registry_uses_requested_revision_and_keeps_new_findings_blocking(self):
+        async def exercise(root):
+            await analysis.git(root, "init", "-q")
+            source = root / "a.py"
+            source.write_text("print('synthetic baseline')\n")
+
+            async def commit():
+                await analysis.git(root, "add", ".")
+                await analysis.git(root, "-c", "user.name=Synthetic", "-c", "user.email=ci@example.invalid",
+                                   "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null",
+                                   "commit", "-qm", "synthetic reviewed history")
+                return (await analysis.git(root, "rev-parse", "HEAD")).decode().strip()
+
+            base = await commit()
+            source.write_text("import subprocess\n\nprint(subprocess.__name__)\n")
+            finding = (await analysis.analyze("bandit", root))[0]
+            review = {"id": "synthetic-review", "file": "a.py", "rule": finding["rule"],
+                      "severity": finding["severity"], "fingerprint": analysis.finding_digest(finding),
+                      "reason": "Synthetic import only", "reference": "#428"}
+            registry = root / analysis.REVIEW_FILE
+            registry.parent.mkdir()
+            registry.write_text(json.dumps({
+                "schema": 1, "bandit_version": "1.9.4",
+                "context": {"a.py": analysis.context_digest("a.py", source.read_bytes())},
+                "findings": [review],
+            }))
+            output = io.StringIO()
+            with patch.object(analysis.Path, "cwd", return_value=root), \
+                    contextlib.redirect_stdout(output):
+                self.assertEqual(await analysis.check(base, "WORKTREE"), 0, output.getvalue())
+                extra = root / "extra.py"
+                extra.write_text("import subprocess\nraise RuntimeError('must not execute source')\n")
+                self.assertEqual(await analysis.check(base, "WORKTREE"), 1)
+                extra.unlink()
+                approved = await commit()
+                saved = registry.read_bytes()
+                registry.write_text("invalid local registry")
+                # A commit comparison must read that commit, never the dirty local registry.
+                self.assertEqual(await analysis.check(approved, approved), 0)
+                with self.assertRaises(analysis.AnalysisError):
+                    await analysis.check(approved, "WORKTREE")
+                registry.write_bytes(saved)
+                empty = json.loads(saved)
+                empty["context"] = {}
+                empty["findings"] = []
+                registry.write_text(json.dumps(empty))
+                with self.assertRaises(analysis.AnalysisError):
+                    await analysis.check(approved, "WORKTREE")
+                source.write_text("print('synthetic resolved finding')\n")
+                self.assertEqual(await analysis.check(approved, "WORKTREE"), 0)
+                registry.write_bytes(saved)
+                source.write_text("import subprocess\n\nprint(subprocess.__name__)\n"
+                                  "print('changed reviewed context')\n")
+                with self.assertRaises(analysis.AnalysisError):
+                    await analysis.check(approved, "WORKTREE")
+                source.write_text("import subprocess\n\nprint(subprocess.__name__)\n")
+                registry.unlink()
+                with self.assertRaises(analysis.AnalysisError):
+                    await analysis.check(approved, "WORKTREE")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            asyncio.run(exercise(Path(temporary)))
+
     def test_fingerprint_ignores_indentation_but_preserves_literal_contents(self):
         def key(code):
             return analysis.fingerprint("a.py", "F821", "undefined", "unrated", code)

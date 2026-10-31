@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "bandit_version": "1.9.4",
+  "context": {
+    "requirements-ci.txt": "0dc3879c6fd6a1c199e210d40c55abd9aa6d4e54058b2e1b1c502e0fb3cfa669",
+    "src/termia/update_apt_helper.py": "fa5205fc294a3897140451179481ca412bb02a2f30eecdba5038ac0cee31dff9",
+    "src/termia/update_controller.py": "54bb4506d9ce284816af3156b6717e73e6a4b0a9efce065a295af8ee1206f6f4",
+    "src/termia/update_dependencies.py": "56446ce8207f7f5c62f318e4eece66fcdbb5632d9d496cf335be29bf839ac6d0",
+    "src/termia/update_installers.py": "1a2dbfa4bcfe001374835cf4a8e94e296944679e3fa212706fc5fc75bad3e648",
+    "src/termia/update_service.py": "83d0d8827944480042293c36f54b1d473367b30c983dc5f4eadd67608ac9b802",
+    "tools/docker-lab/gnome26/Dockerfile.updater": "47acdfdc53b2f62bbc93683ee4e1cf02e5a0e3c50ac247c23c0ff7e9dd2c6004",
+    "tools/docker-lab/gnome26/prepare-updater.sh": "3433a0ab4cf57fe081ebde01c37f201d9a9d09bc936077da7c03384e88034408",
+    "tools/docker-lab/upgrade-preview/Dockerfile": "52f2d62b6c7328fe5f3ebf1213e3e24d1a2ddaad438cc9e3e7f7c5d4c5965c47",
+    "tools/docker-lab/upgrade-preview/boot.sh": "1eac9b1b27690a8f4ce8e4e2652788867a16758a28a7df057e703f3141f8abce",
+    "tools/docker-lab/upgrade-preview/launch.py": "89f527f6b4d4fe409d16c89e955b9ac19bf792f2c0863337647fb7dc8b421b37",
+    "tools/docker-lab/upgrade-preview/panel.py": "0026a6e053bf3560cd0497e84c9cf56a63ae84356bc1a60690f1e0db1ec6a511",
+    "tools/docker-lab/upgrade-preview/prepare.py": "a09a116e46a8046446bd25a60fe5196290d7bb75ac35e5d5a7b7d4c889846896",
+    "tools/docker-lab/upgrade-preview/reset.py": "71124ffc6550322924bd8bba397cee2e7ed93bfaa52deb0c56e06c2d3c4d618e"
+  },
+  "findings": [
+    {
+      "id": "bandit-428-01",
+      "file": "src/termia/update_apt_helper.py",
+      "rule": "B404",
+      "severity": "LOW/HIGH",
+      "fingerprint": "a26a8d2f31bd7e0a246d6ba59135a6c180e8c03cafa9989902cd74a14e51845c",
+      "reason": "Required subprocess import; the related invocations use argument vectors and are reviewed separately.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-02",
+      "file": "src/termia/update_installers.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "2577411d44c1f8ecbea89f453f5ba5ccb515e667cad56ffdabb84178624cfb14",
+      "reason": "Command runner uses argument vectors without a shell; installer callers construct absolute executables and validate release and package arguments.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-03",
+      "file": "tools/docker-lab/upgrade-preview/launch.py",
+      "rule": "B404",
+      "severity": "LOW/HIGH",
+      "fingerprint": "9c9af64b0b16551af5bf68c14c37f7c9f92ac8a69ebf4f445b3bb6ab795e5d7f",
+      "reason": "Required subprocess import; the related invocations use argument vectors and are reviewed separately.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-04",
+      "file": "tools/docker-lab/upgrade-preview/launch.py",
+      "rule": "B606",
+      "severity": "LOW/MEDIUM",
+      "fingerprint": "805a05f84dd85e101b81334c7c953de682acf856540c35f4d6bd73592c20ec11",
+      "reason": "Restart replaces the preview process using the running Python interpreter and a fixed fixture launcher, without a shell.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-05",
+      "file": "tools/docker-lab/upgrade-preview/launch.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "720cab5ff53dd3e34e055187aa66c5f17de241dc8347b0ac7c57316827a91152",
+      "reason": "The preview terminal authentication agent uses fixed absolute executable paths and argument vectors without a shell.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-06",
+      "file": "tools/docker-lab/upgrade-preview/panel.py",
+      "rule": "B404",
+      "severity": "LOW/HIGH",
+      "fingerprint": "0979929be4ce0c2915071779c22322835373e8f0d818790fe98095f8389b0faf",
+      "reason": "Required subprocess import; the related invocations use argument vectors and are reviewed separately.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-07",
+      "file": "tools/docker-lab/upgrade-preview/panel.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "54e158609a0fb16a71ae94544e3bc33a95a9454e895e3abc395d667987dbddd8",
+      "reason": "Preview actions use fixed absolute executables and fixture launchers; modes are selected by built-in buttons rather than shell input.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-08",
+      "file": "tools/docker-lab/upgrade-preview/panel.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "7a1f9eb3d11ada557824c93735e7d4ef57c998d0aa2bf586d33cbe5ba1faa4c6",
+      "reason": "Preview actions use fixed absolute executables and fixture launchers; modes are selected by built-in buttons rather than shell input.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-09",
+      "file": "tools/docker-lab/upgrade-preview/panel.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "a110754c75f2c1b854e50541ffa55d29b049e0a616aaa8fae957a95e811db23e",
+      "reason": "Preview actions use fixed absolute executables and fixture launchers; modes are selected by built-in buttons rather than shell input.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-10",
+      "file": "tools/docker-lab/upgrade-preview/prepare.py",
+      "rule": "B404",
+      "severity": "LOW/HIGH",
+      "fingerprint": "71fd2d51dd3cbc08f15ca1fbd12ab58db27e15d903d6cc2d622d3947a5aa1c04",
+      "reason": "Required subprocess import; the related invocations use argument vectors and are reviewed separately.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-11",
+      "file": "tools/docker-lab/upgrade-preview/prepare.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "742322c5d71b9272cd3ab60334d7b470f1c32e89e67b4a68b393498c24314ca4",
+      "reason": "Git bundle/export operations use an absolute executable, fixed tags and validated repository-relative source paths without a shell.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-12",
+      "file": "tools/docker-lab/upgrade-preview/prepare.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "293ce985f8477f1032aa119c6f2c892cb15da2f5b8fbac1f94f65f8a194490ae",
+      "reason": "Git bundle/export operations use an absolute executable, fixed tags and validated repository-relative source paths without a shell.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-13",
+      "file": "tools/docker-lab/upgrade-preview/reset.py",
+      "rule": "B404",
+      "severity": "LOW/HIGH",
+      "fingerprint": "8c8d624585c6b526c6aa9eeebf2c634df4bd460d1e45cd7b5d1e042eb2bce51e",
+      "reason": "Required subprocess import; the related invocations use argument vectors and are reviewed separately.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-14",
+      "file": "tools/docker-lab/upgrade-preview/reset.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "97654b8111a44ca6d348935729f54a0a500341ef61e1ff4d7e62423aab83ddfa",
+      "reason": "Disposable-container reset uses absolute executables and fixed package, Git and fixture-path arguments without a shell.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-15",
+      "file": "tools/docker-lab/upgrade-preview/reset.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "6bb3e3240b482d656a1a07ff6bebf28f43eeaa339ca7e7e62173c9b044975372",
+      "reason": "Disposable-container reset uses absolute executables and fixed package, Git and fixture-path arguments without a shell.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-16",
+      "file": "tools/docker-lab/upgrade-preview/reset.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "594aea5e073fde54fbf425177ad0f79d8b9b6159777a839315e0c2598062c996",
+      "reason": "Disposable-container reset uses absolute executables and fixed package, Git and fixture-path arguments without a shell.",
+      "reference": "#428"
+    },
+    {
+      "id": "bandit-428-17",
+      "file": "tools/docker-lab/upgrade-preview/reset.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "bf9a5b793ca97bb3f3a09c0569154f149106aa0b783a13dbe9b0bf2a4040f01d",
+      "reason": "Disposable-container reset uses absolute executables and fixed package, Git and fixture-path arguments without a shell.",
+      "reference": "#428"
+    }
+  ]
+}

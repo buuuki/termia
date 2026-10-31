@@ -62,12 +62,40 @@ signature and does not protect against compromise of the official repository.
 Debian packages require a matching digest, package name, application version,
 architecture and an upgrade over the installed package. The desktop polkit agent
 handles administrator authentication; Termia never collects that password.
+Assisted Git and Debian updates use one pkexec authorization for a fixed helper
+from the running Termia installation, executed by isolated system Python with
+no shell or target-code imports. The helper validates package arguments and
+refreshes signed APT metadata before installation; any refresh failure aborts.
+For Debian, it rejects symlink/non-regular files and verifies the expected size
+and SHA-256 while copying into its own temporary directory before APT runs.
+Only the protected copy is installed, and it is removed when the helper exits.
+No administrator password is collected or cached by Termia.
 APT resolves dependencies and refuses removals. Already-running installations
 are not killed when the UI closes. Temporary packages are removed afterwards;
 the updater retains a per-user lock across profiles until the operation ends.
 
+The read-only installation log displays a bounded, in-memory tail of verbose
+APT/Git stdout and stderr. URLs and terminal control sequences are removed;
+local paths and other identifying output can remain, so review copied logs
+before sharing. Termia does not persist this log or connect its stream to
+authentication input. Commands that return machine-readable metadata are not
+included in the log. Administrator authentication stays with the desktop agent.
+
 Git updates only fast-forward clean release checkouts to a tag fetched from the
-fixed official HTTPS repository. They never reset, stash or force-push. Git hooks
+fixed official HTTPS repository. Requirements are read as bounded declarative
+Debian control metadata from the fetched commit; downloaded Python or setup
+scripts are not executed with privileges. Only validated package names are
+passed to native APT via pkexec after user approval, with removals prohibited.
+Package/runtime verification must succeed before changing the checkout. The
+update view has no manual-dependency action; missing requirements or unavailable
+assisted installation keep the update pending. Packages installed before a later
+failure are not rolled back.
+
+Prepared artifacts are retained while awaiting the user's choice, without
+holding the cross-profile lock while awaiting a decision. Each worker operation
+reacquires the lock; source identity and package digests are revalidated before
+application. Closing before application discards staging; once a system
+transaction starts it is allowed to finish. They never reset, stash or force-push. Git hooks
 are disabled for updater commands. Git configuration is trusted local state;
 do not run a checkout supplied by an untrusted third party. The fetched tag may
 remain after cancellation, but the working tree is not changed by preparation.

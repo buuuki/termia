@@ -867,6 +867,38 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### About updates
 
+- Confirm the installation type is shown for Git, .deb and unknown installs,
+  including when no update is available. After preparation, confirm the top
+  status names missing dependencies and explains automatic installation only
+  when available, or lists all verified requirements when ready. Test English,
+  Spanish and Catalan, light/dark appearance and
+  small windows; retain selectable text and readable layout.
+- In a disposable Ubuntu 24.04/26.04 fixture, omit GtkSourceView 5. Download
+  and review must leave the checkout unchanged. Confirm there is no manual
+  dependency installation button. Missing names must appear at the top, with
+  assisted installation offered when available. Missing requirements and
+  unavailable assisted installation must keep the update pending. Once all
+  requirements are verified, require explicit Update Termia before applying.
+  Use the same final action label with or without missing dependencies; preserve
+  assisted installation only for the missing-dependency case.
+  Closing while waiting must discard staging without changing the checkout.
+- Repeat assisted Git installation with real polkit acceptance/cancellation,
+  package-manager failure, a busy package manager and failed runtime probes.
+  Apply only after verification; do not claim success after errors. Confirm
+  .deb uses APT's transaction and verifies installed version and dependencies.
+  Start the Debian trial with empty APT lists: refresh must precede installation.
+  For assisted Git and Debian, require one native authorization covering both
+  APT operations. Cancelling it must start neither operation; a failed repository
+  refresh must not reach installation. Reject invalid/symlink packages before
+  APT and verify that changing the original download during refresh cannot
+  alter the protected package installed by the helper. Do not cache passwords.
+  Do not run privileged installation trials on the developer's host.
+- Cover changed/invalid plans, altered package bytes, changed checkout, and
+  close/cancel during preparation/application. Accept legacy numbered beta
+  identifiers, unnumbered beta and cross-PATCH maintenance within MAJOR.MINOR;
+  reject development updates and automatic prereleases for stable users.
+
+
 - Open About and use Check for updates. Keep the existing logo, version,
   license, issue link and native dialog appearance. Check keyboard access,
   light/dark themes, and English/Spanish/Catalan. Terminal and split geometry
@@ -874,8 +906,8 @@ Long measurements and release-platform checks remain separate validation work.
 - Run from the development branch: no downgrade to beta.1 is offered and the
   checkout restriction is explained. Verify no-update, offline, timeout,
   malformed metadata and newer compatible release states using injected clients.
-- Check numeric beta ordering and beta-to-final-stable progression in the same
-  application line. Stable users must never be offered prereleases automatically.
+- Check numeric legacy beta ordering, unnumbered beta maintenance and
+  beta-to-stable progression in the same MAJOR.MINOR series. Stable users must never be offered prereleases automatically.
 - In a disposable clean release checkout, prepare an official tag and confirm a
   fast-forward. Repeat with dirty, development, detached non-release and divergent
   checkouts: refuse without resetting or stashing user files. A fetch may leave
@@ -1229,6 +1261,33 @@ own validation requirements. Never destroy the previous private laboratories.
 
 ### Setup and upgrade compatibility
 
+When code has advanced to the selected release while the older process remains
+open, rechecking must offer dependency review rather than a dirty-checkout error.
+Only a clean main/tag checkout exactly at the selected official release qualifies;
+never relax checks for local edits or development branches. Verify assisted
+installation and manual rechecks with a missing GtkSourceView binding. Update
+windows must allow access to Termia's terminals during manual installation.
+Copy commands using normal selection/copy shortcuts, finish verification, then
+close all Termia windows and reopen. Content and confirmation windows use
+`configure_dialog_content`; action rows use the shared action-area helper.
+
+
+In About → Check for updates, verify Installation details expands to show live
+APT/Git output while the spinner stays active. Status, installation-type and
+confirmation text must support GTK selection and normal copy shortcuts without
+a dedicated setup-copy button. Opening the dialog must focus Check for updates
+without automatically selecting the version text. Content and actions must align using shared
+dialog insets rather than nested padding.
+Selecting text and copying with Ctrl+C must match the displayed text,
+remain available after an error, and a new check must clear the log. Keep the log
+read-only and bounded to 65,536 characters; no output may be used as executable
+input. Confirm stderr is visible, ANSI controls are removed, URLs are hidden
+even across pipe-read boundaries, and large output does not queue unbounded GTK
+callbacks. Cancellation must still stop preparation, not an applying package
+transaction; destroyed windows must not receive output. Check EN/ES/CA text.
+Use a real GNOME session for Ubuntu's native authentication dialog; a terminal
+polkit agent does not validate that interaction.
+
 Missing Python/GI, SSH or sshpass dependencies must make `run_checks()` fail
 when invoked as an `if` condition. Setup must install missing dependencies,
 recheck them, and never create a launcher or report successful installation
@@ -1261,8 +1320,15 @@ check of a local snapshot does not publish or certify later remote changes.
 CI also runs `python3 scripts/check_static_analysis.py --base <base-ref> --head <head-ref>`
 with the pinned tools in `requirements-ci.txt`. Validate changes to this gate
 with `python3 scripts/run_sandbox_tests.py tests.test_static_analysis` and a
-real comparison. Existing findings must remain visible; new occurrences and
-tool/report/history errors must fail. Line shifts must not create new findings,
+real comparison. Existing and individually reviewed findings must remain visible;
+unreviewed new occurrences and tool/report/history/review-evidence errors must
+fail. Follow `STATIC_ANALYSIS_REVIEWS.md`: exact approved low Bandit cases may
+stop blocking, with no blanket exclusions. Verify duplicate occurrences, changed
+guards or severity, stale entries, unsafe paths, invalid schemas and deleting an
+existing registry cannot pass. Removing entries while their findings remain
+must also fail; committed comparisons must ignore a dirty local
+registry. Preserve the raw introduced count and report reviewed/blocking counts.
+Line shifts must not create new findings,
 and duplicate findings, renamed files, deleted files and suppression comments
 must not bypass comparison. The first legacy-base promotion must require the
 documented immutable adoption/release/head ancestry, report its effective base,
@@ -1328,3 +1394,33 @@ config migration, import/export, and statistics.
 
 The automated equivalent runs in GitHub Actions for every pull request and
 every push to `main`.
+
+### Updater preview tool hardening (#428)
+
+Run `python3 scripts/run_sandbox_tests.py tests.test_upgrade_preview` without
+network access or privileged package operations. Verify that importing the
+preparer has no build/download side effects, approved fixture bytes are accepted,
+and incorrect digests, oversized data, nonofficial URLs and HTTPS downgrades are
+rejected before a package is written or Git is run. Use absolute executables,
+including commands passed through sudo or a terminal, in the preview launcher,
+panel, preparer and shared reset script. Keep the GNOME export's launch markers
+and reset behavior intact; this validation does not rebuild a running laboratory.
+With mocked widgets and child processes, exercise real evidence-directory
+creation under a synthetic temporary parent. Confirm distinct private `0700`
+directories even with a permissive umask, retained logs from previous trials,
+and no directory or child allocation while a trial is already running.
+
+### Direct update preparation (#428)
+
+Download and review must prepare the update in the existing updater window
+without an intermediate confirmation. Preparation must not install packages or
+advance the source checkout. Show each pending dependency once, record successful
+preparation only after verification and dependency checks, and retain log output
+on failure. Never apply a Git update with missing requirements; for Debian, retain
+APT dependency resolution and final installed-version/runtime verification.
+
+Dependency summaries and manual command instructions appear in installation
+details, without duplicate content above dependency actions or a separate Copy
+commands or Copy log button. Manual instructions support selection and Ctrl+C;
+a new check clears them. Verify that collapsing installation details keeps footer
+actions at the bottom, and dependency buttons do not stretch on window resize.

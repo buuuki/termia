@@ -52,6 +52,14 @@ msgstr ""
 msgid "Current version: {version}"
 msgstr ""
 
+#: src/termia/i18n.py:update_source_updated
+msgid "The local repository already contains this update. Review and install any missing dependencies before closing Termia."
+msgstr ""
+
+#: src/termia/i18n.py:update_review_dependencies
+msgid "Review dependencies"
+msgstr ""
+
 #: src/termia/i18n.py:update_intro
 msgid "Check official releases for a newer compatible version."
 msgstr ""
@@ -61,7 +69,7 @@ msgid "Release notes"
 msgstr ""
 
 #: src/termia/i18n.py:update_install
-msgid "Download and install"
+msgid "Download and review"
 msgstr ""
 
 #: src/termia/i18n.py:update_checking
@@ -76,12 +84,36 @@ msgstr ""
 msgid "No newer compatible release is available."
 msgstr ""
 
-#: src/termia/i18n.py:update_confirm
-msgid "Install Termia {version}? Debian installation may request administrator authentication. Once installation starts, let it finish. Restart Termia manually afterwards."
+#: src/termia/i18n.py:update_prepared
+msgid "Update prepared and verified; dependencies checked."
 msgstr ""
 
 #: src/termia/i18n.py:update_preparing
 msgid "Downloading and verifying the update…"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_title
+msgid "Installation details"
+msgstr ""
+
+#: src/termia/i18n.py:update_copy_log
+msgid "Copy log"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_preparing
+msgid "Preparing and verifying the update…"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_dependencies
+msgid "Installing required dependencies…"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_applying
+msgid "Applying the update…"
+msgstr ""
+
+#: src/termia/i18n.py:update_log_verifying
+msgid "Verifying the installed version and dependencies…"
 msgstr ""
 
 #: src/termia/i18n.py:update_applying
@@ -89,11 +121,11 @@ msgid "Installing… Please wait for the installation to finish."
 msgstr ""
 
 #: src/termia/i18n.py:update_installed
-msgid "Update installed. Restart Termia to use the new version."
+msgid "Update installed and required dependencies verified. Close all Termia windows, then open Termia again."
 msgstr ""
 
 #: src/termia/i18n.py:update_installed_source
-msgid "Source updated. Run scripts/termia-setup.sh install in the checkout to verify dependencies, then restart Termia."
+msgid "Source update installed and required dependencies verified. Close all Termia windows, then open Termia again."
 msgstr ""
 
 #: src/termia/i18n.py:update_cancelling
@@ -138,6 +170,108 @@ msgstr ""
 
 #: src/termia/i18n.py:update_unknown_installation
 msgid "This installation type cannot be updated automatically. Use the official release page."
+msgstr ""
+
+#: src/termia/i18n.py:update_type_detecting
+msgid "Installation type: detecting…"
+msgstr ""
+
+#: src/termia/i18n.py:update_type_source
+msgid "Installation type: Git source repository"
+msgstr ""
+
+#: src/termia/i18n.py:update_type_debian
+msgid "Installation type: Debian package (.deb)"
+msgstr ""
+
+#: src/termia/i18n.py:update_type_unknown
+msgid "Installation type: unknown or unsupported"
+msgstr ""
+
+#: src/termia/i18n.py:update_dependency_none
+msgid "None"
+msgstr ""
+
+#: src/termia/i18n.py:update_dependency_summary
+msgid ""
+"Dependencies to install or repair:\n"
+"{missing}"
+msgstr ""
+
+#: src/termia/i18n.py:update_dependencies_automatic
+msgid ""
+"Updating Termia will automatically install these dependencies:\n"
+"{dependencies}"
+msgstr ""
+
+#: src/termia/i18n.py:update_dependency_warning
+msgid ""
+"Missing dependencies:\n"
+"{dependencies}"
+msgstr ""
+
+#: src/termia/i18n.py:update_dependencies_ready
+msgid ""
+"All required dependencies are available:\n"
+"{dependencies}"
+msgstr ""
+
+#: src/termia/i18n.py:update_debian_dependencies
+msgid "APT installs the .deb and resolves its dependencies in one transaction. Administrator authorization is required. Manual dependency installation does not bypass APT checks."
+msgstr ""
+
+#: src/termia/i18n.py:update_assisted
+#: src/termia/i18n.py:update_recheck_continue
+msgid "Update Termia"
+msgstr ""
+
+#: src/termia/i18n.py:update_manual
+msgid "Install dependencies manually"
+msgstr ""
+
+#: src/termia/i18n.py:update_manual_steps
+msgid ""
+"Run these commands in a terminal:\n"
+"\n"
+"{commands}\n"
+"\n"
+"Then choose Check and continue. Termia will not apply the update while required dependencies are missing."
+msgstr ""
+
+#: src/termia/i18n.py:update_copy_commands
+msgid "Copy commands"
+msgstr ""
+
+#: src/termia/i18n.py:update_dependencies_checking
+msgid "Checking dependencies before applying the update…"
+msgstr ""
+
+#: src/termia/i18n.py:update_requirements_unavailable
+msgid "The target release requirements could not be read safely. No update was applied. Use the release installation instructions."
+msgstr ""
+
+#: src/termia/i18n.py:update_dependency_platform
+msgid "Dependency planning currently requires Debian/Ubuntu with APT and dpkg. No update was applied. Follow the installation instructions on the release page."
+msgstr ""
+
+#: src/termia/i18n.py:update_dependency_check_failed
+msgid "Dependency verification failed. The update is still pending. Check the system package state and the Python environment used to launch Termia."
+msgstr ""
+
+#: src/termia/i18n.py:update_dependencies_install_failed
+msgid "Dependency installation failed or administrator authorization was cancelled. The source checkout was not updated; system packages may have changed. Review the package manager and try again."
+msgstr ""
+
+#: src/termia/i18n.py:update_dependencies_not_ready
+msgid "Dependencies are still unavailable after installation. The source checkout was not updated. Review the package manager and Python environment before retrying."
+msgstr ""
+
+#: src/termia/i18n.py:update_verification_failed_after_apply
+msgid "The package installation finished, but final verification failed. The package may already be updated. Verify its installed version and dependencies before restarting Termia."
+msgstr ""
+
+#: src/termia/i18n.py:update_plan_expired
+msgid "The update plan changed or expired. Check for updates again and review the new requirements before continuing."
 msgstr ""
 
 #: src/termia/i18n.py:sftp_browse

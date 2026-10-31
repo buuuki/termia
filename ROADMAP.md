@@ -35,8 +35,9 @@ changed and no release has been published by this branch transition.
 `main` remains the latest published release line.
 
 Review pending development before allocating it to maintenance or a future
-feature delivery. Cross-patch updater discovery and dependency installation
-remain implementation work; changing policy does not enable those behaviors.
+feature delivery. The development updater now supports cross-PATCH beta
+maintenance and dependency review/installation; installed beta.4 clients retain
+the older behavior. End-to-end upgrade and release validation remain required.
 Remain in beta until the release-readiness criteria are satisfied.
 
 `0.6.0-beta.2` was published after completing the following checks:

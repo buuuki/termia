@@ -4,6 +4,12 @@
 
 ### Added
 
+- Show a bounded, read-only live installation log with copy support and
+  administrator authentication kept outside Termia (`#428`).
+
+- Add an explicitly unvalidated Docker preview of beta.3 upgrade paths for
+  review of the proposed dependency-aware updater (`#428`).
+
 - Include English, Spanish and Catalan desktop language support and native
   Mozilla Firefox in the Ubuntu 26 GNOME laboratory image (`#430`).
 
@@ -29,6 +35,15 @@
 
 ### Changed
 
+- Keep individually reviewed low Bandit findings visible while binding their
+  acceptance to exact occurrences and validated source context; preserve
+  blocking checks for new findings and invalid review evidence (`#428`).
+
+- Remove the manual dependency action from the update window, name missing
+  or fully available requirements, and explain automatic dependency installation
+  when available. Use Update Termia for the final action, preserving verification
+  and explicit confirmation before installation (#428).
+
 - Accept the GNOME Docker laboratory as a baseline for testing Termia, keeping
   application/updater validation separate and retaining documented limits (`#430`).
 
@@ -51,6 +66,50 @@
   make terminal-cleanup capture explicit without changing application behavior (`#415`).
 
 ### Fixed
+
+- Use absolute executables in updater-preview tools, reuse the official
+  HTTPS/redirect policy for checksum-verified fixture downloads, and retain
+  trial logs in private, uniquely allocated directories (`#428`).
+
+- Separate the successful update message from installation output and clarify
+  the Spanish restart instructions (`#428`).
+
+- Arrange updater installation choices horizontally, hide the check action
+  during review and omit the Debian APT explanation (`#428`).
+
+- Enlarge installation details on first output, keep footer actions at the bottom,
+  apply compact content-button sizing and use native log selection/copy (`#428`).
+
+- Show dependency summaries and manual commands only in installation details,
+  removing the separate command-copy action (`#428`).
+
+- Keep updater installation details below dependency actions with a compact
+  default window width (`#428`).
+
+- Prepare updates directly from Download and review, show a single pending
+  dependency list and record successful preparation without startup warnings (`#428`).
+
+- Use a narrower updater window, compact content spacing and right-aligned
+  footer actions through shared dialog layout helpers (`#428`).
+
+- Make About non-modal and independent of the main window so update
+  dependency commands remain accessible in Termia terminals (`#428`).
+
+- Use one native authorization for APT refresh and installation in assisted
+  Git/Debian updates, with verified private staging of Debian packages and
+  installation blocked after a failed refresh (`#428`).
+
+- Recognize an already-updated clean source checkout, allow dependency recovery
+  without blocking terminal access, and share updater content/action insets (`#428`).
+
+- Allow native selection of updater messages and align content/actions with
+  shared dialog insets, without adding a setup-copy button or automatically
+  selecting the version text on opening (`#428`).
+
+- Show update installation type and target requirements, offer assisted or manual
+  dependency installation with copyable commands and rechecks, prevent source
+  upgrades with missing runtime dependencies, verify Debian installation outcomes,
+  and allow beta maintenance updates within the same minor series (`#428`).
 
 - Initialize the laboratory dock through the Ubuntu user session and provide
   an English UTF-8 desktop baseline while retaining user preferences (`#430`).
