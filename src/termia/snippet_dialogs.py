@@ -48,8 +48,6 @@ class ManagerState:
     category: Gtk.ComboBoxText
     new_category_button: Gtk.Button
     new_category_entry: Gtk.Entry
-    new_category_confirm: Gtk.Button
-    new_category_cancel: Gtk.Button
     new_category_box: Gtk.Box
     scope: Gtk.ComboBoxText
     target: Gtk.ComboBoxText
@@ -484,8 +482,7 @@ class SnippetDialogs:
             category_scroller, search, preview_title, preview_meta,
             preview_content_label, preview_view,
             (edit, duplicate, delete), name, category, new_category_button,
-            new_category_entry, new_category_confirm, new_category_cancel,
-            new_category_box, scope, target, command, delete_detail,
+            new_category_entry, new_category_box, scope, target, command, delete_detail,
             category_manage_grid, category_name_entry, category_name_box,
             (category_rename, category_duplicate, category_delete),
             category_delete_detail,

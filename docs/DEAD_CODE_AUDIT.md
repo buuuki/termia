@@ -125,6 +125,70 @@ publication.
 Other audit candidates remain outside this cleanup and require separate scope
 approval.
 
+## Follow-up #441: unread snippet category-button state
+
+Baseline: `efc12fb` on `0.6.1-dev`, after #439 / PR #440. Remove only
+`ManagerState.new_category_confirm` and `new_category_cancel`, plus their two
+arguments at the single positional constructor in `build_manager()`.
+
+A reference and AST search across 178 tracked Python files found no attribute
+readers or exact string-based consumers of either field. An in-memory rehearsal
+preserved the argument mapping of all 45 remaining fields. `ManagerState` is
+internal UI state, not a stored configuration model or a public add-on API.
+
+The buttons themselves remain active: `build_manager()` creates and appends
+them to `new_category_box` and connects their `clicked` signals using local
+variables. Keep this hierarchy, creation, signal wiring and callback behavior.
+The scroller fields have test consumers and remain. No third removable state
+field is established by this review.
+
+Adapt the existing category-persistence regression to emit the actual save and
+cancel button signals, including after garbage collection. Check that saving
+creates the selected empty category, cancelling another name leaves categories
+unchanged, both actions clear/hide the inline entry and restore the controls,
+and cancelling the snippet retains the saved category in the manager.
+
+Focused validation:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_snippet_dialogs tests.test_snippet_shortcuts tests.test_snippets
+```
+
+Compare the final production AST against the baseline, run the complete standard
+checks and tracked-source static comparison, and measure production line/branch
+coverage with local ignored reports. No analyzer rules or review entries change.
+
+Automated validation passed: 46 focused tests and the full 795-test private
+sandbox suite, with no skipped tests; Python compilation, setup-script syntax,
+translation synchronization (615 messages) and whitespace checks also passed.
+Ruff on the modified Python files and Bandit on the production module report no
+findings. The tracked-source comparison against `efc12fb` reports no new findings
+or blocking cases; all 157 existing Bandit findings, including 17 reviewed
+findings, remain. The final production AST differs only by the two approved
+field deletions and matching constructor arguments; button creation, parenting,
+signals and callbacks remain unchanged.
+
+Coverage includes all 74 production Python modules, including the unexecuted
+`__main__.py`: global line coverage is 76.04% and branch coverage is 63.61%.
+`snippet_dialogs.py` has 94.27% line and 75.97% branch coverage; the category
+cancel callback is now exercised. Empty-name and category-store error paths,
+several manager action/delete callbacks and the picker close callback remain
+unexecuted. Per-module results and missing paths remain in the ignored
+`htmlcov/441-snippet-button-state/` HTML/JSON reports. Child-process coverage
+does not establish complete native GTK/VTE, lifecycle or remote-host coverage.
+Existing GTK/VTE deprecation and GLib source-ID warnings occurred without test
+failures.
+
+For manual validation, run `./scripts/run_test_instance.sh --fresh`. Open the
+snippet editor and save a synthetic category; cancel the unsaved snippet and
+verify the empty category remains. Reopen the editor, cancel a different
+category name and verify it was not saved. Check that the category controls
+remain usable and the window can be closed and reopened. No snippet command,
+remote host, Docker/VM workload or personal profile is needed. This maintenance
+belongs to planned `0.6.1-beta`; no version metadata changes are included.
+The requester confirmed the isolated manual checks before publication. Other
+audit candidates remain outside this batch.
+
 ## Original audit #367
 
 The batches below retain their original baseline, validation evidence and

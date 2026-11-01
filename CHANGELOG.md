@@ -4,6 +4,9 @@
 
 ### Refactored
 
+- Remove two unread snippet category-button state fields while preserving
+  the existing buttons, signal handling and category persistence (`#441`).
+
 - Stop computing the obsolete flat sidebar rows; keep native-tree ordering,
   expansion and search covered through the active GTK model (`#439`).
 
