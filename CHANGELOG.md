@@ -34,6 +34,9 @@
 
 ### Fixed
 
+- Keep shared dialog buttons and Escape working when GTK recreates their Python
+  window wrapper, including on Ubuntu 26 (`#452`).
+
 - Filter repetitive GTK symbolic-mask debug output in the test launcher while
   retaining other diagnostics, application PID and exit status (`#443`).
 
@@ -72,6 +75,10 @@
   instructions before publication; document the beta.5 development cycle.
 
 ### Changed
+
+- Keep selectable labels unselected when focused, preserving manual text
+  selection and keyboard navigation throughout Termia; remove the obsolete
+  About dialog text-selection override (`#452`).
 
 - Let the Notes editor workspace use the surrounding window background (`#335`).
 

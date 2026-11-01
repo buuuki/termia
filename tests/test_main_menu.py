@@ -65,7 +65,6 @@ class MainMenuResetTests(unittest.TestCase):
             patch("termia.main_menu.Gtk.AboutDialog") as about,
             patch("termia.main_menu.ABOUT_IMAGE") as image,
             patch("termia.update_view.attach_updates"),
-            patch("termia.main_menu.GLib.idle_add"),
         ):
             image.exists.return_value = False
             host.on_about(None)
@@ -117,6 +116,35 @@ class MainMenuUITests(unittest.TestCase):
         self.actions = MainMenuActions(**{
             field.name: Mock() for field in fields(MainMenuActions)
         })
+
+    def test_about_preserves_manual_selection_without_initial_highlight(self) -> None:
+        settings = Gtk.Settings.get_default()
+        previous = settings.get_property("gtk-label-select-on-focus")
+        self.addCleanup(settings.set_property, "gtk-label-select-on-focus", previous)
+        settings.set_property("gtk-label-select-on-focus", False)
+        existing = Gtk.Window.list_toplevels()
+        with patch("termia.update_view.attach_updates"):
+            self.host.on_about(None)
+        dialog = next(window for window in Gtk.Window.list_toplevels()
+                      if isinstance(window, Gtk.AboutDialog) and window not in existing)
+        self.addCleanup(dialog.destroy)
+        loop = GLib.MainLoop()
+        GLib.timeout_add(150, lambda: (loop.quit(), False)[1])
+        loop.run()
+
+        def labels(widget):
+            if isinstance(widget, Gtk.Label):
+                yield widget
+            child = widget.get_first_child()
+            while child is not None:
+                yield from labels(child)
+                child = child.get_next_sibling()
+
+        selectable = [label for label in labels(dialog) if label.get_selectable() and label.get_mapped()]
+        self.assertTrue(selectable)
+        self.assertTrue(all(not label.get_selection_bounds()[0] for label in selectable))
+        selectable[0].select_region(0, -1)
+        self.assertTrue(selectable[0].get_selection_bounds()[0])
 
     def test_every_command_dispatches_only_its_injected_callback(self) -> None:
         popover = self.host.build_main_menu(self.actions, write_allowed=True)

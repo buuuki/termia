@@ -203,13 +203,3 @@ class MainMenuMixin:
         from .update_view import attach_updates
         attach_updates(dialog, self.t)
         dialog.present()
-        GLib.idle_add(self.clear_about_dialog_selection, dialog)
-
-    def clear_about_dialog_selection(self, widget: Gtk.Widget) -> bool:
-        if isinstance(widget, Gtk.Label):
-            widget.set_selectable(False)
-        child = widget.get_first_child()
-        while child is not None:
-            self.clear_about_dialog_selection(child)
-            child = child.get_next_sibling()
-        return GLib.SOURCE_REMOVE
