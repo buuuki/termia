@@ -257,6 +257,32 @@ or privileged installation paths. The synthetic automated cases cover those
 controller/view paths without installing packages. The requester confirmed the
 isolated manual review, including the console filter, before publication.
 
+## Follow-up #445: unread test bindings
+
+Remove the unused `second` binding in the Notes failed-tab-switch test and
+the unused `root` binding in the progressive split-geometry test. Preserve
+both tab creations in order and the `FakeRoot(first_pane)` call, whose
+constructor sets `first_pane.parent`. Assertions and production code remain
+unchanged. This is maintenance for planned `0.6.1-beta`, with no version bump.
+
+Validate with `python3 scripts/run_sandbox_tests.py tests.test_notes tests.test_split_panes`,
+Ruff and the standard full regression checks. An application instance cannot
+validate removal of local test names; the affected tests verify their retained
+setup and behavior. Other audit candidates require separate review.
+
+Validation passed: 153 affected tests and all 796 private sandbox tests, without
+skips; compilation, shell syntax, translation synchronization (615 messages)
+and whitespace checks passed. AST comparison confirms only the approved binding
+changes, preserving all setup calls and assertions. Ruff decreases from 54 to
+52 findings, with no new findings; the two existing RUF059 warnings in another
+Notes test remain outside this batch. Bandit stays at 157 findings (143 low,
+14 medium), with 17 reviewed and zero new or blocking cases. Production code
+is unchanged. Coverage includes all 74 production modules at 76.03% lines and
+63.59% branches; per-module results and gaps remain in ignored
+`htmlcov/445-test-bindings/`. The unexecuted `__main__.py` and native/lifecycle
+limitations remain; coverage does not establish complete runtime verification.
+Existing GTK/VTE and GLib source-ID warnings appeared without test failures.
+
 ## Original audit #367
 
 The batches below retain their original baseline, validation evidence and

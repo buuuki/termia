@@ -279,7 +279,7 @@ class SplitPaneControllerTests(unittest.TestCase):
         session = SimpleNamespace()
         first_terminal = FakeTerminal()
         first_pane = FakeWidget(width=801, height=601)
-        root = FakeRoot(first_pane)
+        FakeRoot(first_pane)
         panes = {first_terminal: first_pane}
         idle_callbacks = []
 
