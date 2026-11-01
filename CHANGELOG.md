@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Use a transparent PNG logo in About, preserving the original artwork and
+  avoiding a runtime SVG-loader requirement for that dialog (`#452`).
+
 ## 0.6.1-beta - Pending publication
 
 Maintenance since `0.6.0-beta.4`; this remains a prerelease.

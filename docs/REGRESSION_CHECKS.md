@@ -915,8 +915,8 @@ Long measurements and release-platform checks remain separate validation work.
   reject development updates and automatic prereleases for stable users.
 
 
-- Open About and use Check for updates. Keep the existing logo, version,
-  license, issue link and native dialog appearance. Check keyboard access,
+- Open About and use Check for updates. Verify the bundled PNG logo has a
+  transparent exterior; preserve version, license, issue link and native dialog appearance. Check keyboard access,
   light/dark themes, and English/Spanish/Catalan. Terminal and split geometry
   must remain unchanged; opening About alone must not query the network.
 - Run from the development branch: no downgrade to beta.1 is offered and the

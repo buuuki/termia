@@ -128,6 +128,7 @@ class MainMenuUITests(unittest.TestCase):
         dialog = next(window for window in Gtk.Window.list_toplevels()
                       if isinstance(window, Gtk.AboutDialog) and window not in existing)
         self.addCleanup(dialog.destroy)
+        self.assertIsNotNone(dialog.get_logo())
         loop = GLib.MainLoop()
         GLib.timeout_add(150, lambda: (loop.quit(), False)[1])
         loop.run()
