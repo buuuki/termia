@@ -331,7 +331,7 @@ class SnippetDialogTests(unittest.TestCase):
         back.emit("clicked")
         self.assertEqual(state.stack.get_visible_child_name(), "manager")
 
-    def test_editor_created_category_persists_without_saving_a_snippet(self):
+    def test_editor_category_buttons_save_and_cancel_without_saving_a_snippet(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -347,9 +347,35 @@ class SnippetDialogTests(unittest.TestCase):
 
         state = dialogs.show_manager()
         dialogs.show_editor(state, None, False)
-        dialogs.on_new_category(Mock(), state)
+        state.new_category_button.emit("clicked")
         state.new_category_entry.set_text("Empty")
-        dialogs.on_new_category_confirm(Mock(), state)
+        gc.collect()
+        save = state.new_category_entry.get_next_sibling()
+        self.assertIsInstance(save, Gtk.Button)
+        self.assertEqual(save.get_label(), "Save")
+        save.emit("clicked")
+
+        self.assertEqual(store.data.snippet_categories, ["Empty"])
+        self.assertEqual(dialogs.category_value(state), "Empty")
+        self.assertFalse(state.new_category_box.get_visible())
+        self.assertEqual(state.new_category_entry.get_text(), "")
+        self.assertTrue(state.category.get_sensitive())
+        self.assertTrue(state.new_category_button.get_sensitive())
+
+        state.new_category_button.emit("clicked")
+        state.new_category_entry.set_text("Discarded")
+        gc.collect()
+        cancel = state.new_category_box.get_last_child()
+        self.assertIsInstance(cancel, Gtk.Button)
+        self.assertEqual(cancel.get_label(), "Cancel")
+        cancel.emit("clicked")
+
+        self.assertEqual(store.data.snippet_categories, ["Empty"])
+        self.assertEqual(dialogs.category_value(state), "Empty")
+        self.assertFalse(state.new_category_box.get_visible())
+        self.assertEqual(state.new_category_entry.get_text(), "")
+        self.assertTrue(state.category.get_sensitive())
+        self.assertTrue(state.new_category_button.get_sensitive())
         dialogs.on_editor_cancel(Mock(), state)
 
         self.assertEqual(store.data.snippet_categories, ["Empty"])
