@@ -197,28 +197,55 @@ class MainMenuUITests(unittest.TestCase):
             "export_config", "import_config", "import_asbru", "clear_config",
         ])
 
-    def test_closed_menu_resets_visible_submenu(self) -> None:
+    def test_connection_submenu_opens_beside_main_menu_and_resets_on_close(self) -> None:
         popover = self.host.build_main_menu(self.actions, write_allowed=True)
+        self.assertTrue(popover.get_flags() & Gtk.PopoverMenuFlags.NESTED)
+        window = Gtk.Window()
+        self.addCleanup(window.destroy)
+        button = Gtk.MenuButton(label="Menu")
+        button.set_popover(popover)
+        window.set_child(button)
+        window.present()
+        popover.popup()
 
-        def find_stack(widget):
-            if isinstance(widget, Gtk.Stack):
-                return widget
+        def settle():
+            loop = GLib.MainLoop()
+            GLib.timeout_add(100, lambda: (loop.quit(), False)[1])
+            loop.run()
+
+        def descendants(widget):
+            yield widget
             child = widget.get_first_child()
             while child is not None:
-                found = find_stack(child)
-                if found is not None:
-                    return found
+                yield from descendants(child)
                 child = child.get_next_sibling()
-            return None
 
-        stack = find_stack(popover)
-        self.assertIsNotNone(stack)
-        pages = stack.get_pages()
-        submenu = next(
-            pages.get_item(i).get_name() for i in range(pages.get_n_items())
-            if pages.get_item(i).get_name() != "main"
-        )
-        popover.set_property("visible-submenu", submenu)
-        self.assertEqual(popover.get_property("visible-submenu"), submenu)
-        popover.emit("closed")
+        settle()
+        label = next(item for item in descendants(popover)
+                     if isinstance(item, Gtk.Label) and item.get_label() == "connections_file")
+        row = label.get_parent()
+        while row is not None and row.get_css_name() != "modelbutton":
+            row = row.get_parent()
+        self.assertIsNotNone(row)
+        self.assertTrue(row.activate())
+        settle()
+        submenu = next(item for item in descendants(popover)
+                       if isinstance(item, Gtk.Popover) and item is not popover and item.get_visible())
+        self.assertTrue(popover.get_visible())
+        self.assertTrue(popover.get_autohide())
+        self.assertFalse(submenu.get_autohide())
+        self.assertTrue(submenu.get_has_arrow())
+        self.assertTrue(window.get_focus().is_ancestor(submenu))
+        submenu.popdown()
+        settle()
+        self.assertTrue(popover.get_visible())
+        self.assertIs(window.get_focus(), row)
+        self.assertTrue(row.activate())
+        settle()
+        self.assertTrue(submenu.get_visible())
+        popover.popdown()
+        settle()
+        popover.popup()
+        settle()
+        self.assertFalse(submenu.get_visible())
         self.assertEqual(popover.get_property("visible-submenu"), "main")

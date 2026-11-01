@@ -33,6 +33,32 @@ def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
     return GLib.SOURCE_REMOVE
 
 
+def _configure_submenu_dismissal(popover: Gtk.PopoverMenu) -> None:
+    """Let the main menu own dismissal while preserving submenu keyboard focus."""
+    def focus_submenu(panel: Gtk.Popover) -> None:
+        panel.child_focus(Gtk.DirectionType.TAB_FORWARD)
+
+    def restore_parent_focus(panel: Gtk.Popover) -> None:
+        parent = panel.get_parent()
+        root = parent.get_ancestor(Gtk.Popover) if parent is not None else None
+        if root is not None and root.get_visible():
+            parent.grab_focus()
+
+    def visit(widget: Gtk.Widget) -> None:
+        if isinstance(widget, Gtk.Popover) and widget is not popover:
+            widget.set_has_arrow(True)
+            # A separate grab can leave the root open after this panel closes.
+            widget.set_autohide(False)
+            widget.connect("show", focus_submenu)
+            widget.connect("closed", restore_parent_focus)
+        child = widget.get_first_child()
+        while child is not None:
+            visit(child)
+            child = child.get_next_sibling()
+
+    visit(popover)
+
+
 class MainMenuMixin:
     POPOVER_CALLBACK_DELAY_MS = 100
 
@@ -42,9 +68,10 @@ class MainMenuMixin:
         """Present injected commands without accessing stores or feature implementations."""
         model = Gio.Menu()
         action_group = Gio.SimpleActionGroup()
-        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover = Gtk.PopoverMenu.new_from_model_full(model, Gtk.PopoverMenuFlags.NESTED)
         popover.add_css_class("termia-menu-popover")
         popover.set_has_arrow(True)
+        popover.set_cascade_popdown(False)
 
         def append_command(
             menu: Gio.Menu, label: str, name: str, *, requires_write: bool = False
@@ -100,6 +127,7 @@ class MainMenuMixin:
 
         popover.insert_action_group("main-menu", action_group)
         popover.set_menu_model(model)
+        _configure_submenu_dismissal(popover)
         popover.connect("show", lambda source: GLib.idle_add(_clear_initial_menu_selection, source))
         popover.connect("closed", lambda *_args: self.reset_main_menu(popover))
         return popover

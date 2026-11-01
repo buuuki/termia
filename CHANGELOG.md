@@ -34,6 +34,9 @@
 
 ### Fixed
 
+- Dismiss the main menu with one outside click after leaving Import/Export,
+  preserving submenu keyboard navigation (`#452`).
+
 - Keep shared dialog buttons and Escape working when GTK recreates their Python
   window wrapper, including on Ubuntu 26 (`#452`).
 
@@ -75,6 +78,11 @@
   instructions before publication; document the beta.5 development cycle.
 
 ### Changed
+
+- Open main-menu Import/Export as a native side submenu with its pointing
+  arrow (`#452`).
+- Fit Data Locations to its contents without scrolling, with monospaced paths
+  and top-aligned row labels and status (`#452`).
 
 - Keep selectable labels unselected when focused, preserving manual text
   selection and keyboard navigation throughout Termia; remove the obsolete

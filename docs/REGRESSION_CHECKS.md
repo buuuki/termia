@@ -80,6 +80,9 @@ Long measurements and release-platform checks remain separate validation work.
   the same visible root/menu model, and restore parent focus. Right/Left must
   enter/leave submenus without breaking later outside-click dismissal.
   Tab/server/group context menus retain GTK's native pointing arrow.
+- Open main-menu Import/Export, return to its parent with Left or the pointer,
+  then click outside once: both menus must close. Repeat after reopening and
+  verify submenu actions close both menus before presenting their dialogs.
 
 - Repeatedly open and close local/SSH tabs and split panes. Retired sessions,
   native VTE widgets, pages and tab labels must become
@@ -355,6 +358,9 @@ Long measurements and release-platform checks remain separate validation work.
 - `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
 - `Ctrl+Shift+B` must toggle the server sidebar without changing the `Ctrl+F` behavior.
 - `F10` must open and close the main menu. Other unmodified function keys, including `F6`, must still reach the embedded terminal.
+- Main-menu Import/Export must open beside the main menu, retain its existing
+  actions and write guards, and support pointer and keyboard navigation. Closing
+  and reopening the menu must leave that submenu closed.
 - `Ctrl+Shift+T` must open a new local terminal without changing the existing tab-navigation shortcuts.
 - `Ctrl+F6` and `Ctrl+Shift+F6` must cycle focus forward and backward through the visible server list, tab bar, and active terminal, skipping unavailable regions.
 - In horizontal, vertical, nested, and 2x2 split layouts, use the configured
