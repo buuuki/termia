@@ -96,10 +96,6 @@ msgstr ""
 msgid "Installation details"
 msgstr ""
 
-#: src/termia/i18n.py:update_copy_log
-msgid "Copy log"
-msgstr ""
-
 #: src/termia/i18n.py:update_log_preparing
 msgid "Preparing and verifying the update…"
 msgstr ""
@@ -216,30 +212,9 @@ msgid ""
 "{dependencies}"
 msgstr ""
 
-#: src/termia/i18n.py:update_debian_dependencies
-msgid "APT installs the .deb and resolves its dependencies in one transaction. Administrator authorization is required. Manual dependency installation does not bypass APT checks."
-msgstr ""
-
 #: src/termia/i18n.py:update_assisted
 #: src/termia/i18n.py:update_recheck_continue
 msgid "Update Termia"
-msgstr ""
-
-#: src/termia/i18n.py:update_manual
-msgid "Install dependencies manually"
-msgstr ""
-
-#: src/termia/i18n.py:update_manual_steps
-msgid ""
-"Run these commands in a terminal:\n"
-"\n"
-"{commands}\n"
-"\n"
-"Then choose Check and continue. Termia will not apply the update while required dependencies are missing."
-msgstr ""
-
-#: src/termia/i18n.py:update_copy_commands
-msgid "Copy commands"
 msgstr ""
 
 #: src/termia/i18n.py:update_dependencies_checking
@@ -454,10 +429,6 @@ msgstr ""
 msgid "Terminal"
 msgstr ""
 
-#: src/termia/i18n.py:prompt
-msgid "Prompt"
-msgstr ""
-
 #: src/termia/i18n.py:terminal_appearance
 msgid "Terminal appearance"
 msgstr ""
@@ -502,14 +473,6 @@ msgstr ""
 msgid "Debug mode"
 msgstr ""
 
-#: src/termia/i18n.py:debug_mode_enabled
-msgid "Debug mode enabled"
-msgstr ""
-
-#: src/termia/i18n.py:debug_mode_disabled
-msgid "Debug mode disabled"
-msgstr ""
-
 #: src/termia/i18n.py:debug_log_path
 msgid "Debug log: {path}"
 msgstr ""
@@ -525,10 +488,6 @@ msgstr ""
 #: src/termia/i18n.py:setting_disabled
 #: src/termia/i18n.py:keybinding_disabled
 msgid "Disabled"
-msgstr ""
-
-#: src/termia/i18n.py:preferences
-msgid "Preferences"
 msgstr ""
 
 #: src/termia/i18n.py:filter_servers
@@ -724,14 +683,6 @@ msgstr ""
 
 #: src/termia/i18n.py:language
 msgid "Language"
-msgstr ""
-
-#: src/termia/i18n.py:restart_language
-msgid "The language will apply after restarting the application."
-msgstr ""
-
-#: src/termia/i18n.py:language_settings_saved
-msgid "Language saved"
 msgstr ""
 
 #: src/termia/i18n.py:select_server
@@ -990,10 +941,6 @@ msgstr ""
 msgid "Could not complete the transfer."
 msgstr ""
 
-#: src/termia/i18n.py:send_files_to_server_failed_detail
-msgid "Could not complete the transfer: {error}"
-msgstr ""
-
 #: src/termia/i18n.py:send_files_to_server_cancelled
 msgid "Transfer cancelled."
 msgstr ""
@@ -1004,10 +951,6 @@ msgstr ""
 
 #: src/termia/i18n.py:send_files_to_server_missing
 msgid "scp, ssh, or setsid was not found in PATH."
-msgstr ""
-
-#: src/termia/i18n.py:send_files_to_server_fingerprint
-msgid "Confirm the host fingerprint in the terminal if prompted, then enter the password if needed."
 msgstr ""
 
 #: src/termia/i18n.py:send_files_to_server_fingerprint_title
@@ -1187,10 +1130,6 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
-#: src/termia/i18n.py:prompt_settings_saved
-msgid "Prompt settings saved"
-msgstr ""
-
 #: src/termia/i18n.py:terminal_settings_saved
 msgid "Terminal preferences saved"
 msgstr ""
@@ -1349,10 +1288,6 @@ msgstr ""
 
 #: src/termia/i18n.py:connections_unlocked
 msgid "Connections unlocked"
-msgstr ""
-
-#: src/termia/i18n.py:configuration
-msgid "Configuration"
 msgstr ""
 
 #: src/termia/i18n.py:data_locations
@@ -1998,18 +1933,6 @@ msgstr ""
 msgid "Show or hide the notes toolbar"
 msgstr ""
 
-#: src/termia/i18n.py:notes_minimize_window
-msgid "Minimize notes window"
-msgstr ""
-
-#: src/termia/i18n.py:notes_maximize_window
-msgid "Maximize notes window"
-msgstr ""
-
-#: src/termia/i18n.py:notes_restore_window
-msgid "Restore notes window size"
-msgstr ""
-
 #: src/termia/i18n.py:notes_line_numbers
 msgid "Show or hide line numbers"
 msgstr ""
@@ -2024,10 +1947,6 @@ msgstr ""
 
 #: src/termia/i18n.py:notes_server_scope
 msgid "Servers"
-msgstr ""
-
-#: src/termia/i18n.py:notes_choose_server
-msgid "Choose a server"
 msgstr ""
 
 #: src/termia/i18n.py:notes_choose_server_empty
@@ -2068,10 +1987,6 @@ msgstr ""
 
 #: src/termia/i18n.py:notes_search
 msgid "Search notes"
-msgstr ""
-
-#: src/termia/i18n.py:notes_manage_categories
-msgid "Manage note categories"
 msgstr ""
 
 #: src/termia/i18n.py:notes_create
@@ -2144,10 +2059,6 @@ msgstr ""
 msgid "Personal notes"
 msgstr ""
 
-#: src/termia/i18n.py:notes_server_group
-msgid "Server notes"
-msgstr ""
-
 #: src/termia/i18n.py:notes_unknown_server
 msgid "Unavailable server"
 msgstr ""
@@ -2186,10 +2097,6 @@ msgstr ""
 
 #: src/termia/i18n.py:notes_empty
 msgid "No matching notes."
-msgstr ""
-
-#: src/termia/i18n.py:notes_empty_all
-msgid "No notes yet."
 msgstr ""
 
 #: src/termia/i18n.py:notes_empty_server
@@ -2429,10 +2336,6 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_edit
 msgid "Edit snippet"
-msgstr ""
-
-#: src/termia/i18n.py:snippet_duplicate
-msgid "Duplicate snippet"
 msgstr ""
 
 #: src/termia/i18n.py:snippet_delete

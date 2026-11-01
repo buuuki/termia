@@ -6,9 +6,6 @@
 msgid "Installation details"
 msgstr "Detalles de la instalación"
 
-msgid "Copy log"
-msgstr "Copiar registro"
-
 msgid "Preparing and verifying the update…"
 msgstr "Preparando y verificando la actualización…"
 
@@ -227,10 +224,6 @@ msgstr "Nuevo servidor"
 msgid "Terminal"
 msgstr "Terminal"
 
-#: src/termia/i18n.py:prompt
-msgid "Prompt"
-msgstr "Prompt"
-
 #: src/termia/i18n.py:terminal_appearance
 msgid "Terminal appearance"
 msgstr "Apariencia del terminal"
@@ -275,14 +268,6 @@ msgstr "General"
 msgid "Debug mode"
 msgstr "Modo debug"
 
-#: src/termia/i18n.py:debug_mode_enabled
-msgid "Debug mode enabled"
-msgstr "Modo debug activado"
-
-#: src/termia/i18n.py:debug_mode_disabled
-msgid "Debug mode disabled"
-msgstr "Modo debug desactivado"
-
 #: src/termia/i18n.py:debug_log_path
 msgid "Debug log: {path}"
 msgstr "Registro de debug: {path}"
@@ -298,10 +283,6 @@ msgstr "Activado"
 #: src/termia/i18n.py:setting_disabled
 msgid "Disabled"
 msgstr "Desactivado"
-
-#: src/termia/i18n.py:preferences
-msgid "Preferences"
-msgstr "Preferencias"
 
 #: src/termia/i18n.py:filter_servers
 msgid "Filter servers"
@@ -496,14 +477,6 @@ msgstr "Oscuro"
 #: src/termia/i18n.py:language
 msgid "Language"
 msgstr "Idioma"
-
-#: src/termia/i18n.py:restart_language
-msgid "The language will apply after restarting the application."
-msgstr "El idioma se aplicará al reiniciar la aplicación."
-
-#: src/termia/i18n.py:language_settings_saved
-msgid "Language saved"
-msgstr "Idioma guardado"
 
 #: src/termia/i18n.py:select_server
 msgid "Select a server"
@@ -727,10 +700,6 @@ msgstr "Ficheros enviados a {name}"
 msgid "Could not complete the transfer."
 msgstr "No se pudo completar la transferencia."
 
-#: src/termia/i18n.py:send_files_to_server_failed_detail
-msgid "Could not complete the transfer: {error}"
-msgstr "No se pudo completar la transferencia: {error}"
-
 #: src/termia/i18n.py:send_files_to_server_cancelled
 msgid "Transfer cancelled."
 msgstr "Transferencia cancelada."
@@ -742,10 +711,6 @@ msgstr "No se pudo iniciar la transferencia: {error}"
 #: src/termia/i18n.py:send_files_to_server_missing
 msgid "scp, ssh, or setsid was not found in PATH."
 msgstr "No se encontró scp, ssh o setsid en el PATH."
-
-#: src/termia/i18n.py:send_files_to_server_fingerprint
-msgid "Confirm the host fingerprint in the terminal if prompted, then enter the password if needed."
-msgstr "Confirma la huella del host en la terminal si aparece y después introduce la contraseña si se pide."
 
 #: src/termia/i18n.py:send_files_to_server_fingerprint_title
 msgid "Confirm SSH host fingerprint"
@@ -935,10 +900,6 @@ msgstr "Fecha"
 msgid "Date and time"
 msgstr "Fecha y hora"
 
-#: src/termia/i18n.py:prompt_settings_saved
-msgid "Prompt settings saved"
-msgstr "Configuración de prompt guardada"
-
 #: src/termia/i18n.py:terminal_settings_saved
 msgid "Terminal preferences saved"
 msgstr "Preferencias de terminal guardadas"
@@ -1101,10 +1062,6 @@ msgstr "Desbloquea las conexiones cifradas antes de cambiar la configuración."
 #: src/termia/i18n.py:connections_unlocked
 msgid "Connections unlocked"
 msgstr "Conexiones desbloqueadas"
-
-#: src/termia/i18n.py:configuration
-msgid "Configuration"
-msgstr "Configuración"
 
 #: src/termia/i18n.py:data_locations
 msgid "Data locations"
@@ -1891,9 +1848,6 @@ msgstr "Crear snippet"
 msgid "Edit snippet"
 msgstr "Editar snippet"
 
-msgid "Duplicate snippet"
-msgstr "Duplicar snippet"
-
 msgid "Delete snippet"
 msgstr "Eliminar snippet"
 
@@ -1981,9 +1935,6 @@ msgstr "Personales"
 msgid "Servers"
 msgstr "Servidores"
 
-msgid "Choose a server"
-msgstr "Elige un servidor"
-
 msgid "Choose a server to see its notes."
 msgstr "Elige un servidor para ver sus notas."
 
@@ -2013,9 +1964,6 @@ msgstr "Importar o exportar notas"
 
 msgid "Search notes"
 msgstr "Buscar notas"
-
-msgid "Manage note categories"
-msgstr "Gestionar categorías de notas"
 
 msgid "Create note"
 msgstr "Crear nota"
@@ -2080,9 +2028,6 @@ msgstr "Servidor"
 msgid "Personal notes"
 msgstr "Notas personales"
 
-msgid "Server notes"
-msgstr "Notas de servidor"
-
 msgid "Unavailable server"
 msgstr "Servidor no disponible"
 
@@ -2112,9 +2057,6 @@ msgstr "{count} bytes"
 
 msgid "No matching notes."
 msgstr "No hay notas coincidentes."
-
-msgid "No notes yet."
-msgstr "Todavía no hay notas."
 
 msgid "No notes for this server yet."
 msgstr "Todavía no hay notas para este servidor."
@@ -2261,15 +2203,6 @@ msgstr "Apariencia del editor (no se guarda en el texto de la nota)"
 msgid "Show or hide line numbers"
 msgstr "Mostrar u ocultar los números de línea"
 
-msgid "Minimize notes window"
-msgstr "Minimizar la ventana de notas"
-
-msgid "Maximize notes window"
-msgstr "Maximizar la ventana de notas"
-
-msgid "Restore notes window size"
-msgstr "Restaurar el tamaño de la ventana de notas"
-
 msgid "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia."
 msgstr "Se ha superado un límite de seguridad del almacenamiento. Los archivos originales no se han modificado y la edición está desactivada. Consulta docs/STORAGE_MIGRATIONS.md para recuperarlos y después reinicia Termia."
 
@@ -2329,39 +2262,13 @@ msgstr "El plan de actualización ha cambiado o ha caducado. Busca actualizacion
 msgid "The package installation finished, but final verification failed. The package may already be updated. Verify its installed version and dependencies before restarting Termia."
 msgstr "La instalación del paquete ha terminado, pero la verificación final ha fallado. El paquete puede estar ya actualizado. Verifica su versión instalada y sus dependencias antes de reiniciar Termia."
 
-#: src/termia/i18n.py:update_debian_dependencies
-msgid "APT installs the .deb and resolves its dependencies in one transaction. Administrator authorization is required. Manual dependency installation does not bypass APT checks."
-msgstr "APT instala el .deb y resuelve sus dependencias en una sola operación. Se requiere autorización de administrador. Instalar las dependencias manualmente no omite las comprobaciones de APT."
-
 #: src/termia/i18n.py:update_dependencies_not_ready
 msgid "Dependencies are still unavailable after installation. The source checkout was not updated. Review the package manager and Python environment before retrying."
 msgstr "Las dependencias siguen sin estar disponibles después de instalarlas. No se ha actualizado el código. Revisa el gestor de paquetes y el entorno Python antes de reintentar."
 
-#: src/termia/i18n.py:update_manual
-msgid "Install dependencies manually"
-msgstr "Instalar las dependencias manualmente"
-
 #: src/termia/i18n.py:update_type_unknown
 msgid "Installation type: unknown or unsupported"
 msgstr "Tipo de instalación: desconocido o no compatible"
-
-#: src/termia/i18n.py:update_manual_steps
-msgid ""
-"Run these commands in a terminal:\n"
-"\n"
-"{commands}\n"
-"\n"
-"Then choose Check and continue. Termia will not apply the update while required dependencies are missing."
-msgstr ""
-"Ejecuta estos comandos en una terminal:\n"
-"\n"
-"{commands}\n"
-"\n"
-"Después pulsa Comprobar y continuar. Termia no aplicará la actualización mientras falten dependencias necesarias."
-
-#: src/termia/i18n.py:update_copy_commands
-msgid "Copy commands"
-msgstr "Copiar comandos"
 
 #: src/termia/i18n.py:update_requirements_unavailable
 msgid "The target release requirements could not be read safely. No update was applied. Use the release installation instructions."

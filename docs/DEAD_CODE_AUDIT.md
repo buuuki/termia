@@ -16,6 +16,60 @@ The conclusions below apply to in-repository consumers. Accidental reexports
 are not a supported external plugin API. File locations refer to the baseline;
 line numbers change as cleanup progresses.
 
+## Follow-up #449: obsolete translation keys
+
+Baseline: `5f6fb6b`. Remove 23 keys without current production consumers:
+
+- Updater: `update_copy_log`, `update_debian_dependencies`, `update_manual`,
+  `update_manual_steps`, `update_copy_commands`.
+- Preferences: `prompt`, `preferences`, `configuration`, `debug_mode_enabled`,
+  `debug_mode_disabled`, `restart_language`, `language_settings_saved`,
+  `prompt_settings_saved`.
+- Transfers: `send_files_to_server_failed_detail`,
+  `send_files_to_server_fingerprint`.
+- Notes: `notes_minimize_window`, `notes_maximize_window`,
+  `notes_restore_window`, `notes_choose_server`, `notes_manage_categories`,
+  `notes_server_group`, `notes_empty_all`.
+- Snippets: `snippet_duplicate`.
+
+Search tracked sources, tests and scripts for direct and indirect consumers,
+including key variables, menu tables, exception messages and constructed keys.
+Retain the active `theme_*`, `split_*` and `prompt_datetime_*` families: their
+keys are constructed dynamically. Other suspected keys remain outside scope.
+Ignored laboratory source snapshots are historical consumers, not the current
+checkout; leave them untouched. The only remaining literal consumer of these
+23 keys was the updater's negative manual-button assertion. Preserve that
+English-language assertion with the original label instead of translating a
+removed key, which would silently fall back to the key itself.
+
+Remove only the corresponding POT/PO blocks and regenerate both MO files.
+Catalog cardinality changes from 615 to 592 unique messages; verify every
+surviving English, Spanish and Catalan value against the baseline. No controls,
+stored formats, Core/add-on contracts or version metadata change. Include this
+maintenance in the planned `0.6.1-beta`.
+
+Focused validation uses the private sandbox runner with `tests.test_update_view`,
+`tests.test_general_preferences`, `tests.test_terminal_preferences`,
+`tests.test_notes` and `tests.test_snippet_dialogs`. Run catalog synchronization,
+standard checks, the full suite and static comparison before publication.
+For manual validation, run `./scripts/run_test_instance.sh --fresh`; inspect
+updates, general and terminal preferences, Notes and snippets in EN/ES/CA.
+Theme, split-direction and prompt date/time labels must remain translated,
+without raw key names or empty labels. No real SSH or update installation is
+needed. These checks cannot prove absence of every possible dynamic consumer.
+
+Automated validation passed: 195 focused tests and all 798 private-suite tests,
+with no skips; compilation, shell syntax and synchronization of 592 messages.
+All surviving source messages and ES/CA compiled translations match the baseline.
+Ruff passes on touched Python files; globally it retains 52 existing findings.
+Bandit retains 157 findings (143 low, 14 medium), with no new/blocking findings
+and all 17 reviewed entries unchanged. Coverage includes all 74 production
+modules: 76.03% lines/63.59% branches; i18n has 90.00%/62.50%. Reports remain
+ignored under `htmlcov/449-translations/` and logs stay local. The private runner
+cleans up its display and bus. Visual validation was not confirmed; the
+requester explicitly instructed publication and merge after the automated
+checks. Do not record a manual pass.
+
 ## Follow-up #447: unread dependency comparison state
 
 Baseline: `9b9377d`. Remove `DependencyPlan.added`, its calculation and the
