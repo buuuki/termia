@@ -13,6 +13,7 @@ gi.require_version("Pango", "1.0")
 from gi.repository import Gdk, Gio, GLib, Graphene, Gtk, Pango
 
 from .debug import log_event
+from .dialog_window import DialogWindow
 from .ui_state import SignalConnections, TerminalSession
 
 TERMINAL_TAB_DND_MIME_TYPE = "application/x-termia-terminal-tab-id"
@@ -478,7 +479,7 @@ class TabsMixin:
         if not valid:
             self.stop_tab_drag_scroll()
             return Gdk.DragAction(0)
-        self.reorder_dragged_tab_at_bar_x(target, point.x)
+        self.reorder_dragged_tab_at_bar_x(point.x)
         adjustment = self.session_tab_scroller.get_hadjustment()
         if self.tab_drag_scroll_delta(x, adjustment.get_page_size()) == 0:
             self.stop_tab_drag_scroll()
@@ -529,7 +530,7 @@ class TabsMixin:
             self.tab_drag_scroll_context = None
             return GLib.SOURCE_REMOVE
         adjustment.set_value(value)
-        self.reorder_dragged_tab_at_bar_x(target, point.x + value - previous)
+        self.reorder_dragged_tab_at_bar_x(point.x + value - previous)
         return GLib.SOURCE_CONTINUE
 
     def on_tab_bar_drop_leave(self, *_args) -> None:
@@ -569,7 +570,7 @@ class TabsMixin:
         )
 
     def on_tab_bar_drop_bytes_read(self, stream, result, context) -> None:
-        _drop, expected_id, target, x, token = context
+        _drop, expected_id, _target, x, token = context
         try:
             received_id = stream.read_bytes_finish(result).get_data().decode("utf-8")
         except (GLib.Error, UnicodeError):
@@ -584,7 +585,7 @@ class TabsMixin:
             and not getattr(self, "shutdown_in_progress", False)
         )
         if accepted:
-            self.reorder_dragged_tab_at_bar_x(target, x, expected_id)
+            self.reorder_dragged_tab_at_bar_x(x, expected_id)
             self.set_active_session(expected_id)
         self.finish_tab_drop(context, accepted)
 
@@ -596,7 +597,6 @@ class TabsMixin:
 
     def reorder_dragged_tab_at_bar_x(
         self,
-        target: Gtk.DropTargetAsync,
         pointer_x: float,
         dragged_session_id: str | None = None,
     ) -> None:
@@ -771,7 +771,7 @@ class TabsMixin:
 
     def show_rename_tab_dialog(self, popover: Gtk.Popover, session: TerminalSession) -> None:
         popover.popdown()
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.t("rename_tab"),
             transient_for=self.window_for_session(session),
             modal=True,
@@ -793,7 +793,7 @@ class TabsMixin:
         return session.detached_window or self
 
     def on_rename_tab_response(
-        self, dialog: Gtk.Dialog, response: Gtk.ResponseType, entry: Gtk.Entry, session: TerminalSession
+        self, dialog: DialogWindow, response: Gtk.ResponseType, entry: Gtk.Entry, session: TerminalSession
     ) -> None:
         title = entry.get_text().strip()
         if response == Gtk.ResponseType.OK and title:

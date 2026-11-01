@@ -25,6 +25,7 @@ from .connection_utils import (
     unique_server_clone_name,
     unique_workspace_clone_name,
 )
+from .dialog_window import DialogWindow
 from .models import Group, LocalTerminalProfile, Server, Workspace
 from .sidebar_projection import SidebarRow as RowObject
 from .sidebar_projection import build_sidebar_projection
@@ -1422,7 +1423,7 @@ class SidebarMixin:
         tabs: list[dict[str, object]] | None = None,
         workspace_id: str | None = None,
     ) -> None:
-        dialog = Gtk.Dialog(title=title, transient_for=self, modal=True)
+        dialog = DialogWindow(title=title, transient_for=self, modal=True)
         self.add_dialog_action_buttons(dialog, self.t("save"))
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
@@ -1445,7 +1446,7 @@ class SidebarMixin:
 
     def on_workspace_name_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         entry: Gtk.Entry,
         tabs: list[dict[str, object]] | None,

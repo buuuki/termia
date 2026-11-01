@@ -1325,6 +1325,15 @@ check of a local snapshot does not publish or certify later remote changes.
 
 ### Standard automated commands
 
+For #335, run `python3 scripts/run_sandbox_tests.py tests.test_dialog_widgets`
+and the affected dialog, preference, Notes, snippet, tab and reconnect tests.
+Existing forms use shared modal windows and native dropdowns. Check Save/Cancel,
+Enter/Escape, window close, focus return, unchanged selection IDs after reopening,
+duplicate labels and empty/rebuilt models. Test light/dark and EN/ES/CA, including
+read-only states and optional tools enabled/disabled; no real SSH is required.
+The migrated paths must not emit Gtk.Dialog/ComboBox deprecations; retain other
+diagnostics rather than suppressing warnings globally.
+
 CI also runs `python3 scripts/check_static_analysis.py --base <base-ref> --head <head-ref>`
 with the pinned tools in `requirements-ci.txt`. Validate changes to this gate
 with `python3 scripts/run_sandbox_tests.py tests.test_static_analysis` and a

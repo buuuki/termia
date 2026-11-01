@@ -28,11 +28,12 @@ from .constants import (
     STATE_DIR,
     STATISTICS_FILE,
 )
+from .dialog_window import DialogWindow
 
 
 class ConfigActionsMixin:
     def on_data_locations(self) -> None:
-        dialog = Gtk.Dialog(title=self.t("data_locations_title"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("data_locations_title"), transient_for=self, modal=True)
         dialog.set_default_size(680, 360)
         self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE)
         dialog.connect("response", lambda source, _response: source.destroy())
@@ -187,7 +188,7 @@ class ConfigActionsMixin:
         return True
 
     def present_connection_import_password(self, path: Path) -> None:
-        dialog = Gtk.Dialog(title=self.t("import_config_unlock_title"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("import_config_unlock_title"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
         self.add_dialog_action_buttons(dialog, self.t("import_config"))
@@ -207,7 +208,7 @@ class ConfigActionsMixin:
         entry.grab_focus()
 
     def on_connection_import_password_response(
-        self, dialog: Gtk.Dialog, response: Gtk.ResponseType, path: Path,
+        self, dialog: DialogWindow, response: Gtk.ResponseType, path: Path,
         entry: Gtk.PasswordEntry, error: Gtk.Label,
     ) -> None:
         if response != Gtk.ResponseType.OK or not self.ensure_writable():

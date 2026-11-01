@@ -8,6 +8,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, Gtk
 
+from termia.dialog_window import DialogWindow
 from termia.main_menu import MainMenuMixin
 from termia.optional_tools_dialog import OptionalToolsDialog
 
@@ -60,7 +61,7 @@ class OptionalToolsUITests(unittest.TestCase):
         OptionalToolsDialog(parent, store, lambda key: key, notifier).show()
         dialog = next(
             window for window in Gtk.Window.list_toplevels()
-            if isinstance(window, Gtk.Dialog) and window.get_title() == "optional_tools"
+            if isinstance(window, DialogWindow) and window.get_title() == "optional_tools"
         )
         self.addCleanup(parent.destroy)
         self.addCleanup(dialog.destroy)
@@ -94,7 +95,7 @@ class OptionalToolsUITests(unittest.TestCase):
         OptionalToolsDialog(parent, store, lambda key: key, Mock()).show()
         dialog = next(
             window for window in Gtk.Window.list_toplevels()
-            if isinstance(window, Gtk.Dialog) and window.get_title() == "optional_tools"
+            if isinstance(window, DialogWindow) and window.get_title() == "optional_tools"
         )
         self.addCleanup(parent.destroy)
         self.addCleanup(dialog.destroy)

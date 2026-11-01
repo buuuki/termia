@@ -8,6 +8,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gtk, Pango
 
+from .dialog_window import DialogWindow
 from .keybindings import (
     DEFAULT_KEYBINDINGS,
     KEYBINDING_ACTIONS,
@@ -98,7 +99,7 @@ class KeybindingPreferencesMixin:
     def on_keybindings_settings(self, _button: Gtk.Button) -> None:
         if not self.ensure_writable():
             return
-        dialog = Gtk.Dialog(title=self.t("keybindings"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("keybindings"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(520, -1)
         self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
@@ -159,7 +160,7 @@ class KeybindingPreferencesMixin:
         dialog.connect("response", self.on_keybindings_settings_response, rows, previous)
         dialog.present()
 
-    def on_keybindings_settings_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType,
+    def on_keybindings_settings_response(self, dialog: DialogWindow, response: Gtk.ResponseType,
                                          rows: list[tuple[str, KeybindingCaptureRow]],
                                          previous: dict[str, str]) -> None:
         if response == Gtk.ResponseType.APPLY:

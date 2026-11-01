@@ -19,6 +19,7 @@ from termia.config_io import (
     MissingMasterPasswordError,
     read_connections_payload,
 )
+from termia.dialog_window import DialogWindow
 from termia.models import Note, NoteCategory
 from termia.notes import (
     NoteError,
@@ -238,7 +239,9 @@ class NativeNoteTabsTests(unittest.TestCase):
         return tab
 
     def test_notebook_owns_selection_and_reordering_without_changing_draft(self):
-        first, draft, last = (self.add_tab(key) for key in ("one", "draft:one", "two"))
+        self.add_tab("one")
+        draft = self.add_tab("draft:one")
+        self.add_tab("two")
         self.assertEqual(self.dialog.editor_notebook.get_n_pages(), 3)
         self.assertTrue(self.dialog.editor_notebook.get_tab_reorderable(draft.page_widget))
         self.dialog.activate_editor_tab = MagicMock(side_effect=lambda key: setattr(self.dialog, "active_editor_tab_key", key))
@@ -1448,7 +1451,7 @@ class CategoryContextMenuTests(unittest.TestCase):
         menu.activate_action("note-category.rename", None)
         self.drain_events(wait_for_rename=True)
         dialogs = [window for window in Gtk.Window.list_toplevels()
-                   if isinstance(window, Gtk.Dialog) and window.get_transient_for() is self.window]
+                   if isinstance(window, DialogWindow) and window.get_transient_for() is self.window]
         self.assertEqual(len(dialogs), 1)
         dialogs[0].response(Gtk.ResponseType.CANCEL)
         self.drain_events()
@@ -1912,13 +1915,14 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.save_active_editor_if_valid = lambda: True
         dialog.window = MagicMock()
 
-        with patch("termia.notes_dialogs.Gtk") as gtk:
+        with (patch("termia.notes_dialogs.Gtk") as gtk,
+              patch("termia.notes_dialogs.DialogWindow") as window):
             dialog.prompt_category_edit("rename", "Ops")
             gtk.Entry.return_value.set_text.assert_called_with("Ops")
             dialog.prompt_category_edit("duplicate", "Ops")
             gtk.Entry.return_value.set_text.assert_called_with("Ops copy")
             dialog.prompt_category_edit("add")
-            gtk.Dialog.assert_called_with(
+            window.assert_called_with(
                 title="notes_category_add", transient_for=dialog.window, modal=True,
             )
             gtk.Entry.return_value.set_placeholder_text.assert_called_with("notes_category_name")
@@ -2450,7 +2454,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.translate = lambda key: key
         dialog.window = MagicMock()
 
-        with patch("termia.notes_dialogs.Gtk") as gtk:
+        with (patch("termia.notes_dialogs.Gtk") as gtk,
+              patch("termia.notes_dialogs.DialogWindow")):
             entry = gtk.Entry.return_value
             dialog.show_note_rename_dialog("Existing title", lambda *_args: None)
 

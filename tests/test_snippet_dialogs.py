@@ -13,6 +13,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
+from termia.choice_widgets import append_choice, select_choice
 from termia.i18n import translate_key
 from termia.models import CommandSnippet
 from termia.snippet_dialogs import SnippetDialogs
@@ -418,7 +419,7 @@ class SnippetDialogTests(unittest.TestCase):
         state = dialogs.show_manager()
         dialogs.show_editor(state, None, False)
         self.assertEqual(dialogs.category_value(state), "")
-        self.assertEqual(state.category.get_active_text(), "Uncategorized")
+        self.assertEqual(state.category.get_selected_item().get_string(), "Uncategorized")
         dialogs.on_editor_cancel(Mock(), state)
 
         state.category_grid.get_child_at_index(1).get_child().emit("clicked")
@@ -452,8 +453,8 @@ class SnippetDialogTests(unittest.TestCase):
 
         for duplicate in (False, True):
             dialogs.show_editor(state, "one", duplicate)
-            state.target.append("long", "A very long target name " * 12)
-            state.target.set_active_id("long")
+            append_choice(state.target, "long", "A very long target name " * 12)
+            select_choice(state.target, "long")
             state.target.set_visible(True)
             self.settle_window()
             self.assertEqual(state.window.get_width(), 600)

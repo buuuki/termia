@@ -50,7 +50,7 @@ def build_application_css(
         ".termia-tab-label:hover { background: alpha(@theme_fg_color, 0.06); } "
         ".termia-tab-label.active { background: alpha(@theme_fg_color, 0.13); } "
         ".termia-tab-label.dragging { background: alpha(@theme_selected_bg_color, 0.25); opacity: 0.72; } "
-        ".termia-notes-notebook, .termia-notes-notebook > header, "
+        ".termia-notes-notebook, .termia-notes-notebook > stack, .termia-notes-notebook > header, "
         ".termia-notes-notebook > header > tabs { background: transparent; border: 0; box-shadow: none; } "
         ".termia-notes-notebook > header > tabs > tab { border-radius: 8px 8px 0 0; } "
         ".termia-notes-notebook > header > tabs > tab:checked { background: alpha(@theme_fg_color, 0.13); } "

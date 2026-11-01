@@ -14,10 +14,18 @@ Issue [#360](https://github.com/buuuki/termia/issues/360) tracks that comparison
 
 ## Classification
 
-Encrypted connection import uses a standard `Gtk.Dialog` with
+Encrypted connection import uses the shared modal `DialogWindow` with
 `Gtk.PasswordEntry` and native response buttons in `src/termia/config_actions.py`.
 GTK owns dialog presentation; Termia validates the password, handles retry and
 cancellation, and rechecks storage limits and write permission before import.
+
+Issue #335 migrates existing forms from deprecated `Gtk.Dialog` to the shared
+`Gtk.Window` composition in `dialog_window.py`, retaining their content and
+response actions. Termia owns response dispatch, Escape and close handling;
+GTK owns window modality, focus and default-widget activation. This is custom
+behavior on a standard window, not a new GTK dialog type. Text selectors use
+native `Gtk.DropDown` controls; `choice_widgets.py` maps stable stored IDs to
+displayed strings and configures bounded labels with native list-item factories.
 
 - **Standard control:** GTK owns the interaction pattern through a purpose-made
   widget or menu model. Termia may supply actions, data, labels, and scoped

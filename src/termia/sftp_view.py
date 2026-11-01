@@ -17,6 +17,7 @@ from gi.repository import GLib, Gtk, Pango
 
 from .debug import log_event
 from .dialog_actions import add_dialog_action_button, configure_action_area
+from .dialog_window import DialogWindow
 from .known_hosts import ScannedHostKey, append_scanned_host_key
 from .sftp_backend import ParamikoBackend, failure_details
 from .sftp_service import (
@@ -336,7 +337,7 @@ class SFTPWindow(Gtk.Window):
 
     def dialog(self, message, callback, entry=None):
         previous_status = self.status.get_text()
-        dialog = Gtk.Dialog(transient_for=self, modal=True, title="SFTP")
+        dialog = DialogWindow(transient_for=self, modal=True, title="SFTP")
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         add_dialog_action_button(
             dialog, self.t("sftp_continue"), Gtk.ResponseType.OK,

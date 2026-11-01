@@ -9,6 +9,7 @@ from termia import config_io
 from termia.config_actions import ConfigActionsMixin, Gio, Gtk
 from termia.config_io import read_connections_payload, write_connections_file
 from termia.dialog_actions import add_dialog_action_button
+from termia.dialog_window import DialogWindow
 from termia.models import Server
 from termia.stores import ConnectionStore
 
@@ -65,7 +66,7 @@ class ConnectionImportTests(unittest.TestCase):
     def prompt(self):
         self.select()
         dialog = next(window for window in Gtk.Window.list_toplevels()
-                      if isinstance(window, Gtk.Dialog) and window.get_transient_for() == self.host)
+                      if isinstance(window, DialogWindow) and window.get_transient_for() == self.host)
         entry = dialog.get_content_area().get_first_child().get_next_sibling()
         return dialog, entry, entry.get_next_sibling()
 

@@ -10,6 +10,7 @@ from gi.repository import Gtk
 
 from termia.config_io import CONNECTION_STORAGE_ENCRYPTED, InvalidMasterPasswordError
 from termia.dialog_actions import add_dialog_action_button
+from termia.dialog_window import DialogWindow
 from termia.i18n import translate_key
 from termia.security_preferences import SecurityPreferencesMixin
 from termia.stores import ReadOnlyStoreError, UnchangedMasterPasswordError
@@ -126,7 +127,7 @@ class SecurityPreferencesUITests(unittest.TestCase):
         host.on_security_settings(None)
         dialog = next(
             window for window in Gtk.Window.list_toplevels()
-            if isinstance(window, Gtk.Dialog) and window.get_title() == host.t("security")
+            if isinstance(window, DialogWindow) and window.get_title() == host.t("security")
         )
         self.addCleanup(dialog.destroy)
         return dialog
@@ -145,7 +146,7 @@ class SecurityPreferencesUITests(unittest.TestCase):
 
         dialog = next(
             window for window in Gtk.Window.list_toplevels()
-            if isinstance(window, Gtk.Dialog)
+            if isinstance(window, DialogWindow)
             and window.get_title() == host.t("change_master_credential_title")
         )
         self.addCleanup(dialog.destroy)

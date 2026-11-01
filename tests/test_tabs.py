@@ -245,7 +245,7 @@ class PrivateTabDragTests(unittest.TestCase):
 
     def test_motion_reorders_only_the_current_local_drag(self):
         self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 100, 0), Gdk.DragAction.MOVE)
-        self.host.reorder_dragged_tab_at_bar_x.assert_called_once_with(None, 100)
+        self.host.reorder_dragged_tab_at_bar_x.assert_called_once_with(100)
         self.host.invalidate_tab_overflow_menu.assert_not_called()
         self.drop.get_drag.return_value = object()
         self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 100, 0), Gdk.DragAction(0))
