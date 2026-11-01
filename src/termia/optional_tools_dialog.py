@@ -12,6 +12,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
 from .dialog_actions import add_dialog_action_button
+from .dialog_window import DialogWindow
 from .stores import ConnectionStore, ReadOnlyStoreError
 
 
@@ -29,7 +30,7 @@ class OptionalToolsDialog:
         self.notify = notify
 
     def show(self) -> None:
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.translate("optional_tools"),
             transient_for=self.parent,
             modal=True,
@@ -61,7 +62,7 @@ class OptionalToolsDialog:
         hint.set_wrap(True)
         content.append(hint)
 
-        def on_response(current: Gtk.Dialog, response: Gtk.ResponseType) -> None:
+        def on_response(current: DialogWindow, response: Gtk.ResponseType) -> None:
             if response == Gtk.ResponseType.OK:
                 try:
                     self.store.update_optional_tools(

@@ -9,6 +9,8 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
+from .dialog_window import DialogWindow
+
 DIALOG_ACTION_SPACING = 8
 DIALOG_ACTION_INSET_TOP = 16
 DIALOG_ACTION_INSET_BOTTOM = 16
@@ -17,7 +19,7 @@ DIALOG_ACTION_INSET_END = 16
 
 
 def add_dialog_action_button(
-    dialog: Gtk.Dialog,
+    dialog: DialogWindow,
     label: str,
     response: Gtk.ResponseType,
 ) -> Gtk.Button:

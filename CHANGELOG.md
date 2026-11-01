@@ -4,6 +4,9 @@
 
 ### Refactored
 
+- Replace deprecated GTK dialogs and text selectors with modal windows and native
+  dropdowns; retain existing actions, saved values and lifecycle guards, and remove
+  unused internal arguments and Notes test bindings (`#335`).
 - Remove 23 obsolete translation keys and their English, Spanish and Catalan
   catalog messages while preserving dynamically selected labels (`#449`).
 
@@ -69,6 +72,8 @@
   instructions before publication; document the beta.5 development cycle.
 
 ### Changed
+
+- Let the Notes editor workspace use the surrounding window background (`#335`).
 
 - Keep individually reviewed low Bandit findings visible while binding their
   acceptance to exact occurrences and validated source context; preserve

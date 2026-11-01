@@ -15,6 +15,7 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, GLib, Gtk
 
+from termia.dialog_window import DialogWindow
 from termia.i18n import translate_key
 from termia.keybinding_preferences import (
     KeybindingCaptureRow,
@@ -97,7 +98,7 @@ class SnippetShortcutTests(unittest.TestCase):
         self.addCleanup(host.destroy)
         host.on_keybindings_settings(None)
         dialog = next(window for window in Gtk.Window.list_toplevels()
-                      if isinstance(window, Gtk.Dialog) and window.get_transient_for() is host)
+                      if isinstance(window, DialogWindow) and window.get_transient_for() is host)
         self.addCleanup(dialog.destroy)
         content = dialog.get_content_area()
         grid = content.get_last_child().get_child()
@@ -123,7 +124,7 @@ class SnippetShortcutTests(unittest.TestCase):
         self.assertEqual(self.store.data.app.keybindings[action], "Ctrl+Alt+D")
         host.on_keybindings_settings(None)
         dialog = next(window for window in Gtk.Window.list_toplevels()
-                      if isinstance(window, Gtk.Dialog) and window.get_transient_for() is host)
+                      if isinstance(window, DialogWindow) and window.get_transient_for() is host)
         self.addCleanup(dialog.destroy)
         dialog.response(Gtk.ResponseType.APPLY)
         dialog.response(Gtk.ResponseType.OK)

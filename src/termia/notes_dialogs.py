@@ -18,12 +18,20 @@ gi.require_version("GtkSource", "5")
 gi.require_version("Pango", "1.0")
 from gi.repository import Gdk, Gio, GLib, GObject, Graphene, Gtk, GtkSource, Pango
 
+from .choice_widgets import (
+    append_choice,
+    choice_id,
+    constrain_choice,
+    select_choice,
+    text_choice,
+)
 from .config_io import InvalidMasterPasswordError, MissingMasterPasswordError
 from .constants import (
     DEFAULT_NOTES_EDITOR_BACKGROUND,
     DEFAULT_NOTES_EDITOR_FOREGROUND,
 )
 from .dialog_actions import add_dialog_action_button, configure_action_area
+from .dialog_window import DialogWindow
 from .models import Note, NoteCategory
 from .notes import NoteError, normalized_note_categories, note_category_move_allowed
 from .notes_io import export_notes_file, import_notes_file
@@ -371,20 +379,17 @@ class NotesDialogs:
         self.line_numbers_button.connect("toggled", self.on_line_numbers_toggled)
         toolbar.append(self.line_numbers_button)
         self.text_view.set_show_line_numbers(settings.get("line_numbers", True))
-        font = Gtk.ComboBoxText()
+        font = text_choice()
         font.set_tooltip_text(self.translate("font_size"))
-        font.append("", self.translate("theme_system"))
+        append_choice(font, "", self.translate("theme_system"))
         names = sorted({family.get_name() for family in self.text_view.get_pango_context().list_families()})
         if settings.get("font") and settings["font"] not in names:
             names.append(settings["font"])
         for name in names:
-            font.append(name, name)
-        for cell in font.get_cells():
-            cell.set_property("ellipsize", Pango.EllipsizeMode.END)
-            cell.set_property("width-chars", 12)
-            cell.set_property("max-width-chars", 14)
-        font.set_active_id(settings.get("font", ""))
-        font.connect("changed", lambda widget: self.update_editor_appearance({"font": widget.get_active_id() or ""}))
+            append_choice(font, name, name)
+        constrain_choice(font, 12, 14)
+        select_choice(font, settings.get("font", ""))
+        font.connect("notify::selected", lambda widget, _pspec: self.update_editor_appearance({"font": choice_id(widget) or ""}))
         toolbar.append(font)
         size = Gtk.SpinButton.new_with_range(6, 72, 1)
         size.set_value(settings.get("size", 12))
@@ -1893,7 +1898,7 @@ class NotesDialogs:
             self._note_tab_menu = None
 
     def show_note_rename_dialog(self, title: str, response_callback, *callback_args) -> None:
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.translate("notes_rename"), transient_for=self.window, modal=True
         )
         add_dialog_action_button(
@@ -1927,7 +1932,7 @@ class NotesDialogs:
             )
 
     def on_note_rename_response(
-        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry, note_id: str
+        self, dialog: DialogWindow, response: int, entry: Gtk.Entry, note_id: str
     ) -> None:
         title = entry.get_text().strip()
         dialog.destroy()
@@ -1953,7 +1958,7 @@ class NotesDialogs:
             )
 
     def on_editor_tab_rename_response(
-        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry, key: str
+        self, dialog: DialogWindow, response: int, entry: Gtk.Entry, key: str
     ) -> None:
         title = entry.get_text().strip()
         dialog.destroy()
@@ -2600,7 +2605,7 @@ class NotesDialogs:
             "rename": "notes_category_rename",
             "duplicate": "notes_category_duplicate",
         }[mode]
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.translate(title_key), transient_for=self.window, modal=True
         )
         dialog.set_default_size(360, -1)
@@ -2631,7 +2636,7 @@ class NotesDialogs:
         entry.set_position(-1)
 
     def on_category_edit_response(
-        self, dialog: Gtk.Dialog, response: int, entry: Gtk.Entry,
+        self, dialog: DialogWindow, response: int, entry: Gtk.Entry,
         mode: str, original: str | None, server_id: str | None = None,
     ) -> None:
         name = entry.get_text()
@@ -2946,7 +2951,7 @@ class NotesDialogs:
         self.show_toast(message)
 
     def ask_password(self, title: str, callback) -> None:
-        dialog = Gtk.Dialog(title=title, transient_for=self.window, modal=True)
+        dialog = DialogWindow(title=title, transient_for=self.window, modal=True)
         dialog.set_default_size(420, 120)
         content = dialog.get_content_area()
         content.set_margin_top(14)
@@ -2966,7 +2971,7 @@ class NotesDialogs:
             dialog, self.translate("continue"), Gtk.ResponseType.ACCEPT,
         )
 
-        def response(source: Gtk.Dialog, result: int) -> None:
+        def response(source: DialogWindow, result: int) -> None:
             password = entry.get_text() if result == Gtk.ResponseType.ACCEPT else None
             source.destroy()
             callback(password or None)

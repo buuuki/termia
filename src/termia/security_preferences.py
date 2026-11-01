@@ -7,6 +7,12 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, Gtk
 
+from .choice_widgets import (
+    append_choice,
+    choice_id,
+    select_choice,
+    text_choice,
+)
 from .config_io import (
     CONNECTION_STORAGE_ENCRYPTED,
     CONNECTION_STORAGE_OBFUSCATED,
@@ -14,6 +20,7 @@ from .config_io import (
     InvalidMasterPasswordError,
 )
 from .dialog_actions import add_dialog_action_button
+from .dialog_window import DialogWindow
 from .stores import (
     MasterPasswordRollbackError,
     ReadOnlyStoreError,
@@ -25,7 +32,7 @@ class SecurityPreferencesMixin:
     def on_security_settings(self, _button: Gtk.Button) -> None:
         if not self.ensure_writable():
             return
-        dialog = Gtk.Dialog(title=self.t("security"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("security"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
         self.add_dialog_action_buttons(dialog, self.t("save"))
@@ -36,11 +43,11 @@ class SecurityPreferencesMixin:
         content.set_margin_end(16)
         content.set_spacing(12)
         grid = Gtk.Grid(column_spacing=12, row_spacing=12)
-        storage_combo = Gtk.ComboBoxText()
-        storage_combo.append(CONNECTION_STORAGE_PLAIN, self.t("connection_storage_plain"))
-        storage_combo.append(CONNECTION_STORAGE_OBFUSCATED, self.t("connection_storage_obfuscated"))
-        storage_combo.append(CONNECTION_STORAGE_ENCRYPTED, self.t("connection_storage_encrypted"))
-        storage_combo.set_active_id(self.store.data.app.connection_storage_mode)
+        storage_combo = text_choice()
+        append_choice(storage_combo, CONNECTION_STORAGE_PLAIN, self.t("connection_storage_plain"))
+        append_choice(storage_combo, CONNECTION_STORAGE_OBFUSCATED, self.t("connection_storage_obfuscated"))
+        append_choice(storage_combo, CONNECTION_STORAGE_ENCRYPTED, self.t("connection_storage_encrypted"))
+        select_choice(storage_combo, self.store.data.app.connection_storage_mode)
         storage_combo.set_hexpand(True)
         label = Gtk.Label(label=self.t("connection_storage_mode"))
         label.set_xalign(0)
@@ -63,7 +70,7 @@ class SecurityPreferencesMixin:
         dialog.present()
 
     def on_change_master_password_clicked(
-        self, _button: Gtk.Button, settings_dialog: Gtk.Dialog,
+        self, _button: Gtk.Button, settings_dialog: DialogWindow,
     ) -> None:
         if not self.ensure_writable():
             return
@@ -71,7 +78,7 @@ class SecurityPreferencesMixin:
         self.present_change_master_password_dialog()
 
     def present_change_master_password_dialog(self) -> None:
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.t("change_master_credential_title"),
             transient_for=self,
             modal=True,
@@ -117,7 +124,7 @@ class SecurityPreferencesMixin:
 
     def on_change_master_password_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         current_entry: Gtk.PasswordEntry,
         new_entry: Gtk.PasswordEntry,
@@ -184,10 +191,10 @@ class SecurityPreferencesMixin:
         dialog.destroy()
         self.toast_label.set_label(self.t("security_settings_saved"))
 
-    def on_security_settings_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType,
-                                      storage_combo: Gtk.ComboBoxText) -> None:
+    def on_security_settings_response(self, dialog: DialogWindow, response: Gtk.ResponseType,
+                                      storage_combo: Gtk.DropDown) -> None:
         if response == Gtk.ResponseType.OK:
-            target_mode = storage_combo.get_active_id() or CONNECTION_STORAGE_PLAIN
+            target_mode = choice_id(storage_combo) or CONNECTION_STORAGE_PLAIN
             if target_mode == CONNECTION_STORAGE_ENCRYPTED and self.store.data.app.connection_storage_mode != CONNECTION_STORAGE_ENCRYPTED:
                 dialog.destroy()
                 self.confirm_enable_connection_encryption()
@@ -217,7 +224,7 @@ class SecurityPreferencesMixin:
             self.present_master_password_dialog()
 
     def present_master_password_dialog(self) -> None:
-        dialog = Gtk.Dialog(title=self.t("master_credential_title"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("master_credential_title"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
         add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
@@ -260,7 +267,7 @@ class SecurityPreferencesMixin:
         dialog.present()
         password_entry.grab_focus()
 
-    def on_master_password_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType,
+    def on_master_password_response(self, dialog: DialogWindow, response: Gtk.ResponseType,
                                     password_entry: Gtk.PasswordEntry, confirm_entry: Gtk.PasswordEntry,
                                     error: Gtk.Label) -> None:
         if response != Gtk.ResponseType.OK:
