@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from typing import ClassVar
-from weakref import ref
 
 import gi
 
@@ -29,11 +28,10 @@ class DialogWindow(Gtk.Window):
         self._actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self._actions.set_halign(Gtk.Align.END)
         outer.append(self._actions)
-        window_ref = ref(self)
-
         def key_pressed(controller, keyval, keycode, state):
-            window = window_ref()
-            return window._on_key_pressed(controller, keyval, keycode, state) if window else False
+            window = controller.get_widget()
+            return (window._on_key_pressed(controller, keyval, keycode, state)
+                    if isinstance(window, DialogWindow) else False)
 
         keys = Gtk.EventControllerKey()
         keys.connect("key-pressed", key_pressed)
@@ -45,11 +43,9 @@ class DialogWindow(Gtk.Window):
 
     def add_button(self, label: str, response: int) -> Gtk.Button:
         button = Gtk.Button(label=label)
-        window_ref = ref(self)
-
-        def clicked(_button):
-            window = window_ref()
-            if window is not None:
+        def clicked(source):
+            window = source.get_root()
+            if isinstance(window, DialogWindow):
                 window.response(response)
 
         button.connect("clicked", clicked)

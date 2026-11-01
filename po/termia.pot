@@ -194,15 +194,15 @@ msgid ""
 "{missing}"
 msgstr ""
 
-#: src/termia/i18n.py:update_dependencies_automatic
-msgid ""
-"Updating Termia will automatically install these dependencies:\n"
-"{dependencies}"
-msgstr ""
-
 #: src/termia/i18n.py:update_dependency_warning
 msgid ""
 "Missing dependencies:\n"
+"{dependencies}"
+msgstr ""
+
+#: src/termia/i18n.py:update_dependencies_automatic
+msgid ""
+"Updating Termia will automatically install these dependencies:\n"
 "{dependencies}"
 msgstr ""
 
@@ -2408,6 +2408,10 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_name_required
 msgid "A snippet name is required."
+msgstr ""
+
+#: src/termia/i18n.py:snippet_name_too_long
+msgid "Use 30 characters or fewer for the snippet name."
 msgstr ""
 
 #: src/termia/i18n.py:snippet_content_required

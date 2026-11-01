@@ -2314,3 +2314,7 @@ msgstr "El repositorio local ya contiene esta actualización. Revisa e instala l
 #: src/termia/i18n.py:update_review_dependencies
 msgid "Review dependencies"
 msgstr "Revisar dependencias"
+
+#: src/termia/i18n.py:snippet_name_too_long
+msgid "Use 30 characters or fewer for the snippet name."
+msgstr "Usa un máximo de 30 caracteres para el nombre del snippet."

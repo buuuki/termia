@@ -141,7 +141,8 @@ older client's behavior explicitly; a fix in the target release cannot
 retroactively change the updater performing that first upgrade.
 
 The development Git updater reviews target requirements and offers assisted
-APT installation or copyable manual commands before application. Required
+APT installation before application. Unsupported cases retain release installation
+instructions rather than a manual-dependency button or generated commands. Required
 packages and runtime bindings must pass verification before the checkout
 changes. The .deb adapter uses native APT dependency resolution and verifies
 the installed version and requirements afterwards. Unsupported systems keep

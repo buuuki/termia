@@ -1,515 +1,153 @@
 # Termia
 
-Termia es un gestor de conexiones SSH y espacios de trabajo de terminal para
-escritorios Linux. Reúne sesiones locales y remotas, espacios de trabajo
-guardados y transferencias de archivos con Python, GTK 4 y terminales VTE.
+Termia es un gestor de conexiones SSH y espacios de trabajo de terminal para Linux.
+Reúne sesiones locales y remotas, espacios de trabajo guardados y transferencias
+de archivos en terminales VTE integrados con GTK 4.
 
-Documentación principal en inglés: [../README.md](../README.md)
-Documentación en catalán: [README.ca.md](README.ca.md)
+![Termia con varias sesiones SSH integradas](../img/termia-screenshot.png)
 
-## Funciones
+[English](../README.md) · [Català](README.ca.md) · [Hoja de ruta](../ROADMAP.md)
 
-- Abre **Ayuda** desde el menú principal para consultar secciones por función
-  y tus atajos actuales, incluidos los desactivados. Los menús del terminal
-  muestran los atajos de Copiar, Pegar y Pestaña → Nueva pestaña. Al pegar desde
-  el menú, el foco vuelve al terminal o panel pulsado.
-- Ejecutar conexiones SSH y terminales locales en terminales VTE de GTK 4 integrados.
-- Usar menús contextuales estándar de GTK para terminales, conexiones, grupos,
-  perfiles locales, espacios de trabajo y notas, con navegación por teclado.
-- Trabajar con varias pestañas, ventanas independientes y paneles de terminal
-  divididos que pueden conectarse de forma independiente a distintos servidores
-  SSH o terminales locales.
-- Acceder a las pestañas de terminal que no caben mediante la barra horizontal
-  que se oculta automáticamente o la lista de la flecha hacia abajo, actualizada
-  al abrirla. Navegar por el árbol de conexiones con el teclado y
-  desplegar grupos; arrastrar servidores entre grupos o a Sin grupo.
-- La pestaña de terminal activa tiene el fondo resaltado, sin línea azul;
-  al pasar el ratón por una pestaña inactiva, el resaltado es más suave.
-- La selección del sidebar resalta el icono y el nombre con esquinas ligeramente
-  redondeadas. En un terminal separado, Volver a acoplar a la ventana principal
-  está justo debajo de la opción de barra de estado del menú contextual del terminal.
-- Guardar diseños de división por servidor SSH o perfil de terminal local para reabrir un espacio de trabajo preparado.
-- Guardar espacios de trabajo con varias pestañas y, si se activa la opción
-  correspondiente, restaurar la sesión anterior al iniciar. La restauración
-  está desactivada por defecto.
-- Subir ficheros locales a servidores remotos con SCP desde el menú contextual del terminal o del servidor.
-- Explorar archivos remotos mediante un explorador SFTP nativo con navegación,
-  transferencias, progreso, cancelación y operaciones confirmadas.
-- Buscar versiones oficiales e instalar actualizaciones verificadas desde
-  **Acerca de**.
-- Guardar snippets de comandos reutilizables por categoría y limitarlos a
-  todos los terminales, un grupo o un servidor; previsualizar las variables
-  antes de enviarlos explícitamente al terminal seleccionado. Gestionarlos
-  desde una ventana independiente con tres columnas: categorías y contadores,
-  lista de snippets, previsualización del comando en solo lectura y búsqueda
-  global. Los terminales siguen disponibles mientras está abierta.
-  Las tarjetas de categorías mantienen su tamaño y ocupan tantas columnas
-  como quepan; pasan a otra fila si falta espacio. Usa **Volver a snippets**
-  para regresar desde la gestión de categorías. Puedes crear, renombrar,
-  duplicar y eliminar categorías por separado; al eliminar una categoría, sus
-  snippets pasan a Sin categoría.
-  Asigna un atajo opcional junto a Disponibilidad en el editor del snippet o
-  en la sección Snippets de las preferencias de teclado. Ambos editan la
-  misma asignación; se rechazan conflictos y se exige Ctrl, Alt o Super.
-  Con un terminal enfocado, el atajo abre las variables/previsualización para
-  ese panel si coincide su ámbito; confirma antes de enviar. Las copias no
-  tienen atajo. Se guardan en los ajustes locales de teclado, separados de
-  las exportaciones de conexiones; versiones anteriores pueden descartarlos
-  al guardar los ajustes de teclado.
-- Mantener los datos de conexión en local con almacenamiento en texto plano, ofuscado o cifrado opcional protegido por una contraseña maestra.
-- Organizar conexiones con grupos anidados, favoritos y una sección Recent sin duplicados; encontrarlas rápidamente con `Ctrl+F`. Arrastrar un servidor guardado a un grupo, subgrupo o Sin grupo para moverlo.
-- Guardar host, usuario, puerto, contraseña, ruta de clave privada y un comando opcional al iniciar cada conexión SSH.
-- Importar y exportar configuración de Termia, incluidas conexiones básicas, grupos anidados y credenciales disponibles de YAML de Asbru.
-  Al importar un archivo cifrado de Termia se solicita su contraseña; cancelar
-  o introducir una contraseña incorrecta no modifica los datos actuales. El
-  perfil mantiene su propia protección de almacenamiento y contraseña.
-- Consultar el historial de conexiones y estadísticas locales opcionales de uso, incluidas duraciones y servidores más usados.
-- Crear notas personales o asociadas a servidores, organizarlas por categorías y editarlas mientras se usan los terminales. Las notas tienen guardado automático e importación/exportación independientes.
-- Personalizar colores y fuente del terminal, prompts locales, atajos, confirmaciones, barras de estado de sesión, idioma y comportamiento seguro con varias instancias.
+## Características
 
-## Novedades de 0.6.0-beta.4
+- Terminales locales y SSH con pestañas, paneles divididos y ventanas separables.
+- Conexiones organizadas en grupos anidados, favoritos y conexiones recientes.
+- Espacios de trabajo guardados y restauración opcional de la sesión anterior.
+- Subidas SCP y explorador SFTP nativo con transferencias y cancelación.
+- Snippets reutilizables con categorías, ámbito, variables y atajos;
+  los comandos se previsualizan antes de enviarlos.
+- Notas personales o asociadas a servidores, con guardado automático,
+  categorías e importación/exportación.
+- Datos de conexión locales con cifrado opcional mediante contraseña maestra.
+- Importación/exportación de Termia e importación de conexiones desde Ásbrú YAML.
+- Historial de conexiones y complementos opcionales de Estadísticas y SFTP.
+- Apariencia y atajos configurables; interfaz en castellano, catalán e inglés.
 
-Beta.4 es una versión preliminar. Consulta
-[la revisión de la release](https://github.com/buuuki/termia/issues/386) para conocer las validaciones y limitaciones.
+## Estado de la versión
 
-- Mantener notas personales y de servidores en una ventana independiente, con
-  guardado automático, categorías por ámbito y anidadas, apariencia de texto plano,
-  números de línea nativos e importación/exportación protegidas e independientes.
-- Cambiar la contraseña maestra de conexiones y notas cifradas conservando los
-  datos. Las notas antiguas reciben una copia protegida antes de migrar su esquema.
-- Gestionar snippets en una ventana independiente, asignarles atajos por ámbito
-  y configurar un comando opcional al iniciar una conexión SSH.
-- Reconectar un panel SSH o local fallido conservando los demás splits.
-- Solicitar la contraseña al importar conexiones cifradas y conservar la
-  protección del perfil actual; limitar el tamaño y el trabajo de cifrado.
-- Activar o desactivar Estadísticas/SFTP sin borrar sus datos.
-- Usar la barra de pestañas desplazable aprobada, menús nativos y árboles de
-  conexiones/notas, con mejoras de foco, arrastre privado y restauración de títulos.
-- Mejorar el cierre de terminales/transferencias, liberar widgets de terminal/SFTP
-  retirados y detectar dependencias ausentes al actualizar desde el código.
-- Reproducir pruebas visuales, SSH/SFTP/SCP, memoria y ciclos de vida en el
-  laboratorio Docker publicado; observar sudo/polkit reales en su VM opcional.
+La candidata es **0.6.1-beta**, todavía sin publicar. La última versión publicada
+es [0.6.0-beta.4](https://github.com/buuuki/termia/releases/tag/v0.6.0-beta.4).
+Los cambios están en [CHANGELOG.md](../CHANGELOG.md); la preparación se sigue en
+[#452](https://github.com/buuuki/termia/issues/452).
 
-Beta.4 añade GtkSourceView 5. Haz una copia del perfil antes de actualizar y
-consulta [la compatibilidad de almacenamiento](STORAGE_MIGRATIONS.md) antes de
-volver a una versión anterior.
+## Instalar en Ubuntu 24.04 o posterior
 
-## Explorador SFTP
-
-Abre **Explorar archivos (SFTP)** desde el menú de un servidor o panel SSH.
-Instala las dependencias con `scripts/termia-setup.sh install`. La ventana
-independiente permite navegar, subir archivos/carpetas, descargar, crear
-carpetas, renombrar y borrar archivos o carpetas vacías. Los tamaños de la lista
-se muestran en B, kB, MB o GB según corresponda. Un clic selecciona un archivo
-o carpeta para descargarlo; un doble clic en una carpeta o Enter con su fila
-enfocada permite abrirla. No sobrescribe destinos
-existentes ni transfiere enlaces simbólicos. Cancelar desconecta SFTP; reconecta
-con **Reconectar SFTP** para continuar. **Desconectar** cierra la ventana y su
-conexión SFTP independiente, incluso durante una transferencia. Cancelar,
-Reconectar SFTP y Desconectar aparecen a la derecha. Pueden quedar archivos
-remotos o carpetas incompletos. La ventana SFTP puede quedar detrás del terminal;
-sus diálogos solo bloquean SFTP. El progreso muestra el archivo actual en MB,
-la velocidad reciente en MB/s y los archivos completados. El tooltip muestra
-los MB acumulados de la operación, sin repetirlos en la barra. La velocidad
-usa una ventana reciente de tres segundos que continúa entre archivos. El total
-de una carpeta es desconocido porque la transferencia comienza sin recorrer
-antes todo el árbol.
-Una diferencia inesperada en el número de bytes hace fallar la transferencia;
-esto no verifica sumas de comprobación. Cancelar un diálogo de renombrado o
-borrado conserva la conexión. Cerrar la pestaña propietaria o Termia solicita
-la limpieza de SFTP sin bloquear GTK. La reconexión espera a que terminen el
-trabajador y la tarea de cierre. Si la limpieza sigue pendiente tras 30 segundos,
-se indica que no se ha verificado; ese plazo no garantiza que termine una llamada
-bloqueada del sistema operativo o de red.
-
-Paramiko usa el host y la identidad guardados, SSH-agent/claves predeterminadas
-o contraseña en memoria. Confirma las huellas desconocidas; se rechazan claves
-modificadas. No se incluyen alias de OpenSSH, ProxyJump, proveedores de claves
-hardware ni MFA interactivo. SCP sigue disponible. Esta función se introdujo
-en beta.2 y sigue disponible en beta.4.
-
-## Descargar e instalar (Ubuntu 24.04+)
-
-En el actualizador en desarrollo, **Detalles de la instalación** muestra las
-fases y la salida de APT/Git en tiempo real en un registro desplegable de solo
-lectura, con un máximo de 65.536 caracteres. Selecciona texto y pulsa **Ctrl+C**
-para copiarlo; una nueva
-comprobación lo vacía. Se ocultan las URL, pero puede contener rutas locales o
-nombres de repositorios: revísalo antes de compartirlo. No se guarda
-automáticamente. La contraseña de administrador se introduce únicamente en el
-diálogo de autenticación de Ubuntu.
-
-### Actualizaciones
-
-El actualizador en desarrollo muestra si Termia procede de Git, de un paquete
-Debian (.deb) o de un método no compatible. Descarga y verifica el destino
-antes de mostrar requisitos nuevos/modificados y dependencias que faltan.
-El mensaje superior nombra las dependencias que faltan o enumera los requisitos
-cuando todos están disponibles. Instala las dependencias ausentes con Termia y
-autorización administrativa nativa. No hay botón de instalación manual.
-Si faltan requisitos o la instalación asistida no está disponible, la actualización
-sigue pendiente; utiliza las instrucciones de instalación de la release en ese caso.
-**La nueva versión de Termia no arrancará si faltan dependencias obligatorias.**
-
-Si Termia sigue abierto después de actualizar su repositorio Git limpio a la
-versión seleccionada, el actualizador ofrece **Revisar dependencias**. Instala
-las dependencias desde Termia. Tras verificarlas, cierra todas las
-ventanas de Termia y vuelve a abrir la aplicación.
-
-Las actualizaciones asistidas Git y Debian solicitan una sola autorización
-administrativa para renovar APT e instalar. Un helper fijo de la versión de Termia
-que está ejecutándose realiza ambos pasos sin recoger ni guardar contraseñas.
-Para Debian verifica y prepara una copia privada del paquete antes de renovar APT.
-Si falla algún repositorio o cancelas la autorización, la instalación se detiene;
-se necesita acceso a los repositorios aunque el paquete ya esté descargado.
-
-La comprobación asistida admite actualmente Debian/Ubuntu con APT/dpkg. En Git,
-se verifican los paquetes y módulos necesarios antes de modificar el código.
-En .deb, APT resuelve las dependencias con el paquete y después se verifican
-la versión instalada y los requisitos. No se ejecuta como root el instalador
-descargado. Cerrar la ventana antes de aplicar descarta la actualización
-preparada. Los paquetes instalados antes de un
-fallo posterior no se eliminan automáticamente.
-
-Los actualizadores publicados hasta beta.4 conservan el comportamiento anterior.
-En esas actualizaciones desde código, ejecuta
-`bash scripts/termia-setup.sh install` después de actualizar y antes de reiniciar.
-El cliente beta.4 no descubre automáticamente betas de otro PATCH: utiliza las
-instrucciones de la release para esa primera transición.
-
-Abre **Acerca de → Buscar actualizaciones** para consultar las versiones oficiales.
-El actualizador en desarrollo mantiene las betas/RC en la misma serie
-MAJOR.MINOR, incluidos parches y entregas estables;
-las instalaciones estables solo ofrecen versiones estables más recientes.
-La consulta es manual y no envía configuración ni datos SSH.
-
-**Descargar y revisar** prepara el destino antes de preguntar cómo continuar. Para Debian se verifica el SHA-256
-publicado por GitHub y la identidad y versión del paquete. Se necesitan APT,
-`pkexec` y un agente de autenticación del escritorio. Si faltan herramientas o
-metadatos verificables, se ofrece el enlace oficial para instalar manualmente.
-
-Git solo permite actualizar un repositorio limpio, exactamente en la etiqueta de
-su versión actual, en `main` o separado de una rama en dicha etiqueta. Descarga
-la etiqueta oficial seleccionada y solo avanza sin crear merges. Las ramas de
-desarrollo, cambios locales e historiales divergentes requieren actualización
-manual. Con el actualizador publicado en beta.4, ejecuta después
-`scripts/termia-setup.sh install` para verificar las dependencias antes de reiniciar.
-
-Para actualizar **desde el código beta.3 a beta.4**, ejecuta ese setup **antes
-de reiniciar**: beta.4 incorpora GtkSourceView 5 (`gir1.2-gtksource-5` en Ubuntu).
-El actualizador solo cambia el código, no instala paquetes del sistema. Tras
-avanzar el repositorio, se ejecuta el setup recién descargado de beta.4, con la
-detección de dependencias corregida. Si faltan dependencias, en Ubuntu utiliza
-`sudo apt-get update` y `sudo apt-get install` y puede pedir tu contraseña de
-sudo. Si ya están disponibles, no necesita sudo. El lanzador se instala en tu
-directorio de datos de usuario. Los paquetes Debian resuelven las dependencias
-mediante APT.
-
-El [informe de compatibilidad Docker](DOCKER_UPGRADE_VALIDATION.md) describe las
-pruebas en Ubuntu 24.04 y 26.04 y sus limitaciones.
-
-Se pueden cancelar las consultas y descargas. Una vez iniciada la instalación,
-hay que dejarla terminar; cerrar Termia no detiene al gestor de paquetes.
-Esta función está incluida en el paquete beta.2 y no actualiza revisiones
-exclusivamente Debian de la misma versión de la aplicación.
-
-### Paquete publicado
-
-Descarga [termia_0.6.0.beta.4-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.0-beta.4/termia_0.6.0.beta.4-1_all.deb)
-e instálalo con APT, que resolverá las dependencias necesarias:
+La siguiente descarga estará disponible cuando se publique 0.6.1-beta:
+[termia_0.6.1.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.1-beta/termia_0.6.1.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.0.beta.4-1_all.deb
+sudo apt install ./termia_0.6.1.beta-1_all.deb
 ```
 
-## Descargar e instalar desde el código fuente
+APT instala las dependencias necesarias, el lanzador y el icono.
+Abre **Termia** desde el menú de aplicaciones o ejecuta `termia`.
 
-Clona el repositorio completo:
+### Ejecutar desde el código fuente
 
 ```bash
 git clone https://github.com/buuuki/termia.git
 cd termia
-chmod +x scripts/termia-setup.sh
-```
-
-Instala las dependencias que falten, comprueba el resultado y añade el lanzador
-local de Termia con:
-
-```bash
 ./scripts/termia-setup.sh install
-```
-
-Antes de modificar el sistema, el script muestra las acciones previstas y espera
-10 segundos para poder cancelarlo. En Debian, Ubuntu y Linux Mint, si `apt-get
-update` falla porque algún repositorio configurado no está disponible, pregunta
-antes de usar la caché APT disponible para instalar los paquetes necesarios.
-Si todas las dependencias de ejecución ya están disponibles, no ejecuta el gestor
-de paquetes del sistema.
-
-El instalador verifica el resultado después de instalar. También intenta instalar JetBrains Mono para la fuente por defecto del terminal; las instalaciones nuevas usan la paleta Polaris y el color blanco del prompt por defecto, y si no está disponible, Termia usa Ubuntu Mono o Monospace como fallback.
-
-Si la comprobación indica que falta el namespace `Vte 3.91`, falta el paquete de
-introspección GTK 4 VTE. En Debian, Ubuntu o Linux Mint el paquete necesario es
-`gir1.2-vte-3.91`.
-El editor de Notas también necesita GtkSourceView 5 (`gir1.2-gtksource-5`
-en Debian, Ubuntu y Linux Mint); el instalador y el paquete Debian lo instalan.
-
-También puedes ejecutar Termia directamente desde el repositorio:
-
-```bash
 python3 run_termia.py
 ```
 
-Para probar una rama sin cerrar la ventana habitual de Termia, inicia un perfil
-aislado. Utiliza una configuración, estado y bloqueo de escritura propios:
+El script comprueba las dependencias e instala un lanzador para el usuario.
+Admite los gestores de paquetes de Debian/Ubuntu/Linux Mint, Fedora y Arch.
+Reinicia Termia solo cuando termine correctamente; repítelo si mueves el checkout.
+Usa `./scripts/termia-setup.sh uninstall` para quitar el lanzador conservando los datos.
+
+### Requisitos
+
+Python 3.10+, GTK 4, GtkSourceView 5 y el namespace VTE para GTK 4 `Vte 3.91`.
+Las comprobaciones se realizan en laboratorios Ubuntu 24.04 y 26.04.
+Ubuntu 22.04 y anteriores no proporcionan el VTE para GTK 4 necesario.
+
+## Actualizaciones
+
+**Beta.3 y beta.4 requieren una primera actualización manual a 0.6.1-beta.**
+Haz una copia del perfil, cierra Termia e instala el nuevo .deb sobre el anterior.
+No hace falta desinstalar primero.
+
+Para un checkout limpio, una vez publicada la etiqueta:
 
 ```bash
+git status --short
+git fetch https://github.com/buuuki/termia.git tag v0.6.1-beta
+git merge --ff-only v0.6.1-beta
+./scripts/termia-setup.sh install
+```
+
+Detente si el primer comando muestra cambios locales o el merge no puede avanzar
+mediante fast-forward. Completa el setup antes de reiniciar y consulta la
+[compatibilidad de datos](STORAGE_MIGRATIONS.md) antes de volver a una versión anterior.
+
+Desde 0.6.1-beta, **Acerca de → Buscar actualizaciones** detecta versiones de
+mantenimiento beta/RC posteriores de la misma serie MAJOR.MINOR, incluidas
+versiones estables posteriores. Las instalaciones estables solo reciben estables.
+
+El actualizador verifica las descargas y revisa las dependencias antes de instalar.
+Las instalaciones compatibles desde Git o Debian pueden usar la autorización
+administrativa nativa para los paquetes necesarios. Git requiere un checkout limpio
+de una release en main o en su etiqueta; las ramas de desarrollo y cambios locales
+se actualizan manualmente. En casos no compatibles se conserva el enlace oficial.
+Deja terminar la instalación y reinicia Termia; no actualiza revisiones exclusivamente
+Debian de la misma versión de la aplicación.
+
+## Ayuda y pruebas aisladas
+
+Abre **Ayuda** desde el menú principal para consultar los flujos de uso y tus atajos.
+Los complementos opcionales de Estadísticas y SFTP se gestionan desde
+**Complementos**; los cambios requieren reiniciar y desactivarlos conserva sus datos.
+
+Para probar un checkout con un perfil vacío o una copia separada de tus datos:
+
+```bash
+./scripts/run_test_instance.sh --fresh
 ./scripts/run_test_instance.sh --copy-current-config review
 ```
 
-El lanzador de pruebas filtra únicamente el mensaje repetitivo de depuración de
-GTK `snapshot symbolic icon using mask`. Se conservan los demás mensajes de
-depuración, avisos y errores; stderr permanece intacto.
+El primer comando crea un perfil vacío; el segundo copia los datos actuales.
+Ninguno modifica tu perfil habitual. Consulta
+[CONTRIBUTING.md](../CONTRIBUTING.md) para las comprobaciones y el diagnóstico.
 
-La opción copia las conexiones, notas, ajustes, historial de conexiones,
-estadísticas y el registro de depuración en el perfil de pruebas. Los cambios
-realizados allí nunca modifican los datos habituales de Termia.
+## Datos y seguridad
 
-Termia puede migrar archivos de configuración compatibles de versiones
-anteriores. Una vez que una versión más reciente guarda una configuración, una
-versión anterior podría dejar de poder abrirla. Haz una copia de seguridad de
-la configuración antes de actualizar o alternar versiones, y utiliza perfiles
-aislados al probar ramas de desarrollo.
+La configuración y las notas se guardan en `~/.config/termia/`; el historial y
+las estadísticas, en `~/.local/state/termia/`. Haz una copia antes de actualizar.
+Las credenciales y exportaciones pueden contener contraseñas legibles si no se
+cifran. La ofuscación no es cifrado y una contraseña maestra perdida no se recupera.
 
-Para obtener información de diagnóstico sobre pestañas, splits, procesos VTE,
-avisos de GTK, bloqueos de almacenamiento, cifrado y arranque en modo solo
-lectura, activa `Modo debug` en las preferencias Generales. También puedes
-activarlo para una ejecución con:
+Los comandos de inicio SSH se ejecutan cada vez que se inicia su conexión;
+trátalos como configuración ejecutable. Termia no registra los comandos del
+terminal, su salida ni las pulsaciones. Consulta [SECURITY.md](../SECURITY.md)
+para el almacenamiento, las exportaciones y las actualizaciones.
 
-```bash
-python3 run_termia.py --debug
-```
-
-La información se guarda en `~/.local/state/termia/debug.log`. Cuando es posible,
-las señales fatales también escriben allí las pilas Python activas. No registra
-contraseñas, comandos, contenido del terminal, destinos de conexión ni rutas
-privadas.
-
-Elimina únicamente el lanzador de escritorio, sin borrar ajustes, conexiones,
-estadísticas ni paquetes del sistema:
-
-```bash
-./scripts/termia-setup.sh uninstall
-```
+El explorador SFTP admite los datos guardados, claves del agente SSH o por defecto
+y contraseñas; no admite alias de OpenSSH, ProxyJump, proveedores de claves físicas
+ni MFA interactivo. No sobrescribe destinos existentes y puede dejar archivos o
+directorios parciales al cancelar o fallar una transferencia. Verifica las huellas
+de hosts desconocidos antes de aceptarlas; los cambios de clave se rechazan.
 
 ## Crear un paquete Debian
 
-En Debian, Ubuntu 24.04 o posterior, o una distribución compatible, instala las
-dependencias de compilación y crea el paquete desde la raíz del repositorio.
-Ubuntu 22.04 y anteriores no incluyen el entorno VTE para GTK 4 necesario:
+Desde la raíz del repositorio en Ubuntu 24.04+ o un sistema Debian compatible:
 
 ```bash
 sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El fichero `termia_0.6.0~beta.4-1_all.deb` se crea en el directorio padre.
-Los paquetes compilados localmente son independientes de los archivos oficiales enlazados arriba.
+El paquete se crea en el directorio padre como `termia_0.6.1~beta-1_all.deb`.
+Es independiente del archivo oficial de la release.
 
-Instálalo con:
+## Documentación
 
-```bash
-sudo apt install ../termia_0.6.0~beta.4-1_all.deb
-```
-
-El paquete Debian instala el comando `termia`, el lanzador de escritorio y el
-icono; APT instala las dependencias de GTK, VTE, GtkSourceView, Python, SSH y cifrado.
-
-## Notas de uso
-
-Las cabeceras de grupos se despliegan o contraen sin quedar seleccionadas;
-la selección conserva su forma compacta alrededor del icono y nombre del objeto.
-Los menús contextuales permiten navegar con flechas, Enter y Escape. La
-[guía del laboratorio Docker](../tools/docker-lab/README.es.md) explica cómo
-reproducir el escritorio por navegador y las pruebas de diseño, memoria y
-ciclos de vida en otro PC.
-
-El menú `Configuración` se divide en `General`, `Terminal`, `Atajos` y `Seguridad`:
-
-- `General` controla tema, idioma, confirmaciones, comportamiento al iniciar, recuperación de la sesión anterior, atajos de contraseña y barra de estado de sesión, que empieza oculta por defecto. La recuperación de la sesión anterior está desactivada por defecto.
-- `Terminal` combina la apariencia del VTE y el prompt local con una única vista previa. Los cambios de apariencia se aplican a terminales abiertos; los del prompt solo a nuevos Bash locales o duplicaciones y nunca inyectan comandos en shells locales activos ni sesiones SSH. Las instalaciones nuevas empiezan con JetBrains Mono y la paleta Polaris.
-- Edita un servidor SSH guardado para definir `Ejecutar comando al iniciar`. Termia lo ejecuta después de autenticar y mantiene abierta la sesión con una shell interactiva cuando termina. Se ejecuta cada vez que se inicia una sesión con ese perfil, incluidas las duplicadas o restauradas.
-- `Atajos` muestra los atajos activos y permite grabar combinaciones para acciones como filtrar servidores, mostrar la lista, abrir un terminal local, navegar por el foco, copiar, pegar, cambiar de pestaña, ampliar la fuente y enviar la contraseña guardada. `Ctrl+F` enfoca el filtro, `Ctrl+Shift+B` muestra u oculta la lista, `F10` abre o cierra el menú principal, `Ctrl+Shift+T` abre un terminal local y `Ctrl+F6`/`Ctrl+Shift+F6` recorre las regiones principales. Las demás teclas de función sin modificadores se envían a las aplicaciones del terminal.
-- `Ctrl+Izquierda`, `Ctrl+Derecha`, `Ctrl+Arriba` y `Ctrl+Abajo` mueven el
-  foco entre paneles divididos según su dirección visual. Pueden reasignarse o
-  desactivarse si una aplicación del terminal necesita esas combinaciones.
-- `Seguridad` controla el modo de almacenamiento de conexiones. En perfiles
-  cifrados también permite cambiar la contraseña maestra; Termia verifica la
-  contraseña actual y vuelve a cifrar las conexiones y las notas.
-- `Gestionar notas` abre una ventana reutilizable que no bloquea los terminales.
-  Las notas se guardan como texto plano; caracteres como `**`, `#` y las comillas
-  invertidas se conservan literalmente. La barra solo ofrece controles de
-  apariencia: fuente, tamaño, color del texto, fondo y un conmutador persistente
-  para la numeración de líneas, activada por defecto. El editor usa el fondo
-  `#001B33` y texto blanco; el margen estándar de GtkSourceView muestra números
-  `#0065BF` sobre `#000D1A`.
-  Estos ajustes y la visibilidad de la barra se guardan como preferencias
-  independientes del contenido. Notas utiliza una ventana independiente y no modal,
-  con los mismos controles GTK que la principal. Al abrirla se restaura y se presenta;
-  puedes llevar cualquiera de las dos al frente. Cerrar Notas oculta su espacio para
-  reutilizarlo; salir de Termia guarda los cambios y cierra ambas ventanas.
-  Las pestañas usan el cuaderno GTK estándar para seleccionarlas, reordenarlas y acceder a las que no caben.
-  El botón junto a las pestañas muestra u oculta la barra compacta;
-  la lista, con texto más pequeño, mantiene su posición. En modo solo lectura,
-  estos ajustes duran esa sesión.
-  Las notas se guardan automáticamente en un fichero separado; también hay un
-  botón **Guardar**. Al abrir la ventana se crea un borrador nuevo o se recupera
-  uno pendiente del mismo contexto; en modo solo lectura no se crean borradores.
-  Los borradores vacíos no se almacenan; al cerrar uno con cambios sin guardar,
-  se pregunta qué hacer. El botón **Cerrar pestaña** del editor sigue el mismo
-  diálogo de guardar, descartar o seguir editando que la X de la pestaña. La
-  lista organiza las notas en un árbol: **Personales** contiene las categorías
-  personales y **Servidores** contiene los servidores con notas o categorías
-  guardadas, además del servidor en el que se está trabajando. Al desplegarlo
-  aparecen sus notas y categorías; las categorías vacías guardadas también se
-  muestran. Un borrador «Nota nueva» aparece temporalmente bajo «Sin categoría»
-  y solo se guarda al escribir contenido. Las
-  categorías pertenecen a su ámbito y pueden repetirse entre notas personales
-  y servidores. Arrastra una categoría sobre otra para anidarla, o sobre la
-  cabecera Personales/del servidor para devolverla a la raíz. No se permiten
-  movimientos entre ámbitos ni sobre sí misma o un descendiente. Los nombres
-  siguen siendo únicos dentro de cada ámbito. Renombrar conserva los subgrupos;
-  eliminar una categoría sube sus subgrupos un nivel y pasa sus propias notas a
-  «Sin categoría». Duplicar copia solo sus propias notas, junto al original.
-  Sobre el buscador, **Expandir todos los grupos de notas** y **Contraer todos
-  los grupos de notas** actúan sobre todo el árbol sin alterar notas ni editores.
-  La búsqueda muestra temporalmente los resultados y sus grupos antecesores;
-  al limpiarla se recupera el estado de expansión elegido.
-  «Sin categoría» aparece si hay notas sin categoría o un
-  borrador activo en ese ámbito. La lista tiene búsqueda global
-  y filas compactas; el diálogo compacto de Propiedades muestra, entre otros
-  datos, la categoría guardada de cada nota. Un clic selecciona la nota y un doble clic
-  la abre en una pestaña de edición. La pestaña seleccionada tiene un fondo
-  resaltado que se adapta al tema y conserva la línea azul de GTK. El área de
-  escritura tiene un fondo y un borde diferenciados que se adaptan al tema.
-  Los menús contextuales de notas y
-  Propiedades comparten la superficie y el estilo del menú principal de Termia.
-  Los controles
-  a la izquierda de la barra de título ocultan la lista y abren el menú de
-  importación/exportación. El botón de nueva nota permanece en la barra
-  superior junto al control de la lista, incluso al ocultarla. Sobre el
-  buscador, un botón crea categorías. Con clic derecho sobre una
-  categoría puedes renombrarla, duplicarla con sus notas o eliminarla. El
-  gestor del menú principal muestra el árbol completo y ofrece importar y
-  exportar. Abrir notas desde un servidor expande ese servidor y oculta
-  importar/exportar. Las pestañas muestran un icono de ámbito y, al
-  pasar el cursor por una nota de servidor, su nombre. Los títulos nuevos se
-  numeran por ámbito (Nota nueva, Nota nueva 2, etc.). Las notas pueden ser
-  personales o asociarse a un servidor. Al
-  eliminar un servidor, sus notas se conservan como personales. La importación
-  sustituye las notas tras ofrecer una copia de seguridad. Antes de exportar,
-  Termia explica que elegir «Sin contraseña» crea un fichero de texto plano
-  legible, mientras que elegir una contraseña cifra la exportación y esa
-  contraseña es necesaria para importarla. Haz clic derecho en una nota para
-  editarla, renombrarla, clonarla, ver sus propiedades o eliminarla. Al clonar,
-  se guarda una copia con identidad nueva y el mismo contenido y asociaciones.
-- Usa el botón con forma de terminal de la barra lateral para crear un nuevo perfil de terminal local; aparece en la lista como una conexión y se abre en una terminal incrustada al activarlo.
-- Si otra instancia de Termia ya tiene el bloqueo de escritura, una nueva ventana se abre en modo solo lectura, muestra un indicador en la cabecera, desactiva las acciones que escriben y sigue permitiendo navegar, conectar y exportar la configuración.
-- Si activas la restauración de la sesión anterior en `General`, al cerrar
-  Termia se guarda la disposición de las pestañas y paneles abiertos. Al volver
-  a iniciarlo, después de desbloquear las conexiones cifradas si procede,
-  pregunta si quieres restaurarlos. Esta opción está desactivada por defecto;
-  no guarda la salida de los terminales, procesos, PID, contraseñas ni rutas
-  privadas.
-- Haz clic derecho en un terminal o en un servidor para subir ficheros a `/tmp/.termia/` en el host destino.
-- El menú principal incluye historial de conexiones, ubicaciones de ficheros de datos y acciones de importación/exportación.
-
-Cada panel de terminal puede mostrar su propia barra de estado con el nombre de
-la conexión, estado, PID, tiempo transcurrido, un botón compacto para ocultarla
-y la acción de desconexión. Activa o desactiva las barras desde `General`; si
-quieres cambiar la de un panel, haz clic derecho dentro de él y selecciona
-`Mostrar barra de estado de la sesión` u `Ocultar barra de estado de la sesión`.
-Las acciones direccionales de `Dividir` duplican el panel seleccionado; usa
-`Abrir conexión en panel dividido…` para elegir una dirección y otro servidor
-SSH o terminal local guardado. Una pestaña admite hasta 16 paneles. Salir o
-desconectar uno no detiene los demás. Un panel que espera una reconexión muestra
-automáticamente su barra de estado con la acción `Cerrar`, mientras que Intro
-sigue permitiendo reintentar la conexión.
-Termia permite hasta 40 pestañas abiertas en total, incluidas las que están en
-ventanas independientes. Los espacios de trabajo y grupos de servidores que no
-quepan en la capacidad disponible se rechazan antes de iniciar sus procesos.
-Usa el botón de guardar de la barra lateral para almacenar las pestañas y
-divisiones actuales como un espacio de trabajo con nombre. Los espacios de
-trabajo aparecen en la barra lateral con un icono de cuadrícula; desde su menú
-contextual puedes abrirlos, actualizarlos, renombrarlos, duplicarlos o
-eliminarlos. Un espacio de trabajo puede contener hasta 32 paneles entre todas
-sus pestañas y se abre sin una confirmación adicional. Los espacios de trabajo
-también restauran los títulos personalizados y el directorio de trabajo de cada
-panel local. No se capturan directorios SSH; si un directorio local ya no está
-disponible, se usa el directorio inicial normal del perfil.
-
-## Entorno probado
-
-Termia se ha probado en Ubuntu 24.04.4 LTS con kernel Linux
-6.8.0-117-generic, GNOME 46.0 y Wayland.
-
-## Base de ejecución compatible
-
-Termia requiere Python 3.10 o posterior, GTK 4.0/GDK 4.0, GtkSourceView 5
-(`GtkSource 5`) y el espacio de introspección de VTE para GTK 4, `Vte 3.91`.
-El entorno actual de validación
-proporciona GTK 4.14.5 y VTE 0.76.0. Las comprobaciones de compatibilidad para
-métodos GTK opcionales como `set_handle_menubar_accel` y
-`set_show_separators` son intencionadas, porque las distribuciones pueden
-exponer distintos niveles de API de GTK.
-
-## Datos del usuario y seguridad
-
-Las conexiones, preferencias y estadísticas se guardan fuera del repositorio:
-
-```text
-~/.config/termia/connections.json   # grupos, servidores y snippets guardados si están disponibles
-~/.config/termia/notes.json        # notas y categorías
-~/.config/termia/settings.json      # configuración de la app y del terminal
-~/.config/termia/instance.lock      # bloqueo de escritor único para el modo multiinstancia
-~/.local/state/termia/connections-history.jsonl
-~/.local/state/termia/statistics.json
-~/.local/state/termia/last-session.json  # solo si se activa la restauración
-```
-
-Las contraseñas guardadas y los comandos de inicio por servidor se almacenan en `connections.json`; el fichero puede mantenerse en texto plano, ofuscado o cifrado con una contraseña maestra desde las preferencias de Seguridad. Un comando de inicio se ejecuta automáticamente cada vez que se inicia una sesión con su perfil SSH. Trátalo como configuración ejecutable, no incluyas secretos y protege las exportaciones, que pueden contener comandos y contraseñas. Cuando el cifrado está activado, Termia pide la contraseña maestra al arrancar y no puede recuperar los datos de conexión si esa contraseña se pierde. En Seguridad puedes cambiarla; Termia verifica la contraseña actual y vuelve a cifrar las conexiones y las notas. Las notas se guardan por separado en `notes.json` y siguen el mismo modo de protección local; no se incluyen al importar o exportar conexiones. Las notas exportadas sin contraseña son JSON sin cifrar y legible; al elegir una contraseña para la exportación, el fichero se cifra y esa contraseña es necesaria para importarlo. Esta contraseña de exportación es independiente de la contraseña maestra. Trata los ficheros exportados como datos sensibles. Las contraseñas importadas desde Ásbrú se guardan igual cuando el YAML de origen las expone en el campo `pass`.
-Los ficheros de conexiones exportados también pueden contener credenciales.
-Los contadores locales agregados se guardan por separado en `statistics.json` y vienen desactivados por defecto. Desde **Complementos** en el menú principal puedes activar o desactivar Estadísticas y el explorador SFTP. Los cambios se aplican al reiniciar Termia; desactivar un complemento oculta sus acciones, pero no borra sus datos. Cuando hay varios procesos de Termia abiertos al mismo tiempo, solo la instancia que mantiene `instance.lock` escribe conexiones, ajustes o estadísticas; las siguientes permanecen en solo lectura para evitar corromper esos ficheros.
-El historial se guarda aparte en `connections-history.jsonl`; la sección Recent
-de la barra lateral se obtiene de las conexiones SSH correctas de ese historial.
-
-Termia no registra un historial de los comandos escritos o ejecutados en los
-terminales, su salida, el contenido del portapapeles ni contadores de comandos
-o pulsaciones. Los snippets y comandos de inicio por servidor son configuración
-que el usuario guarda en `connections.json`, no un historial de comandos
-ejecutados. Cuando están activadas, las estadísticas solo registran
-conexiones agregadas, uso por servidor y duración de sesiones; se escriben como
-máximo cada 30 segundos, al finalizar sesiones y al cerrar Termia. Consulta
-[../SECURITY.md](../SECURITY.md).
-
-Python puede crear directorios `__pycache__/` junto a los módulos ejecutados.
-Solo contienen bytecode generado, están excluidos por `.gitignore` y no deben
-subirse a GitHub.
-
-## Estructura
-
-```text
-run_termia.py                     Lanzador para ejecutar desde el repositorio
-src/termia/app.py             Composición principal y ventana
-src/termia/                Módulos de almacenamiento, diálogos, pestañas, terminales y utilidades
-src/termia/assets/            Imágenes utilizadas por Termia
-scripts/                      Instalación y desinstalación
-docs/                         Documentación adicional
-LICENSE                       Licencia GPL-3.0-o-posterior
-```
+- [Contribución y validación](../CONTRIBUTING.md)
+- [Laboratorios Docker](../tools/docker-lab/README.es.md)
+- [Versionado](VERSIONING.md) y [migraciones de datos](STORAGE_MIGRATIONS.md)
+- [Arquitectura](architecture/overview.md)
 
 ## Licencia
 
-Termia se publica bajo la [GNU General Public License v3.0 o posterior](../LICENSE). Las dependencias se instalan
-por separado mediante el gestor de paquetes del sistema. Consulta
-[../THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+[GNU GPL v3.0 o posterior](../LICENSE). El sistema operativo proporciona las
+dependencias por separado; consulta los [avisos de terceros](../THIRD_PARTY_NOTICES.md).

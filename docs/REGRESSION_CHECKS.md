@@ -80,6 +80,9 @@ Long measurements and release-platform checks remain separate validation work.
   the same visible root/menu model, and restore parent focus. Right/Left must
   enter/leave submenus without breaking later outside-click dismissal.
   Tab/server/group context menus retain GTK's native pointing arrow.
+- Open main-menu Import/Export, return to its parent with Left or the pointer,
+  then click outside once: both menus must close. Repeat after reopening and
+  verify submenu actions close both menus before presenting their dialogs.
 
 - Repeatedly open and close local/SSH tabs and split panes. Retired sessions,
   native VTE widgets, pages and tab labels must become
@@ -182,10 +185,12 @@ Long measurements and release-platform checks remain separate validation work.
   is selected. Category rows must remain uniformly sized, including long names
   and empty categories. Selecting a category filters the list; typing in search
   must search across all categories, even after a category was selected.
-  Its default size is 795 × 560 logical px (25% narrower than the previous
-  1060 px width); all three columns and their actions must fit in every UI
+  Its default size is 900 × 560 logical px; all three columns and their actions must fit in every UI
   language. Manual resizing and returning from the editor must preserve the
   user's chosen manager size.
+  New and edited snippet names allow at most 30 characters. Preserve longer
+  stored names on loading and opening the editor; require shortening before
+  saving. Long preview titles must wrap within the column without widening the window.
   Search spans the top alone; Manage categories appears above the category
   column, Create snippet above the list, and a modest Command preview label
   above the read-only preview. The selection hint appears beneath the list
@@ -355,6 +360,9 @@ Long measurements and release-platform checks remain separate validation work.
 - `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
 - `Ctrl+Shift+B` must toggle the server sidebar without changing the `Ctrl+F` behavior.
 - `F10` must open and close the main menu. Other unmodified function keys, including `F6`, must still reach the embedded terminal.
+- Main-menu Import/Export must open beside the main menu, retain its existing
+  actions and write guards, and support pointer and keyboard navigation. Closing
+  and reopening the menu must leave that submenu closed.
 - `Ctrl+Shift+T` must open a new local terminal without changing the existing tab-navigation shortcuts.
 - `Ctrl+F6` and `Ctrl+Shift+F6` must cycle focus forward and backward through the visible server list, tab bar, and active terminal, skipping unavailable regions.
 - In horizontal, vertical, nested, and 2x2 split layouts, use the configured
@@ -907,8 +915,8 @@ Long measurements and release-platform checks remain separate validation work.
   reject development updates and automatic prereleases for stable users.
 
 
-- Open About and use Check for updates. Keep the existing logo, version,
-  license, issue link and native dialog appearance. Check keyboard access,
+- Open About and use Check for updates. Verify the bundled PNG logo has a
+  transparent exterior; preserve version, license, issue link and native dialog appearance. Check keyboard access,
   light/dark themes, and English/Spanish/Catalan. Terminal and split geometry
   must remain unchanged; opening About alone must not query the network.
 - Run from the development branch: no downgrade to beta.1 is offered and the
@@ -1275,8 +1283,9 @@ Only a clean main/tag checkout exactly at the selected official release qualifie
 never relax checks for local edits or development branches. Verify assisted
 installation and manual rechecks with a missing GtkSourceView binding. Update
 windows must allow access to Termia's terminals during manual installation.
-Copy commands using normal selection/copy shortcuts, finish verification, then
-close all Termia windows and reopen. Content and confirmation windows use
+Copy diagnostic text using normal selection/copy shortcuts, finish verification,
+then close all Termia windows and reopen. No manual-dependency button or generated
+command list should appear. Content and confirmation windows use
 `configure_dialog_content`; action rows use the shared action-area helper.
 
 

@@ -320,6 +320,7 @@ def snippets_from_payload(
                 item.get("category", "") if isinstance(item.get("category", ""), str) else "",
                 item.get("scope", "global") if isinstance(item.get("scope", "global"), str) else "global",
                 item.get("target_id", "") if isinstance(item.get("target_id", ""), str) else "",
+                allow_legacy_name=True,
             )
             if (groups is not None and servers is not None
                     and not snippet_target_exists(snippet, groups, servers)):

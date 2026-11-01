@@ -1088,6 +1088,12 @@ class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
 
+    def do_startup(self) -> None:
+        Gtk.Application.do_startup(self)
+        settings = Gtk.Settings.get_default()
+        if settings is not None:
+            settings.set_property("gtk-label-select-on-focus", False)
+
     def do_activate(self) -> None:
         window = self.props.active_window
         created = window is None

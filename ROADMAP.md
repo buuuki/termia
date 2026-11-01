@@ -9,6 +9,11 @@ and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
 ## Current Target: 0.6.1-beta maintenance
 
+Release preparation: [#452](https://github.com/buuuki/termia/issues/452).
+Candidate versions are `0.6.1-beta` / `0.6.1~beta-1`. Local package installation
+and upgrade checks have passed; publication remains pending.
+Beta.4 remains the latest published release.
+
 Termia remains in beta. Maintenance may increment PATCH while retaining beta
 status; new feature deliveries increment MINOR. New beta deliveries use
 `-beta` without a serial; new development branches use `X.Y.Z-dev` without
@@ -30,8 +35,8 @@ maintenance, test, diagnostic and policy changes reviewed after beta.4.
 New issue branches start from it and their PRs target it.
 
 The previous branch, `release/0.6.0-beta.5-dev`, is retained as historical
-state, not an active development target. No application/package version has
-changed and no release has been published by this branch transition.
+state, not an active development target. That branch transition itself did
+not change versions or publish a release.
 `main` remains the latest published release line.
 
 Review pending development before allocating it to maintenance or a future
