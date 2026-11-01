@@ -200,8 +200,9 @@ class GitInstaller:
                 or self.git("rev-parse", "HEAD", cancel=cancel) != self.original_head):
             raise UpdateError("update_checkout_blocked")
         required = source_requirements(self.git("show", f"{prepared}:debian/control", cancel=cancel))
-        previous = source_requirements(self.git("show", f"{self.original_head}:debian/control", cancel=cancel))
-        return dependency_plan(required, previous, self.run, cancel)
+        # Keep rejecting invalid metadata from the running release.
+        source_requirements(self.git("show", f"{self.original_head}:debian/control", cancel=cancel))
+        return dependency_plan(required, self.run, cancel)
 
     def install_dependencies(self, plan: DependencyPlan) -> None:
         def run(args, cancel, **options):
@@ -260,9 +261,10 @@ class DebianInstaller:
                     for field in fields]
         previous = [self.run(["/usr/bin/dpkg-query", "-W", f"-f=${{{field}}}", "termia"], cancel)
                     for field in fields]
-        return dependency_plan(parse_requirements(", ".join(v for v in required if v)),
-                               parse_requirements(", ".join(v for v in previous if v)),
-                               self.run, cancel)
+        required = parse_requirements(", ".join(v for v in required if v))
+        # Keep rejecting invalid metadata from the installed release.
+        parse_requirements(", ".join(v for v in previous if v))
+        return dependency_plan(required, self.run, cancel)
 
     def install_dependencies(self, plan: DependencyPlan) -> None:
         # The verified .deb and its requirements are installed in one APT transaction.

@@ -43,8 +43,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
             source_requirements("Package: termia\nDepends: pkg\n\nPackage: termia\nDepends: pkg")
 
     @patch("termia.update_dependencies.Path.is_file", return_value=True)
-    def test_new_already_installed_and_missing_requirements_are_distinct(self, _exists):
-        before = parse_requirements("python3 (>= 3.10)")
+    def test_installed_and_missing_requirements_are_distinct(self, _exists):
         after = parse_requirements("python3 (>= 3.10), gir1.2-gtksource-5")
         def run(args, cancel, **kwargs):
             if args[0].endswith("dpkg-query"):
@@ -54,14 +53,12 @@ Depends: ${misc:Depends}, ${python3:Depends},
             if args[0].endswith("dpkg"):
                 return ""
             return json.dumps(["gir1.2-gtksource-5"])
-        plan = dependency_plan(after, before, run, Event())
-        self.assertEqual(plan.added, ("gir1.2-gtksource-5",))
+        plan = dependency_plan(after, run, Event())
         self.assertEqual(plan.packages, ("gir1.2-gtksource-5",))
         self.assertEqual(plan.required, after)
         self.assertEqual(plan.missing, ("gir1.2-gtksource-5",))
-        ready = dependency_plan(after, before, lambda args, *a: "installed\t5.0" if
+        ready = dependency_plan(after, lambda args, *a: "installed\t5.0" if
                                 args[0].endswith("dpkg-query") else "[]", Event())
-        self.assertEqual(ready.added, plan.added)
         self.assertFalse(ready.missing)
         self.assertFalse(ready.packages)
 
@@ -72,7 +69,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
             if args[-1] == "first":
                 raise UpdateError("update_install_failed")
             return "installed\t1.0"
-        self.assertFalse(dependency_plan(required, (), run, Event()).missing)
+        self.assertFalse(dependency_plan(required, run, Event()).missing)
 
     def test_runtime_probe_is_fresh_isolated_and_does_not_import_target(self):
         run = Mock(return_value='["gir1.2-gtksource-5"]')
@@ -84,7 +81,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
             runtime_missing(("gir1.2-gtksource-5",), run, Event())
 
     def test_assisted_uses_one_authorization_for_the_fixed_helper(self):
-        plan = DependencyPlan((), (), ("pkg",), ("pkg",), True)
+        plan = DependencyPlan((), ("pkg",), ("pkg",), True)
         run = Mock()
         install_dependencies(plan, run)
         run.assert_called_once()
@@ -103,19 +100,19 @@ Depends: ${misc:Depends}, ${python3:Depends},
     def test_missing_platform_and_cancel_never_report_ready(self):
         with patch("termia.update_dependencies.Path.is_file", return_value=False), self.assertRaisesRegex(
                 UpdateError, "update_dependency_platform"):
-            dependency_plan(parse_requirements("pkg"), (), Mock(), Event())
+            dependency_plan(parse_requirements("pkg"), Mock(), Event())
         cancel = Event()
         cancel.set()
         with patch("termia.update_dependencies.Path.is_file", return_value=True), self.assertRaisesRegex(
                 UpdateError, "update_cancelled"):
-            dependency_plan(parse_requirements("pkg"), (), Mock(), cancel)
+            dependency_plan(parse_requirements("pkg"), Mock(), cancel)
 
 
 class UpdateTransactionTests(unittest.TestCase):
     def setUp(self):
-        self.missing = DependencyPlan(((Requirement("pkg"),),), ("pkg",), ("pkg",),
+        self.missing = DependencyPlan(((Requirement("pkg"),),), ("pkg",),
                                       ("pkg",), True)
-        self.ready = DependencyPlan(self.missing.required, ("pkg",), (), (), True)
+        self.ready = DependencyPlan(self.missing.required, (), (), True)
         self.adapter = Mock(kind="update_source")
         self.adapter.prepare.side_effect = lambda release, path, cancel: path
         self.adapter.dependencies.return_value = self.missing
@@ -177,7 +174,7 @@ class UpdateTransactionTests(unittest.TestCase):
     def test_plan_changes_require_new_confirmation(self):
         plan = self.prepare()
         self.adapter.dependencies.return_value = DependencyPlan(
-            self.ready.required, (), ("other",), ("other",), True)
+            self.ready.required, ("other",), ("other",), True)
         self.controller.install(plan, assisted=True)
         self.finish()
         self.adapter.install_dependencies.assert_not_called()
@@ -225,6 +222,26 @@ class UpdateTransactionTests(unittest.TestCase):
 
 
 class AdapterDependencyTests(unittest.TestCase):
+    def test_git_rejects_invalid_previous_metadata_before_planning(self):
+        adapter = GitInstaller(Path("/synthetic"), "0.6.0-beta.4")
+        adapter.original_head = "old"
+        adapter.availability = Mock(return_value="")
+        adapter.git = Mock(side_effect=[
+            "old", "Package: termia\nDepends: pkg", "Package: termia\nDepends: bad-",
+        ])
+        with (patch("termia.update_installers.dependency_plan") as planner,
+              self.assertRaisesRegex(UpdateError, "update_requirements_unavailable")):
+            adapter.dependencies("target", Event())
+        planner.assert_not_called()
+
+    def test_debian_rejects_invalid_previous_metadata_before_planning(self):
+        run = Mock(side_effect=["basepkg", "newpkg", "basepkg", "bad-"])
+        adapter = DebianInstaller(Mock(), run)
+        with (patch("termia.update_installers.dependency_plan") as planner,
+              self.assertRaisesRegex(UpdateError, "update_requirements_unavailable")):
+            adapter.dependencies("synthetic.deb", Event())
+        planner.assert_not_called()
+
     def test_git_metadata_is_read_from_prepared_commit_not_worktree(self):
         adapter = GitInstaller(Path("/synthetic"), "0.6.0-beta.4")
         adapter.original_head = "old"

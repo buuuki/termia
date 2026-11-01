@@ -30,7 +30,6 @@ class Requirement:
 @dataclass(frozen=True)
 class DependencyPlan:
     required: tuple[tuple[Requirement, ...], ...]
-    added: tuple[str, ...]
     missing: tuple[str, ...]
     packages: tuple[str, ...]
     assisted_available: bool
@@ -147,10 +146,9 @@ def runtime_missing(packages: tuple[str, ...], run, cancel: Event) -> tuple[str,
         raise UpdateError("update_dependency_check_failed") from None
 
 
-def dependency_plan(required, previous, run, cancel: Event) -> DependencyPlan:
+def dependency_plan(required, run, cancel: Event) -> DependencyPlan:
     if not all(Path(p).is_file() for p in ("/usr/bin/dpkg-query", "/usr/bin/dpkg", "/usr/bin/apt-get")):
         raise UpdateError("update_dependency_platform")
-    added = tuple(requirement_label(g) for g in required if g not in previous)
     missing = []
     packages = []
     chosen = []
@@ -166,7 +164,7 @@ def dependency_plan(required, previous, run, cancel: Event) -> DependencyPlan:
         if package not in packages:
             packages.append(package)
             missing.append(package)
-    return DependencyPlan(required, added, tuple(missing), tuple(packages),
+    return DependencyPlan(required, tuple(missing), tuple(packages),
                           Path("/usr/bin/pkexec").is_file())
 
 

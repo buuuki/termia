@@ -4,6 +4,9 @@
 
 ### Refactored
 
+- Remove unread dependency comparison state while preserving previous-release
+  metadata validation and active update checks (`#447`).
+
 - Remove two unread test bindings while preserving Notes tab setup and
   split-pane parent initialization (`#445`).
 
