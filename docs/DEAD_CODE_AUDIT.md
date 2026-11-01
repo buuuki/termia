@@ -189,6 +189,74 @@ belongs to planned `0.6.1-beta`; no version metadata changes are included.
 The requester confirmed the isolated manual checks before publication. Other
 audit candidates remain outside this batch.
 
+## Follow-up #443: unused manual dependency commands
+
+Baseline: `66fcf93` on `0.6.1-dev`. Remove `DependencyPlan.manual_commands`,
+its command-text assembly and the otherwise unused `shlex` import. Only tests
+read this field; the current view displays dependency status and installation
+output, while assisted installation uses the existing package tuple and fixed
+APT helper. Adapt all positional fixtures and replace obsolete text assertions
+with checks of required/missing requirements and packages.
+
+Keep `added`, previous-version metadata reads and validation, parsing, runtime
+probes, cancellation, plan-expiry checks and installation safeguards unchanged.
+Removing the previous metadata chain would change failure behavior and requires
+separate review. Correct the stale manual-command instructions in the regression
+checklist to match the current UI; no controls or translations change.
+
+Validate the remaining five plan fields and production AST against the baseline,
+then run updater tests, the full regression checks, Ruff and Bandit. Preserve
+coverage of missing/ready dependencies, alternatives, cancellation, expired
+plans, helper authorization and unchanged source after installation failures.
+No real package installation, Docker/VM workload or personal profile is needed.
+This is planned `0.6.1-beta` maintenance without a version metadata change.
+
+Focused command:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_update_dependencies tests.test_updates tests.test_update_view
+```
+
+Local validation passed: 69 focused tests and the final 796-test private sandbox
+suite, with no skips; compilation, setup-script syntax, translation sync (615
+messages) and whitespace checks passed. Ruff on modified Python and Bandit on
+the production module report no findings. The production AST differs only by
+the approved field, import, text-assembly and constructor-argument removals.
+The requester approved renewing the dependency module's reviewed context.
+The registry changes only that context digest; the review rationale is recorded
+in `STATIC_ANALYSIS_REVIEWS.md`. All 17 finding entries and checker rules remain.
+The renewed global comparison passed: Ruff 54 existing findings and Bandit 157
+existing findings (143 low, 14 medium), with no new findings, 17 reviewed and
+zero blocking cases. All 16 static-analysis regression tests passed after the
+registry update. No production code changed after the successful full suite.
+
+Coverage includes all 74 production Python modules: 76.03% lines and 63.59%
+branches globally; `update_dependencies.py` has 91.54% line and 86.00% branch
+coverage. Per-module reports and missing paths remain in ignored
+`htmlcov/443-manual-commands/`. Error branches and the unexecuted `__main__.py`
+remain gaps; this does not verify native or privileged installations. Existing
+GTK/VTE deprecation and GLib source-ID warnings occurred without test failures.
+
+The requester expanded #443 to include the noisy test-console diagnostic.
+The launcher filters only the GTK DEBUG symbolic-mask message on stdout using
+line-buffered output; stderr and all other diagnostics remain unchanged.
+Process substitution preserves the application's exec/PID and exit status.
+`tests.test_test_instance` checks suppression, other debug domains/messages,
+warning/error levels, stderr and both successful and failed application exits
+with a synthetic executable. A native GLib probe confirms the diagnostic is
+written to stdout in the supported prefix format. The launcher syntax check,
+new test, Ruff and renewed global comparison pass. Localized launcher
+documentation is updated. Final full-suite logs remain local; test fixtures
+clean their synthetic profiles.
+
+For isolated manual review use `./scripts/run_test_instance.sh --fresh` and open
+About and the updater. Check that the existing controls remain usable and no
+manual-installation action appears. A fresh source-development checkout may
+block installation; opening this window does not validate missing-dependency
+or privileged installation paths. The synthetic automated cases cover those
+controller/view paths without installing packages. The requester confirmed the
+isolated manual review, including the console filter, before publication.
+
 ## Original audit #367
 
 The batches below retain their original baseline, validation evidence and

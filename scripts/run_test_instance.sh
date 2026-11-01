@@ -68,6 +68,7 @@ echo "State:   ${DATA_ROOT}/state/termia"
 echo "Fresh:   $([ "${FRESH_INSTANCE}" -eq 1 ] && echo enabled || echo disabled)"
 echo "Copy:    current Termia data $([ "${COPY_CURRENT_CONFIG}" -eq 1 ] && echo enabled || echo disabled)"
 echo "Debug:   PYTHONFAULTHANDLER=1 PYTHONUNBUFFERED=1 G_ENABLE_DIAGNOSTIC=1 G_MESSAGES_DEBUG=all"
+echo "Console: repeated GTK symbolic-mask DEBUG messages are filtered"
 echo "PID:     $$"
 
 cd "${REPO_ROOT}"
@@ -78,4 +79,5 @@ exec env \
     PYTHONUNBUFFERED="${PYTHONUNBUFFERED:-1}" \
     G_ENABLE_DIAGNOSTIC="${G_ENABLE_DIAGNOSTIC:-1}" \
     G_MESSAGES_DEBUG="${G_MESSAGES_DEBUG:-all}" \
-    python3 run_termia.py
+    python3 run_termia.py > >(grep --line-buffered -v -E \
+        '^(\([^)]*\):[[:space:]]*)?Gtk-DEBUG:[[:space:]]+([0-9:.]+:[[:space:]]+)?snapshot symbolic icon using mask$')

@@ -267,6 +267,10 @@ perfil aïllat. Utilitza una configuració, estat i bloqueig d'escriptura propis
 ./scripts/run_test_instance.sh --copy-current-config review
 ```
 
+El llançador de proves filtra únicament el missatge repetitiu de depuració de
+GTK `snapshot symbolic icon using mask`. Es conserven els altres missatges de
+depuració, avisos i errors; stderr es manté intacte.
+
 L'opció copia les connexions, notes, ajustos, historial de connexions,
 estadístiques i el registre de depuració al perfil de proves. Els canvis fets
 allà mai no modifiquen les dades habituals de Termia.

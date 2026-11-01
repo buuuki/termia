@@ -51,6 +51,18 @@ authorizes merging, package installation or release publication. Do not accept
 fresh scan results without explicit review, weaken analyzer rules, or rewrite safe operations
 only to evade detection. Preserve the comparison base and legacy-history rules.
 
+## Context review for #443
+
+The requester approved renewing the `update_dependencies.py` context after
+removing the unused `manual_commands` field, its display-text construction
+and `shlex` import. Comparison against `66fcf93` confirms that package selection,
+parsing, cancellation, runtime probes, helper execution and installation guards
+are unchanged. Updater tests also retain authorization, expired-plan and failed
+installation coverage. Update only this module's context digest; preserve all
+17 finding entries, their fingerprints, reasons and references, the pinned
+analyzer versions and checker rules. This renews the reviewed context without
+accepting new findings or authorizing a release.
+
 ## Validation
 
 ```bash
