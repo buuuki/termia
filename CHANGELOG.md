@@ -4,6 +4,9 @@
 
 ### Refactored
 
+- Remove 23 obsolete translation keys and their English, Spanish and Catalan
+  catalog messages while preserving dynamically selected labels (`#449`).
+
 - Remove unread dependency comparison state while preserving previous-release
   metadata validation and active update checks (`#447`).
 

@@ -185,7 +185,7 @@ class UpdateViewTests(unittest.TestCase):
                 child = child.get_next_sibling()
 
         visit(self.dialog)
-        self.assertNotIn(self.dialog.t("update_manual"), buttons)
+        self.assertNotIn("Install dependencies manually", buttons)
         self.factory.return_value.install.assert_not_called()
 
     def test_debian_plan_omits_apt_transaction_message(self):
