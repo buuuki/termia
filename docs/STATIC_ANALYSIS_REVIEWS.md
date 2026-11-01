@@ -63,6 +63,19 @@ installation coverage. Update only this module's context digest; preserve all
 analyzer versions and checker rules. This renews the reviewed context without
 accepting new findings or authorizing a release.
 
+## Context review for #447
+
+The requester approved removing unread dependency comparison state and renewing
+only the `update_dependencies.py` and `update_installers.py` context digests.
+Against `9b9377d`, the field, its calculation and planner parameter are removed;
+both adapters still parse previous-release metadata, in the same order, and
+reject invalid input before planning. Target parsing, checkout identity guards,
+package selection, cancellation, runtime probes, helper arguments and privilege
+boundaries remain unchanged. Adapter regression tests cover invalid previous
+metadata. All 17 finding entries, reasons, fingerprints, other context digests,
+analyzer versions and rules are retained. This does not authorize installation
+or release publication.
+
 ## Validation
 
 ```bash

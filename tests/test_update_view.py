@@ -137,7 +137,7 @@ class UpdateViewTests(unittest.TestCase):
 
     def dependency_update(self, kind="update_source", missing=True, assisted=True):
         requirement = ((Requirement("gir1.2-gtksource-5"),),)
-        plan = DependencyPlan(requirement, ("gir1.2-gtksource-5",),
+        plan = DependencyPlan(requirement,
                               ("gir1.2-gtksource-5",) if missing else (),
                               ("gir1.2-gtksource-5",) if missing else (),
                               assisted)

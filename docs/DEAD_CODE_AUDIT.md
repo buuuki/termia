@@ -16,6 +16,41 @@ The conclusions below apply to in-repository consumers. Accidental reexports
 are not a supported external plugin API. File locations refer to the baseline;
 line numbers change as cleanup progresses.
 
+## Follow-up #447: unread dependency comparison state
+
+Baseline: `9b9377d`. Remove `DependencyPlan.added`, its calculation and the
+planner's previous-requirements input. No production consumer reads the field;
+adapt the existing model fixtures without changing active plan fields.
+Both adapters retain parsing of previous-release metadata: invalid metadata
+must still block preparation before invoking the planner. Target requirements,
+checkout identity, alternatives/version checks, cancellation, runtime probes,
+confirmation and installation safeguards remain unchanged. This is internal
+maintenance for the planned `0.6.1-beta`, with no UI or stored-data change.
+
+Focused validation:
+
+```bash
+python3 scripts/run_sandbox_tests.py tests.test_update_dependencies tests.test_updates tests.test_update_view tests.test_static_analysis
+```
+
+Validation passed: 71 focused updater tests, all 798 private-suite tests with
+no skips, Python compilation, shell syntax, 615 synchronized translations and
+whitespace checks. Ruff reports 52 existing findings and Bandit 157 (143 low,
+14 medium), with no new or blocking findings; touched Python files pass Ruff.
+All 17 reviewed entries remain unchanged. Global coverage includes all 74
+production modules: 76.03% lines and 63.59% branches. Dependency planning has
+91.41% line/86.00% branch coverage; adapters have 77.78%/67.86%. Uncovered
+integration, native and privileged paths still require separate validation.
+Reports are ignored under `htmlcov/447-dependency-state/`; logs remain local.
+The private display and bus are cleaned up by the runner.
+
+Manual inspection uses `./scripts/run_test_instance.sh --fresh`: open About,
+check for updates, and verify the existing status and controls render correctly.
+Do not install an update on the development host. This UI check cannot validate
+adapter metadata rejection; the synthetic adapter tests exercise those paths.
+The requester confirmed that the isolated updater window check passed.
+Remaining translation, session-state and GTK migration candidates are separate.
+
 ## Follow-up #437: initial cleanup
 
 The follow-up baseline is `a1085e9` on `0.6.1-dev`. Only the following two

@@ -297,7 +297,7 @@ class ControllerTests(unittest.TestCase):
     def test_application_cannot_be_cancelled_and_retains_temp_until_finished(self):
         entered, proceed = Event(), Event()
         adapter = Mock(kind="update_source")
-        adapter.dependencies.return_value = DependencyPlan((), (), (), (), True)
+        adapter.dependencies.return_value = DependencyPlan((), (), (), True)
         adapter.prepare.side_effect = lambda r, directory, c: directory
         def apply(path, release):
             self.assertTrue(path.exists())
