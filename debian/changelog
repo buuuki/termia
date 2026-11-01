@@ -1,3 +1,10 @@
+termia (0.6.1~beta-1) unstable; urgency=medium
+
+  * Prepare beta maintenance: dependency-aware updates, GTK modernization,
+    snippet keyboard fixes and focused cleanup (#452).
+
+ -- Jordi Pons <jpons.git@proton.me>  Sun, 01 Nov 2026 14:00:00 +0100
+
 termia (0.6.0~beta.4-1) unstable; urgency=medium
 
   * Prepare Termia 0.6.0-beta.4 with saved Notes, scoped and nested categories,

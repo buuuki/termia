@@ -50,7 +50,7 @@ a standard GTK control does not justify crossing those boundaries.
 
 | # | Surface | Standard GTK control | Source and Termia-owned behavior |
 |---:|---|---|---|
-| — | Update dependency review | Selectable `Gtk.Label`, `Gtk.ScrolledWindow`, native `Gtk.Button`, `Gtk.Expander` and read-only `Gtk.TextView` | `src/termia/update_view.py`; installation type, requirement data, assisted/manual actions, manual commands in the copyable log, bounded live output and recheck dispatch; shared content/action insets without nested padding |
+| — | Update dependency review | Selectable `Gtk.Label`, `Gtk.ScrolledWindow`, native `Gtk.Button`, `Gtk.Expander` and read-only `Gtk.TextView` | `src/termia/update_view.py`; installation type, requirements, assisted installation, recheck dispatch and bounded copyable diagnostics; shared content/action insets without nested padding |
 | — | Main menu | `Gtk.PopoverMenu` with `Gio.Menu` and native nested submenus | `src/termia/main_menu.py`; actions and submenu reset |
 | — | Notes Import/Export menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; scope and write guards |
 | 1 | Terminal context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/terminal_menus.py`; scoped actions |

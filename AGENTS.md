@@ -35,8 +35,6 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 - Follow `docs/VERSIONING.md` for explicitly approved PATCH maintenance,
   including beta deliveries. Use a release-development branch from the
   published baseline when isolation from pending features is required.
-  Work on one issue/branch at a time, keep one open PR, and obtain approval
-  before changing the release target or branch arrangement.
 - Keep each change focused and avoid unrelated refactors or cleanup.
 - Do not commit local user configuration, exported credentials, generated caches, or unrelated cleanup.
 - Update the README and localized documentation when documented user-facing behavior changes.
@@ -96,23 +94,16 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Validation
 
-For code changes, use the narrowest relevant checks while iterating. At
-minimum, syntax-check touched Python files and run the affected test module
-without verbose output. For example, for a tabs-only change:
+For code changes, syntax-check touched Python files and run the affected test
+module. For example, for a tabs-only change:
 
 ```bash
 python3 -m py_compile src/termia/tabs.py
 PYTHONPATH=src python3 -m unittest tests.test_tabs
 ```
 
-Rerun only a failing module or case with `-v` when detailed output helps.
-
 After a code implementation is stable and before opening the PR, run the
-complete non-verbose checks from `docs/REGRESSION_CHECKS.md` once. Do not repeat
-an unchanged successful command. If later edits can affect its coverage, rerun
-the relevant check; rerun the full suite only when the later change warrants
-it. For documentation-only changes, validate the affected documentation,
-links, and documented commands without running unrelated application tests.
+complete checks from `docs/REGRESSION_CHECKS.md`.
 Inside a restricted Codex sandbox, run unittest through
 `python3 scripts/run_sandbox_tests.py` so GTK and SFTP tests use a private
 display and session bus with local TCP sockets. Pass module names after the

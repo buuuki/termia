@@ -2,187 +2,65 @@
 
 ## Unreleased
 
-### Refactored
+## 0.6.1-beta - Pending publication
 
-- Replace deprecated GTK dialogs and text selectors with modal windows and native
-  dropdowns; retain existing actions, saved values and lifecycle guards, and remove
-  unused internal arguments and Notes test bindings (`#335`).
-- Remove 23 obsolete translation keys and their English, Spanish and Catalan
-  catalog messages while preserving dynamically selected labels (`#449`).
+Maintenance since `0.6.0-beta.4`; this remains a prerelease.
 
-- Remove unread dependency comparison state while preserving previous-release
-  metadata validation and active update checks (`#447`).
+### Changed
 
-- Remove two unread test bindings while preserving Notes tab setup and
-  split-pane parent initialization (`#445`).
-
-- Remove unused manual dependency-command text from update plans while
-  preserving dependency checks and assisted installation (`#443`).
-
-- Remove two unread snippet category-button state fields while preserving
-  the existing buttons, signal handling and category persistence (`#441`).
-
-- Stop computing the obsolete flat sidebar rows; keep native-tree ordering,
-  expansion and search covered through the active GTK model (`#439`).
-
-- Remove an unused Notes storage-mode helper and an unread sidebar projection
-  attribute while preserving active storage and native-tree behavior (`#437`).
-
-- Simplify equivalent dictionary, factory, condition and context-manager
-  expressions in application code, tests and laboratory tools; preserve
-  command strings and retain search joins with stricter input behavior (`#421`).
+- Open main-menu Import/Export as a native side submenu with its pointing
+  arrow (`#452`).
+- Keep selectable labels unselected when focused, preserving manual text
+  selection and keyboard navigation throughout Termia; remove the obsolete
+  About dialog text-selection override (`#452`).
+- Fit Data Locations to its contents without scrolling, with monospaced paths
+  and top-aligned row labels and status (`#452`).
+- Widen snippet management, bound its preview layout and limit newly saved names
+  to 30 characters while preserving existing longer names (`#452`).
+- Simplify the English, Spanish and Catalan READMEs, retaining the screenshot
+  and essential installation and security guidance (`#452`).
+- Review update dependencies before applying Git or Debian updates, with one
+  native authorization for APT refresh/installation, verified package staging,
+  runtime checks, cancellation and recovery of an already-updated clean checkout
+  (`#428`). Published beta.4 clients require a manual first transition.
+- Simplify updater status and dependency actions, retain selectable bounded live
+  installation output, and use **Update Termia** as the final action (`#428`).
+- Replace 27 deprecated GTK dialogs and 13 text selectors with modal windows and
+  native dropdowns; preserve actions, stored values and lifecycle handling. Match
+  the Notes workspace background to its surrounding window (`#335`).
+- Remove confirmed unused Notes/sidebar/snippet/updater state, obsolete projection
+  calculations, 23 translation keys and unread test bindings. Simplify reviewed
+  expressions while retaining active callbacks and stored-data behavior
+  (`#421`, `#437`, `#439`, `#441`, `#443`, `#445`, `#447`, `#449`).
+- Keep individually reviewed low Bandit findings visible and tied to exact
+  occurrences and validated context; retain blocking checks for new findings
+  (`#428`).
 
 ### Fixed
 
 - Dismiss the main menu with one outside click after leaving Import/Export,
   preserving submenu keyboard navigation (`#452`).
-
 - Keep shared dialog buttons and Escape working when GTK recreates their Python
   window wrapper, including on Ubuntu 26 (`#452`).
+- Advance snippet selection/variables to preview with Enter, then send the
+  explicitly confirmed command once (`#433`).
+- Filter repetitive GTK symbolic-mask debug messages in the isolated launcher,
+  preserving other diagnostics, process identity and exit status (`#443`).
+- Stabilize native Notes drag tests and callback fixtures without hiding
+  warnings or weakening checks (`#413`, `#417`).
 
-- Filter repetitive GTK symbolic-mask debug output in the test launcher while
-  retaining other diagnostics, application PID and exit status (`#443`).
+### Development and validation
 
-- Let Enter advance snippet selection and variables to the preview, then
-  explicitly send the previewed command once using the focused GTK action (`#433`).
-
-### Added
-
-- Show a bounded, read-only live installation log with copy support and
-  administrator authentication kept outside Termia (`#428`).
-
-- Add an explicitly unvalidated Docker preview of beta.3 upgrade paths for
-  review of the proposed dependency-aware updater (`#428`).
-
-- Include English, Spanish and Catalan desktop language support and native
-  Mozilla Firefox in the Ubuntu 26 GNOME laboratory image (`#430`).
-
-- Persist the GTK laboratory launcher and dock setup in the optional image,
-  and document resuming an existing desktop and rebuilding it from Git (`#430`).
-
-- Add an optional synthetic updater trial image to the GNOME laboratory, with
-  the existing compact GTK 4 controls for #428 and native desktop authorization;
-  integration validation remains required (`#430`).
-
-- Add a pinned Ubuntu 26.04 Docker base and experimental GNOME Wayland/RDP
-  desktop with synthetic credentials, a GFX-capable Remmina profile, scoped
-  teardown and input/reconstruction checks; full acceptance remains pending (`#430`).
-
-- Provide the experimental GNOME RDP server with the FUSE device required by
-  clipboard negotiation so ordinary clients do not abort the server (`#430`).
-
-- Add isolated Wayland terminal churn diagnostics alongside existing X11 modes,
-  verify the active graphical backend and document memory validation (`#419`).
-
-- Validate release asset names, approved checksums, package metadata and download
-  instructions before publication; document the beta.5 development cycle.
-
-### Changed
-
-- Widen snippet management, bound its preview layout and limit newly saved names
-  to 30 characters while preserving existing longer names (`#452`).
-
-- Open main-menu Import/Export as a native side submenu with its pointing
-  arrow (`#452`).
-- Fit Data Locations to its contents without scrolling, with monospaced paths
-  and top-aligned row labels and status (`#452`).
-
-- Keep selectable labels unselected when focused, preserving manual text
-  selection and keyboard navigation throughout Termia; remove the obsolete
-  About dialog text-selection override (`#452`).
-
-- Let the Notes editor workspace use the surrounding window background (`#335`).
-
-- Keep individually reviewed low Bandit findings visible while binding their
-  acceptance to exact occurrences and validated source context; preserve
-  blocking checks for new findings and invalid review evidence (`#428`).
-
-- Remove the manual dependency action from the update window, name missing
-  or fully available requirements, and explain automatic dependency installation
-  when available. Use Update Termia for the final action, preserving verification
-  and explicit confirmation before installation (#428).
-
-- Accept the GNOME Docker laboratory as a baseline for testing Termia, keeping
-  application/updater validation separate and retaining documented limits (`#430`).
-
-- Restrict GNOME updater build inputs to the required fixture scripts so the
-  retired Tkinter panel is never exported (`#430`).
-
-- Establish `0.6.1-dev` as the active maintenance base and update contributor
-  analysis commands while retaining the previous development branch (`#426`).
-
-- Clarify unnumbered beta versions and plain `X.Y.Z-dev` development branches,
-  preserving published history and requiring tooling transition checks (`#424`).
-
-- Allow PATCH maintenance during beta independently of feature development;
-  document transition gates and preserve Git/Debian asset conventions (`#422`).
-
-- Isolate per-case callbacks in tests and laboratory probes, and annotate native
-  signal metadata as class state without changing production behavior (`#417`).
-
-- Normalize imports and type annotations, preserve the RowObject re-export, and
-  make terminal-cleanup capture explicit without changing application behavior (`#415`).
-
-### Fixed
-
-- Use absolute executables in updater-preview tools, reuse the official
-  HTTPS/redirect policy for checksum-verified fixture downloads, and retain
-  trial logs in private, uniquely allocated directories (`#428`).
-
-- Separate the successful update message from installation output and clarify
-  the Spanish restart instructions (`#428`).
-
-- Arrange updater installation choices horizontally, hide the check action
-  during review and omit the Debian APT explanation (`#428`).
-
-- Enlarge installation details on first output, keep footer actions at the bottom,
-  apply compact content-button sizing and use native log selection/copy (`#428`).
-
-- Show dependency summaries and manual commands only in installation details,
-  removing the separate command-copy action (`#428`).
-
-- Keep updater installation details below dependency actions with a compact
-  default window width (`#428`).
-
-- Prepare updates directly from Download and review, show a single pending
-  dependency list and record successful preparation without startup warnings (`#428`).
-
-- Use a narrower updater window, compact content spacing and right-aligned
-  footer actions through shared dialog layout helpers (`#428`).
-
-- Make About non-modal and independent of the main window so update
-  dependency commands remain accessible in Termia terminals (`#428`).
-
-- Use one native authorization for APT refresh and installation in assisted
-  Git/Debian updates, with verified private staging of Debian packages and
-  installation blocked after a failed refresh (`#428`).
-
-- Recognize an already-updated clean source checkout, allow dependency recovery
-  without blocking terminal access, and share updater content/action insets (`#428`).
-
-- Allow native selection of updater messages and align content/actions with
-  shared dialog insets, without adding a setup-copy button or automatically
-  selecting the version text on opening (`#428`).
-
-- Show update installation type and target requirements, offer assisted or manual
-  dependency installation with copyable commands and rechecks, prevent source
-  upgrades with missing runtime dependencies, verify Debian installation outcomes,
-  and allow beta maintenance updates within the same minor series (`#428`).
-
-- Initialize the laboratory dock through the Ubuntu user session and provide
-  an English UTF-8 desktop baseline while retaining user preferences (`#430`).
-
-- Isolate laboratory trial profiles for older Termia versions using their
-  supported XDG configuration and state directories (`#430`).
-
-- Allow sandboxed GNOME image loaders to use `pivot_root` through a versioned
-  Docker seccomp profile so desktop icons and backgrounds load (`#430`).
-
-- Wait for native GTK readiness and drag lifecycle signals in the Notes category
-  pointer test, with bounded waits and timeout diagnostics (`#413`).
-
-- Correct beta.4 public download links and installation filenames to match
-  GitHub's release asset name (`#386`).
+- Prepare source/package metadata and release documentation for `0.6.1-beta`
+  (`#452`).
+- Add release-asset consistency checks and prepare the `0.6.1-dev` maintenance
+  line with unnumbered beta delivery conventions (`#422`, `#424`, `#426`).
+- Extend isolated Wayland lifecycle diagnostics and the optional Ubuntu 26
+  GNOME/RDP laboratory, language support, launchers and updater trials
+  (`#419`, `#430`). Historical fixtures do not validate this final release.
+- Harden updater laboratory inputs, executable paths, downloads and temporary
+  permissions. Keep raw runtime evidence and personal data out of Git history
+  (`#428`, `#430`).
 
 ## 0.6.0-beta.4 - 2026-10-25
 

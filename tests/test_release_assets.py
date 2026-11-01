@@ -68,6 +68,6 @@ class ReleaseAssetTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate(release, root, sha, [readme])
                 (root / "SHA256SUMS").write_bytes(original)
-                readme.write_text(readme.read_text().replace(".beta.", "~beta."))
+                readme.write_text(readme.read_text().replace(".beta", "~beta"))
                 with self.assertRaises(ValueError):
                     validate(release, root, sha, [readme])

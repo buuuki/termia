@@ -1283,8 +1283,9 @@ Only a clean main/tag checkout exactly at the selected official release qualifie
 never relax checks for local edits or development branches. Verify assisted
 installation and manual rechecks with a missing GtkSourceView binding. Update
 windows must allow access to Termia's terminals during manual installation.
-Copy commands using normal selection/copy shortcuts, finish verification, then
-close all Termia windows and reopen. Content and confirmation windows use
+Copy diagnostic text using normal selection/copy shortcuts, finish verification,
+then close all Termia windows and reopen. No manual-dependency button or generated
+command list should appear. Content and confirmation windows use
 `configure_dialog_content`; action rows use the shared action-area helper.
 
 
