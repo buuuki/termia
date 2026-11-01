@@ -43,6 +43,7 @@ Documentación en catalán: [README.ca.md](README.ca.md)
   desde una ventana independiente con tres columnas: categorías y contadores,
   lista de snippets, previsualización del comando en solo lectura y búsqueda
   global. Los terminales siguen disponibles mientras está abierta.
+  Los nombres nuevos o editados admiten hasta 30 caracteres; los antiguos más largos se conservan hasta editarlos.
   Las tarjetas de categorías mantienen su tamaño y ocupan tantas columnas
   como quepan; pasan a otra fila si falta espacio. Usa **Volver a snippets**
   para regresar desde la gestión de categorías. Puedes crear, renombrar,

@@ -43,6 +43,7 @@ Roadmap: [ROADMAP.md](ROADMAP.md)
   three-column view in an independent window with category counts, snippet
   lists, a read-only command preview, and global search. Terminals remain
   usable while the manager is open.
+  New and edited snippet names allow up to 30 characters; older longer names are preserved until edited.
   Fixed-size category tiles use as many columns as fit and wrap when space is
   limited. Use **Back to snippets** to return from category management.
   Create, rename, duplicate, and delete categories independently; deleting a

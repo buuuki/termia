@@ -35,7 +35,12 @@ from .keybindings import (
 )
 from .models import CommandSnippet
 from .snippet_presenter import SnippetPresenter
-from .snippets import SnippetError, render_snippet, snippet_variables
+from .snippets import (
+    MAX_SNIPPET_NAME_LENGTH,
+    SnippetError,
+    render_snippet,
+    snippet_variables,
+)
 from .stores import ConnectionStore, ReadOnlyStoreError
 from .ui_state import TerminalSession
 
@@ -228,7 +233,7 @@ class SnippetDialogs:
             title=self.translate("manage_snippets"),
             application=self.parent.get_application(),
         )
-        window.set_default_size(795, 560)
+        window.set_default_size(900, 560)
         stack = Gtk.Stack()
         stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         stack.set_hhomogeneous(False)
@@ -260,6 +265,7 @@ class SnippetDialogs:
         listing = Gtk.ListBox()
         listing.set_selection_mode(Gtk.SelectionMode.SINGLE)
         list_scroller = Gtk.ScrolledWindow()
+        list_scroller.set_size_request(240, -1)
         list_scroller.set_hexpand(True)
         list_scroller.set_vexpand(True)
         list_scroller.set_child(listing)
@@ -278,11 +284,17 @@ class SnippetDialogs:
         preview_title = Gtk.Label()
         preview_title.set_xalign(0)
         preview_title.set_wrap(True)
+        preview_title.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        preview_title.set_max_width_chars(30)
+        preview_title.set_lines(3)
+        preview_title.set_ellipsize(Pango.EllipsizeMode.END)
         preview_title.add_css_class("title-3")
         preview_title.set_visible(False)
         preview_meta = Gtk.Label()
         preview_meta.set_xalign(0)
         preview_meta.set_wrap(True)
+        preview_meta.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        preview_meta.set_max_width_chars(30)
         preview_meta.set_visible(False)
         preview_content_label = Gtk.Label(label=self.translate("snippet_content"))
         preview_content_label.set_xalign(0)
@@ -322,6 +334,7 @@ class SnippetDialogs:
 
         editor_page = self.page()
         name = Gtk.Entry()
+        name.set_max_length(MAX_SNIPPET_NAME_LENGTH)
         category = text_choice()
         category_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         category_row.set_halign(Gtk.Align.START)
@@ -899,7 +912,10 @@ class SnippetDialogs:
         state.shortcut.set_accelerator("" if duplicate else state.previous_shortcut)
         state.editor_error.set_visible(False)
         suffix = f" {self.translate('snippet_copy_suffix')}" if snippet and duplicate else ""
-        state.name.set_text(f"{snippet.name}{suffix}" if snippet else "")
+        display_name = f"{snippet.name}{suffix}" if snippet else ""
+        # Retain legacy names and duplicate suffixes until the user shortens them.
+        state.name.set_max_length(max(MAX_SNIPPET_NAME_LENGTH, len(display_name)))
+        state.name.set_text(display_name)
         category = snippet.category if snippet else state.category_filter or ""
         self.populate_editor_categories(state, category)
         self.hide_new_category(state)

@@ -79,6 +79,9 @@
 
 ### Changed
 
+- Widen snippet management, bound its preview layout and limit newly saved names
+  to 30 characters while preserving existing longer names (`#452`).
+
 - Open main-menu Import/Export as a native side submenu with its pointing
   arrow (`#452`).
 - Fit Data Locations to its contents without scrolling, with monospaced paths

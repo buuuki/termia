@@ -42,7 +42,9 @@ Documentació en castellà: [README.es.md](README.es.md)
   d'enviar-los explícitament al terminal seleccionat. Gestionar-los des d'una
   finestra independent amb tres columnes: categories i comptadors, llista de
   snippets, previsualització de l'ordre en només lectura i cerca global. Els
-  terminals continuen disponibles mentre és oberta. Les targetes de categoria
+  terminals continuen disponibles mentre és oberta. Els noms nous o editats
+  admeten fins a 30 caràcters; els antics més llargs es conserven fins a editar-los.
+  Les targetes de categoria
   mantenen la mida i ocupen tantes columnes com hi caben; passen a una altra
   fila si falta espai. Usa **Torna als snippets** per tornar des de la gestió
   de categories. Pots crear, canviar el nom, duplicar i suprimir categories per

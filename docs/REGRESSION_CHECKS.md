@@ -185,10 +185,12 @@ Long measurements and release-platform checks remain separate validation work.
   is selected. Category rows must remain uniformly sized, including long names
   and empty categories. Selecting a category filters the list; typing in search
   must search across all categories, even after a category was selected.
-  Its default size is 795 × 560 logical px (25% narrower than the previous
-  1060 px width); all three columns and their actions must fit in every UI
+  Its default size is 900 × 560 logical px; all three columns and their actions must fit in every UI
   language. Manual resizing and returning from the editor must preserve the
   user's chosen manager size.
+  New and edited snippet names allow at most 30 characters. Preserve longer
+  stored names on loading and opening the editor; require shortening before
+  saving. Long preview titles must wrap within the column without widening the window.
   Search spans the top alone; Manage categories appears above the category
   column, Create snippet above the list, and a modest Command preview label
   above the read-only preview. The selection hint appears beneath the list

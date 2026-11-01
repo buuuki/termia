@@ -286,7 +286,7 @@ class SnippetDialogTests(unittest.TestCase):
         self.assertTrue(all(
             tile.get_child().has_css_class("termia-snippet-category-frame") for tile in tiles
         ))
-        self.assertEqual({tile.get_child().get_size_request() for tile in tiles}, {(170, 112)})
+        self.assertEqual({tuple(tile.get_child().get_size_request()) for tile in tiles}, {(170, 112)})
         long_tile = grid.get_child_at_index(
             state.category_manage_keys.index("A very long category name that should be ellipsized")
         )
@@ -487,17 +487,17 @@ class SnippetDialogTests(unittest.TestCase):
                 try:
                     state = dialogs.show_manager()
                     self.settle_window()
-                    self.assertEqual((state.window.get_width(), state.window.get_height()), (795, 560))
+                    self.assertEqual((state.window.get_width(), state.window.get_height()), (900, 560))
                     state.listing.select_row(state.listing.get_row_at_index(0))
                     self.settle_window()
-                    self.assertEqual(state.window.get_width(), 795)
+                    self.assertEqual(state.window.get_width(), 900)
                     for widget in (state.category_scroller, state.list_scroller, state.preview_view):
                         self.assertGreater(widget.get_width(), 140)
                     for button in state.actions:
                         ok, bounds = button.compute_bounds(state.window)
                         self.assertTrue(ok)
                         self.assertGreaterEqual(bounds.get_x(), 0)
-                        self.assertLessEqual(bounds.get_x() + bounds.get_width(), 795)
+                        self.assertLessEqual(bounds.get_x() + bounds.get_width(), 900)
                         self.assertTrue(button.get_sensitive())
                 finally:
                     dialogs.shutdown()
@@ -512,7 +512,7 @@ class SnippetDialogTests(unittest.TestCase):
         state = dialogs.show_manager()
         self.settle_window()
         manager_size = (state.window.get_width(), state.window.get_height())
-        self.assertEqual(manager_size, (795, 560))
+        self.assertEqual(manager_size, (900, 560))
         for widget in (state.category_scroller, state.list_scroller, state.preview_view):
             self.assertGreater(widget.get_width(), 100)
         dialogs.show_editor(state, None, False)
@@ -532,6 +532,28 @@ class SnippetDialogTests(unittest.TestCase):
         self.assertIs(reopened, state)
         self.assertEqual(state.stack.get_visible_child_name(), "manager")
         self.assertEqual((state.window.get_width(), state.window.get_height()), manager_size)
+
+    def test_long_names_are_bounded_in_preview_and_preserved_in_editor(self):
+        parent = self.make_parent()
+        data = SimpleNamespace(snippets=[CommandSnippet("one", "W" * 30, "true", "Example")],
+                               groups=[], servers=[])
+        dialogs = self.make_dialogs(parent, data)
+        self.addCleanup(parent.destroy)
+        self.addCleanup(dialogs.shutdown)
+        state = dialogs.show_manager()
+        for name in ("W" * 30, "W" * 20000):
+            data.snippets[0].name = name
+            dialogs.refresh_manager(state)
+            state.listing.select_row(state.listing.get_row_at_index(0))
+            self.settle_window()
+            self.assertEqual((state.window.get_width(), state.window.get_height()), (900, 560))
+            self.assertGreater(state.list_scroller.get_width(), 140)
+            dialogs.show_editor(state, "one", False)
+            self.assertEqual(state.name.get_text(), name)
+            dialogs.on_editor_cancel(Mock(), state)
+        dialogs.show_editor(state, None, False)
+        state.name.set_text("W" * 31)
+        self.assertEqual(state.name.get_text(), "W" * 30)
 
     def test_manager_reuses_one_window_during_repeated_editor_cancellation(self):
         parent = self.make_parent()

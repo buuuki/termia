@@ -9,6 +9,7 @@ import shlex
 from .models import CommandSnippet, Group, Server
 
 SNIPPET_SCOPES = {"global", "group", "server"}
+MAX_SNIPPET_NAME_LENGTH = 30
 VARIABLE_PATTERN = re.compile(r"\{\{([A-Za-z][A-Za-z0-9_]*)\}\}")
 
 
@@ -34,11 +35,14 @@ def normalized_categories(categories: object, snippets: list[CommandSnippet]) ->
 def normalize_snippet(
     snippet_id: str, name: str, content: str, category: str = "",
     scope: str = "global", target_id: str = "",
+    *, allow_legacy_name: bool = False,
 ) -> CommandSnippet:
     name, content, category = name.strip(), content.strip(), category.strip()
     scope, target_id = scope.strip(), target_id.strip()
     if not name:
         raise SnippetError("snippet_name_required")
+    if not allow_legacy_name and len(name) > MAX_SNIPPET_NAME_LENGTH:
+        raise SnippetError("snippet_name_too_long")
     if not content:
         raise SnippetError("snippet_content_required")
     if scope not in SNIPPET_SCOPES:
