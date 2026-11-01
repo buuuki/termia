@@ -267,6 +267,10 @@ aislado. Utiliza una configuración, estado y bloqueo de escritura propios:
 ./scripts/run_test_instance.sh --copy-current-config review
 ```
 
+El lanzador de pruebas filtra únicamente el mensaje repetitivo de depuración de
+GTK `snapshot symbolic icon using mask`. Se conservan los demás mensajes de
+depuración, avisos y errores; stderr permanece intacto.
+
 La opción copia las conexiones, notas, ajustes, historial de conexiones,
 estadísticas y el registro de depuración en el perfil de pruebas. Los cambios
 realizados allí nunca modifican los datos habituales de Termia.

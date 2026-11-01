@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import re
-import shlex
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,7 +33,6 @@ class DependencyPlan:
     added: tuple[str, ...]
     missing: tuple[str, ...]
     packages: tuple[str, ...]
-    manual_commands: str
     assisted_available: bool
 
 
@@ -168,10 +166,7 @@ def dependency_plan(required, previous, run, cancel: Event) -> DependencyPlan:
         if package not in packages:
             packages.append(package)
             missing.append(package)
-    commands = ""
-    if packages:
-        commands = "sudo apt update\nsudo apt install --no-remove " + shlex.join(packages)
-    return DependencyPlan(required, added, tuple(missing), tuple(packages), commands,
+    return DependencyPlan(required, added, tuple(missing), tuple(packages),
                           Path("/usr/bin/pkexec").is_file())
 
 

@@ -57,13 +57,13 @@ Depends: ${misc:Depends}, ${python3:Depends},
         plan = dependency_plan(after, before, run, Event())
         self.assertEqual(plan.added, ("gir1.2-gtksource-5",))
         self.assertEqual(plan.packages, ("gir1.2-gtksource-5",))
-        self.assertEqual(plan.manual_commands,
-                         "sudo apt update\nsudo apt install --no-remove gir1.2-gtksource-5")
+        self.assertEqual(plan.required, after)
+        self.assertEqual(plan.missing, ("gir1.2-gtksource-5",))
         ready = dependency_plan(after, before, lambda args, *a: "installed\t5.0" if
                                 args[0].endswith("dpkg-query") else "[]", Event())
         self.assertEqual(ready.added, plan.added)
         self.assertFalse(ready.missing)
-        self.assertFalse(ready.manual_commands)
+        self.assertFalse(ready.packages)
 
     @patch("termia.update_dependencies.Path.is_file", return_value=True)
     def test_alternative_installed_satisfies_group(self, _exists):
@@ -84,7 +84,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
             runtime_missing(("gir1.2-gtksource-5",), run, Event())
 
     def test_assisted_uses_one_authorization_for_the_fixed_helper(self):
-        plan = DependencyPlan((), (), ("pkg",), ("pkg",), "", True)
+        plan = DependencyPlan((), (), ("pkg",), ("pkg",), True)
         run = Mock()
         install_dependencies(plan, run)
         run.assert_called_once()
@@ -114,8 +114,8 @@ Depends: ${misc:Depends}, ${python3:Depends},
 class UpdateTransactionTests(unittest.TestCase):
     def setUp(self):
         self.missing = DependencyPlan(((Requirement("pkg"),),), ("pkg",), ("pkg",),
-                                      ("pkg",), "sudo apt install pkg", True)
-        self.ready = DependencyPlan(self.missing.required, ("pkg",), (), (), "", True)
+                                      ("pkg",), True)
+        self.ready = DependencyPlan(self.missing.required, ("pkg",), (), (), True)
         self.adapter = Mock(kind="update_source")
         self.adapter.prepare.side_effect = lambda release, path, cancel: path
         self.adapter.dependencies.return_value = self.missing
@@ -177,7 +177,7 @@ class UpdateTransactionTests(unittest.TestCase):
     def test_plan_changes_require_new_confirmation(self):
         plan = self.prepare()
         self.adapter.dependencies.return_value = DependencyPlan(
-            self.ready.required, (), ("other",), ("other",), "", True)
+            self.ready.required, (), ("other",), ("other",), True)
         self.controller.install(plan, assisted=True)
         self.finish()
         self.adapter.install_dependencies.assert_not_called()

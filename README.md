@@ -279,6 +279,10 @@ profile. It uses separate configuration, state, and writer lock:
 ./scripts/run_test_instance.sh --copy-current-config review
 ```
 
+The test launcher filters only the repetitive GTK debug message
+`snapshot symbolic icon using mask`. Other debug output, warnings and errors
+remain available; stderr is unchanged.
+
 The option copies connections, notes, settings, connection history, statistics,
 and the debug log into the test profile. Changes made there never modify your
 usual Termia data.

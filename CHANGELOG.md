@@ -4,6 +4,9 @@
 
 ### Refactored
 
+- Remove unused manual dependency-command text from update plans while
+  preserving dependency checks and assisted installation (`#443`).
+
 - Remove two unread snippet category-button state fields while preserving
   the existing buttons, signal handling and category persistence (`#441`).
 
@@ -18,6 +21,9 @@
   command strings and retain search joins with stricter input behavior (`#421`).
 
 ### Fixed
+
+- Filter repetitive GTK symbolic-mask debug output in the test launcher while
+  retaining other diagnostics, application PID and exit status (`#443`).
 
 - Let Enter advance snippet selection and variables to the preview, then
   explicitly send the previewed command once using the focused GTK action (`#433`).

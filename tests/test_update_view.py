@@ -140,7 +140,6 @@ class UpdateViewTests(unittest.TestCase):
         plan = DependencyPlan(requirement, ("gir1.2-gtksource-5",),
                               ("gir1.2-gtksource-5",) if missing else (),
                               ("gir1.2-gtksource-5",) if missing else (),
-                              "sudo apt update\nsudo apt install gir1.2-gtksource-5" if missing else "",
                               assisted)
         result = CheckResult(Release("v0.6.1-beta", Version.parse("0.6.1-beta"), None),
                              Installation(Mock(kind=kind), ""))

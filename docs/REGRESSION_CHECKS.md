@@ -765,6 +765,9 @@ Long measurements and release-platform checks remain separate validation work.
   `notes.json` into the isolated profile without changing the original file.
   The test profile must redirect only Termia data, preserving the desktop GTK
   configuration and appearance.
+- The test launcher must suppress only GTK DEBUG messages whose complete text
+  is `snapshot symbolic icon using mask`. Preserve other debug messages, all
+  warning/error levels, stderr, the reported application PID and its exit code.
 
 ### Application Appearance and Themes
 
@@ -1424,8 +1427,9 @@ preparation only after verification and dependency checks, and retain log output
 on failure. Never apply a Git update with missing requirements; for Debian, retain
 APT dependency resolution and final installed-version/runtime verification.
 
-Dependency summaries and manual command instructions appear in installation
-details, without duplicate content above dependency actions or a separate Copy
-commands or Copy log button. Manual instructions support selection and Ctrl+C;
-a new check clears them. Verify that collapsing installation details keeps footer
+Dependency summaries and installation output appear in installation details,
+with missing or verified requirements named in the top status. Do not display
+manual installation commands or add a separate Copy commands or Copy log button.
+The log supports selection and Ctrl+C; a new check clears it.
+Verify that collapsing installation details keeps footer
 actions at the bottom, and dependency buttons do not stretch on window resize.
