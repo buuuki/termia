@@ -250,7 +250,8 @@ class NativeNoteTabsTests(unittest.TestCase):
         self.assertIs(self.dialog.editor_notebook.get_nth_page(0), draft.page_widget)
 
     def test_failed_switch_restores_selected_page(self):
-        first, second = self.add_tab("one"), self.add_tab("two")
+        first = self.add_tab("one")
+        self.add_tab("two")
         self.dialog.active_editor_tab_key = "one"
         self.dialog.activate_editor_tab = MagicMock()
         self.dialog.editor_notebook.set_current_page(1)

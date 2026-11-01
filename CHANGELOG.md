@@ -4,6 +4,9 @@
 
 ### Refactored
 
+- Remove two unread test bindings while preserving Notes tab setup and
+  split-pane parent initialization (`#445`).
+
 - Remove unused manual dependency-command text from update plans while
   preserving dependency checks and assisted installation (`#443`).
 
