@@ -1,0 +1,51 @@
+name: termia-459-gnome24
+services:
+  desktop:
+    build:
+      context: ${LAB_BUILD_CONTEXT:?Use python3 tools/docker-lab/gnome24/lab.py start}
+    image: termia-lab-459-gnome24:local
+    hostname: termia-gnome24
+    platform: linux/amd64
+    labels:
+      local.termia.issue: "459"
+      local.termia.checkout: ${LAB_CHECKOUT_ID:?Use lab.py}
+    cgroup: private
+    cap_add: [SYS_ADMIN]
+    security_opt:
+      - apparmor=unconfined
+      - seccomp=../gnome26/seccomp-desktop.json
+    devices:
+      - /dev/fuse:/dev/fuse:rw
+    cpus: 2
+    mem_limit: 4g
+    pids_limit: 4096
+    shm_size: 256m
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
+    ports:
+      - "127.0.0.1:12389:3389"
+    volumes:
+      - profile:/home/lab
+      - credentials:/var/lib/termia-lab
+      - remote-state:/var/lib/gnome-remote-desktop
+    stop_signal: SIGRTMIN+3
+    stop_grace_period: 30s
+    restart: "no"
+    healthcheck:
+      test: [CMD-SHELL, "systemctl is-active --quiet gdm.service gnome-remote-desktop.service && ss -H -ltn 'sport = :3389' | grep -q ."]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+volumes:
+  profile:
+    labels:
+      local.termia.checkout: ${LAB_CHECKOUT_ID:?Use lab.py}
+  credentials:
+    labels:
+      local.termia.checkout: ${LAB_CHECKOUT_ID:?Use lab.py}
+  remote-state:
+    labels:
+      local.termia.checkout: ${LAB_CHECKOUT_ID:?Use lab.py}

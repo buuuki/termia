@@ -7,6 +7,12 @@ sidebar and menu work in [#380](https://github.com/buuuki/termia/issues/380).
 
 ## What is available
 
+The separate [Ubuntu 24 GNOME laboratory](../tools/docker-lab/gnome24/README.md)
+from #459 uses a persistent Docker project and native remote login. It is not
+the historical Ubuntu 24 X11/Weston desktop or XFCE VM. Native GNOME/Wayland login, RDP image/input, the Termia panel and terminal
+have been validated locally, with 819 automated tests passing.
+The Ubuntu 26 GNOME baseline remains independent and unchanged.
+
 The portable package is published under `tools/docker-lab/` through
 [#377](https://github.com/buuuki/termia/issues/377). Start with its
 [English](../tools/docker-lab/README.md),
