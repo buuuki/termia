@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Close the main-menu Import/Export submenu on pointer leave and clear its
+  initial and stale pointer highlights while preserving keyboard navigation (`#466`).
+
 ### Added
 
 - Add a native private SSH key picker to connection forms and clarify password
