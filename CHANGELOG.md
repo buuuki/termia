@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Let terminal applications receive split-focus keys when no focus move is
+  possible; use Ctrl+Shift+Arrow defaults and migrate legacy defaults once
+  without replacing custom, disabled or conflicting assignments (`#456`).
 - Close the main-menu Import/Export submenu on pointer leave and clear its
   initial and stale pointer highlights while preserving keyboard navigation (`#466`).
 

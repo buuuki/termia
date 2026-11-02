@@ -11,6 +11,8 @@ together in embedded VTE terminals.
 ## Features
 
 - Local and SSH terminals with tabs, split panes, and detachable windows.
+  Use `Ctrl+Shift+Arrow` to move between Termia panes; `Ctrl+Arrow` remains
+  available to terminal applications such as tmux.
 - Connections organized in nested groups, favorites, and recent connections.
 - Native private SSH key file picker when creating or editing a connection.
 - Saved workspaces and optional restoration of the previous session.

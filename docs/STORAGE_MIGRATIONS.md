@@ -58,10 +58,20 @@ credentials or private notes. Isolated test instances use their own profile.
   stored explicitly.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
+  Optional `app.split_focus_shortcuts_version` defaults to `1` in new profiles.
+  Old profiles without the marker migrate only legacy `Ctrl+Arrow` split-focus
+  assignments to `Ctrl+Shift+Arrow`. Custom and disabled assignments survive;
+  an occupied destination leaves an existing assignment unchanged, or disables
+  a missing split-focus assignment rather than creating a conflict. The marker
+  is saved with preferences so later deliberate `Ctrl+Arrow` choices survive
+  restarts. Read-only loading never writes this migration. The object schema
+  is unchanged; older versions may discard the marker on save, so retain a
+  settings backup before downgrading and check shortcuts after upgrading again.
   Optional `app.keybindings` entries named `snippet:<id>` assign shortcuts to
   stable snippet IDs. This extends the existing action dictionary without
   changing object fields or the schema version. Old settings have no snippet
-  assignments; ordinary action defaults remain unchanged. These local settings
+  assignments; this snippet extension does not change ordinary action defaults.
+  These local settings
   are separate from connection exports. Older versions can still read the
   file but may discard snippet action keys when normalizing/saving settings;
   retain a settings backup before downgrading if these assignments are needed.

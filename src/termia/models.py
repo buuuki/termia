@@ -137,6 +137,7 @@ class AppSettings:
     debug_enabled: bool = False
     notes_editor: dict[str, Any] = field(default_factory=dict)
     keybindings: dict[str, str] = field(default_factory=lambda: DEFAULT_KEYBINDINGS.copy())
+    split_focus_shortcuts_version: int = 1
 
 
 @dataclass
