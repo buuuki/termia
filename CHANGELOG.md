@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-No changes yet.
+### Changed
+
+- Move note Save, Delete and Close actions from the editor footer into its
+  native tab menu, add Clone, and retain autosave status and modification time
+  (`#457`).
+- Reduce Notes status-row vertical margins to give the editor more space,
+  retaining the shared action-area spacing and horizontal insets (`#457`).
 
 ## 0.6.1-beta - 2026-11-02
 

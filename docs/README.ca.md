@@ -17,7 +17,9 @@ fitxers en terminals VTE integrats amb GTK 4.
 - Snippets reutilitzables amb categories, àmbit, variables i dreceres;
   les ordres es previsualitzen abans d'enviar-les.
 - Notes personals o associades a servidors, amb desament automàtic,
-  categories i importació/exportació.
+  categories i importació/exportació. Fes clic dret en una pestanya per
+  reanomenar, eliminar, clonar, desar o tancar-la; l’editor conserva l’estat
+  de desament i la data de modificació.
 - Dades de connexió locals amb xifratge opcional mitjançant contrasenya mestra.
 - Importació/exportació de Termia i importació de connexions des d'Ásbrú YAML.
 - Historial de connexions i complements opcionals d'Estadístiques i SFTP.

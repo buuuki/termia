@@ -63,7 +63,7 @@ a standard GTK control does not justify crossing those boundaries.
 | 8 | Terminal-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/tabs.py`; clicked-session validation |
 | 9 | Note-list item context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; note identity and write guards |
 | 10 | Notes category context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; category identity and write guards |
-| 11 | Notes editor-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; saved-note and draft identity |
+| 11 | Notes editor-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; saved-note and draft identity; Rename, Delete, Clone, Save and Close tab dispatch |
 | 13 | Notes editor tab bar | `Gtk.Notebook` | `src/termia/notes_dialogs.py`; shared editor, draft identity, save guards, close action, and tab menu |
 | 14 | Connections tree | `Gtk.TreeListModel`, `Gtk.TreeExpander`, `Gtk.ListView`, and `Gtk.SingleSelection` | `src/termia/sidebar.py`, `src/termia/sidebar_projection.py`; Termia supplies projected identities, filtering, expansion preferences, context actions, and private group drop targets; GTK owns selection, disclosure, and navigation |
 | 15 | Notes tree | `Gtk.TreeListModel`, `Gtk.TreeExpander`, `Gtk.ListView`, and `Gtk.SingleSelection` | `src/termia/notes_dialogs.py`; Notes supplies hierarchy data, scope actions, saved expansion, menus, and private drag targets |
