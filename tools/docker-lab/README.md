@@ -10,6 +10,10 @@ The separate [Ubuntu 26.04 GNOME base](gnome26/README.md) is being built in
 issue #430. Its experimental GNOME Wayland/RDP desktop has functional checks;
 Termia integration and full laboratory acceptance remain pending.
 
+For a separate persistent Ubuntu 24.04 GNOME/Wayland desktop with native RDP,
+see the [Ubuntu 24 GNOME guide](gnome24/README.md). Its runtime acceptance
+status is recorded there; the X11/Weston laboratory below remains separate.
+
 ## First start on another PC
 
 Requirements: Linux, a local Docker Engine accessible to your user, Git,

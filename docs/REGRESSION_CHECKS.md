@@ -1220,6 +1220,24 @@ light/dark appearance. Start an isolated instance with
 
 ## Automated Checks
 
+### Persistent Ubuntu 24.04 GNOME laboratory
+
+Follow `tools/docker-lab/gnome24/README.md`. Run the focused
+`tests.test_gnome24_lab` module for snapshot filtering, symlink/path rejection,
+resource ownership, preparation/build failure and private credentials. A source
+snapshot must contain the selected tracked bytes, not personal/untracked files.
+
+Before accepting the infrastructure, verify Ubuntu 24, native GNOME/Wayland,
+RDP image/keyboard input and GNOME authentication with no alternate desktop or
+PAM/polkit bypass. Listener health alone is insufficient. Exercise the panel,
+persistent and isolated Termia profiles, native Firefox and EN/ES/CA languages.
+Record Git, Xvfb and pinned analyzer availability and executable test temporaries.
+Run the required suite before publication. Check profile, password and TLS
+persistence through stop/resume and controlled recreation; preserve all older
+laboratories. Keep credentials, profiles and raw evidence out of Git. Confirm
+that remote Docker and foreign resource ownership are rejected and that the
+running snapshot matches the prepared source. Document unvalidated paths.
+
 ### Ubuntu 26.04 GNOME base image
 
 For the separate package-only image in `tools/docker-lab/gnome26`, follow its

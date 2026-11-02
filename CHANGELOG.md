@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Add an Ubuntu 24.04 GNOME Docker laboratory with native remote
+  login, persistent profiles, source snapshots, a GTK panel, pinned test tools
+  and English/Spanish/Catalan guides; validate native Wayland/RDP login and
+  preserve Ubuntu 26 independently (`#459`).
+
 ### Changed
 
 - Move note Save, Delete and Close actions from the editor footer into its
