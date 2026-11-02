@@ -76,6 +76,21 @@ metadata. All 17 finding entries, reasons, fingerprints, other context digests,
 analyzer versions and rules are retained. This does not authorize installation
 or release publication.
 
+## RDP configurator review for #454
+
+The requester approved absolute executable paths in `configure-rdp.py` and four
+individual low B404/B603 reviews. The three B607 findings are fixed, including
+the nested `env`, `grdctl` and `openssl` executables. The remaining calls configure
+only the synthetic lab account; credentials use stdin, validated record contents
+and private files. Certificate generation runs as `lab` with localhost names.
+This reviews subprocess execution, not the separate root ownership setup.
+No shell is involved.
+
+Bind these four occurrences to the script, desktop Dockerfile and its two
+startup services. Preserve the original 17 reviews, rule eligibility, analyzer
+pins and comparison base. The release comparison against `main` must show all
+21 reviews and zero blocking findings; this does not authorize publication.
+
 ## Validation
 
 ```bash

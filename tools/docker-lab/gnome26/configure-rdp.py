@@ -21,7 +21,7 @@ def main():
     if not password or any(char in password for char in ':\r\n'):
         raise ValueError('Invalid synthetic laboratory password')
     if sys.argv[1:] == ['prepare']:
-        subprocess.run(['chpasswd'], input=f'lab:{password}\n', text=True, check=True)
+        subprocess.run(['/usr/sbin/chpasswd'], input=f'lab:{password}\n', text=True, check=True)
         print('Synthetic user lab is ready.', flush=True)
         return
     if sys.argv[1:] != ['session']:
@@ -38,10 +38,10 @@ def main():
 
     def grd(*arguments, input=None):
         subprocess.run([
-            'runuser', '-u', user.pw_name, '--', 'env',
+            '/usr/sbin/runuser', '-u', user.pw_name, '--', '/usr/bin/env',
             'XDG_RUNTIME_DIR=' + str(runtime),
             'DBUS_SESSION_BUS_ADDRESS=unix:path=' + str(runtime / 'bus'),
-            'grdctl', '--headless', 'rdp', *arguments,
+            '/usr/bin/grdctl', '--headless', 'rdp', *arguments,
         ], input=input, text=True, check=True, stdout=subprocess.DEVNULL)
 
     tls = Path(user.pw_dir) / '.local/share/gnome-remote-desktop'
@@ -52,7 +52,7 @@ def main():
     key, certificate = tls / 'tls.key', tls / 'tls.crt'
     if not key.exists() or not certificate.exists():
         subprocess.run([
-            'runuser', '-u', user.pw_name, '--', 'openssl', 'req',
+            '/usr/sbin/runuser', '-u', user.pw_name, '--', '/usr/bin/openssl', 'req',
             '-new', '-newkey', 'rsa:3072', '-days', '365', '-nodes', '-x509',
             '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1',
             '-keyout', str(key), '-out', str(certificate),

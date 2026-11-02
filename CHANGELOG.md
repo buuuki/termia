@@ -42,6 +42,8 @@ Maintenance since `0.6.0-beta.4`; this remains a prerelease.
 
 ### Fixed
 
+- Use absolute executables in the Ubuntu 26 RDP configurator and record four
+  individually reviewed low Bandit findings without weakening checks (`#454`).
 - Dismiss the main menu with one outside click after leaving Import/Export,
   preserving submenu keyboard navigation (`#452`).
 - Keep shared dialog buttons and Escape working when GTK recreates their Python

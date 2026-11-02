@@ -8,8 +8,12 @@
     "src/termia/update_dependencies.py": "a1e2c4b6a8d55722e7e7a6d85f84e849288affba2254cfa67e79df59bf4c0575",
     "src/termia/update_installers.py": "00142a8f667844c9edb67a397669e5af0db2fbc1b1bc48d782ec557376f76866",
     "src/termia/update_service.py": "83d0d8827944480042293c36f54b1d473367b30c983dc5f4eadd67608ac9b802",
+    "tools/docker-lab/gnome26/Dockerfile": "8994d82cdbd2fe2a56c3e679c2bfd78214a0b3f087b8da0b6f9d502ec93a147c",
     "tools/docker-lab/gnome26/Dockerfile.updater": "47acdfdc53b2f62bbc93683ee4e1cf02e5a0e3c50ac247c23c0ff7e9dd2c6004",
+    "tools/docker-lab/gnome26/configure-rdp.py": "54664248a31ed4747df43184e624527141634e71e421218bb38bc35847f72225",
     "tools/docker-lab/gnome26/prepare-updater.sh": "3433a0ab4cf57fe081ebde01c37f201d9a9d09bc936077da7c03384e88034408",
+    "tools/docker-lab/gnome26/termia-lab-rdp.service": "24e6edcedec81fcf7759ac99444ba91eac4addbafac7411d43222d8d3c60e0a4",
+    "tools/docker-lab/gnome26/termia-lab-user-rdp.service": "76b6bbe9918b978a2c0b2205ba480af1895495db74e0348f2a72efc1fe2b2ff5",
     "tools/docker-lab/upgrade-preview/Dockerfile": "52f2d62b6c7328fe5f3ebf1213e3e24d1a2ddaad438cc9e3e7f7c5d4c5965c47",
     "tools/docker-lab/upgrade-preview/boot.sh": "1eac9b1b27690a8f4ce8e4e2652788867a16758a28a7df057e703f3141f8abce",
     "tools/docker-lab/upgrade-preview/launch.py": "89f527f6b4d4fe409d16c89e955b9ac19bf792f2c0863337647fb7dc8b421b37",
@@ -170,6 +174,42 @@
       "fingerprint": "bf9a5b793ca97bb3f3a09c0569154f149106aa0b783a13dbe9b0bf2a4040f01d",
       "reason": "Disposable-container reset uses absolute executables and fixed package, Git and fixture-path arguments without a shell.",
       "reference": "#428"
+    },
+    {
+      "id": "bandit-454-01",
+      "file": "tools/docker-lab/gnome26/configure-rdp.py",
+      "rule": "B404",
+      "severity": "LOW/HIGH",
+      "fingerprint": "fa443ae2709bad8846f4e1eb99fe96f861ce89d87b120cb4dececa4611bd5846",
+      "reason": "Required subprocess import; the three calls use fixed absolute executables and argument vectors and are reviewed separately.",
+      "reference": "#454"
+    },
+    {
+      "id": "bandit-454-02",
+      "file": "tools/docker-lab/gnome26/configure-rdp.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "1c9672a07b6d0caeb1425f9e54579d11c8f601bd70a2642070cb75c6a5a3b63a",
+      "reason": "Fixed chpasswd executable configures only lab; the generated synthetic password is kept in a private file, rejects record separators and is passed through stdin rather than command arguments, without a shell.",
+      "reference": "#454"
+    },
+    {
+      "id": "bandit-454-03",
+      "file": "tools/docker-lab/gnome26/configure-rdp.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "64ed200ed16a59bf4003dfa84ddbb581086a570a8dc8467e2a97a0154539c361",
+      "reason": "Fixed runuser, env and grdctl executables configure only the lab account; internal RDP actions use argument vectors, and synthetic credentials use stdin rather than command arguments, without a shell.",
+      "reference": "#454"
+    },
+    {
+      "id": "bandit-454-04",
+      "file": "tools/docker-lab/gnome26/configure-rdp.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "c7b77efa64188f7f0d0d39b7a24450315be850632ebf6a35bb30ab2daeeb2613",
+      "reason": "Fixed runuser and openssl executables run certificate generation as lab with localhost certificate names and fixed output-path construction, using argument vectors without a shell or real user credentials. This entry reviews subprocess execution, not the separate root ownership setup.",
+      "reference": "#454"
     }
   ]
 }
