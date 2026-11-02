@@ -4,6 +4,8 @@
 
 ### Added
 
+- Add a native private SSH key picker to connection forms and clarify password
+  storage options, including master-password encryption (`#461`).
 - Add an Ubuntu 24.04 GNOME Docker laboratory with native remote
   login, persistent profiles, source snapshots, a GTK panel, pinned test tools
   and English/Spanish/Catalan guides; validate native Wayland/RDP login and

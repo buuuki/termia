@@ -1,5 +1,16 @@
 # Regression Checks and Protected Behaviors
 
+## Connection private SSH key selection
+
+- In an isolated profile, create and edit a connection: use the folder button
+  beside Private SSH key to select a synthetic local file. Confirm its path
+  fills the editable entry; cancellation leaves the previous path unchanged.
+- Save and reopen the connection to confirm the path persists. Cancel the form
+  and confirm no connection changes are saved. No SSH connection is needed.
+- Check EN/ES/CA, keyboard access, light/dark themes and the wrapped password
+  warning: plain text, obfuscation and master-password encryption are listed,
+  and obfuscation is explicitly distinguished from encryption.
+
 ## Storage resource rejection
 
 - Import an encrypted connection export from the menu. Verify the native

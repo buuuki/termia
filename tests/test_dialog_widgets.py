@@ -1,10 +1,13 @@
 import gc
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gdk, GLib, Gtk
+gi.require_version("Gdk", "4.0")
+from gi.repository import Gdk, Gio, GLib, Gtk
 
 from termia.app import TermiaApp
 from termia.choice_widgets import (
@@ -15,10 +18,83 @@ from termia.choice_widgets import (
     select_choice,
     text_choice,
 )
+from termia.connection_dialogs import ConnectionDialogsMixin
 from termia.dialog_window import DialogWindow
+from termia.models import Server
 
 
 class DialogWidgetTests(unittest.TestCase):
+    def test_connection_key_picker_selection_cancel_remote_and_closed_form(self):
+        parent = DialogWindow()
+        entry = Gtk.Entry(text="/synthetic/previous-key")
+        parent.get_content_area().append(entry)
+        parent.present()
+        self.addCleanup(parent.destroy)
+        host = SimpleNamespace(t=lambda key: key)
+        picker = Mock()
+        with patch("termia.connection_dialogs.Gtk.FileDialog", return_value=picker):
+            ConnectionDialogsMixin.select_private_ssh_key(host, parent, entry)
+        self.assertEqual(picker.set_initial_file.call_args.args[0].get_path(), "/synthetic/previous-key")
+        self.assertIs(picker.open.call_args.args[0], parent)
+        selected = picker.open.call_args.args[2]
+        picker.open_finish.side_effect = GLib.Error("Cancelled")
+        selected(picker, None)
+        self.assertEqual(entry.get_text(), "/synthetic/previous-key")
+        picker.open_finish.side_effect = None
+        picker.open_finish.return_value = Gio.File.new_for_uri("sftp://example.invalid/key")
+        selected(picker, None)
+        self.assertEqual(entry.get_text(), "/synthetic/previous-key")
+        picker.open_finish.return_value = Gio.File.new_for_path("/synthetic/key with spaces")
+        selected(picker, None)
+        self.assertEqual(entry.get_text(), "/synthetic/key with spaces")
+        parent.destroy()
+        picker.open_finish.return_value = Gio.File.new_for_path("/synthetic/late-key")
+        selected(picker, None)
+        self.assertEqual(entry.get_text(), "/synthetic/key with spaces")
+
+    def test_connection_forms_preserve_manual_key_and_wire_picker_for_create_and_edit(self):
+        class Host(ConnectionDialogsMixin, Gtk.Window):
+            def __init__(self):
+                super().__init__()
+                self.store = Mock()
+                self.store.data.groups = []
+                self.toast_label = Mock()
+                self.refresh_list = Mock()
+                self.select_private_ssh_key = Mock()
+
+            def t(self, key):
+                return key
+
+            def ensure_writable(self):
+                return True
+
+            def add_dialog_action_buttons(self, dialog, label):
+                dialog.add_button(label, Gtk.ResponseType.OK)
+
+        host = Host()
+        self.addCleanup(host.destroy)
+        server = Server("test", "Example", "example.invalid", "tester", public_key="/synthetic/key")
+        for existing in (None, server):
+            with self.subTest(edit=existing is not None):
+                dialog = DialogWindow(transient_for=host)
+                self.addCleanup(dialog.destroy)
+                with patch("termia.connection_dialogs.DialogWindow", return_value=dialog):
+                    host.show_server_dialog(existing)
+                grid = dialog.get_content_area().get_first_child()
+                field = grid.get_child_at(1, 6)
+                entry = field.get_first_child()
+                self.assertEqual(entry.get_text(), existing.public_key if existing else "")
+                field.get_last_child().emit("clicked")
+                host.select_private_ssh_key.assert_called_with(dialog, entry)
+                for row, text in ((0, "Example"), (1, "example.invalid"), (2, "tester")):
+                    grid.get_child_at(1, row).set_text(text)
+                entry.set_text("/synthetic/manual-key")
+                dialog.response(Gtk.ResponseType.OK)
+                if existing:
+                    self.assertEqual(host.store.update_server.call_args.args[8], "/synthetic/manual-key")
+                else:
+                    self.assertEqual(host.store.add_server.call_args.args[7], "/synthetic/manual-key")
+
     def test_application_keeps_label_focus_without_automatic_selection(self):
         settings = Gtk.Settings.get_default()
         previous = settings.get_property("gtk-label-select-on-focus")

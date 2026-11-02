@@ -621,12 +621,16 @@ msgstr ""
 msgid "Private SSH key"
 msgstr ""
 
+#: src/termia/i18n.py:select_private_ssh_key
+msgid "Select private SSH key"
+msgstr ""
+
 #: src/termia/i18n.py:ssh_fingerprint_manual
 msgid "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Ctrl+P."
 msgstr ""
 
 #: src/termia/i18n.py:credential_warning
-msgid "Warning: the password will be stored in connections.json. You can switch between plain text and obfuscated storage from Security."
+msgid "If you enter a password, it will be saved with the connection in connections.json. Configure storage in Security: plain text, obfuscation or encryption with a master password. Obfuscation is not encryption."
 msgstr ""
 
 #: src/termia/i18n.py:server_required_fields

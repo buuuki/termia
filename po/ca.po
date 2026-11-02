@@ -410,13 +410,17 @@ msgstr "Contrasenya"
 msgid "Private SSH key"
 msgstr "Clau SSH privada"
 
+#: src/termia/i18n.py:select_private_ssh_key
+msgid "Select private SSH key"
+msgstr "Selecciona una clau SSH privada"
+
 #: src/termia/i18n.py:ssh_fingerprint_manual
 msgid "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Ctrl+P."
 msgstr "Host nou: respon al fingerprint en aquest terminal. Després introdueix la contrasenya manualment o amb Ctrl+P."
 
 #: src/termia/i18n.py:credential_warning
-msgid "Warning: the password will be stored in connections.json. You can switch between plain text and obfuscated storage from Security."
-msgstr "Avís: la contrasenya es desarà a connections.json. Pots canviar entre text pla i ofuscat des de Seguretat."
+msgid "If you enter a password, it will be saved with the connection in connections.json. Configure storage in Security: plain text, obfuscation or encryption with a master password. Obfuscation is not encryption."
+msgstr "Si introdueixes una contrasenya, es desarà amb la connexió a connections.json. Configura l’emmagatzematge a Seguretat: text pla, ofuscació o xifratge amb contrasenya mestra. L’ofuscació no és xifratge."
 
 #: src/termia/i18n.py:server_required_fields
 msgid "Name, host, and SSH user are required."

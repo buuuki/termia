@@ -12,6 +12,7 @@ fitxers en terminals VTE integrats amb GTK 4.
 
 - Terminals locals i SSH amb pestanyes, panells dividits i finestres separables.
 - Connexions organitzades en grups imbricats, preferits i connexions recents.
+- Selector nadiu de claus SSH privades en crear o editar una connexió.
 - Espais de treball desats i restauració opcional de la sessió anterior.
 - Pujades SCP i explorador SFTP nadiu amb transferències i cancel·lació.
 - Snippets reutilitzables amb categories, àmbit, variables i dreceres;
