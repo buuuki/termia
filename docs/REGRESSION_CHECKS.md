@@ -94,6 +94,15 @@ Long measurements and release-platform checks remain separate validation work.
 - Open main-menu Import/Export, return to its parent with Left or the pointer,
   then click outside once: both menus must close. Repeat after reopening and
   verify submenu actions close both menus before presenting their dialogs.
+- Open Import/Export with the pointer: its first action must not be highlighted
+  automatically. Move from its row into the panel: it must remain open. Leave
+  both the row and panel: only the submenu must close after a brief delay.
+  Repeat after reopening; Right/Left, Up/Down, Enter and Escape must still work,
+  with a visible selection when navigating by keyboard. Closing the whole menu
+  during the delay must not leave a timer that closes a newly reopened panel.
+- Open Import/Export with the keyboard, move down through its actions and back
+  with Left/Right, and repeat: the first action must not retain a second
+  highlight after focus moves to another action.
 
 - Repeatedly open and close local/SSH tabs and split panes. Retired sessions,
   native VTE widgets, pages and tab labels must become

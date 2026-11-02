@@ -35,8 +35,52 @@ def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
 
 def _configure_submenu_dismissal(popover: Gtk.PopoverMenu) -> None:
     """Let the main menu own dismissal while preserving submenu keyboard focus."""
-    def focus_submenu(panel: Gtk.Popover) -> None:
-        panel.child_focus(Gtk.DirectionType.TAB_FORWARD)
+    def configure_submenu_focus(panel: Gtk.Popover) -> None:
+        focus_root: Gtk.Window | None = None
+        focus_handler: int | None = None
+
+        def focus_changed(root, _pspec) -> None:
+            focused = root.get_focus()
+            if focused is None or not focused.is_ancestor(panel):
+                return
+
+            def clear_stale_selection(widget: Gtk.Widget) -> None:
+                if widget.get_css_name() == "modelbutton":
+                    if widget is not focused and not focused.is_ancestor(widget):
+                        widget.unset_state_flags(Gtk.StateFlags.SELECTED)
+                    return
+                child = widget.get_first_child()
+                while child is not None:
+                    clear_stale_selection(child)
+                    child = child.get_next_sibling()
+
+            # GTK's pointer-selected item can outlive keyboard focus on it.
+            clear_stale_selection(panel)
+
+        def clear_highlight() -> bool:
+            if panel.get_visible():
+                _clear_initial_menu_selection(panel)
+            return GLib.SOURCE_REMOVE
+
+        def mapped(_panel) -> None:
+            nonlocal focus_root, focus_handler
+            focus_root = panel.get_root()
+            if isinstance(focus_root, Gtk.Window):
+                focus_handler = focus_root.connect("notify::focus-widget", focus_changed)
+                focused = focus_root.get_focus()
+                if focused is None or not focused.is_ancestor(panel):
+                    panel.child_focus(Gtk.DirectionType.TAB_FORWARD)
+            GLib.idle_add(clear_highlight)
+
+        def unmapped(_panel) -> None:
+            nonlocal focus_root, focus_handler
+            if focus_root is not None and focus_handler is not None:
+                focus_root.disconnect(focus_handler)
+            focus_root = None
+            focus_handler = None
+
+        panel.connect("map", mapped)
+        panel.connect("unmap", unmapped)
 
     def restore_parent_focus(panel: Gtk.Popover) -> None:
         parent = panel.get_parent()
@@ -44,13 +88,56 @@ def _configure_submenu_dismissal(popover: Gtk.PopoverMenu) -> None:
         if root is not None and root.get_visible():
             parent.grab_focus()
 
+    def watch_submenu(panel: Gtk.Popover) -> None:
+        hovered: set[Gtk.Widget] = set()
+        pending: int | None = None
+
+        def cancel_pending(*_args) -> None:
+            nonlocal pending
+            if pending is not None:
+                GLib.source_remove(pending)
+                pending = None
+            hovered.clear()
+
+        def changed(_controller, entered: bool, widget: Gtk.Widget) -> None:
+            nonlocal pending
+            if entered:
+                hovered.add(widget)
+            else:
+                hovered.discard(widget)
+            if pending is not None:
+                GLib.source_remove(pending)
+                pending = None
+            if not hovered and panel.get_visible() and popover.get_visible():
+                def close_if_outside() -> bool:
+                    nonlocal pending
+                    pending = None
+                    if not hovered and popover.get_visible():
+                        panel.popdown()
+                    return GLib.SOURCE_REMOVE
+
+                # Allow crossing the gap between the row and its native panel.
+                pending = GLib.timeout_add(120, close_if_outside)
+
+        for widget in (panel.get_parent(), panel):
+            if widget is None:
+                continue
+            motion = Gtk.EventControllerMotion()
+            motion.set_name("termia-main-submenu-leave")
+            motion.connect("enter", lambda source, _x, _y, target: changed(source, True, target), widget)
+            motion.connect("leave", lambda source, target: changed(source, False, target), widget)
+            widget.add_controller(motion)
+        panel.connect("closed", cancel_pending)
+        popover.connect("closed", cancel_pending)
+
     def visit(widget: Gtk.Widget) -> None:
         if isinstance(widget, Gtk.Popover) and widget is not popover:
             widget.set_has_arrow(True)
             # A separate grab can leave the root open after this panel closes.
             widget.set_autohide(False)
-            widget.connect("show", focus_submenu)
+            configure_submenu_focus(widget)
             widget.connect("closed", restore_parent_focus)
+            watch_submenu(widget)
         child = widget.get_first_child()
         while child is not None:
             visit(child)
