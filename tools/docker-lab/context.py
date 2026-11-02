@@ -1,7 +1,7 @@
 """Allowlisted, fresh Docker contexts; never send the checkout as build input."""
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 LAB_FILES = (
     'lab/boot.sh', 'lab/desktop.py', 'lab/launcher.py', 'lab/sample_process.py',

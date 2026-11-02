@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-import signal
 import shlex
+import signal
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -16,6 +16,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, Gtk
 
 from .debug import log_event
+from .dialog_window import DialogWindow
 from .known_hosts import ScannedHostKey, append_scanned_host_keys, scan_host_key_async
 from .models import Server
 from .terminal_processes import (
@@ -98,9 +99,9 @@ class FileTransferController:
         self.fetch_host_key = fetch_host_key
         self.write_host_key = write_host_key
         self.selection_cancellable: Gio.Cancellable | None = None
-        self.pending_destination_dialog: Gtk.Dialog | None = None
-        self.pending_fingerprint_dialog: Gtk.Dialog | None = None
-        self.pending_password_dialog: Gtk.Dialog | None = None
+        self.pending_destination_dialog: DialogWindow | None = None
+        self.pending_fingerprint_dialog: DialogWindow | None = None
+        self.pending_password_dialog: DialogWindow | None = None
         self.active_state: dict[str, Any] | None = None
         self.inactive_notified = False
         self.cancelled = False
@@ -144,7 +145,7 @@ class FileTransferController:
         self.mark_inactive()
 
     def show_destination_dialog(self, server: Server, local_paths: list[Path]) -> None:
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.t("send_files_to_server_destination_title").format(name=server.name),
             transient_for=self.parent,
             modal=True,
@@ -194,7 +195,7 @@ class FileTransferController:
 
     def on_destination_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         server: Server,
         local_paths: list[Path],
@@ -358,7 +359,7 @@ class FileTransferController:
         scp_command: list[str],
         state: dict[str, Any],
     ) -> None:
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.t("send_files_to_server_credential_title"),
             transient_for=self.parent,
             modal=True,
@@ -407,7 +408,7 @@ class FileTransferController:
 
     def on_password_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         server: Server,
         scp_command: list[str],
@@ -472,7 +473,7 @@ class FileTransferController:
         destination: str,
         scanned_keys: list[ScannedHostKey],
     ) -> None:
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.t("send_files_to_server_fingerprint_title"),
             transient_for=self.parent,
             modal=True,
@@ -521,7 +522,7 @@ class FileTransferController:
 
     def on_fingerprint_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         server: Server,
         local_paths: list[Path],
@@ -540,7 +541,7 @@ class FileTransferController:
         self.start_upload(server, local_paths, destination)
 
     def show_transfer_dialog(self, server: Server, destination: str, file_list: str) -> dict[str, Any]:
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.t("send_files_to_server_title").format(name=server.name),
             transient_for=self.parent,
             modal=False,
@@ -600,7 +601,7 @@ class FileTransferController:
             progress.pulse()
         return GLib.SOURCE_CONTINUE
 
-    def on_dialog_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType, state: dict[str, Any]) -> None:
+    def on_dialog_response(self, dialog: DialogWindow, response: Gtk.ResponseType, state: dict[str, Any]) -> None:
         if state.get("completed"):
             self.cleanup_dialog(state)
             self.destroy_transfer_dialog(state)

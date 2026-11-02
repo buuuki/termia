@@ -3,6 +3,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from termia.session_registry import SessionRegistry
 from termia.terminal_processes import (
     SessionProcessIdentity,
     TerminalProcess,
@@ -12,7 +13,6 @@ from termia.terminal_processes import (
     terminal_process_is_active,
 )
 from termia.terminal_sessions import TerminalSessionsMixin
-from termia.session_registry import SessionRegistry
 
 
 class FakeTerminal:

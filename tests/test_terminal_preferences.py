@@ -76,7 +76,7 @@ class TerminalPreferencesTests(unittest.TestCase):
             color_button,
             SimpleNamespace(get_value=lambda: 2),
             SimpleNamespace(get_active=lambda: True),
-            SimpleNamespace(get_active_id=lambda: "time"),
+            SimpleNamespace(get_selected=lambda: 0, _termia_choice_ids=["time"]),
             SimpleNamespace(get_text=lambda: r"\u@\h:\w\$ "),
             color_button,
         )

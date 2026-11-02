@@ -3,9 +3,9 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 
 def fingerprint():
@@ -46,7 +46,7 @@ def main():
                        '--leak-check=full', '--show-leak-kinds=definite',
                        '--log-file=/evidence/valgrind-%p.log', *command]
     output = Path('/evidence/result.json')
-    result = dict(mode=args.mode, source_sha256=initial, completed=False)
+    result = {'mode': args.mode, 'source_sha256': initial, 'completed': False}
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         for line in process.stdout:

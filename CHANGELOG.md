@@ -2,10 +2,71 @@
 
 ## Unreleased
 
+No changes yet.
+
+## 0.6.1-beta - 2026-11-02
+
+Maintenance since `0.6.0-beta.4`; this remains a prerelease.
+
+### Changed
+
+- Use a transparent PNG logo in About, preserving the original artwork and
+  avoiding a runtime SVG-loader requirement for that dialog (`#452`).
+- Open main-menu Import/Export as a native side submenu with its pointing
+  arrow (`#452`).
+- Keep selectable labels unselected when focused, preserving manual text
+  selection and keyboard navigation throughout Termia; remove the obsolete
+  About dialog text-selection override (`#452`).
+- Fit Data Locations to its contents without scrolling, with monospaced paths
+  and top-aligned row labels and status (`#452`).
+- Widen snippet management, bound its preview layout and limit newly saved names
+  to 30 characters while preserving existing longer names (`#452`).
+- Simplify the English, Spanish and Catalan READMEs, retaining the screenshot
+  and essential installation and security guidance (`#452`).
+- Review update dependencies before applying Git or Debian updates, with one
+  native authorization for APT refresh/installation, verified package staging,
+  runtime checks, cancellation and recovery of an already-updated clean checkout
+  (`#428`). Published beta.4 clients require a manual first transition.
+- Simplify updater status and dependency actions, retain selectable bounded live
+  installation output, and use **Update Termia** as the final action (`#428`).
+- Replace 27 deprecated GTK dialogs and 13 text selectors with modal windows and
+  native dropdowns; preserve actions, stored values and lifecycle handling. Match
+  the Notes workspace background to its surrounding window (`#335`).
+- Remove confirmed unused Notes/sidebar/snippet/updater state, obsolete projection
+  calculations, 23 translation keys and unread test bindings. Simplify reviewed
+  expressions while retaining active callbacks and stored-data behavior
+  (`#421`, `#437`, `#439`, `#441`, `#443`, `#445`, `#447`, `#449`).
+- Keep individually reviewed low Bandit findings visible and tied to exact
+  occurrences and validated context; retain blocking checks for new findings
+  (`#428`).
+
 ### Fixed
 
-- Correct beta.4 public download links and installation filenames to match
-  GitHub's release asset name (`#386`).
+- Use absolute executables in the Ubuntu 26 RDP configurator and record four
+  individually reviewed low Bandit findings without weakening checks (`#454`).
+- Dismiss the main menu with one outside click after leaving Import/Export,
+  preserving submenu keyboard navigation (`#452`).
+- Keep shared dialog buttons and Escape working when GTK recreates their Python
+  window wrapper, including on Ubuntu 26 (`#452`).
+- Advance snippet selection/variables to preview with Enter, then send the
+  explicitly confirmed command once (`#433`).
+- Filter repetitive GTK symbolic-mask debug messages in the isolated launcher,
+  preserving other diagnostics, process identity and exit status (`#443`).
+- Stabilize native Notes drag tests and callback fixtures without hiding
+  warnings or weakening checks (`#413`, `#417`).
+
+### Development and validation
+
+- Prepare source/package metadata and release documentation for `0.6.1-beta`
+  (`#452`, `#454`).
+- Add release-asset consistency checks and prepare the `0.6.1-dev` maintenance
+  line with unnumbered beta delivery conventions (`#422`, `#424`, `#426`).
+- Extend isolated Wayland lifecycle diagnostics and the optional Ubuntu 26
+  GNOME/RDP laboratory, language support, launchers and updater trials
+  (`#419`, `#430`). Historical fixtures do not validate this final release.
+- Harden updater laboratory inputs, executable paths, downloads and temporary
+  permissions. Keep raw runtime evidence and personal data out of Git history
+  (`#428`, `#430`).
 
 ## 0.6.0-beta.4 - 2026-10-25
 

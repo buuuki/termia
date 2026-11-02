@@ -12,8 +12,8 @@ import gi
 gi.require_version("GLib", "2.0")
 from gi.repository import GLib
 
-from .session_observer import Pane
 from .models import StatisticsSettings
+from .session_observer import Pane
 from .ui_state import TerminalSession
 
 

@@ -11,7 +11,14 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk
 
+from .choice_widgets import (
+    append_choice,
+    choice_id,
+    select_choice,
+    text_choice,
+)
 from .connection_utils import group_descendant_ids, group_path_labels
+from .dialog_window import DialogWindow
 from .models import Group, LocalTerminalProfile, Server
 from .stores import ReadOnlyStoreError
 from .terminal_config import SPLIT_LAYOUT_CHOICES, normalize_split_layout
@@ -21,21 +28,21 @@ class ConnectionDialogsMixin:
     def show_group_dialog(self, group: Group | None = None, parent_group_id: str | None = None) -> None:
         if not self.ensure_writable():
             return
-        dialog = Gtk.Dialog(title=self.t("edit_group") if group else self.t("new_group"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("edit_group") if group else self.t("new_group"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(360, -1)
         self.add_dialog_action_buttons(dialog, self.t("save"))
 
         entry = Gtk.Entry()
         entry.set_placeholder_text(self.t("name"))
-        parent_combo = Gtk.ComboBoxText()
-        parent_combo.append("", self.t("no_parent_group"))
+        parent_combo = text_choice()
+        append_choice(parent_combo, "", self.t("no_parent_group"))
         excluded_ids = group_descendant_ids(self.store.data.groups, group.id) | {group.id} if group else set()
         for candidate, path_label in group_path_labels(self.store.data.groups):
             if candidate.id not in excluded_ids:
-                parent_combo.append(candidate.id, path_label)
+                append_choice(parent_combo, candidate.id, path_label)
         selected_parent_id = group.parent_id if group and group.parent_id not in excluded_ids else parent_group_id or ""
-        parent_combo.set_active_id(selected_parent_id)
+        select_choice(parent_combo, selected_parent_id)
         if group:
             entry.set_text(group.name)
 
@@ -59,14 +66,14 @@ class ConnectionDialogsMixin:
 
     def on_group_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         entry: Gtk.Entry,
-        parent_combo: Gtk.ComboBoxText,
+        parent_combo: Gtk.DropDown,
         group: Group | None,
     ) -> None:
         name = entry.get_text().strip()
-        parent_id = parent_combo.get_active_id() or None
+        parent_id = choice_id(parent_combo) or None
         if response == Gtk.ResponseType.OK and name:
             try:
                 if group:
@@ -96,17 +103,17 @@ class ConnectionDialogsMixin:
         label.add_css_class("termia-required-hint")
         return label
 
-    def build_split_layout_combo(self, selected_layout: str = "none") -> Gtk.ComboBoxText:
-        combo = Gtk.ComboBoxText()
+    def build_split_layout_combo(self, selected_layout: str = "none") -> Gtk.DropDown:
+        combo = text_choice()
         for layout_id, label_key in SPLIT_LAYOUT_CHOICES:
-            combo.append(layout_id, self.t(label_key))
-        combo.set_active_id(normalize_split_layout(selected_layout))
+            append_choice(combo, layout_id, self.t(label_key))
+        select_choice(combo, normalize_split_layout(selected_layout))
         return combo
 
     def show_server_dialog(self, server: Server | None = None) -> None:
         if not self.ensure_writable():
             return
-        dialog = Gtk.Dialog(title=self.t("edit_server") if server else self.t("new_server"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("edit_server") if server else self.t("new_server"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
         self.add_dialog_action_buttons(dialog, self.t("save"))
@@ -121,7 +128,7 @@ class ConnectionDialogsMixin:
         host_entry = Gtk.Entry()
         user_entry = Gtk.Entry()
         port_spin = Gtk.SpinButton.new_with_range(1, 65535, 1)
-        group_combo = Gtk.ComboBoxText()
+        group_combo = text_choice()
         password_entry = Gtk.PasswordEntry()
         password_entry.set_show_peek_icon(True)
         public_key_entry = Gtk.Entry()
@@ -133,17 +140,17 @@ class ConnectionDialogsMixin:
             widget.set_size_request(260, -1)
         favorite_check.set_halign(Gtk.Align.START)
 
-        group_combo.append("", self.t("no_group"))
+        append_choice(group_combo, "", self.t("no_group"))
         for group, path_label in group_path_labels(self.store.data.groups):
-            group_combo.append(group.id, path_label)
-        group_combo.set_active_id("")
+            append_choice(group_combo, group.id, path_label)
+        select_choice(group_combo, "")
 
         if server:
             name_entry.set_text(server.name)
             host_entry.set_text(server.host)
             user_entry.set_text(server.user)
             port_spin.set_value(server.port)
-            group_combo.set_active_id(server.group_id or "")
+            select_choice(group_combo, server.group_id or "")
             password_entry.set_text(server.password)
             public_key_entry.set_text(server.public_key)
             run_command_entry.set_text(server.command_on_start)
@@ -200,7 +207,7 @@ class ConnectionDialogsMixin:
 
     def on_server_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         widgets: dict[str, Any],
         server: Server | None,
@@ -209,11 +216,11 @@ class ConnectionDialogsMixin:
         host = widgets["host"].get_text().strip()
         user = widgets["user"].get_text().strip()
         port = int(widgets["port"].get_value())
-        group_id = widgets["group"].get_active_id() or None
+        group_id = choice_id(widgets['group']) or None
         password = widgets["password"].get_text()
         public_key = widgets["public_key"].get_text().strip()
         command_on_start = widgets["command_on_start"].get_text().strip()
-        split_layout = widgets["split_layout"].get_active_id() or "none"
+        split_layout = choice_id(widgets['split_layout']) or "none"
         favorite = widgets["favorite"].get_active()
 
         if response == Gtk.ResponseType.OK:
@@ -262,7 +269,7 @@ class ConnectionDialogsMixin:
     def show_local_terminal_dialog(self, profile: LocalTerminalProfile | None = None) -> None:
         if not self.ensure_writable():
             return
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.t("edit_local_terminal") if profile else self.t("new_local_terminal"),
             transient_for=self,
             modal=True,
@@ -348,7 +355,7 @@ class ConnectionDialogsMixin:
 
     def on_local_terminal_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         widgets: dict[str, Any],
         profile: LocalTerminalProfile | None,
@@ -359,7 +366,7 @@ class ConnectionDialogsMixin:
         arguments = widgets["arguments"].get_text().strip()
         command_on_start = widgets["command_on_start"].get_text().strip()
         tab_title = widgets["tab_title"].get_text().strip()
-        split_layout = widgets["split_layout"].get_active_id() or "none"
+        split_layout = choice_id(widgets['split_layout']) or "none"
 
         if response == Gtk.ResponseType.OK:
             if not name or not shell:

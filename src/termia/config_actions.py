@@ -8,7 +8,7 @@ import gi
 import yaml
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gio, GLib, Gtk
+from gi.repository import Gio, GLib, Gtk, Pango
 
 from .asbru_import import extract_asbru_connections, merge_asbru_connections
 from .config_io import (
@@ -28,12 +28,13 @@ from .constants import (
     STATE_DIR,
     STATISTICS_FILE,
 )
+from .dialog_window import DialogWindow
 
 
 class ConfigActionsMixin:
     def on_data_locations(self) -> None:
-        dialog = Gtk.Dialog(title=self.t("data_locations_title"), transient_for=self, modal=True)
-        dialog.set_default_size(680, 360)
+        dialog = DialogWindow(title=self.t("data_locations_title"), transient_for=self, modal=True)
+        dialog.set_default_size(680, -1)
         self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE)
         dialog.connect("response", lambda source, _response: source.destroy())
 
@@ -47,11 +48,8 @@ class ConfigActionsMixin:
         intro = Gtk.Label(label=self.t("data_locations_detail"))
         intro.set_xalign(0)
         intro.set_wrap(True)
+        intro.set_max_width_chars(80)
         content.append(intro)
-
-        scroller = Gtk.ScrolledWindow()
-        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scroller.set_vexpand(True)
 
         grid = Gtk.Grid(column_spacing=16, row_spacing=10)
         grid.set_margin_top(6)
@@ -62,6 +60,7 @@ class ConfigActionsMixin:
         for row, (label_key, path) in enumerate(self.data_location_paths()):
             label = Gtk.Label(label=self.t(label_key))
             label.set_xalign(0)
+            label.set_valign(Gtk.Align.START)
             label.add_css_class("dim-label")
             grid.attach(label, 0, row, 1, 1)
 
@@ -69,16 +68,22 @@ class ConfigActionsMixin:
             path_label.set_xalign(0)
             path_label.set_selectable(True)
             path_label.set_wrap(True)
+            path_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            path_label.set_width_chars(40)
+            path_label.set_max_width_chars(56)
+            attributes = Pango.AttrList()
+            attributes.insert(Pango.attr_family_new("monospace"))
+            path_label.set_attributes(attributes)
             path_label.set_hexpand(True)
             grid.attach(path_label, 1, row, 1, 1)
 
             state = Gtk.Label(label=self.t("path_exists") if path.exists() else self.t("path_missing"))
             state.set_xalign(0)
+            state.set_valign(Gtk.Align.START)
             state.add_css_class("dim-label")
             grid.attach(state, 2, row, 1, 1)
 
-        scroller.set_child(grid)
-        content.append(scroller)
+        content.append(grid)
         dialog.present()
 
     def data_location_paths(self) -> list[tuple[str, Path]]:
@@ -187,7 +192,7 @@ class ConfigActionsMixin:
         return True
 
     def present_connection_import_password(self, path: Path) -> None:
-        dialog = Gtk.Dialog(title=self.t("import_config_unlock_title"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("import_config_unlock_title"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(460, -1)
         self.add_dialog_action_buttons(dialog, self.t("import_config"))
@@ -207,7 +212,7 @@ class ConfigActionsMixin:
         entry.grab_focus()
 
     def on_connection_import_password_response(
-        self, dialog: Gtk.Dialog, response: Gtk.ResponseType, path: Path,
+        self, dialog: DialogWindow, response: Gtk.ResponseType, path: Path,
         entry: Gtk.PasswordEntry, error: Gtk.Label,
     ) -> None:
         if response != Gtk.ResponseType.OK or not self.ensure_writable():

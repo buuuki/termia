@@ -14,6 +14,8 @@ from gi.repository import GObject, Gtk, Vte
 from .sidebar_projection import SidebarRow as RowObject
 from .terminal_processes import TerminalProcess
 
+__all__ = ["RowObject", "SignalConnections", "TerminalPane", "TerminalSession"]
+
 
 @dataclass
 class SignalConnections:

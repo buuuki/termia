@@ -10,7 +10,12 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
 from .dialog_actions import add_dialog_action_button
-from .statistics_presenter import StatisticCard, StatisticsDashboard
+from .dialog_window import DialogWindow
+from .statistics_presenter import (
+    StatisticCard,
+    StatisticsDashboard,
+    StatisticsPresenter,
+)
 
 
 class StatisticsDialog:
@@ -27,7 +32,7 @@ class StatisticsDialog:
         self.translate = translate
 
     def show(self) -> None:
-        dialog = Gtk.Dialog(title=self.translate("statistics_title"), transient_for=self.parent, modal=True)
+        dialog = DialogWindow(title=self.translate("statistics_title"), transient_for=self.parent, modal=True)
         dialog.set_resizable(True)
         dialog.set_default_size(620, 520)
         add_dialog_action_button(
@@ -74,7 +79,7 @@ class StatisticsDialog:
         dialog.present()
 
     def show_session(self, parent: Gtk.Window, server_connections: int) -> None:
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.translate("session_statistics"),
             transient_for=parent,
             modal=True,

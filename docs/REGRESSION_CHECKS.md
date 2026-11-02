@@ -80,6 +80,9 @@ Long measurements and release-platform checks remain separate validation work.
   the same visible root/menu model, and restore parent focus. Right/Left must
   enter/leave submenus without breaking later outside-click dismissal.
   Tab/server/group context menus retain GTK's native pointing arrow.
+- Open main-menu Import/Export, return to its parent with Left or the pointer,
+  then click outside once: both menus must close. Repeat after reopening and
+  verify submenu actions close both menus before presenting their dialogs.
 
 - Repeatedly open and close local/SSH tabs and split panes. Retired sessions,
   native VTE widgets, pages and tab labels must become
@@ -182,10 +185,12 @@ Long measurements and release-platform checks remain separate validation work.
   is selected. Category rows must remain uniformly sized, including long names
   and empty categories. Selecting a category filters the list; typing in search
   must search across all categories, even after a category was selected.
-  Its default size is 795 × 560 logical px (25% narrower than the previous
-  1060 px width); all three columns and their actions must fit in every UI
+  Its default size is 900 × 560 logical px; all three columns and their actions must fit in every UI
   language. Manual resizing and returning from the editor must preserve the
   user's chosen manager size.
+  New and edited snippet names allow at most 30 characters. Preserve longer
+  stored names on loading and opening the editor; require shortening before
+  saving. Long preview titles must wrap within the column without widening the window.
   Search spans the top alone; Manage categories appears above the category
   column, Create snippet above the list, and a modest Command preview label
   above the read-only preview. The selection hint appears beneath the list
@@ -210,7 +215,12 @@ Long measurements and release-platform checks remain separate validation work.
   The selected highlight must follow the rounded tile rather than the square
   outer cell, while keyboard focus remains visible in light and dark themes.
 - Snippet variable values must be shell-quoted as individual arguments, and a
-  group-scoped snippet must apply to servers in that group and its nested
+  snippet selected in the execution search must advance to its preview with
+  Enter. Enter in a variable field must open the preview without sending;
+  Enter on the focused preview action must send once. Reopening the picker
+  must restore the selection action, with no sending when no item is selected.
+  Closing or cancelling the picker must disable its default action.
+  Group-scoped snippets must apply to servers in that group and its nested
   subgroups. Invalid or deleted scope targets must never broaden a snippet to
   global availability.
 - Snippet shortcuts must use the same assignment in the editor and keyboard
@@ -350,6 +360,9 @@ Long measurements and release-platform checks remain separate validation work.
 - `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
 - `Ctrl+Shift+B` must toggle the server sidebar without changing the `Ctrl+F` behavior.
 - `F10` must open and close the main menu. Other unmodified function keys, including `F6`, must still reach the embedded terminal.
+- Main-menu Import/Export must open beside the main menu, retain its existing
+  actions and write guards, and support pointer and keyboard navigation. Closing
+  and reopening the menu must leave that submenu closed.
 - `Ctrl+Shift+T` must open a new local terminal without changing the existing tab-navigation shortcuts.
 - `Ctrl+F6` and `Ctrl+Shift+F6` must cycle focus forward and backward through the visible server list, tab bar, and active terminal, skipping unavailable regions.
 - In horizontal, vertical, nested, and 2x2 split layouts, use the configured
@@ -760,6 +773,9 @@ Long measurements and release-platform checks remain separate validation work.
   `notes.json` into the isolated profile without changing the original file.
   The test profile must redirect only Termia data, preserving the desktop GTK
   configuration and appearance.
+- The test launcher must suppress only GTK DEBUG messages whose complete text
+  is `snapshot symbolic icon using mask`. Preserve other debug messages, all
+  warning/error levels, stderr, the reported application PID and its exit code.
 
 ### Application Appearance and Themes
 
@@ -867,15 +883,47 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### About updates
 
-- Open About and use Check for updates. Keep the existing logo, version,
-  license, issue link and native dialog appearance. Check keyboard access,
+- Confirm the installation type is shown for Git, .deb and unknown installs,
+  including when no update is available. After preparation, confirm the top
+  status names missing dependencies and explains automatic installation only
+  when available, or lists all verified requirements when ready. Test English,
+  Spanish and Catalan, light/dark appearance and
+  small windows; retain selectable text and readable layout.
+- In a disposable Ubuntu 24.04/26.04 fixture, omit GtkSourceView 5. Download
+  and review must leave the checkout unchanged. Confirm there is no manual
+  dependency installation button. Missing names must appear at the top, with
+  assisted installation offered when available. Missing requirements and
+  unavailable assisted installation must keep the update pending. Once all
+  requirements are verified, require explicit Update Termia before applying.
+  Use the same final action label with or without missing dependencies; preserve
+  assisted installation only for the missing-dependency case.
+  Closing while waiting must discard staging without changing the checkout.
+- Repeat assisted Git installation with real polkit acceptance/cancellation,
+  package-manager failure, a busy package manager and failed runtime probes.
+  Apply only after verification; do not claim success after errors. Confirm
+  .deb uses APT's transaction and verifies installed version and dependencies.
+  Start the Debian trial with empty APT lists: refresh must precede installation.
+  For assisted Git and Debian, require one native authorization covering both
+  APT operations. Cancelling it must start neither operation; a failed repository
+  refresh must not reach installation. Reject invalid/symlink packages before
+  APT and verify that changing the original download during refresh cannot
+  alter the protected package installed by the helper. Do not cache passwords.
+  Do not run privileged installation trials on the developer's host.
+- Cover changed/invalid plans, altered package bytes, changed checkout, and
+  close/cancel during preparation/application. Accept legacy numbered beta
+  identifiers, unnumbered beta and cross-PATCH maintenance within MAJOR.MINOR;
+  reject development updates and automatic prereleases for stable users.
+
+
+- Open About and use Check for updates. Verify the bundled PNG logo has a
+  transparent exterior; preserve version, license, issue link and native dialog appearance. Check keyboard access,
   light/dark themes, and English/Spanish/Catalan. Terminal and split geometry
   must remain unchanged; opening About alone must not query the network.
 - Run from the development branch: no downgrade to beta.1 is offered and the
   checkout restriction is explained. Verify no-update, offline, timeout,
   malformed metadata and newer compatible release states using injected clients.
-- Check numeric beta ordering and beta-to-final-stable progression in the same
-  application line. Stable users must never be offered prereleases automatically.
+- Check numeric legacy beta ordering, unnumbered beta maintenance and
+  beta-to-stable progression in the same MAJOR.MINOR series. Stable users must never be offered prereleases automatically.
 - In a disposable clean release checkout, prepare an official tag and confirm a
   fast-forward. Repeat with dirty, development, detached non-release and divergent
   checkouts: refuse without resetting or stashing user files. A fetch may leave
@@ -1165,7 +1213,97 @@ light/dark appearance. Start an isolated instance with
 
 ## Automated Checks
 
+### Ubuntu 26.04 GNOME base image
+
+For the separate package-only image in `tools/docker-lab/gnome26`, follow its
+[build and inspection commands](../tools/docker-lab/gnome26/README.md).
+Confirm the pinned Ubuntu digest, fixed APT snapshot and restricted build
+context. The full `ubuntu-desktop` metapackage, GNOME Shell, remote desktop,
+systemd, D-Bus, PipeWire and WirePlumber must have installed status, with no
+unfinished dpkg configuration or broken dependencies. Compare the recorded
+package inventory with the installed packages. Keep Snap transitional packages
+distinct from actual installed Snap applications.
+
+Confirm the English, Spanish and Catalan Ubuntu/GNOME language packs and
+the `en_US.UTF-8`, `es_ES.UTF-8` and `ca_ES.UTF-8` locales are installed.
+Check that Firefox and its Spanish/Catalan language packs match the declared
+initial version and originate from Mozilla's signed repository.
+With a fresh desktop profile, select each session language and verify it
+after the requested session restart. Launch Firefox from the application
+grid, load an HTTPS page and exercise text input through RDP.
+Restart and recreate the container with its profile volume retained;
+verify the selected language and synthetic browser preferences persist.
+Keep these interactive checks separate from successful package installation.
+
+Inspect with network disabled, a read-only filesystem, no host mounts and no
+added capabilities. No persistent volumes, exposed ports or running desktops
+are expected at this stage. A successful image build alone does not validate
+GNOME Shell on Wayland, remote image/input or teardown/reconstruction of the
+desktop deployment. Record those infrastructure observations separately from
+functional application and updater checks, which belong to #428 or their own
+issues. The requester accepted the #430 laboratory baseline on 2026-10-29;
+retain documented limitations without claiming application release validation.
+
+For the experimental `desktop` target, use the Compose commands in that guide.
+Check the declared private cgroups, `SYS_ADMIN`, per-container AppArmor setting,
+versioned seccomp (Moby default plus `pivot_root` only), loopback-only RDP port
+and absence of host bind mounts, GPU or KVM devices. Verify the declared read-write `/dev/fuse` device and host FUSE
+support; clipboard negotiation must not abort the daemon. Readiness health
+only checks the session socket and RDP listener;
+it does not mean every Ubuntu service is healthy. Keep failed units visible.
+Verify GNOME Shell's actual Wayland log, logind's active remote Wayland session,
+a GTK `GdkWaylandDisplay` probe and a desktop image received through RDP.
+Verify actual dock/application/desktop icons and wallpaper, not only panel
+text or successful authentication. Glycin/bubblewrap must load images with
+sandboxing enabled and without `pivot_root` permission errors.
+With a fresh isolated test profile, verify the Ubuntu session identity and
+compare its effective defaults with the installed Ubuntu schema overrides:
+window buttons, Yaru themes, fonts, background and keyboard shortcuts.
+Repeat through the laboratory panel and a terminal opened from it; Settings
+must recognize GNOME and applications must inherit the same desktop identity.
+Check the initial `en_US.UTF-8` session locale and user-selected Spanish/Catalan
+across restart and recreation. Keep existing dock and language customizations.
+Inspect extension state with the session unlocked; inactive extensions on the
+lock screen do not establish a loading failure. Verify dock setup waits for the
+Ubuntu user session and reports failure if it cannot become active.
+With clipboard disabled, send a synthetic text marker by RDP mouse/keyboard to
+the stock text editor, save it and compare the resulting bytes. Reconnect and
+confirm the session/file survive. Destroy the new project's volumes and repeat
+with regenerated credentials and no previous profile marker; retaining Docker
+build cache does not certify a fresh network/package download. Do not alter PAM
+or polkit to make an authorization test pass. Native authorization acceptance,
+clipboard/FUSE, full desktop-service health and Termia integration remain their
+own validation requirements. Never destroy the previous private laboratories.
+
 ### Setup and upgrade compatibility
+
+When code has advanced to the selected release while the older process remains
+open, rechecking must offer dependency review rather than a dirty-checkout error.
+Only a clean main/tag checkout exactly at the selected official release qualifies;
+never relax checks for local edits or development branches. Verify assisted
+installation and manual rechecks with a missing GtkSourceView binding. Update
+windows must allow access to Termia's terminals during manual installation.
+Copy diagnostic text using normal selection/copy shortcuts, finish verification,
+then close all Termia windows and reopen. No manual-dependency button or generated
+command list should appear. Content and confirmation windows use
+`configure_dialog_content`; action rows use the shared action-area helper.
+
+
+In About → Check for updates, verify Installation details expands to show live
+APT/Git output while the spinner stays active. Status, installation-type and
+confirmation text must support GTK selection and normal copy shortcuts without
+a dedicated setup-copy button. Opening the dialog must focus Check for updates
+without automatically selecting the version text. Content and actions must align using shared
+dialog insets rather than nested padding.
+Selecting text and copying with Ctrl+C must match the displayed text,
+remain available after an error, and a new check must clear the log. Keep the log
+read-only and bounded to 65,536 characters; no output may be used as executable
+input. Confirm stderr is visible, ANSI controls are removed, URLs are hidden
+even across pipe-read boundaries, and large output does not queue unbounded GTK
+callbacks. Cancellation must still stop preparation, not an applying package
+transaction; destroyed windows must not receive output. Check EN/ES/CA text.
+Use a real GNOME session for Ubuntu's native authentication dialog; a terminal
+polkit agent does not validate that interaction.
 
 Missing Python/GI, SSH or sshpass dependencies must make `run_checks()` fail
 when invoked as an `if` condition. Setup must install missing dependencies,
@@ -1186,13 +1324,37 @@ setup against the developer's host as a regression test: it can invoke sudo and
 install packages. Official release assets, HTTPS transport and desktop privilege
 authorization require separate release-time validation.
 
+### Release asset validation
+
+Run `python3 scripts/run_sandbox_tests.py tests.test_release_assets` when changing
+release checks. Cover draft/published state, approved digest, asset cardinality,
+source/tag agreement, prerelease state, README links and release instructions.
+Follow the draft and public-download gates in `VERSIONING.md`; a successful
+check of a local snapshot does not publish or certify later remote changes.
+
 ### Standard automated commands
+
+For #335, run `python3 scripts/run_sandbox_tests.py tests.test_dialog_widgets`
+and the affected dialog, preference, Notes, snippet, tab and reconnect tests.
+Existing forms use shared modal windows and native dropdowns. Check Save/Cancel,
+Enter/Escape, window close, focus return, unchanged selection IDs after reopening,
+duplicate labels and empty/rebuilt models. Test light/dark and EN/ES/CA, including
+read-only states and optional tools enabled/disabled; no real SSH is required.
+The migrated paths must not emit Gtk.Dialog/ComboBox deprecations; retain other
+diagnostics rather than suppressing warnings globally.
 
 CI also runs `python3 scripts/check_static_analysis.py --base <base-ref> --head <head-ref>`
 with the pinned tools in `requirements-ci.txt`. Validate changes to this gate
 with `python3 scripts/run_sandbox_tests.py tests.test_static_analysis` and a
-real comparison. Existing findings must remain visible; new occurrences and
-tool/report/history errors must fail. Line shifts must not create new findings,
+real comparison. Existing and individually reviewed findings must remain visible;
+unreviewed new occurrences and tool/report/history/review-evidence errors must
+fail. Follow `STATIC_ANALYSIS_REVIEWS.md`: exact approved low Bandit cases may
+stop blocking, with no blanket exclusions. Verify duplicate occurrences, changed
+guards or severity, stale entries, unsafe paths, invalid schemas and deleting an
+existing registry cannot pass. Removing entries while their findings remain
+must also fail; committed comparisons must ignore a dirty local
+registry. Preserve the raw introduced count and report reviewed/blocking counts.
+Line shifts must not create new findings,
 and duplicate findings, renamed files, deleted files and suppression comments
 must not bypass comparison. The first legacy-base promotion must require the
 documented immutable adoption/release/head ancestry, report its effective base,
@@ -1258,3 +1420,34 @@ config migration, import/export, and statistics.
 
 The automated equivalent runs in GitHub Actions for every pull request and
 every push to `main`.
+
+### Updater preview tool hardening (#428)
+
+Run `python3 scripts/run_sandbox_tests.py tests.test_upgrade_preview` without
+network access or privileged package operations. Verify that importing the
+preparer has no build/download side effects, approved fixture bytes are accepted,
+and incorrect digests, oversized data, nonofficial URLs and HTTPS downgrades are
+rejected before a package is written or Git is run. Use absolute executables,
+including commands passed through sudo or a terminal, in the preview launcher,
+panel, preparer and shared reset script. Keep the GNOME export's launch markers
+and reset behavior intact; this validation does not rebuild a running laboratory.
+With mocked widgets and child processes, exercise real evidence-directory
+creation under a synthetic temporary parent. Confirm distinct private `0700`
+directories even with a permissive umask, retained logs from previous trials,
+and no directory or child allocation while a trial is already running.
+
+### Direct update preparation (#428)
+
+Download and review must prepare the update in the existing updater window
+without an intermediate confirmation. Preparation must not install packages or
+advance the source checkout. Show each pending dependency once, record successful
+preparation only after verification and dependency checks, and retain log output
+on failure. Never apply a Git update with missing requirements; for Debian, retain
+APT dependency resolution and final installed-version/runtime verification.
+
+Dependency summaries and installation output appear in installation details,
+with missing or verified requirements named in the top status. Do not display
+manual installation commands or add a separate Copy commands or Copy log button.
+The log supports selection and Ctrl+C; a new check clears it.
+Verify that collapsing installation details keeps footer
+actions at the bottom, and dependency buttons do not stretch on window resize.

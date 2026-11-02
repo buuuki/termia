@@ -3,14 +3,14 @@
 """UI-independent SFTP contracts and serialized, cancellable execution."""
 from __future__ import annotations
 
+import posixpath
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Event, Lock, Thread
 from time import monotonic, sleep
-from typing import Protocol, Any
-import posixpath
+from typing import Any, Protocol
 
 
 @dataclass(frozen=True)

@@ -111,9 +111,9 @@ class ServerGroupMoveTests(unittest.TestCase):
                     setattr(self.store, state, False)
 
     def test_failed_save_restores_the_original_group(self) -> None:
-        with patch.object(self.store, "save_connections", side_effect=OSError("disk full")):
-            with self.assertRaises(OSError):
-                self.store.move_server_to_group(self.server.id, self.second.id)
+        with (patch.object(self.store, "save_connections", side_effect=OSError("disk full")),
+              self.assertRaises(OSError)):
+            self.store.move_server_to_group(self.server.id, self.second.id)
         self.assertEqual(self.server.group_id, self.first.id)
 
     def test_move_updates_group_scoped_snippet_availability(self) -> None:

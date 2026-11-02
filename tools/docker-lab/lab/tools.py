@@ -1,19 +1,18 @@
 """Local controller for isolated diagnostics and passive process observations."""
 import argparse
-from collections import deque
 import datetime
 import fcntl
 import hashlib
 import json
 import os
-from pathlib import Path
-import shutil
+import secrets
 import subprocess
 import sys
+import tempfile
 import threading
 import time
-import secrets
-import tempfile
+from collections import deque
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from context import prepare_context
@@ -33,7 +32,8 @@ SERVER_IMAGE = PREFIX + '-server:local'
 LABEL = 'local.termia.tools'
 MODES = ('lifecycle', 'memory', 'memory-trace', 'close-live', 'valgrind',
          'menus', 'churn-disabled', 'churn-enabled', 'behavior-x11', 'behavior-wayland',
-         'smoke-x11', 'smoke-wayland', 'ssh-smoke')
+         'smoke-x11', 'smoke-wayland', 'ssh-smoke',
+         'churn-disabled-wayland', 'churn-enabled-wayland')
 SSH_MODES = MODES[:5] + ('ssh-smoke',)
 
 
@@ -147,15 +147,15 @@ def start(kind, mode=None):
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d-%H%M%S-%f')
         directory = EVIDENCE / f'{stamp}-{mode or kind}'
         directory.mkdir()
-        write_json(directory / 'manifest.json', dict(mode=mode or kind,
-                   source_sha256=fingerprint(), source=str(SOURCE),
-                   created_utc=stamp, state='starting'))
+        write_json(directory / 'manifest.json', {'mode': mode or kind,
+                   'source_sha256': fingerprint(), 'source': str(SOURCE),
+                   'created_utc': stamp, 'state': 'starting'})
         with (directory / 'console.log').open('w') as log:
             process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()),
                 '_worker', kind, str(directory), mode or 'monitor'],
                 stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        write_json(EVIDENCE / (kind + '.json'), dict(pid=process.pid, birth=birth(process.pid),
-                   mode=mode or kind, directory=str(directory)))
+        write_json(EVIDENCE / (kind + '.json'), {'pid': process.pid, 'birth': birth(process.pid),
+                   'mode': mode or kind, 'directory': str(directory)})
         print(f'Iniciado: {directory}')
 
 
@@ -278,12 +278,14 @@ def client_command(directory, mode):
         command = ['python3', '-X', 'faulthandler', '/opt/lab/lifecycle/entry.py', mode]
     else:
         args += ['--network', 'none']
-        probe_mode, backend = (mode.split('-', 1) if mode.startswith(('behavior-', 'smoke-')) else (mode, 'x11'))
+        probe_mode, separator, backend = mode.rpartition('-')
+        if not separator or backend not in ('x11', 'wayland'):
+            probe_mode, backend = mode, 'x11'
         command = ['python3', '-X', 'faulthandler', '/opt/probes/probe.py', probe_mode, backend]
     args += ['--entrypoint', 'bash', IMAGE, '-c',
-             'mkdir -p "$HOME" "$XDG_RUNTIME_DIR"; chmod 700 "$HOME" "$XDG_RUNTIME_DIR"; '
+             ('mkdir -p "$HOME" "$XDG_RUNTIME_DIR"; chmod 700 "$HOME" "$XDG_RUNTIME_DIR"; '
              'unset SSH_AUTH_SOCK; export GDK_BACKEND=x11 GSETTINGS_BACKEND=memory; '
-             'exec dbus-run-session -- xvfb-run -a -s "-screen 0 1800x1100x24 -nolisten tcp" "$@"',
+             'exec dbus-run-session -- xvfb-run -a -s "-screen 0 1800x1100x24 -nolisten tcp" "$@"'),
              'termia-diagnostic', *command]
     return ['docker', *map(str, args)]
 

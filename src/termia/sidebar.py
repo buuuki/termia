@@ -25,8 +25,10 @@ from .connection_utils import (
     unique_server_clone_name,
     unique_workspace_clone_name,
 )
+from .dialog_window import DialogWindow
 from .models import Group, LocalTerminalProfile, Server, Workspace
-from .sidebar_projection import SidebarRow as RowObject, build_sidebar_projection
+from .sidebar_projection import SidebarRow as RowObject
+from .sidebar_projection import build_sidebar_projection
 from .workspace_layout import (
     MAX_WORKSPACE_PANES,
     capture_workspace_tabs,
@@ -326,10 +328,8 @@ class SidebarMixin:
         projection = build_sidebar_projection(
             self.store.data.groups, self.store.data.servers,
             self.store.data.local_terminals, self.store.data.workspaces,
-            self.store.recent_server_ids(), query, self.group_expanded_state,
-            self.collapse_groups_on_startup,
+            self.store.recent_server_ids(), query,
         )
-        self.sidebar_projection = projection
         root = Gio.ListStore.new(SidebarTreeNode)
 
         def server_node(server, kind="server", icon="network-server-symbolic"):
@@ -1423,7 +1423,7 @@ class SidebarMixin:
         tabs: list[dict[str, object]] | None = None,
         workspace_id: str | None = None,
     ) -> None:
-        dialog = Gtk.Dialog(title=title, transient_for=self, modal=True)
+        dialog = DialogWindow(title=title, transient_for=self, modal=True)
         self.add_dialog_action_buttons(dialog, self.t("save"))
         dialog.set_default_response(Gtk.ResponseType.OK)
         content = dialog.get_content_area()
@@ -1446,7 +1446,7 @@ class SidebarMixin:
 
     def on_workspace_name_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         entry: Gtk.Entry,
         tabs: list[dict[str, object]] | None,

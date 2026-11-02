@@ -11,49 +11,58 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Gtk
 
-from .config_actions import ConfigActionsMixin
-from .connection_history_presenter import ConnectionHistoryPresenter
-from .connection_history_view import ConnectionHistoryDialog
 from .builtin_sftp import SFTPTool
 from .builtin_tools import BuiltInTools
-from .transfer_lifecycle import ManagedTransfer
+from .config_actions import ConfigActionsMixin
 from .connection_dialogs import ConnectionDialogsMixin
+from .connection_history_presenter import ConnectionHistoryPresenter
+from .connection_history_view import ConnectionHistoryDialog
 from .constants import (
     APP_ID,
     DATA_FILE,
     INSTANCE_LOCK_FILE,
-    SETTINGS_FILE,
     SESSION_SNAPSHOT_FILE,
+    SETTINGS_FILE,
     STATE_DIR,
 )
-from .debug import configure_debug_logging, log_event, log_startup_context, log_store_state
+from .debug import (
+    configure_debug_logging,
+    log_event,
+    log_startup_context,
+    log_store_state,
+)
 from .dialog_actions import configure_action_area
 from .i18n import translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
 from .main_menu_actions import MainMenuActions
-from .notifications import NOTIFICATION_ICONS, GroupedNotificationLabel, NotificationSeverity
-from .preferences import PreferencesMixin
-from .session_registry import SessionRegistry
-from .session_observer import NoOpSessionObserver
-from .session_snapshot import SessionSnapshotStore
-from .snippet_dialogs import SnippetDialogs
-from .snippet_presenter import SnippetPresenter
 from .notes_dialogs import NotesDialogs
 from .notes_presenter import NotesPresenter
+from .notifications import (
+    NOTIFICATION_ICONS,
+    GroupedNotificationLabel,
+    NotificationSeverity,
+)
 from .optional_tools_dialog import OptionalToolsDialog
-from .stores import ConnectionStore
+from .preferences import PreferencesMixin
+from .session_observer import NoOpSessionObserver
+from .session_registry import SessionRegistry
+from .session_snapshot import SessionSnapshotStore
 from .sidebar import SidebarMixin
-from .statistics_presenter import StatisticsPresenter
+from .snippet_dialogs import SnippetDialogs
+from .snippet_presenter import SnippetPresenter
 from .statistics_collector import StatisticsCollector
+from .statistics_presenter import StatisticsPresenter
 from .statistics_view import StatisticsDialog
+from .stores import ConnectionStore
 from .styles import build_application_css
 from .tab_lifecycle_actions import TabLifecycleActions
 from .tabs import TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
-from .terminal_menus import TerminalMenusMixin
 from .terminal_menu_actions import TerminalMenuActions
+from .terminal_menus import TerminalMenusMixin
 from .terminal_processes import TerminalProcess
 from .terminal_sessions import TerminalSessionsMixin
+from .transfer_lifecycle import ManagedTransfer
 from .ui_state import RowObject
 
 TOAST_VISIBLE_SECONDS = 5
@@ -1078,6 +1087,12 @@ class TermiaWindow(
 class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
+
+    def do_startup(self) -> None:
+        Gtk.Application.do_startup(self)
+        settings = Gtk.Settings.get_default()
+        if settings is not None:
+            settings.set_property("gtk-label-select-on-focus", False)
 
     def do_activate(self) -> None:
         window = self.props.active_window

@@ -3,14 +3,16 @@ import functools
 import hashlib
 import json
 import os
-from pathlib import Path
 import time
 import weakref
+from pathlib import Path
 
 import gi
+
 gi.require_version('Gtk', '4.0')
 gi.require_version('Gdk', '4.0')
 from gi.repository import Gdk, GLib, Gtk
+
 from termia import __version__
 from termia.app import TermiaApp, main
 from termia.tabs import TabsMixin

@@ -1,10 +1,10 @@
-import unittest
-import gc
-import time
 import shutil
 import subprocess
-import tempfile
 import sys
+import tempfile
+import time
+import unittest
+from itertools import pairwise
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -13,7 +13,7 @@ from gi.repository import Gio, GObject
 
 from termia.session_registry import SessionRegistry
 from termia.tab_lifecycle_actions import TabLifecycleActions
-from termia.tabs import Gdk, GLib, Graphene, Gtk, TERMINAL_TAB_DND_MIME_TYPE, TabsMixin
+from termia.tabs import TERMINAL_TAB_DND_MIME_TYPE, Gdk, GLib, Graphene, Gtk, TabsMixin
 
 
 def install_tab_strip(host, window):
@@ -170,17 +170,17 @@ class PrivateTabDragTests(unittest.TestCase):
     def test_accept_rejects_foreign_text_missing_and_detached_sessions(self):
         self.assertTrue(self.host.on_tab_bar_drop_accept(None, self.drop))
         for condition in ("foreign", "text", "deleted", "detached", "shutdown"):
-            with self.subTest(condition=condition):
-                with patch.object(self.host, "tab_drag", object() if condition == "foreign" else self.host.tab_drag), \
-                     patch.object(self.drop, "get_formats", return_value=Gdk.ContentFormats.new(
-                         ["text/plain"] if condition == "text" else [TERMINAL_TAB_DND_MIME_TYPE])), \
-                     patch.object(self.session, "detached_window", object() if condition == "detached" else None), \
-                     patch.object(self.host, "shutdown_in_progress", condition == "shutdown", create=True):
-                    if condition == "deleted":
-                        self.host.session_registry.remove(self.session.id)
-                    self.assertFalse(self.host.on_tab_bar_drop(None, self.drop, 20, 0))
-                    if condition == "deleted":
-                        self.host.session_registry.register(self.session)
+            with (self.subTest(condition=condition),
+                  patch.object(self.host, "tab_drag", object() if condition == "foreign" else self.host.tab_drag),
+                  patch.object(self.drop, "get_formats", return_value=Gdk.ContentFormats.new(
+                      ["text/plain"] if condition == "text" else [TERMINAL_TAB_DND_MIME_TYPE])),
+                  patch.object(self.session, "detached_window", object() if condition == "detached" else None),
+                  patch.object(self.host, "shutdown_in_progress", condition == "shutdown", create=True)):
+                if condition == "deleted":
+                    self.host.session_registry.remove(self.session.id)
+                self.assertFalse(self.host.on_tab_bar_drop(None, self.drop, 20, 0))
+                if condition == "deleted":
+                    self.host.session_registry.register(self.session)
         self.drop.read_async.assert_not_called()
 
     def test_drag_icon_uses_tab_paintable_and_clears_drag_state(self):
@@ -245,7 +245,7 @@ class PrivateTabDragTests(unittest.TestCase):
 
     def test_motion_reorders_only_the_current_local_drag(self):
         self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 100, 0), Gdk.DragAction.MOVE)
-        self.host.reorder_dragged_tab_at_bar_x.assert_called_once_with(None, 100)
+        self.host.reorder_dragged_tab_at_bar_x.assert_called_once_with(100)
         self.host.invalidate_tab_overflow_menu.assert_not_called()
         self.drop.get_drag.return_value = object()
         self.assertEqual(self.host.on_tab_bar_drop_motion(None, self.drop, 100, 0), Gdk.DragAction(0))
@@ -565,7 +565,7 @@ class FakeTab:
 class FakeTabBar:
     def __init__(self, tabs) -> None:
         self.first_child = tabs[0] if tabs else None
-        for current, following in zip(tabs, tabs[1:]):
+        for current, following in pairwise(tabs):
             current.next_sibling = following
 
     def get_first_child(self):
@@ -1157,6 +1157,7 @@ class TerminalTabStripApplicationTests(unittest.TestCase):
 def exercise_overflow_drag():
     """Run the GTK assertion reproducer in a child process on the private display."""
     import resource
+
     import gi
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     gi.require_version("GdkX11", "4.0")

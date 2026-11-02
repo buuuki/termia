@@ -3,13 +3,13 @@
 """Release policy and bounded official downloads. No GTK or installation code."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
-from pathlib import Path
 import re
-from threading import Event
 import time
+from dataclasses import dataclass
+from pathlib import Path
+from threading import Event
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
@@ -45,7 +45,7 @@ class Version:
             raise ValueError("Unsupported version")
         major, minor, patch, stage, serial, dev = match.groups()
         return cls(int(major), int(minor), int(patch),
-                   {"alpha": 0, "beta": 1, "rc": 2, None: 3}[stage],
+                   -1 if dev else {"alpha": 0, "beta": 1, "rc": 2, None: 3}[stage],
                    int(serial or 1), int(not dev))
 
 
@@ -73,6 +73,8 @@ class Release:
 
 def select_release(items: list[dict], current: str) -> Release | None:
     installed = Version.parse(current)
+    if not installed.released:
+        return None
     candidates = []
     for item in items:
         tag = item.get("tag_name", "")
@@ -84,11 +86,11 @@ def select_release(items: list[dict], current: str) -> Release | None:
             continue
         if not version.released or version <= installed:
             continue
-        # Prereleases stay in their application line; stable users see stable only.
+        # Beta maintenance stays in MAJOR.MINOR; stable users see stable only.
         if installed.stage < 3:
-            if (version.major, version.minor, version.patch) != (
-                installed.major, installed.minor, installed.patch
-            ):
+            if version.stage < installed.stage:
+                continue
+            if (version.major, version.minor) != (installed.major, installed.minor):
                 continue
         elif version.stage < 3 or item.get("prerelease"):
             continue

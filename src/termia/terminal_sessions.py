@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-import signal
 import shlex
+import signal
 import time
 from pathlib import Path
 from typing import Any
@@ -20,19 +20,26 @@ gi.require_version("Pango", "1.0")
 gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
+from .choice_widgets import (
+    append_choice,
+    choice_id,
+    select_choice,
+    text_choice,
+)
 from .connection_utils import find_local_terminal_profile, find_server
+from .debug import log_event
+from .dialog_window import DialogWindow
 from .file_transfer import FileTransferController
-from .transfer_lifecycle import ManagedTransfer
 from .keybindings import is_unmodified_function_key, keybinding_matches
 from .known_hosts import inspect_known_host_async
 from .models import LocalTerminalProfile, Server, Workspace
 from .session_commands import build_ssh_command
-from .split_panes import SplitPaneController, directional_pane_neighbor
 from .split_connection_search import (
     SplitConnectionChoice,
     build_split_connection_choices,
     filter_split_connection_choices,
 )
+from .split_panes import SplitPaneController, directional_pane_neighbor
 from .terminal_config import (
     build_local_prompt_shell_command,
     build_terminal_environment,
@@ -46,6 +53,7 @@ from .terminal_processes import (
     terminal_process_is_active,
 )
 from .terminal_view import TerminalViewFactory
+from .transfer_lifecycle import ManagedTransfer
 from .ui_state import TerminalPane, TerminalSession
 from .workspace_layout import (
     MAX_WORKSPACE_PANES,
@@ -56,8 +64,6 @@ from .workspace_layout import (
     workspace_tab_layouts,
     workspace_total_pane_count,
 )
-from .debug import log_event
-
 
 INITIAL_LOCAL_COMMAND_DELAY_MS = 300
 MAX_OPEN_TABS = 40
@@ -656,7 +662,7 @@ class TerminalSessionsMixin:
             terminal.feed(f"{message}\r\n".encode())
             session.status_label.set_label(self.t("ssh_missing_status"))
             self.store.record_history_end(session, "failed", detail=message)
-            self.mark_session_for_reconnect(session, server, message)
+            self.mark_session_for_reconnect(session, message)
             return
 
         if server.password:
@@ -699,7 +705,7 @@ class TerminalSessionsMixin:
                 terminal.feed(f"{message}\r\n".encode())
                 session.status_label.set_label(self.t("sshpass_missing_status"))
                 self.store.record_history_end(session, "failed", detail=message)
-                self.mark_session_for_reconnect(session, server, message)
+                self.mark_session_for_reconnect(session, message)
                 return
             command = build_ssh_command(server, ssh_path, sshpass_path=sshpass_path)
             display_command = build_ssh_command(
@@ -722,7 +728,7 @@ class TerminalSessionsMixin:
             terminal.feed(f"{message}\r\n".encode())
             session.status_label.set_label("Error")
             self.store.record_history_end(session, "failed", detail=exc.message)
-            self.mark_session_for_reconnect(session, server, self.t("ssh_start_failed_toast").format(name=server.name))
+            self.mark_session_for_reconnect(session, self.t("ssh_start_failed_toast").format(name=server.name))
             return
 
         session.child_process = child_process
@@ -743,7 +749,7 @@ class TerminalSessionsMixin:
         self.apply_split_layout(session, split_layout, server=server)
         self.toast_label.set_label(self.t("session_opened").format(title=session.title))
 
-    def mark_session_for_reconnect(self, session: TerminalSession, server: Server, toast: str) -> None:
+    def mark_session_for_reconnect(self, session: TerminalSession, toast: str) -> None:
         session.connected = False
         session.pending_reconnect = True
         session.active_terminal_ids.discard(id(session.terminal))
@@ -1222,7 +1228,7 @@ class TerminalSessionsMixin:
             self.toast_label.set_label(self.t("split_connection_none_available"))
             return
 
-        dialog = Gtk.Dialog(
+        dialog = DialogWindow(
             title=self.t("open_connection_in_split"),
             transient_for=self.window_for_session(session),
             modal=True,
@@ -1237,10 +1243,10 @@ class TerminalSessionsMixin:
         grid.set_margin_start(16)
         grid.set_margin_end(16)
 
-        direction_combo = Gtk.ComboBoxText()
+        direction_combo = text_choice()
         for direction in ("up", "down", "right", "left"):
-            direction_combo.append(direction, self.t(f"split_{direction}"))
-        direction_combo.set_active_id("right")
+            append_choice(direction_combo, direction, self.t(f"split_{direction}"))
+        select_choice(direction_combo, "right")
 
         search_entry = Gtk.SearchEntry()
         search_entry.set_placeholder_text(self.t("search_connections"))
@@ -1386,7 +1392,7 @@ class TerminalSessionsMixin:
     def on_split_connection_search_activated(
         self,
         _entry: Gtk.SearchEntry,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         connection_list: Gtk.ListBox,
         state: dict[str, list[SplitConnectionChoice]],
     ) -> None:
@@ -1395,18 +1401,18 @@ class TerminalSessionsMixin:
 
     def on_split_connection_dialog_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         session: TerminalSession,
         source_terminal: Vte.Terminal,
-        direction_combo: Gtk.ComboBoxText,
+        direction_combo: Gtk.DropDown,
         connection_list: Gtk.ListBox,
         state: dict[str, list[SplitConnectionChoice]],
     ) -> None:
         if response != Gtk.ResponseType.OK:
             dialog.destroy()
             return
-        direction = direction_combo.get_active_id()
+        direction = choice_id(direction_combo)
         connection_id = self.selected_split_connection_id(connection_list, state)
         if direction is None or connection_id is None:
             dialog.destroy()
@@ -2383,4 +2389,4 @@ class TerminalSessionsMixin:
             self.toast_label.set_label(self.t("session_closed_toast").format(title=server.name))
             return
         session.status_label.set_label(f"Error: {session.title}")
-        self.mark_session_for_reconnect(session, server, self.t("connection_failed_toast").format(title=server.name))
+        self.mark_session_for_reconnect(session, self.t("connection_failed_toast").format(title=server.name))

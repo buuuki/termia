@@ -86,18 +86,6 @@ class NotesFileStore:
             password,
         )
 
-    def detect_storage_mode(self) -> str:
-        try:
-            payload = read_storage_json(self.path)
-        except (OSError, json.JSONDecodeError):
-            return "plain"
-        format_name = payload.get("format") if isinstance(payload, dict) else None
-        if format_name == "termia-notes-encrypted-v1":
-            return CONNECTION_STORAGE_ENCRYPTED
-        if format_name == "termia-notes-obfuscated-v1":
-            return "obfuscated"
-        return "plain"
-
     def backup_invalid_file(self) -> Path | None:
         if not self.path.exists() or self.read_only:
             return None

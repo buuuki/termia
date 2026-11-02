@@ -1,12 +1,19 @@
-import unittest
-import time
 import shutil
 import subprocess
+import time
+import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 from termia.models import Group, LocalTerminalProfile, Server, StoreData, Workspace
-from termia.sidebar import Gdk, GLib, Graphene, Gtk, SERVER_GROUP_DND_MIME_TYPE, SidebarMixin
+from termia.sidebar import (
+    SERVER_GROUP_DND_MIME_TYPE,
+    Gdk,
+    GLib,
+    Graphene,
+    Gtk,
+    SidebarMixin,
+)
 from termia.sidebar_projection import SidebarRow
 
 
@@ -244,8 +251,52 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         host.set_all_groups_expanded(True)
         self.assertTrue(host.get_group_expander("child").get_expanded())
 
+    def test_startup_collapse_preserves_sections_and_child_expansion(self):
+        host = self.host
+        host.collapse_groups_on_startup = True
+        host.group_expanded_state = {"child": True}
+        host.refresh_list()
+        parent = host.get_group_expander("parent")
+        self.assertFalse(parent.get_expanded())
+        self.assertIsNone(host.get_visible_tree_row_index(SidebarRow("server", "one", "")))
+        for kind, item_id in (("workspace", "work"), ("local_terminal", "local"),
+                              ("recent", "one"), ("favorite", "one")):
+            self.assertIsNotNone(host.get_visible_tree_row_index(SidebarRow(kind, item_id, "")))
+        parent.set_expanded(True)
+        self.drain()
+        self.assertTrue(host.get_group_expander("child").get_expanded())
+        self.assertIsNotNone(host.get_visible_tree_row_index(SidebarRow("server", "one", "")))
+        parent.set_expanded(False)
+        self.drain()
+        parent.set_expanded(True)
+        self.drain()
+        self.assertTrue(host.get_group_expander("child").get_expanded())
+
+    def test_profile_search_uses_directory_and_restores_collapsed_groups(self):
+        host = self.host
+        host.store.data.local_terminals[0].working_directory = "/srv/projects"
+        host.group_expanded_state = {"parent": False}
+        host.search_entry.set_text("projects")
+        host.refresh_list()
+        self.assertEqual(
+            [(row.kind, row.item_id) for row in host.visible_tree_rows
+             if row.kind not in {"section", "group"}],
+            [("local_terminal", "local")],
+        )
+        self.assertIsNone(host.get_group_expander("parent"))
+        host.search_entry.set_text("")
+        host.refresh_list()
+        self.assertFalse(host.get_group_expander("parent").get_expanded())
+        self.assertFalse(host.group_expanded_state["parent"])
+
     def test_activation_uses_each_projected_identity(self):
         host = self.host
+        self.assertEqual(
+            [(row.kind, row.item_id) for row in host.visible_tree_rows if row.kind != "section"],
+            [("workspace", "work"), ("local_terminal", "local"),
+             ("recent", "one"), ("favorite", "one"), ("group", "parent"),
+             ("group", "child"), ("server", "one"), ("server", "two")],
+        )
         for kind in ("server", "favorite", "recent"):
             index = self.select(kind, "one")
             host.on_sidebar_tree_activated(host.server_list, index)

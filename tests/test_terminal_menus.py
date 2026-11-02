@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 from termia.models import Server
 from termia.terminal_menu_actions import TerminalMenuActions
-from termia.terminal_menus import Gdk, Gio, GLib, Gtk, Vte, TerminalMenusMixin
+from termia.terminal_menus import Gdk, Gio, GLib, Gtk, TerminalMenusMixin, Vte
 from termia.terminal_sessions import TerminalSessionsMixin
 
 

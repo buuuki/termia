@@ -6,11 +6,65 @@ from types import MethodType, SimpleNamespace
 from unittest.mock import Mock, patch
 
 from termia import config_io
-from termia.config_actions import ConfigActionsMixin, Gio, Gtk
+from termia.config_actions import ConfigActionsMixin, Gio, GLib, Gtk
 from termia.config_io import read_connections_payload, write_connections_file
 from termia.dialog_actions import add_dialog_action_button
+from termia.dialog_window import DialogWindow
+from termia.i18n import translate_key
 from termia.models import Server
 from termia.stores import ConnectionStore
+
+
+class DataLocationsTests(unittest.TestCase):
+    def test_all_locations_fit_without_scrolling_in_each_language(self):
+        if not Gtk.init_check():
+            self.skipTest("GTK display unavailable")
+        paths = ConfigActionsMixin.data_location_paths(None)
+        for language in ("en", "es", "ca"):
+            for long_path in (False, True):
+                with self.subTest(language=language, long_path=long_path):
+                    host = Gtk.Window()
+                    host.t = lambda key, lang=language: translate_key(key, lang)
+                    locations = [(key, Path("/synthetic") / ("nested-directory/" * 5 if long_path else "")
+                                  / path.name) for key, path in paths]
+                    host.data_location_paths = lambda values=locations: values
+                    host.add_dialog_action_button = add_dialog_action_button
+                    dialog = None
+                    try:
+                        ConfigActionsMixin.on_data_locations(host)
+                        dialog = next(window for window in Gtk.Window.list_toplevels()
+                                      if window.get_transient_for() == host)
+                        loop = GLib.MainLoop()
+                        GLib.timeout_add(200, lambda active_loop=loop: (active_loop.quit(), False)[1])
+                        loop.run()
+                        content = dialog.get_content_area()
+                        grid = content.get_first_child().get_next_sibling()
+                        self.assertIsInstance(grid, Gtk.Grid)
+                        for row, (_key, path) in enumerate(locations):
+                            label, path_label, status = (grid.get_child_at(column, row)
+                                                         for column in range(3))
+                            self.assertEqual(path_label.get_text(), str(path))
+                            self.assertTrue(path_label.get_selectable())
+                            self.assertIn("monospace", path_label.get_attributes().to_string())
+                            self.assertEqual(label.get_valign(), Gtk.Align.START)
+                            self.assertEqual(status.get_valign(), Gtk.Align.START)
+                            for widget in (label, path_label, status):
+                                valid, bounds = widget.compute_bounds(dialog)
+                                self.assertTrue(valid)
+                                self.assertGreater(bounds.get_width(), 0)
+                                self.assertGreaterEqual(bounds.get_y(), 0)
+                                self.assertLessEqual(bounds.get_y() + bounds.get_height(), dialog.get_height())
+                                self.assertLessEqual(bounds.get_x() + bounds.get_width(), dialog.get_width())
+                        self.assertLess(dialog.get_height(), 760)
+                        dialog.get_widget_for_response(Gtk.ResponseType.CLOSE).emit("clicked")
+                        closing = GLib.MainLoop()
+                        GLib.timeout_add(100, lambda active_loop=closing: (active_loop.quit(), False)[1])
+                        closing.run()
+                        self.assertNotIn(dialog, Gtk.Window.list_toplevels())
+                    finally:
+                        if dialog is not None:
+                            dialog.destroy()
+                        host.destroy()
 
 
 class ConnectionImportTests(unittest.TestCase):
@@ -65,7 +119,7 @@ class ConnectionImportTests(unittest.TestCase):
     def prompt(self):
         self.select()
         dialog = next(window for window in Gtk.Window.list_toplevels()
-                      if isinstance(window, Gtk.Dialog) and window.get_transient_for() == self.host)
+                      if isinstance(window, DialogWindow) and window.get_transient_for() == self.host)
         entry = dialog.get_content_area().get_first_child().get_next_sibling()
         return dialog, entry, entry.get_next_sibling()
 

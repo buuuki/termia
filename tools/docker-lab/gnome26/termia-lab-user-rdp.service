@@ -1,0 +1,10 @@
+[Unit]
+Description=Configure native RDP in the synthetic GNOME headless session
+Requires=termia-lab-session.service
+After=termia-lab-session.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=60
+ExecStart=/usr/bin/python3 /usr/local/lib/termia-lab/configure-rdp.py session

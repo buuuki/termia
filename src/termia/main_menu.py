@@ -10,11 +10,12 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Gtk
 
-from .constants import ABOUT_IMAGE, ISSUES_URL
 from . import __version__
+from .constants import ABOUT_IMAGE, ISSUES_URL
 from .dialog_actions import add_dialog_action_button as add_shared_dialog_action_button
-from .main_menu_actions import MainMenuActions
+from .dialog_window import DialogWindow
 from .keybindings import KEYBINDING_ACTIONS, keybinding_label
+from .main_menu_actions import MainMenuActions
 
 
 def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
@@ -32,6 +33,32 @@ def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
     return GLib.SOURCE_REMOVE
 
 
+def _configure_submenu_dismissal(popover: Gtk.PopoverMenu) -> None:
+    """Let the main menu own dismissal while preserving submenu keyboard focus."""
+    def focus_submenu(panel: Gtk.Popover) -> None:
+        panel.child_focus(Gtk.DirectionType.TAB_FORWARD)
+
+    def restore_parent_focus(panel: Gtk.Popover) -> None:
+        parent = panel.get_parent()
+        root = parent.get_ancestor(Gtk.Popover) if parent is not None else None
+        if root is not None and root.get_visible():
+            parent.grab_focus()
+
+    def visit(widget: Gtk.Widget) -> None:
+        if isinstance(widget, Gtk.Popover) and widget is not popover:
+            widget.set_has_arrow(True)
+            # A separate grab can leave the root open after this panel closes.
+            widget.set_autohide(False)
+            widget.connect("show", focus_submenu)
+            widget.connect("closed", restore_parent_focus)
+        child = widget.get_first_child()
+        while child is not None:
+            visit(child)
+            child = child.get_next_sibling()
+
+    visit(popover)
+
+
 class MainMenuMixin:
     POPOVER_CALLBACK_DELAY_MS = 100
 
@@ -41,9 +68,10 @@ class MainMenuMixin:
         """Present injected commands without accessing stores or feature implementations."""
         model = Gio.Menu()
         action_group = Gio.SimpleActionGroup()
-        popover = Gtk.PopoverMenu.new_from_model(None)
+        popover = Gtk.PopoverMenu.new_from_model_full(model, Gtk.PopoverMenuFlags.NESTED)
         popover.add_css_class("termia-menu-popover")
         popover.set_has_arrow(True)
+        popover.set_cascade_popdown(False)
 
         def append_command(
             menu: Gio.Menu, label: str, name: str, *, requires_write: bool = False
@@ -99,6 +127,7 @@ class MainMenuMixin:
 
         popover.insert_action_group("main-menu", action_group)
         popover.set_menu_model(model)
+        _configure_submenu_dismissal(popover)
         popover.connect("show", lambda source: GLib.idle_add(_clear_initial_menu_selection, source))
         popover.connect("closed", lambda *_args: self.reset_main_menu(popover))
         return popover
@@ -120,21 +149,21 @@ class MainMenuMixin:
         GLib.timeout_add(self.POPOVER_CALLBACK_DELAY_MS, run_callback)
 
     def add_dialog_action_button(
-        self, dialog: Gtk.Dialog, label: str, response: Gtk.ResponseType
+        self, dialog: DialogWindow, label: str, response: Gtk.ResponseType
     ) -> Gtk.Button:
         return add_shared_dialog_action_button(
             dialog, label, response,
         )
 
     def add_dialog_action_buttons(
-        self, dialog: Gtk.Dialog, confirm_label: str, confirm_response: Gtk.ResponseType = Gtk.ResponseType.OK
+        self, dialog: DialogWindow, confirm_label: str, confirm_response: Gtk.ResponseType = Gtk.ResponseType.OK
     ) -> tuple[Gtk.Button, Gtk.Button]:
         cancel = self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         confirm = self.add_dialog_action_button(dialog, confirm_label, confirm_response)
         return cancel, confirm
 
     def on_help(self, _button: Gtk.Button) -> None:
-        dialog = Gtk.Dialog(title=self.t("help_title"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("help_title"), transient_for=self, modal=True)
         dialog.set_default_size(760, 620)
         self.add_dialog_action_button(dialog, self.t("close"), Gtk.ResponseType.CLOSE)
         dialog.connect("response", lambda source, _response: source.destroy())
@@ -189,7 +218,7 @@ class MainMenuMixin:
         dialog.present()
 
     def on_about(self, _button: Gtk.Button) -> None:
-        dialog = Gtk.AboutDialog(transient_for=self, modal=True)
+        dialog = Gtk.AboutDialog(modal=False)
         dialog.set_program_name("Termia")
         dialog.set_version(__version__)
         dialog.set_copyright("Copyright © 2026 Jordi Pons")
@@ -201,15 +230,4 @@ class MainMenuMixin:
             dialog.set_logo(Gdk.Texture.new_from_filename(str(ABOUT_IMAGE)))
         from .update_view import attach_updates
         attach_updates(dialog, self.t)
-        dialog.set_destroy_with_parent(True)
         dialog.present()
-        GLib.idle_add(self.clear_about_dialog_selection, dialog)
-
-    def clear_about_dialog_selection(self, widget: Gtk.Widget) -> bool:
-        if isinstance(widget, Gtk.Label):
-            widget.set_selectable(False)
-        child = widget.get_first_child()
-        while child is not None:
-            self.clear_about_dialog_selection(child)
-            child = child.get_next_sibling()
-        return GLib.SOURCE_REMOVE

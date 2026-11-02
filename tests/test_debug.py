@@ -1,8 +1,8 @@
-import tempfile
-import unittest
+import faulthandler
 import logging
 import os
-import faulthandler
+import tempfile
+import unittest
 from pathlib import Path
 from unittest.mock import patch
 

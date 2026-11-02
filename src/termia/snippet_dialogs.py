@@ -13,15 +13,34 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gtk, Pango, Vte
 
+from .choice_widgets import (
+    append_choice,
+    append_choice_text,
+    choice_id,
+    choice_index,
+    clear_choices,
+    constrain_choice,
+    select_choice,
+    text_choice,
+)
 from .debug import log_event
 from .keybinding_preferences import KeybindingCaptureRow
 from .keybindings import (
-    SNIPPET_ACTION_PREFIX, KeybindingError, is_snippet_action, keybinding_matches,
-    snippet_action, validate_keybindings,
+    SNIPPET_ACTION_PREFIX,
+    KeybindingError,
+    is_snippet_action,
+    keybinding_matches,
+    snippet_action,
+    validate_keybindings,
 )
 from .models import CommandSnippet
 from .snippet_presenter import SnippetPresenter
-from .snippets import SnippetError, render_snippet, snippet_variables
+from .snippets import (
+    MAX_SNIPPET_NAME_LENGTH,
+    SnippetError,
+    render_snippet,
+    snippet_variables,
+)
 from .stores import ConnectionStore, ReadOnlyStoreError
 from .ui_state import TerminalSession
 
@@ -41,14 +60,12 @@ class ManagerState:
     preview_view: Gtk.TextView
     actions: tuple[Gtk.Button, Gtk.Button, Gtk.Button]
     name: Gtk.Entry
-    category: Gtk.ComboBoxText
+    category: Gtk.DropDown
     new_category_button: Gtk.Button
     new_category_entry: Gtk.Entry
-    new_category_confirm: Gtk.Button
-    new_category_cancel: Gtk.Button
     new_category_box: Gtk.Box
-    scope: Gtk.ComboBoxText
-    target: Gtk.ComboBoxText
+    scope: Gtk.DropDown
+    target: Gtk.DropDown
     command: Gtk.TextView
     delete_detail: Gtk.Label
     category_manage_grid: Gtk.FlowBox
@@ -216,7 +233,7 @@ class SnippetDialogs:
             title=self.translate("manage_snippets"),
             application=self.parent.get_application(),
         )
-        window.set_default_size(795, 560)
+        window.set_default_size(900, 560)
         stack = Gtk.Stack()
         stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         stack.set_hhomogeneous(False)
@@ -248,6 +265,7 @@ class SnippetDialogs:
         listing = Gtk.ListBox()
         listing.set_selection_mode(Gtk.SelectionMode.SINGLE)
         list_scroller = Gtk.ScrolledWindow()
+        list_scroller.set_size_request(240, -1)
         list_scroller.set_hexpand(True)
         list_scroller.set_vexpand(True)
         list_scroller.set_child(listing)
@@ -266,11 +284,17 @@ class SnippetDialogs:
         preview_title = Gtk.Label()
         preview_title.set_xalign(0)
         preview_title.set_wrap(True)
+        preview_title.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        preview_title.set_max_width_chars(30)
+        preview_title.set_lines(3)
+        preview_title.set_ellipsize(Pango.EllipsizeMode.END)
         preview_title.add_css_class("title-3")
         preview_title.set_visible(False)
         preview_meta = Gtk.Label()
         preview_meta.set_xalign(0)
         preview_meta.set_wrap(True)
+        preview_meta.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        preview_meta.set_max_width_chars(30)
         preview_meta.set_visible(False)
         preview_content_label = Gtk.Label(label=self.translate("snippet_content"))
         preview_content_label.set_xalign(0)
@@ -310,7 +334,8 @@ class SnippetDialogs:
 
         editor_page = self.page()
         name = Gtk.Entry()
-        category = Gtk.ComboBoxText()
+        name.set_max_length(MAX_SNIPPET_NAME_LENGTH)
+        category = text_choice()
         category_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         category_row.set_halign(Gtk.Align.START)
         category_row.append(category)
@@ -327,14 +352,12 @@ class SnippetDialogs:
         new_category_box.append(new_category_confirm)
         new_category_box.append(new_category_cancel)
         new_category_box.set_visible(False)
-        scope = Gtk.ComboBoxText()
-        target = Gtk.ComboBoxText()
+        scope = text_choice()
+        target = text_choice()
         for selector in (category, scope, target):
             selector.set_halign(Gtk.Align.START)
             selector.set_size_request(220, -1)
-            for cell in selector.get_cells():
-                cell.set_property("ellipsize", Pango.EllipsizeMode.END)
-                cell.set_property("max-width-chars", 24)
+            constrain_choice(selector, -1, 24)
         command = Gtk.TextView()
         command.set_monospace(True)
         command.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
@@ -344,7 +367,7 @@ class SnippetDialogs:
             ("group", "snippet_scope_group"),
             ("server", "snippet_scope_server"),
         ):
-            scope.append(value, self.translate(key))
+            append_choice(scope, value, self.translate(key))
         name_label = Gtk.Label(label=self.translate("name"))
         name_label.set_xalign(0)
         editor_page.append(name_label)
@@ -480,8 +503,7 @@ class SnippetDialogs:
             category_scroller, search, preview_title, preview_meta,
             preview_content_label, preview_view,
             (edit, duplicate, delete), name, category, new_category_button,
-            new_category_entry, new_category_confirm, new_category_cancel,
-            new_category_box, scope, target, command, delete_detail,
+            new_category_entry, new_category_box, scope, target, command, delete_detail,
             category_manage_grid, category_name_entry, category_name_box,
             (category_rename, category_duplicate, category_delete),
             category_delete_detail,
@@ -493,7 +515,7 @@ class SnippetDialogs:
         duplicate.connect("clicked", self.on_manager_duplicate, state)
         delete.connect("clicked", self.on_manager_delete, state)
         close.connect("clicked", self.on_manager_close, state)
-        scope.connect("changed", self.on_editor_scope_changed, state)
+        scope.connect("notify::selected", self.on_editor_scope_changed, state)
         editor_cancel.connect("clicked", self.on_editor_cancel, state)
         editor_save.connect("clicked", self.on_editor_save, state)
         delete_cancel.connect("clicked", self.on_delete_cancel, state)
@@ -821,19 +843,19 @@ class SnippetDialogs:
             self.show_editor(state, state.selected_id, True)
 
     def category_value(self, state: ManagerState) -> str:
-        active = state.category.get_active()
+        active = choice_index(state.category)
         if active < 0 or active >= len(state.category_options):
             raise SnippetError("snippet_category_required")
         return state.category_options[active]
 
     def populate_editor_categories(self, state: ManagerState, selected: str = "") -> None:
-        state.category.remove_all()
+        clear_choices(state.category)
         state.category_options = [""] + [
             item.key for item in self.presenter.categories() if item.key
         ]
         for category in state.category_options:
-            state.category.append_text(self.category_label(category))
-        state.category.set_active(state.category_options.index(selected))
+            append_choice_text(state.category, self.category_label(category))
+        state.category.set_selected(state.category_options.index(selected))
 
     def hide_new_category(self, state: ManagerState) -> None:
         state.new_category_entry.set_text("")
@@ -868,9 +890,9 @@ class SnippetDialogs:
                 self.show_error(self.translate(str(exc)))
                 return
             state.category_options.append(category)
-            state.category.append_text(category)
+            append_choice_text(state.category, category)
             existing = len(state.category_options) - 1
-        state.category.set_active(existing)
+        state.category.set_selected(existing)
         self.hide_new_category(state)
 
     def show_editor(self, state: ManagerState, snippet_id: str | None, duplicate: bool) -> None:
@@ -890,12 +912,15 @@ class SnippetDialogs:
         state.shortcut.set_accelerator("" if duplicate else state.previous_shortcut)
         state.editor_error.set_visible(False)
         suffix = f" {self.translate('snippet_copy_suffix')}" if snippet and duplicate else ""
-        state.name.set_text(f"{snippet.name}{suffix}" if snippet else "")
+        display_name = f"{snippet.name}{suffix}" if snippet else ""
+        # Retain legacy names and duplicate suffixes until the user shortens them.
+        state.name.set_max_length(max(MAX_SNIPPET_NAME_LENGTH, len(display_name)))
+        state.name.set_text(display_name)
         category = snippet.category if snippet else state.category_filter or ""
         self.populate_editor_categories(state, category)
         self.hide_new_category(state)
         state.command.get_buffer().set_text(snippet.content if snippet else "")
-        state.scope.set_active_id(snippet.scope if snippet else "global")
+        select_choice(state.scope, snippet.scope if snippet else "global")
         self.populate_targets(state, snippet.target_id if snippet else "")
         state.window.set_title(self.translate("snippet_add" if snippet is None or duplicate else "snippet_edit"))
         state.stack.set_visible_child_name("editor")
@@ -903,18 +928,18 @@ class SnippetDialogs:
         state.name.grab_focus()
         log_event("snippet.editor_opened", duplicate=duplicate, editing=snippet is not None)
 
-    def on_editor_scope_changed(self, _scope: Gtk.ComboBoxText, state: ManagerState) -> None:
+    def on_editor_scope_changed(self, _scope: Gtk.DropDown, _pspec, state: ManagerState) -> None:
         self.populate_targets(state)
 
     def populate_targets(self, state: ManagerState, preferred_id: str = "") -> None:
-        current_id = preferred_id or state.target.get_active_id() or ""
-        state.target.remove_all()
-        targets = self.presenter.targets(state.scope.get_active_id() or "global")
+        current_id = preferred_id or choice_id(state.target) or ""
+        clear_choices(state.target)
+        targets = self.presenter.targets(choice_id(state.scope) or "global")
         for item in targets:
-            state.target.append(item.id, item.label)
+            append_choice(state.target, item.id, item.label)
         state.target.set_visible(bool(targets))
-        if targets and not state.target.set_active_id(current_id):
-            state.target.set_active(0)
+        if targets and not select_choice(state.target, current_id):
+            state.target.set_selected(0)
 
     def on_editor_cancel(self, _button: Gtk.Button, state: ManagerState) -> None:
         state.editor_snippet_id = None
@@ -933,7 +958,7 @@ class SnippetDialogs:
         try:
             values = (
                 state.name.get_text(), command, self.category_value(state),
-                state.scope.get_active_id() or "global", state.target.get_active_id() or "",
+                choice_id(state.scope) or "global", choice_id(state.target) or "",
             )
             if state.editor_snippet_id is None or state.editor_duplicate:
                 selected_id = self.store.add_snippet(*values, shortcut=state.shortcut.get_accelerator()).id
@@ -1009,6 +1034,7 @@ class SnippetDialogs:
         state.search.set_text("")
         state.stack.set_visible_child_name("picker")
         self.refresh_picker(state)
+        state.window.set_default_widget(state.preview_button)
         return state
 
     def on_terminal_shortcut(self, keyval: int, modifiers: object,
@@ -1101,6 +1127,17 @@ class SnippetDialogs:
         stack.add_named(preview_page, "preview")
 
         state = PickerState(window, stack, search, listing, preview_button, variable_fields, preview_view)
+
+        def update_default_action(*_args) -> None:
+            page = stack.get_visible_child_name()
+            default = {"picker": preview_button, "variables": variables_preview, "preview": send}[page]
+            window.set_default_widget(default)
+            if page == "preview":
+                send.grab_focus()
+
+        stack.connect("notify::visible-child-name", update_default_action)
+        update_default_action()
+        search.connect("activate", lambda *_: window.emit("activate-default"))
         state.selection_handler_id = listing.connect("row-selected", self.on_picker_selected, state)
         search.connect("search-changed", self.on_picker_search, state)
         picker_cancel.connect("clicked", self.on_picker_cancel, state)
@@ -1116,6 +1153,7 @@ class SnippetDialogs:
         state.window.set_visible(False)
         state.window.set_transient_for(self.parent)
         state.stack.set_visible_child_name("picker")
+        state.window.set_default_widget(None)
         state.target = None
         state.context = None
         state.variable_entries.clear()
@@ -1172,6 +1210,7 @@ class SnippetDialogs:
             label = Gtk.Label(label=variable)
             label.set_xalign(0)
             entry = Gtk.Entry()
+            entry.connect("activate", lambda *_: state.window.emit("activate-default"))
             state.variable_entries[variable] = entry
             state.variable_fields.append(label)
             state.variable_fields.append(entry)

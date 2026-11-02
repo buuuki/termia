@@ -7,7 +7,9 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
+from typing import get_type_hints
 from unittest.mock import MagicMock, call, patch
+
 from gi.repository import Gio, GLib, GObject
 
 from termia.config_io import (
@@ -17,23 +19,41 @@ from termia.config_io import (
     MissingMasterPasswordError,
     read_connections_payload,
 )
+from termia.dialog_window import DialogWindow
 from termia.models import Note, NoteCategory
-from termia.notes import NoteError, normalize_note, normalized_note_categories, note_category_move_allowed
+from termia.notes import (
+    NoteError,
+    normalize_note,
+    normalized_note_categories,
+    note_category_move_allowed,
+)
 from termia.notes_dialogs import (
-    Gdk, Graphene, Gtk, GtkSource, NOTE_ROW_DND_MIME_TYPE,
-    NOTE_CATEGORY_DND_MIME_TYPE, NoteEditorTab, NotesDialogs, NotesTreeNode,
-    create_notes_text_view, format_note_timestamp,
+    NOTE_CATEGORY_DND_MIME_TYPE,
+    NOTE_ROW_DND_MIME_TYPE,
+    Gdk,
+    Graphene,
+    Gtk,
+    GtkSource,
+    NoteEditorTab,
+    NotesDialogs,
+    NotesTreeNode,
+    create_notes_text_view,
+    format_note_timestamp,
 )
 from termia.notes_io import (
+    encode_notes_payload,
     export_notes_file,
     import_notes_file,
     read_notes_file,
-    write_notes_file,
     validate_notes_payload,
-    encode_notes_payload,
+    write_notes_file,
 )
 from termia.notes_presenter import NotesPresenter
-from termia.stores import ConnectionStore, ReadOnlyStoreError, UnchangedMasterPasswordError
+from termia.stores import (
+    ConnectionStore,
+    ReadOnlyStoreError,
+    UnchangedMasterPasswordError,
+)
 
 
 def make_note_tree_dialog(notes=(), categories=(), servers=(), tabs=()):
@@ -219,7 +239,9 @@ class NativeNoteTabsTests(unittest.TestCase):
         return tab
 
     def test_notebook_owns_selection_and_reordering_without_changing_draft(self):
-        first, draft, last = (self.add_tab(key) for key in ("one", "draft:one", "two"))
+        self.add_tab("one")
+        draft = self.add_tab("draft:one")
+        self.add_tab("two")
         self.assertEqual(self.dialog.editor_notebook.get_n_pages(), 3)
         self.assertTrue(self.dialog.editor_notebook.get_tab_reorderable(draft.page_widget))
         self.dialog.activate_editor_tab = MagicMock(side_effect=lambda key: setattr(self.dialog, "active_editor_tab_key", key))
@@ -231,7 +253,8 @@ class NativeNoteTabsTests(unittest.TestCase):
         self.assertIs(self.dialog.editor_notebook.get_nth_page(0), draft.page_widget)
 
     def test_failed_switch_restores_selected_page(self):
-        first, second = self.add_tab("one"), self.add_tab("two")
+        first = self.add_tab("one")
+        self.add_tab("two")
         self.dialog.active_editor_tab_key = "one"
         self.dialog.activate_editor_tab = MagicMock()
         self.dialog.editor_notebook.set_current_page(1)
@@ -296,7 +319,7 @@ class NoteHierarchyTests(unittest.TestCase):
         dialog.store = SimpleNamespace(data=SimpleNamespace(
             note_categories=self.categories, servers=[],
         ))
-        dialog.presenter = NotesPresenter(lambda: [note], lambda: self.categories, lambda: [])
+        dialog.presenter = NotesPresenter(lambda: [note], lambda: self.categories, list)
         dialog.search_entry = SimpleNamespace(get_text=lambda: "")
         dialog.notes_list = object()
         dialog.notes_tree_selection = Gtk.SingleSelection.new(None)
@@ -394,7 +417,7 @@ class NoteHierarchyTests(unittest.TestCase):
         store = SimpleNamespace(read_only=True, encryption_locked=False, data=SimpleNamespace(
             app=SimpleNamespace(notes_editor={}), notes=[], note_categories=[], servers=[],
         ))
-        presenter = NotesPresenter(lambda: [], lambda: [], lambda: [])
+        presenter = NotesPresenter(list, list, list)
         dialog = NotesDialogs(parent, store, presenter, lambda key: key,
                               lambda: True, lambda _message: None, lambda _message: None)
         dialog.ensure_window()
@@ -500,15 +523,48 @@ class NoteHierarchyTests(unittest.TestCase):
         window.set_default_size(360, 180)
         window.set_child(view)
         dialog.window = window
-        window.present()
+        source = None
+        point = None
 
         def drain():
             while GLib.MainContext.default().pending():
                 GLib.MainContext.default().iteration(False)
 
-        drain()
+        def wait_for(condition, phase):
+            deadline = time.monotonic() + 2
+            while not condition():
+                if time.monotonic() >= deadline:
+                    self.fail(
+                        f"Timed out waiting for {phase}: "
+                        f"window_mapped={window.get_mapped()}, "
+                        f"view_size=({view.get_width()}, {view.get_height()}), "
+                        f"source_mapped={source.get_mapped() if source is not None else None}, "
+                        f"source_size={(source.get_width(), source.get_height()) if source is not None else None}, "
+                        f"point={(point.x, point.y) if point is not None else None}, "
+                        f"origin={getattr(dialog, 'category_group_drag_origin', None)}, "
+                        f"drag_begin_calls={dialog.on_category_group_drag_begin.call_count}, "
+                        f"header_click_calls={dialog.on_note_tree_header_clicked.call_count}"
+                    )
+                GLib.MainContext.default().iteration(False)
+                time.sleep(0.005)
+
+        def pointer(*args):
+            subprocess.run(["xdotool", *args], check=True, stdout=subprocess.DEVNULL)
+            drain()
+
+        def reset_pointer_and_close():
+            try:
+                pointer("mouseup", "1")
+                pointer("mousemove", "0", "0")
+            finally:
+                window.close()
+                drain()
+
+        self.addCleanup(reset_pointer_and_close)
+        window.present()
+        wait_for(lambda: window.get_mapped() and view.get_width() > 0 and view.get_height() > 0,
+                 "mapped and allocated list")
         widgets = [view]
-        source = None
         while widgets:
             widget = widgets.pop()
             if isinstance(widget, Gtk.TreeExpander):
@@ -521,27 +577,24 @@ class NoteHierarchyTests(unittest.TestCase):
                 widgets.append(child)
                 child = child.get_next_sibling()
         self.assertIsNotNone(source)
+        wait_for(lambda: source.get_mapped() and source.get_width() > 0 and source.get_height() > 0,
+                 "mapped and allocated source row")
         valid, point = source.compute_point(window, Graphene.Point().init(35, source.get_height() / 2))
         self.assertTrue(valid)
+        window.get_display().sync()
         xid = GdkX11.X11Surface.get_xid(window.get_surface())
-        def pointer(*args):
-            subprocess.run(["xdotool", *args], check=True, stdout=subprocess.DEVNULL)
-            drain()
-        def reset_pointer_and_close():
-            pointer("mouseup", "1")
-            pointer("mousemove", "0", "0")
-            window.close()
-            drain()
-        self.addCleanup(reset_pointer_and_close)
         pointer("mousemove", "--window", str(xid), str(int(point.x)), str(int(point.y)))
         pointer("mousedown", "1")
         self.assertFalse(dialog.on_note_tree_header_clicked.called)
         for offset in (12, 24, 48, 80):
             pointer("mousemove", "--window", str(xid), str(int(point.x + offset)), str(int(point.y)))
+            # Pace the gesture; completion is checked separately with a deadline.
             time.sleep(0.03)
             drain()
+        wait_for(lambda: dialog.on_category_group_drag_begin.called, "native drag-begin")
         self.assertTrue(dialog.on_category_group_drag_begin.called)
         pointer("mouseup", "1")
+        wait_for(lambda: getattr(dialog, "category_group_drag", None) is None, "native drag-end")
         dialog.on_note_tree_header_clicked.assert_not_called()
 
     def test_move_validation_rejects_cycles_missing_and_cross_scope_parents(self):
@@ -597,9 +650,9 @@ class NoteHierarchyTests(unittest.TestCase):
             path.write_text(raw, encoding="utf-8")
             store = NotesFileStore(path)
             store.load("plain")
-            with patch.object(store, "backup_current_file", side_effect=OSError("test failure")):
-                with self.assertRaises(OSError):
-                    store.save("plain")
+            with (patch.object(store, "backup_current_file", side_effect=OSError("test failure")),
+                  self.assertRaises(OSError)):
+                store.save("plain")
             self.assertEqual(path.read_text(encoding="utf-8"), raw)
 
     def test_read_only_legacy_and_invalid_hierarchy_preserve_original_files(self):
@@ -626,9 +679,9 @@ class NoteHierarchyTests(unittest.TestCase):
             path = Path(directory) / "notes.json"
             write_notes_file(path, [], self.categories, "plain")
             original = path.read_bytes()
-            with patch("termia.notes_io.os.replace", side_effect=OSError("test interrupted write")):
-                with self.assertRaises(OSError):
-                    write_notes_file(path, [], [NoteCategory("Different")], "plain")
+            with (patch("termia.notes_io.os.replace", side_effect=OSError("test interrupted write")),
+                  self.assertRaises(OSError)):
+                write_notes_file(path, [], [NoteCategory("Different")], "plain")
             self.assertEqual(path.read_bytes(), original)
             self.assertEqual(read_notes_file(path)[1], self.categories)
 
@@ -644,14 +697,14 @@ class NoteHierarchyTests(unittest.TestCase):
 
     def test_search_retains_ancestors_and_excludes_unrelated_empty_groups(self):
         note = normalize_note("id", "Needle", "Body", "Leaf")
-        presenter = NotesPresenter(lambda: [note], lambda: self.categories, lambda: [])
+        presenter = NotesPresenter(lambda: [note], lambda: self.categories, list)
         tree = presenter.tree("Needle")
         self.assertEqual({item.name: item.parent for item in tree.personal_categories},
                          {"Project": None, "Child": "Project", "Leaf": "Child"})
         self.assertEqual(sum(len(item.items) for item in tree.personal_categories), 1)
 
     def test_bulk_navigation_preserves_selection_tabs_and_never_saves(self):
-        for categories in ([], self.categories):
+        def exercise_case(categories):
             dialog = NotesDialogs.__new__(NotesDialogs)
             dialog.store = SimpleNamespace(read_only=True, data=SimpleNamespace(
                 servers=[SimpleNamespace(id="server")], note_categories=categories))
@@ -669,6 +722,9 @@ class NoteHierarchyTests(unittest.TestCase):
                 self.assertEqual((dialog.selected_note_id, dialog.selected_draft_key), ("selected", "draft"))
                 self.assertEqual(dialog.editor_tabs["active"].content, "Unsaved")
                 self.assertEqual(dialog.active_editor_tab_key, "active")
+
+        for categories in ([], self.categories):
+            exercise_case(categories)
 
     def test_private_category_drag_checks_scope_and_never_offers_text(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -988,7 +1044,7 @@ class NotesDomainTests(unittest.TestCase):
         first = normalize_note("old", "Runbook", "Restart", now="2026-10-01T10:00:00+00:00")
         second = normalize_note("new", "Database", "Backup", now="2026-10-02T10:00:00+00:00")
         presenter = NotesPresenter(
-            lambda: [first, second], lambda: [NoteCategory("Ops")], lambda: [],
+            lambda: [first, second], lambda: [NoteCategory("Ops")], list,
         )
 
         self.assertEqual([item.note.id for item in presenter.items()], ["new", "old"])
@@ -1395,7 +1451,7 @@ class CategoryContextMenuTests(unittest.TestCase):
         menu.activate_action("note-category.rename", None)
         self.drain_events(wait_for_rename=True)
         dialogs = [window for window in Gtk.Window.list_toplevels()
-                   if isinstance(window, Gtk.Dialog) and window.get_transient_for() is self.window]
+                   if isinstance(window, DialogWindow) and window.get_transient_for() is self.window]
         self.assertEqual(len(dialogs), 1)
         dialogs[0].response(Gtk.ResponseType.CANCEL)
         self.drain_events()
@@ -1859,13 +1915,14 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.save_active_editor_if_valid = lambda: True
         dialog.window = MagicMock()
 
-        with patch("termia.notes_dialogs.Gtk") as gtk:
+        with (patch("termia.notes_dialogs.Gtk") as gtk,
+              patch("termia.notes_dialogs.DialogWindow") as window):
             dialog.prompt_category_edit("rename", "Ops")
             gtk.Entry.return_value.set_text.assert_called_with("Ops")
             dialog.prompt_category_edit("duplicate", "Ops")
             gtk.Entry.return_value.set_text.assert_called_with("Ops copy")
             dialog.prompt_category_edit("add")
-            gtk.Dialog.assert_called_with(
+            window.assert_called_with(
                 title="notes_category_add", transient_for=dialog.window, modal=True,
             )
             gtk.Entry.return_value.set_placeholder_text.assert_called_with("notes_category_name")
@@ -2023,7 +2080,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(selected[4][3], tab.key)
 
     def test_close_tab_responses_route_to_save_discard_or_keep(self):
-        for response, expected in ((0, "save"), (1, "discard"), (2, "keep")):
+        def exercise_case(response, expected):
             with self.subTest(response=response):
                 dialog = NotesDialogs.__new__(NotesDialogs)
                 calls = []
@@ -2037,6 +2094,9 @@ class NotesDialogSignalTests(unittest.TestCase):
                 dialog.on_close_editor_tab_response(Alert(), None, "note-id")
 
                 self.assertEqual(calls, [] if expected == "keep" else [(expected, "note-id")])
+
+        for response, expected in ((0, "save"), (1, "discard"), (2, "keep")):
+            exercise_case(response, expected)
 
     def test_save_and_close_persists_inactive_draft_before_removing_tab(self):
         note = Note("saved-id", "Draft", "Content", "Ops", "server-id", "created", "modified")
@@ -2394,7 +2454,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.translate = lambda key: key
         dialog.window = MagicMock()
 
-        with patch("termia.notes_dialogs.Gtk") as gtk:
+        with (patch("termia.notes_dialogs.Gtk") as gtk,
+              patch("termia.notes_dialogs.DialogWindow")):
             entry = gtk.Entry.return_value
             dialog.show_note_rename_dialog("Existing title", lambda *_args: None)
 
@@ -2490,7 +2551,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_presenter_includes_servers_with_empty_categories_and_active_scope(self):
         presenter = NotesPresenter(
-            lambda: [],
+            list,
             lambda: [NoteCategory("Maintenance", "server-category")],
             lambda: [
                 SimpleNamespace(id="server-category", name="Category host"),
@@ -2628,7 +2689,7 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(messages, ["Note cloned."])
 
     def test_export_protection_choice_routes_to_plain_or_password_flow(self):
-        for encrypted in (False, True):
+        def exercise_case(encrypted):
             with self.subTest(encrypted=encrypted):
                 dialog = NotesDialogs.__new__(NotesDialogs)
                 destroyed = []
@@ -2653,6 +2714,9 @@ class NotesDialogSignalTests(unittest.TestCase):
                 else:
                     self.assertEqual(password_prompts, [])
                     self.assertEqual(file_choices, [None])
+
+        for encrypted in (False, True):
+            exercise_case(encrypted)
 
     def test_initial_selector_signals_do_not_prevent_window_opening(self):
         class EmittingCombo:
@@ -2726,6 +2790,64 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog.editor_content = lambda: "Restart the service"
         dialog.on_editor_changed()
         self.assertEqual(scheduled, [True])
+
+    def test_shutdown_preserves_active_note_when_saving_fails(self):
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.window = MagicMock()
+        dialog.editor_dirty = True
+        dialog.editor_content = MagicMock(return_value="Unsaved synthetic note")
+        dialog.save_editor = MagicMock(return_value=False)
+        dialog.cancel_autosave = MagicMock()
+        dialog.editor_tabs = {}
+
+        self.assertFalse(dialog.prepare_shutdown())
+
+        dialog.cancel_autosave.assert_called_once_with()
+        dialog.save_editor.assert_called_once_with()
+        dialog.window.present.assert_called_once_with()
+        dialog.window.destroy.assert_not_called()
+
+    def test_shutdown_allows_saved_active_note_and_skips_empty_content(self):
+        def exercise(content, should_save):
+            dialog = NotesDialogs.__new__(NotesDialogs)
+            dialog.window = MagicMock()
+            dialog.editor_dirty = True
+            dialog.editor_content = MagicMock(return_value=content)
+            dialog.save_editor = MagicMock(return_value=True)
+            dialog.cancel_autosave = MagicMock()
+            dialog.editor_tabs = {}
+
+            self.assertTrue(dialog.prepare_shutdown())
+
+            self.assertEqual(dialog.save_editor.call_count, int(should_save))
+            dialog.cancel_autosave.assert_called_once_with()
+            dialog.window.present.assert_not_called()
+
+        exercise("Saved synthetic note", True)
+        exercise("  \n", False)
+
+    def test_failed_save_prevents_switching_away_from_active_note(self):
+        current = NoteEditorTab("current", None, "Current", "", None, "Unsaved", dirty=True)
+        target = NoteEditorTab("target", None, "Target", "", None, "Other")
+        dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.editor_tabs = {current.key: current, target.key: target}
+        dialog.active_editor_tab_key = current.key
+        dialog.scope_mode = "personal"
+        dialog.server_filter_id = None
+        dialog.editor_dirty = True
+        dialog.editor_content = MagicMock(return_value=current.content)
+        dialog.save_editor = MagicMock(return_value=False)
+        dialog.update_editor_tab_label = MagicMock()
+        dialog.cancel_autosave = MagicMock()
+        dialog.capture_active_editor_tab = MagicMock()
+
+        dialog.activate_editor_tab(target.key)
+
+        self.assertEqual(dialog.active_editor_tab_key, current.key)
+        self.assertEqual(current.content, "Unsaved")
+        dialog.save_editor.assert_called_once_with()
+        dialog.cancel_autosave.assert_not_called()
+        dialog.capture_active_editor_tab.assert_not_called()
 
     def test_failed_save_still_presents_notes_window(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -3061,6 +3183,9 @@ class NotesIOTests(unittest.TestCase):
 
 
 class NotesStoreTests(unittest.TestCase):
+    def test_editor_annotations_support_runtime_introspection(self):
+        self.assertIn("values", get_type_hints(ConnectionStore.update_notes_editor))
+
     def make_store(self, root):
         return ConnectionStore(
             root / "connections.json", root / "settings.json", root / "statistics.json",
@@ -3082,9 +3207,9 @@ class NotesStoreTests(unittest.TestCase):
                 for name, parent in (("Project", "Leaf"), ("Child", "Child"), ("Child", "missing")):
                     with self.assertRaises(NoteError):
                         store.move_note_category(name, parent)
-                with patch.object(store, "save_notes", side_effect=OSError("test failure")):
-                    with self.assertRaises(OSError):
-                        store.move_note_category("Child", "Other")
+                with (patch.object(store, "save_notes", side_effect=OSError("test failure")),
+                      self.assertRaises(OSError)):
+                    store.move_note_category("Child", "Other")
                 self.assertEqual(store.data.note_categories, before)
                 self.assertEqual((root / "notes.json").read_bytes(), original_file)
                 with patch.object(store, "_read_only", True), self.assertRaises(ReadOnlyStoreError):
@@ -3308,9 +3433,9 @@ class NotesStoreTests(unittest.TestCase):
                         raise OSError("disk full")
                     return atomic_write(path, contents)
 
-                with patch("termia.notes_io.atomic_write", side_effect=fail_notes_write):
-                    with self.assertRaises(OSError):
-                        store.change_master_password("old master", "new master")
+                with (patch("termia.notes_io.atomic_write", side_effect=fail_notes_write),
+                      self.assertRaises(OSError)):
+                    store.change_master_password("old master", "new master")
 
                 self.assertEqual({path: path.read_bytes() for path in paths}, before)
                 self.assertEqual(store.master_password, "old master")
@@ -3342,9 +3467,9 @@ class NotesStoreTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             store = self.make_store(Path(directory))
             try:
-                with patch.object(store, "save_notes", side_effect=OSError("disk full")):
-                    with self.assertRaises(OSError):
-                        store.add_note("Runbook", "Keep this in the editor")
+                with (patch.object(store, "save_notes", side_effect=OSError("disk full")),
+                      self.assertRaises(OSError)):
+                    store.add_note("Runbook", "Keep this in the editor")
                 self.assertEqual(store.data.notes, [])
             finally:
                 store.close()

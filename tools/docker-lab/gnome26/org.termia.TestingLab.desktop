@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Laboratorio de pruebas de Termia
+Comment=Comparar y probar el actualizador de Termia
+Exec=env PYTHONPATH=/opt/review/src python3 /opt/upgrade-lab/panel.py
+Icon=/opt/review/src/termia/assets/termia.svg
+Terminal=false
+Categories=Development;

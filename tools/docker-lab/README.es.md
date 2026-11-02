@@ -7,6 +7,10 @@ SSH/SFTP/SCP y las pruebas de memoria y ciclos de vida desde un clon nuevo. El
 cliente monta el código en solo lectura, sin tu escritorio, agente SSH ni perfil
 personal de Termia.
 
+La [base independiente Ubuntu 26.04 GNOME](gnome26/README.es.md) se está
+construyendo en #430. Su escritorio experimental GNOME Wayland/RDP tiene
+comprobaciones funcionales; faltan Termia y la aceptación completa del laboratorio.
+
 ## Primer arranque en otro PC
 
 Necesitas Linux, Docker Engine local accesible para tu usuario, Git, Python 3,
@@ -92,6 +96,22 @@ bash tools/docker-lab/run.sh status
 | `churn-disabled`, `churn-enabled` | 20 ciclos de terminales con herramientas opcionales desactivadas/activadas |
 | `behavior-x11`, `behavior-wayland` | Arrastres y cancelaciones mediante eventos de ratón |
 | `valgrind` | Diagnóstico de asignaciones nativas; mucho más lento |
+
+Los comandos existentes `churn-disabled` y `churn-enabled` usan X11. Para
+probar ambos casos como clientes Wayland sobre Weston aislado:
+
+```bash
+bash tools/docker-lab/run.sh run churn-disabled-wayland
+bash tools/docker-lab/run.sh wait
+bash tools/docker-lab/run.sh run churn-enabled-wayland
+bash tools/docker-lab/run.sh wait
+```
+
+Comprueba en el `result.json` de cada probe que `runtime.display` sea
+`GdkWaylandDisplay`, `completed` sea true, `retention_detected` sea false y
+`cleanup.running_children` sea cero. Revisa las muestras de memoria; terminar
+no demuestra ausencia de fugas. Weston se ejecuta sobre Xvfb privado; estas
+pruebas no cubren GNOME/Mutter. Compara memoria dentro del mismo entorno y caso.
 
 Para un ensayo corto de memoria, o cancelar el diagnóstico de este clon:
 

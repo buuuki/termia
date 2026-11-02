@@ -5,8 +5,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import termia.constants as constants
-
 
 class TermiaPathOverrideTests(unittest.TestCase):
     def test_termia_path_overrides_do_not_require_xdg_overrides(self) -> None:

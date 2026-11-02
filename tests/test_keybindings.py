@@ -2,12 +2,12 @@ import unittest
 
 from termia.keybindings import (
     DEFAULT_KEYBINDINGS,
-    keybinding_label,
+    KeybindingError,
     keybinding_accelerator,
+    keybinding_label,
+    merge_keybindings,
     normalize_keybinding,
     normalize_keybindings,
-    KeybindingError,
-    merge_keybindings,
     snippet_action,
     validate_keybindings,
 )

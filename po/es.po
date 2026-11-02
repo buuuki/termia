@@ -3,6 +3,21 @@
 # This file is distributed under the same license as the Termia package.
 #
 
+msgid "Installation details"
+msgstr "Detalles de la instalación"
+
+msgid "Preparing and verifying the update…"
+msgstr "Preparando y verificando la actualización…"
+
+msgid "Installing required dependencies…"
+msgstr "Instalando las dependencias necesarias…"
+
+msgid "Applying the update…"
+msgstr "Aplicando la actualización…"
+
+msgid "Verifying the installed version and dependencies…"
+msgstr "Verificando la versión instalada y las dependencias…"
+
 msgid "Getting started"
 msgstr "Primeros pasos"
 
@@ -209,10 +224,6 @@ msgstr "Nuevo servidor"
 msgid "Terminal"
 msgstr "Terminal"
 
-#: src/termia/i18n.py:prompt
-msgid "Prompt"
-msgstr "Prompt"
-
 #: src/termia/i18n.py:terminal_appearance
 msgid "Terminal appearance"
 msgstr "Apariencia del terminal"
@@ -257,14 +268,6 @@ msgstr "General"
 msgid "Debug mode"
 msgstr "Modo debug"
 
-#: src/termia/i18n.py:debug_mode_enabled
-msgid "Debug mode enabled"
-msgstr "Modo debug activado"
-
-#: src/termia/i18n.py:debug_mode_disabled
-msgid "Debug mode disabled"
-msgstr "Modo debug desactivado"
-
 #: src/termia/i18n.py:debug_log_path
 msgid "Debug log: {path}"
 msgstr "Registro de debug: {path}"
@@ -280,10 +283,6 @@ msgstr "Activado"
 #: src/termia/i18n.py:setting_disabled
 msgid "Disabled"
 msgstr "Desactivado"
-
-#: src/termia/i18n.py:preferences
-msgid "Preferences"
-msgstr "Preferencias"
 
 #: src/termia/i18n.py:filter_servers
 msgid "Filter servers"
@@ -478,14 +477,6 @@ msgstr "Oscuro"
 #: src/termia/i18n.py:language
 msgid "Language"
 msgstr "Idioma"
-
-#: src/termia/i18n.py:restart_language
-msgid "The language will apply after restarting the application."
-msgstr "El idioma se aplicará al reiniciar la aplicación."
-
-#: src/termia/i18n.py:language_settings_saved
-msgid "Language saved"
-msgstr "Idioma guardado"
 
 #: src/termia/i18n.py:select_server
 msgid "Select a server"
@@ -709,10 +700,6 @@ msgstr "Ficheros enviados a {name}"
 msgid "Could not complete the transfer."
 msgstr "No se pudo completar la transferencia."
 
-#: src/termia/i18n.py:send_files_to_server_failed_detail
-msgid "Could not complete the transfer: {error}"
-msgstr "No se pudo completar la transferencia: {error}"
-
 #: src/termia/i18n.py:send_files_to_server_cancelled
 msgid "Transfer cancelled."
 msgstr "Transferencia cancelada."
@@ -724,10 +711,6 @@ msgstr "No se pudo iniciar la transferencia: {error}"
 #: src/termia/i18n.py:send_files_to_server_missing
 msgid "scp, ssh, or setsid was not found in PATH."
 msgstr "No se encontró scp, ssh o setsid en el PATH."
-
-#: src/termia/i18n.py:send_files_to_server_fingerprint
-msgid "Confirm the host fingerprint in the terminal if prompted, then enter the password if needed."
-msgstr "Confirma la huella del host en la terminal si aparece y después introduce la contraseña si se pide."
 
 #: src/termia/i18n.py:send_files_to_server_fingerprint_title
 msgid "Confirm SSH host fingerprint"
@@ -917,10 +900,6 @@ msgstr "Fecha"
 msgid "Date and time"
 msgstr "Fecha y hora"
 
-#: src/termia/i18n.py:prompt_settings_saved
-msgid "Prompt settings saved"
-msgstr "Configuración de prompt guardada"
-
 #: src/termia/i18n.py:terminal_settings_saved
 msgid "Terminal preferences saved"
 msgstr "Preferencias de terminal guardadas"
@@ -1083,10 +1062,6 @@ msgstr "Desbloquea las conexiones cifradas antes de cambiar la configuración."
 #: src/termia/i18n.py:connections_unlocked
 msgid "Connections unlocked"
 msgstr "Conexiones desbloqueadas"
-
-#: src/termia/i18n.py:configuration
-msgid "Configuration"
-msgstr "Configuración"
 
 #: src/termia/i18n.py:data_locations
 msgid "Data locations"
@@ -1730,8 +1705,8 @@ msgid "Release notes"
 msgstr "Notas de la versión"
 
 #: src/termia/i18n.py:update_install
-msgid "Download and install"
-msgstr "Descargar e instalar"
+msgid "Download and review"
+msgstr "Descargar y revisar"
 
 #: src/termia/i18n.py:update_checking
 msgid "Checking for updates…"
@@ -1743,11 +1718,11 @@ msgstr "La versión {version} está disponible."
 
 #: src/termia/i18n.py:update_current_latest
 msgid "No newer compatible release is available."
-msgstr "No hay una versión compatible más reciente disponible."
+msgstr "No hay actualizaciones"
 
-#: src/termia/i18n.py:update_confirm
-msgid "Install Termia {version}? Debian installation may request administrator authentication. Once installation starts, let it finish. Restart Termia manually afterwards."
-msgstr "¿Instalar Termia {version}? La instalación Debian puede solicitar autenticación de administrador. Una vez iniciada la instalación, deja que termine. Después reinicia Termia manualmente."
+#: src/termia/i18n.py:update_prepared
+msgid "Update prepared and verified; dependencies checked."
+msgstr "Actualización preparada y verificada; dependencias comprobadas."
 
 #: src/termia/i18n.py:update_preparing
 msgid "Downloading and verifying the update…"
@@ -1758,12 +1733,12 @@ msgid "Installing… Please wait for the installation to finish."
 msgstr "Instalando… Espera a que termine la instalación."
 
 #: src/termia/i18n.py:update_installed
-msgid "Update installed. Restart Termia to use the new version."
-msgstr "Actualización instalada. Reinicia Termia para utilizar la nueva versión."
+msgid "Update installed and required dependencies verified. Close all Termia windows, then open Termia again."
+msgstr "Termia se ha actualizado correctamente! Cierra todas las ventanas de Termia y vuelve a abrir la aplicación"
 
 #: src/termia/i18n.py:update_installed_source
-msgid "Source updated. Run scripts/termia-setup.sh install in the checkout to verify dependencies, then restart Termia."
-msgstr "Código actualizado. Ejecuta scripts/termia-setup.sh install en el repositorio para verificar las dependencias y después reinicia Termia."
+msgid "Source update installed and required dependencies verified. Close all Termia windows, then open Termia again."
+msgstr "Termia se ha actualizado correctamente! Cierra todas las ventanas de Termia y vuelve a abrir la aplicación"
 
 #: src/termia/i18n.py:update_cancelling
 msgid "Cancelling…"
@@ -1873,9 +1848,6 @@ msgstr "Crear snippet"
 msgid "Edit snippet"
 msgstr "Editar snippet"
 
-msgid "Duplicate snippet"
-msgstr "Duplicar snippet"
-
 msgid "Delete snippet"
 msgstr "Eliminar snippet"
 
@@ -1963,9 +1935,6 @@ msgstr "Personales"
 msgid "Servers"
 msgstr "Servidores"
 
-msgid "Choose a server"
-msgstr "Elige un servidor"
-
 msgid "Choose a server to see its notes."
 msgstr "Elige un servidor para ver sus notas."
 
@@ -1995,9 +1964,6 @@ msgstr "Importar o exportar notas"
 
 msgid "Search notes"
 msgstr "Buscar notas"
-
-msgid "Manage note categories"
-msgstr "Gestionar categorías de notas"
 
 msgid "Create note"
 msgstr "Crear nota"
@@ -2062,9 +2028,6 @@ msgstr "Servidor"
 msgid "Personal notes"
 msgstr "Notas personales"
 
-msgid "Server notes"
-msgstr "Notas de servidor"
-
 msgid "Unavailable server"
 msgstr "Servidor no disponible"
 
@@ -2094,9 +2057,6 @@ msgstr "{count} bytes"
 
 msgid "No matching notes."
 msgstr "No hay notas coincidentes."
-
-msgid "No notes yet."
-msgstr "Todavía no hay notas."
 
 msgid "No notes for this server yet."
 msgstr "Todavía no hay notas para este servidor."
@@ -2243,15 +2203,6 @@ msgstr "Apariencia del editor (no se guarda en el texto de la nota)"
 msgid "Show or hide line numbers"
 msgstr "Mostrar u ocultar los números de línea"
 
-msgid "Minimize notes window"
-msgstr "Minimizar la ventana de notas"
-
-msgid "Maximize notes window"
-msgstr "Maximizar la ventana de notas"
-
-msgid "Restore notes window size"
-msgstr "Restaurar el tamaño de la ventana de notas"
-
 msgid "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia."
 msgstr "Se ha superado un límite de seguridad del almacenamiento. Los archivos originales no se han modificado y la edición está desactivada. Consulta docs/STORAGE_MIGRATIONS.md para recuperarlos y después reinicia Termia."
 
@@ -2266,3 +2217,104 @@ msgstr "Introduce la contraseña del archivo."
 
 msgid "Could not decrypt this file. Check the password and try again."
 msgstr "No se pudo descifrar este archivo. Comprueba la contraseña e inténtalo de nuevo."
+
+#: src/termia/i18n.py:update_dependency_none
+msgid "None"
+msgstr "Ninguna"
+
+#: src/termia/i18n.py:update_dependencies_ready
+msgid ""
+"All required dependencies are available:\n"
+"{dependencies}"
+msgstr ""
+"Todas las dependencias necesarias están disponibles:\n"
+"{dependencies}"
+
+#: src/termia/i18n.py:update_dependency_summary
+msgid ""
+"Dependencies to install or repair:\n"
+"{missing}"
+msgstr ""
+"Dependencias que hay que instalar o reparar:\n"
+"{missing}"
+
+#: src/termia/i18n.py:update_dependencies_automatic
+msgid ""
+"Updating Termia will automatically install these dependencies:\n"
+"{dependencies}"
+msgstr ""
+"Al actualizar Termia se instalarán automáticamente las siguientes dependencias:\n"
+"{dependencies}"
+
+#: src/termia/i18n.py:update_dependency_warning
+msgid ""
+"Missing dependencies:\n"
+"{dependencies}"
+msgstr ""
+"Faltan estas dependencias:\n"
+"{dependencies}"
+
+#: src/termia/i18n.py:update_plan_expired
+msgid "The update plan changed or expired. Check for updates again and review the new requirements before continuing."
+msgstr "El plan de actualización ha cambiado o ha caducado. Busca actualizaciones de nuevo y revisa los requisitos antes de continuar."
+
+#: src/termia/i18n.py:update_verification_failed_after_apply
+msgid "The package installation finished, but final verification failed. The package may already be updated. Verify its installed version and dependencies before restarting Termia."
+msgstr "La instalación del paquete ha terminado, pero la verificación final ha fallado. El paquete puede estar ya actualizado. Verifica su versión instalada y sus dependencias antes de reiniciar Termia."
+
+#: src/termia/i18n.py:update_dependencies_not_ready
+msgid "Dependencies are still unavailable after installation. The source checkout was not updated. Review the package manager and Python environment before retrying."
+msgstr "Las dependencias siguen sin estar disponibles después de instalarlas. No se ha actualizado el código. Revisa el gestor de paquetes y el entorno Python antes de reintentar."
+
+#: src/termia/i18n.py:update_type_unknown
+msgid "Installation type: unknown or unsupported"
+msgstr "Tipo de instalación: desconocido o no compatible"
+
+#: src/termia/i18n.py:update_requirements_unavailable
+msgid "The target release requirements could not be read safely. No update was applied. Use the release installation instructions."
+msgstr "No se han podido leer los requisitos de la versión de destino de forma segura. No se ha aplicado la actualización. Consulta las instrucciones de instalación de la release."
+
+#: src/termia/i18n.py:update_assisted
+#: src/termia/i18n.py:update_recheck_continue
+msgid "Update Termia"
+msgstr "Actualizar Termia"
+
+#: src/termia/i18n.py:update_dependencies_checking
+msgid "Checking dependencies before applying the update…"
+msgstr "Comprobando dependencias antes de aplicar la actualización…"
+
+#: src/termia/i18n.py:update_type_detecting
+msgid "Installation type: detecting…"
+msgstr "Tipo de instalación: detectando…"
+
+#: src/termia/i18n.py:update_type_debian
+msgid "Installation type: Debian package (.deb)"
+msgstr "Tipo de instalación: paquete Debian (.deb)"
+
+#: src/termia/i18n.py:update_dependency_check_failed
+msgid "Dependency verification failed. The update is still pending. Check the system package state and the Python environment used to launch Termia."
+msgstr "La verificación de dependencias ha fallado. La actualización sigue pendiente. Comprueba el estado de los paquetes del sistema y el entorno Python que inicia Termia."
+
+#: src/termia/i18n.py:update_dependency_platform
+msgid "Dependency planning currently requires Debian/Ubuntu with APT and dpkg. No update was applied. Follow the installation instructions on the release page."
+msgstr "La comprobación de dependencias requiere actualmente Debian/Ubuntu con APT y dpkg. No se ha aplicado la actualización. Sigue las instrucciones de instalación de la página de la release."
+
+#: src/termia/i18n.py:update_dependencies_install_failed
+msgid "Dependency installation failed or administrator authorization was cancelled. The source checkout was not updated; system packages may have changed. Review the package manager and try again."
+msgstr "La instalación de dependencias ha fallado o se ha cancelado la autorización de administrador. No se ha actualizado el código; pueden haber cambiado paquetes del sistema. Revisa el gestor de paquetes y vuelve a intentarlo."
+
+#: src/termia/i18n.py:update_type_source
+msgid "Installation type: Git source repository"
+msgstr "Tipo de instalación: repositorio de código Git"
+
+#: src/termia/i18n.py:update_source_updated
+msgid "The local repository already contains this update. Review and install any missing dependencies before closing Termia."
+msgstr "El repositorio local ya contiene esta actualización. Revisa e instala las dependencias que falten antes de cerrar Termia."
+
+#: src/termia/i18n.py:update_review_dependencies
+msgid "Review dependencies"
+msgstr "Revisar dependencias"
+
+#: src/termia/i18n.py:snippet_name_too_long
+msgid "Use 30 characters or fewer for the snippet name."
+msgstr "Usa un máximo de 30 caracteres para el nombre del snippet."

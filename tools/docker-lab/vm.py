@@ -5,13 +5,13 @@ import fcntl
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import secrets
 import shutil
 import subprocess
 import tarfile
 import urllib.request
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SOURCE = ROOT.parents[1]
@@ -113,7 +113,7 @@ def prepare():
     shutil.copyfile(FILES / 'Dockerfile', context / 'Dockerfile')
     docker('build', '-t', IMAGE, context)
     checksums = urllib.request.urlopen(BASE_URL + 'SHA256SUMS', timeout=60).read().decode()
-    match = re.search(r'^([0-9a-f]{64})\s+\*?' + re.escape(BASE_FILE) + r'$', checksums, re.M)
+    match = re.search(r'^([0-9a-f]{64})\s+\*?' + re.escape(BASE_FILE) + r'$', checksums, re.MULTILINE)
     if match is None:
         raise RuntimeError('Official Ubuntu image checksum not found')
     download(BASE_URL + BASE_FILE, RUNTIME / 'ubuntu-base.img', match[1])

@@ -7,25 +7,35 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Current Target: 0.6.0-beta.N
+## Current delivery: 0.6.1-beta maintenance
 
-The `0.6.0` prerelease line remains active. Each published beta iteration may
-include new features, fixes, and improvements that belong to the current
-release scope. Increment the trailing beta number for each published
-iteration, as defined in `docs/VERSIONING.md`.
+Source version: `0.6.1-beta`; Debian package: `0.6.1~beta-1`. This delivery
+collects maintenance since `0.6.0-beta.4`, including the updater, GTK dialogs,
+focused cleanup and UI corrections. See [CHANGELOG.md](CHANGELOG.md).
+Preparation is tracked in [#452](https://github.com/buuuki/termia/issues/452)
+and publication in [#454](https://github.com/buuuki/termia/issues/454).
 
-`0.6.0-beta.4` is the current release target, tracked in
-[issue #386](https://github.com/buuuki/termia/issues/386). It adds saved Notes,
-master-password changes, snippet shortcuts, SSH startup commands and optional
-built-in tools, together with GTK interaction, process/transfer lifecycle and
-memory fixes. It also includes the Docker/VM laboratories.
-See `CHANGELOG.md` for the detailed changes; this is still a beta,
-not an RC or stable release.
+Termia remains in beta. Maintenance may increment PATCH while retaining beta
+status; new feature deliveries increment MINOR. New beta deliveries use
+`-beta` without a serial; new development branches use `X.Y.Z-dev` without
+a `release/` prefix or a maturity suffix. Numbered RCs remain optional.
+See `docs/VERSIONING.md` for the maintenance and transition gates.
 
-The active development branch is `release/0.6.0-beta.4-dev`, created from
-`main` after beta.3 was published. New feature and bugfix branches must start
-from it and target it with their pull requests. `main` remains the latest
-published release line.
+## Development after publication
+
+Use `0.6.1-dev` until `v0.6.1-beta` is published. Then create `0.6.2-dev` from
+the updated `main` for further maintenance. New issue branches and PRs use that
+active development line. Future features and stable promotion require separate
+scope and readiness approval.
+
+Retain `0.6.1-dev` and `release/0.6.0-beta.5-dev` as historical branches unless
+cleanup is approved. Creating a development branch does not change versions.
+`main` remains the latest published release line.
+
+The `0.6.1-beta` updater supports cross-PATCH beta maintenance and dependency
+review/installation. Beta.3 and beta.4 require a manual first upgrade, documented
+in the README. Fresh public asset/tag/digest verification is required at
+publication; historical laboratory fixtures do not replace that check.
 
 `0.6.0-beta.2` was published after completing the following checks:
 
@@ -46,10 +56,10 @@ published release line.
 - [x] Keep README files, translated documentation, in-app version text,
       changelog, Debian metadata, tag, release, and download links consistent.
 
-Publish another `0.6.0-beta.N` when source changes are required after the
-previous beta has been distributed, including new features within the current
-scope. Packaging-only rebuilds increment only the Debian revision as defined
-in `docs/VERSIONING.md`.
+Publish isolated corrections as PATCH maintenance and reserve MINOR changes
+for new feature deliveries. Preserve the beta suffix when readiness has not
+been established. Packaging-only rebuilds increment only the Debian revision,
+as defined in `docs/VERSIONING.md`.
 
 ## Future features (unscheduled)
 

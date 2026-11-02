@@ -1,21 +1,33 @@
 import hashlib
 import io
-from pathlib import Path
 import subprocess
 import tempfile
-from threading import Event
 import unittest
+from pathlib import Path
+from threading import Event
 from unittest.mock import Mock
 
-from termia.update_service import (
-    Asset, OfficialRedirects, Release, ReleaseClient, UpdateError, Version,
-    REPOSITORY, allowed_url, select_release,
-)
+from termia.update_controller import CheckResult, UpdateController
+from termia.update_dependencies import DependencyPlan
 from termia.update_installers import (
-    DebianInstaller, GitInstaller, Installation, command, detect_installation,
+    DebianInstaller,
+    GitInstaller,
+    Installation,
+    command,
+    detect_installation,
     update_lock,
 )
-from termia.update_controller import CheckResult, UpdateController
+from termia.update_service import (
+    REPOSITORY,
+    Asset,
+    OfficialRedirects,
+    Release,
+    ReleaseClient,
+    UpdateError,
+    Version,
+    allowed_url,
+    select_release,
+)
 
 
 def release(tag="v0.6.0-beta.2", **values):
@@ -29,10 +41,14 @@ class ReleasePolicyTests(unittest.TestCase):
         self.assertLess(Version.parse("0.6.0-beta.10"), Version.parse("0.6.0-rc.1"))
         self.assertLess(Version.parse("0.6.0-rc.1"), Version.parse("0.6.0"))
         self.assertEqual(Version.parse("0.5.0-beta"), Version.parse("0.5.0-beta.1"))
+        self.assertLess(Version.parse("0.6.1-dev"), Version.parse("0.6.1-beta"))
+        self.assertIsNone(select_release([release("v0.6.2-beta")], "0.6.1-dev"))
+        self.assertEqual(select_release([release("v0.6.1-beta")], "0.6.0-beta.4").tag,
+                         "v0.6.1-beta")
 
-    def test_prerelease_stays_in_current_application_line(self):
+    def test_prerelease_stays_in_major_minor_and_receives_patch_maintenance(self):
         result = select_release([release("v0.7.0"), release(), release("v0.6.1-beta.1")], "0.6.0-beta.1")
-        self.assertEqual(result.tag, "v0.6.0-beta.2")
+        self.assertEqual(result.tag, "v0.6.1-beta.1")
         self.assertIsNone(select_release([release("v0.6.0-beta.1")], "0.6.0-beta.2-dev"))
 
     def test_stable_can_upgrade_but_never_to_prerelease(self):
@@ -53,8 +69,8 @@ class ReleasePolicyTests(unittest.TestCase):
     def test_asset_url_must_match_official_release(self):
         item = release()
         name = "termia_0.6.0.beta.2-1_all.deb"
-        asset = dict(name=name, size=10, digest="sha256:" + "a" * 64,
-                     browser_download_url=f"{REPOSITORY}/releases/download/{item['tag_name']}/{name}")
+        asset = {"name": name, "size": 10, "digest": "sha256:" + "a" * 64,
+                 "browser_download_url": f"{REPOSITORY}/releases/download/{item['tag_name']}/{name}"}
         item["assets"] = [asset]
         self.assertIsNotNone(select_release([item], "0.6.0-beta.1").asset)
         asset["browser_download_url"] = "https://example.org/package.deb"
@@ -192,12 +208,25 @@ class InstallerTests(unittest.TestCase):
         client.download.side_effect = lambda asset, path, cancel: path.write_bytes(data)
         run = Mock(side_effect=["termia", "0.6.0~beta.2-1", "all", "0.6.0~beta.1-1", "", ""])
         adapter = DebianInstaller(client, run)
+        output = Mock()
+        adapter.set_output(output)
         with tempfile.TemporaryDirectory(prefix="termia test ") as directory:
             path = adapter.prepare(candidate, Path(directory), Event())
             adapter.apply(path, candidate)
-            self.assertEqual(run.call_args.args[0][-2:], ["install", str(path)])
-            self.assertEqual(run.call_args.args[0][0], "/usr/bin/pkexec")
+            arguments = run.call_args.args[0]
+            self.assertEqual(arguments[:5], [
+                "/usr/bin/pkexec", "--disable-internal-agent", "/usr/bin/python3", "-I", "-c",
+            ])
+            helper = Path(__file__).resolve().parents[1] / "src/termia/update_apt_helper.py"
+            self.assertEqual(arguments[5], helper.read_text(encoding="utf-8"))
+            self.assertEqual(arguments[6:], [
+                "debian", candidate.asset.sha256, str(len(data)), str(path),
+            ])
+            authorized = [call for call in run.call_args_list
+                          if call.args[0][0] == "/usr/bin/pkexec"]
+            self.assertEqual(len(authorized), 1)
             self.assertTrue(run.call_args.kwargs["applying"])
+            self.assertIs(run.call_args.kwargs["output"], output)
 
     def test_unknown_installation_is_check_only(self):
         result = detect_installation("0.6.0-beta.2", Mock(), Event(), Path("/tmp/unknown/package/update_installers.py"),
@@ -205,10 +234,8 @@ class InstallerTests(unittest.TestCase):
         self.assertIsNone(result.adapter)
 
     def test_lock_serializes_profiles(self):
-        with update_lock():
-            with self.assertRaisesRegex(UpdateError, "update_busy"):
-                with update_lock():
-                    self.fail("second lock acquired")
+        with update_lock(), self.assertRaisesRegex(UpdateError, "update_busy"), update_lock():
+            self.fail("second lock acquired")
 
     def test_command_does_not_expose_stderr(self):
         with self.assertRaisesRegex(UpdateError, "^update_install_failed$"):
@@ -216,6 +243,23 @@ class InstallerTests(unittest.TestCase):
 
 
 class ControllerTests(unittest.TestCase):
+    def test_output_queue_is_bounded_and_close_suppresses_delivery(self):
+        from termia.update_output import MAX_LOG_CHARS
+
+        queued, notifications = [], Mock()
+        controller = UpdateController("0.6.0-beta.3", queued.append, notifications)
+        for _ in range(100):
+            controller.report_output("x" * 4096)
+        self.assertEqual(len(queued), 1)
+        self.assertEqual(len(controller.pending_output), MAX_LOG_CHARS)
+        queued.pop()()
+        notifications.assert_called_once_with("output", "x" * MAX_LOG_CHARS)
+        notifications.reset_mock()
+        controller.report_output("late output")
+        controller.close()
+        queued.pop()()
+        notifications.assert_not_called()
+
     def test_close_suppresses_queued_callbacks(self):
         queued, notifications = [], Mock()
         controller = UpdateController("0.6.0-beta.1", queued.append, notifications,
@@ -241,7 +285,7 @@ class ControllerTests(unittest.TestCase):
         adapter.prepare.side_effect = prepare
         controller = UpdateController("0.6.0-beta.1", lambda f: None, Mock())
         result = CheckResult(select_release([release()], "0.6.0-beta.1"), Installation(adapter, ""))
-        controller.install(result)
+        controller.prepare_update(result)
         self.assertTrue(entered.wait(5))
         self.assertFalse(controller.check())
         self.assertTrue(controller.stop())
@@ -252,7 +296,8 @@ class ControllerTests(unittest.TestCase):
 
     def test_application_cannot_be_cancelled_and_retains_temp_until_finished(self):
         entered, proceed = Event(), Event()
-        adapter = Mock()
+        adapter = Mock(kind="update_source")
+        adapter.dependencies.return_value = DependencyPlan((), (), (), True)
         adapter.prepare.side_effect = lambda r, directory, c: directory
         def apply(path, release):
             self.assertTrue(path.exists())
@@ -262,7 +307,10 @@ class ControllerTests(unittest.TestCase):
         adapter.apply.side_effect = apply
         controller = UpdateController("0.6.0-beta.1", lambda f: None, Mock())
         result = CheckResult(select_release([release()], "0.6.0-beta.1"), Installation(adapter, ""))
-        controller.install(result)
+        controller.prepare_update(result)
+        controller.thread.join(5)
+        self.assertIsNotNone(controller.prepared)
+        controller.install(controller.prepared)
         self.assertTrue(entered.wait(5))
         self.assertFalse(controller.stop())
         controller.close()

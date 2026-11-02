@@ -12,6 +12,7 @@ from gi.repository import Gio, Gtk, Pango
 
 from .connection_history_presenter import ConnectionHistoryPresenter
 from .dialog_actions import add_dialog_action_button
+from .dialog_window import DialogWindow
 from .models import ConnectionHistoryEntry
 
 
@@ -35,7 +36,7 @@ class ConnectionHistoryDialog:
         self.show_toast = show_toast
 
     def show(self) -> None:
-        dialog = Gtk.Dialog(title=self.translate("connection_history_title"), transient_for=self.parent, modal=True)
+        dialog = DialogWindow(title=self.translate("connection_history_title"), transient_for=self.parent, modal=True)
         dialog.set_resizable(True)
         dialog.set_default_size(760, 520)
         state = {"show_local_terminals": True}
@@ -101,7 +102,7 @@ class ConnectionHistoryDialog:
 
     def on_connection_history_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
         state: dict[str, bool],
         list_box: Gtk.ListBox,
@@ -115,7 +116,7 @@ class ConnectionHistoryDialog:
 
     def confirm_clear_connection_history(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         state: dict[str, bool],
         list_box: Gtk.ListBox,
         search_entry: Gtk.SearchEntry,
@@ -139,7 +140,7 @@ class ConnectionHistoryDialog:
         self,
         _alert: Gtk.AlertDialog,
         result: Gio.AsyncResult,
-        data: tuple[Gtk.Dialog, dict[str, bool], Gtk.ListBox, Gtk.SearchEntry, Gtk.ToggleButton, Gtk.AlertDialog],
+        data: tuple[DialogWindow, dict[str, bool], Gtk.ListBox, Gtk.SearchEntry, Gtk.ToggleButton, Gtk.AlertDialog],
     ) -> None:
         dialog, state, list_box, search_entry, local_toggle, alert = data
         try:

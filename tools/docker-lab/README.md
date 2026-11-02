@@ -6,6 +6,10 @@ Run the visual desktop, synthetic SSH/SFTP/SCP fixtures, memory diagnostics and
 process-lifecycle tests from a fresh checkout. The source stays read-only inside
 the client; the host desktop, SSH agent and personal Termia profile are not mounted.
 
+The separate [Ubuntu 26.04 GNOME base](gnome26/README.md) is being built in
+issue #430. Its experimental GNOME Wayland/RDP desktop has functional checks;
+Termia integration and full laboratory acceptance remain pending.
+
 ## First start on another PC
 
 Requirements: Linux, a local Docker Engine accessible to your user, Git,
@@ -89,6 +93,22 @@ bash tools/docker-lab/run.sh status
 | `churn-disabled`, `churn-enabled` | 20 terminal cycles, optional tools off/on |
 | `behavior-x11`, `behavior-wayland` | Repeated pointer drags and cancellations |
 | `valgrind` | Native allocation diagnostics; much slower |
+
+The existing `churn-disabled` and `churn-enabled` commands use X11. To run
+both workloads as Wayland clients on isolated Weston:
+
+```bash
+bash tools/docker-lab/run.sh run churn-disabled-wayland
+bash tools/docker-lab/run.sh wait
+bash tools/docker-lab/run.sh run churn-enabled-wayland
+bash tools/docker-lab/run.sh wait
+```
+
+Check `runtime.display` is `GdkWaylandDisplay` in each probe's `result.json`,
+`completed` is true, `retention_detected` is false and `cleanup.running_children`
+is zero. Review the memory samples; completion alone does not prove no leaks.
+Weston is nested on private Xvfb; these runs do not test GNOME/Mutter.
+Compare memory within the same backend and workload.
 
 For a short memory trial, or to cancel this checkout's current diagnostic:
 

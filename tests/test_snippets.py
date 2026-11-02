@@ -5,8 +5,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from termia.models import CommandSnippet, Group, Server
+from termia.config_io import snippets_from_payload
 from termia.keybindings import KeybindingError, snippet_action
+from termia.models import CommandSnippet, Group, Server
 from termia.snippet_presenter import SnippetPresenter
 from termia.snippets import (
     SnippetError,
@@ -20,6 +21,34 @@ from termia.stores import ConnectionStore, ReadOnlyStoreError
 
 
 class SnippetDomainTests(unittest.TestCase):
+    def test_name_limit_preserves_legacy_names_when_loading_and_saving(self):
+        self.assertEqual(normalize_snippet("one", "W" * 30, "true").name, "W" * 30)
+        with self.assertRaisesRegex(SnippetError, "snippet_name_too_long"):
+            normalize_snippet("one", "W" * 31, "true")
+        legacy_name = "W" * 20000
+        loaded = snippets_from_payload([{"id": "legacy", "name": legacy_name, "content": "true"}])
+        self.assertEqual(loaded[0].name, legacy_name)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = (root / "connections.json", root / "settings.json", root / "statistics.json",
+                     root / "lock", root / "history")
+            store = ConnectionStore(*paths)
+            try:
+                store.data.snippets = loaded
+                store.save()
+            finally:
+                store.close()
+            restored = ConnectionStore(*paths)
+            try:
+                self.assertEqual(restored.data.snippets[0].name, legacy_name)
+                with self.assertRaisesRegex(SnippetError, "snippet_name_too_long"):
+                    restored.update_snippet("legacy", legacy_name, "true")
+                self.assertEqual(restored.data.snippets[0].name, legacy_name)
+                restored.update_snippet("legacy", "W" * 30, "true")
+                self.assertEqual(restored.data.snippets[0].name, "W" * 30)
+            finally:
+                restored.close()
+
     def test_shortcuts_follow_ids_survive_reload_and_are_not_duplicated(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -107,7 +136,7 @@ class SnippetDomainTests(unittest.TestCase):
             CommandSnippet("three", "Status", "status", "Operations"),
             CommandSnippet("four", "Notes", "cat notes"),
         ]
-        presenter = SnippetPresenter(lambda: snippets, lambda: [], lambda: [])
+        presenter = SnippetPresenter(lambda: snippets, list, list)
 
         self.assertEqual(
             [(item.key, item.count) for item in presenter.categories()],
@@ -119,7 +148,7 @@ class SnippetDomainTests(unittest.TestCase):
         snippets = [CommandSnippet("one", "Deploy", "deploy", "Release")]
         categories = ["Empty"]
         presenter = SnippetPresenter(
-            lambda: snippets, lambda: [], lambda: [], lambda: categories,
+            lambda: snippets, list, list, lambda: categories,
         )
 
         self.assertEqual(
@@ -134,7 +163,7 @@ class SnippetDomainTests(unittest.TestCase):
             CommandSnippet("two", "Restart", "restart service", "Operations"),
             CommandSnippet("three", "Status", "status", "Operations"),
         ]
-        presenter = SnippetPresenter(lambda: snippets, lambda: [], lambda: [])
+        presenter = SnippetPresenter(lambda: snippets, list, list)
 
         self.assertEqual(
             [item.id for item in presenter.manager_items(query="service")],
@@ -162,7 +191,7 @@ class SnippetDomainTests(unittest.TestCase):
             CommandSnippet("one", "Notes", "cat notes"),
             CommandSnippet("two", "Deploy", "deploy", "Release"),
         ]
-        presenter = SnippetPresenter(lambda: snippets, lambda: [], lambda: [])
+        presenter = SnippetPresenter(lambda: snippets, list, list)
 
         self.assertEqual([item.id for item in presenter.manager_items(category="")], ["one"])
         self.assertEqual([item.label for item in presenter.manager_items(category="")], ["Notes"])

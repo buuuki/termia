@@ -1,5 +1,5 @@
-import unittest
 import os
+import unittest
 from dataclasses import fields
 from unittest.mock import Mock, patch
 
@@ -58,6 +58,21 @@ class FakeDialog:
 
 
 class MainMenuResetTests(unittest.TestCase):
+    def test_about_is_independent_of_main_window(self) -> None:
+        host = MainMenuMixin()
+        host.t = lambda key: key
+        with (
+            patch("termia.main_menu.Gtk.AboutDialog") as about,
+            patch("termia.main_menu.ABOUT_IMAGE") as image,
+            patch("termia.update_view.attach_updates"),
+        ):
+            image.exists.return_value = False
+            host.on_about(None)
+
+        about.assert_called_once_with(modal=False)
+        about.return_value.set_destroy_with_parent.assert_not_called()
+        about.return_value.present.assert_called_once_with()
+
     def test_reset_main_menu_returns_to_top_level_without_replacing_content(self) -> None:
         popover = FakePopover()
         MainMenuMixin().reset_main_menu(popover)
@@ -101,6 +116,36 @@ class MainMenuUITests(unittest.TestCase):
         self.actions = MainMenuActions(**{
             field.name: Mock() for field in fields(MainMenuActions)
         })
+
+    def test_about_preserves_manual_selection_without_initial_highlight(self) -> None:
+        settings = Gtk.Settings.get_default()
+        previous = settings.get_property("gtk-label-select-on-focus")
+        self.addCleanup(settings.set_property, "gtk-label-select-on-focus", previous)
+        settings.set_property("gtk-label-select-on-focus", False)
+        existing = Gtk.Window.list_toplevels()
+        with patch("termia.update_view.attach_updates"):
+            self.host.on_about(None)
+        dialog = next(window for window in Gtk.Window.list_toplevels()
+                      if isinstance(window, Gtk.AboutDialog) and window not in existing)
+        self.addCleanup(dialog.destroy)
+        self.assertIsNotNone(dialog.get_logo())
+        loop = GLib.MainLoop()
+        GLib.timeout_add(150, lambda: (loop.quit(), False)[1])
+        loop.run()
+
+        def labels(widget):
+            if isinstance(widget, Gtk.Label):
+                yield widget
+            child = widget.get_first_child()
+            while child is not None:
+                yield from labels(child)
+                child = child.get_next_sibling()
+
+        selectable = [label for label in labels(dialog) if label.get_selectable() and label.get_mapped()]
+        self.assertTrue(selectable)
+        self.assertTrue(all(not label.get_selection_bounds()[0] for label in selectable))
+        selectable[0].select_region(0, -1)
+        self.assertTrue(selectable[0].get_selection_bounds()[0])
 
     def test_every_command_dispatches_only_its_injected_callback(self) -> None:
         popover = self.host.build_main_menu(self.actions, write_allowed=True)
@@ -153,28 +198,55 @@ class MainMenuUITests(unittest.TestCase):
             "export_config", "import_config", "import_asbru", "clear_config",
         ])
 
-    def test_closed_menu_resets_visible_submenu(self) -> None:
+    def test_connection_submenu_opens_beside_main_menu_and_resets_on_close(self) -> None:
         popover = self.host.build_main_menu(self.actions, write_allowed=True)
+        self.assertTrue(popover.get_flags() & Gtk.PopoverMenuFlags.NESTED)
+        window = Gtk.Window()
+        self.addCleanup(window.destroy)
+        button = Gtk.MenuButton(label="Menu")
+        button.set_popover(popover)
+        window.set_child(button)
+        window.present()
+        popover.popup()
 
-        def find_stack(widget):
-            if isinstance(widget, Gtk.Stack):
-                return widget
+        def settle():
+            loop = GLib.MainLoop()
+            GLib.timeout_add(100, lambda: (loop.quit(), False)[1])
+            loop.run()
+
+        def descendants(widget):
+            yield widget
             child = widget.get_first_child()
             while child is not None:
-                found = find_stack(child)
-                if found is not None:
-                    return found
+                yield from descendants(child)
                 child = child.get_next_sibling()
-            return None
 
-        stack = find_stack(popover)
-        self.assertIsNotNone(stack)
-        pages = stack.get_pages()
-        submenu = next(
-            pages.get_item(i).get_name() for i in range(pages.get_n_items())
-            if pages.get_item(i).get_name() != "main"
-        )
-        popover.set_property("visible-submenu", submenu)
-        self.assertEqual(popover.get_property("visible-submenu"), submenu)
-        popover.emit("closed")
+        settle()
+        label = next(item for item in descendants(popover)
+                     if isinstance(item, Gtk.Label) and item.get_label() == "connections_file")
+        row = label.get_parent()
+        while row is not None and row.get_css_name() != "modelbutton":
+            row = row.get_parent()
+        self.assertIsNotNone(row)
+        self.assertTrue(row.activate())
+        settle()
+        submenu = next(item for item in descendants(popover)
+                       if isinstance(item, Gtk.Popover) and item is not popover and item.get_visible())
+        self.assertTrue(popover.get_visible())
+        self.assertTrue(popover.get_autohide())
+        self.assertFalse(submenu.get_autohide())
+        self.assertTrue(submenu.get_has_arrow())
+        self.assertTrue(window.get_focus().is_ancestor(submenu))
+        submenu.popdown()
+        settle()
+        self.assertTrue(popover.get_visible())
+        self.assertIs(window.get_focus(), row)
+        self.assertTrue(row.activate())
+        settle()
+        self.assertTrue(submenu.get_visible())
+        popover.popdown()
+        settle()
+        popover.popup()
+        settle()
+        self.assertFalse(submenu.get_visible())
         self.assertEqual(popover.get_property("visible-submenu"), "main")

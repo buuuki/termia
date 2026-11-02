@@ -7,8 +7,15 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
+from .choice_widgets import (
+    append_choice,
+    choice_id,
+    select_choice,
+    text_choice,
+)
 from .constants import APP_THEMES, DEBUG_LOG_FILE
 from .debug import configure_debug_logging
+from .dialog_window import DialogWindow
 from .i18n import LANGUAGES, detect_system_language
 from .models import AppSettings
 from .stores import ReadOnlyStoreError
@@ -53,7 +60,7 @@ class GeneralPreferencesMixin:
     def on_app_preferences(self, _button: Gtk.Button) -> None:
         if not self.ensure_writable():
             return
-        dialog = Gtk.Dialog(title=self.t("general"), transient_for=self, modal=True)
+        dialog = DialogWindow(title=self.t("general"), transient_for=self, modal=True)
         dialog.set_resizable(False)
         dialog.set_default_size(380, -1)
         self.add_dialog_action_buttons(dialog, self.t("save"))
@@ -61,14 +68,14 @@ class GeneralPreferencesMixin:
         for margin in ("top", "bottom", "start", "end"):
             getattr(grid, f"set_margin_{margin}")(16)
 
-        theme_combo = Gtk.ComboBoxText()
+        theme_combo = text_choice()
         for theme_id in APP_THEMES:
-            theme_combo.append(theme_id, self.t(f"theme_{theme_id}"))
-        theme_combo.set_active_id(self.store.data.app.theme)
-        language_combo = Gtk.ComboBoxText()
+            append_choice(theme_combo, theme_id, self.t(f"theme_{theme_id}"))
+        select_choice(theme_combo, self.store.data.app.theme)
+        language_combo = text_choice()
         for language_id, label in LANGUAGES.items():
-            language_combo.append(language_id, label)
-        language_combo.set_active_id(self.store.data.app.language)
+            append_choice(language_combo, language_id, label)
+        select_choice(language_combo, self.store.data.app.language)
 
         checks = [
             ("close_tab_on_disconnect", self.store.data.app.close_tab_on_disconnect),
@@ -156,15 +163,15 @@ class GeneralPreferencesMixin:
             for setting_key, attribute in GENERAL_PREFERENCE_FIELDS
         }
 
-    def on_app_preferences_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType, theme_combo: Gtk.ComboBoxText,
-                                    language_combo: Gtk.ComboBoxText, *check_buttons: Gtk.CheckButton) -> None:
+    def on_app_preferences_response(self, dialog: DialogWindow, response: Gtk.ResponseType, theme_combo: Gtk.DropDown,
+                                    language_combo: Gtk.DropDown, *check_buttons: Gtk.CheckButton) -> None:
         if response == Gtk.ResponseType.OK:
             previous_values = self.general_preference_values(self.store.data.app)
             values = [button.get_active() for button in check_buttons]
             try:
                 self.store.update_app_settings(AppSettings(
-                    theme=theme_combo.get_active_id() or "system",
-                    language=language_combo.get_active_id() or detect_system_language(),
+                    theme=choice_id(theme_combo) or "system",
+                    language=choice_id(language_combo) or detect_system_language(),
                     close_tab_on_disconnect=values[0], close_tab_on_ssh_exit=values[1],
                     open_local_terminal_on_startup=values[2], show_sidebar_on_startup=values[4],
                     restore_sessions_on_startup=values[3],

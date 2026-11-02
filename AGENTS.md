@@ -26,9 +26,15 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Development Workflow
 
-- Base issue branches on the active release-development branch, such as
-  `release/0.6.0-beta.2-dev`. Use `main` only for release preparation and
+- Base issue branches on `0.6.1-dev` until `v0.6.1-beta` is published, then
+  on `0.6.2-dev`, created from the updated `main`. New target
+  branches use `X.Y.Z-dev`, such as `0.6.1-dev`, without a `release/` prefix
+  or a maturity suffix. Retain the previous branches unless cleanup is approved.
+  Use `main` only for release preparation and
   maintenance that must apply to the published-release line.
+- Follow `docs/VERSIONING.md` for explicitly approved PATCH maintenance,
+  including beta deliveries. Use a release-development branch from the
+  published baseline when isolation from pending features is required.
 - Keep each change focused and avoid unrelated refactors or cleanup.
 - Do not commit local user configuration, exported credentials, generated caches, or unrelated cleanup.
 - Update the README and localized documentation when documented user-facing behavior changes.
@@ -75,6 +81,12 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 - Follow `docs/VERSIONING.md` when preparing application releases or Debian
   packages.
+- New beta versions use `X.Y.Z-beta` without a serial; validated does not
+  mean stable. Publish `X.Y.Z` only after explicit stable readiness approval.
+  Preserve historical numbered betas and validate tooling before transition.
+- Treat PATCH/MINOR scope and beta/RC/stable maturity independently. Preserve
+  published versions and the canonical Git, Debian and public asset formats.
+  Do not claim cross-patch updater support until implemented and validated.
 - Increment the Termia prerelease or application version when publishing source
   changes; reserve Debian revision increments for packaging-only changes.
 - Keep the source version, changelog, Debian version, annotated Git tag, GitHub
@@ -82,23 +94,16 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Validation
 
-For code changes, use the narrowest relevant checks while iterating. At
-minimum, syntax-check touched Python files and run the affected test module
-without verbose output. For example, for a tabs-only change:
+For code changes, syntax-check touched Python files and run the affected test
+module. For example, for a tabs-only change:
 
 ```bash
 python3 -m py_compile src/termia/tabs.py
 PYTHONPATH=src python3 -m unittest tests.test_tabs
 ```
 
-Rerun only a failing module or case with `-v` when detailed output helps.
-
 After a code implementation is stable and before opening the PR, run the
-complete non-verbose checks from `docs/REGRESSION_CHECKS.md` once. Do not repeat
-an unchanged successful command. If later edits can affect its coverage, rerun
-the relevant check; rerun the full suite only when the later change warrants
-it. For documentation-only changes, validate the affected documentation,
-links, and documented commands without running unrelated application tests.
+complete checks from `docs/REGRESSION_CHECKS.md`.
 Inside a restricted Codex sandbox, run unittest through
 `python3 scripts/run_sandbox_tests.py` so GTK and SFTP tests use a private
 display and session bus with local TCP sockets. Pass module names after the

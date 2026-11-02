@@ -5,12 +5,12 @@ from __future__ import annotations
 
 import base64
 import errno
-from dataclasses import replace
 import hashlib
 import logging
 import os
-from pathlib import Path
 import stat
+from dataclasses import replace
+from pathlib import Path
 from threading import Event, Lock
 
 import paramiko
@@ -24,8 +24,14 @@ if isinstance(_invoke_import_error, ImportError):
 del _invoke_import_error
 
 from .sftp_service import (
-    AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, IncompleteTransfer, RemoteEntry,
-    UnknownHost, child_path,
+    AuthenticationRequired,
+    Cancelled,
+    Endpoint,
+    HostKeyChanged,
+    IncompleteTransfer,
+    RemoteEntry,
+    UnknownHost,
+    child_path,
 )
 
 

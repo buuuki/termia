@@ -7,16 +7,25 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
+from .choice_widgets import (
+    append_choice,
+    append_choice_text,
+    choice_id,
+    choice_text,
+    select_choice,
+    text_choice,
+)
 from .constants import (
+    DEFAULT_PROMPT_COLOR,
     DEFAULT_SPLIT_SEPARATOR_COLOR,
     DEFAULT_SPLIT_SEPARATOR_THICKNESS,
-    DEFAULT_PROMPT_COLOR,
     DEFAULT_TERMINAL_BACKGROUND,
     DEFAULT_TERMINAL_FOREGROUND,
     MAX_SPLIT_SEPARATOR_THICKNESS,
     PROMPT_PRESETS,
     TERMINAL_PALETTES,
 )
+from .dialog_window import DialogWindow
 from .prompt_preferences import combined_terminal_preview_markup
 from .stores import ReadOnlyStoreError
 from .terminal_config import (
@@ -36,7 +45,7 @@ class TerminalPreferencesMixin:
         if not self.ensure_writable():
             return
         owner = parent if parent is not None else self
-        dialog = Gtk.Dialog(title=self.t("terminal"), transient_for=owner, modal=True)
+        dialog = DialogWindow(title=self.t("terminal"), transient_for=owner, modal=True)
         dialog.set_resizable(True)
         dialog.set_default_size(760, 620)
         self.add_dialog_action_buttons(dialog, self.t("save"))
@@ -56,13 +65,13 @@ class TerminalPreferencesMixin:
         grid.set_margin_start(10)
         grid.set_margin_end(10)
 
-        font_combo = Gtk.ComboBoxText()
+        font_combo = text_choice()
         font_combo.set_halign(Gtk.Align.START)
         font_families = self.terminal_font_families()
         for font_family in font_families:
-            font_combo.append_text(font_family)
+            append_choice_text(font_combo, font_family)
         active_font = self.resolved_terminal_font_family(settings.font_family)
-        font_combo.set_active(font_families.index(active_font) if active_font in font_families else 0)
+        font_combo.set_selected(font_families.index(active_font) if active_font in font_families else 0)
         font_size_spin = Gtk.SpinButton.new_with_range(6, 72, 1)
         font_size_spin.set_value(settings.font_size)
         font_size_spin.set_width_chars(4)
@@ -164,11 +173,11 @@ class TerminalPreferencesMixin:
         prompt_datetime_id, prompt_base_template = split_prompt_datetime_template(
             settings.prompt_template
         )
-        prompt_datetime_combo = Gtk.ComboBoxText()
+        prompt_datetime_combo = text_choice()
         prompt_datetime_combo.set_halign(Gtk.Align.START)
         for option_id in ("none", "time", "time_seconds", "date", "both"):
-            prompt_datetime_combo.append(option_id, self.t(f"prompt_datetime_{option_id}"))
-        prompt_datetime_combo.set_active_id(prompt_datetime_id)
+            append_choice(prompt_datetime_combo, option_id, self.t(f"prompt_datetime_{option_id}"))
+        select_choice(prompt_datetime_combo, prompt_datetime_id)
         prompt_template_entry = Gtk.Entry()
         prompt_template_entry.set_hexpand(True)
         prompt_template_entry.set_text(prompt_base_template)
@@ -254,12 +263,12 @@ class TerminalPreferencesMixin:
         self.update_terminal_split_preview(
             split_preview_line, split_separator_color_button, split_separator_thickness_spin, split_preview_provider
         )
-        font_combo.connect("changed", update_preview)
+        font_combo.connect("notify::selected", update_preview)
         font_size_spin.connect("value-changed", update_preview)
         foreground_button.connect("notify::rgba", update_preview)
         background_button.connect("notify::rgba", update_preview)
         prompt_enabled.connect("toggled", update_preview)
-        prompt_datetime_combo.connect("changed", update_preview)
+        prompt_datetime_combo.connect("notify::selected", update_preview)
         prompt_template_entry.connect("changed", update_preview)
         prompt_color_button.connect("notify::rgba", update_preview)
         split_separator_color_button.connect(
@@ -314,18 +323,18 @@ class TerminalPreferencesMixin:
                 return fallback
         return font_families[0] if font_families else "Monospace"
 
-    def selected_terminal_font_family(self, font_combo: Gtk.ComboBoxText) -> str:
-        return font_combo.get_active_text() or "Monospace"
+    def selected_terminal_font_family(self, font_combo: Gtk.DropDown) -> str:
+        return choice_text(font_combo) or "Monospace"
 
     def update_terminal_preview(
         self,
         preview: Gtk.Label,
-        font_combo: Gtk.ComboBoxText,
+        font_combo: Gtk.DropDown,
         font_size_spin: Gtk.SpinButton,
         foreground_button: Gtk.ColorButton,
         background_button: Gtk.ColorButton,
         prompt_enabled: Gtk.CheckButton,
-        prompt_datetime_combo: Gtk.ComboBoxText,
+        prompt_datetime_combo: Gtk.DropDown,
         prompt_template_entry: Gtk.Entry,
         prompt_color_button: Gtk.ColorButton,
         provider: Gtk.CssProvider,
@@ -338,7 +347,7 @@ class TerminalPreferencesMixin:
             combined_terminal_preview_markup(
                 prompt_enabled=prompt_enabled.get_active(),
                 prompt_template=prompt_template_entry.get_text(),
-                prompt_datetime_id=prompt_datetime_combo.get_active_id() or "none",
+                prompt_datetime_id=choice_id(prompt_datetime_combo) or "none",
                 prompt_color=rgba_to_hex(prompt_color_button.get_rgba()),
                 command_text=self.t("terminal_preview_command"),
                 output_text=self.t("terminal_preview_output"),
@@ -365,16 +374,16 @@ class TerminalPreferencesMixin:
 
     def on_terminal_settings_response(
         self,
-        dialog: Gtk.Dialog,
+        dialog: DialogWindow,
         response: Gtk.ResponseType,
-        font_combo: Gtk.ComboBoxText,
+        font_combo: Gtk.DropDown,
         font_size_spin: Gtk.SpinButton,
         foreground_button: Gtk.ColorButton,
         background_button: Gtk.ColorButton,
         split_separator_color_button: Gtk.ColorButton,
         split_separator_thickness_spin: Gtk.SpinButton,
         prompt_enabled: Gtk.CheckButton,
-        prompt_datetime_combo: Gtk.ComboBoxText,
+        prompt_datetime_combo: Gtk.DropDown,
         prompt_template_entry: Gtk.Entry,
         prompt_color_button: Gtk.ColorButton,
     ) -> None:
@@ -390,7 +399,7 @@ class TerminalPreferencesMixin:
                     prompt_enabled=prompt_enabled.get_active(),
                     prompt_template=prompt_template_with_datetime(
                         prompt_template_entry.get_text(),
-                        prompt_datetime_combo.get_active_id() or "none",
+                        choice_id(prompt_datetime_combo) or "none",
                     ),
                     prompt_color=rgba_to_hex(prompt_color_button.get_rgba()),
                 )

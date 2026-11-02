@@ -1,22 +1,27 @@
-import io
 import errno
-from pathlib import Path
-from queue import Queue
+import io
 import stat
 import tempfile
-from threading import Event, get_ident
 import unittest
-from unittest.mock import Mock
-from unittest.mock import patch
+from pathlib import Path
+from queue import Queue
+from threading import Event, get_ident
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import paramiko
 
-from termia.sftp_service import (
-    AuthenticationRequired, Cancelled, Endpoint, HostKeyChanged, IncompleteTransfer, SFTPService,
-    UnknownHost, child_path,
-)
 from termia.sftp_backend import ParamikoBackend, RequireConfirmation, failure_details
+from termia.sftp_service import (
+    AuthenticationRequired,
+    Cancelled,
+    Endpoint,
+    HostKeyChanged,
+    IncompleteTransfer,
+    SFTPService,
+    UnknownHost,
+    child_path,
+)
 
 
 class SFTPTests(unittest.TestCase):
@@ -372,8 +377,8 @@ class SFTPServiceTests(unittest.TestCase):
 class SFTPIntegrationTests(unittest.TestCase):
     def test_terminal_owner_is_registered_and_cancelled_independently(self):
         from termia.builtin_sftp import SFTPTool
-        from termia.terminal_sessions import TerminalSessionsMixin
         from termia.models import Server
+        from termia.terminal_sessions import TerminalSessionsMixin
         class Host(TerminalSessionsMixin):
             shutdown_in_progress = False
             t = staticmethod(lambda key: key)

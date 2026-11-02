@@ -14,9 +14,21 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from .models import CommandSnippet, Group, LocalTerminalProfile, Server, StoreData, Workspace
 from .migrations import CURRENT_CONNECTIONS_SCHEMA_VERSION, migrate_connections_payload
-from .snippets import SnippetError, normalize_snippet, normalized_categories, snippet_target_exists
+from .models import (
+    CommandSnippet,
+    Group,
+    LocalTerminalProfile,
+    Server,
+    StoreData,
+    Workspace,
+)
+from .snippets import (
+    SnippetError,
+    normalize_snippet,
+    normalized_categories,
+    snippet_target_exists,
+)
 from .workspace_layout import normalized_workspace_tabs
 
 CONNECTION_STORAGE_PLAIN = "plain"
@@ -308,10 +320,11 @@ def snippets_from_payload(
                 item.get("category", "") if isinstance(item.get("category", ""), str) else "",
                 item.get("scope", "global") if isinstance(item.get("scope", "global"), str) else "global",
                 item.get("target_id", "") if isinstance(item.get("target_id", ""), str) else "",
+                allow_legacy_name=True,
             )
-            if groups is not None and servers is not None:
-                if not snippet_target_exists(snippet, groups, servers):
-                    continue
+            if (groups is not None and servers is not None
+                    and not snippet_target_exists(snippet, groups, servers)):
+                continue
             snippets.append(snippet)
         except SnippetError:
             continue
