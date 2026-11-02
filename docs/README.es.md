@@ -25,14 +25,13 @@ de archivos en terminales VTE integrados con GTK 4.
 
 ## Estado de la versión
 
-La candidata es **0.6.1-beta**, todavía sin publicar. La última versión publicada
-es [0.6.0-beta.4](https://github.com/buuuki/termia/releases/tag/v0.6.0-beta.4).
-Los cambios están en [CHANGELOG.md](../CHANGELOG.md); la preparación se sigue en
-[#452](https://github.com/buuuki/termia/issues/452).
+**[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** es una
+versión preliminar de mantenimiento. Consulta [CHANGELOG.md](../CHANGELOG.md)
+para ver los cambios desde 0.6.0-beta.4.
 
 ## Instalar en Ubuntu 24.04 o posterior
 
-La siguiente descarga estará disponible cuando se publique 0.6.1-beta:
+Paquete Debian:
 [termia_0.6.1.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.1-beta/termia_0.6.1.beta-1_all.deb).
 
 ```bash

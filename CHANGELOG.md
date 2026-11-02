@@ -2,17 +2,16 @@
 
 ## Unreleased
 
-### Changed
+No changes yet.
 
-- Use a transparent PNG logo in About, preserving the original artwork and
-  avoiding a runtime SVG-loader requirement for that dialog (`#452`).
-
-## 0.6.1-beta - Pending publication
+## 0.6.1-beta - 2026-11-02
 
 Maintenance since `0.6.0-beta.4`; this remains a prerelease.
 
 ### Changed
 
+- Use a transparent PNG logo in About, preserving the original artwork and
+  avoiding a runtime SVG-loader requirement for that dialog (`#452`).
 - Open main-menu Import/Export as a native side submenu with its pointing
   arrow (`#452`).
 - Keep selectable labels unselected when focused, preserving manual text
@@ -57,7 +56,7 @@ Maintenance since `0.6.0-beta.4`; this remains a prerelease.
 ### Development and validation
 
 - Prepare source/package metadata and release documentation for `0.6.1-beta`
-  (`#452`).
+  (`#452`, `#454`).
 - Add release-asset consistency checks and prepare the `0.6.1-dev` maintenance
   line with unnumbered beta delivery conventions (`#422`, `#424`, `#426`).
 - Extend isolated Wayland lifecycle diagnostics and the optional Ubuntu 26

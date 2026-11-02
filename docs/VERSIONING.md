@@ -86,16 +86,15 @@ state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `<MAJOR.MINOR.PATCH>-dev` branch from the updated
 `main`.
 
-`0.6.0-beta.4` is published. The active maintenance development branch is
-`0.6.1-dev`, created at `075fd73` from the previous development line after
-reviewing its pending maintenance, test, diagnostic and policy changes.
-The next maintenance target is `0.6.1-beta`, subject to final scope and
-validation approval. The former `release/0.6.0-beta.5-dev` branch is retained
-as historical state. Future feature work requires a separately approved
-scope; do not automatically create or allocate work to `0.7.0`.
-Update release metadata only during approved release preparation.
-The completed beta.4 review is recorded in
-[issue #386](https://github.com/buuuki/termia/issues/386).
+The prepared maintenance delivery is `0.6.1-beta`, tracked in
+[#452](https://github.com/buuuki/termia/issues/452) and
+[#454](https://github.com/buuuki/termia/issues/454). Use `0.6.1-dev` until
+`v0.6.1-beta` is published. Then create `0.6.2-dev` from the updated `main` for
+further maintenance, retaining the previous branches unless cleanup is approved.
+The branch transition does not change the application version. Future feature
+work or stable promotion requires separate approval; do not automatically
+allocate work to `0.7.0`. Update release metadata only during approved release
+preparation.
 
 ## Release workflow before the first stable version
 
@@ -209,14 +208,13 @@ corrections use a new PATCH; numbered RCs remain available when approved.
 A delivery maintained in beta retains its suffix until the stable release
 criteria are met and its promotion is explicitly approved.
 
-## Current beta baseline
+## Beta baseline
 
 The existing `0.5.0-beta` release is treated as the first beta iteration of
-`0.5.0`; its historical tag and release are not renamed. The latest published
-source release is `0.6.0-beta.4`; the active development branch is
-`0.6.1-dev`, targeting beta maintenance as described above. Historical release
-and branch names remain unchanged. Creating the branch does not change the
-application version or authorize release publication.
+`0.5.0`; its historical tag and release are not renamed. `0.6.1-beta` is
+maintenance of published `0.6.0-beta.4`. Follow the publication-dependent branch
+transition above. Historical release and branch names remain unchanged;
+creating a development branch does not authorize publication.
 
 ## Debian package versions
 

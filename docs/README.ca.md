@@ -25,14 +25,13 @@ fitxers en terminals VTE integrats amb GTK 4.
 
 ## Estat de la versió
 
-La candidata és **0.6.1-beta**, encara sense publicar. L'última versió publicada
-és [0.6.0-beta.4](https://github.com/buuuki/termia/releases/tag/v0.6.0-beta.4).
-Els canvis són a [CHANGELOG.md](../CHANGELOG.md); la preparació es segueix a
-[#452](https://github.com/buuuki/termia/issues/452).
+**[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** és una
+versió preliminar de manteniment. Consulta [CHANGELOG.md](../CHANGELOG.md)
+per veure els canvis des de 0.6.0-beta.4.
 
 ## Instal·lar a Ubuntu 24.04 o posterior
 
-La descàrrega següent estarà disponible quan es publiqui 0.6.1-beta:
+Paquet Debian:
 [termia_0.6.1.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.1-beta/termia_0.6.1.beta-1_all.deb).
 
 ```bash

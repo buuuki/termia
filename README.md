@@ -24,14 +24,13 @@ together in embedded VTE terminals.
 
 ## Release status
 
-The candidate is **0.6.1-beta**, not yet published. The latest published release
-is [0.6.0-beta.4](https://github.com/buuuki/termia/releases/tag/v0.6.0-beta.4).
-Changes are listed in [CHANGELOG.md](CHANGELOG.md); release preparation is
-tracked in [#452](https://github.com/buuuki/termia/issues/452).
+**[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** is a
+maintenance prerelease. See [CHANGELOG.md](CHANGELOG.md) for the changes since
+0.6.0-beta.4.
 
 ## Install on Ubuntu 24.04 or newer
 
-The following download will become available when 0.6.1-beta is published:
+Debian package:
 [termia_0.6.1.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.1-beta/termia_0.6.1.beta-1_all.deb).
 
 ```bash

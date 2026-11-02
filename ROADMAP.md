@@ -7,12 +7,13 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Current Target: 0.6.1-beta maintenance
+## Current delivery: 0.6.1-beta maintenance
 
-Release preparation: [#452](https://github.com/buuuki/termia/issues/452).
-Candidate versions are `0.6.1-beta` / `0.6.1~beta-1`. Local package installation
-and upgrade checks have passed; publication remains pending.
-Beta.4 remains the latest published release.
+Source version: `0.6.1-beta`; Debian package: `0.6.1~beta-1`. This delivery
+collects maintenance since `0.6.0-beta.4`, including the updater, GTK dialogs,
+focused cleanup and UI corrections. See [CHANGELOG.md](CHANGELOG.md).
+Preparation is tracked in [#452](https://github.com/buuuki/termia/issues/452)
+and publication in [#454](https://github.com/buuuki/termia/issues/454).
 
 Termia remains in beta. Maintenance may increment PATCH while retaining beta
 status; new feature deliveries increment MINOR. New beta deliveries use
@@ -20,30 +21,21 @@ status; new feature deliveries increment MINOR. New beta deliveries use
 a `release/` prefix or a maturity suffix. Numbered RCs remain optional.
 See `docs/VERSIONING.md` for the maintenance and transition gates.
 
-`0.6.0-beta.4` is published; its release review is recorded in
-[issue #386](https://github.com/buuuki/termia/issues/386). It adds saved Notes,
-master-password changes, snippet shortcuts, SSH startup commands and optional
-built-in tools, together with GTK interaction, process/transfer lifecycle and
-memory fixes. It also includes the Docker/VM laboratories.
-See `CHANGELOG.md` for the detailed changes; this is still a beta,
-not an RC or stable release.
+## Development after publication
 
-The next maintenance target is `0.6.1-beta`, subject to final scope and
-validation approval. The active development branch is `0.6.1-dev`, created
-at commit `075fd73` from the previous development line. It preserves the
-maintenance, test, diagnostic and policy changes reviewed after beta.4.
-New issue branches start from it and their PRs target it.
+Use `0.6.1-dev` until `v0.6.1-beta` is published. Then create `0.6.2-dev` from
+the updated `main` for further maintenance. New issue branches and PRs use that
+active development line. Future features and stable promotion require separate
+scope and readiness approval.
 
-The previous branch, `release/0.6.0-beta.5-dev`, is retained as historical
-state, not an active development target. That branch transition itself did
-not change versions or publish a release.
+Retain `0.6.1-dev` and `release/0.6.0-beta.5-dev` as historical branches unless
+cleanup is approved. Creating a development branch does not change versions.
 `main` remains the latest published release line.
 
-Review pending development before allocating it to maintenance or a future
-feature delivery. The development updater now supports cross-PATCH beta
-maintenance and dependency review/installation; installed beta.4 clients retain
-the older behavior. End-to-end upgrade and release validation remain required.
-Remain in beta until the release-readiness criteria are satisfied.
+The `0.6.1-beta` updater supports cross-PATCH beta maintenance and dependency
+review/installation. Beta.3 and beta.4 require a manual first upgrade, documented
+in the README. Fresh public asset/tag/digest verification is required at
+publication; historical laboratory fixtures do not replace that check.
 
 `0.6.0-beta.2` was published after completing the following checks:
 
