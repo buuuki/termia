@@ -26,6 +26,8 @@ together in embedded VTE terminals.
 - Termia configuration import/export and connection import from Ásbrú YAML.
 - Connection history and optional Statistics and SFTP add-ons.
 - Configurable appearance, keybindings, and English, Spanish, and Catalan UI.
+  Keyboard Shortcuts opens independently so terminals remain usable; changes
+  apply on Save, and its buttons show full combinations.
 
 ## Release status
 

@@ -377,6 +377,15 @@ Long measurements and release-platform checks remain separate validation work.
 - After keyboard tab switching, focus must return to the terminal, not the tab label.
 - After closing a session, focus must move to the active terminal automatically.
 - Terminal shortcuts such as font size increase/decrease must not break normal terminal input unexpectedly.
+- Open Keyboard Shortcuts and type in a terminal while leaving it open. Confirm
+  it is independent, non-modal and resizable, with complete long combinations
+  visible in its buttons without stretching them across the available space.
+  Check EN/ES/CA, small screens and light/dark.
+  Capture, clear, restore defaults and cancel must preserve existing behavior;
+  Save applies valid changes and still rejects duplicates and stale edits.
+  Returning to a terminal during capture must cancel capture without changing
+  the shortcut. Close Termia and confirm no shortcut window remains. Check that
+  the snippet editor retains its compact shortcut control.
 - `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
 - `Ctrl+Shift+B` must toggle the server sidebar without changing the `Ctrl+F` behavior.
 - `F10` must open and close the main menu. Other unmodified function keys, including `F6`, must still reach the embedded terminal.
