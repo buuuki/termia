@@ -193,10 +193,12 @@ MESSAGES = {'servers': 'Show or hide server list',
  'group': 'Group',
  'credential': 'Password',
  'public_key': 'Private SSH key',
+ 'select_private_ssh_key': 'Select private SSH key',
  'ssh_fingerprint_manual': 'New host: answer the fingerprint prompt in this terminal. Then enter '
                            'the password manually or with Ctrl+P.',
- 'credential_warning': 'Warning: the password will be stored in connections.json. You can switch '
-                     'between plain text and obfuscated storage from Security.',
+ 'credential_warning': 'If you enter a password, it will be saved with the connection in connections.json. '
+                       'Configure storage in Security: plain text, obfuscation or encryption with a master password. '
+                       'Obfuscation is not encryption.',
  'server_required_fields': 'Name, host, and SSH user are required.',
  'required_field': 'Fields marked with an asterisk (*) are required.',
  'reconnect_prompt': 'Press Enter to reconnect.',

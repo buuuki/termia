@@ -12,6 +12,7 @@ de archivos en terminales VTE integrados con GTK 4.
 
 - Terminales locales y SSH con pestañas, paneles divididos y ventanas separables.
 - Conexiones organizadas en grupos anidados, favoritos y conexiones recientes.
+- Selector nativo de claves SSH privadas al crear o editar una conexión.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
 - Subidas SCP y explorador SFTP nativo con transferencias y cancelación.
 - Snippets reutilizables con categorías, ámbito, variables y atajos;

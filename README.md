@@ -12,6 +12,7 @@ together in embedded VTE terminals.
 
 - Local and SSH terminals with tabs, split panes, and detachable windows.
 - Connections organized in nested groups, favorites, and recent connections.
+- Native private SSH key file picker when creating or editing a connection.
 - Saved workspaces and optional restoration of the previous session.
 - SCP uploads and a native SFTP file explorer with transfers and cancellation.
 - Reusable command snippets with categories, scope, variables, and shortcuts;
