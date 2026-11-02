@@ -400,6 +400,13 @@ Long measurements and release-platform checks remain separate validation work.
   target the clicked tab even when another tab is active. Dismiss/reopen the
   menu repeatedly and confirm no stale popup remains; if the target closes or
   detaches before dispatch, its pending action must do nothing.
+- Note tabs offer Rename note, Delete note, Clone note, Save note and Close tab.
+  Save, Clone and Delete activate the clicked tab before using existing flows;
+  a failed previous save must prevent changing the target. Close acts directly
+  on the clicked tab. Unsaved drafts disable Clone and Delete; read-only or
+  locked storage disables mutations while retaining Close. Revalidate pending
+  targets and permissions after popup dismissal. The editor has no Save,
+  Delete or Close buttons; saved status and modification time remain visible.
 - The note-tab context menu must follow the right-click position and rename
   the clicked saved note or draft even when another tab is active. Rename must
   be disabled for read-only or locked storage. Dismiss/reopen with Escape and
@@ -721,7 +728,7 @@ Long measurements and release-platform checks remain separate validation work.
   opening an already open note activates its existing tab, and Save/autosave
   affect only that note. Closing a clean tab must close only that tab. Close a
   dirty tab and test Save and close, Close without saving, and Keep editing.
-  The editor's Close tab button must follow the same behavior as the tab's X;
+  The tab menu's Close tab action must follow the same behavior as the tab's X;
   neither can undo changes that were already saved automatically.
   Confirm the active tab highlight follows the selected note. With no saved
   notes, switch between multiple unsaved drafts and verify each editor appears
@@ -742,7 +749,7 @@ Long measurements and release-platform checks remain separate validation work.
   remains until explicitly deleted or non-empty content is restored.
   Drag a note onto another category and onto Uncategorized; verify list grouping
   updates and an already-open editor keeps the new category after autosaving.
-  Confirm the explicit Save button persists server-linked notes even before the
+  Confirm the tab menu Save action persists server-linked notes even before the
   autosave delay. Close an incomplete draft tab and confirm Keep editing
   preserves it while Close without saving removes only that draft.
   Open server notes from a sidebar context menu and confirm the notes window

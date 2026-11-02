@@ -2021,6 +2021,10 @@ msgstr ""
 msgid "Moved note to {category}."
 msgstr ""
 
+#: src/termia/i18n.py:notes_save
+msgid "Save note"
+msgstr ""
+
 #: src/termia/i18n.py:notes_clone
 msgid "Clone note"
 msgstr ""

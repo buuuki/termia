@@ -17,6 +17,8 @@ together in embedded VTE terminals.
 - Reusable command snippets with categories, scope, variables, and shortcuts;
   commands are previewed before sending them.
 - Personal and server-linked notes with autosave, categories, and import/export.
+  Right-click a note tab to rename, delete, clone, save, or close it; the editor
+  retains its save status and modification time.
 - Local connection storage with optional master-password encryption.
 - Termia configuration import/export and connection import from Ásbrú YAML.
 - Connection history and optional Statistics and SFTP add-ons.

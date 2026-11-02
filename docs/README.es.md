@@ -17,7 +17,9 @@ de archivos en terminales VTE integrados con GTK 4.
 - Snippets reutilizables con categorías, ámbito, variables y atajos;
   los comandos se previsualizan antes de enviarlos.
 - Notas personales o asociadas a servidores, con guardado automático,
-  categorías e importación/exportación.
+  categorías e importación/exportación. Haz clic derecho en una pestaña para
+  renombrar, eliminar, clonar, guardar o cerrarla; el editor conserva el estado
+  de guardado y la fecha de modificación.
 - Datos de conexión locales con cifrado opcional mediante contraseña maestra.
 - Importación/exportación de Termia e importación de conexiones desde Ásbrú YAML.
 - Historial de conexiones y complementos opcionales de Estadísticas y SFTP.

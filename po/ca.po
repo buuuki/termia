@@ -2318,3 +2318,7 @@ msgstr "Revisar dependències"
 #: src/termia/i18n.py:snippet_name_too_long
 msgid "Use 30 characters or fewer for the snippet name."
 msgstr "Fes servir un màxim de 30 caràcters per al nom del snippet."
+
+#: src/termia/i18n.py:notes_save
+msgid "Save note"
+msgstr "Desar nota"

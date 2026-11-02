@@ -340,6 +340,8 @@ class NotesDialogs:
 
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         configure_action_area(footer)
+        footer.set_margin_top(0)
+        footer.set_margin_bottom(4)
         self.status_label = Gtk.Label()
         self.status_label.set_xalign(0)
         self.status_label.set_hexpand(True)
@@ -347,16 +349,6 @@ class NotesDialogs:
         self.modified_label = Gtk.Label()
         self.modified_label.add_css_class("dim-label")
         footer.append(self.modified_label)
-        self.save_button = Gtk.Button(label=self.translate("save"))
-        self.save_button.connect("clicked", lambda *_: self.save_editor())
-        footer.append(self.save_button)
-        self.delete_button = Gtk.Button(label=self.translate("notes_delete"))
-        self.delete_button.add_css_class("destructive-action")
-        self.delete_button.connect("clicked", lambda *_: self.confirm_delete_note())
-        footer.append(self.delete_button)
-        self.close_editor_button = Gtk.Button(label=self.translate("close_tab"))
-        self.close_editor_button.connect("clicked", lambda *_: self.close_active_editor_tab())
-        footer.append(self.close_editor_button)
         editor.append(footer)
         editor_workspace.append(editor)
         self.editor_workspace = editor_workspace
@@ -617,8 +609,6 @@ class NotesDialogs:
             self.category_add_button,
             self.add_button,
             self.text_view,
-            self.save_button,
-            self.delete_button,
         ):
             widget.set_sensitive(writable)
         self.set_import_export_actions_visible(self.scope_mode == "personal")
@@ -1798,12 +1788,26 @@ class NotesDialogs:
             popover = self.build_note_tab_context_menu()
             self._note_tab_menu = popover
         model = Gio.Menu()
-        model.append(self.translate("notes_rename"), "note-tab.rename")
+        for label, action in (
+            ("notes_rename", "rename"),
+            ("notes_delete", "delete"),
+            ("notes_clone", "clone"),
+            ("notes_save", "save"),
+            ("close_tab", "close"),
+        ):
+            model.append(self.translate(label), f"note-tab.{action}")
         popover.set_menu_model(model)
         self._note_tab_menu_target = (key, tab, parent, self.window)
         self._note_tab_rename_action.set_enabled(
             not self.store.read_only and not self.store.encryption_locked
         )
+        writable = not self.store.read_only and not self.store.encryption_locked
+        for name, action in self._note_tab_actions.items():
+            action.set_enabled(
+                name == "close" or (
+                    writable and (name == "save" or tab.note_id is not None)
+                )
+            )
         rect = Gdk.Rectangle()
         rect.x, rect.y = int(point.x), int(point.y)
         rect.width = rect.height = 1
@@ -1831,6 +1835,12 @@ class NotesDialogs:
         rename.connect("activate", activate_rename)
         actions.add_action(rename)
         self._note_tab_rename_action = rename
+        self._note_tab_actions = {}
+        for name in ("delete", "clone", "save", "close"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", self.on_note_tab_menu_action, name)
+            actions.add_action(action)
+            self._note_tab_actions[name] = action
         popover = Gtk.PopoverMenu.new_from_model(None)
         popover.add_css_class("termia-menu-popover")
         popover.set_has_arrow(False)
@@ -1841,6 +1851,49 @@ class NotesDialogs:
         # can be removed while GTK is returning focus from its rename dialog.
         popover.set_parent(self.editor_tabs_bar)
         return popover
+
+    def on_note_tab_menu_action(self, _action, _parameter, name: str) -> None:
+        target = self._note_tab_menu_target
+        self._note_tab_menu_target = None
+        self.close_note_tab_context_menu()
+        if target is None:
+            return
+        key, tab, parent, window = target
+
+        def dispatch_if_current() -> bool:
+            if (
+                self.editor_tabs.get(key) is not tab
+                or tab.container_widget is not parent
+                or self.window is not window
+                or window is None
+                or not window.get_visible()
+                or parent.get_root() is not window
+            ):
+                return GLib.SOURCE_REMOVE
+            if name == "close":
+                self.close_editor_tab(key)
+                return GLib.SOURCE_REMOVE
+            if self.store.read_only or self.store.encryption_locked:
+                return GLib.SOURCE_REMOVE
+            if name not in ("save", "clone", "delete"):
+                return GLib.SOURCE_REMOVE
+            if name != "save" and (
+                tab.note_id is None or self.find_note(tab.note_id) is None
+            ):
+                return GLib.SOURCE_REMOVE
+            self.activate_editor_tab(key)
+            if self.active_editor_tab_key != key:
+                return GLib.SOURCE_REMOVE
+            if name == "save":
+                self.save_editor()
+            elif name == "clone":
+                self.clone_note(tab.note_id)
+            else:
+                self.confirm_delete_note(tab.note_id)
+            return GLib.SOURCE_REMOVE
+
+        # Release GTK's popup grab before opening confirmation dialogs.
+        GLib.timeout_add(100, dispatch_if_current)
 
     def on_note_tab_rename_action(self, key: str) -> None:
         tab = self.editor_tabs.get(key)
@@ -2452,8 +2505,6 @@ class NotesDialogs:
         self.text_view.set_sensitive(enabled)
         self.text_view.set_editable(writable)
         self.text_view.set_cursor_visible(writable)
-        self.save_button.set_sensitive(writable)
-        self.delete_button.set_sensitive(writable and self.current_note_id is not None)
 
     def create_note(self) -> None:
         if not self.ensure_writable():
