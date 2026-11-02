@@ -8,6 +8,7 @@ from termia.constants import DEFAULT_TERMINAL_BACKGROUND, DEFAULT_TERMINAL_FOREG
 from termia.migrations import (
     CURRENT_CONNECTIONS_SCHEMA_VERSION,
     CURRENT_SCHEMA_VERSION,
+    migrate_app_settings_payload,
     migrate_connections_payload,
     migrate_settings_payload,
 )
@@ -16,6 +17,55 @@ from termia.stores import ConnectionStore, SettingsStore
 
 
 class MigrationTests(unittest.TestCase):
+    def test_split_focus_legacy_defaults_migrate_once_and_survive_restart(self):
+        old = {f"focus_split_{direction}": f"Ctrl+{direction.title()}"
+               for direction in ("left", "right", "up", "down")}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            original = json.dumps({"app": {"keybindings": old}})
+            path.write_text(original, encoding="utf-8")
+            store = SettingsStore(path)
+            for direction in ("left", "right", "up", "down"):
+                self.assertEqual(store.app.keybindings[f"focus_split_{direction}"],
+                                 f"Ctrl+Shift+{direction.title()}")
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            store.save()
+            self.assertEqual(SettingsStore(path).app.split_focus_shortcuts_version, 1)
+            store.app.keybindings["focus_split_left"] = "Ctrl+Left"
+            store.save()
+            self.assertEqual(SettingsStore(path).app.keybindings["focus_split_left"], "Ctrl+Left")
+
+    def test_split_focus_migration_preserves_custom_disabled_and_occupied_bindings(self):
+        old = {"focus_split_left": "<Control>KP_Left", "focus_split_right": "Ctrl+Right",
+               "focus_split_up": "", "focus_split_down": "Alt+Down",
+               "snippet:example": "<Shift><Control>Right"}
+        payload = {"keybindings": old}
+        migrated, changed = migrate_app_settings_payload(payload)
+        self.assertTrue(changed)
+        bindings = migrated["keybindings"]
+        self.assertEqual(bindings["focus_split_left"], "Ctrl+Shift+Left")
+        for action in ("focus_split_right", "focus_split_up", "focus_split_down", "snippet:example"):
+            self.assertEqual(bindings[action], old[action])
+        self.assertEqual(old["focus_split_left"], "<Control>KP_Left")
+        self.assertNotIn("split_focus_shortcuts_version", payload)
+        self.assertEqual(migrate_app_settings_payload(migrated), (migrated, False))
+
+    def test_missing_split_focus_default_does_not_override_an_occupied_shortcut(self):
+        payload = {"keybindings": {"snippet:example": "Ctrl+Shift+Up"}}
+        migrated, _changed = migrate_app_settings_payload(payload)
+        self.assertEqual(migrated["keybindings"]["focus_split_up"], "")
+        self.assertEqual(migrated["keybindings"]["snippet:example"], "Ctrl+Shift+Up")
+
+    def test_split_focus_migration_never_writes_read_only_settings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            original = json.dumps({"app": {"keybindings": {"focus_split_left": "Ctrl+Left"}}})
+            path.write_text(original, encoding="utf-8")
+            store = SettingsStore(path, read_only=True)
+            self.assertEqual(store.app.keybindings["focus_split_left"], "Ctrl+Shift+Left")
+            store.save()
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+
     def test_new_settings_store_initializes_notes_editor_defaults(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"

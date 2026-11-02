@@ -11,6 +11,8 @@ de archivos en terminales VTE integrados con GTK 4.
 ## Características
 
 - Terminales locales y SSH con pestañas, paneles divididos y ventanas separables.
+  Usa `Ctrl+Shift+flechas` para moverte entre paneles de Termia; `Ctrl+flechas`
+  queda disponible para aplicaciones del terminal como tmux.
 - Conexiones organizadas en grupos anidados, favoritos y conexiones recientes.
 - Selector nativo de claves SSH privadas al crear o editar una conexión.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.

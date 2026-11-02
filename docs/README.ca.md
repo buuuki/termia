@@ -11,6 +11,8 @@ fitxers en terminals VTE integrats amb GTK 4.
 ## Funcionalitats
 
 - Terminals locals i SSH amb pestanyes, panells dividits i finestres separables.
+  Fes servir `Ctrl+Shift+fletxes` per moure't entre panells de Termia;
+  `Ctrl+fletxes` queda disponible per a aplicacions del terminal com tmux.
 - Connexions organitzades en grups imbricats, preferits i connexions recents.
 - Selector nadiu de claus SSH privades en crear o editar una connexió.
 - Espais de treball desats i restauració opcional de la sessió anterior.

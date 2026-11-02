@@ -10,6 +10,7 @@ from .constants import (
     DEFAULT_TERMINAL_FOREGROUND,
     LEGACY_ANSI_PALETTE,
 )
+from .keybindings import DEFAULT_KEYBINDINGS, normalize_keybinding
 from .models import DEFAULT_ANSI_PALETTE, TerminalSettings
 
 CURRENT_SCHEMA_VERSION = 1
@@ -58,7 +59,7 @@ def migrate_settings_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], b
 
 
 def migrate_app_settings_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], bool]:
-    """Rename the old sudo-labelled password shortcut settings."""
+    """Migrate legacy preference names and split-focus shortcut defaults."""
     migrated = dict(payload)
     changed = False
     aliases = {
@@ -70,6 +71,32 @@ def migrate_app_settings_payload(payload: dict[str, Any]) -> tuple[dict[str, Any
             migrated.setdefault(new_key, migrated[old_key])
             del migrated[old_key]
             changed = True
+    if migrated.get("split_focus_shortcuts_version", 0) == 0:
+        bindings = migrated.get("keybindings")
+        if isinstance(bindings, dict):
+            bindings = dict(bindings)
+            for direction in ("left", "right", "up", "down"):
+                action = f"focus_split_{direction}"
+                previous = f"Ctrl+{direction.title()}"
+                current = bindings.get(action)
+                if action in bindings and (
+                    not isinstance(current, str) or normalize_keybinding(current) != previous
+                ):
+                    continue
+                replacement = DEFAULT_KEYBINDINGS[action]
+                occupied = any(
+                    other != action and isinstance(value, str)
+                    and normalize_keybinding(value) == replacement
+                    for other, value in bindings.items()
+                )
+                if not occupied:
+                    bindings[action] = replacement
+                elif action not in bindings:
+                    # Do not introduce a default that conflicts with a custom action.
+                    bindings[action] = ""
+            migrated["keybindings"] = bindings
+        migrated["split_focus_shortcuts_version"] = 1
+        changed = True
     return migrated, changed
 
 

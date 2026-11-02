@@ -386,9 +386,15 @@ Long measurements and release-platform checks remain separate validation work.
 - `Ctrl+Shift+T` must open a new local terminal without changing the existing tab-navigation shortcuts.
 - `Ctrl+F6` and `Ctrl+Shift+F6` must cycle focus forward and backward through the visible server list, tab bar, and active terminal, skipping unavailable regions.
 - In horizontal, vertical, nested, and 2x2 split layouts, use the configured
-  `Ctrl+Arrow` shortcuts to move to the nearest pane in each visual direction.
-  At an outer edge, focus must remain in the current pane. Disable one shortcut
-  and confirm its key combination reaches the terminal instead.
+  `Ctrl+Shift+Arrow` defaults to move to the nearest pane in each visual direction.
+  At an outer edge or in a single terminal, focus must stay put and the key must
+  reach the terminal. Custom shortcuts must follow the same rule; disabled
+  shortcuts must pass through. In tmux with its default prefix, use `Ctrl+B`,
+  then `Ctrl+Arrow` to resize a tmux pane by one cell without moving Termia focus.
+- With synthetic old settings, confirm old `Ctrl+Arrow` defaults migrate once
+  to `Ctrl+Shift+Arrow`; custom/disabled bindings and occupied destinations are
+  preserved. Save/restart and confirm deliberately reassigned old shortcuts
+  are not migrated again. Read-only loading must not rewrite settings.
 - After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. Keyboard navigation must scroll just enough to keep the selected item visible. These keys must still reach the VTE while a terminal has focus.
 - The selected group, subgroup, or server must use a single consistent sidebar selection highlight; selecting a new item must clear the previous highlight. Starting navigation from the server filter must focus the selected row, GTK expander focus must not create a second selector, and `Up` must never leave the list for the sidebar action buttons while an earlier visible row exists. GTK must automatically scroll the focused row into view, while terminal focus must keep sidebar navigation disabled.
 - In the native connections tree, use GTK disclosure keys (`Shift+Right`,

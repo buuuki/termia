@@ -955,8 +955,7 @@ class TerminalSessionsMixin:
             return True
         for direction in ("left", "right", "up", "down"):
             if keybinding_matches(keybindings.get(f"focus_split_{direction}", ""), keyval, state):
-                self.move_split_pane_focus(session, terminal, direction)
-                return True
+                return self.move_split_pane_focus(session, terminal, direction)
         if keybinding_matches(keybindings.get("font_increase", ""), keyval, state):
             self.change_terminal_font_size(1)
             return True
