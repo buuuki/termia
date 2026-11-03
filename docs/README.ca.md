@@ -27,6 +27,8 @@ fitxers en terminals VTE integrats amb GTK 4.
 - Importació/exportació de Termia i importació de connexions des d'Ásbrú YAML.
 - Historial de connexions i complements opcionals d'Estadístiques i SFTP.
 - Aparença i dreceres configurables; interfície en català, castellà i anglès.
+  Dreceres s’obre en una finestra independent per continuar fent servir els terminals;
+  els canvis s’apliquen en desar i els botons mostren les combinacions completes.
 
 ## Estat de la versió
 

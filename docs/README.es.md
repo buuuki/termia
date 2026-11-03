@@ -27,6 +27,8 @@ de archivos en terminales VTE integrados con GTK 4.
 - Importación/exportación de Termia e importación de conexiones desde Ásbrú YAML.
 - Historial de conexiones y complementos opcionales de Estadísticas y SFTP.
 - Apariencia y atajos configurables; interfaz en castellano, catalán e inglés.
+  Atajos se abre en una ventana independiente para seguir usando los terminales;
+  los cambios se aplican al guardar y sus botones muestran las combinaciones completas.
 
 ## Estado de la versión
 

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Isolate synthetic process identities in the root-pane exit test from host
+  process/session metadata to avoid environment-dependent CI failures (`#468`).
 - Let terminal applications receive split-focus keys when no focus move is
   possible; use Ctrl+Shift+Arrow defaults and migrate legacy defaults once
   without replacing custom, disabled or conflicting assignments (`#456`).
@@ -21,6 +23,9 @@
 
 ### Changed
 
+- Make Keyboard Shortcuts an independent, non-modal, resizable window with
+  buttons showing full combinations; preserve compact snippet controls
+  (`#468`).
 - Move note Save, Delete and Close actions from the editor footer into its
   native tab menu, add Clone, and retain autosave status and modification time
   (`#457`).

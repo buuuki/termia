@@ -909,7 +909,11 @@ class TerminalPaneStateTests(unittest.TestCase):
         self.assertFalse(root.disconnect_requested)
         self.assertTrue(split.disconnect_requested)
 
-    def test_explicitly_disconnected_first_pane_is_removed_for_local_and_ssh(self) -> None:
+    @patch("termia.terminal_processes.process_session_members", return_value=())
+    @patch("termia.terminal_processes.process_start_time", return_value=None)
+    def test_explicitly_disconnected_first_pane_is_removed_for_local_and_ssh(
+        self, process_start_time, process_session_members,
+    ) -> None:
         for kind in ("local", "ssh"):
             with self.subTest(kind=kind):
                 root_terminal = FakeTerminal()
@@ -993,6 +997,9 @@ class TerminalPaneStateTests(unittest.TestCase):
                     session.split_processes[id(sibling_terminal)],
                     sibling_process,
                 )
+
+        process_start_time.assert_called_with(10)
+        process_session_members.assert_called_with(1000)
 
     def test_completed_split_process_identity_is_cleared_without_touching_siblings(self) -> None:
         root_terminal = FakeTerminal()

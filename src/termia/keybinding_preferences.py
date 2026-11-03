@@ -22,17 +22,20 @@ from .stores import ReadOnlyStoreError
 
 
 class KeybindingCaptureRow(Gtk.Box):
-    def __init__(self, accelerator: str, disabled_label: str, capture_prompt: str, clear_label: str) -> None:
+    def __init__(self, accelerator: str, disabled_label: str, capture_prompt: str, clear_label: str,
+                 *, compact: bool = True) -> None:
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self.set_hexpand(True)
+        self.set_halign(Gtk.Align.FILL if compact else Gtk.Align.END)
         self._disabled_label = disabled_label
         self._capture_prompt = capture_prompt
         self._clear_label = clear_label
+        self._compact = compact
         self._accelerator = normalize_keybinding(accelerator)
         self._capturing = False
         self._capture_button = Gtk.Button()
-        self._capture_button.set_hexpand(True)
-        self._capture_button.set_halign(Gtk.Align.FILL)
+        self._capture_button.set_hexpand(compact)
+        self._capture_button.set_halign(Gtk.Align.FILL if compact else Gtk.Align.START)
         self._capture_button.connect("clicked", self.on_capture_clicked)
         key_controller = Gtk.EventControllerKey.new()
         key_controller.connect("key-pressed", self.on_key_pressed)
@@ -62,8 +65,10 @@ class KeybindingCaptureRow(Gtk.Box):
             self._capture_button.set_label(keybinding_label(self._accelerator, self._disabled_label))
             self._capture_button.remove_css_class("suggested-action")
         label = self._capture_button.get_child()
-        label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_max_width_chars(24)
+        label.set_ellipsize(Pango.EllipsizeMode.END if self._compact else Pango.EllipsizeMode.NONE)
+        label.set_max_width_chars(24 if self._compact else -1)
+        if not self._compact:
+            label.set_width_chars(14)
         self._capture_button.set_tooltip_text(self._capture_button.get_label())
 
     def on_capture_clicked(self, _button: Gtk.Button) -> None:
@@ -99,9 +104,17 @@ class KeybindingPreferencesMixin:
     def on_keybindings_settings(self, _button: Gtk.Button) -> None:
         if not self.ensure_writable():
             return
-        dialog = DialogWindow(title=self.t("keybindings"), transient_for=self, modal=True)
-        dialog.set_resizable(False)
-        dialog.set_default_size(520, -1)
+        dialog = DialogWindow(title=self.t("keybindings"), application=self.get_application(), modal=False)
+        dialog.set_resizable(True)
+        dialog.set_default_size(576, -1)
+        # Keep an independent window from outliving its settings owner.
+        owner_unrealize = self.connect("unrealize", lambda *_args: dialog.destroy())
+
+        def release_owner_handler(*_args) -> None:
+            if self.handler_is_connected(owner_unrealize):
+                self.disconnect(owner_unrealize)
+
+        dialog.connect("unrealize", release_owner_handler)
         self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
         self.add_dialog_action_button(dialog, self.t("save"), Gtk.ResponseType.OK)
         self.add_dialog_action_button(
@@ -127,9 +140,12 @@ class KeybindingPreferencesMixin:
         for index, (action, label_key) in enumerate(KEYBINDING_ACTIONS):
             label = Gtk.Label(label=self.t(label_key))
             label.set_xalign(0)
+            label.set_wrap(True)
+            label.set_max_width_chars(30)
             row = KeybindingCaptureRow(
                 self.store.data.app.keybindings.get(action, DEFAULT_KEYBINDINGS[action]),
                 self.t("keybinding_disabled"), self.t("keybinding_capture_prompt"), self.t("keybinding_clear"),
+                compact=False,
             )
             rows.append((action, row))
             grid.attach(label, 0, index, 1, 1)
@@ -147,11 +163,13 @@ class KeybindingPreferencesMixin:
             row = KeybindingCaptureRow(
                 previous.get(action, ""), self.t("keybinding_disabled"),
                 self.t("keybinding_capture_prompt"), self.t("keybinding_clear"),
+                compact=False,
             )
             rows.append((action, row))
             grid.attach(label, 0, index, 1, 1)
             grid.attach(row, 1, index, 1, 1)
         scroller = Gtk.ScrolledWindow()
+        scroller.set_vexpand(True)
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_max_content_height(560)
         scroller.set_propagate_natural_height(True)

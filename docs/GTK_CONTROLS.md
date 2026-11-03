@@ -108,6 +108,10 @@ See [the laboratory record](DOCKER_LABORATORY.md) for the investigations.
 
 ### Item 17: justified capture exception
 
+Keyboard Shortcuts uses an independent non-modal, resizable `DialogWindow`
+with full-width capture labels; the snippet editor retains compact labels.
+The settings window closes when its owning main window is destroyed.
+
 `KeybindingCaptureRow` is shared by preferences and the snippet editor. It uses
 standard GTK buttons and event/focus controllers, but Termia owns the recording
 interaction: begin capture, normalize the key
