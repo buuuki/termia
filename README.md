@@ -15,6 +15,11 @@ together in embedded VTE terminals.
   available to terminal applications such as tmux.
 - Connections organized in nested groups, favorites, and recent connections.
 - Native private SSH key file picker when creating or editing a connection.
+- Optional saved passwords for local terminal profiles. Enable the saved-password
+  shortcut in preferences and press `Ctrl+P` (default) when `sudo` requests it;
+  the active pane receives its own saved password, with optional Enter.
+  The shortcut does not detect password prompts. Storage follows Security
+  preferences; see [storage compatibility](docs/STORAGE_MIGRATIONS.md) before upgrading.
 - Saved workspaces and optional restoration of the previous session.
 - SCP uploads and a native SFTP file explorer with transfers and cancellation.
 - Reusable command snippets with categories, scope, variables, and shortcuts;

@@ -2,7 +2,7 @@
 
 ## Stored credentials
 
-Termia stores configured SSH passwords in:
+Termia stores configured SSH and local-terminal profile passwords in:
 
 ```text
 ~/.config/termia/connections.json
@@ -34,8 +34,10 @@ contain host names, user names, and session metadata, but not terminal commands
 or output. Keep it private as well.
 
 The configured password shortcut, `Ctrl+P` by default, sends the saved SSH
-password directly to the active remote terminal process, with an optional trailing
-`Enter`. It does not use the clipboard. Enable it only on trusted desktops and
+or local-profile password directly to the active terminal process, with an optional
+trailing `Enter`. Each pane uses its own saved connection or local profile;
+unsaved local terminals have no saved password. It does not use the clipboard
+or detect whether sudo or another program is requesting a password. Enable it only on trusted desktops and
 use it only when the terminal is waiting for a password.
 
 ## Local statistics

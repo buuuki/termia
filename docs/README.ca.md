@@ -15,6 +15,11 @@ fitxers en terminals VTE integrats amb GTK 4.
   `Ctrl+fletxes` queda disponible per a aplicacions del terminal com tmux.
 - Connexions organitzades en grups imbricats, preferits i connexions recents.
 - Selector nadiu de claus SSH privades en crear o editar una connexió.
+- Contrasenya opcional als perfils de terminal local. Activa la drecera d'enviament
+  a les preferències i prem `Ctrl+P` (per defecte) quan `sudo` la demani;
+  el panell actiu rep la seva contrasenya desada, amb Retorn opcional.
+  La drecera no detecta peticions de contrasenya. La protecció depèn de
+  Seguretat; consulta la [compatibilitat](STORAGE_MIGRATIONS.md) abans d'actualitzar.
 - Espais de treball desats i restauració opcional de la sessió anterior.
 - Pujades SCP i explorador SFTP nadiu amb transferències i cancel·lació.
 - Snippets reutilitzables amb categories, àmbit, variables i dreceres;

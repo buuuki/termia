@@ -14,6 +14,10 @@
 
 ### Added
 
+- Save an optional local-terminal profile password and send it to the active
+  pane with the saved-password shortcut; preserve it on clone and export.
+  Upgrade connections to schema 4 (`#471`).
+
 - Add a native private SSH key picker to connection forms and clarify password
   storage options, including master-password encryption (`#461`).
 - Add an Ubuntu 24.04 GNOME Docker laboratory with native remote

@@ -53,6 +53,7 @@ class LocalTerminalProfile:
     command_on_start: str = ""
     tab_title: str = ""
     split_layout: str = "none"
+    password: str = ""
 
 
 @dataclass

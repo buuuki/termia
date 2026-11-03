@@ -50,12 +50,19 @@ credentials or private notes. Isolated test instances use their own profile.
 
 ### Schema inventory
 
-- `connections.json`: object schema `3`; embedded legacy settings and
+- `connections.json`: object schema `4`; embedded legacy settings and
   statistics are extracted into their dedicated files, schema `2` adds
   locally stored command snippets and persistent snippet categories, and
   schema `3` adds an optional per-server startup command. Existing server
   profiles receive an empty command when migrated; empty categories remain
-  stored explicitly.
+  stored explicitly. Schema `4` adds an optional local-terminal profile password;
+  older profiles receive an empty password. Passwords follow the connection
+  storage protection mode and are included in connection exports and clones.
+  Before first launch with schema 4 support, close Termia and make an offline
+  backup of connections.json. Writable startup migrates and saves older schemas;
+  read-only loading does not rewrite them. Previous Termia versions cannot read
+  schema 4. Restore the pre-upgrade backup before downgrading, keeping a separate
+  protected copy of newer data. Do not open a schema 4 file with an older client.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
   Optional `app.split_focus_shortcuts_version` defaults to `1` in new profiles.
