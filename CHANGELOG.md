@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Defer native sidebar local-profile activation until the current event
+  finishes, preserving deliberate focus changes (`#473`).
 - Normalize optional local-profile passwords and format regression-test
   imports to resolve static-analysis blockers (`#471`).
 - Isolate synthetic process identities in the root-pane exit test from host

@@ -569,7 +569,24 @@ class SidebarMixin:
             return
         else:
             self.sidebar_tree_selection.set_selected(position)
-            self.activate_selected_tree_row()
+            if row.get_item().row.kind != "local_terminal":
+                self.activate_selected_tree_row()
+                return
+            model = self.sidebar_tree_model
+            selected = self.selected
+            focused = self.get_focus()
+
+            def activate_local():
+                if (
+                    not getattr(self, "shutdown_in_progress", False)
+                    and self.sidebar_tree_model is model
+                    and self.selected is selected
+                    and self.get_focus() is focused
+                ):
+                    self.activate_selected_tree_row()
+                return GLib.SOURCE_REMOVE
+
+            GLib.idle_add(activate_local)
 
     def on_sidebar_tree_context_pressed(self, gesture, _count, x, y, row, content) -> None:
         root = self.get_child()

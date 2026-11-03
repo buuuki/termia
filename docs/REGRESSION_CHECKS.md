@@ -392,6 +392,10 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Focus and Keyboard
 
+- Navigate to a saved local profile with the keyboard and press Enter.
+  Verify immediate terminal input with no existing tabs and with existing
+  tabs, including repeated activation. Moving focus elsewhere before a
+  deferred activation completes must cancel that pending activation.
 - `Ctrl+PageUp` and `Ctrl+PageDown` must switch between tabs.
 - After keyboard tab switching, focus must return to the terminal, not the tab label.
 - After closing a session, focus must move to the active terminal automatically.

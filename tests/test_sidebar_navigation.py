@@ -303,6 +303,7 @@ class NativeConnectionsTreeTests(unittest.TestCase):
             host.open_terminal_tab.assert_called_with(host.store.data.servers[0])
         index = self.select("local_terminal", "local")
         host.on_sidebar_tree_activated(host.server_list, index)
+        self.drain()
         host.open_local_terminal_profile.assert_called_once_with(host.store.data.local_terminals[0])
         index = self.select("workspace", "work")
         host.on_sidebar_tree_activated(host.server_list, index)
@@ -311,6 +312,43 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         host.refresh_list()
         self.assertIsNone(host.selected)
         self.assertFalse(host.activate_selected_tree_row())
+
+    def test_pending_local_activation_preserves_deliberate_focus_change(self):
+        host = self.host
+        index = self.select("local_terminal", "local")
+        host.focus_sidebar_tree_position(index)
+        self.drain()
+        host.on_sidebar_tree_activated(host.server_list, index)
+        host.open_local_terminal_profile.assert_not_called()
+        host.search_entry.grab_focus()
+        self.drain()
+        host.open_local_terminal_profile.assert_not_called()
+
+    def test_native_enter_local_profile_keeps_terminal_focus(self):
+        if not shutil.which("xdotool"):
+            self.skipTest("GTK keyboard test requires xdotool")
+        import gi
+        gi.require_version("GdkX11", "4.0")
+        gi.require_version("Vte", "3.91")
+        from gi.repository import GdkX11, Vte
+
+        host = self.host
+        terminal = Vte.Terminal()
+        host.get_child().append(terminal)
+        host.open_local_terminal_profile.side_effect = lambda _profile: terminal.grab_focus()
+        index = self.select("local_terminal", "local")
+        host.focus_sidebar_tree_position(index)
+        self.drain()
+        xid = GdkX11.X11Surface.get_xid(host.get_surface())
+        subprocess.run(
+            ["xdotool", "windowfocus", str(xid), "key", "--clearmodifiers", "Return"],
+            check=True, stdout=subprocess.DEVNULL,
+        )
+        self.drain()
+        host.open_local_terminal_profile.assert_called_once_with(
+            host.store.data.local_terminals[0],
+        )
+        self.assertIs(host.get_focus(), terminal)
 
     def test_right_click_keeps_target_and_rejects_rebuilt_rows(self):
         host = self.host
