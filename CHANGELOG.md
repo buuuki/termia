@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Isolate synthetic process identities in the root-pane exit test from host
+  process/session metadata to avoid environment-dependent CI failures (`#468`).
 - Let terminal applications receive split-focus keys when no focus move is
   possible; use Ctrl+Shift+Arrow defaults and migrate legacy defaults once
   without replacing custom, disabled or conflicting assignments (`#456`).
