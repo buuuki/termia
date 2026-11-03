@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Normalize optional local-profile passwords and format regression-test
+  imports to resolve static-analysis blockers (`#471`).
 - Isolate synthetic process identities in the root-pane exit test from host
   process/session metadata to avoid environment-dependent CI failures (`#468`).
 - Let terminal applications receive split-focus keys when no focus move is

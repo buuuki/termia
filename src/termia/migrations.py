@@ -55,7 +55,7 @@ def migrate_connections_payload(payload: dict[str, Any]) -> tuple[dict[str, Any]
     if isinstance(profiles, list):
         for profile in profiles:
             if isinstance(profile, dict) and "password" not in profile:
-                profile["password"] = ""
+                profile.setdefault("password", "")
                 changed = True
     return migrated, changed
 

@@ -15,7 +15,10 @@ from gi.repository import Gtk
 from termia.config_io import load_store_data_from_json, write_connections_file
 from termia.connection_dialogs import ConnectionDialogsMixin
 from termia.dialog_window import DialogWindow
-from termia.migrations import CURRENT_CONNECTIONS_SCHEMA_VERSION, migrate_connections_payload
+from termia.migrations import (
+    CURRENT_CONNECTIONS_SCHEMA_VERSION,
+    migrate_connections_payload,
+)
 from termia.models import LocalTerminalProfile, Server, StoreData
 from termia.sidebar import SidebarMixin
 from termia.stores import ConnectionStore
