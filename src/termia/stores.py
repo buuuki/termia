@@ -1391,6 +1391,7 @@ class ConnectionStore:
         command_on_start: str,
         tab_title: str,
         split_layout: str = "none",
+        password: str | None = None,
     ) -> LocalTerminalProfile:
         self.ensure_writable()
         profile = LocalTerminalProfile(
@@ -1403,6 +1404,7 @@ class ConnectionStore:
             tab_title=tab_title.strip(),
             split_layout=normalize_split_layout(split_layout),
         )
+        profile.password = password or ""
         self.data.local_terminals.append(profile)
         self.save_connections()
         return profile
@@ -1417,6 +1419,7 @@ class ConnectionStore:
         command_on_start: str,
         tab_title: str,
         split_layout: str = "none",
+        password: str | None = None,
     ) -> None:
         self.ensure_writable()
         updated = False
@@ -1429,6 +1432,7 @@ class ConnectionStore:
                 profile.command_on_start = command_on_start.strip()
                 profile.tab_title = tab_title.strip()
                 profile.split_layout = normalize_split_layout(split_layout)
+                profile.password = password or ""
                 updated = True
                 break
         if updated:

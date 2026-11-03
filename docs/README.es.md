@@ -15,6 +15,11 @@ de archivos en terminales VTE integrados con GTK 4.
   queda disponible para aplicaciones del terminal como tmux.
 - Conexiones organizadas en grupos anidados, favoritos y conexiones recientes.
 - Selector nativo de claves SSH privadas al crear o editar una conexión.
+- Contraseña opcional en los perfiles de terminal local. Activa el atajo de envío
+  en las preferencias y pulsa `Ctrl+P` (predeterminado) cuando `sudo` la solicite;
+  el panel activo recibe su contraseña guardada, con Enter opcional.
+  El atajo no detecta solicitudes de contraseña. La protección depende de
+  Seguridad; consulta la [compatibilidad](STORAGE_MIGRATIONS.md) antes de actualizar.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
 - Subidas SCP y explorador SFTP nativo con transferencias y cancelación.
 - Snippets reutilizables con categorías, ámbito, variables y atajos;

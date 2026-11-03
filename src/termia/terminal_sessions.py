@@ -1091,11 +1091,14 @@ class TerminalSessionsMixin:
     def send_saved_password(self, session: TerminalSession, terminal: Vte.Terminal | None = None) -> None:
         target = terminal or session.terminal
         pane = self.pane_state(session, target)
-        server = find_server(self.store.data.servers, pane.server_id) if pane.server_id is not None else None
-        if not pane.connected or server is None or not server.password:
+        if pane.server_id is not None:
+            connection = find_server(self.store.data.servers, pane.server_id)
+        else:
+            connection = find_local_terminal_profile(self.store.data.local_terminals, pane.local_profile_id)
+        if not pane.connected or connection is None or not connection.password:
             self.toast_label.set_warning(self.t("send_credential_unavailable"))
             return
-        payload = server.password.encode()
+        payload = connection.password.encode()
         if self.store.data.app.send_password_enter:
             payload += b"\r"
         target.feed_child(payload)

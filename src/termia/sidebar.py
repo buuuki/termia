@@ -1373,6 +1373,7 @@ class SidebarMixin:
             profile.command_on_start,
             profile.tab_title,
             profile.split_layout,
+            password=profile.password,
         )
         self.selected = RowObject("local_terminal", clone.id, clone.name)
         self.toast_label.set_label(f"{self.t('local_terminal_cloned')}: {clone.name}")

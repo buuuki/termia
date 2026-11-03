@@ -1,5 +1,24 @@
 # Regression Checks and Protected Behaviors
 
+## Local saved passwords
+
+- Before upgrading a real profile, close Termia and back up connections.json;
+  see the schema 4 downgrade instructions in STORAGE_MIGRATIONS.md.
+- Launch `scripts/run_test_instance.sh --fresh`. Create and edit a local profile
+  with a synthetic password, check native visibility controls and the storage
+  warning, save/reopen, clear the password, and cancel an edit. Check EN/ES/CA.
+- Enable the saved-password shortcut. Use a synthetic non-echoing input prompt
+  in a local terminal; verify Ctrl+P sends the exact password, with and without
+  optional Enter. Never put real credentials into an echoing shell prompt.
+- Repeat with two saved local profiles and mixed local/SSH pane identities;
+  only the focused pane receives its own password. No real SSH host is needed
+  for automated pane identity tests. Check missing/deleted profiles, unsaved
+  local terminals, empty passwords, exited panes and a disabled shortcut.
+- Clone a local profile and restart. Export/import plain, obfuscated and
+  encrypted synthetic profiles; confirm passwords survive without changing
+  the selected protection mode. Legacy profiles load with empty passwords,
+  read-only loading preserves original bytes, and future schemas are rejected.
+
 ## Connection private SSH key selection
 
 - In an isolated profile, create and edit a connection: use the folder button
