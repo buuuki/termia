@@ -21,6 +21,10 @@ de archivos en terminales VTE integrados con GTK 4.
   El atajo no detecta solicitudes de contraseña. La protección depende de
   Seguridad; consulta la [compatibilidad](STORAGE_MIGRATIONS.md) antes de actualizar.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
+- Copia automática opcional al terminar de seleccionar texto del terminal,
+  desactivada por defecto en Preferencias generales. El aviso confirma la copia
+  e indica los caracteres, incluidos espacios y saltos de línea, cuando el
+  portapapeles acepta el texto. Un clic en otra zona quita el resaltado sin perder la copia.
 - Confirmación antes de pegar texto con saltos de línea en el terminal,
   activada por defecto en Preferencias generales. Revisa la vista previa y
   pulsa Pegar; Cancelar o Escape no envían nada. También protege el botón

@@ -65,6 +65,10 @@ credentials or private notes. Isolated test instances use their own profile.
   protected copy of newer data. Do not open a schema 4 file with an older client.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
+  Optional `app.copy_on_selection` defaults to `false` for new and older
+  profiles. It adds no schema migration and is separate from connection
+  exports. Older clients can read settings but discard this field when saving;
+  check the preference after downgrading and upgrading again.
   Optional `app.split_focus_shortcuts_version` defaults to `1` in new profiles.
   Old profiles without the marker migrate only legacy `Ctrl+Arrow` split-focus
   assignments to `Ctrl+Shift+Arrow`. Custom and disabled assignments survive;

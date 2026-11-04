@@ -157,6 +157,17 @@ Long measurements and release-platform checks remain separate validation work.
   Disable the option and repeat; native paste must remain available. With
   protection enabled, middle-click is reserved for paste even in applications
   with mouse reporting; review that documented compatibility tradeoff.
+
+- General preferences: automatic selection copying is disabled by default.
+  Enable it, select text by drag/double/triple click in local/SSH panes and
+  detached windows, and verify clipboard text plus a success notification with
+  the Unicode character count (including spaces and line breaks). Do not copy
+  partial selections while dragging. A plain click must remove the highlight
+  while retaining the copied text. Empty/deselected or retired panes must not
+  replace the clipboard or report success. Verify singular/plural messages in
+  English, Spanish and Catalan, preference persistence, manual copying and
+  independent saving of copy, paste-confirmation and Debug settings. When
+  disabled, selecting text must leave the standard clipboard unchanged.
 - Terminal tabs, note tabs (including drafts), and saved-note rows must offer
   only their distinct private drag formats. Drag each onto the server filter,
   notes search, note editor, and another application's text field: no internal

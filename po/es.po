@@ -2342,3 +2342,19 @@ msgstr "El texto contiene saltos de línea y puede ejecutar comandos. Revísalo 
 #: src/termia/i18n.py:terminal_paste_read_failed
 msgid "Could not read text from the clipboard"
 msgstr "No se pudo leer el texto del portapapeles"
+
+#: src/termia/i18n.py:copy_on_selection
+msgid "Automatically copy terminal text on selection"
+msgstr "Copiar automáticamente el texto del terminal al seleccionar"
+
+#: src/termia/i18n.py:terminal_selection_copied_one
+msgid "Copied 1 character to the clipboard"
+msgstr "Copiado 1 carácter al portapapeles"
+
+#: src/termia/i18n.py:terminal_selection_copied
+msgid "Copied {count} characters to the clipboard"
+msgstr "Copiados {count} caracteres al portapapeles"
+
+#: src/termia/i18n.py:terminal_selection_copy_failed
+msgid "Could not copy the selected text to the clipboard"
+msgstr "No se pudo copiar el texto seleccionado al portapapeles"

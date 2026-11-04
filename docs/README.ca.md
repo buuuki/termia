@@ -21,6 +21,10 @@ fitxers en terminals VTE integrats amb GTK 4.
   La drecera no detecta peticions de contrasenya. La protecció depèn de
   Seguretat; consulta la [compatibilitat](STORAGE_MIGRATIONS.md) abans d'actualitzar.
 - Espais de treball desats i restauració opcional de la sessió anterior.
+- Còpia automàtica opcional en acabar de seleccionar text del terminal,
+  desactivada per defecte a Preferències generals. L'avís confirma la còpia i
+  indica els caràcters, inclosos espais i salts de línia, quan el porta-retalls
+  accepta el text. Un clic en una altra zona treu el ressaltat sense perdre la còpia.
 - Confirmació abans d'enganxar text amb salts de línia al terminal, activada
   per defecte a Preferències generals. Revisa la previsualització i prem
   Enganxar; Cancel·lar o Escapament no envien res. També protegeix el botó

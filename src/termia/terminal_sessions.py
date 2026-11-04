@@ -913,6 +913,7 @@ class TerminalSessionsMixin:
         middle_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         signals.connect(middle_click, "pressed", self.on_terminal_primary_paste_requested, session, terminal, paste_state)
         terminal.add_controller(middle_click)
+        signals.connect(terminal, "selection-changed", self.on_terminal_selection_changed, session)
 
     @staticmethod
     def on_terminal_paste_unrealize(_terminal: Vte.Terminal, state: dict[str, Any]) -> None:
@@ -1037,6 +1038,44 @@ class TerminalSessionsMixin:
 
         clipboard = terminal.get_primary_clipboard() if primary else terminal.get_clipboard()
         clipboard.read_text_async(cancellable, clipboard_ready)
+
+    def on_terminal_selection_changed(
+        self,
+        terminal: Vte.Terminal,
+        session: TerminalSession,
+    ) -> None:
+        if not self.store.data.app.copy_on_selection or not terminal.get_has_selection():
+            return
+        pane = session.pane_for_terminal(terminal)
+        if pane is None or pane.retired:
+            return
+        owner_ref = weakref.ref(self)
+        pane_ref = weakref.ref(pane)
+
+        def copy_finished_selection() -> bool:
+            owner = owner_ref()
+            current = pane_ref()
+            if (
+                owner is not None
+                and current is not None
+                and not current.retired
+                and owner.store.data.app.copy_on_selection
+                and current.terminal.get_has_selection()
+            ):
+                text = current.terminal.get_text_selected(Vte.Format.TEXT)
+                if not text:
+                    return GLib.SOURCE_REMOVE
+                clipboard = current.terminal.get_clipboard()
+                provider = Gdk.ContentProvider.new_for_value(text)
+                if clipboard.set_content(provider):
+                    count = len(text)
+                    message = "terminal_selection_copied_one" if count == 1 else "terminal_selection_copied"
+                    owner.toast_label.set_success(owner.t(message).format(count=count))
+                else:
+                    owner.toast_label.set_error(owner.t("terminal_selection_copy_failed"))
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(copy_finished_selection)
 
     def on_terminal_focus_enter(
         self,
