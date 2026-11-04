@@ -45,6 +45,7 @@ def build_application_css(
         f".termia-split-pane.horizontal > separator:hover {{ border-left-color: alpha({split_separator_color}, 0.82); }} "
         f".termia-split-pane.vertical > separator:hover {{ border-top-color: alpha({split_separator_color}, 0.82); }} "
         ".termia-read-only-badge { font-weight: 600; } "
+        ".termia-terminal-paste-preview { border: 1px solid #000000; } "
         ".termia-tab-label { padding: 7px 10px; margin: 0 2px; border-radius: 8px; "
         "background: transparent; border: 0; box-shadow: none; } "
         ".termia-tab-label:hover { background: alpha(@theme_fg_color, 0.06); } "

@@ -21,6 +21,11 @@ fitxers en terminals VTE integrats amb GTK 4.
   La drecera no detecta peticions de contrasenya. La protecció depèn de
   Seguretat; consulta la [compatibilitat](STORAGE_MIGRATIONS.md) abans d'actualitzar.
 - Espais de treball desats i restauració opcional de la sessió anterior.
+- Confirmació abans d'enganxar text amb salts de línia al terminal, activada
+  per defecte a Preferències generals. Revisa la previsualització i prem
+  Enganxar; Cancel·lar o Escapament no envien res. També protegeix el botó
+  central: mentre està activada, Termia el tracta com una enganxada fins i
+  tot en aplicacions del terminal que normalment gestionen el ratolí.
 - Pujades SCP i explorador SFTP nadiu amb transferències i cancel·lació.
 - Snippets reutilitzables amb categories, àmbit, variables i dreceres;
   les ordres es previsualitzen abans d'enviar-les.

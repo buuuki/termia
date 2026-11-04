@@ -21,6 +21,11 @@ de archivos en terminales VTE integrados con GTK 4.
   El atajo no detecta solicitudes de contraseña. La protección depende de
   Seguridad; consulta la [compatibilidad](STORAGE_MIGRATIONS.md) antes de actualizar.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
+- Confirmación antes de pegar texto con saltos de línea en el terminal,
+  activada por defecto en Preferencias generales. Revisa la vista previa y
+  pulsa Pegar; Cancelar o Escape no envían nada. También protege el botón
+  central: mientras está activada, Termia lo trata como pegado incluso en
+  aplicaciones del terminal que normalmente gestionan el ratón.
 - Subidas SCP y explorador SFTP nativo con transferencias y cancelación.
 - Snippets reutilizables con categorías, ámbito, variables y atajos;
   los comandos se previsualizan antes de enviarlos.

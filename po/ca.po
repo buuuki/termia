@@ -2326,3 +2326,19 @@ msgstr "Fes servir un màxim de 30 caràcters per al nom del snippet."
 #: src/termia/i18n.py:notes_save
 msgid "Save note"
 msgstr "Desar nota"
+
+#: src/termia/i18n.py:confirm_multiline_paste
+msgid "Confirm before pasting multiple lines"
+msgstr "Confirmar abans d'enganxar diverses línies"
+
+#: src/termia/i18n.py:terminal_paste_confirm_title
+msgid "Confirm multiline paste"
+msgstr "Confirmar l'enganxada de diverses línies"
+
+#: src/termia/i18n.py:terminal_paste_confirm_body
+msgid "The text contains line breaks and may execute commands. Review it before pasting."
+msgstr "El text conté salts de línia i pot executar ordres. Revisa'l abans d'enganxar-lo."
+
+#: src/termia/i18n.py:terminal_paste_read_failed
+msgid "Could not read text from the clipboard"
+msgstr "No s'ha pogut llegir el text del porta-retalls"

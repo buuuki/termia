@@ -472,6 +472,7 @@ def backup_invalid_file(path: Path, read_only: bool = False) -> Path | None:
 
 
 def normalize_app_settings(app: AppSettings) -> AppSettings:
+    app.confirm_multiline_paste = app.confirm_multiline_paste is not False
     app.keybindings = normalize_keybindings(app.keybindings)
     values = app.notes_editor if isinstance(app.notes_editor, dict) else {}
     size = values.get("size", 12)
@@ -1631,6 +1632,7 @@ class ConnectionStore:
             show_sidebar_on_startup=app.show_sidebar_on_startup,
             show_session_status_bar=app.show_session_status_bar,
             audible_bell=app.audible_bell,
+            confirm_multiline_paste=app.confirm_multiline_paste is not False,
             confirm_disconnect=app.confirm_disconnect,
             confirm_close_app=app.confirm_close_app,
             send_password_shortcut=app.send_password_shortcut,

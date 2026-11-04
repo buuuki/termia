@@ -144,6 +144,19 @@ Long measurements and release-platform checks remain separate validation work.
   menu, and verify updated labels or no label for a disabled assignment.
   Other commands must not display unrelated shortcuts (split focus is not
   split creation). Check keyboard activation and menu dismissal still work.
+
+- General preferences: confirm multiline pastes is enabled by default and
+  survives Save/restart. Paste single-line and LF/CR/CRLF text using the
+  configured shortcut, Shift+Insert, the context menu and middle-button primary
+  selection in local/SSH panes and detached windows. Single-line text pastes
+  directly; any line break, including a trailing break, requires confirmation.
+  Cancel, Escape and window close must send nothing. Confirm must paste only
+  the displayed snapshot even if the clipboard changes, using VTE's bracketed
+  paste handling. Closed, reconnected or reparented panes must not receive a
+  pending paste. Check the black 1px preview border and 8px footer gap.
+  Disable the option and repeat; native paste must remain available. With
+  protection enabled, middle-click is reserved for paste even in applications
+  with mouse reporting; review that documented compatibility tradeoff.
 - Terminal tabs, note tabs (including drafts), and saved-note rows must offer
   only their distinct private drag formats. Drag each onto the server filter,
   notes search, note editor, and another application's text field: no internal
