@@ -784,7 +784,7 @@ class TermiaWindow(
 
         self.search_entry = Gtk.SearchEntry()
         self.search_entry.set_placeholder_text(self.t("filter_servers"))
-        self.search_entry.connect("search-changed", lambda _entry: self.refresh_list())
+        self.search_entry.connect("search-changed", self.on_server_filter_changed)
         sidebar.append(self.search_entry)
 
         self.server_list = self.create_sidebar_tree()

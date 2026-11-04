@@ -178,10 +178,13 @@ those synthetic scenarios, not every SSH server or a full release matrix.
 
 ### Sidebar and context menus
 
-Connection groups and section headers now behave like Notes category headers:
-clicking the content toggles expansion without making the header the selected
-object. Keyboard selection skips headers. The existing compact, rounded
-icon/text selection remains; scoped CSS removes the theme's pressed inset shadow.
+Under #380, connection group/section headers toggled without becoming selected.
+Issue #474 revises that decision after Ubuntu 26 laboratory review: native tree
+navigation selects headers, and content clicks select/focus the header before
+toggling it once. Enter toggles a header or opens the selected connection. The
+compact icon/text selection remains. Delayed search notifications do not rebuild
+an already-current model; manual folding while filtering is transient, and
+clearing the search restores the saved expansion state.
 
 Tab, server and group menus use GTK's native pointing arrow. GTK can reposition
 it to fit the available space; it is not permanently fixed to the upper edge.
