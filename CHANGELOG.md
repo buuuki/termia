@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Preserve keyboard activation after delayed search notifications and keep
+  group/section selection visible; allow explicit group folding while
+  filtering (`#474`).
 - Increase right spacing in Keyboard Shortcuts to prevent the expanded
   overlay scrollbar from overlapping clear buttons (`#475`).
 - Keep keyboard input in the real local shell after double-clicking a saved

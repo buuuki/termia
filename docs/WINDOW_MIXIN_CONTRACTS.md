@@ -137,7 +137,10 @@ keybinding dialogs have comparatively small contracts.
   and private server-to-group drags. Recycled rows and deferred callbacks are
   checked against the current model generation. GTK model reads and expansion
   persistence wait until expansion notifications finish; disappearing child
-  rows must not overwrite their saved expansion preferences.
+  rows must not overwrite their saved expansion preferences. Group/section
+  headers participate in native selection; content clicks select/focus and
+  toggle once. Redundant search notifications preserve the current model.
+  Manual folding while filtering does not change saved expansion preferences.
 - Owns reusable native menus for servers, groups, local profiles and saved
   workspaces. Each dispatch revalidates the captured object ID and permissions;
   menu construction no longer supplies generic custom rows to other mixins.

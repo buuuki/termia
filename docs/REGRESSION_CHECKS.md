@@ -98,9 +98,10 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Tabs
 
-- Connection group/section headers must toggle expansion without becoming
-  selected objects. Keep object selection compact and rounded, skip headers
-  during keyboard selection, and do not show an inset pressed-row shadow.
+- Connection group/section headers must be selectable during native tree
+  navigation. Content clicks select/focus and toggle a header once, including
+  double clicks; Enter toggles the selected header without opening a connection.
+  Keep selection compact and rounded, without an inset pressed-row shadow.
 - Main, tab, server, group and terminal menus must open without the initial
   selected highlight while preserving visible Up/Down keyboard navigation.
   Test actual right-button press/release on VTE, not only programmatic popup:
@@ -431,11 +432,16 @@ Long measurements and release-platform checks remain separate validation work.
   are not migrated again. Read-only loading must not rewrite settings.
 - After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. Keyboard navigation must scroll just enough to keep the selected item visible. These keys must still reach the VTE while a terminal has focus.
 - The selected group, subgroup, or server must use a single consistent sidebar selection highlight; selecting a new item must clear the previous highlight. Starting navigation from the server filter must focus the selected row, GTK expander focus must not create a second selector, and `Up` must never leave the list for the sidebar action buttons while an earlier visible row exists. GTK must automatically scroll the focused row into view, while terminal focus must keep sidebar navigation disabled.
+- Type a server query and immediately press Down before the search delay
+  expires. Wait, then press Enter: exactly the selected connection must open
+  and its terminal must receive focus. Repeat with changing queries, existing
+  tabs, and the same server in Recent, Favorites and its ordinary group.
 - In the native connections tree, use GTK disclosure keys (`Shift+Right`,
   `Shift+Left`, `+`, and `-`) and pointer disclosure on nested groups. Collapsing
   a parent must retain its children's expansion preferences. Search must reveal
-  matching descendants without changing expansion preferences; clearing it
-  must restore the previous state. Expand/collapse all must include hidden
+  matching descendants without changing expansion preferences. Allow manual
+  folding while filtering; clearing search must restore the previous state.
+  Expand/collapse all must include hidden
   descendants. Keep workspace, local, Recent, Favorites, and Ungrouped sections.
 - Scroll a large connection list until rows are recycled. Open server and group
   context menus on a different selection and verify the clicked identity.
