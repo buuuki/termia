@@ -4,8 +4,9 @@
 
 ### Fixed
 
-- Defer native sidebar local-profile activation until the current event
-  finishes, preserving deliberate focus changes (`#473`).
+- Keep keyboard input in the real local shell after double-clicking a saved
+  profile, deferring native activation until the event finishes and preserving
+  deliberate focus changes; cover repeated pointer activation (`#473`).
 - Normalize optional local-profile passwords and format regression-test
   imports to resolve static-analysis blockers (`#471`).
 - Isolate synthetic process identities in the root-pane exit test from host

@@ -1,9 +1,12 @@
+import shlex
 import shutil
 import subprocess
+import tempfile
 import time
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from termia.models import Group, LocalTerminalProfile, Server, StoreData, Workspace
 from termia.sidebar import (
@@ -101,6 +104,87 @@ class SidebarNavigationTests(unittest.TestCase):
         host.on_server_context_send_files(None, popover, server.id)
 
         host.on_send_files_to_server.assert_called_once_with(popover, None, server)
+
+
+class LocalProfilePointerFocusTests(unittest.TestCase):
+    def wait_until(self, predicate, timeout=3):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            GLib.MainContext.default().iteration(False)
+            if predicate():
+                return
+            time.sleep(0.005)
+        self.fail("Timed out waiting for native local-profile activation")
+
+    def test_double_click_local_profile_accepts_typing_in_real_shell(self):
+        xdotool = shutil.which("xdotool")
+        if xdotool is None or not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("Native pointer test requires xdotool and a GTK display")
+        import gi
+        gi.require_version("GdkX11", "4.0")
+        from gi.repository import GdkX11
+
+        if not isinstance(Gdk.Display.get_default(), GdkX11.X11Display):
+            self.skipTest("Native pointer test requires the private X11 display")
+        from termia.app import TermiaApp, TermiaWindow
+        from termia.stores import ConnectionStore
+
+        app = TermiaApp()
+        app.set_application_id("local.termia.PointerFocusTest")
+        self.assertTrue(app.register(None))
+        with tempfile.TemporaryDirectory(prefix="termia-pointer-focus-") as temporary:
+            root = Path(temporary)
+            store = ConnectionStore(root / "connections.json", root / "settings.json",
+                                    root / "statistics.json", root / "lock", root / "history")
+            store.data.app.open_local_terminal_on_startup = False
+            store.data.app.restore_sessions_on_startup = False
+            store.data.app.confirm_disconnect = False
+            store.data.terminal.prompt_enabled = False
+            profile = store.add_local_terminal("Synthetic local profile", temporary, "/bin/sh", "", "", "")
+            with patch("termia.app.ConnectionStore", return_value=store), \
+                    patch("termia.app.SESSION_SNAPSHOT_FILE", root / "session.json"):
+                window = TermiaWindow(app)
+            window.present()
+            try:
+                self.wait_until(lambda: window.tree_widgets.get(("local_terminal", profile.id)) is not None
+                                and window.tree_widgets[("local_terminal", profile.id)].get_mapped()
+                                and window.tree_widgets[("local_terminal", profile.id)].get_width() > 0
+                                and window.tree_widgets[("local_terminal", profile.id)].get_height() > 0)
+                xid = str(GdkX11.X11Surface.get_xid(window.get_surface()))
+                subprocess.run([xdotool, "windowfocus", "--sync", xid], check=True)
+                self.wait_until(window.is_active)
+                for previous_tabs in range(3):
+                    with self.subTest(existing_tabs=previous_tabs):
+                        row = window.tree_widgets[("local_terminal", profile.id)]
+                        valid, point = row.compute_point(
+                            window, Graphene.Point().init(row.get_width() / 2, row.get_height() / 2),
+                        )
+                        self.assertTrue(valid)
+                        subprocess.run(
+                            [xdotool, "mousemove", "--window", xid, str(int(point.x)), str(int(point.y)),
+                             "click", "--repeat", "2", "--delay", "100", "1"], check=True,
+                        )
+                        self.wait_until(lambda expected=previous_tabs + 1:
+                                        len(window.session_registry.sessions()) == expected)
+                        session = window.session_registry.sessions()[-1]
+                        self.wait_until(lambda current=session: current.child_process is not None)
+                        marker = root / f"typed-{previous_tabs}"
+                        command = "printf focused > " + shlex.quote(str(marker))
+                        subprocess.run([xdotool, "type", "--clearmodifiers", command], check=True)
+                        subprocess.run([xdotool, "key", "Return"], check=True)
+                        self.wait_until(lambda output=marker: output.exists() and output.read_text() == "focused")
+                        self.assertEqual(marker.read_text(), "focused")
+                        self.assertIs(window.get_focus(), session.terminal)
+                        self.assertEqual(len(window.session_registry.sessions()), previous_tabs + 1)
+            finally:
+                window.shutdown_in_progress = True
+                window.prepare_terminal_sessions_for_shutdown()
+                window.terminate_open_terminal_processes(force=True)
+                window.snippet_dialogs.shutdown()
+                window.notes_dialogs.shutdown()
+                window.destroy()
+                store.close()
+                app.quit()
 
 
 class NativeConnectionsTreeTests(unittest.TestCase):
