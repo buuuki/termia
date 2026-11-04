@@ -21,6 +21,10 @@ together in embedded VTE terminals.
   The shortcut does not detect password prompts. Storage follows Security
   preferences; see [storage compatibility](docs/STORAGE_MIGRATIONS.md) before upgrading.
 - Saved workspaces and optional restoration of the previous session.
+- Optional automatic copying when terminal selection finishes, disabled by
+  default in General preferences. A success notification reports the character
+  count, including spaces and line breaks, once the clipboard accepts the text.
+  Click elsewhere in the terminal to clear the highlight without losing the copy.
 - Confirmation before pasting terminal text containing line breaks, enabled
   by default in General preferences. Review the preview and choose Paste;
   Cancel or Escape sends nothing. Middle-button pastes are also protected;

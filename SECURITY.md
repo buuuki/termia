@@ -40,6 +40,15 @@ unsaved local terminals have no saved password. It does not use the clipboard
 or detect whether sudo or another program is requesting a password. Enable it only on trusted desktops and
 use it only when the terminal is waiting for a password.
 
+## Terminal selection clipboard
+
+Automatic selection copying is opt-in in General preferences. When enabled,
+completed terminal selections replace the standard system clipboard. Other
+applications and clipboard managers may read or retain that text; leave the
+option disabled when selecting sensitive terminal output. Termia's copy
+notification shows only the character count, not the selected text, and this
+feature does not save clipboard contents to Termia's configuration or logs.
+
 ## Local statistics
 
 When enabled, Termia stores aggregate connection and session-duration statistics,

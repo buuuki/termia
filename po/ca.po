@@ -2342,3 +2342,19 @@ msgstr "El text conté salts de línia i pot executar ordres. Revisa'l abans d'e
 #: src/termia/i18n.py:terminal_paste_read_failed
 msgid "Could not read text from the clipboard"
 msgstr "No s'ha pogut llegir el text del porta-retalls"
+
+#: src/termia/i18n.py:copy_on_selection
+msgid "Automatically copy terminal text on selection"
+msgstr "Copiar automàticament el text del terminal en seleccionar"
+
+#: src/termia/i18n.py:terminal_selection_copied_one
+msgid "Copied 1 character to the clipboard"
+msgstr "Copiat 1 caràcter al porta-retalls"
+
+#: src/termia/i18n.py:terminal_selection_copied
+msgid "Copied {count} characters to the clipboard"
+msgstr "Copiats {count} caràcters al porta-retalls"
+
+#: src/termia/i18n.py:terminal_selection_copy_failed
+msgid "Could not copy the selected text to the clipboard"
+msgstr "No s'ha pogut copiar el text seleccionat al porta-retalls"

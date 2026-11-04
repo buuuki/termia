@@ -30,6 +30,7 @@ class GeneralPreferencesNotificationTests(unittest.TestCase):
             show_session_status_bar=False,
             audible_bell=False,
             confirm_multiline_paste=False,
+            copy_on_selection=False,
             statistics_enabled=False,
             confirm_disconnect=False,
             confirm_close_app=False,

@@ -453,6 +453,22 @@ msgstr ""
 msgid "Could not read text from the clipboard"
 msgstr ""
 
+#: src/termia/i18n.py:copy_on_selection
+msgid "Automatically copy terminal text on selection"
+msgstr ""
+
+#: src/termia/i18n.py:terminal_selection_copied_one
+msgid "Copied 1 character to the clipboard"
+msgstr ""
+
+#: src/termia/i18n.py:terminal_selection_copied
+msgid "Copied {count} characters to the clipboard"
+msgstr ""
+
+#: src/termia/i18n.py:terminal_selection_copy_failed
+msgid "Could not copy the selected text to the clipboard"
+msgstr ""
+
 #: src/termia/i18n.py:local_prompt
 msgid "Local prompt"
 msgstr ""

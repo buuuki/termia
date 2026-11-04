@@ -129,6 +129,7 @@ class AppSettings:
     show_session_status_bar: bool = False
     audible_bell: bool = False
     confirm_multiline_paste: bool = True
+    copy_on_selection: bool = False
     confirm_disconnect: bool = True
     confirm_close_app: bool = False
     send_password_shortcut: bool = False

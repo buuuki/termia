@@ -27,6 +27,10 @@
 
 ### Added
 
+- Add opt-in automatic copying of completed terminal selections, with a
+  success notification and character count. Preserve manual copying and
+  native deselection (`#463`).
+
 - Confirm terminal pastes containing line breaks by default, with a read-only
   preview and safe cancellation. Add a General preference to disable the
   protection; include middle-button primary-selection pastes (`#462`).
