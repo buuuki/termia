@@ -1275,11 +1275,11 @@ msgid "Unlock connections"
 msgstr ""
 
 #: src/termia/i18n.py:unlock_connections_detail
-msgid "Enter the master password to unlock your Termia connections."
+msgid "Enter your connections master password"
 msgstr ""
 
 #: src/termia/i18n.py:unlock_connections_failed
-msgid "Could not unlock connections with this master password."
+msgid "Incorrect password"
 msgstr ""
 
 #: src/termia/i18n.py:connections_locked

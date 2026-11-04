@@ -847,10 +847,14 @@ Long measurements and release-platform checks remain separate validation work.
 - Header bar, main menu, configuration menu, statistics menu, popovers, sidebars, tabs, buttons, selected rows, warning text, and dialogs must remain readable in light, dark, system, and any custom app themes.
 - Tab colors, borders, spacing, close button contrast, selected tab state, and hover/active states must remain visually clear.
 - Context menus and popovers must use readable foreground/background colors and must not inherit terminal colors.
-- Required asterisks in server, local-terminal, workspace-name, and split-connection
-  forms must match normal label text. The explanatory hint in server,
-  local-terminal, and workspace-name forms must remain readable as secondary
-  text. Sidebar Delete server, Delete local terminal, and Delete workspace
+- Required asterisks in server, local-terminal, and split-connection
+  forms must match normal label text. The explanatory hint in server and
+  local-terminal forms must remain readable as secondary text. The
+  single-field Save/Rename workspace dialogs must omit both the asterisk and
+  that explanation, remain compact in EN/ES/CA and both light/dark themes, and
+  use a single 16-pixel gap above the action row. Retain empty-name validation,
+  Save/Cancel and Enter/Escape behavior.
+  Sidebar Delete server, Delete local terminal, and Delete workspace
   actions must use normal menu text while real validation errors retain their
   error styling.
 - Sidebar group/server selection colors must remain readable and must preserve the distinction between folders/groups and server entries.
