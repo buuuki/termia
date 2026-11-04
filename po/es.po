@@ -1048,12 +1048,12 @@ msgid "Unlock connections"
 msgstr "Desbloquear conexiones"
 
 #: src/termia/i18n.py:unlock_connections_detail
-msgid "Enter the master password to unlock your Termia connections."
-msgstr "Introduce la contraseña maestra para desbloquear tus conexiones de Termia."
+msgid "Enter your connections master password"
+msgstr "Introduce tu contraseña maestra de conexiones"
 
 #: src/termia/i18n.py:unlock_connections_failed
-msgid "Could not unlock connections with this master password."
-msgstr "No se pudieron desbloquear las conexiones con esta contraseña maestra."
+msgid "Incorrect password"
+msgstr "Contraseña incorrecta"
 
 #: src/termia/i18n.py:connections_locked
 msgid "Connections are locked until the master password is entered."

@@ -913,7 +913,7 @@ class TermiaWindow(
         unlock_panel.add_css_class("card")
         unlock_panel.set_halign(Gtk.Align.CENTER)
         unlock_panel.set_valign(Gtk.Align.CENTER)
-        unlock_panel.set_size_request(420, -1)
+        unlock_panel.set_size_request(380, -1)
         unlock_panel.set_margin_top(20)
         unlock_panel.set_margin_bottom(20)
         unlock_panel.set_margin_start(20)
