@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Keep keyboard input in the real local shell after double-clicking a saved
+  profile, deferring native activation until the event finishes and preserving
+  deliberate focus changes; cover repeated pointer activation (`#473`).
 - Keep Save/Rename workspace dialogs compact by removing the redundant
   required-field marker, explanation and duplicate spacing above the buttons
   while preserving empty-name validation (`#477`).

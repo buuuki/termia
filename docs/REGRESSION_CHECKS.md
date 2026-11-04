@@ -392,6 +392,12 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Focus and Keyboard
 
+- Double-click a saved local profile, wait for the shell prompt and type
+  without clicking inside the terminal. Input must reach that shell, with no
+  existing tabs and with existing tabs, including repeated double-clicks.
+  Enter in the shell must not reopen the profile from the sidebar. Preserve
+  keyboard activation with Enter. Moving focus elsewhere before a deferred
+  activation completes must cancel that pending activation.
 - `Ctrl+PageUp` and `Ctrl+PageDown` must switch between tabs.
 - After keyboard tab switching, focus must return to the terminal, not the tab label.
 - After closing a session, focus must move to the active terminal automatically.
