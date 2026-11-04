@@ -134,7 +134,7 @@ class KeybindingPreferencesMixin:
         description.add_css_class("dim-label")
         content.append(description)
         grid = Gtk.Grid(column_spacing=12, row_spacing=10)
-        grid.set_margin_end(8)
+        grid.set_margin_end(24)
         rows: list[tuple[str, KeybindingCaptureRow]] = []
         previous = self.store.data.app.keybindings.copy()
         for index, (action, label_key) in enumerate(KEYBINDING_ACTIONS):
@@ -151,6 +151,8 @@ class KeybindingPreferencesMixin:
             grid.attach(label, 0, index, 1, 1)
             grid.attach(row, 1, index, 1, 1)
         index = len(KEYBINDING_ACTIONS)
+        grid.attach(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), 0, index, 2, 1)
+        index += 1
         heading = Gtk.Label(label=self.t("snippet_keybindings"), xalign=0)
         heading.add_css_class("heading")
         grid.attach(heading, 0, index, 2, 1)

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Increase right spacing in Keyboard Shortcuts to prevent the expanded
+  overlay scrollbar from overlapping clear buttons (`#475`).
 - Keep keyboard input in the real local shell after double-clicking a saved
   profile, deferring native activation until the event finishes and preserving
   deliberate focus changes; cover repeated pointer activation (`#473`).
@@ -35,6 +37,8 @@
 
 ### Changed
 
+- Separate Termia and snippet shortcut sections with a native GTK separator
+  (`#475`).
 - Make Keyboard Shortcuts an independent, non-modal, resizable window with
   buttons showing full combinations; preserve compact snippet controls
   (`#468`).
