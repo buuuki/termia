@@ -27,6 +27,10 @@
 
 ### Added
 
+- Confirm terminal pastes containing line breaks by default, with a read-only
+  preview and safe cancellation. Add a General preference to disable the
+  protection; include middle-button primary-selection pastes (`#462`).
+
 - Save an optional local-terminal profile password and send it to the active
   pane with the saved-password shortcut; preserve it on clone and export.
   Upgrade connections to schema 4 (`#471`).

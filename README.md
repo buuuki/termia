@@ -21,6 +21,11 @@ together in embedded VTE terminals.
   The shortcut does not detect password prompts. Storage follows Security
   preferences; see [storage compatibility](docs/STORAGE_MIGRATIONS.md) before upgrading.
 - Saved workspaces and optional restoration of the previous session.
+- Confirmation before pasting terminal text containing line breaks, enabled
+  by default in General preferences. Review the preview and choose Paste;
+  Cancel or Escape sends nothing. Middle-button pastes are also protected;
+  with protection enabled, Termia handles that button as paste even in
+  terminal applications that normally handle mouse events.
 - SCP uploads and a native SFTP file explorer with transfers and cancellation.
 - Reusable command snippets with categories, scope, variables, and shortcuts;
   commands are previewed before sending them.

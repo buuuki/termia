@@ -6,6 +6,7 @@ import os
 import shlex
 import signal
 import time
+import weakref
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
@@ -904,6 +905,138 @@ class TerminalSessionsMixin:
         right_click.set_button(3)
         signals.connect(right_click, "pressed", self.on_terminal_right_click, session, terminal)
         terminal.add_controller(right_click)
+        paste_state: dict[str, Any] = {}
+        signals.connect(terminal, "paste-clipboard", self.on_terminal_paste_requested, session, paste_state)
+        signals.connect(terminal, "unrealize", self.on_terminal_paste_unrealize, paste_state)
+        middle_click = Gtk.GestureClick.new()
+        middle_click.set_button(2)
+        middle_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        signals.connect(middle_click, "pressed", self.on_terminal_primary_paste_requested, session, terminal, paste_state)
+        terminal.add_controller(middle_click)
+
+    @staticmethod
+    def on_terminal_paste_unrealize(_terminal: Vte.Terminal, state: dict[str, Any]) -> None:
+        cancellable = state.pop("cancellable", None)
+        if cancellable is not None:
+            cancellable.cancel()
+        dialog = state.pop("dialog", None)
+        if dialog is not None:
+            dialog.destroy()
+
+    def on_terminal_paste_requested(
+        self, terminal: Vte.Terminal, session: TerminalSession, state: dict[str, Any]
+    ) -> None:
+        if not self.store.data.app.confirm_multiline_paste:
+            return
+        terminal.stop_emission_by_name("paste-clipboard")
+        self.request_protected_terminal_paste(terminal, session, state)
+
+    def on_terminal_primary_paste_requested(
+        self, gesture: Gtk.GestureClick, _presses: int, _x: float, _y: float,
+        session: TerminalSession, terminal: Vte.Terminal, state: dict[str, Any],
+    ) -> None:
+        if not self.store.data.app.confirm_multiline_paste:
+            return
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        terminal.grab_focus()
+        self.request_protected_terminal_paste(terminal, session, state, primary=True)
+
+    def request_protected_terminal_paste(
+        self, terminal: Vte.Terminal, session: TerminalSession,
+        state: dict[str, Any], *, primary: bool = False,
+    ) -> None:
+        if state.get("cancellable") is not None:
+            return
+        pane = session.pane_for_terminal(terminal)
+        root = terminal.get_root()
+        if pane is None or pane.retired or not pane.connected or not isinstance(root, Gtk.Window):
+            return
+        owner_ref = weakref.ref(self)
+        pane_ref = weakref.ref(pane)
+        root_ref = weakref.ref(root)
+        process = pane.child_process
+        cancellable = Gio.Cancellable()
+        state["cancellable"] = cancellable
+
+        def target_is_valid() -> bool:
+            current = pane_ref()
+            return (
+                not cancellable.is_cancelled()
+                and state.get("cancellable") is cancellable
+                and owner_ref() is not None
+                and current is not None
+                and not current.retired
+                and current.connected
+                and not current.pending_reconnect
+                and current.child_process is process
+                and root_ref() is not None
+                and current.terminal.get_root() is root_ref()
+                and current.terminal.get_input_enabled()
+            )
+
+        def finish_request() -> None:
+            if state.get("cancellable") is cancellable:
+                state.pop("cancellable", None)
+                state.pop("dialog", None)
+
+        def clipboard_ready(clipboard: Gdk.Clipboard, result: Gio.AsyncResult) -> None:
+            try:
+                text = clipboard.read_text_finish(result)
+            except GLib.Error:
+                owner = owner_ref()
+                if target_is_valid() and owner is not None:
+                    owner.toast_label.set_error(owner.t("terminal_paste_read_failed"))
+                finish_request()
+                return
+            if not text or not target_is_valid():
+                finish_request()
+                return
+            current = pane_ref()
+            if "\n" not in text and "\r" not in text:
+                current.terminal.grab_focus()
+                current.terminal.paste_text(text)
+                finish_request()
+                return
+            owner = owner_ref()
+            dialog = DialogWindow(
+                title=owner.t("terminal_paste_confirm_title"),
+                transient_for=root_ref(), modal=True, destroy_with_parent=True,
+            )
+            dialog.set_default_size(560, 320)
+            cancel, _paste = owner.add_dialog_action_buttons(dialog, owner.t("paste"))
+            cancel.get_parent().set_margin_top(8)
+            dialog.set_default_response(Gtk.ResponseType.CANCEL)
+            content = dialog.get_content_area()
+            content.set_spacing(12)
+            for margin in ("top", "bottom", "start", "end"):
+                getattr(content, f"set_margin_{margin}")(16)
+            content.set_margin_bottom(0)
+            content.append(Gtk.Label(label=owner.t("terminal_paste_confirm_body"), wrap=True, xalign=0))
+            preview = Gtk.TextView(editable=False, cursor_visible=False, monospace=True)
+            preview.get_buffer().set_text(text)
+            scroller = Gtk.ScrolledWindow()
+            scroller.add_css_class("termia-terminal-paste-preview")
+            scroller.set_vexpand(True)
+            scroller.set_child(preview)
+            content.append(scroller)
+
+            def respond(window: DialogWindow, response: int) -> None:
+                valid = target_is_valid()
+                target = pane_ref()
+                finish_request()
+                window.destroy()
+                if valid and target is not None:
+                    target.terminal.grab_focus()
+                    if response == Gtk.ResponseType.OK:
+                        target.terminal.paste_text(text)
+
+            dialog.connect("response", respond)
+            state["dialog"] = dialog
+            dialog.present()
+            cancel.grab_focus()
+
+        clipboard = terminal.get_primary_clipboard() if primary else terminal.get_clipboard()
+        clipboard.read_text_async(cancellable, clipboard_ready)
 
     def on_terminal_focus_enter(
         self,

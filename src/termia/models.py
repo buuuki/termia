@@ -128,6 +128,7 @@ class AppSettings:
     show_sidebar_on_startup: bool = True
     show_session_status_bar: bool = False
     audible_bell: bool = False
+    confirm_multiline_paste: bool = True
     confirm_disconnect: bool = True
     confirm_close_app: bool = False
     send_password_shortcut: bool = False

@@ -51,6 +51,7 @@ a standard GTK control does not justify crossing those boundaries.
 | # | Surface | Standard GTK control | Source and Termia-owned behavior |
 |---:|---|---|---|
 | — | Connection private SSH key selection | `Gtk.FileDialog`, `Gtk.Entry` and native icon button | `src/termia/connection_dialogs.py`; fills only a local file path, preserves manual entry and ignores results after the form closes |
+| — | Multiline terminal paste confirmation | Existing `DialogWindow`, read-only `Gtk.TextView`, `Gtk.ScrolledWindow` and native buttons | `src/termia/terminal_sessions.py`; Cancel is the default; Termia snapshots clipboard text, validates the original pane/process and intercepts middle-button primary pastes while protection is enabled |
 | — | Update dependency review | Selectable `Gtk.Label`, `Gtk.ScrolledWindow`, native `Gtk.Button`, `Gtk.Expander` and read-only `Gtk.TextView` | `src/termia/update_view.py`; installation type, requirements, assisted installation, recheck dispatch and bounded copyable diagnostics; shared content/action insets without nested padding |
 | — | Main menu | `Gtk.PopoverMenu` with `Gio.Menu` and native nested submenus | `src/termia/main_menu.py`; actions, submenu reset, delayed leave-to-close on the submenu row/panel, and initial-highlight clearing without removing keyboard focus |
 | — | Notes Import/Export menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; scope and write guards |

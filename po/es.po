@@ -2326,3 +2326,19 @@ msgstr "Usa un máximo de 30 caracteres para el nombre del snippet."
 #: src/termia/i18n.py:notes_save
 msgid "Save note"
 msgstr "Guardar nota"
+
+#: src/termia/i18n.py:confirm_multiline_paste
+msgid "Confirm before pasting multiple lines"
+msgstr "Confirmar antes de pegar varias líneas"
+
+#: src/termia/i18n.py:terminal_paste_confirm_title
+msgid "Confirm multiline paste"
+msgstr "Confirmar pegado de varias líneas"
+
+#: src/termia/i18n.py:terminal_paste_confirm_body
+msgid "The text contains line breaks and may execute commands. Review it before pasting."
+msgstr "El texto contiene saltos de línea y puede ejecutar comandos. Revísalo antes de pegarlo."
+
+#: src/termia/i18n.py:terminal_paste_read_failed
+msgid "Could not read text from the clipboard"
+msgstr "No se pudo leer el texto del portapapeles"

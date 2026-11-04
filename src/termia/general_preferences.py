@@ -30,6 +30,7 @@ GENERAL_PREFERENCE_FIELDS = (
     ("show_sidebar_on_startup", "show_sidebar_on_startup"),
     ("show_session_status_bar", "show_session_status_bar"),
     ("audible_bell", "audible_bell"),
+    ("confirm_multiline_paste", "confirm_multiline_paste"),
     ("confirm_disconnect", "confirm_disconnect"),
     ("confirm_close_app", "confirm_close_app"),
     ("send_credential_shortcut", "send_password_shortcut"),
@@ -89,6 +90,7 @@ class GeneralPreferencesMixin:
             ("confirm_close_app", self.store.data.app.confirm_close_app),
             ("send_credential_shortcut", self.store.data.app.send_password_shortcut),
             ("send_credential_enter", self.store.data.app.send_password_enter),
+            ("confirm_multiline_paste", self.store.data.app.confirm_multiline_paste),
             ("debug_mode", self.store.data.app.debug_enabled),
         ]
         check_buttons = [Gtk.CheckButton(label=self.t(key)) for key, _ in checks]
@@ -145,7 +147,7 @@ class GeneralPreferencesMixin:
         enter_box.set_hexpand(True)
         enter_box.append(send_password_enter)
         enter_box.append(enter_hint)
-        rows.extend((("", shortcut_box), ("", enter_box), ("", check_buttons[-1])))
+        rows.extend((("", shortcut_box), ("", enter_box), ("", check_buttons[11]), ("", check_buttons[-1])))
         for index, (label_text, widget) in enumerate(rows):
             label = Gtk.Label(label=label_text)
             label.set_xalign(0)
@@ -180,7 +182,8 @@ class GeneralPreferencesMixin:
                     confirm_disconnect=values[7], confirm_close_app=values[8],
                     send_password_shortcut=values[9], send_password_enter=values[10],
                     connection_storage_mode=self.store.data.app.connection_storage_mode,
-                    debug_enabled=values[11],
+                    confirm_multiline_paste=values[11],
+                    debug_enabled=values[12],
                     keybindings=self.store.data.app.keybindings,
                 ))
             except ReadOnlyStoreError:
