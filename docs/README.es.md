@@ -45,10 +45,11 @@ de archivos en terminales VTE integrados con GTK 4.
   los cambios se aplican al guardar y sus botones muestran las combinaciones completas.
 
 Esta rama de investigación añade **Dark Glow** en **General → Tema**: superficies
-oscuras opacas, bordes coloreados sutiles de 1px y esquinas de 10px, sin brillo
-exterior. Sistema/Claro/Oscuro siguen disponibles; el terminal y el editor de
-Notas conservan sus propios colores. Es una opción local de investigación,
-no una versión publicada.
+oscuras opacas, bordes coloreados sutiles de 1px, esquinas de 10px e iluminación
+suave en paneles y pestañas activos. Sistema/Claro/Oscuro siguen disponibles; el terminal y el editor de
+Notas conservan sus propios colores. La separación de paneles y la vista previa
+del pegado multilínea se adaptan al tema seleccionado. Es una opción local de
+investigación, no una versión publicada.
 
 ## Estado de la versión
 

@@ -698,6 +698,7 @@ class TermiaWindow(
         self.add_controller(window_keys)
 
         header = Gtk.HeaderBar()
+        header.add_css_class("termia-main-header")
         self.header = header
         self.set_titlebar(header)
 
@@ -734,6 +735,7 @@ class TermiaWindow(
         header.pack_end(self.read_only_badge)
 
         body = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        body.add_css_class("termia-main-paned")
         body.set_position(280)
         body.set_wide_handle(True)
         self.body = body
@@ -743,10 +745,10 @@ class TermiaWindow(
 
         sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         sidebar.set_size_request(120, -1)
-        sidebar.set_margin_top(12)
-        sidebar.set_margin_bottom(12)
-        sidebar.set_margin_start(12)
-        sidebar.set_margin_end(12)
+        sidebar.set_margin_top(4)
+        sidebar.set_margin_bottom(4)
+        sidebar.set_margin_start(4)
+        sidebar.set_margin_end(0)
         self.sidebar = sidebar
         sidebar.add_css_class("termia-sidebar")
         body.set_start_child(sidebar)

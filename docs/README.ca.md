@@ -45,10 +45,11 @@ fitxers en terminals VTE integrats amb GTK 4.
   els canvis s’apliquen en desar i els botons mostren les combinacions completes.
 
 Aquesta branca d'investigació afegeix **Dark Glow** a **General → Tema**:
-superfícies fosques opaques, vores de color subtils d'1px i cantonades de 10px,
-sense brillantor exterior. Sistema/Clar/Fosc continuen disponibles; el terminal
-i l'editor de Notes conserven els seus colors. És una opció local d'investigació,
-no una versió publicada.
+superfícies fosques opaques, vores de color subtils d'1px, cantonades de 10px
+i il·luminació suau als panells i les pestanyes actius. Sistema/Clar/Fosc continuen disponibles; el terminal
+i l'editor de Notes conserven els seus colors. La separació dels panells i la
+vista prèvia de l'enganxada multilínia s'adapten al tema seleccionat. És una
+opció local d'investigació, no una versió publicada.
 
 ## Estat de la versió
 

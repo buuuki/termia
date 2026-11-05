@@ -895,7 +895,7 @@ Long measurements and release-platform checks remain separate validation work.
   error styling.
 - Sidebar group/server selection colors must remain readable and must preserve the distinction between folders/groups and server entries.
 - New CSS rules must be scoped to Termia classes where practical and must not unintentionally override GTK/VTE internals.
-- Split pane dividers have two deliberately different visual parts that must be
+- In System/Light/Dark, split pane dividers have two visual parts that must be
   checked separately:
   - The thin visual separator line uses the configured split-separator color
     (green `#008712` by default) and configured thickness. It must remain
@@ -906,9 +906,18 @@ Long measurements and release-platform checks remain separate validation work.
     active terminal theme/background. Its minimum drag size is 5 px, or the
     configured separator thickness when that is larger; it is vertical for
     horizontal splits and horizontal for vertical splits.
+- In Dark Glow, split separators must have transparent backgrounds and
+  transparent borders, including hover, with no central green line. Pane
+  borders must remain distinct and the underlying canvas must show through.
+  Preserve separator minimum size `max(5px, configured thickness)`, retained
+  border allocation and native mouse/keyboard resizing in nested splits.
+  Verify configured colors reappear after switching to System/Light/Dark;
+  in Dark Glow only the separator geometry, not its visible color, follows
+  the thickness preference. The settings preview still shows configured color.
+  Runtime checks for this change remain pending.
 - Split dividers must remain readable on both light and dark themes. Confirm
   that the thin configured line remains visible while the wider drag area
-  blends with the terminal background.
+  blends with the terminal background in System/Light/Dark.
 - Showing pane status bars must not enlarge either the thin separator line or
   the draggable area; narrow panes may ellipsize the connection name while
   keeping the timer and actions usable.
@@ -1171,10 +1180,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Drag a horizontal split divider away from the centre, then show and hide its
   pane status bar from both the context menu and `Hide` button; the divider
   must remain at the chosen position and long status titles must ellipsize.
-  Check the divider's two visual parts independently: the thin line must keep
+  In System/Light/Dark, check the divider's two visual parts: the line must keep
   its configured color and thickness, while the wider drag area must retain its
   minimum drag size and terminal-background color.
-- In both light and dark application themes, change the terminal background in
+- In System/Light/Dark, change the terminal background in
   Terminal preferences and save it. Confirm that the wider draggable area
   changes to the new terminal background while the thin separator line keeps
   its configured color. Change the separator thickness as well and confirm
@@ -1293,13 +1302,56 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
 - In the Dark Glow research checkout, select General → Theme → Dark Glow and
-  save. Verify opaque surfaces, 1px borders, 10px corners, no outer glow and
-  visible keyboard focus. Check existing/new Notes and preference windows,
+  save. Verify opaque surfaces, 1px borders, 10px corners, soft lighting on
+  focused panes/active tabs and visible keyboard focus. Check existing/new Notes and preference windows,
   detached tabs and menus; notification borders must follow severity.
   Switch back to System/Light/Dark with those windows open and verify that the
   fixed palette is removed. Restart to check preference persistence. Terminal
   and Notes editor colors, split layout, terminal focus and read-only guards
   must remain unchanged. Automated theme tests have not been run in this phase.
+- For #484 region separation, inspect maximized/restored windows in
+  System/Light/Dark/Dark Glow: the main header keeps native centering, drag
+  and window controls, with a 1px contour and 4px gap above the body. Check
+  sidebar child alignment at 10px horizontal padding, all four panel edges,
+  hidden/shown sidebar, remembered width, narrow/wide resizing and the native
+  separator's full mouse/keyboard resize area. Check that removing its lines
+  causes no intense doubled borders. Verify 4px between visible tab controls
+  and the terminal stack with one/many tabs, overflow and nested splits.
+- For #484 paste-preview styling, use synthetic multiline text with long
+  lines, leading/trailing spaces, tabs, LF/CRLF, Unicode and literal escape
+  characters. Inspect theme surface/selection colors, both scrollbars, text
+  margins, warning/button separation, narrow/resized dialogs and keyboard
+  navigation. In a safe local receiver verify the exact original clipboard
+  text reaches only the intended pane after confirmation; Cancel/Escape/close
+  and invalidated targets must paste nothing. Do not normalize the sample or
+  run arbitrary shell commands while inspecting control sequences. These
+  runtime checks remain pending and do not replace existing paste safety checks.
+- For #484 native alerts, inspect restoration after unlocking a synthetic
+  saved workspace and deletion of a synthetic note. In Dark Glow check the
+  cyan 1px border, matching dark header, 16px top content inset, footer insets,
+  compact action heights, readable EN/ES/CA text and keyboard focus. Verify
+  restore/skip, deletion/cancel, Enter, Escape and window close retain their
+  existing outcomes. Include unsaved-note/close/import alerts affected by the
+  same native selectors, inactive windows, wrapping and System/Light/Dark.
+  Check headerbar and non-headerbar `.titlebar` decorations in focused and
+  backdrop states: background `#182231`, text `#EDF3F8`, no inherited gradient.
+  Check client-side header rendering separately from window-manager titles.
+  These checks remain pending; do not use real credentials or destructive data.
+- For #484 buttons, select Dark Glow and inspect header/sidebar controls,
+  action buttons, flat close buttons, toggles, dropdown/menu inner buttons,
+  Notes and dialog buttons. Verify normal `#1C2A3C`, hover `#23364B`, pressed/
+  checked `#29475A`, disabled `#182231`, suggested `#264C3A`, destructive
+  `#5A2C37`, readable symbolic icons and independent keyboard focus. Check
+  disabled actions cannot activate and that switching back restores native
+  System/Light/Dark button colors. Visual/runtime checks remain pending.
+- For #484, check System/Light/Dark/Dark Glow with individual terminals and
+  nested horizontal/vertical splits. Verify subdued inactive pane/tab borders,
+  brighter focused panes, active terminal/Notes tabs and separate keyboard
+  outlines. Check first/last terminal cells, selection, scrolling, resizing,
+  split-divider drag areas, tab reordering, close targets and overflow. Inspect
+  main/context/submenus and dropdown rows with mouse and keyboard, including
+  selected, pressed and disabled items; check icon/text contrast and clipped
+  shadows. These checks remain pending until explicitly performed.
 - Change terminal foreground/background/palette and confirm only VTE terminal colors change, not the app chrome.
 - Open Terminal preferences and change appearance and prompt controls together;
   confirm the shared preview updates both, appearance updates all open panes on

@@ -159,6 +159,16 @@ scripts/run_test_instance.sh --fresh
 - Scope CSS changes to Termia classes where practical and avoid overriding GTK or VTE internals unintentionally.
 - Preserve readability on both light and dark terminal backgrounds.
 
+## Design and Graphical Interface
+
+- Maintain a native GTK4 interface that is modern, minimalist, and consistent.
+- Apply the visual style defined in `docs/UI_STYLING.md`.
+- Reuse existing components, colors, and CSS classes.
+- Maintain a clear visual hierarchy between active, inactive, selected, and focused elements.
+- Preserve the behavior of VTE, tabs, splits, and menus.
+- Avoid unnecessary visual changes or unsolicited redesigns.
+- Before modifying visual components, consult `docs/UI_STYLING.md`.
+
 ## Security Notes
 
 - Saved SSH passwords and exported configuration files can contain plain-text credentials. Treat examples and test data accordingly.

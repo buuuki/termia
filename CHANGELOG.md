@@ -4,6 +4,27 @@
 
 ### Fixed
 
+- Hide split-separator lines and backgrounds in Dark Glow, retaining native
+  resize interaction and existing separator dimensions between pane borders (#484).
+
+- Make both the outer tab-controls and inner tab-bar backgrounds transparent
+  in Dark Glow, preserving individual tab states and existing spacing (#484).
+
+- Separate the native main header, server sidebar and terminal tabs with scoped
+  panel borders and spacing; retain the sidebar resize handle and theme the
+  multiline-paste preview without changing pasted text or confirmation (#484).
+
+- Align native confirmation alerts with Dark Glow using colored borders,
+  matching header colors, content insets and compact action buttons; cover
+  both headerbar and non-headerbar GTK titlebars, including backdrop (#484).
+
+- Apply the Dark Glow palette to flat and framed buttons, remove inherited
+  button background images and define checked/disabled colors (#484).
+
+- Unify terminal-container, terminal/Notes tab and native menu interaction
+  styling with subdued inactive borders, focused-pane lighting and distinct
+  keyboard focus, using GTK theme colors or the opt-in Dark Glow palette (#484).
+
 - Preserve keyboard activation after delayed search notifications and keep
   group/section selection visible; allow explicit group folding while
   filtering (`#474`).
@@ -28,7 +49,7 @@
 ### Added
 
 - Research a fixed Dark Glow interface theme with opaque dark surfaces, 1px
-  borders, 10px corners and no outer glow; keep terminal colors independent
+  borders, 10px corners and subtle active-pane/tab lighting; keep terminal colors independent
   (`#484`).
 
 - Add opt-in automatic copying of completed terminal selections, with a
