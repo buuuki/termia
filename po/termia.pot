@@ -717,6 +717,10 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
+#: src/termia/i18n.py:theme_dark_glow
+msgid "Dark Glow"
+msgstr ""
+
 #: src/termia/i18n.py:language
 msgid "Language"
 msgstr ""

@@ -27,6 +27,10 @@
 
 ### Added
 
+- Research a fixed Dark Glow interface theme with opaque dark surfaces, 1px
+  borders, 10px corners and no outer glow; keep terminal colors independent
+  (`#484`).
+
 - Add opt-in automatic copying of completed terminal selections, with a
   success notification and character count. Preserve manual copying and
   native deselection (`#463`).

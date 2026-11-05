@@ -44,6 +44,12 @@ fitxers en terminals VTE integrats amb GTK 4.
   Dreceres s’obre en una finestra independent per continuar fent servir els terminals;
   els canvis s’apliquen en desar i els botons mostren les combinacions completes.
 
+Aquesta branca d'investigació afegeix **Dark Glow** a **General → Tema**:
+superfícies fosques opaques, vores de color subtils d'1px i cantonades de 10px,
+sense brillantor exterior. Sistema/Clar/Fosc continuen disponibles; el terminal
+i l'editor de Notes conserven els seus colors. És una opció local d'investigació,
+no una versió publicada.
+
 ## Estat de la versió
 
 **[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** és una

@@ -4,6 +4,9 @@ This inventory records the current sources and ownership of Termia's visual
 rules. It is a baseline for issue #302, not a proposed palette or a promise of
 custom themes.
 
+This local research branch additionally implements the fixed Dark Glow option
+described below. It does not implement the custom-theme editor from #303.
+
 ## Quick reference
 
 | Source | Owns | Must not be changed by this inventory |
@@ -21,9 +24,25 @@ Termia's application appearance is selected in General preferences.
 | System | Follows GNOME `color-scheme`; resets the app override when the scheme is unknown | Inherited from GTK |
 | Light | Requests GTK's light variant | Inherited from GTK |
 | Dark | Requests GTK's dark variant | Inherited from GTK |
+| Dark Glow (local research) | Requests GTK's dark variant | Fixed opaque palette from `theme_styles.py`, 1px borders, 10px corners and no outer glow |
 
 The shared application CSS provider is replaced when the appearance changes so
 rules from an earlier mode do not remain active.
+
+Dark Glow rules are scoped below `window.termia-dark-glow`. An application-owned
+top-level window observer adds/removes that class for existing and future
+windows, including detached windows and in-process dialogs. It is disconnected
+at application shutdown. This follows the existing process-wide GTK appearance;
+it does not change another application's theme or external desktop portals.
+Switching back removes the scope class and replaces the CSS provider.
+
+`theme_styles.py` centralizes neutral surfaces and cyan/violet/green/yellow/red
+roles. `termia-panel` and `termia-role-*` are reusable internal style classes,
+not an add-on interface. Notifications use their existing severity to choose
+the border role. Keyboard focus retains an explicit outline. VTE nodes and the
+Notes editing surface are not recolored; their configured palettes stay separate.
+This is a fixed selectable theme, without a theme editor, animations, background
+blur or prototype imports. Tests are prepared but have not been executed.
 
 ## Current visual sources
 

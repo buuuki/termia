@@ -65,6 +65,10 @@ credentials or private notes. Isolated test instances use their own profile.
   protected copy of newer data. Do not open a schema 4 file with an older client.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
+  The local Dark Glow research theme adds the `dark_glow` value to the existing
+  `app.theme` string without a schema change. Choose System/Light/Dark before
+  opening that profile in an older client, which does not recognize the new
+  value and may replace it on save. No terminal color setting is migrated.
   Optional `app.copy_on_selection` defaults to `false` for new and older
   profiles. It adds no schema migration and is separate from connection
   exports. Older clients can read settings but discard this field when saving;

@@ -81,6 +81,24 @@ class SplitSeparatorStyleTests(unittest.TestCase):
         )
         self.assertNotIn("@error_color", css)
 
+    def test_fixed_theme_is_opt_in_and_does_not_override_terminal_nodes(self):
+        ordinary = build_application_css("#202020", "#008712", 1)
+        for theme in ("system", "light", "dark"):
+            self.assertEqual(build_application_css("#202020", "#008712", 1, theme), ordinary)
+        css = build_application_css("#202020", "#008712", 1, "dark_glow").decode()
+        self.assertIn("window.termia-dark-glow", css)
+        self.assertIn("border-radius: 10px", css)
+        self.assertIn("background-color: #182231", css)
+        self.assertNotIn("vte-terminal {", css)
+        self.assertNotIn("backdrop-filter", css)
+
+    def test_fixed_theme_css_parses_without_errors(self):
+        provider = Gtk.CssProvider()
+        errors = []
+        provider.connect("parsing-error", lambda _provider, _section, error: errors.append(str(error)))
+        provider.load_from_string(build_application_css("#202020", "#008712", 1, "dark_glow").decode())
+        self.assertEqual(errors, [])
+
 
 if __name__ == "__main__":
     unittest.main()

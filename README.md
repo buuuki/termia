@@ -43,6 +43,11 @@ together in embedded VTE terminals.
   Keyboard Shortcuts opens independently so terminals remain usable; changes
   apply on Save, and its buttons show full combinations.
 
+This research checkout adds **Dark Glow** under **General → Theme**: solid dark
+surfaces, subtle colored 1px borders and 10px corners, with glow disabled.
+System/Light/Dark remain available; terminal and Notes editor colors retain
+their own settings. This is a local research option, not a published release.
+
 ## Release status
 
 **[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** is a

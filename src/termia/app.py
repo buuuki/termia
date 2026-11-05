@@ -62,6 +62,7 @@ from .terminal_menu_actions import TerminalMenuActions
 from .terminal_menus import TerminalMenusMixin
 from .terminal_processes import TerminalProcess
 from .terminal_sessions import TerminalSessionsMixin
+from .theme_styles import DARK_GLOW_CLASS, DARK_GLOW_THEME
 from .transfer_lifecycle import ManagedTransfer
 from .ui_state import RowObject
 
@@ -378,6 +379,15 @@ class TermiaWindow(
         self.toast_messages.append(message)
         self.toast_severity = max(self.toast_severity, severity)
         self.toast_icon.set_from_icon_name(NOTIFICATION_ICONS[self.toast_severity])
+        frame = getattr(self, "toast_frame", None)
+        if frame is not None:
+            for role in ("cyan", "green", "yellow", "red"):
+                frame.remove_css_class(f"termia-role-{role}")
+            role = {
+                NotificationSeverity.INFORMATION: "cyan", NotificationSeverity.SUCCESS: "green",
+                NotificationSeverity.WARNING: "yellow", NotificationSeverity.ERROR: "red",
+            }[self.toast_severity]
+            frame.add_css_class(f"termia-role-{role}")
         self.toast_label.set_grouped_text("\n".join(self.toast_messages))
         if not hasattr(self, "toast_revealer"):
             return
@@ -630,7 +640,7 @@ class TermiaWindow(
                 else:
                     settings.set_property("gtk-application-prefer-dark-theme", prefers_dark)
             else:
-                settings.set_property("gtk-application-prefer-dark-theme", theme == "dark")
+                settings.set_property("gtk-application-prefer-dark-theme", theme in ("dark", DARK_GLOW_THEME))
         self.install_tree_styles()
 
     def connect_system_theme_changes(self) -> None:
@@ -650,12 +660,19 @@ class TermiaWindow(
         if display is None:
             return
         terminal_settings = self.store.data.terminal
+        theme = self.store.data.app.theme
+        get_application = getattr(self, "get_application", None)
+        application = get_application() if get_application is not None else None
+        scope = getattr(application, "_window_theme_scope", None)
+        if scope is not None:
+            scope.set_enabled(theme == DARK_GLOW_THEME)
         provider = Gtk.CssProvider()
         provider.load_from_data(
             build_application_css(
                 terminal_settings.background,
                 terminal_settings.split_separator_color,
                 terminal_settings.split_separator_thickness,
+                theme,
             )
         )
         previous_provider = getattr(self, "_application_css_provider", None)
@@ -672,6 +689,7 @@ class TermiaWindow(
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.main_root = root
+        root.add_css_class("termia-main-surface")
         window_overlay.set_child(root)
 
         window_keys = Gtk.EventControllerKey.new()
@@ -730,6 +748,7 @@ class TermiaWindow(
         sidebar.set_margin_start(12)
         sidebar.set_margin_end(12)
         self.sidebar = sidebar
+        sidebar.add_css_class("termia-sidebar")
         body.set_start_child(sidebar)
         body.set_resize_start_child(False)
         body.set_shrink_start_child(True)
@@ -886,6 +905,8 @@ class TermiaWindow(
         toast_revealer.set_can_target(False)
 
         toast_frame = Gtk.Frame()
+        self.toast_frame = toast_frame
+        toast_frame.add_css_class("termia-notification")
         toast_frame.add_css_class("background")
         toast_frame.add_css_class("card")
         toast_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -1084,12 +1105,44 @@ class TermiaWindow(
         self.render_detail()
 
 
+class WindowThemeScope:
+    """Scope the process-wide theme to native top-levels, including future dialogs."""
+
+    def __init__(self):
+        self.enabled = False
+        self.model = Gtk.Window.get_toplevels()
+        self.handler = self.model.connect("items-changed", self.refresh)
+
+    def set_enabled(self, enabled: bool) -> None:
+        self.enabled = enabled
+        self.refresh()
+
+    def refresh(self, *_args) -> None:
+        if self.model is None:
+            return
+        for index in range(self.model.get_n_items()):
+            window = self.model.get_item(index)
+            if window is not None:
+                if self.enabled:
+                    window.add_css_class(DARK_GLOW_CLASS)
+                else:
+                    window.remove_css_class(DARK_GLOW_CLASS)
+
+    def close(self, *_args) -> None:
+        if self.model is not None:
+            self.set_enabled(False)
+            self.model.disconnect(self.handler)
+            self.model = None
+
+
 class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
+        self._window_theme_scope = WindowThemeScope()
+        self.connect("shutdown", self._window_theme_scope.close)
         settings = Gtk.Settings.get_default()
         if settings is not None:
             settings.set_property("gtk-label-select-on-focus", False)

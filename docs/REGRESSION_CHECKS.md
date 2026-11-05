@@ -1292,6 +1292,14 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   confirm the snapshot remains restorable.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
+- In the Dark Glow research checkout, select General → Theme → Dark Glow and
+  save. Verify opaque surfaces, 1px borders, 10px corners, no outer glow and
+  visible keyboard focus. Check existing/new Notes and preference windows,
+  detached tabs and menus; notification borders must follow severity.
+  Switch back to System/Light/Dark with those windows open and verify that the
+  fixed palette is removed. Restart to check preference persistence. Terminal
+  and Notes editor colors, split layout, terminal focus and read-only guards
+  must remain unchanged. Automated theme tests have not been run in this phase.
 - Change terminal foreground/background/palette and confirm only VTE terminal colors change, not the app chrome.
 - Open Terminal preferences and change appearance and prompt controls together;
   confirm the shared preview updates both, appearance updates all open panes on

@@ -2358,3 +2358,7 @@ msgstr "Copiados {count} caracteres al portapapeles"
 #: src/termia/i18n.py:terminal_selection_copy_failed
 msgid "Could not copy the selected text to the clipboard"
 msgstr "No se pudo copiar el texto seleccionado al portapapeles"
+
+#: src/termia/i18n.py:theme_dark_glow
+msgid "Dark Glow"
+msgstr "Dark Glow"
