@@ -46,18 +46,18 @@ de archivos en terminales VTE integrados con GTK 4.
   Atajos se abre en una ventana independiente para seguir usando los terminales;
   los cambios se aplican al guardar y sus botones muestran las combinaciones completas.
 
-Esta rama de investigación añade **Dark Glow** en **General → Tema**: superficies
+Esta rama de investigación añade **Retron** en **General → Tema**: superficies
 oscuras opacas, bordes coloreados sutiles de 1px, esquinas de 10px e iluminación
 suave en paneles y pestañas activos. Sistema/Claro/Oscuro conservan su aspecto
 anterior. Cada tema guarda sus propios colores de texto y fondo del terminal;
-Dark Glow empieza con texto Solarized y el fondo oscuro del sidebar (`#182231`).
+Retron empieza con texto Solarized y el fondo oscuro del sidebar (`#182231`).
 Puedes cambiarlos cuando quieras desde las
 preferencias del terminal: se guardan para el tema seleccionado. Los colores
 del editor de Notas siguen siendo independientes.
-Dark Glow añade espacio interior al terminal y una barra de título tenue sin
+Retron añade espacio interior al terminal y una barra de título tenue sin
 halo luminoso. Es una opción local de
 investigación, no una versión publicada.
-Con Dark Glow seleccionado, Preferencias generales permite elegir el color de
+Con Retron seleccionado, Preferencias generales permite elegir el color de
 los bordes o restablecer el cian original; se aplica al guardar.
 
 ## Estado de la versión

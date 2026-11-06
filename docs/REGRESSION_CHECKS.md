@@ -877,7 +877,7 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Application Appearance and Themes
 
-- General preferences shows Border color and Reset only when Dark Glow is
+- General preferences shows Border color and Reset only when Retron is
   selected. Choose a custom opaque color, Save and restart: main-window,
   header/sidebar, terminal, status capsule, terminal/Notes tab and native-alert
   frame colors must follow it, including open detached windows. Widths,
@@ -886,14 +886,14 @@ Long measurements and release-platform checks remain separate validation work.
   restores cyan `#55BAC9` only after Save; Cancel and read-only rejection must
   preserve the saved choice. System/Light/Dark must retain their base CSS and
   ignore the chosen border color. Switching away and back must retain it.
-- Dark Glow research borders, shadows, menu/tab states and panel spacing must
+- Retron research borders, shadows, menu/tab states and panel spacing must
   disappear on switching to System/Light/Dark. Restore the sidebar's 12px
   margins on all sides, including with existing windows and panes open.
-  In Dark Glow, the main header has a subdued border and no halo. Terminal
+  In Retron, the main header has a subdued border and no halo. Terminal
   content has 8px horizontal and 6px vertical padding, without changing its
   configured background or foreground. Check selection, scrolling, cursor
   visibility and nested split resizing with dark and light terminal palettes.
-  Paste-preview padding is exclusive to Dark Glow and must not alter text.
+  Paste-preview padding is exclusive to Retron and must not alter text.
   Terminal containers have 10px rounded corners with native GTK clipping;
   existing and new panes must restore ordinary overflow when leaving Dark
   Glow. Confirm no character, cursor, status control or scrollbar is cut off,
@@ -902,11 +902,11 @@ Long measurements and release-platform checks remain separate validation work.
   keyboard focus outlines remain distinct. Focused-terminal and active
   main-window borders use 50% opacity and their halos use 5% opacity with
   3px blur; inactive borders remain 35%. Tab emphasis retains 65%/8% values.
-  Dark Glow uses 8px content insets and gaps between the sidebar and terminal
+  Retron uses 8px content insets and gaps between the sidebar and terminal
   region, terminal tabs and panes, adjacent tabs and split panes. Sidebar and
   terminal-region tops align below the header; a visible tab strip occupies
   its own row above the terminal. Check hidden sidebar/tab controls as well.
-  Dark Glow resize handles occupy the 8px gap independently of the saved
+  Retron resize handles occupy the 8px gap independently of the saved
   separator thickness; other themes restore their configured line and sizing.
   The main window has a 1px cyan border, 10px corners and the subdued terminal
   halo, dimmed on backdrop. Check window-edge resizing, titlebar dragging,
@@ -941,13 +941,13 @@ Long measurements and release-platform checks remain separate validation work.
     active terminal theme/background. Its minimum drag size is 5 px, or the
     configured separator thickness when that is larger; it is vertical for
     horizontal splits and horizontal for vertical splits.
-- In Dark Glow, split separators must have transparent backgrounds and
+- In Retron, split separators must have transparent backgrounds and
   transparent borders, including hover, with no central green line. Pane
   borders must remain distinct and the underlying canvas must show through.
-  Use an 8px separator with no border, margin or padding in Dark Glow and
+  Use an 8px separator with no border, margin or padding in Retron and
   preserve native mouse/keyboard resizing in nested splits.
   Verify configured colors reappear after switching to System/Light/Dark;
-  Dark Glow uses a fixed 8px gap independently of the thickness preference.
+  Retron uses a fixed 8px gap independently of the thickness preference.
   The settings preview still shows the configured color and thickness.
   Runtime checks for this change remain pending.
 - Split dividers must remain readable on both light and dark themes. Confirm
@@ -956,7 +956,7 @@ Long measurements and release-platform checks remain separate validation work.
 - Showing pane status bars must not enlarge either the thin separator line or
   the draggable area; narrow panes may ellipsize the connection name while
   keeping the timer and actions usable.
-- In Dark Glow, status bars use the terminal's saved foreground/background
+- In Retron, status bars use the terminal's saved foreground/background
   with secondary labels and compact native buttons, a capsule outline at
   1px/35%-opacity cyan and no active-state fill or halo. Labels/buttons use
   Ubuntu Mono with DejaVu Sans Mono/monospace fallbacks, without changing the
@@ -985,7 +985,7 @@ Long measurements and release-platform checks remain separate validation work.
 ### Terminal Appearance
 
 - Each application theme saves its own terminal text/background colors.
-  Dark Glow starts with Solarized text on the sidebar surface (`#839496` on
+  Retron starts with Solarized text on the sidebar surface (`#839496` on
   `#182231`), preserving any previously saved pair; legacy standard
   themes start with the existing terminal colors. Change colors in Terminal
   preferences, switch themes and restart: each pair must remain independent,
@@ -1365,7 +1365,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   confirm the snapshot remains restorable.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
-- In the Dark Glow research checkout, select General → Theme → Dark Glow and
+- In the Retron research checkout, select General → Theme → Retron and
   save. Verify opaque surfaces, 1px borders, 10px corners, soft lighting on
   focused panes/active tabs and visible keyboard focus. Check existing/new Notes and preference windows,
   detached tabs and menus; notification borders must follow severity.
@@ -1375,7 +1375,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   split layout, terminal focus and read-only guards must remain unchanged.
   Automated theme tests have not been run in this phase.
 - For #484 region separation, inspect maximized/restored windows in
-  Dark Glow: the main header keeps native centering, drag and window
+  Retron: the main header keeps native centering, drag and window
   controls, with a 1px contour and 8px gaps to the outer frame and body. Check
   sidebar child alignment at 10px horizontal padding, all four panel edges,
   hidden/shown sidebar, remembered width, narrow/wide resizing and the native
@@ -1394,7 +1394,7 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   run arbitrary shell commands while inspecting control sequences. These
   runtime checks remain pending and do not replace existing paste safety checks.
 - For #484 native alerts, inspect restoration after unlocking a synthetic
-  saved workspace and deletion of a synthetic note. In Dark Glow check the
+  saved workspace and deletion of a synthetic note. In Retron check the
   cyan 1px border, matching dark header, 16px top content inset, footer insets,
   compact action heights, readable EN/ES/CA text and keyboard focus. Verify
   restore/skip, deletion/cancel, Enter, Escape and window close retain their
@@ -1404,14 +1404,14 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   backdrop states: background `#182231`, text `#EDF3F8`, no inherited gradient.
   Check client-side header rendering separately from window-manager titles.
   These checks remain pending; do not use real credentials or destructive data.
-- For #484 buttons, select Dark Glow and inspect header/sidebar controls,
+- For #484 buttons, select Retron and inspect header/sidebar controls,
   action buttons, flat close buttons, toggles, dropdown/menu inner buttons,
   Notes and dialog buttons. Verify normal `#1C2A3C`, hover `#23364B`, pressed/
   checked `#29475A`, disabled `#182231`, suggested `#264C3A`, destructive
   `#5A2C37`, readable symbolic icons and independent keyboard focus. Check
   disabled actions cannot activate and that switching back restores native
   System/Light/Dark button colors. Visual/runtime checks remain pending.
-- For #484, check System/Light/Dark/Dark Glow with individual terminals and
+- For #484, check System/Light/Dark/Retron with individual terminals and
   nested horizontal/vertical splits. Verify subdued inactive pane/tab borders,
   brighter focused panes, active terminal/Notes tabs and separate keyboard
   outlines. Check first/last terminal cells, selection, scrolling, resizing,

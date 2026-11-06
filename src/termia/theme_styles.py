@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Fixed, opt-in Dark Glow palette. No dependency on optional tools or VTE."""
+"""Fixed, opt-in Retron palette. No dependency on optional tools or VTE."""
 
 from .constants import DARK_GLOW_SURFACE_COLOR, DEFAULT_DARK_GLOW_BORDER_COLOR
 
@@ -76,7 +76,7 @@ def build_interaction_css(
     theme: str, terminal_background: str, terminal_foreground: str,
     border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR,
 ) -> str:
-    """Dark Glow pane, tab and native menu states; ordinary themes retain GTK."""
+    """Retron pane, tab and native menu states; ordinary themes retain GTK."""
     if theme != DARK_GLOW_THEME:
         return ""
     accent = border_color

@@ -45,16 +45,16 @@ together in embedded VTE terminals.
   Keyboard Shortcuts opens independently so terminals remain usable; changes
   apply on Save, and its buttons show full combinations.
 
-This research checkout adds **Dark Glow** under **General → Theme**: solid dark
+This research checkout adds **Retron** under **General → Theme**: solid dark
 surfaces, subtle colored 1px borders, 10px corners and soft active-pane/tab lighting.
 System/Light/Dark retain their previous interface styling. Each app theme saves
-its own terminal text/background colors; Dark Glow starts with Solarized text
+its own terminal text/background colors; Retron starts with Solarized text
 on the sidebar's dark background (`#182231`).
 Use Terminal preferences to change those colors for the selected theme at any
-time. Notes editor colors remain independent. Dark Glow adds terminal content padding and a subdued
+time. Notes editor colors remain independent. Retron adds terminal content padding and a subdued
 main header without a halo. This is a local research option, not a
 published release.
-With Dark Glow selected, General preferences also lets you choose the container
+With Retron selected, General preferences also lets you choose the container
 border color or reset it to cyan; changes apply on Save.
 
 ## Release status

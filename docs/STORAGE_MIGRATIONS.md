@@ -65,13 +65,16 @@ credentials or private notes. Isolated test instances use their own profile.
   protected copy of newer data. Do not open a schema 4 file with an older client.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
-  The local Dark Glow research theme adds the `dark_glow` value to the existing
+  The local Retron research theme adds the `dark_glow` value to the existing
   `app.theme` string without a schema change. Choose System/Light/Dark before
   opening that profile in an older client, which does not recognize the new
   value and may replace it on save.
-  Optional `app.terminal_colors_by_theme` maps System/Light/Dark/Dark Glow to
+  Retron is the display name; the stored `dark_glow` identifier, CSS class and
+  existing `dark_glow_border_color` preference retain their compatibility names.
+  The rename requires no migration and preserves all per-theme colors.
+  Optional `app.terminal_colors_by_theme` maps System/Light/Dark/Retron to
   foreground/background pairs. Older settings seed the three standard themes
-  from their existing terminal colors; Dark Glow initially uses Solarized text
+  from their existing terminal colors; Retron initially uses Solarized text
   on the sidebar surface (`#839496` on `#182231`). Existing saved pairs,
   including a previous Solarized background, remain unchanged.
   Loading selects the current theme's pair in memory;
@@ -93,7 +96,7 @@ credentials or private notes. Isolated test instances use their own profile.
   Optional `app.dark_glow_border_color` defaults to `#55BAC9`. It accepts an
   opaque six-digit hex color; missing or malformed values fall back to the
   default without discarding the remaining settings. General preferences
-  persists it only on Save and exposes Reset while Dark Glow is selected.
+  persists it only on Save and exposes Reset while Retron is selected.
   Other themes ignore it; unrelated preference saves preserve it. It adds no
   schema change and is separate from terminal colors and semantic status roles.
   Older clients ignore this app field and discard it on saving, so retain a

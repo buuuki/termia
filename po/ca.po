@@ -2360,8 +2360,8 @@ msgid "Could not copy the selected text to the clipboard"
 msgstr "No s'ha pogut copiar el text seleccionat al porta-retalls"
 
 #: src/termia/i18n.py:theme_dark_glow
-msgid "Dark Glow"
-msgstr "Dark Glow"
+msgid "Retron"
+msgstr "Retron"
 
 #: src/termia/i18n.py:terminal_state_connected
 msgid "Connected"

@@ -4,44 +4,44 @@
 
 ### Fixed
 
-- Soften the Dark Glow main-window and focused-terminal borders and halos,
+- Soften the Retron main-window and focused-terminal borders and halos,
   retaining a visible focus distinction without changing their geometry (#484).
 
-- Make Dark Glow terminal status bars compact capsules with subdued cyan
+- Make Retron terminal status bars compact capsules with subdued cyan
   borders, saved terminal colors and retro monospace text. Keep halos around
   the shell area only and retain status actions and keyboard focus indicators (#484).
 
-- Use uniform 8px Dark Glow gaps around the main content and between sidebar,
+- Use uniform 8px Retron gaps around the main content and between sidebar,
   tabs and terminal panes; match the main window border to the rounded,
   softly lit terminal frames while retaining native resize handles (#484).
 
-- Round Dark Glow terminal containers with native GTK clipping and soften
+- Round Retron terminal containers with native GTK clipping and soften
   focused-terminal and active-tab borders and halos (#484).
 
-- Confine research panel, tab, menu and preview styling to Dark Glow; restore
+- Confine research panel, tab, menu and preview styling to Retron; restore
   System/Light/Dark spacing and states. Add terminal content insets and soften
-  the Dark Glow main header border without a halo (#484).
+  the Retron main header border without a halo (#484).
 
-- Hide split-separator lines and backgrounds in Dark Glow, retaining native
+- Hide split-separator lines and backgrounds in Retron, retaining native
   resize interaction and existing separator dimensions between pane borders (#484).
 
 - Make both the outer tab-controls and inner tab-bar backgrounds transparent
-  in Dark Glow, preserving individual tab states and existing spacing (#484).
+  in Retron, preserving individual tab states and existing spacing (#484).
 
 - Separate the native main header, server sidebar and terminal tabs with scoped
   panel borders and spacing; retain the sidebar resize handle and theme the
   multiline-paste preview without changing pasted text or confirmation (#484).
 
-- Align native confirmation alerts with Dark Glow using colored borders,
+- Align native confirmation alerts with Retron using colored borders,
   matching header colors, content insets and compact action buttons; cover
   both headerbar and non-headerbar GTK titlebars, including backdrop (#484).
 
-- Apply the Dark Glow palette to flat and framed buttons, remove inherited
+- Apply the Retron palette to flat and framed buttons, remove inherited
   button background images and define checked/disabled colors (#484).
 
 - Unify terminal-container, terminal/Notes tab and native menu interaction
   styling with subdued inactive borders, focused-pane lighting and distinct
-  keyboard focus, using GTK theme colors or the opt-in Dark Glow palette (#484).
+  keyboard focus, using GTK theme colors or the opt-in Retron palette (#484).
 
 - Preserve keyboard activation after delayed search notifications and keep
   group/section selection visible; allow explicit group folding while
@@ -66,7 +66,7 @@
 
 ### Added
 
-- Choose and reset the Dark Glow container-border color in General preferences
+- Choose and reset the Retron container-border color in General preferences
   with a native color picker; preserve border geometry, intensity, other
   themes and semantic status colors (#484).
 
@@ -75,11 +75,11 @@
   retain names across disconnects, retries and tab renaming (#484).
 
 - Save terminal foreground/background colors independently for each app theme.
-  Dark Glow starts with Solarized text on the sidebar's dark background;
+  Retron starts with Solarized text on the sidebar's dark background;
   existing terminal color controls customize
   the selected theme and update open panes (#484).
 
-- Research a fixed Dark Glow interface theme with opaque dark surfaces, 1px
+- Research a fixed Retron interface theme with opaque dark surfaces, 1px
   borders, 10px corners and subtle active-pane/tab lighting; keep terminal colors independent
   (`#484`).
 
@@ -104,6 +104,9 @@
   preserve Ubuntu 26 independently (`#459`).
 
 ### Changed
+
+- Rename the research theme from Dark Glow to Retron in the interface and
+  documentation, retaining existing saved preferences and internal IDs (#484).
 
 - Separate Termia and snippet shortcut sections with a native GTK separator
   (`#475`).

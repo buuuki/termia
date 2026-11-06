@@ -4,7 +4,7 @@ This inventory records the current sources and ownership of Termia's visual
 rules, originally recorded as a baseline for issue #302. It also defines the
 design guidelines below; these do not imply a custom-theme editor.
 
-This local research branch additionally implements the fixed Dark Glow option
+This local research branch additionally implements the fixed Retron option
 described below. It does not implement the custom-theme editor from #303.
 
 ## Visual design guidelines
@@ -30,7 +30,7 @@ performing a general redesign.
   focus independently recognizable and disabled controls clearly identifiable.
 - Preserve accessibility, readability, resizing, and compatibility with System,
   Light, and Dark appearance. Adapt shared styles to the GTK theme; keep the
-  fixed Dark Glow palette confined to its opt-in mode.
+  fixed Retron palette confined to its opt-in mode.
 - Avoid excessive saturation, decorative effects, unnecessary animations,
   unsolicited redesigns, new dependencies, and custom rendering. Use only
   CSS properties supported by the project's GTK4 runtime, applied through
@@ -94,12 +94,12 @@ Termia's application appearance is selected in General preferences.
 | System | Follows GNOME `color-scheme`; resets the app override when the scheme is unknown | Inherited from GTK |
 | Light | Requests GTK's light variant | Inherited from GTK |
 | Dark | Requests GTK's dark variant | Inherited from GTK |
-| Dark Glow (local research) | Requests GTK's dark variant | Fixed opaque palette from `theme_styles.py`, 1px borders, 10px corners and soft active-pane/tab lighting |
+| Retron (local research) | Requests GTK's dark variant | Fixed opaque palette from `theme_styles.py`, 1px borders, 10px corners and soft active-pane/tab lighting |
 
 The shared application CSS provider is replaced when the appearance changes so
 rules from an earlier mode do not remain active.
 
-Dark Glow rules are scoped below `window.termia-dark-glow`. An application-owned
+Retron rules are scoped below `window.termia-dark-glow`. An application-owned
 top-level window observer adds/removes that class for existing and future
 windows, including detached windows and in-process dialogs. It is disconnected
 at application shutdown. This follows the existing process-wide GTK appearance;
@@ -107,7 +107,7 @@ it does not change another application's theme or external desktop portals.
 Switching back removes the scope class and replaces the CSS provider. Saving
 a theme change also loads that theme's saved terminal foreground/background.
 
-With Dark Glow selected, General preferences exposes a native opaque color
+With Retron selected, General preferences exposes a native opaque color
 picker and Reset button for container borders. Save persists
 `app.dark_glow_border_color` (default `#55BAC9`) and replaces the shared CSS
 provider, updating existing windows and panes. Cancel leaves settings and CSS
@@ -130,10 +130,10 @@ editor colors remain independent.
 This is a fixed selectable theme, without a theme editor, animations, background
 blur or prototype imports. Tests are prepared but have not been executed.
 
-### Dark Glow interaction styles (#484)
+### Retron interaction styles (#484)
 
 `build_interaction_css()` in `theme_styles.py` centralizes terminal-container,
-terminal/Notes tab and native menu states exclusively for Dark Glow, using
+terminal/Notes tab and native menu states exclusively for Retron, using
 its cyan accent and fixed surface colors. System/Light/Dark retain the
 pre-research base CSS and native GTK states.
 Rules target `.termia-terminal-pane` and its scroller/status children,
@@ -146,7 +146,7 @@ Terminal scrollers reserve a constant 1px border on every side; focus within
 brightens it and adds a 3px, low-opacity outer shadow. This reduces available
 terminal content space by 2px per axis compared with borderless containers.
 VTE content additionally has 6px vertical and 8px horizontal CSS padding in
-Dark Glow only. No foreground, background or ANSI colors are overridden.
+Retron only. No foreground, background or ANSI colors are overridden.
 This describes CSS ownership; app-theme selection separately loads the saved
 terminal foreground/background pair through `stores.py`.
 Tab borders use inset shadows to retain their current allocations. Active tabs
@@ -160,7 +160,7 @@ automated and interactive validation remain pending in this research phase.
 ## Technical specification: palette, CSS values and cascade
 
 This section records the current local implementation, not a proposed design.
-Hexadecimal border values below describe the default color. A saved Dark Glow
+Hexadecimal border values below describe the default color. A saved Retron
 border choice replaces the frame/interaction accent, retaining the documented
 alpha and geometry; semantic palette roles are not replaced.
 Keep it synchronized whenever visual values or selectors change. Sources:
@@ -172,7 +172,7 @@ sources linked below. CSS dimensions are logical pixels unless another unit
 is specified. A value inherited from GTK is theme-dependent; it has no single
 fixed hexadecimal equivalent in Termia.
 
-### Complete Dark Glow palette
+### Complete Retron palette
 
 All hexadecimal colors in this table are opaque (alpha 1). Their alpha is
 reduced only where an explicit `alpha(...)` expression is used.
@@ -202,17 +202,17 @@ cyan/green/yellow/red in `TermiaWindow.show_toast()`.
 ### Provider order and scope
 
 `build_application_css()` concatenates the base structural CSS, then the fixed
-Dark Glow CSS and interaction CSS only for `theme == "dark_glow"`.
+Retron CSS and interaction CSS only for `theme == "dark_glow"`.
 The application provider uses `Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION` (600).
 Notes has an independent editor provider at application priority + 1 (601).
 Providers apply to the display; selectors determine which widgets they affect.
 
-Dark Glow prefixes its rules with `window.termia-dark-glow`. The top-level
+Retron prefixes its rules with `window.termia-dark-glow`. The top-level
 observer adds/removes that class on existing and future windows.
 System/Light/Dark receive no research interaction rules. GTK specificity applies before source order;
 later rules win only at equal specificity and provider priority.
 
-| Interaction variable | Dark Glow |
+| Interaction variable | Retron |
 |---|---|
 | `accent` | Saved `app.dark_glow_border_color`; default `#55BAC9` |
 | `foreground` | `#EDF3F8` |
@@ -224,7 +224,7 @@ later rules win only at equal specificity and provider priority.
 opacity. The rendered result depends on the surface behind it. No fixed final
 pixel color is promised for GTK-derived or translucent values.
 
-### Dark Glow surfaces and controls
+### Retron surfaces and controls
 
 Selectors below are relative to `window.termia-dark-glow`. Palette names refer
 to the exact values above. Properties not listed remain inherited from GTK or
@@ -273,7 +273,7 @@ assigned to flat buttons. Enabled ordinary buttons use `#1C2A3C`, hover
 `#23364B`, pressed/checked `#29475A`, with text `#EDF3F8`; hover and
 pressed/checked borders use `#55BAC9`. Focus outline remains `2px solid
 #55BAC9` at offset `2px`. Suggested/destructive backgrounds remain `#264C3A`
-and `#5A2C37`, with green/red borders, except when disabled. Dark Glow scope
+and `#5A2C37`, with green/red borders, except when disabled. Retron scope
 is unchanged; System/Light/Dark retain their GTK button colors.
 
 Progress trough geometry and unspecified icon colors remain GTK-owned.
@@ -296,7 +296,7 @@ offset, blur radius, optional spread radius, and color; `inset` draws inward.
 | Both tab types, `:focus-visible` or `:focus-within` | `outline: 2px solid A; outline-offset: -3px` |
 | Terminal tab `.dragging` | Background `alpha(A, 0.25)`, whole-widget opacity `0.72` |
 
-For Dark Glow, the accent is RGB `(85, 186, 201)`: the normal border is
+For Retron, the accent is RGB `(85, 186, 201)`: the normal border is
 `rgba(85, 186, 201, 0.35)`, hover border `rgba(85, 186, 201, 0.65)`, active
 tab border `rgba(85, 186, 201, 0.65)` and tab glow
 `rgba(85, 186, 201, 0.08)`. Focused terminals and the active main window use
@@ -308,7 +308,7 @@ setting or reusable `GlowPanel` widget.
 The terminal scroller's border has a 10px radius and no background override.
 The outer pane has no border or shadow; the status toolbar has its own
 subdued capsule border without a shadow. Status colors
-follow the saved terminal foreground/background. Dark Glow uses native
+follow the saved terminal foreground/background. Retron uses native
 `Gtk.Overflow.HIDDEN` on the scroller to clip its contents to the rounded
 padding box, leaving the status controls outside that clip. New scrollers
 receive it at construction; theme
@@ -325,7 +325,7 @@ dragging changes background and opacity without removing the active shadow.
 Focus outlines are drawn inward on tabs. Shadows/outlines do not reserve extra
 layout space, and ancestors may clip outer shadows.
 
-### Terminal status bars in Dark Glow
+### Terminal status bars in Retron
 
 The existing `.termia-pane-status` box sits above the bordered terminal
 scroller. Normal and `.active` states use the saved terminal background and
@@ -361,7 +361,7 @@ skipped. `TerminalPane.status_detail` is transient UI data, not stored settings.
 
 Targets are `.termia-menu-popover modelbutton` and
 `dropdown.termia-choice popover listview > row`; the common dropdown factory
-adds `termia-choice`. In Dark Glow these selectors also have the window prefix.
+adds `termia-choice`. In Retron these selectors also have the window prefix.
 
 | State | Background | Foreground | Outline/shadow |
 |---|---|---|---|
@@ -378,7 +378,7 @@ still affect descendants; no per-icon recoloring is performed here.
 
 ### Shared structural CSS values
 
-These are the declarations in `styles.py`. More specific Dark Glow or shared
+These are the declarations in `styles.py`. More specific Retron or shared
 interaction rules override them as described above. Four-value padding is
 top/right/bottom/left; two-value padding is vertical/horizontal.
 
@@ -396,19 +396,19 @@ top/right/bottom/left; two-value padding is vertical/horizontal.
 | `.termia-session-tab-scroller` | Background transparent, border `0`, shadow `none` |
 | Tab scroller horizontal scrollbar | Minimum height `5px`, margin `0 2px`, padding `0`; slider minimum height `3px`, minimum width `24px` |
 | `.termia-terminal-stack` | Border `0`, shadow `none` |
-| `.termia-pane-status.active` | Base background `alpha(@theme_selected_bg_color, 0.12)`; Dark Glow overrides it with the saved terminal background without focus highlighting |
+| `.termia-pane-status.active` | Base background `alpha(@theme_selected_bg_color, 0.12)`; Retron overrides it with the saved terminal background without focus highlighting |
 | Pane status labels; status bar inside a split | Label minimum width `0`; split status-bar padding `6px` |
 | `.termia-read-only-badge` | Font weight `600` |
-| `.termia-terminal-paste-preview` | Base border `1px solid #000000`; Dark Glow alone overrides surface, selection, border, radius and padding as specified below |
-| `.termia-tab-label` | Padding `7px 10px`, margin `0 2px`, radius `8px`, background transparent, border `0`; Dark Glow reserves a transparent `1px` border and uses radius `10px` |
+| `.termia-terminal-paste-preview` | Base border `1px solid #000000`; Retron alone overrides surface, selection, border, radius and padding as specified below |
+| `.termia-tab-label` | Padding `7px 10px`, margin `0 2px`, radius `8px`, background transparent, border `0`; Retron reserves a transparent `1px` border and uses radius `10px` |
 | `.termia-tab-title` | Font size `1.05em` |
 | `.termia-tab-close` | Padding `0`, minimum width/height `24px`, base radius `9999px`; base hover black alpha `0.16`, active black alpha `0.24`, hover shadow `none` |
 | `.termia-tab-overflow-button` | Padding `0`, minimum width `0`, minimum height `24px`, margin `1px 0 6px 0`; inner button horizontal padding `1px`, minimum width `16px` |
 | `.termia-status-hide`, `.termia-disconnect-button` | Padding `0 6px`, minimum height `18px`, font size `0.85em` |
-| Notes notebook, stack, header and header tabs | Background transparent, border `0`, shadow `none` before the Dark Glow header background override |
-| Notes header tab | Radius `8px 8px 0 0`; checked background `alpha(@theme_fg_color, 0.13)`; Dark Glow overrides states as above |
+| Notes notebook, stack, header and header tabs | Background transparent, border `0`, shadow `none` before the Retron header background override |
+| Notes header tab | Radius `8px 8px 0 0`; checked background `alpha(@theme_fg_color, 0.13)`; Retron overrides states as above |
 | `.termia-notes-editor` | Border `1px solid @borders`, radius `8px`, default background `#001B33`; text view foreground `#FFFFFF` and background `#001B33` before saved appearance overrides |
-| `.stat-card` | Padding `10px 12px`, border `1px solid @borders`, radius `6px`, background `alpha(@theme_bg_color, 0.58)`; Dark Glow replaces border/background/radius with its surface rule |
+| `.stat-card` | Padding `10px 12px`, border `1px solid @borders`, radius `6px`, background `alpha(@theme_bg_color, 0.58)`; Retron replaces border/background/radius with its surface rule |
 | Statistics title/value/subtitle | Font sizes `0.82em` / `1.55em` / `0.82em`; value font weight `700` |
 | `.stat-row` | Padding `6px 8px`, bottom border `1px solid alpha(@borders, 0.55)` |
 | Snippet category `flowboxchild.termia-snippet-category-tile` | Padding `0`, radius `8px`; selected background transparent, shadow `none`; inner `.termia-snippet-category-frame` radius `8px` |
@@ -419,11 +419,11 @@ top/right/bottom/left; two-value padding is vertical/horizontal.
 and maximum width of 8 characters, and title start/end margins of `4px`.
 These requests are separate from CSS padding. They are not fixed allocations.
 
-The generic Dark Glow `button` rule is more specific than the base
+The generic Retron `button` rule is more specific than the base
 `.termia-tab-close` radius rule: the close button currently receives `10px`
 corners rather than the base circular `9999px` radius. Its hover/pressed
-background also follows the more specific Dark Glow button rules. Similarly,
-Dark Glow's selected-row rule paints the entire selected connection row as
+background also follows the more specific Retron button rules. Similarly,
+Retron's selected-row rule paints the entire selected connection row as
 well as its content block, rather than preserving the ordinary content-only
 selection. These are current cascade effects, not additional design approvals.
 GTK Notebook underline rendering can be affected by the explicit tab
@@ -432,10 +432,10 @@ GTK Notebook underline rendering can be affected by the explicit tab
 ### Split separators and independent editor/terminal colors
 
 Each app theme has an editable terminal foreground/background pair in
-`app.terminal_colors_by_theme`. Dark Glow initially uses Solarized foreground
+`app.terminal_colors_by_theme`. Retron initially uses Solarized foreground
 `#839496` on the sidebar's background `#182231`. The shared
 `DARK_GLOW_SURFACE_COLOR` in `constants.py` supplies both that terminal default
-and the Dark Glow surface palette; saved terminal overrides remain independent.
+and the Retron surface palette; saved terminal overrides remain independent.
 Previously saved colors are retained. System/Light/Dark initially copy the previous
 terminal colors. Terminal preferences save changes for the selected theme;
 switching themes applies its saved pair to existing panes and future sessions.
@@ -451,7 +451,7 @@ and configured separator color for the line. On hover only the line becomes
 `alpha(configured color, 0.82)`. Default line color is `#008712`, width `1px`;
 preferences bound width to `1–32px`.
 
-Dark Glow overrides `.termia-split-pane > separator` and its `:hover` state
+Retron overrides `.termia-split-pane > separator` and its `:hover` state
 with `background: transparent; border: 0; margin: 0; padding: 0; box-shadow: none`.
 The shorthand also clears background images. Orientation-specific rules use
 minimum width 8px for horizontal splits and minimum height 8px for vertical
@@ -464,15 +464,15 @@ by another widget. Actual total hit-area size and composition require runtime
 inspection; 8px is the CSS minimum, not a measured runtime allocation.
 
 Separator color preferences remain stored and visible in System/Light/Dark;
-in Dark Glow, changing the configured line color does not produce a visible
+in Retron, changing the configured line color does not produce a visible
 line or change the fixed gap. The existing Terminal preferences separator
 preview continues to display the configured color; it is not a screenshot of
-the Dark Glow transparent divider. No settings migration is introduced.
+the Retron transparent divider. No settings migration is introduced.
 
 Terminal settings default to foreground `#D8DEE9`, background `#1F2430`,
 font `JetBrains Mono`, size `13` in the Pango font description, and prompt
 color `#EEEEEC` (custom prompt disabled by default). `TerminalViewFactory`
-passes saved colors directly to VTE; no Dark Glow rule changes its ANSI colors.
+passes saved colors directly to VTE; no Retron rule changes its ANSI colors.
 The current default ANSI palette in `models.py`, by index, is:
 
 | Index/name | Normal | Bright index/name | Bright |
@@ -511,14 +511,14 @@ properties, a requested width clamped to `1–32px`, and radius `999px`.
 
 ### Main regions and multiline-paste preview (#484)
 
-These rules are appended by `build_interaction_css()` only in Dark Glow.
+These rules are appended by `build_interaction_css()` only in Retron.
 They retain the existing widget hierarchy and native controls. Main-window
 composition in `app.py` adds `termia-main-header` to the actual `Gtk.HeaderBar`
 and `termia-main-paned` to the existing horizontal `Gtk.Paned`. No wrapper is
 inserted into the title bar and no event handler changes. VTE receives only
 the content padding specified above.
 
-Let `A` be the Dark Glow accent and `F` its foreground from the variable table.
+Let `A` be the Retron accent and `F` its foreground from the variable table.
 `P` is the panel surface `#182231`. Text selection uses `#29475A` / `#EDF3F8`.
 All numerical CSS dimensions below are logical pixels.
 
@@ -540,7 +540,7 @@ All numerical CSS dimensions below are logical pixels.
 | Preview `textview > text > selection` | Theme-specific selection background and foreground defined above |
 | Preview scrollbar slider | Background image `none`, background `alpha(A, 0.35)`; hover `alpha(A, 0.65)`; pressed `A`; native geometry retained |
 
-The sidebar's GTK widget margins in Dark Glow are `0px` on every side;
+The sidebar's GTK widget margins in Retron are `0px` on every side;
 System/Light/Dark retain `12px` on each side. Theme application
 updates these margins on the current window. Every direct child (action row,
 search entry, tree scroller and summary label) shares the parent padding of
@@ -567,7 +567,7 @@ maximized/restored windows and native controls require visual inspection.
 The 8px tab-to-stack margin is outside the tab scroller and applies uniformly
 to all sessions/splits. Existing active/inactive tab and pane rules are retained.
 
-Dark Glow CSS gives the preview TextView horizontal padding of 10px and
+Retron CSS gives the preview TextView horizontal padding of 10px and
 vertical padding of 8px; ordinary modes retain native spacing. These are presentation properties, not
 inserted spaces or newlines: the original `set_text(text)` and
 `terminal.paste_text(text)` calls and the captured text are unchanged. The
@@ -585,7 +585,7 @@ Only static code/resource inspection has been performed. Font-dependent minimum
 sizes, clipboard-content preservation in execution, native focus, resize areas,
 selection contrast, scrollbar states and clipping remain unvalidated at runtime.
 
-### Native confirmation alerts in Dark Glow
+### Native confirmation alerts in Retron
 
 Session restoration after unlock and Notes deletion use `Gtk.AlertDialog` in
 `app.py` and `notes_dialogs.py`. They do not use Termia's `DialogWindow` form
@@ -637,7 +637,7 @@ interactive or automated validation in this research iteration.
 
 ### Effects not implemented and validation limits
 
-Dark Glow canvas, surface and control colors have opacity 1. There is no
+Retron canvas, surface and control colors have opacity 1. There is no
 semitransparent glass panel, background blur, `backdrop-filter`, custom drawing,
 or theme-defined animation/transition. Translucency is limited to the alpha
 expressions and widget opacities explicitly listed above. GTK may supply its
@@ -684,7 +684,7 @@ separator treatment in `src/termia/styles.py`.
 Terminal foreground/background, ANSI palettes, prompt color, and the split
 separator color are user-configurable terminal settings. The split divider
 combines the terminal background for its drag area with the configured line
-color in System/Light/Dark. Dark Glow instead makes the background and border
+color in System/Light/Dark. Retron instead makes the background and border
 transparent, retaining dimensions and saved preferences as detailed above.
 These configurable terminal values are not application-theme tokens.
 
@@ -713,7 +713,7 @@ sidebar container and allowing the window background to show through. GTK still
 owns selection, but its full-row background is suppressed. Selection colors are
 painted on the content-width icon/title block with 6 px horizontal padding and
 4 px corner radii, leaving the remaining row background unchanged in
-System/Light/Dark. Dark Glow overrides selected rows and their content blocks
+System/Light/Dark. Retron overrides selected rows and their content blocks
 with `#29475A`, foreground `#EDF3F8` and `10px` radii, as detailed above.
 
 ### Terminal tab selection
@@ -725,9 +725,9 @@ horizontal scrolling. Notes keep their separate native Notebook.
 
 Scoped `termia-tab-label` styles use a theme-derived selected background,
 softer inactive hover, 7 px vertical and 10 px horizontal padding, 2 px side
-margins and 8 px rounded corners. Dark Glow uses zero tab margins, 8px spacing
+margins and 8 px rounded corners. Retron uses zero tab margins, 8px spacing
 between tabs and 10px rounded corners. Close buttons have
-the base circular radius, overridden to `10px` by Dark Glow as recorded above.
+the base circular radius, overridden to `10px` by Retron as recorded above.
 The strip's horizontal scrollbar uses GTK overlay scrolling and hides when idle.
 The adjacent native down-arrow menu button appears only when tabs overflow.
 
@@ -759,7 +759,7 @@ They describe the existing implementation, not a reusable window contract:
   `#001B33`; saved Notes appearance preferences can replace them.
 - `termia-notes-window` marks the window; no window-frame CSS rule currently
   targets that class. `termia-notes-notebook` keeps GTK's selected-tab and overflow
-  behavior, with a transparent header outside Dark Glow, rounded tab corners,
+  behavior, with a transparent header outside Retron, rounded tab corners,
   colored inset borders and active shadows. Selection colors and focus outlines
   come from `theme_styles.py`; the explicit shadows may replace the theme's
   native underline. `termia-notes-editor` has scoped rules in `styles.py`. The

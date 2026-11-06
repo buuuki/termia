@@ -46,18 +46,18 @@ fitxers en terminals VTE integrats amb GTK 4.
   Dreceres s’obre en una finestra independent per continuar fent servir els terminals;
   els canvis s’apliquen en desar i els botons mostren les combinacions completes.
 
-Aquesta branca d'investigació afegeix **Dark Glow** a **General → Tema**:
+Aquesta branca d'investigació afegeix **Retron** a **General → Tema**:
 superfícies fosques opaques, vores de color subtils d'1px, cantonades de 10px
 i il·luminació suau als panells i les pestanyes actius. Sistema/Clar/Fosc conserven
 l'aspecte anterior. Cada tema desa els seus colors de text i fons del terminal;
-Dark Glow comença amb text Solarized i el fons fosc del panell lateral (`#182231`).
+Retron comença amb text Solarized i el fons fosc del panell lateral (`#182231`).
 Pots canviar-los quan vulguis des de les
 preferències del terminal: es desen per al tema seleccionat. Els colors de
 l'editor de Notes continuen sent independents.
-Dark Glow afegeix espai interior al terminal i una barra de títol tènue sense
+Retron afegeix espai interior al terminal i una barra de títol tènue sense
 halo lluminós. És una
 opció local d'investigació, no una versió publicada.
-Amb Dark Glow seleccionat, Preferències generals permet triar el color de les
+Amb Retron seleccionat, Preferències generals permet triar el color de les
 vores o restablir el cian original; s'aplica en desar.
 
 ## Estat de la versió

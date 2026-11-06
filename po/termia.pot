@@ -718,7 +718,7 @@ msgid "Dark"
 msgstr ""
 
 #: src/termia/i18n.py:theme_dark_glow
-msgid "Dark Glow"
+msgid "Retron"
 msgstr ""
 
 #: src/termia/i18n.py:language
