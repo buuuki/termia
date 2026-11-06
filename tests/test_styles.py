@@ -81,15 +81,23 @@ class SplitSeparatorStyleTests(unittest.TestCase):
         )
         self.assertNotIn("@error_color", css)
 
-    def test_fixed_theme_is_opt_in_and_does_not_override_terminal_nodes(self):
+    def test_fixed_theme_is_opt_in_and_preserves_terminal_colors(self):
         ordinary = build_application_css("#202020", "#008712", 1)
         for theme in ("system", "light", "dark"):
             self.assertEqual(build_application_css("#202020", "#008712", 1, theme), ordinary)
+        self.assertNotIn(".termia-terminal-pane {", ordinary.decode())
+        self.assertNotIn("headerbar.termia-main-header", ordinary.decode())
+        self.assertNotIn(".termia-menu-popover modelbutton", ordinary.decode())
         css = build_application_css("#202020", "#008712", 1, "dark_glow").decode()
         self.assertIn("window.termia-dark-glow", css)
         self.assertIn("border-radius: 10px", css)
         self.assertIn("background-color: #182231", css)
-        self.assertNotIn("vte-terminal {", css)
+        self.assertIn(
+            "window.termia-dark-glow .termia-terminal-pane vte-terminal { padding: 6px 8px; }",
+            css,
+        )
+        terminal_rules = [rule for rule in css.split("}") if "vte-terminal" in rule]
+        self.assertTrue(all("color" not in rule for rule in terminal_rules))
         self.assertNotIn("backdrop-filter", css)
 
     def test_fixed_theme_css_parses_without_errors(self):

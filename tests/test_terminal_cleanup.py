@@ -43,6 +43,9 @@ class CleanupHost(TerminalSessionsMixin, TabsMixin):
 
     t = staticmethod(lambda key: key)
 
+    def update_pane_status(self, _pane, _detail=None):
+        pass
+
     def __init__(self, session, window):
         self.session_registry = SessionRegistry([session])
         self.store = SimpleNamespace(

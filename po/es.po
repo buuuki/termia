@@ -2362,3 +2362,19 @@ msgstr "No se pudo copiar el texto seleccionado al portapapeles"
 #: src/termia/i18n.py:theme_dark_glow
 msgid "Dark Glow"
 msgstr "Dark Glow"
+
+#: src/termia/i18n.py:terminal_state_connected
+msgid "Connected"
+msgstr "Conectada"
+
+#: src/termia/i18n.py:terminal_ssh_state_detail
+msgid "The SSH process is running; authentication may still be pending."
+msgstr "El proceso SSH está activo; la autenticación puede seguir pendiente."
+
+#: src/termia/i18n.py:border_color
+msgid "Border color"
+msgstr "Color de los bordes"
+
+#: src/termia/i18n.py:reset_border_color
+msgid "Reset"
+msgstr "Restablecer"

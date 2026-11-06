@@ -158,8 +158,9 @@ Long measurements and release-platform checks remain separate validation work.
   protection enabled, middle-click is reserved for paste even in applications
   with mouse reporting; review that documented compatibility tradeoff.
 
-- General preferences: automatic selection copying is disabled by default.
-  Enable it, select text by drag/double/triple click in local/SSH panes and
+- General preferences: automatic selection copying is enabled by default
+  for new profiles and older settings without the option. An explicitly
+  saved disabled value must remain disabled. Select text by drag/double/triple click in local/SSH panes and
   detached windows, and verify clipboard text plus a success notification with
   the Unicode character count (including spaces and line breaks). Do not copy
   partial selections while dragging. A plain click must remove the highlight
@@ -876,6 +877,40 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Application Appearance and Themes
 
+- General preferences shows Border color and Reset only when Dark Glow is
+  selected. Choose a custom opaque color, Save and restart: main-window,
+  header/sidebar, terminal, status capsule, terminal/Notes tab and native-alert
+  frame colors must follow it, including open detached windows. Widths,
+  radii, border opacities and halos remain unchanged. Connected/starting
+  indicators and success/warning/error roles retain their own colors. Reset
+  restores cyan `#55BAC9` only after Save; Cancel and read-only rejection must
+  preserve the saved choice. System/Light/Dark must retain their base CSS and
+  ignore the chosen border color. Switching away and back must retain it.
+- Dark Glow research borders, shadows, menu/tab states and panel spacing must
+  disappear on switching to System/Light/Dark. Restore the sidebar's 12px
+  margins on all sides, including with existing windows and panes open.
+  In Dark Glow, the main header has a subdued border and no halo. Terminal
+  content has 8px horizontal and 6px vertical padding, without changing its
+  configured background or foreground. Check selection, scrolling, cursor
+  visibility and nested split resizing with dark and light terminal palettes.
+  Paste-preview padding is exclusive to Dark Glow and must not alter text.
+  Terminal containers have 10px rounded corners with native GTK clipping;
+  existing and new panes must restore ordinary overflow when leaving Dark
+  Glow. Confirm no character, cursor, status control or scrollbar is cut off,
+  including nested splits and detached windows. Active terminal/Notes tabs
+  use 65%-opacity borders and an 8%-opacity, 3px halo;
+  keyboard focus outlines remain distinct. Focused-terminal and active
+  main-window borders use 50% opacity and their halos use 5% opacity with
+  3px blur; inactive borders remain 35%. Tab emphasis retains 65%/8% values.
+  Dark Glow uses 8px content insets and gaps between the sidebar and terminal
+  region, terminal tabs and panes, adjacent tabs and split panes. Sidebar and
+  terminal-region tops align below the header; a visible tab strip occupies
+  its own row above the terminal. Check hidden sidebar/tab controls as well.
+  Dark Glow resize handles occupy the 8px gap independently of the saved
+  separator thickness; other themes restore their configured line and sizing.
+  The main window has a 1px cyan border, 10px corners and the subdued terminal
+  halo, dimmed on backdrop. Check window-edge resizing, titlebar dragging,
+  maximize/restore and keyboard navigation without clipped controls.
 - Configured application colors and theme styling must remain consistent after UI changes.
 - System follows GNOME's active appearance, while Light and Dark request the
   corresponding GTK variant. None of these built-in modes may impose a
@@ -909,11 +944,11 @@ Long measurements and release-platform checks remain separate validation work.
 - In Dark Glow, split separators must have transparent backgrounds and
   transparent borders, including hover, with no central green line. Pane
   borders must remain distinct and the underlying canvas must show through.
-  Preserve separator minimum size `max(5px, configured thickness)`, retained
-  border allocation and native mouse/keyboard resizing in nested splits.
+  Use an 8px separator with no border, margin or padding in Dark Glow and
+  preserve native mouse/keyboard resizing in nested splits.
   Verify configured colors reappear after switching to System/Light/Dark;
-  in Dark Glow only the separator geometry, not its visible color, follows
-  the thickness preference. The settings preview still shows configured color.
+  Dark Glow uses a fixed 8px gap independently of the thickness preference.
+  The settings preview still shows the configured color and thickness.
   Runtime checks for this change remain pending.
 - Split dividers must remain readable on both light and dark themes. Confirm
   that the thin configured line remains visible while the wider drag area
@@ -921,6 +956,26 @@ Long measurements and release-platform checks remain separate validation work.
 - Showing pane status bars must not enlarge either the thin separator line or
   the draggable area; narrow panes may ellipsize the connection name while
   keeping the timer and actions usable.
+- In Dark Glow, status bars use the terminal's saved foreground/background
+  with secondary labels and compact native buttons, a capsule outline at
+  1px/35%-opacity cyan and no active-state fill or halo. Labels/buttons use
+  Ubuntu Mono with DejaVu Sans Mono/monospace fallbacks, without changing the
+  shell font. Check capsule corners, 8px below the bar and equal status
+  padding in single/split panes. The rounded focus border encloses the terminal
+  scroller only. Check dark/light custom terminal colors, Hide, Disconnect,
+  timer/status updates and keyboard focus, including nested and detached panes.
+  Showing/hiding the bar must retain divider positions and terminal focus.
+- In all themes, each status bar shows a colored dot, a translated session
+  state and its saved connection/profile name. Verify yellow while starting,
+  green once the child process starts and muted on exit/disconnect/failure.
+  SSH green indicates an active client process, not verified authentication;
+  the tooltip must state that authentication may still be pending. Check
+  startup failures, retries and mixed nested local/SSH panes independently,
+  including a closed root with a live sibling. Renamed tabs and automatic
+  directory titles must not replace saved connection/profile names. Names
+  containing markup characters must display literally. Full names, PID and
+  errors belong in tooltips; language changes must refresh all open labels,
+  including disconnected panes. Retired panes must not receive UI updates.
 - Showing or hiding a pane status bar must preserve the existing position of
   every affected split divider.
 - Adding a split inside an existing nested layout must preserve every ancestor
@@ -929,6 +984,15 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Terminal Appearance
 
+- Each application theme saves its own terminal text/background colors.
+  Dark Glow starts with Solarized text on the sidebar surface (`#839496` on
+  `#182231`), preserving any previously saved pair; legacy standard
+  themes start with the existing terminal colors. Change colors in Terminal
+  preferences, switch themes and restart: each pair must remain independent,
+  including for open splits and detached tabs. General preference changes
+  must preserve all pairs. Font, size, ANSI palette and prompt remain shared;
+  switching themes must not send commands, restart shells or reconnect SSH.
+  Read-only loading must apply the active pair without rewriting settings.
 - Terminal foreground, background, font, font size, ANSI palette, and prompt settings must apply to new terminal sessions.
 - The audible terminal bell must be disabled by default, and its preference
   must apply to newly opened and already open VTE terminals.
@@ -1306,17 +1370,20 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   focused panes/active tabs and visible keyboard focus. Check existing/new Notes and preference windows,
   detached tabs and menus; notification borders must follow severity.
   Switch back to System/Light/Dark with those windows open and verify that the
-  fixed palette is removed. Restart to check preference persistence. Terminal
-  and Notes editor colors, split layout, terminal focus and read-only guards
-  must remain unchanged. Automated theme tests have not been run in this phase.
+  fixed interface palette is removed and each theme's saved terminal colors
+  are loaded. Restart to check preference persistence. Notes editor colors,
+  split layout, terminal focus and read-only guards must remain unchanged.
+  Automated theme tests have not been run in this phase.
 - For #484 region separation, inspect maximized/restored windows in
-  System/Light/Dark/Dark Glow: the main header keeps native centering, drag
-  and window controls, with a 1px contour and 4px gap above the body. Check
+  Dark Glow: the main header keeps native centering, drag and window
+  controls, with a 1px contour and 8px gaps to the outer frame and body. Check
   sidebar child alignment at 10px horizontal padding, all four panel edges,
   hidden/shown sidebar, remembered width, narrow/wide resizing and the native
   separator's full mouse/keyboard resize area. Check that removing its lines
-  causes no intense doubled borders. Verify 4px between visible tab controls
+  causes no intense doubled borders. Verify 8px between visible tab controls
   and the terminal stack with one/many tabs, overflow and nested splits.
+  Switch to System/Light/Dark and confirm the research frame, spacing and
+  resize-handle overrides disappear, restoring the native/base styling.
 - For #484 paste-preview styling, use synthetic multiline text with long
   lines, leading/trailing spaces, tabs, LF/CRLF, Unicode and literal escape
   characters. Inspect theme surface/selection colors, both scrollbars, text

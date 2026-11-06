@@ -83,7 +83,7 @@ alone. Follow the user's explicit restrictions on running tests.
 |---|---|---|
 | GTK/GNOME | System surfaces, text, borders, selection, focus, and system appearance | The desktop theme or GTK-managed widget behavior |
 | Termia | Scoped structural rules: layout insets, dimensions, and component selectors | GTK-managed application colors or VTE internals |
-| Terminal settings | VTE foreground, background, ANSI palette, prompt, and split divider | Application menus, dialogs, or sidebar chrome |
+| Terminal settings | VTE foreground/background saved per app theme; shared ANSI palette, prompt, and split divider | Application menus, dialogs, or sidebar chrome |
 
 ## Appearance modes
 
@@ -104,29 +104,51 @@ top-level window observer adds/removes that class for existing and future
 windows, including detached windows and in-process dialogs. It is disconnected
 at application shutdown. This follows the existing process-wide GTK appearance;
 it does not change another application's theme or external desktop portals.
-Switching back removes the scope class and replaces the CSS provider.
+Switching back removes the scope class and replaces the CSS provider. Saving
+a theme change also loads that theme's saved terminal foreground/background.
+
+With Dark Glow selected, General preferences exposes a native opaque color
+picker and Reset button for container borders. Save persists
+`app.dark_glow_border_color` (default `#55BAC9`) and replaces the shared CSS
+provider, updating existing windows and panes. Cancel leaves settings and CSS
+unchanged. The control is hidden for other themes, which ignore the value.
+Reset selects the original cyan in the picker; it takes effect only on Save.
+The choice affects the main window, header/sidebar, terminal scrollers, status
+capsules, terminal/Notes tabs and native-alert frames, plus their related
+interaction outlines. Border widths, radii, opacities and halo geometry are
+unchanged. Semantic notification roles and connection-state colors retain
+their fixed palette; standard button/entry colors and terminal palettes remain
+independent. Neutral card/popover borders retain their existing palette.
 
 `theme_styles.py` centralizes neutral surfaces and cyan/violet/green/yellow/red
 roles. `termia-panel` and `termia-role-*` are reusable internal style classes,
 not an add-on interface. Notifications use their existing severity to choose
-the border role. Keyboard focus retains an explicit outline. VTE nodes and the
-Notes editing surface are not recolored; their configured palettes stay separate.
+the border role. Keyboard focus retains an explicit outline. CSS does not
+recolor VTE or the Notes editing surface. Terminal foreground/background pairs
+are saved per app theme and applied through VTE's existing color API; Notes
+editor colors remain independent.
 This is a fixed selectable theme, without a theme editor, animations, background
 blur or prototype imports. Tests are prepared but have not been executed.
 
-### Shared interaction styles (#484)
+### Dark Glow interaction styles (#484)
 
 `build_interaction_css()` in `theme_styles.py` centralizes terminal-container,
-terminal/Notes tab and native menu states. System/Light/Dark use GTK theme
-colors; Dark Glow uses its existing cyan accent and fixed surface colors.
-Rules target `.termia-terminal-pane`, `.termia-tab-label`, native Notebook
+terminal/Notes tab and native menu states exclusively for Dark Glow, using
+its cyan accent and fixed surface colors. System/Light/Dark retain the
+pre-research base CSS and native GTK states.
+Rules target `.termia-terminal-pane` and its scroller/status children,
+`.termia-tab-label`, native Notebook
 `header > tabs > tab`, `.termia-menu-popover modelbutton`, and rows below
 `dropdown.termia-choice popover listview`. The shared dropdown factory supplies
 `termia-choice`; native selection and activation remain GTK-owned.
 
-Terminal containers reserve a constant 1px border on every side; focus within
-brightens it and adds a 4px, low-opacity outer shadow. This reduces available
+Terminal scrollers reserve a constant 1px border on every side; focus within
+brightens it and adds a 3px, low-opacity outer shadow. This reduces available
 terminal content space by 2px per axis compared with borderless containers.
+VTE content additionally has 6px vertical and 8px horizontal CSS padding in
+Dark Glow only. No foreground, background or ANSI colors are overridden.
+This describes CSS ownership; app-theme selection separately loads the saved
+terminal foreground/background pair through `stores.py`.
 Tab borders use inset shadows to retain their current allocations. Active tabs
 also receive a soft outer shadow, while keyboard focus has a separate outline.
 Pane focus follows GTK's `:focus-within`, including focus on a pane's toolbar;
@@ -138,6 +160,9 @@ automated and interactive validation remain pending in this research phase.
 ## Technical specification: palette, CSS values and cascade
 
 This section records the current local implementation, not a proposed design.
+Hexadecimal border values below describe the default color. A saved Dark Glow
+border choice replaces the frame/interaction accent, retaining the documented
+alpha and geometry; semantic palette roles are not replaced.
 Keep it synchronized whenever visual values or selectors change. Sources:
 [`theme_styles.py`](../src/termia/theme_styles.py),
 [`styles.py`](../src/termia/styles.py),
@@ -177,24 +202,23 @@ cyan/green/yellow/red in `TermiaWindow.show_toast()`.
 ### Provider order and scope
 
 `build_application_css()` concatenates the base structural CSS, then the fixed
-Dark Glow CSS only for `theme == "dark_glow"`, then the shared interaction CSS.
+Dark Glow CSS and interaction CSS only for `theme == "dark_glow"`.
 The application provider uses `Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION` (600).
 Notes has an independent editor provider at application priority + 1 (601).
 Providers apply to the display; selectors determine which widgets they affect.
 
 Dark Glow prefixes its rules with `window.termia-dark-glow`. The top-level
-observer adds/removes that class on existing and future windows. Ordinary
-System/Light/Dark shared rules target the Termia component classes without
-the fixed-palette window prefix. GTK specificity applies before source order;
+observer adds/removes that class on existing and future windows.
+System/Light/Dark receive no research interaction rules. GTK specificity applies before source order;
 later rules win only at equal specificity and provider priority.
 
-| Shared interaction variable | Dark Glow | System/Light/Dark |
-|---|---|---|
-| `accent` | `#55BAC9` | `@theme_selected_bg_color` |
-| `foreground` | `#EDF3F8` | `@theme_fg_color` |
-| `hover` | `#23364B` | `alpha(@theme_fg_color, 0.06)` |
-| `selected` | `#29475A` | `alpha(@theme_fg_color, 0.13)` |
-| `muted` | `#B3C1D1` | `alpha(@theme_fg_color, 0.45)` |
+| Interaction variable | Dark Glow |
+|---|---|
+| `accent` | Saved `app.dark_glow_border_color`; default `#55BAC9` |
+| `foreground` | `#EDF3F8` |
+| `hover` | `#23364B` |
+| `selected` | `#29475A` |
+| `muted` | `#B3C1D1` |
 
 `alpha(color, factor)` multiplies the input alpha; it is not a global widget
 opacity. The rendered result depends on the surface behind it. No fixed final
@@ -209,6 +233,7 @@ other component rules; this is not a complete replacement GTK theme.
 | Selector | Explicit styling |
 |---|---|
 | Window itself; `.termia-main-surface` | Background `canvas`, foreground `text` |
+| Main `window.termia-main-window` | Border `1px solid alpha(cyan, 0.50)`, radius `10px`, shadow `0 0 3px alpha(cyan, 0.05)`; backdrop border alpha `0.35`, shadow `none` |
 | `headerbar` | Background `surface`, foreground `text`, shadow `none` |
 | `.termia-session-tabs`, `.termia-session-tab-controls` | Background `transparent`, foreground `text`, shadow `none`; the main canvas `#0D1420` shows through both containers. Individual tab backgrounds, borders and active lighting remain independently styled. |
 | `.termia-sidebar`, `.termia-panel`, `.stat-card`, `frame.card` | Background `surface`, foreground `text`, border `1px solid border`, radius `10px`, shadow `none` |
@@ -263,30 +288,74 @@ offset, blur radius, optional spread radius, and color; `inset` draws inward.
 
 | Component/state | Exact declarations |
 |---|---|
-| `.termia-terminal-pane`, normal | `border: 1px solid alpha(A, 0.35)` |
-| `.termia-terminal-pane:focus-within` | `border-color: A; box-shadow: 0 0 4px alpha(A, 0.18)` |
+| `.termia-terminal-pane > scrolledwindow`, normal | `border: 1px solid alpha(A, 0.35); border-radius: 10px` |
+| `.termia-terminal-pane:focus-within > scrolledwindow` | `border-color: alpha(A, 0.50); box-shadow: 0 0 3px alpha(A, 0.05)` |
 | Terminal tab and Notes `header > tabs > tab`, normal | `box-shadow: inset 0 0 0 1px alpha(A, 0.35)` |
 | Both tab types, `:hover` | `background-color: H; box-shadow: inset 0 0 0 1px alpha(A, 0.65)` |
-| Terminal `.active` or Notes `:checked` | `background-color: S; box-shadow: inset 0 0 0 1px A, 0 0 4px alpha(A, 0.18)` |
+| Terminal `.active` or Notes `:checked` | `background-color: S; box-shadow: inset 0 0 0 1px alpha(A, 0.65), 0 0 3px alpha(A, 0.08)` |
 | Both tab types, `:focus-visible` or `:focus-within` | `outline: 2px solid A; outline-offset: -3px` |
 | Terminal tab `.dragging` | Background `alpha(A, 0.25)`, whole-widget opacity `0.72` |
 
 For Dark Glow, the accent is RGB `(85, 186, 201)`: the normal border is
 `rgba(85, 186, 201, 0.35)`, hover border `rgba(85, 186, 201, 0.65)`, active
-border `#55BAC9`, and outer glow `rgba(85, 186, 201, 0.18)`. Glow offsets are
-both `0px`, blur `4px`, spread `0px`; it is not an inset glow. The tab's inset
+tab border `rgba(85, 186, 201, 0.65)` and tab glow
+`rgba(85, 186, 201, 0.08)`. Focused terminals and the active main window use
+border alpha `0.50` and glow alpha `0.05`. Glow offsets are
+both `0px`, blur `3px`, spread `0px`; it is not an inset glow. The tab's inset
 border has zero blur and `1px` spread. There is no configurable glow-strength
 setting or reusable `GlowPanel` widget.
 
-The pane border has no explicit radius or background rule. It encloses the
-status toolbar and terminal scroller, not VTE's drawing node. Its constant
+The terminal scroller's border has a 10px radius and no background override.
+The outer pane has no border or shadow; the status toolbar has its own
+subdued capsule border without a shadow. Status colors
+follow the saved terminal foreground/background. Dark Glow uses native
+`Gtk.Overflow.HIDDEN` on the scroller to clip its contents to the rounded
+padding box, leaving the status controls outside that clip. New scrollers
+receive it at construction; theme
+application updates registered panes, including detached sessions. Other
+modes restore `Gtk.Overflow.VISIBLE` and omit the rounded-border CSS. Its constant
 width reserves 2px per axis; changing focus changes no border width.
+The descendant `vte-terminal` node receives only `padding: 6px 8px` under
+`window.termia-dark-glow .termia-terminal-pane`; its own background fills
+the padding using the configured terminal palette.
 `:focus-within` includes toolbar focus, rather than tracking SSH connection
 state. Tab selection uses `.active`/`:checked` independently of keyboard focus.
 At equal specificity, active tab styling is emitted after hover and wins;
 dragging changes background and opacity without removing the active shadow.
 Focus outlines are drawn inward on tabs. Shadows/outlines do not reserve extra
 layout space, and ancestors may clip outer shadows.
+
+### Terminal status bars in Dark Glow
+
+The existing `.termia-pane-status` box sits above the bordered terminal
+scroller. Normal and `.active` states use the saved terminal background and
+foreground, with a `1px solid alpha(cyan, 0.35)` border, radius `999px`,
+`box-shadow: none`, padding `3px 12px`, bottom margin `8px` and font size
+`0.9em`. The normal selector includes the parent pane so these insets also
+override the base split-status padding. Labels and buttons use the retro
+monospace stack `"Ubuntu Mono", "DejaVu Sans Mono", monospace`; the shell's
+configured font is unchanged. Labels retain the configured foreground at full opacity for
+contrast with custom light or dark terminal backgrounds. Native Hide and
+Disconnect buttons use transparent backgrounds, no border/shadow, minimum
+content height `18px`, padding `2px 6px`, radius `6px` and font size `1em`
+relative to the status bar. Hover/pressed backgrounds use terminal foreground
+at alpha `0.08`/`0.13`; disabled buttons use opacity `0.45`. The existing
+keyboard-focus outline remains. No status update, timer, visibility or
+disconnect behavior changes; other application themes retain their base CSS.
+
+In all application themes, the status label renders a colored dot and a
+translated state followed by the saved connection/profile name. The point
+uses the existing role colors: green `#78BD97` while the session child is
+running, yellow `#D2B36F` while starting and muted `#B3C1D1` after disconnection.
+Text accompanies color for accessibility. Names are escaped before Pango
+markup rendering, ellipsized when necessary and retained in full in the
+tooltip. Process IDs and errors also move to that tooltip. SSH status follows
+the managed client process; it does not independently verify authentication,
+and the tooltip explicitly explains that distinction. Root and split states
+are read from their individual `TerminalPane`, not the whole session's aggregate
+flag. Existing timers refresh names; changing language refreshes even closed
+panes. No extra timer or signal owner is introduced, and retired panes are
+skipped. `TerminalPane.status_detail` is transient UI data, not stored settings.
 
 ### Native menu and dropdown states
 
@@ -327,17 +396,17 @@ top/right/bottom/left; two-value padding is vertical/horizontal.
 | `.termia-session-tab-scroller` | Background transparent, border `0`, shadow `none` |
 | Tab scroller horizontal scrollbar | Minimum height `5px`, margin `0 2px`, padding `0`; slider minimum height `3px`, minimum width `24px` |
 | `.termia-terminal-stack` | Border `0`, shadow `none` |
-| `.termia-pane-status.active` | Background `alpha(@theme_selected_bg_color, 0.12)`, including Dark Glow |
+| `.termia-pane-status.active` | Base background `alpha(@theme_selected_bg_color, 0.12)`; Dark Glow overrides it with the saved terminal background without focus highlighting |
 | Pane status labels; status bar inside a split | Label minimum width `0`; split status-bar padding `6px` |
 | `.termia-read-only-badge` | Font weight `600` |
-| `.termia-terminal-paste-preview` | Shared theme surface/selection colors, border `1px solid alpha(accent, 0.35)`, radius `8px`; see region specification below |
+| `.termia-terminal-paste-preview` | Base border `1px solid #000000`; Dark Glow alone overrides surface, selection, border, radius and padding as specified below |
 | `.termia-tab-label` | Padding `7px 10px`, margin `0 2px`, radius `8px`, background transparent, border `0`; Dark Glow reserves a transparent `1px` border and uses radius `10px` |
 | `.termia-tab-title` | Font size `1.05em` |
 | `.termia-tab-close` | Padding `0`, minimum width/height `24px`, base radius `9999px`; base hover black alpha `0.16`, active black alpha `0.24`, hover shadow `none` |
 | `.termia-tab-overflow-button` | Padding `0`, minimum width `0`, minimum height `24px`, margin `1px 0 6px 0`; inner button horizontal padding `1px`, minimum width `16px` |
 | `.termia-status-hide`, `.termia-disconnect-button` | Padding `0 6px`, minimum height `18px`, font size `0.85em` |
 | Notes notebook, stack, header and header tabs | Background transparent, border `0`, shadow `none` before the Dark Glow header background override |
-| Notes header tab | Radius `8px 8px 0 0`; shared interaction shadows as above |
+| Notes header tab | Radius `8px 8px 0 0`; checked background `alpha(@theme_fg_color, 0.13)`; Dark Glow overrides states as above |
 | `.termia-notes-editor` | Border `1px solid @borders`, radius `8px`, default background `#001B33`; text view foreground `#FFFFFF` and background `#001B33` before saved appearance overrides |
 | `.stat-card` | Padding `10px 12px`, border `1px solid @borders`, radius `6px`, background `alpha(@theme_bg_color, 0.58)`; Dark Glow replaces border/background/radius with its surface rule |
 | Statistics title/value/subtitle | Font sizes `0.82em` / `1.55em` / `0.82em`; value font weight `700` |
@@ -362,6 +431,18 @@ GTK Notebook underline rendering can be affected by the explicit tab
 
 ### Split separators and independent editor/terminal colors
 
+Each app theme has an editable terminal foreground/background pair in
+`app.terminal_colors_by_theme`. Dark Glow initially uses Solarized foreground
+`#839496` on the sidebar's background `#182231`. The shared
+`DARK_GLOW_SURFACE_COLOR` in `constants.py` supplies both that terminal default
+and the Dark Glow surface palette; saved terminal overrides remain independent.
+Previously saved colors are retained. System/Light/Dark initially copy the previous
+terminal colors. Terminal preferences save changes for the selected theme;
+switching themes applies its saved pair to existing panes and future sessions.
+Font, size, ANSI palette, prompt and split-separator settings remain shared.
+Initialization, read-only behavior and downgrade compatibility are documented
+in [STORAGE_MIGRATIONS.md](STORAGE_MIGRATIONS.md).
+
 Let `T = max(1, configured split_separator_thickness)` and `H = max(5, T)`.
 Horizontal split separators use minimum width `H` and a left solid border of
 width `T`; vertical separators use minimum height `H` and a top solid border
@@ -371,19 +452,20 @@ and configured separator color for the line. On hover only the line becomes
 preferences bound width to `1–32px`.
 
 Dark Glow overrides `.termia-split-pane > separator` and its `:hover` state
-with `background: transparent; border-color: transparent; box-shadow: none`.
-The shorthand also clears background images. It retains `H`, border width
-`T`, native margins/padding/cursor, `wide_handle=False`, split positions and
-Gtk.Paned interaction. The retained separator provides the gap; no margins
-are added to terminal panels. Both panel borders remain separately visible.
+with `background: transparent; border: 0; margin: 0; padding: 0; box-shadow: none`.
+The shorthand also clears background images. Orientation-specific rules use
+minimum width 8px for horizontal splits and minimum height 8px for vertical
+splits, independent of the configured line thickness. Native cursor,
+`wide_handle=False`, split positions and Gtk.Paned interaction are retained.
+The separator provides the uniform gap; no margins are added to terminal
+panels. Both panel borders remain separately visible.
 The main canvas (`#0D1420`) shows through the transparent gap where not covered
 by another widget. Actual total hit-area size and composition require runtime
-inspection; `H` is a CSS minimum, not a measured overall width/height.
+inspection; 8px is the CSS minimum, not a measured runtime allocation.
 
 Separator color preferences remain stored and visible in System/Light/Dark;
 in Dark Glow, changing the configured line color does not produce a visible
-line. Thickness still affects the retained border allocation and can increase
-minimum separator size above 5px. The existing Terminal preferences separator
+line or change the fixed gap. The existing Terminal preferences separator
 preview continues to display the configured color; it is not a screenshot of
 the Dark Glow transparent divider. No settings migration is introduced.
 
@@ -429,64 +511,64 @@ properties, a requested width clamped to `1–32px`, and radius `999px`.
 
 ### Main regions and multiline-paste preview (#484)
 
-These rules are appended by `build_interaction_css()` in every appearance mode.
+These rules are appended by `build_interaction_css()` only in Dark Glow.
 They retain the existing widget hierarchy and native controls. Main-window
 composition in `app.py` adds `termia-main-header` to the actual `Gtk.HeaderBar`
 and `termia-main-paned` to the existing horizontal `Gtk.Paned`. No wrapper is
-inserted into the title bar, no event handler changes, and no VTE node is styled.
+inserted into the title bar and no event handler changes. VTE receives only
+the content padding specified above.
 
-Let `A` be the shared accent and `F` its foreground from the variable table.
-`P` is the panel surface: `#182231` for Dark Glow and `@theme_bg_color` for
-System/Light/Dark. Text selection uses `#29475A` / `#EDF3F8` in Dark Glow and
-`@theme_selected_bg_color` / `@theme_selected_fg_color` in ordinary modes.
+Let `A` be the Dark Glow accent and `F` its foreground from the variable table.
+`P` is the panel surface `#182231`. Text selection uses `#29475A` / `#EDF3F8`.
 All numerical CSS dimensions below are logical pixels.
 
 | Target/state | Exact values |
 |---|---|
-| `headerbar.termia-main-header` | Background image `none`, background `P`, foreground `F`, border `1px solid alpha(A, 0.35)`, radius `10px`, shadow `inset 0 0 4px alpha(A, 0.10)` |
-| Main header `:backdrop` | Border color `alpha(A, 0.25)`, shadow `none`; same background and foreground |
-| `.termia-main-surface` | Top padding `4px`, separating title bar from the body |
+| `headerbar.termia-main-header` | Background image `none`, background `P`, foreground `F`, border `1px solid alpha(A, 0.18)`, radius `10px`, margin `8px 8px 0`, shadow `none` |
+| Main header `:backdrop` | Border color `alpha(A, 0.12)`, shadow `none`; same background and foreground |
+| `.termia-main-surface` | Padding `8px` on every side, separating title bar, body and outer frame |
 | `.termia-sidebar` | Background `P`, foreground `F`, border `1px solid alpha(A, 0.35)`, radius `10px`, padding `8px 10px` |
 | Sidebar `:focus-within` | Border color `alpha(A, 0.65)`, shadow `inset 0 0 4px alpha(A, 0.10)` |
-| `paned.termia-main-paned > separator` | Background image `none`, background transparent, border color transparent, shadow `none`; no minimum-size, border-width, margin, padding or cursor overrides |
+| `paned.termia-main-paned > separator` | Background image `none`, background transparent, border `0`, minimum width `8px`, margin/padding `0`, shadow `none`; native cursor retained |
 | Main separator `:hover`, `:active`, `:selected` | Background `alpha(A, 0.12)` |
 | Main separator `:focus-visible` | Outline `1px solid A`, offset `-1px` |
-| `.termia-session-tab-controls` | Bottom margin `4px`; no allocation when the controls are hidden |
+| `.termia-session-tab-controls` | Padding `0`, bottom margin `8px`; no allocation when the controls are hidden |
+| `.termia-session-tabs`; `.termia-tab-label` | Tab-bar padding `0`, border spacing `8px`; individual tab margins `0` |
 | Paste preview scroller, descendant `textview`, direct `text` and `border` nodes | Background `P`, foreground `F` |
 | `.termia-terminal-paste-preview` | Border `1px solid alpha(A, 0.35)`, radius `8px` |
+| Preview `textview` | Padding `8px 10px`, replacing native TextView margin overrides |
 | Preview `textview > text > selection` | Theme-specific selection background and foreground defined above |
 | Preview scrollbar slider | Background image `none`, background `alpha(A, 0.35)`; hover `alpha(A, 0.65)`; pressed `A`; native geometry retained |
 
-The sidebar's GTK widget margins are top/bottom/start `4px` and end `0px`,
-replacing the previous `12px` on each side. Every direct child (action row,
+The sidebar's GTK widget margins in Dark Glow are `0px` on every side;
+System/Light/Dark retain `12px` on each side. Theme application
+updates these margins on the current window. Every direct child (action row,
 search entry, tree scroller and summary label) shares the parent padding of
 10px horizontally; descendants retain their existing indentation. Its vertical
 box spacing remains 8px, minimum width request 120px and initial splitter
-position 280px. Replacing exterior margins with interior padding limits the
-extra horizontal space consumption: outer margins plus border and padding
-occupy 26px: previously 24px in ordinary modes or 26px in Dark Glow, which
-already supplied a 1px border. Content constraints can still require a wider
-sidebar at some font sizes; no controls are shrunk or repositioned.
+position 280px. The shared main surface now supplies the 8px outer inset to
+both sidebar and terminal region, keeping their tops aligned. A visible tab
+strip occupies a row above terminal content; it is not empty spacing.
+Content constraints can still require a wider sidebar at some font sizes;
+no controls are shrunk or repositioned.
 
-The sidebar's end margin is zero because the native wide separator itself
-provides the gap. In the inspected Yaru resource, its minimum width is 5px,
-margin/padding zero. Other themes may choose different hit-area dimensions;
-those are retained. Removing its two background-image lines avoids double
-borders while keeping resize and native keyboard interaction. The rule cannot
-match `.termia-split-pane` separators, whose terminal-specific styling remains
-unchanged. Sidebar visibility and remembered-width handling are unchanged.
+The native wide sidebar separator supplies an 8px gap with no border, margin
+or padding. Native resizing and keyboard interaction remain in place.
+Separate rules apply the same gap to `.termia-split-pane` separators.
+System/Light/Dark receive none of these overrides. Sidebar visibility and
+remembered-width handling are unchanged.
 
 The header border adds 1px per edge around the same native HeaderBar; its
 centering, drag region and window controls remain GTK-owned. Header/sidebar
-lighting is deliberately inset (zero offsets, 4px blur, zero spread, alpha
-0.10) so it does not need extra exterior space or cross a scroller boundary.
+lighting is limited to the focused sidebar (zero offsets, 4px blur, zero
+spread, alpha 0.10). The header has no shadow in either focus state.
 This does not establish that every rounded edge renders without clipping;
 maximized/restored windows and native controls require visual inspection.
-The 4px tab-to-stack margin is outside the tab scroller and applies uniformly
+The 8px tab-to-stack margin is outside the tab scroller and applies uniformly
 to all sessions/splits. Existing active/inactive tab and pane rules are retained.
 
-`terminal_sessions.py` gives the preview TextView native left/right margins of
-10px and top/bottom margins of 8px. These are presentation properties, not
+Dark Glow CSS gives the preview TextView horizontal padding of 10px and
+vertical padding of 8px; ordinary modes retain native spacing. These are presentation properties, not
 inserted spaces or newlines: the original `set_text(text)` and
 `terminal.paste_text(text)` calls and the captured text are unchanged. The
 existing 560×320 default dialog size, warning label, content spacing 12px,
@@ -643,7 +725,8 @@ horizontal scrolling. Notes keep their separate native Notebook.
 
 Scoped `termia-tab-label` styles use a theme-derived selected background,
 softer inactive hover, 7 px vertical and 10 px horizontal padding, 2 px side
-margins and 8 px rounded corners (`10px` in Dark Glow). Close buttons have
+margins and 8 px rounded corners. Dark Glow uses zero tab margins, 8px spacing
+between tabs and 10px rounded corners. Close buttons have
 the base circular radius, overridden to `10px` by Dark Glow as recorded above.
 The strip's horizontal scrollbar uses GTK overlay scrolling and hides when idle.
 The adjacent native down-arrow menu button appears only when tabs overflow.

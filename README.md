@@ -21,8 +21,10 @@ together in embedded VTE terminals.
   The shortcut does not detect password prompts. Storage follows Security
   preferences; see [storage compatibility](docs/STORAGE_MIGRATIONS.md) before upgrading.
 - Saved workspaces and optional restoration of the previous session.
-- Optional automatic copying when terminal selection finishes, disabled by
-  default in General preferences. A success notification reports the character
+- Per-pane status bars show the connection name and a colored session-state
+  indicator; process and error details are available in the tooltip.
+- Automatic copying when terminal selection finishes, enabled by default
+  and configurable in General preferences. A success notification reports the character
   count, including spaces and line breaks, once the clipboard accepts the text.
   Click elsewhere in the terminal to clear the highlight without losing the copy.
 - Confirmation before pasting terminal text containing line breaks, enabled
@@ -45,10 +47,15 @@ together in embedded VTE terminals.
 
 This research checkout adds **Dark Glow** under **General → Theme**: solid dark
 surfaces, subtle colored 1px borders, 10px corners and soft active-pane/tab lighting.
-System/Light/Dark remain available; terminal and Notes editor colors retain
-their own settings. Shared panel spacing and the multiline-paste preview adapt
-to the selected application theme. This is a local research option, not a
+System/Light/Dark retain their previous interface styling. Each app theme saves
+its own terminal text/background colors; Dark Glow starts with Solarized text
+on the sidebar's dark background (`#182231`).
+Use Terminal preferences to change those colors for the selected theme at any
+time. Notes editor colors remain independent. Dark Glow adds terminal content padding and a subdued
+main header without a halo. This is a local research option, not a
 published release.
+With Dark Glow selected, General preferences also lets you choose the container
+border color or reset it to cyan; changes apply on Save.
 
 ## Release status
 

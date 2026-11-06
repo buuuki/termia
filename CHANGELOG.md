@@ -4,6 +4,24 @@
 
 ### Fixed
 
+- Soften the Dark Glow main-window and focused-terminal borders and halos,
+  retaining a visible focus distinction without changing their geometry (#484).
+
+- Make Dark Glow terminal status bars compact capsules with subdued cyan
+  borders, saved terminal colors and retro monospace text. Keep halos around
+  the shell area only and retain status actions and keyboard focus indicators (#484).
+
+- Use uniform 8px Dark Glow gaps around the main content and between sidebar,
+  tabs and terminal panes; match the main window border to the rounded,
+  softly lit terminal frames while retaining native resize handles (#484).
+
+- Round Dark Glow terminal containers with native GTK clipping and soften
+  focused-terminal and active-tab borders and halos (#484).
+
+- Confine research panel, tab, menu and preview styling to Dark Glow; restore
+  System/Light/Dark spacing and states. Add terminal content insets and soften
+  the Dark Glow main header border without a halo (#484).
+
 - Hide split-separator lines and backgrounds in Dark Glow, retaining native
   resize interaction and existing separator dimensions between pane borders (#484).
 
@@ -48,11 +66,25 @@
 
 ### Added
 
+- Choose and reset the Dark Glow container-border color in General preferences
+  with a native color picker; preserve border geometry, intensity, other
+  themes and semantic status colors (#484).
+
+- Show each terminal pane's connection name and a colored, translated session
+  indicator in its status bar. Keep process/error details in tooltips and
+  retain names across disconnects, retries and tab renaming (#484).
+
+- Save terminal foreground/background colors independently for each app theme.
+  Dark Glow starts with Solarized text on the sidebar's dark background;
+  existing terminal color controls customize
+  the selected theme and update open panes (#484).
+
 - Research a fixed Dark Glow interface theme with opaque dark surfaces, 1px
   borders, 10px corners and subtle active-pane/tab lighting; keep terminal colors independent
   (`#484`).
 
-- Add opt-in automatic copying of completed terminal selections, with a
+- Add automatic copying of completed terminal selections, enabled by default
+  for new/missing preferences while preserving saved disabled choices, with a
   success notification and character count. Preserve manual copying and
   native deselection (`#463`).
 

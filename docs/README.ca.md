@@ -21,8 +21,10 @@ fitxers en terminals VTE integrats amb GTK 4.
   La drecera no detecta peticions de contrasenya. La protecció depèn de
   Seguretat; consulta la [compatibilitat](STORAGE_MIGRATIONS.md) abans d'actualitzar.
 - Espais de treball desats i restauració opcional de la sessió anterior.
-- Còpia automàtica opcional en acabar de seleccionar text del terminal,
-  desactivada per defecte a Preferències generals. L'avís confirma la còpia i
+- Cada barra d'estat mostra el nom de la connexió i un indicador d'estat amb
+  color; en passar-hi el ratolí es veuen els detalls del procés o error.
+- Còpia automàtica en acabar de seleccionar text del terminal,
+  activada per defecte i configurable a Preferències generals. L'avís confirma la còpia i
   indica els caràcters, inclosos espais i salts de línia, quan el porta-retalls
   accepta el text. Un clic en una altra zona treu el ressaltat sense perdre la còpia.
 - Confirmació abans d'enganxar text amb salts de línia al terminal, activada
@@ -46,10 +48,17 @@ fitxers en terminals VTE integrats amb GTK 4.
 
 Aquesta branca d'investigació afegeix **Dark Glow** a **General → Tema**:
 superfícies fosques opaques, vores de color subtils d'1px, cantonades de 10px
-i il·luminació suau als panells i les pestanyes actius. Sistema/Clar/Fosc continuen disponibles; el terminal
-i l'editor de Notes conserven els seus colors. La separació dels panells i la
-vista prèvia de l'enganxada multilínia s'adapten al tema seleccionat. És una
+i il·luminació suau als panells i les pestanyes actius. Sistema/Clar/Fosc conserven
+l'aspecte anterior. Cada tema desa els seus colors de text i fons del terminal;
+Dark Glow comença amb text Solarized i el fons fosc del panell lateral (`#182231`).
+Pots canviar-los quan vulguis des de les
+preferències del terminal: es desen per al tema seleccionat. Els colors de
+l'editor de Notes continuen sent independents.
+Dark Glow afegeix espai interior al terminal i una barra de títol tènue sense
+halo lluminós. És una
 opció local d'investigació, no una versió publicada.
+Amb Dark Glow seleccionat, Preferències generals permet triar el color de les
+vores o restablir el cian original; s'aplica en desar.
 
 ## Estat de la versió
 

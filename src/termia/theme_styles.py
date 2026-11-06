@@ -1,17 +1,19 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Fixed, opt-in Dark Glow palette. No dependency on optional tools or VTE."""
 
+from .constants import DARK_GLOW_SURFACE_COLOR, DEFAULT_DARK_GLOW_BORDER_COLOR
+
 DARK_GLOW_THEME = "dark_glow"
 DARK_GLOW_CLASS = "termia-dark-glow"
 DARK_GLOW_COLORS = {
-    "canvas": "#0D1420", "surface": "#182231", "control": "#1C2A3C",
+    "canvas": "#0D1420", "surface": DARK_GLOW_SURFACE_COLOR, "control": "#1C2A3C",
     "hover": "#23364B", "selection": "#29475A", "text": "#EDF3F8",
-    "muted": "#B3C1D1", "border": "#345667", "cyan": "#55BAC9",
+    "muted": "#B3C1D1", "border": "#345667", "cyan": DEFAULT_DARK_GLOW_BORDER_COLOR,
     "violet": "#A194D6", "green": "#78BD97", "yellow": "#D2B36F", "red": "#D8848D",
 }
 
 
-def build_dark_glow_css() -> str:
+def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> str:
     c = DARK_GLOW_COLORS
     root = f"window.{DARK_GLOW_CLASS}"
 
@@ -19,6 +21,12 @@ def build_dark_glow_css() -> str:
         return ", ".join(f"{root}{' ' if selector else ''}{selector}" for selector in selectors.split(",")) + " { " + declarations + " } "
 
     css = rule("", f"background-color: {c['canvas']}; color: {c['text']};")
+    css += (
+        f"{root}.termia-main-window {{ border: 1px solid alpha({border_color}, 0.50); "
+        f"border-radius: 10px; box-shadow: 0 0 3px alpha({border_color}, 0.05); }} "
+        f"{root}.termia-main-window:backdrop {{ border-color: alpha({border_color}, 0.35); "
+        "box-shadow: none; } "
+    )
     css += rule("headerbar", f"background-color: {c['surface']}; color: {c['text']}; box-shadow: none;")
     css += rule(".termia-session-tabs,.termia-session-tab-controls", f"background: transparent; color: {c['text']}; box-shadow: none;")
     css += rule(".termia-main-surface", f"background-color: {c['canvas']}; color: {c['text']};")
@@ -45,8 +53,8 @@ def build_dark_glow_css() -> str:
         css += rule(f".termia-role-{role} progressbar > trough > progress", f"background-color: {c[role]}; border-color: {c[role]};")
     alert = f"{root}.dialog.message"
     alert_rules = (
-        ("", f"background-color: {c['canvas']}; color: {c['text']}; border: 1px solid alpha({c['cyan']}, 0.65); border-radius: 10px; box-shadow: 0 0 4px alpha({c['cyan']}, 0.18);"),
-        (":backdrop", f"border-color: alpha({c['cyan']}, 0.35); box-shadow: none;"),
+        ("", f"background-color: {c['canvas']}; color: {c['text']}; border: 1px solid alpha({border_color}, 0.65); border-radius: 10px; box-shadow: 0 0 4px alpha({border_color}, 0.18);"),
+        (":backdrop", f"border-color: alpha({border_color}, 0.35); box-shadow: none;"),
         (" .dialog-vbox", f"background-color: {c['canvas']}; color: {c['text']}; padding: 16px 0 0;"),
         (" .dialog-action-box", "background-image: none; background-color: transparent; border: 0; padding: 0 16px 16px;"),
         (" .dialog-action-area", "border-spacing: 8px;"),
@@ -64,35 +72,40 @@ def build_dark_glow_css() -> str:
     return css
 
 
-def build_interaction_css(theme: str) -> str:
-    """Shared pane, tab and native menu states, scoped to Termia widgets."""
-    dark_glow = theme == DARK_GLOW_THEME
-    accent = DARK_GLOW_COLORS["cyan"] if dark_glow else "@theme_selected_bg_color"
-    foreground = DARK_GLOW_COLORS["text"] if dark_glow else "@theme_fg_color"
-    hover = DARK_GLOW_COLORS["hover"] if dark_glow else "alpha(@theme_fg_color, 0.06)"
-    selected = DARK_GLOW_COLORS["selection"] if dark_glow else "alpha(@theme_fg_color, 0.13)"
-    muted = DARK_GLOW_COLORS["muted"] if dark_glow else "alpha(@theme_fg_color, 0.45)"
-    surface = DARK_GLOW_COLORS["surface"] if dark_glow else "@theme_bg_color"
-    selection_background = DARK_GLOW_COLORS["selection"] if dark_glow else "@theme_selected_bg_color"
-    selection_foreground = DARK_GLOW_COLORS["text"] if dark_glow else "@theme_selected_fg_color"
-    prefix = f"window.{DARK_GLOW_CLASS} " if dark_glow else ""
+def build_interaction_css(
+    theme: str, terminal_background: str, terminal_foreground: str,
+    border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR,
+) -> str:
+    """Dark Glow pane, tab and native menu states; ordinary themes retain GTK."""
+    if theme != DARK_GLOW_THEME:
+        return ""
+    accent = border_color
+    foreground = DARK_GLOW_COLORS["text"]
+    hover = DARK_GLOW_COLORS["hover"]
+    selected = DARK_GLOW_COLORS["selection"]
+    muted = DARK_GLOW_COLORS["muted"]
+    surface = DARK_GLOW_COLORS["surface"]
+    selection_background = DARK_GLOW_COLORS["selection"]
+    selection_foreground = DARK_GLOW_COLORS["text"]
+    prefix = f"window.{DARK_GLOW_CLASS} "
     rules = []
 
     def rule(selectors: str, declarations: str) -> None:
         scoped = ", ".join(prefix + selector.strip() for selector in selectors.split(","))
         rules.append(f"{scoped} {{ {declarations} }} ")
 
-    if dark_glow:
-        rule(".termia-split-pane > separator,.termia-split-pane > separator:hover",
-             "background: transparent; border-color: transparent; box-shadow: none;")
+    rule(".termia-split-pane > separator,.termia-split-pane > separator:hover",
+         "background: transparent; border: 0; margin: 0; padding: 0; box-shadow: none;")
+    rule(".termia-split-pane.horizontal > separator", "min-width: 8px;")
+    rule(".termia-split-pane.vertical > separator", "min-height: 8px;")
 
     rule("headerbar.termia-main-header",
          f"background-image: none; background-color: {surface}; color: {foreground}; "
-         f"border: 1px solid alpha({accent}, 0.35); border-radius: 10px; "
-         f"box-shadow: inset 0 0 4px alpha({accent}, 0.10);")
+         f"border: 1px solid alpha({accent}, 0.18); border-radius: 10px; "
+         "margin: 8px 8px 0; box-shadow: none;")
     rule("headerbar.termia-main-header:backdrop",
-         f"border-color: alpha({accent}, 0.25); box-shadow: none;")
-    rule(".termia-main-surface", "padding-top: 4px;")
+         f"border-color: alpha({accent}, 0.12); box-shadow: none;")
+    rule(".termia-main-surface", "padding: 8px;")
     rule(".termia-sidebar",
          f"background-color: {surface}; color: {foreground}; "
          f"border: 1px solid alpha({accent}, 0.35); border-radius: 10px; padding: 8px 10px;")
@@ -101,26 +114,47 @@ def build_interaction_css(theme: str) -> str:
          f"box-shadow: inset 0 0 4px alpha({accent}, 0.10);")
     separator = "paned.termia-main-paned > separator"
     rule(separator, "background-image: none; background-color: transparent; "
-         "border-color: transparent; box-shadow: none;")
+         "border: 0; min-width: 8px; margin: 0; padding: 0; box-shadow: none;")
     rule(f"{separator}:hover,{separator}:active,{separator}:selected",
          f"background-color: alpha({accent}, 0.12);")
     rule(f"{separator}:focus-visible",
          f"outline: 1px solid {accent}; outline-offset: -1px;")
-    rule(".termia-session-tab-controls", "margin-bottom: 4px;")
+    rule(".termia-session-tab-controls", "padding: 0; margin-bottom: 8px;")
+    rule(".termia-session-tabs", "padding: 0; border-spacing: 8px;")
+    rule(".termia-tab-label", "margin: 0;")
 
     preview = ".termia-terminal-paste-preview"
     rule(f"{preview},{preview} textview,{preview} textview > text,{preview} textview > border",
          f"background-color: {surface}; color: {foreground};")
     rule(preview, f"border: 1px solid alpha({accent}, 0.35); border-radius: 8px;")
+    rule(f"{preview} textview", "padding: 8px 10px;")
     rule(f"{preview} textview > text > selection",
          f"background-color: {selection_background}; color: {selection_foreground};")
     rule(f"{preview} scrollbar slider", f"background-image: none; background-color: alpha({accent}, 0.35);")
     rule(f"{preview} scrollbar slider:hover", f"background-color: alpha({accent}, 0.65);")
     rule(f"{preview} scrollbar slider:active", f"background-color: {accent};")
 
-    rule(".termia-terminal-pane", f"border: 1px solid alpha({accent}, 0.35);")
-    rule(".termia-terminal-pane:focus-within",
-         f"border-color: {accent}; box-shadow: 0 0 4px alpha({accent}, 0.18);")
+    rule(".termia-terminal-pane", "border: 0; border-radius: 0; box-shadow: none;")
+    rule(".termia-terminal-pane > .termia-pane-status,.termia-pane-status.active",
+         f"background-color: {terminal_background}; color: {terminal_foreground}; "
+         f"border: 1px solid alpha({accent}, 0.35); border-radius: 999px; "
+         "box-shadow: none; padding: 3px 12px; margin-bottom: 8px; font-size: 0.9em;")
+    rule(".termia-pane-status > label", f"color: {terminal_foreground}; opacity: 1;")
+    rule(".termia-pane-status > label,.termia-pane-status button",
+         'font-family: "Ubuntu Mono", "DejaVu Sans Mono", monospace;')
+    rule(".termia-pane-status button",
+         f"background-image: none; background-color: transparent; color: {terminal_foreground}; "
+         "border: 0; box-shadow: none; min-height: 18px; padding: 2px 6px; "
+         "border-radius: 6px; font-size: 1em;")
+    rule(".termia-pane-status button:hover", f"background-color: alpha({terminal_foreground}, 0.08);")
+    rule(".termia-pane-status button:active", f"background-color: alpha({terminal_foreground}, 0.13);")
+    rule(".termia-pane-status button:disabled", "background-color: transparent; opacity: 0.45;")
+
+    rule(".termia-terminal-pane > scrolledwindow",
+         f"border: 1px solid alpha({accent}, 0.35); border-radius: 10px;")
+    rule(".termia-terminal-pane vte-terminal", "padding: 6px 8px;")
+    rule(".termia-terminal-pane:focus-within > scrolledwindow",
+         f"border-color: alpha({accent}, 0.50); box-shadow: 0 0 3px alpha({accent}, 0.05);")
 
     note_tab = ".termia-notes-notebook > header > tabs > tab"
     tabs = (".termia-tab-label", note_tab)
@@ -130,7 +164,7 @@ def build_interaction_css(theme: str) -> str:
              f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.65);")
         active = f"{tab}.active" if tab == ".termia-tab-label" else f"{tab}:checked"
         rule(active, f"background-color: {selected}; "
-             f"box-shadow: inset 0 0 0 1px {accent}, 0 0 4px alpha({accent}, 0.18);")
+             f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.65), 0 0 3px alpha({accent}, 0.08);")
         rule(f"{tab}:focus-visible,{tab}:focus-within",
              f"outline: 2px solid {accent}; outline-offset: -3px;")
     rule(".termia-tab-label.dragging",

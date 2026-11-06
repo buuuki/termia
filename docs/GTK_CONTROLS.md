@@ -50,6 +50,7 @@ a standard GTK control does not justify crossing those boundaries.
 
 | # | Surface | Standard GTK control | Source and Termia-owned behavior |
 |---:|---|---|---|
+| — | Dark Glow border color | Native `Gtk.ColorButton` and `Gtk.Button` | `general_preferences.py`; opaque color selection, Reset and visibility while Dark Glow is selected; General Save/Cancel owns persistence |
 | — | Native confirmation alerts (session restore, Notes deletion and related confirmations) | `Gtk.AlertDialog` | `app.py`, `notes_dialogs.py` and other alert callers; GTK retains modal/keyboard behavior and response indices; `theme_styles.py` scopes Dark Glow message-window colors, border and compact spacing without replacing the native control |
 | — | Main header and server-sidebar separator | `Gtk.HeaderBar`, `Gtk.Paned` | `app.py` adds scoped classes; `theme_styles.py` styles borders, spacing and separator feedback while GTK owns centering, window dragging/controls and the native wide resize handle |
 | — | Connection private SSH key selection | `Gtk.FileDialog`, `Gtk.Entry` and native icon button | `src/termia/connection_dialogs.py`; fills only a local file path, preserves manual entry and ignores results after the form closes |

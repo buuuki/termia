@@ -21,8 +21,10 @@ de archivos en terminales VTE integrados con GTK 4.
   El atajo no detecta solicitudes de contraseña. La protección depende de
   Seguridad; consulta la [compatibilidad](STORAGE_MIGRATIONS.md) antes de actualizar.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
-- Copia automática opcional al terminar de seleccionar texto del terminal,
-  desactivada por defecto en Preferencias generales. El aviso confirma la copia
+- Cada barra de estado muestra el nombre de la conexión y un indicador de
+  estado con color; al pasar el ratón se ven los detalles del proceso o error.
+- Copia automática al terminar de seleccionar texto del terminal,
+  activada por defecto y configurable en Preferencias generales. El aviso confirma la copia
   e indica los caracteres, incluidos espacios y saltos de línea, cuando el
   portapapeles acepta el texto. Un clic en otra zona quita el resaltado sin perder la copia.
 - Confirmación antes de pegar texto con saltos de línea en el terminal,
@@ -46,10 +48,17 @@ de archivos en terminales VTE integrados con GTK 4.
 
 Esta rama de investigación añade **Dark Glow** en **General → Tema**: superficies
 oscuras opacas, bordes coloreados sutiles de 1px, esquinas de 10px e iluminación
-suave en paneles y pestañas activos. Sistema/Claro/Oscuro siguen disponibles; el terminal y el editor de
-Notas conservan sus propios colores. La separación de paneles y la vista previa
-del pegado multilínea se adaptan al tema seleccionado. Es una opción local de
+suave en paneles y pestañas activos. Sistema/Claro/Oscuro conservan su aspecto
+anterior. Cada tema guarda sus propios colores de texto y fondo del terminal;
+Dark Glow empieza con texto Solarized y el fondo oscuro del sidebar (`#182231`).
+Puedes cambiarlos cuando quieras desde las
+preferencias del terminal: se guardan para el tema seleccionado. Los colores
+del editor de Notas siguen siendo independientes.
+Dark Glow añade espacio interior al terminal y una barra de título tenue sin
+halo luminoso. Es una opción local de
 investigación, no una versión publicada.
+Con Dark Glow seleccionado, Preferencias generales permite elegir el color de
+los bordes o restablecer el cian original; se aplica al guardar.
 
 ## Estado de la versión
 

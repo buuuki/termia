@@ -661,6 +661,22 @@ class TermiaWindow(
             return
         terminal_settings = self.store.data.terminal
         theme = self.store.data.app.theme
+        sidebar = getattr(self, "sidebar", None)
+        if sidebar is not None:
+            inset = 0 if theme == DARK_GLOW_THEME else 12
+            sidebar.set_margin_top(inset)
+            sidebar.set_margin_bottom(inset)
+            sidebar.set_margin_start(inset)
+            sidebar.set_margin_end(0 if theme == DARK_GLOW_THEME else 12)
+        registry = getattr(self, "session_registry", None)
+        if registry is not None:
+            overflow = Gtk.Overflow.HIDDEN if theme == DARK_GLOW_THEME else Gtk.Overflow.VISIBLE
+            for session in registry.sessions():
+                for pane in session.panes.values():
+                    pane.container.set_overflow(Gtk.Overflow.VISIBLE)
+                    scroller = pane.terminal.get_parent()
+                    if isinstance(scroller, Gtk.ScrolledWindow):
+                        scroller.set_overflow(overflow)
         get_application = getattr(self, "get_application", None)
         application = get_application() if get_application is not None else None
         scope = getattr(application, "_window_theme_scope", None)
@@ -673,6 +689,8 @@ class TermiaWindow(
                 terminal_settings.split_separator_color,
                 terminal_settings.split_separator_thickness,
                 theme,
+                terminal_foreground=terminal_settings.foreground,
+                dark_glow_border_color=self.store.data.app.dark_glow_border_color,
             )
         )
         previous_provider = getattr(self, "_application_css_provider", None)
@@ -684,6 +702,7 @@ class TermiaWindow(
         self._application_css_provider = provider
 
     def _build_ui(self) -> None:
+        self.add_css_class("termia-main-window")
         window_overlay = Gtk.Overlay()
         self.set_child(window_overlay)
 
@@ -745,10 +764,11 @@ class TermiaWindow(
 
         sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         sidebar.set_size_request(120, -1)
-        sidebar.set_margin_top(4)
-        sidebar.set_margin_bottom(4)
-        sidebar.set_margin_start(4)
-        sidebar.set_margin_end(0)
+        sidebar_inset = 0 if self.store.data.app.theme == DARK_GLOW_THEME else 12
+        sidebar.set_margin_top(sidebar_inset)
+        sidebar.set_margin_bottom(sidebar_inset)
+        sidebar.set_margin_start(sidebar_inset)
+        sidebar.set_margin_end(0 if self.store.data.app.theme == DARK_GLOW_THEME else 12)
         self.sidebar = sidebar
         sidebar.add_css_class("termia-sidebar")
         body.set_start_child(sidebar)
@@ -1104,6 +1124,9 @@ class TermiaWindow(
         self.expand_all_button.set_tooltip_text(self.t("expand_all"))
         self.collapse_all_button.set_tooltip_text(self.t("collapse_all"))
         self.search_entry.set_placeholder_text(self.t("filter_servers"))
+        for session in self.session_registry.sessions():
+            for pane in session.panes.values():
+                self.update_pane_status(pane)
         self.render_detail()
 
 

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import gc
+import json
 import tempfile
 import unittest
 import weakref
@@ -17,7 +18,7 @@ from gi.repository import GLib, Gtk, Vte
 from termia.general_preferences import GeneralPreferencesMixin
 from termia.i18n import translate_key
 from termia.models import AppSettings
-from termia.stores import ConnectionStore, normalize_app_settings
+from termia.stores import ConnectionStore, SettingsStore, normalize_app_settings
 from termia.terminal_sessions import TerminalSessionsMixin
 
 
@@ -120,12 +121,23 @@ class AutomaticSelectionCopyTests(unittest.TestCase):
 
 
 class ClipboardPreferenceTests(unittest.TestCase):
-    def test_auto_copy_is_opt_in_for_old_or_invalid_settings(self):
-        self.assertFalse(AppSettings().copy_on_selection)
+    def test_auto_copy_defaults_to_enabled_and_rejects_invalid_values(self):
+        self.assertTrue(AppSettings().copy_on_selection)
         for value in (None, 0, 1, "true", False):
             with self.subTest(value=value):
                 self.assertFalse(normalize_app_settings(AppSettings(copy_on_selection=value)).copy_on_selection)
         self.assertTrue(normalize_app_settings(AppSettings(copy_on_selection=True)).copy_on_selection)
+
+    def test_loading_old_settings_enables_copy_without_overriding_saved_choices(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            for value, expected in ((None, True), (False, False), (True, True)):
+                with self.subTest(value=value):
+                    app = {} if value is None else {"copy_on_selection": value}
+                    original = json.dumps({"app": app})
+                    path.write_text(original, encoding="utf-8")
+                    self.assertEqual(SettingsStore(path).app.copy_on_selection, expected)
+                    self.assertEqual(path.read_text(encoding="utf-8"), original)
 
     def test_copy_and_paste_preferences_persist_independently(self):
         with tempfile.TemporaryDirectory() as directory:
