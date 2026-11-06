@@ -128,7 +128,31 @@ recolor VTE or the Notes editing surface. Terminal foreground/background pairs
 are saved per app theme and applied through VTE's existing color API; Notes
 editor colors remain independent.
 This is a fixed selectable theme, without a theme editor, animations, background
-blur or prototype imports. Tests are prepared but have not been executed.
+blur or prototype imports. The secondary-window changes have automated provider/scope coverage and
+selected visual checks on Ubuntu 26 Wayland; exhaustive interaction-state
+validation remains pending.
+
+### Secondary windows (#484)
+
+Retron applies the existing subtle outer frame to every in-process top-level
+window. Native headerbars share the main header treatment; native message
+alerts retain their compact, more specific rules. Portal windows remain owned
+by the desktop. Standard themes receive none of these rules.
+
+Secondary views opt into shared roles: `termia-dialog-content` for dialog
+content, `termia-surface-panel` for grouped Notes/snippet panels,
+`termia-content-frame` for selected scrolling regions, `termia-text-surface`
+for snippet editors/previews and updater logs, `termia-preference-frame` for
+Terminal preference groups, and `termia-content-paned` for the Notes splitter. Detached session pages use
+`termia-detached-surface` for an 8px inset, removed on reattachment.
+Roles are inert outside Retron. Scrollbars, switches and check/radio indicators
+receive scoped palette rules without replacing native interactions. Notes
+editor colors and VTE colors remain independently owned.
+
+The display provider is replaced on theme changes and the top-level observer
+updates existing and future windows. Tests exercise real secondary windows and
+foreground restoration after provider removal, as well as selector scoping.
+Full interactive review of every control/state remains a separate validation.
 
 ### Retron interaction styles (#484)
 
@@ -233,11 +257,11 @@ other component rules; this is not a complete replacement GTK theme.
 | Selector | Explicit styling |
 |---|---|
 | Window itself; `.termia-main-surface` | Background `canvas`, foreground `text` |
-| Main `window.termia-main-window` | Border `1px solid alpha(cyan, 0.50)`, radius `10px`, shadow `0 0 3px alpha(cyan, 0.05)`; backdrop border alpha `0.35`, shadow `none` |
+| Every in-process `window.termia-dark-glow` | Border `1px solid alpha(cyan, 0.50)`, radius `10px`, shadow `0 0 3px alpha(cyan, 0.05)`; backdrop border alpha `0.35`, shadow `none` |
 | `headerbar` | Background `surface`, foreground `text`, shadow `none` |
 | `.termia-session-tabs`, `.termia-session-tab-controls` | Background `transparent`, foreground `text`, shadow `none`; the main canvas `#0D1420` shows through both containers. Individual tab backgrounds, borders and active lighting remain independently styled. |
 | `.termia-sidebar`, `.termia-panel`, `.stat-card`, `frame.card` | Background `surface`, foreground `text`, border `1px solid border`, radius `10px`, shadow `none` |
-| `listview`, `listbox` | Background `surface`, foreground `text` |
+| `listview`, `list` | Background `surface`, foreground `text` |
 | `row` | Transparent background |
 | `row:hover` | Background `hover` |
 | `row:selected`; selected connection-row `.termia-sidebar-object` | Background `selection`, foreground `text`, radius `10px` |
@@ -524,8 +548,8 @@ All numerical CSS dimensions below are logical pixels.
 
 | Target/state | Exact values |
 |---|---|
-| `headerbar.termia-main-header` | Background image `none`, background `P`, foreground `F`, border `1px solid alpha(A, 0.18)`, radius `10px`, margin `8px 8px 0`, shadow `none` |
-| Main header `:backdrop` | Border color `alpha(A, 0.12)`, shadow `none`; same background and foreground |
+| `headerbar` (all Retron windows; native alerts override spacing) | Background image `none`, background `P`, foreground `F`, border `1px solid alpha(A, 0.18)`, radius `10px`, margin `8px 8px 0`, shadow `none` |
+| Header `:backdrop` | Border color `alpha(A, 0.12)`, shadow `none`; same background and foreground |
 | `.termia-main-surface` | Padding `8px` on every side, separating title bar, body and outer frame |
 | `.termia-sidebar` | Background `P`, foreground `F`, border `1px solid alpha(A, 0.35)`, radius `10px`, padding `8px 10px` |
 | Sidebar `:focus-within` | Border color `alpha(A, 0.65)`, shadow `inset 0 0 4px alpha(A, 0.10)` |

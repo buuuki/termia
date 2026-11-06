@@ -62,6 +62,7 @@ class ConnectionHistoryDialog:
         actions.append(search_entry)
 
         scroller = Gtk.ScrolledWindow()
+        scroller.add_css_class("termia-content-frame")
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_vexpand(True)
         list_box = Gtk.ListBox()

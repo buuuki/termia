@@ -57,6 +57,10 @@ published release.
 With Retron selected, General preferences also lets you choose the container
 border color or reset it to cyan; changes apply on Save.
 
+Retron also styles secondary window frames and shared Notes, snippets, SFTP, preferences
+and update-log containers. Notes editor colors remain independent; native desktop portal
+dialogs may retain the system theme.
+
 ## Release status
 
 **[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** is a

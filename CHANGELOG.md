@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- Extend Retron frames and native control colors to secondary windows; style
+  Notes, snippets, SFTP, history, preferences and update-log containers with
+  shared scoped roles, preserving standard themes and saved editor colors.
+  Correct the native ListBox CSS node selector and cover provider removal (#484).
+
 - Soften the Retron main-window and focused-terminal borders and halos,
   retaining a visible focus distinction without changing their geometry (#484).
 

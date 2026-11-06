@@ -50,6 +50,7 @@ a standard GTK control does not justify crossing those boundaries.
 
 | # | Surface | Standard GTK control | Source and Termia-owned behavior |
 |---:|---|---|---|
+| — | Retron secondary windows | Existing GTK windows, headers, lists, scrolling regions and native controls | `theme_styles.py` shares scoped frames and palette rules; views add presentation roles only. `DialogWindow` exposes `termia-dialog-content`; Notes retains its saved editor colors and GTK owns all interactions |
 | — | Retron border color | Native `Gtk.ColorButton` and `Gtk.Button` | `general_preferences.py`; opaque color selection, Reset and visibility while Retron is selected; General Save/Cancel owns persistence |
 | — | Native confirmation alerts (session restore, Notes deletion and related confirmations) | `Gtk.AlertDialog` | `app.py`, `notes_dialogs.py` and other alert callers; GTK retains modal/keyboard behavior and response indices; `theme_styles.py` scopes Retron message-window colors, border and compact spacing without replacing the native control |
 | — | Main header and server-sidebar separator | `Gtk.HeaderBar`, `Gtk.Paned` | `app.py` adds scoped classes; `theme_styles.py` styles borders, spacing and separator feedback while GTK owns centering, window dragging/controls and the native wide resize handle |

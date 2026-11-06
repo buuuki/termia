@@ -60,6 +60,11 @@ investigación, no una versión publicada.
 Con Retron seleccionado, Preferencias generales permite elegir el color de
 los bordes o restablecer el cian original; se aplica al guardar.
 
+Retron también aplica su estilo a los marcos de ventanas secundarias y los contenedores
+compartidos de Notas, snippets, SFTP, preferencias y registros del actualizador. Los
+colores del editor de Notas son independientes; los diálogos del portal del escritorio
+pueden conservar el tema del sistema.
+
 ## Estado de la versión
 
 **[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** es una

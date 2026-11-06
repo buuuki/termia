@@ -60,6 +60,11 @@ opció local d'investigació, no una versió publicada.
 Amb Retron seleccionat, Preferències generals permet triar el color de les
 vores o restablir el cian original; s'aplica en desar.
 
+Retron també aplica el seu estil als marcs de finestres secundàries i als contenidors
+compartits de Notes, snippets, SFTP, preferències i registres de l’actualitzador. Els
+colors de l’editor de Notes són independents; els diàlegs del portal de l’escriptori
+poden conservar el tema del sistema.
+
 ## Estat de la versió
 
 **[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** és una

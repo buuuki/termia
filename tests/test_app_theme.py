@@ -164,9 +164,10 @@ class AppThemeTests(unittest.TestCase):
         host = SimpleNamespace(
             store=SimpleNamespace(
                 data=SimpleNamespace(
-                    app=SimpleNamespace(theme="system"),
+                    app=SimpleNamespace(theme="system", dark_glow_border_color="#55BAC9"),
                     terminal=SimpleNamespace(
                         background="#202020",
+                        foreground="#ffffff",
                         split_separator_color="#008712",
                         split_separator_thickness=1,
                     ),

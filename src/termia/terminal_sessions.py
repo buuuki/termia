@@ -1464,6 +1464,7 @@ class TerminalSessionsMixin:
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_min_content_height(260)
+        scroller.add_css_class("termia-content-frame")
         scroller.set_vexpand(True)
         scroller.set_child(connection_list)
         connection_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)

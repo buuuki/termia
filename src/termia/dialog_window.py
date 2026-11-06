@@ -23,6 +23,7 @@ class DialogWindow(Gtk.Window):
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.set_child(outer)
         self._content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self._content.add_css_class("termia-dialog-content")
         self._content.set_vexpand(True)
         outer.append(self._content)
         self._actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)

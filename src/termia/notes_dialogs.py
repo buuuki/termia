@@ -255,11 +255,13 @@ class NotesDialogs:
         header_actions.append(self.import_export_menu_button)
 
         paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        paned.add_css_class("termia-content-paned")
         paned.set_position(330)
         paned.set_vexpand(True)
         root.append(paned)
 
         list_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        list_panel.add_css_class("termia-surface-panel")
         list_panel.set_vexpand(True)
         self.notes_tree_root = Gio.ListStore.new(NotesTreeNode)
         self.notes_tree_model = Gtk.TreeListModel.new(

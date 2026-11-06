@@ -1697,3 +1697,19 @@ manual installation commands or add a separate Copy commands or Copy log button.
 The log supports selection and Ctrl+C; a new check clears it.
 Verify that collapsing installation details keeps footer
 actions at the bottom, and dependency buttons do not stretch on window resize.
+
+## Retron secondary-window coverage (#484)
+
+- Launch `scripts/run_test_instance.sh --fresh`. Compare System, Light and Dark
+  before and after Retron with Notes, snippets, preferences and detached
+  terminals open. Repeat with windows opened after each transition.
+- Check focused/inactive window borders, native titles, panels, selections,
+  scrollbars, switches and keyboard focus. Resize windows and inspect clipping.
+- Preserve customized Notes/VTE colors. Check snippets' edit/preview pages,
+  multiline paste, history, connection forms, security prompts and native alerts.
+- Exercise statistics and SFTP enabled/disabled with synthetic data; check
+  updater logs with fixtures without contacting release hosting services.
+- Portal dialogs may retain the desktop theme. Record this separately from
+  in-process GTK dialogs. Run
+  `python3 scripts/run_sandbox_tests.py tests.test_styles tests.test_app_theme tests.test_theme_windows` for automated
+  provider/scope checks; these do not replace the visual review.

@@ -22,16 +22,17 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
 
     css = rule("", f"background-color: {c['canvas']}; color: {c['text']};")
     css += (
-        f"{root}.termia-main-window {{ border: 1px solid alpha({border_color}, 0.50); "
+        f"{root} {{ border: 1px solid alpha({border_color}, 0.50); "
         f"border-radius: 10px; box-shadow: 0 0 3px alpha({border_color}, 0.05); }} "
-        f"{root}.termia-main-window:backdrop {{ border-color: alpha({border_color}, 0.35); "
+        f"{root}:backdrop {{ border-color: alpha({border_color}, 0.35); "
         "box-shadow: none; } "
     )
     css += rule("headerbar", f"background-color: {c['surface']}; color: {c['text']}; box-shadow: none;")
+    css += rule(".titlebar:not(headerbar)", f"background-image: none; background-color: {c['surface']}; color: {c['text']}; box-shadow: none;")
     css += rule(".termia-session-tabs,.termia-session-tab-controls", f"background: transparent; color: {c['text']}; box-shadow: none;")
     css += rule(".termia-main-surface", f"background-color: {c['canvas']}; color: {c['text']};")
     css += rule(".termia-sidebar,.termia-panel,.stat-card,frame.card", f"background-color: {c['surface']}; color: {c['text']}; border: 1px solid {c['border']}; border-radius: 10px; box-shadow: none;")
-    css += rule("listview,listbox", f"background-color: {c['surface']}; color: {c['text']};")
+    css += rule("listview,list", f"background-color: {c['surface']}; color: {c['text']};")
     css += rule("row", "background-color: transparent;")
     css += rule("row:hover", f"background-color: {c['hover']};")
     css += rule("row:selected,.termia-connections-tree > row:selected .termia-sidebar-object", f"background-color: {c['selection']}; color: {c['text']}; border-radius: 10px;")
@@ -48,6 +49,21 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
     css += rule(".termia-tab-label", "background-color: transparent; border: 1px solid transparent; border-radius: 10px; box-shadow: none;")
     css += rule(".termia-notes-notebook > header,.termia-notes-notebook > header > tabs", f"background-color: {c['surface']};")
     css += rule(".dim-label", f"color: {c['muted']}; opacity: 1;")
+    # Native controls keep their geometry and interaction; only Retron colors
+    # change. Do not target textview globally: Notes owns its editor palette.
+    css += rule("scrollbar", "background-color: transparent;")
+    css += rule("scrollbar slider", f"background-image: none; background-color: alpha({border_color}, 0.35);")
+    css += rule("scrollbar slider:hover", f"background-color: alpha({border_color}, 0.65);")
+    css += rule("scrollbar slider:active", f"background-color: {border_color};")
+    css += rule("checkbutton check,checkbutton radio,switch", f"background-image: none; background-color: {c['control']}; border-color: {c['border']}; color: {c['text']};")
+    css += rule("checkbutton check:checked,checkbutton radio:checked,switch:checked", f"background-color: {c['selection']}; border-color: {border_color};")
+    css += rule("switch slider", f"background-image: none; background-color: {c['muted']};")
+    css += rule("checkbutton:disabled,switch:disabled", f"color: {c['muted']}; opacity: 0.5;")
+    css += rule("checkbutton:focus-visible,switch:focus-visible", f"outline: 2px solid {border_color}; outline-offset: 2px;")
+    css += rule("link,button.link", f"color: {c['cyan']};")
+    css += rule("link:visited,button.link:visited", f"color: {c['violet']};")
+    css += rule("progressbar trough,levelbar trough", f"background-color: {c['control']}; border-color: {c['border']};")
+    css += rule("progressbar progress,levelbar block.filled", f"background-color: {c['cyan']}; border-color: {c['cyan']};")
     for role in ("cyan", "violet", "green", "yellow", "red"):
         css += rule(f".termia-panel.termia-role-{role},.termia-notification.termia-role-{role}", f"border-color: {c[role]};")
         css += rule(f".termia-role-{role} progressbar > trough > progress", f"background-color: {c[role]}; border-color: {c[role]};")
@@ -68,7 +84,7 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
             "headerbar:backdrop", ".titlebar:not(headerbar):backdrop",
         )
     )
-    css += f"{titlebar_selectors} {{ background-image: none; background-color: {c['surface']}; color: {c['text']}; border: 0; border-radius: 9px 9px 0 0; box-shadow: none; min-height: 32px; padding: 4px 8px; }} "
+    css += f"{titlebar_selectors} {{ background-image: none; background-color: {c['surface']}; color: {c['text']}; border: 0; border-radius: 9px 9px 0 0; box-shadow: none; min-height: 32px; padding: 4px 8px; margin: 0; }} "
     return css
 
 
@@ -99,13 +115,14 @@ def build_interaction_css(
     rule(".termia-split-pane.horizontal > separator", "min-width: 8px;")
     rule(".termia-split-pane.vertical > separator", "min-height: 8px;")
 
-    rule("headerbar.termia-main-header",
+    rule("headerbar",
          f"background-image: none; background-color: {surface}; color: {foreground}; "
          f"border: 1px solid alpha({accent}, 0.18); border-radius: 10px; "
          "margin: 8px 8px 0; box-shadow: none;")
-    rule("headerbar.termia-main-header:backdrop",
+    rule("headerbar:backdrop",
          f"border-color: alpha({accent}, 0.12); box-shadow: none;")
     rule(".termia-main-surface", "padding: 8px;")
+    rule(".termia-detached-surface", "padding: 8px;")
     rule(".termia-sidebar",
          f"background-color: {surface}; color: {foreground}; "
          f"border: 1px solid alpha({accent}, 0.35); border-radius: 10px; padding: 8px 10px;")
@@ -122,6 +139,32 @@ def build_interaction_css(
     rule(".termia-session-tab-controls", "padding: 0; margin-bottom: 8px;")
     rule(".termia-session-tabs", "padding: 0; border-spacing: 8px;")
     rule(".termia-tab-label", "margin: 0;")
+
+    # Explicit roles opt secondary surfaces into the shared frame treatment.
+    # Inset borders avoid resizing or clipping existing scrollable content.
+    rule(".termia-surface-panel",
+         f"background-color: {surface}; color: {foreground}; border-radius: 10px; "
+         f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.35); padding: 8px;")
+    rule(".termia-dialog-content",
+         f"background-color: {surface}; color: {foreground}; border-radius: 10px; "
+         f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.35); margin: 8px; padding: 8px;")
+    rule(".termia-content-frame,.termia-notes-editor,frame.termia-preference-frame",
+         f"border: 1px solid alpha({accent}, 0.35); border-radius: 10px;")
+    rule(".termia-surface-panel:focus-within,.termia-content-frame:focus-within,.termia-notes-editor:focus-within",
+         f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.50);")
+    rule(".termia-text-surface,.termia-text-surface textview,.termia-text-surface textview > text,.termia-text-surface textview > border",
+         f"background-color: {surface}; color: {foreground};")
+    rule(".termia-text-surface textview", "padding: 8px;")
+    rule(".termia-text-surface textview > text > selection",
+         f"background-color: {selected}; color: {foreground};")
+    rule("paned.termia-content-paned > separator",
+         "background-image: none; background-color: transparent; border: 0; min-width: 8px;")
+    rule("paned.termia-content-paned > separator:hover",
+         f"background-color: alpha({accent}, 0.12);")
+    rule("flowboxchild.termia-snippet-category-tile > frame.termia-snippet-category-frame",
+         f"background-color: {surface}; color: {foreground}; border-color: alpha({accent}, 0.35);")
+    rule("flowboxchild.termia-snippet-category-tile:selected > frame.termia-snippet-category-frame",
+         f"background-color: {selected}; color: {foreground}; border-color: {accent};")
 
     preview = ".termia-terminal-paste-preview"
     rule(f"{preview},{preview} textview,{preview} textview > text,{preview} textview > border",

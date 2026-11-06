@@ -70,6 +70,8 @@ class UpdateDialog(Gtk.Window):
         self.log_buffer = self.log_view.get_buffer()
         self.log_end = self.log_buffer.create_mark(None, self.log_buffer.get_end_iter(), False)
         log_scroller = Gtk.ScrolledWindow()
+        log_scroller.add_css_class("termia-content-frame")
+        log_scroller.add_css_class("termia-text-surface")
         log_scroller.set_min_content_height(280)
         log_scroller.set_vexpand(True)
         log_scroller.set_child(self.log_view)

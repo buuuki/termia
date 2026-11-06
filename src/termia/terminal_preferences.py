@@ -158,6 +158,7 @@ class TerminalPreferencesMixin:
         grid.attach(palette_label, 0, len(rows), 1, 1)
         grid.attach(palette_box, 1, len(rows), 3, 1)
         appearance_frame = Gtk.Frame(label=self.t("terminal_appearance"))
+        appearance_frame.add_css_class("termia-preference-frame")
         appearance_frame.set_child(grid)
         preferences_box.append(appearance_frame)
 
@@ -244,6 +245,7 @@ class TerminalPreferencesMixin:
         prompt_note.add_css_class("dim-label")
         prompt_grid.attach(prompt_note, 0, 4, 4, 1)
         prompt_frame = Gtk.Frame(label=self.t("local_prompt"))
+        prompt_frame.add_css_class("termia-preference-frame")
         prompt_frame.set_child(prompt_grid)
         preferences_box.append(prompt_frame)
 

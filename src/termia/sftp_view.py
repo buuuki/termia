@@ -88,6 +88,7 @@ class SFTPWindow(Gtk.Window):
         self.rows.set_activate_on_single_click(False)
         self.ui_signals.connect(self.rows, "row-activated", self.activate_row)
         scroll = Gtk.ScrolledWindow(vexpand=True)
+        scroll.add_css_class("termia-content-frame")
         scroll.set_child(self.rows)
         box.append(scroll)
         self.progress = Gtk.ProgressBar(show_text=True)
