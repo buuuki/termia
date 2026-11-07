@@ -4,6 +4,30 @@
 
 ### Fixed
 
+- Enclose dialog content and action buttons in one shared Retron panel,
+  preserving action behavior and the separate native message-alert style (#484).
+
+- Add subtle outer-frame feedback while holding native GTK title handles;
+  preserve native movement and exclude message alerts (#484).
+
+- Paint the Retron window canvas once at 50% opacity and reduce the default
+  outer halo to 2px blur at 5% opacity; preserve opaque panel and control colors
+  (#484).
+
+- Narrow the initial Notes tree pane and its search minimum; slim the Retron
+  divider and give the appearance toolbar equal 8px gaps below the tabs and
+  above the editor; retain an 8px tabs-to-editor gap when the toolbar is hidden,
+  including on restart (#484).
+
+- Make the Retron Notes tab container transparent, use directional toolbar
+  toggles, and unify the window, header, tree, editor, toolbar and tab frames
+  with the tree's 1px inset line and focus intensity. Round all four Notes tab
+  corners like connection tabs (#484).
+
+- Remove an unused variable from the Retron secondary-window regression test
+  and align clipboard security guidance with the default selection-copy setting
+  (#484).
+
 - Extend Retron frames and native control colors to secondary windows; style
   Notes, snippets, SFTP, history, preferences and update-log containers with
   shared scoped roles, preserving standard themes and saved editor colors.

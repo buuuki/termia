@@ -72,6 +72,56 @@ and proposed controls.
 
 ## Protected Behaviors
 
+### Shared dialog panel frame
+
+- In Retron, open General preferences and verify that one panel frame encloses
+  both the options and Save/Cancel buttons, with no separate inner frame. Check
+  aligned horizontal insets, keyboard focus, Save, Cancel and Escape. Switch
+  between Retron and System/Light/Dark and reopen General; the shared frame is
+  exclusive to Retron. Native message alerts must retain their separate style.
+
+- Open both New connection and Edit connection in Retron. Their single panel
+  must also enclose all fields, the credential warning and Cancel/Save. Exercise
+  Cancel, Escape, validation, Save and the private-key picker with synthetic
+  data. Existing fields, credentials and selected groups must be preserved.
+
+- Repeat the single-frame check for Terminal and Security preferences, groups,
+  local profiles, workspace names, tab names, Notes/category forms, optional
+  tools, SFTP/SCP prompts, split-connection selection, history, statistics, Help
+  and Data Locations. Their content and complete action row must stay inside
+  the same panel. Check narrow/tall layouts, keyboard focus and closing or
+  cancelling without saving. Use only synthetic data for credentials and
+  transfer prompts; no real remote connection is required for a layout review.
+
+### Retron title-hold feedback
+
+- Hold the primary mouse button on an application-owned GTK titlebar and move
+  the window. Verify the outer frame brightens slightly without changing size,
+  then returns immediately on release. Repeat a stationary hold, Escape during
+  movement, hide/close, theme switching and application shutdown; no highlight
+  or timer may remain. Test main, Notes, detached and secondary windows.
+- Check titlebar buttons, menus, double-click maximization and keyboard window
+  movement retain their native behavior. Buttons must not trigger the highlight.
+  Message alerts must retain their original style. Verify real Wayland/X11
+  compositor behavior separately; server-owned title decorations outside the
+  GTK surface cannot produce this application-side visual state.
+
+### Retron canvas transparency
+
+- With Retron and a default or custom border color, compare focused and unfocused
+  terminals: both scroller borders must be 1px, at 35% opacity without focus
+  and 50% with focus. Focus also adds the existing exterior halo (3px blur,
+  5% opacity). Verify nested splits and
+  detached panes, preserving terminal colors and the other container borders.
+- On a composited desktop, select Retron and put the window over contrasting
+  backgrounds. Verify that the darkest canvas uses 50% opacity, with no second
+  dark canvas layer; panels, controls, text and configured terminal backgrounds
+  must retain their own opacity. The default outer halo has 2px blur at 5%
+  opacity; inactive windows have no halo. Check rounded edges, menus, secondary
+  windows, native alerts, Notes frame overrides and detached terminals. Switch
+  to System/Light/Dark and verify the Retron transparency is removed. A private
+  render can verify alpha values but does not establish desktop compositing.
+
 The optional [Docker laboratory](../tools/docker-lab/README.md) provides a
 private browser desktop and synthetic SSH/SFTP/SCP, memory and lifecycle probes.
 When modifying that harness, check its allowlisted contexts, ignored generated
@@ -646,6 +696,24 @@ Long measurements and release-platform checks remain separate validation work.
   or search entry. Their vertical position stays fixed independently of the editor.
   When horizontal scrolling is needed, reserve space below the controls instead
   of covering them. Keep toolbar controls compact and list text slightly smaller.
+- In Retron, verify the Notes tab container is transparent while individual tabs
+  retain their active/inactive states. The toolbar toggle points up when visible
+  and down when hidden, including after restart. Check the editor and toolbar's
+  rounded borders at all four corners, with and without focus and at narrow
+  window widths. Compare the tree, editor, toolbar, tabs, headerbar and outer
+  frame: each uses the same 1px inset line (35% without focus, 50% with focus),
+  10px corners and no exterior halo. Notes tabs must have all four corners
+  rounded like connection tabs; selection and hover must not add a stronger
+  border or halo. Scroll in both directions, change editor colors, switch
+  to System/Light/Dark and back, and verify text, line numbers, selection,
+  keyboard focus, tab reordering and autosave remain usable.
+- Open Notes with its narrower 280px initial tree pane and 250px search minimum.
+  In Retron, drag the 4px divider in both directions and hide/show the tree;
+  its last width must be restored. Check that the toolbar has equal 8px gaps
+  below the tabs and above the editor, including after hiding and
+  restoring the toolbar. With the toolbar hidden, the tabs-to-editor gap must
+  also be 8px. Restart with the toolbar hidden and verify that gap is retained.
+  Resize the window and verify controls remain usable.
 - Notes are plain text. Verify that typing and saving preserves Markdown-looking
   punctuation such as `**`, `#`, and backticks, along with Unicode, spaces, and
   line breaks. Existing note content must remain unchanged when opened and saved.

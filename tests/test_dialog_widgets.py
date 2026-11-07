@@ -80,6 +80,9 @@ class DialogWidgetTests(unittest.TestCase):
                 self.addCleanup(dialog.destroy)
                 with patch("termia.connection_dialogs.DialogWindow", return_value=dialog):
                     host.show_server_dialog(existing)
+                self.assertTrue(dialog.get_child().has_css_class("termia-dialog-panel"))
+                save = dialog.get_widget_for_response(Gtk.ResponseType.OK)
+                self.assertIs(save.get_parent().get_parent(), dialog.get_child())
                 grid = dialog.get_content_area().get_first_child()
                 field = grid.get_child_at(1, 6)
                 entry = field.get_first_child()

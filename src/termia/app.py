@@ -4,6 +4,7 @@
 import argparse
 import signal
 from time import monotonic
+from weakref import WeakKeyDictionary
 
 import gi
 
@@ -1135,6 +1136,10 @@ class WindowThemeScope:
 
     def __init__(self):
         self.enabled = False
+        self._title_controllers = WeakKeyDictionary()
+        self._held_window = None
+        self._held_device = None
+        self._title_poll = None
         self.model = Gtk.Window.get_toplevels()
         self.handler = self.model.connect("items-changed", self.refresh)
 
@@ -1145,15 +1150,129 @@ class WindowThemeScope:
     def refresh(self, *_args) -> None:
         if self.model is None:
             return
+        windows = set()
         for index in range(self.model.get_n_items()):
             window = self.model.get_item(index)
             if window is not None:
+                windows.add(window)
                 if self.enabled:
                     window.add_css_class(DARK_GLOW_CLASS)
+                    if isinstance(window, Gtk.Window):
+                        self._watch_titlebar(window)
                 else:
                     window.remove_css_class(DARK_GLOW_CLASS)
+                    self._unwatch_titlebar(window)
+        for window in list(self._title_controllers):
+            if window not in windows:
+                self._unwatch_titlebar(window)
+
+    def _watch_titlebar(self, window: Gtk.Window) -> None:
+        if window in self._title_controllers:
+            return
+        click = Gtk.GestureClick()
+        click.set_button(1)
+        click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        pressed = click.connect("pressed", self._on_title_pressed, window.weak_ref())
+        released = click.connect("released", self._on_title_released, window.weak_ref())
+        keys = Gtk.EventControllerKey()
+        keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        key_pressed = keys.connect("key-pressed", self._on_title_key, window.weak_ref())
+        unmap_handler = window.connect("unmap", self._on_title_unmap)
+        window.add_controller(click)
+        window.add_controller(keys)
+        self._title_controllers[window] = (
+            ((click.weak_ref(), (pressed, released)), (keys.weak_ref(), (key_pressed,))),
+            unmap_handler,
+        )
+
+    def _unwatch_titlebar(self, window: Gtk.Window) -> None:
+        if self._held_window is not None and self._held_window() is window:
+            self._clear_title_feedback()
+        registration = self._title_controllers.pop(window, None)
+        if registration is None:
+            return
+        controllers, unmap_handler = registration
+        for controller_ref, handlers in controllers:
+            controller = controller_ref()
+            if controller is not None:
+                for handler in handlers:
+                    if controller.handler_is_connected(handler):
+                        controller.disconnect(handler)
+                if controller.get_widget() is window:
+                    window.remove_controller(controller)
+        if window.handler_is_connected(unmap_handler):
+            window.disconnect(unmap_handler)
+
+    @staticmethod
+    def _is_title_target(widget: Gtk.Widget | None) -> bool:
+        while widget is not None:
+            if isinstance(widget, (Gtk.Button, Gtk.MenuButton, Gtk.Editable,
+                                   Gtk.DropDown, Gtk.Switch, Gtk.Range, Gtk.WindowControls)):
+                return False
+            if isinstance(widget, Gtk.WindowHandle):
+                return True
+            widget = widget.get_parent()
+        return False
+
+    def _on_title_pressed(self, gesture, _count: int, x: float, y: float, window_ref) -> None:
+        window = window_ref()
+        if not self.enabled or window is None or window.has_css_class("message"):
+            return
+        device = gesture.get_current_event_device()
+        if device is not None and self._is_title_target(window.pick(x, y, Gtk.PickFlags.DEFAULT)):
+            self._clear_title_feedback()
+            self._held_window = window_ref
+            self._held_device = device
+            window.add_css_class("termia-title-held")
+            # Native window moves reset GTK gestures and may consume the
+            # release. Query the pointer surface without claiming the gesture.
+            self._title_poll = GLib.timeout_add(50, self._poll_title_feedback)
+
+    def _on_title_released(self, _gesture, _count, _x, _y, window_ref) -> None:
+        if self._held_window is not None and self._held_window() is window_ref():
+            self._clear_title_feedback()
+
+    def _on_title_key(self, _controller, keyval, _keycode, _state, window_ref) -> bool:
+        if keyval == Gdk.KEY_Escape and self._held_window is not None and self._held_window() is window_ref():
+            self._clear_title_feedback()
+        return False
+
+    def _poll_title_feedback(self) -> bool:
+        window = self._held_window() if self._held_window is not None else None
+        if not self.enabled or window is None or not window.get_mapped() or self._held_device is None:
+            self._title_poll = None
+            self._clear_title_feedback()
+            return GLib.SOURCE_REMOVE
+        surface = window.get_surface()
+        if surface is None:
+            self._title_poll = None
+            self._clear_title_feedback()
+            return GLib.SOURCE_REMOVE
+        over, _x, _y, state = surface.get_device_position(self._held_device)
+        # A compositor may temporarily own the pointer during native movement.
+        # Wait for its return rather than treating missing surface focus as up.
+        if over and not state & Gdk.ModifierType.BUTTON1_MASK:
+            self._title_poll = None
+            self._clear_title_feedback()
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
+
+    def _on_title_unmap(self, window: Gtk.Window) -> None:
+        if self._held_window is not None and self._held_window() is window:
+            self._clear_title_feedback()
+
+    def _clear_title_feedback(self) -> None:
+        if self._title_poll is not None:
+            GLib.source_remove(self._title_poll)
+            self._title_poll = None
+        window = self._held_window() if self._held_window is not None else None
+        if window is not None:
+            window.remove_css_class("termia-title-held")
+        self._held_window = None
+        self._held_device = None
 
     def close(self, *_args) -> None:
+        self._clear_title_feedback()
         if self.model is not None:
             self.set_enabled(False)
             self.model.disconnect(self.handler)

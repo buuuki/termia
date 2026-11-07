@@ -42,9 +42,11 @@ use it only when the terminal is waiting for a password.
 
 ## Terminal selection clipboard
 
-Automatic selection copying is opt-in in General preferences. When enabled,
+Automatic selection copying is enabled by default for new profiles and existing
+settings without an explicit choice. A saved disabled choice stays disabled;
+the option can be turned off in General preferences. When enabled,
 completed terminal selections replace the standard system clipboard. Other
-applications and clipboard managers may read or retain that text; leave the
+applications and clipboard managers may read or retain that text; keep the
 option disabled when selecting sensitive terminal output. Termia's copy
 notification shows only the character count, not the selected text, and this
 feature does not save clipboard contents to Termia's configuration or logs.

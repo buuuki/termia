@@ -20,17 +20,19 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
     def rule(selectors: str, declarations: str) -> str:
         return ", ".join(f"{root}{' ' if selector else ''}{selector}" for selector in selectors.split(",")) + " { " + declarations + " } "
 
-    css = rule("", f"background-color: {c['canvas']}; color: {c['text']};")
+    css = rule("", f"background-color: alpha({c['canvas']}, 0.50); color: {c['text']};")
     css += (
         f"{root} {{ border: 1px solid alpha({border_color}, 0.50); "
-        f"border-radius: 10px; box-shadow: 0 0 3px alpha({border_color}, 0.05); }} "
+        f"border-radius: 10px; box-shadow: 0 0 2px alpha({border_color}, 0.05); }} "
         f"{root}:backdrop {{ border-color: alpha({border_color}, 0.35); "
         "box-shadow: none; } "
     )
     css += rule("headerbar", f"background-color: {c['surface']}; color: {c['text']}; box-shadow: none;")
     css += rule(".titlebar:not(headerbar)", f"background-image: none; background-color: {c['surface']}; color: {c['text']}; box-shadow: none;")
     css += rule(".termia-session-tabs,.termia-session-tab-controls", f"background: transparent; color: {c['text']}; box-shadow: none;")
-    css += rule(".termia-main-surface", f"background-color: {c['canvas']}; color: {c['text']};")
+    # The window paints the translucent canvas once; a second layer would
+    # raise its effective opacity from 50% to 75%.
+    css += rule(".termia-main-surface", f"background-color: transparent; color: {c['text']};")
     css += rule(".termia-sidebar,.termia-panel,.stat-card,frame.card", f"background-color: {c['surface']}; color: {c['text']}; border: 1px solid {c['border']}; border-radius: 10px; box-shadow: none;")
     css += rule("listview,list", f"background-color: {c['surface']}; color: {c['text']};")
     css += rule("row", "background-color: transparent;")
@@ -47,7 +49,8 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
     css += rule("entry:disabled", f"color: {c['muted']}; border-color: {c['border']};")
     css += rule("button:focus-visible,entry:focus-within,spinbutton:focus-within", f"outline: 2px solid {c['cyan']}; outline-offset: 2px;")
     css += rule(".termia-tab-label", "background-color: transparent; border: 1px solid transparent; border-radius: 10px; box-shadow: none;")
-    css += rule(".termia-notes-notebook > header,.termia-notes-notebook > header > tabs", f"background-color: {c['surface']};")
+    css += rule(".termia-notes-notebook,.termia-notes-notebook > stack,.termia-notes-notebook > header,.termia-notes-notebook > header > tabs",
+                "background: transparent; border: 0; box-shadow: none;")
     css += rule(".dim-label", f"color: {c['muted']}; opacity: 1;")
     # Native controls keep their geometry and interaction; only Retron colors
     # change. Do not target textview globally: Notes owns its editor palette.
@@ -103,6 +106,8 @@ def build_interaction_css(
     surface = DARK_GLOW_COLORS["surface"]
     selection_background = DARK_GLOW_COLORS["selection"]
     selection_foreground = DARK_GLOW_COLORS["text"]
+    panel_border = f"inset 0 0 0 1px alpha({accent}, 0.35)"
+    panel_focus_border = f"inset 0 0 0 1px alpha({accent}, 0.50)"
     prefix = f"window.{DARK_GLOW_CLASS} "
     rules = []
 
@@ -144,21 +149,35 @@ def build_interaction_css(
     # Inset borders avoid resizing or clipping existing scrollable content.
     rule(".termia-surface-panel",
          f"background-color: {surface}; color: {foreground}; border-radius: 10px; "
-         f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.35); padding: 8px;")
-    rule(".termia-dialog-content",
+         f"box-shadow: {panel_border}; padding: 8px;")
+    rule(".termia-dialog-panel",
          f"background-color: {surface}; color: {foreground}; border-radius: 10px; "
-         f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.35); margin: 8px; padding: 8px;")
+         f"box-shadow: {panel_border}; margin: 8px; padding: 8px;")
+    rule(".termia-dialog-panel:focus-within",
+         f"box-shadow: {panel_focus_border};")
+    rule(".termia-dialog-panel > .termia-dialog-content",
+         "background-color: transparent; border: 0; border-radius: 0; "
+         "box-shadow: none; margin: 0; padding: 0;")
     rule(".termia-content-frame,.termia-notes-editor,frame.termia-preference-frame",
          f"border: 1px solid alpha({accent}, 0.35); border-radius: 10px;")
     rule(".termia-surface-panel:focus-within,.termia-content-frame:focus-within,.termia-notes-editor:focus-within",
-         f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.50);")
+         f"box-shadow: {panel_focus_border};")
+    # Keep opaque scrolling children inside the frame's rounded boundary.
+    rule("frame.termia-notes-editor,frame.termia-notes-toolbar-frame",
+         f"border: 0; border-radius: 10px; box-shadow: {panel_border}; margin: 3px;")
+    rule("frame.termia-notes-editor", "padding: 2px; margin-top: 0;")
+    rule(".termia-notes-toolbar-hidden > frame.termia-notes-editor", "margin-top: 8px;")
+    rule("frame.termia-notes-toolbar-frame",
+         f"background-color: {surface}; padding: 6px; margin-top: 8px; margin-bottom: 0;")
+    rule("frame.termia-notes-editor:focus-within,frame.termia-notes-toolbar-frame:focus-within",
+         f"box-shadow: {panel_focus_border};")
     rule(".termia-text-surface,.termia-text-surface textview,.termia-text-surface textview > text,.termia-text-surface textview > border",
          f"background-color: {surface}; color: {foreground};")
     rule(".termia-text-surface textview", "padding: 8px;")
     rule(".termia-text-surface textview > text > selection",
          f"background-color: {selected}; color: {foreground};")
     rule("paned.termia-content-paned > separator",
-         "background-image: none; background-color: transparent; border: 0; min-width: 8px;")
+         "background-image: none; background-color: transparent; border: 0; min-width: 4px;")
     rule("paned.termia-content-paned > separator:hover",
          f"background-color: alpha({accent}, 0.12);")
     rule("flowboxchild.termia-snippet-category-tile > frame.termia-snippet-category-frame",
@@ -212,6 +231,30 @@ def build_interaction_css(
              f"outline: 2px solid {accent}; outline-offset: -3px;")
     rule(".termia-tab-label.dragging",
          f"background-color: alpha({accent}, 0.25); opacity: 0.72;")
+
+    # Notes uses its tree panel's exact frame treatment for every container.
+    # Keep these rules after tab states so hover/selection cannot add a halo.
+    notes_window = f"window.{DARK_GLOW_CLASS}.termia-notes-window"
+    notes_frames = [notes_window] + [
+        f"{notes_window} {selector}" for selector in (
+            "headerbar", ".termia-surface-panel", "frame.termia-notes-editor",
+            "frame.termia-notes-toolbar-frame", note_tab,
+        )
+    ]
+    rules.append(
+        ", ".join(notes_frames)
+        + f" {{ border: 0; border-radius: 10px; box-shadow: {panel_border}; }} "
+    )
+    rules.append(
+        ", ".join(f"{selector}:focus-within" for selector in notes_frames)
+        + f" {{ box-shadow: {panel_focus_border}; }} "
+    )
+    held = f"window.{DARK_GLOW_CLASS}.termia-title-held:not(.message)"
+    rules.append(f"{held} {{ border-color: alpha({accent}, 0.65); "
+                 f"box-shadow: 0 0 2px alpha({accent}, 0.08); }} ")
+    rules.append(f"{held}.termia-notes-window {{ "
+                 f"box-shadow: inset 0 0 0 1px alpha({accent}, 0.65), "
+                 f"0 0 2px alpha({accent}, 0.08); }} ")
 
     menu_items = (".termia-menu-popover modelbutton",
                   "dropdown.termia-choice popover listview > row")

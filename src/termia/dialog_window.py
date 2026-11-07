@@ -21,6 +21,7 @@ class DialogWindow(Gtk.Window):
         super().__init__(**kwargs)
         self._responses: dict[int, Gtk.Button] = {}
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        outer.add_css_class("termia-dialog-panel")
         self.set_child(outer)
         self._content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self._content.add_css_class("termia-dialog-content")

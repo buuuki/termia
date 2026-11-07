@@ -94,7 +94,7 @@ Termia's application appearance is selected in General preferences.
 | System | Follows GNOME `color-scheme`; resets the app override when the scheme is unknown | Inherited from GTK |
 | Light | Requests GTK's light variant | Inherited from GTK |
 | Dark | Requests GTK's dark variant | Inherited from GTK |
-| Retron (local research) | Requests GTK's dark variant | Fixed opaque palette from `theme_styles.py`, 1px borders, 10px corners and soft active-pane/tab lighting |
+| Retron (local research) | Requests GTK's dark variant | Fixed palette from `theme_styles.py`, a 50%-opaque window canvas, opaque panels, 1px borders, 10px corners and soft active-pane/tab lighting |
 
 The shared application CSS provider is replaced when the appearance changes so
 rules from an earlier mode do not remain active.
@@ -132,6 +132,20 @@ blur or prototype imports. The secondary-window changes have automated provider/
 selected visual checks on Ubuntu 26 Wayland; exhaustive interaction-state
 validation remains pending.
 
+The darkest window background is `#0D1420`, painted at 50% opacity
+(`rgba(13, 20, 32, 0.5)`). The main content root is transparent so this canvas
+is painted only once; painting two 50%-opaque layers would produce 75% opacity.
+Panels, controls, text, terminal colors and native-alert backgrounds retain
+their own colors and opacity. This changes background paint rather than the
+opacity of the whole widget tree. Actual desktop transparency depends on the
+window compositor; it adds no blur. Check the result on the target desktop.
+
+The default outer window border is 1px at 50% opacity, with a 10px radius.
+Its halo uses the selected border color with 2px blur, zero offset/spread and
+5% opacity (95% transparency). Blur radius and opacity are separate values.
+Inactive windows use a 35%-opaque border and no halo. Notes retains its
+separately documented inset-only frame; native alerts retain their own frame.
+
 ### Secondary windows (#484)
 
 Retron applies the existing subtle outer frame to every in-process top-level
@@ -139,8 +153,8 @@ window. Native headerbars share the main header treatment; native message
 alerts retain their compact, more specific rules. Portal windows remain owned
 by the desktop. Standard themes receive none of these rules.
 
-Secondary views opt into shared roles: `termia-dialog-content` for dialog
-content, `termia-surface-panel` for grouped Notes/snippet panels,
+Secondary views opt into shared roles: `termia-dialog-panel` for complete dialog
+panels, `termia-dialog-content` for their inner content, `termia-surface-panel` for grouped Notes/snippet panels,
 `termia-content-frame` for selected scrolling regions, `termia-text-surface`
 for snippet editors/previews and updater logs, `termia-preference-frame` for
 Terminal preference groups, and `termia-content-paned` for the Notes splitter. Detached session pages use
@@ -148,6 +162,47 @@ Terminal preference groups, and `termia-content-paned` for the Notes splitter. D
 Roles are inert outside Retron. Scrollbars, switches and check/radio indicators
 receive scoped palette rules without replacing native interactions. Notes
 editor colors and VTE colors remain independently owned.
+
+Every `DialogWindow` supplies `termia-dialog-panel` on its outer GTK box. A
+single Retron surface and inset frame enclose both content and the complete
+action row, including General, connections, Terminal/Security preferences,
+groups, local profiles, workspaces, Notes forms, optional tools, transfer/SFTP
+prompts and informational dialogs. Inner content areas have no separate frame
+or extra CSS insets. Native message alerts do not use this component and keep
+their separate treatment.
+The outer panel uses the shared 1px inset line (35%, 50% with focus), 10px
+corners, 8px margin and 8px padding. Existing option and action-row margins
+remain in place. Buttons keep their original actions, order and keyboard behavior.
+
+Holding the primary mouse button over an application-owned native GTK title
+handle adds `termia-title-held` to that window. Its exterior border rises to
+65% opacity with a 2px halo at 8% opacity; Notes retains its inset line at 65%
+and adds that same halo. Geometry and canvas opacity do not change. Native
+title buttons and other interactive controls do not trigger the effect, and
+message alerts are excluded. GTK/compositor window movement is never claimed
+or replaced. One 50ms device-state check runs only while held, covering releases
+consumed by native movement; release, Escape delivered to the application,
+unmapping, theme disable and shutdown clear the state. Server-owned decorations
+outside the GTK surface cannot be observed by this controller. Compositor-side
+event routing still requires interactive Wayland/X11 validation.
+
+Notes uses native `Gtk.Frame` containers around its editor scroller and toolbar
+scroller. In Retron, the tree, editor, toolbar, notebook tabs, headerbar and
+outer window frame share a 1px inset line at 35% of the selected border color,
+raised to 50% with focus within. All use 10px corners without an exterior halo;
+hover and selected tabs retain this same line treatment. Notes tabs have all
+four corners rounded like connection tabs. Editor and toolbar retain 3px
+horizontal margins. The toolbar's top margin is 8px and its bottom margin is
+zero; the editor's top margin is zero, giving equal 8px gaps from tabs to
+toolbar and from toolbar to editor. When the toolbar is hidden, its container's
+`termia-notes-toolbar-hidden` class gives the editor an 8px top margin, keeping
+the same gap below the tabs, including when restoring a saved hidden toolbar.
+The editor frame clips its child to the rounded boundary
+and reserves 2px padding; the toolbar frame uses the shared surface background
+and 6px padding. The native Notes divider has a 4px minimum width. The notebook container,
+stack and tab header are transparent; individual tab states retain their colors.
+The native toolbar toggle points up to hide and down to show, including when
+restoring its saved visibility.
 
 The display provider is replaced on theme changes and the top-level observer
 updates existing and future windows. Tests exercise real secondary windows and
@@ -166,8 +221,9 @@ Rules target `.termia-terminal-pane` and its scroller/status children,
 `dropdown.termia-choice popover listview`. The shared dropdown factory supplies
 `termia-choice`; native selection and activation remain GTK-owned.
 
-Terminal scrollers reserve a constant 1px border on every side; focus within
-brightens it and adds a 3px, low-opacity outer shadow. This reduces available
+Terminal scrollers reserve a constant 1px border on every side, at 35% opacity
+without focus and 50% with focus. Focus within also adds a 3px outer shadow at
+5% opacity. This reduces available
 terminal content space by 2px per axis compared with borderless containers.
 VTE content additionally has 6px vertical and 8px horizontal CSS padding in
 Retron only. No foreground, background or ANSI colors are overridden.
@@ -203,8 +259,8 @@ reduced only where an explicit `alpha(...)` expression is used.
 
 | Key | Exact value | Role/application |
 |---|---|---|
-| `canvas` | `#0D1420` | Window and `.termia-main-surface` background |
-| `surface` | `#182231` | Header, sidebar, panels, cards, lists, popover contents and Notes tab header |
+| `canvas` | `#0D1420` | Window background painted at 50% opacity; main content root is transparent. Native-alert backgrounds retain the opaque base color |
+| `surface` | `#182231` | Header, sidebar, panels, cards, lists, popover contents and Notes toolbar frame |
 | `control` | `#1C2A3C` | All button backgrounds, entries and spin buttons |
 | `hover` | `#23364B` | Hover backgrounds and enabled menu/dropdown focus |
 | `selection` | `#29475A` | Selected rows, active tabs and pressed/selected menu items |
@@ -256,8 +312,9 @@ other component rules; this is not a complete replacement GTK theme.
 
 | Selector | Explicit styling |
 |---|---|
-| Window itself; `.termia-main-surface` | Background `canvas`, foreground `text` |
-| Every in-process `window.termia-dark-glow` | Border `1px solid alpha(cyan, 0.50)`, radius `10px`, shadow `0 0 3px alpha(cyan, 0.05)`; backdrop border alpha `0.35`, shadow `none` |
+| Window itself | Background `alpha(canvas, 0.50)`, foreground `text` |
+| `.termia-main-surface` | Transparent background, foreground `text`; avoids stacking a second canvas layer |
+| Every in-process `window.termia-dark-glow` | Border `1px solid alpha(cyan, 0.50)`, radius `10px`, shadow `0 0 2px alpha(cyan, 0.05)`; backdrop border alpha `0.35`, shadow `none`; Notes and native alerts use their documented overrides |
 | `headerbar` | Background `surface`, foreground `text`, shadow `none` |
 | `.termia-session-tabs`, `.termia-session-tab-controls` | Background `transparent`, foreground `text`, shadow `none`; the main canvas `#0D1420` shows through both containers. Individual tab backgrounds, borders and active lighting remain independently styled. |
 | `.termia-sidebar`, `.termia-panel`, `.stat-card`, `frame.card` | Background `surface`, foreground `text`, border `1px solid border`, radius `10px`, shadow `none` |
@@ -276,7 +333,7 @@ other component rules; this is not a complete replacement GTK theme.
 | `entry:disabled` | Foreground `muted`, border color `border` |
 | `button:focus-visible`, `entry:focus-within`, `spinbutton:focus-within` | Outline `2px solid cyan`, offset `2px` |
 | `.termia-tab-label` | Transparent background, transparent `1px solid` border, radius `10px`; shared shadows below apply afterwards |
-| `.termia-notes-notebook > header` and its `> tabs` | Background `surface` |
+| `.termia-notes-notebook`, its `> stack`, `> header` and `> header > tabs` | Transparent background, no container border or shadow; individual tab states remain styled |
 | `.dim-label` | Foreground `muted`, widget opacity `1` |
 | `.termia-panel.termia-role-ROLE`, `.termia-notification.termia-role-ROLE` | Border color from cyan/violet/green/yellow/red role; no extra glow |
 | `.termia-role-ROLE progressbar > trough > progress` | Background and border color from the same role |
@@ -320,12 +377,14 @@ offset, blur radius, optional spread radius, and color; `inset` draws inward.
 | Both tab types, `:focus-visible` or `:focus-within` | `outline: 2px solid A; outline-offset: -3px` |
 | Terminal tab `.dragging` | Background `alpha(A, 0.25)`, whole-widget opacity `0.72` |
 
-For Retron, the accent is RGB `(85, 186, 201)`: the normal border is
+For Retron, the accent is RGB `(85, 186, 201)`: the normal tab border is
 `rgba(85, 186, 201, 0.35)`, hover border `rgba(85, 186, 201, 0.65)`, active
 tab border `rgba(85, 186, 201, 0.65)` and tab glow
-`rgba(85, 186, 201, 0.08)`. Focused terminals and the active main window use
-border alpha `0.50` and glow alpha `0.05`. Glow offsets are
-both `0px`, blur `3px`, spread `0px`; it is not an inset glow. The tab's inset
+`rgba(85, 186, 201, 0.08)`. Terminal scroller borders use alpha `0.35` without
+focus and `0.50` with focus. Focused terminals retain glow alpha `0.05` with `3px` blur;
+the active main window retains border alpha `0.50` and glow alpha `0.05`
+with `2px` blur. Glow offsets and spread are `0px`; these are exterior glows.
+The tab's inset
 border has zero blur and `1px` spread. There is no configurable glow-strength
 setting or reusable `GlowPanel` widget.
 
@@ -773,17 +832,17 @@ They describe the existing implementation, not a reusable window contract:
   notes-list toggle, New note, and Import/Export overflow button appear in
   that order, with 4 px between them and an 8 px start margin. The overflow
   button is hidden for server-scoped notes.
-- The notes-list pane starts at **330 logical px** and restores its last width
-  after being hidden. Its search entry requests at least 300 px and has a 6 px
+- The notes-list pane starts at **280 logical px** and restores its last width
+  after being hidden. Its search entry requests at least 250 px and has a 6 px
   end margin. The editor side keeps a 6 px inset beside the divider while the
   list is visible; hiding the list removes that inset so tabs and editor align.
 - Note tabs stay above the editor toolbar. The editor text has 12 px internal
   margins on all sides. The editor surface has a 1 px theme border and an 8 px
   corner radius. The editor's default foreground and background are white and
   `#001B33`; saved Notes appearance preferences can replace them.
-- `termia-notes-window` marks the window; no window-frame CSS rule currently
-  targets that class. `termia-notes-notebook` keeps GTK's selected-tab and overflow
-  behavior, with a transparent header outside Retron, rounded tab corners,
+- `termia-notes-window` scopes Retron's shared frame treatment to this window.
+  `termia-notes-notebook` keeps GTK's selected-tab and overflow
+  behavior, with a transparent header in every theme, rounded tab corners,
   colored inset borders and active shadows. Selection colors and focus outlines
   come from `theme_styles.py`; the explicit shadows may replace the theme's
   native underline. `termia-notes-editor` has scoped rules in `styles.py`. The

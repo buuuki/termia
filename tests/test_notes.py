@@ -961,11 +961,51 @@ class NotesDomainTests(unittest.TestCase):
         dialog.notes_list_paned = MagicMock()
         dialog.notes_list_visible = True
         dialog.update_editor_appearance = MagicMock()
-        button = SimpleNamespace(get_active=lambda: False)
+        button = Gtk.ToggleButton()
         dialog.on_toolbar_toggled(button)
         dialog.editor_toolbar.set_visible.assert_called_once_with(False)
+        self.assertEqual(button.get_icon_name(), "pan-down-symbolic")
+        button.set_active(True)
+        dialog.on_toolbar_toggled(button)
+        dialog.editor_toolbar.set_visible.assert_called_with(True)
+        self.assertEqual(button.get_icon_name(), "pan-up-symbolic")
         dialog.notes_list_paned.set_start_child.assert_not_called()
         self.assertTrue(dialog.notes_list_visible)
+
+    def test_toolbar_restores_saved_visibility_without_changing_note_text(self):
+        for visible in (False, True):
+            with self.subTest(visible=visible):
+                dialog = NotesDialogs.__new__(NotesDialogs)
+                dialog.store = SimpleNamespace(data=SimpleNamespace(
+                    app=SimpleNamespace(notes_editor={"visible": visible}),
+                ))
+                dialog.translate = lambda key: key
+                dialog.text_view = create_notes_text_view(True)
+                buffer = dialog.text_view.get_buffer()
+                buffer.set_text("Synthetic note\nwith two lines")
+                dialog.toolbar_toggle = Gtk.ToggleButton()
+                dialog.apply_editor_appearance = MagicMock()
+                editor = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+                try:
+                    dialog.build_editor_toolbar(editor)
+                    self.assertEqual(dialog.editor_toolbar.get_visible(), visible)
+                    self.assertEqual(editor.has_css_class("termia-notes-toolbar-hidden"), not visible)
+                    self.assertEqual(dialog.toolbar_toggle.get_icon_name(),
+                                     "pan-up-symbolic" if visible else "pan-down-symbolic")
+                    self.assertEqual(buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False),
+                                     "Synthetic note\nwith two lines")
+                    scroller = dialog.editor_toolbar.get_child()
+                    self.assertIsInstance(scroller, Gtk.ScrolledWindow)
+                    self.assertFalse(scroller.get_overlay_scrolling())
+                    dialog.update_editor_appearance = MagicMock()
+                    dialog.toolbar_toggle.set_active(not visible)
+                    self.assertEqual(editor.has_css_class("termia-notes-toolbar-hidden"), visible)
+                    dialog.toolbar_toggle.set_active(visible)
+                    self.assertEqual(editor.has_css_class("termia-notes-toolbar-hidden"), not visible)
+                finally:
+                    Gtk.StyleContext.remove_provider_for_display(
+                        dialog.text_view.get_display(), dialog.editor_css_provider,
+                    )
 
     def test_opening_notes_restores_window_before_presenting(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
