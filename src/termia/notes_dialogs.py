@@ -255,11 +255,13 @@ class NotesDialogs:
         header_actions.append(self.import_export_menu_button)
 
         paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        paned.set_position(330)
+        paned.add_css_class("termia-content-paned")
+        paned.set_position(280)
         paned.set_vexpand(True)
         root.append(paned)
 
         list_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        list_panel.add_css_class("termia-surface-panel")
         list_panel.set_vexpand(True)
         self.notes_tree_root = Gio.ListStore.new(NotesTreeNode)
         self.notes_tree_model = Gtk.TreeListModel.new(
@@ -279,7 +281,7 @@ class NotesDialogs:
         creation_controls = self.build_creation_controls()
         list_panel.append(creation_controls)
         self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_size_request(300, -1)
+        self.search_entry.set_size_request(250, -1)
         self.search_entry.set_margin_end(6)
         self.search_entry.set_placeholder_text(self.translate("notes_search"))
         self.search_entry.connect("search-changed", self.on_search_changed)
@@ -293,7 +295,7 @@ class NotesDialogs:
         paned.set_start_child(list_panel)
         self.notes_list_panel = list_panel
         self.notes_list_paned = paned
-        self.notes_list_width = 330
+        self.notes_list_width = 280
         self.update_notes_list_toggle()
 
         detail_area = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -307,7 +309,7 @@ class NotesDialogs:
         self.editor_notebook.connect("page-reordered", self.on_editor_notebook_page_reordered)
         self.editor_tabs_bar = self.editor_notebook
         self._syncing_editor_notebook = False
-        self.toolbar_toggle = Gtk.ToggleButton(icon_name="view-reveal-symbolic")
+        self.toolbar_toggle = Gtk.ToggleButton(icon_name="pan-up-symbolic")
         self.toolbar_toggle.set_tooltip_text(self.translate("notes_toolbar"))
         self.editor_notebook.set_action_widget(self.toolbar_toggle, Gtk.PackType.END)
 
@@ -332,11 +334,15 @@ class NotesDialogs:
         self.text_view = text_view
         self.build_editor_toolbar(editor)
         text_scroller = Gtk.ScrolledWindow()
-        text_scroller.add_css_class("termia-notes-editor")
         text_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         text_scroller.set_vexpand(True)
         text_scroller.set_child(text_view)
-        editor.append(text_scroller)
+        editor_frame = Gtk.Frame()
+        editor_frame.add_css_class("termia-notes-editor")
+        editor_frame.set_overflow(Gtk.Overflow.HIDDEN)
+        editor_frame.set_vexpand(True)
+        editor_frame.set_child(text_scroller)
+        editor.append(editor_frame)
 
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         configure_action_area(footer)
@@ -401,14 +407,17 @@ class NotesDialogs:
             color.set_tooltip_text(self.translate(key) + " · " + self.translate("notes_editor_appearance"))
             color.connect("color-set", lambda widget, name=key: self.update_editor_appearance({name: widget.get_rgba().to_string()}))
             toolbar.append(color)
-        self.editor_toolbar = Gtk.ScrolledWindow()
-        self.editor_toolbar.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
-        self.editor_toolbar.set_overlay_scrolling(False)
-        self.editor_toolbar.set_propagate_natural_height(True)
-        self.editor_toolbar.set_child(toolbar)
+        toolbar_scroller = Gtk.ScrolledWindow()
+        toolbar_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        toolbar_scroller.set_overlay_scrolling(False)
+        toolbar_scroller.set_propagate_natural_height(True)
+        toolbar_scroller.set_child(toolbar)
+        self.editor_toolbar = Gtk.Frame()
+        self.editor_toolbar.add_css_class("termia-notes-toolbar-frame")
+        self.editor_toolbar.set_child(toolbar_scroller)
         editor.append(self.editor_toolbar)
         self.toolbar_toggle.set_active(settings.get("visible", True))
-        self.editor_toolbar.set_visible(self.toolbar_toggle.get_active())
+        self.sync_editor_toolbar_visibility(self.toolbar_toggle)
         self.toolbar_toggle.connect("toggled", self.on_toolbar_toggled)
         self.editor_css_provider = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_display(
@@ -421,10 +430,19 @@ class NotesDialogs:
         self.text_view.set_show_line_numbers(enabled)
         self.update_editor_appearance({"line_numbers": enabled})
 
-    def on_toolbar_toggled(self, button: Gtk.ToggleButton) -> None:
+    def sync_editor_toolbar_visibility(self, button: Gtk.ToggleButton) -> None:
         visible = button.get_active()
+        button.set_icon_name("pan-up-symbolic" if visible else "pan-down-symbolic")
         self.editor_toolbar.set_visible(visible)
-        self.update_editor_appearance({"visible": visible})
+        container = self.editor_toolbar.get_parent()
+        if visible:
+            container.remove_css_class("termia-notes-toolbar-hidden")
+        else:
+            container.add_css_class("termia-notes-toolbar-hidden")
+
+    def on_toolbar_toggled(self, button: Gtk.ToggleButton) -> None:
+        self.sync_editor_toolbar_visibility(button)
+        self.update_editor_appearance({"visible": button.get_active()})
 
     def update_editor_appearance(self, values: dict[str, Any]) -> None:
         settings = {**self.store.data.app.notes_editor, **values}

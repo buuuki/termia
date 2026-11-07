@@ -729,6 +729,7 @@ class TabsMixin:
         titlebar.set_title_widget(Gtk.Label(label=session.title))
         window.set_titlebar(titlebar)
         window.set_default_size(860, 520)
+        session.page.add_css_class("termia-detached-surface")
         window.set_child(session.page)
         session.detached_window = window
         self.update_session_tab_bar_visibility()
@@ -764,6 +765,7 @@ class TabsMixin:
         if window is None or not self.session_registry.contains(session.id):
             return
         window.set_child(None)
+        session.page.remove_css_class("termia-detached-surface")
         session.detached_window = None
         window.destroy()
         self.add_session_to_main_view(session)

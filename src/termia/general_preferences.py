@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+from functools import partial
+
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -13,12 +15,14 @@ from .choice_widgets import (
     select_choice,
     text_choice,
 )
-from .constants import APP_THEMES, DEBUG_LOG_FILE
+from .constants import APP_THEMES, DEBUG_LOG_FILE, DEFAULT_DARK_GLOW_BORDER_COLOR
 from .debug import configure_debug_logging
 from .dialog_window import DialogWindow
 from .i18n import LANGUAGES, detect_system_language
 from .models import AppSettings
 from .stores import ReadOnlyStoreError
+from .terminal_config import parse_color, rgba_to_hex
+from .theme_styles import DARK_GLOW_THEME
 
 GENERAL_PREFERENCE_FIELDS = (
     ("theme", "theme"),
@@ -78,6 +82,22 @@ class GeneralPreferencesMixin:
         for language_id, label in LANGUAGES.items():
             append_choice(language_combo, language_id, label)
         select_choice(language_combo, self.store.data.app.language)
+
+        border_color_button = Gtk.ColorButton()
+        border_color_button.set_title(self.t("border_color"))
+        border_color_button.set_use_alpha(False)
+        border_color_button.set_rgba(parse_color(
+            self.store.data.app.dark_glow_border_color, DEFAULT_DARK_GLOW_BORDER_COLOR,
+        ))
+        reset_border_button = Gtk.Button(label=self.t("reset_border_color"))
+        reset_border_button.connect(
+            "clicked", lambda _button: border_color_button.set_rgba(
+                parse_color(DEFAULT_DARK_GLOW_BORDER_COLOR, DEFAULT_DARK_GLOW_BORDER_COLOR)
+            ),
+        )
+        border_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        border_controls.append(border_color_button)
+        border_controls.append(reset_border_button)
 
         checks = [
             ("close_tab_on_disconnect", self.store.data.app.close_tab_on_disconnect),
@@ -139,7 +159,10 @@ class GeneralPreferencesMixin:
             self.t("debug_log_path").format(path=DEBUG_LOG_FILE)
         )
 
-        rows: list[tuple[str, Gtk.Widget]] = [(self.t("theme"), theme_combo), (self.t("language"), language_combo)]
+        rows: list[tuple[str, Gtk.Widget]] = [
+            (self.t("theme"), theme_combo), (self.t("border_color"), border_controls),
+            (self.t("language"), language_combo),
+        ]
         rows.extend(("", button) for button in check_buttons[:9])
         shortcut_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         shortcut_box.set_hexpand(True)
@@ -153,11 +176,22 @@ class GeneralPreferencesMixin:
         for index, (label_text, widget) in enumerate(rows):
             label = Gtk.Label(label=label_text)
             label.set_xalign(0)
+            if widget is border_controls:
+                def update_border_visibility(_combo, _spec, label=label):
+                    visible = choice_id(theme_combo) == DARK_GLOW_THEME
+                    label.set_visible(visible)
+                    border_controls.set_visible(visible)
+
+                theme_combo.connect("notify::selected", update_border_visibility)
+                update_border_visibility(theme_combo, None)
             widget.set_hexpand(True)
             grid.attach(label, 0, index, 1, 1)
             grid.attach(widget, 1, index, 1, 1)
         dialog.get_content_area().append(grid)
-        dialog.connect("response", self.on_app_preferences_response, theme_combo, language_combo, *check_buttons)
+        dialog.connect(
+            "response", partial(self.on_app_preferences_response, border_color_button=border_color_button),
+            theme_combo, language_combo, *check_buttons,
+        )
         dialog.present()
 
     @staticmethod
@@ -168,10 +202,15 @@ class GeneralPreferencesMixin:
         }
 
     def on_app_preferences_response(self, dialog: DialogWindow, response: Gtk.ResponseType, theme_combo: Gtk.DropDown,
-                                    language_combo: Gtk.DropDown, *check_buttons: Gtk.CheckButton) -> None:
+                                    language_combo: Gtk.DropDown, *check_buttons: Gtk.CheckButton,
+                                    border_color_button: Gtk.ColorButton | None = None) -> None:
         if response == Gtk.ResponseType.OK:
             previous_values = self.general_preference_values(self.store.data.app)
             values = [button.get_active() for button in check_buttons]
+            color_options = (
+                {"dark_glow_border_color": rgba_to_hex(border_color_button.get_rgba())}
+                if border_color_button is not None else {}
+            )
             try:
                 self.store.update_app_settings(AppSettings(
                     theme=choice_id(theme_combo) or "system",
@@ -188,7 +227,7 @@ class GeneralPreferencesMixin:
                     copy_on_selection=values[12],
                     debug_enabled=values[13],
                     keybindings=self.store.data.app.keybindings,
-                ))
+                ), **color_options)
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
                 dialog.destroy()
@@ -200,7 +239,10 @@ class GeneralPreferencesMixin:
                     self.pending_session_snapshot = []
                     self.session_snapshot_store.clear()
             self.apply_app_theme()
-            if previous_values["audible_bell"] != self.store.data.app.audible_bell:
+            if (
+                previous_values["audible_bell"] != self.store.data.app.audible_bell
+                or previous_values["theme"] != self.store.data.app.theme
+            ):
                 self.apply_terminal_settings_to_open_tabs()
             self.apply_session_status_bar_visibility_to_open_tabs()
             self.set_sidebar_visible(self.store.data.app.show_sidebar_on_startup)

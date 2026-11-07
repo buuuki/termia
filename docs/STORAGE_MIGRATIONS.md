@@ -65,10 +65,42 @@ credentials or private notes. Isolated test instances use their own profile.
   protected copy of newer data. Do not open a schema 4 file with an older client.
 - `settings.json`: object schema `1`; legacy terminal palette and color values
   are normalized by a named migration.
-  Optional `app.copy_on_selection` defaults to `false` for new and older
-  profiles. It adds no schema migration and is separate from connection
+  The local Retron research theme adds the `dark_glow` value to the existing
+  `app.theme` string without a schema change. Choose System/Light/Dark before
+  opening that profile in an older client, which does not recognize the new
+  value and may replace it on save.
+  Retron is the display name; the stored `dark_glow` identifier, CSS class and
+  existing `dark_glow_border_color` preference retain their compatibility names.
+  The rename requires no migration and preserves all per-theme colors.
+  Optional `app.terminal_colors_by_theme` maps System/Light/Dark/Retron to
+  foreground/background pairs. Older settings seed the three standard themes
+  from their existing terminal colors; Retron initially uses Solarized text
+  on the sidebar surface (`#839496` on `#182231`). Existing saved pairs,
+  including a previous Solarized background, remain unchanged.
+  Loading selects the current theme's pair in memory;
+  the next normal writable save persists the map. Read-only loading never
+  writes or backs up settings solely to initialize these pairs. Invalid entries
+  fall back per theme without discarding other valid pairs. Font, size, ANSI
+  palette and prompt remain shared settings. Explicit theme color profiles
+  bypass the old Solarized-default/font heuristic, retaining chosen fonts.
+  The legacy `terminal.foreground` and `terminal.background` fields retain the
+  active pair for compatibility. No schema bump is required; older clients
+  ignore the optional app field and discard it on saving. Back up settings
+  before downgrading to preserve all per-theme customizations.
+  Optional `app.copy_on_selection` defaults to `true` for new profiles and
+  older settings without this field. An explicitly saved `false` remains
+  disabled; invalid non-boolean values remain disabled. Loading the new
+  default does not rewrite settings. It adds no schema migration and is separate from connection
   exports. Older clients can read settings but discard this field when saving;
   check the preference after downgrading and upgrading again.
+  Optional `app.dark_glow_border_color` defaults to `#55BAC9`. It accepts an
+  opaque six-digit hex color; missing or malformed values fall back to the
+  default without discarding the remaining settings. General preferences
+  persists it only on Save and exposes Reset while Retron is selected.
+  Other themes ignore it; unrelated preference saves preserve it. It adds no
+  schema change and is separate from terminal colors and semantic status roles.
+  Older clients ignore this app field and discard it on saving, so retain a
+  settings backup before downgrading if the custom color must be preserved.
   Optional `app.split_focus_shortcuts_version` defaults to `1` in new profiles.
   Old profiles without the marker migrate only legacy `Ctrl+Arrow` split-focus
   assignments to `Ctrl+Shift+Arrow`. Custom and disabled assignments survive;

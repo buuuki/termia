@@ -210,6 +210,11 @@ keybinding dialogs have comparatively small contracts.
   explicit `TerminalPane` state for every VTE pane, including its connection
   identity, managed process, status widgets, reconnect state, history, and
   statistics timing.
+- `update_pane_status()` renders each pane's process state and saved
+  connection/profile name, with escaped markup and transient `status_detail`
+  in a tooltip. Existing timers and language refresh update the presentation;
+  retired panes are skipped. No additional process probe, timer or signal is
+  added; an active SSH client is not proof of completed authentication.
 - Cross-mixin dependencies: tab creation, ordering, activation, title updates,
   closing, terminal menus, and terminal preferences. Tab-triggered duplication,
   disconnection, confirmation, and split cleanup are exposed through the

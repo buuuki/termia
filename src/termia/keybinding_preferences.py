@@ -171,6 +171,7 @@ class KeybindingPreferencesMixin:
             grid.attach(label, 0, index, 1, 1)
             grid.attach(row, 1, index, 1, 1)
         scroller = Gtk.ScrolledWindow()
+        scroller.add_css_class("termia-content-frame")
         scroller.set_vexpand(True)
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_max_content_height(560)

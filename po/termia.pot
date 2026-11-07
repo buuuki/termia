@@ -717,6 +717,10 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
+#: src/termia/i18n.py:theme_dark_glow
+msgid "Retron"
+msgstr ""
+
 #: src/termia/i18n.py:language
 msgid "Language"
 msgstr ""
@@ -2472,4 +2476,20 @@ msgstr ""
 
 #: src/termia/i18n.py:snippet_terminal_unavailable
 msgid "The selected terminal is no longer available."
+msgstr ""
+
+#: src/termia/i18n.py:terminal_state_connected
+msgid "Connected"
+msgstr ""
+
+#: src/termia/i18n.py:terminal_ssh_state_detail
+msgid "The SSH process is running; authentication may still be pending."
+msgstr ""
+
+#: src/termia/i18n.py:border_color
+msgid "Border color"
+msgstr ""
+
+#: src/termia/i18n.py:reset_border_color
+msgid "Reset"
 msgstr ""

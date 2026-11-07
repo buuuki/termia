@@ -21,8 +21,10 @@ de archivos en terminales VTE integrados con GTK 4.
   El atajo no detecta solicitudes de contraseña. La protección depende de
   Seguridad; consulta la [compatibilidad](STORAGE_MIGRATIONS.md) antes de actualizar.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
-- Copia automática opcional al terminar de seleccionar texto del terminal,
-  desactivada por defecto en Preferencias generales. El aviso confirma la copia
+- Cada barra de estado muestra el nombre de la conexión y un indicador de
+  estado con color; al pasar el ratón se ven los detalles del proceso o error.
+- Copia automática al terminar de seleccionar texto del terminal,
+  activada por defecto y configurable en Preferencias generales. El aviso confirma la copia
   e indica los caracteres, incluidos espacios y saltos de línea, cuando el
   portapapeles acepta el texto. Un clic en otra zona quita el resaltado sin perder la copia.
 - Confirmación antes de pegar texto con saltos de línea en el terminal,
@@ -43,6 +45,25 @@ de archivos en terminales VTE integrados con GTK 4.
 - Apariencia y atajos configurables; interfaz en castellano, catalán e inglés.
   Atajos se abre en una ventana independiente para seguir usando los terminales;
   los cambios se aplican al guardar y sus botones muestran las combinaciones completas.
+
+Esta rama de investigación añade **Retron** en **General → Tema**: superficies
+oscuras opacas, bordes coloreados sutiles de 1px, esquinas de 10px e iluminación
+suave en paneles y pestañas activos. Sistema/Claro/Oscuro conservan su aspecto
+anterior. Cada tema guarda sus propios colores de texto y fondo del terminal;
+Retron empieza con texto Solarized y el fondo oscuro del sidebar (`#182231`).
+Puedes cambiarlos cuando quieras desde las
+preferencias del terminal: se guardan para el tema seleccionado. Los colores
+del editor de Notas siguen siendo independientes.
+Retron añade espacio interior al terminal y una barra de título tenue sin
+halo luminoso. Es una opción local de
+investigación, no una versión publicada.
+Con Retron seleccionado, Preferencias generales permite elegir el color de
+los bordes o restablecer el cian original; se aplica al guardar.
+
+Retron también aplica su estilo a los marcos de ventanas secundarias y los contenedores
+compartidos de Notas, snippets, SFTP, preferencias y registros del actualizador. Los
+colores del editor de Notas son independientes; los diálogos del portal del escritorio
+pueden conservar el tema del sistema.
 
 ## Estado de la versión
 

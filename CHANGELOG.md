@@ -4,6 +4,74 @@
 
 ### Fixed
 
+- Enclose dialog content and action buttons in one shared Retron panel,
+  preserving action behavior and the separate native message-alert style (#484).
+
+- Add subtle outer-frame feedback while holding native GTK title handles;
+  preserve native movement and exclude message alerts (#484).
+
+- Paint the Retron window canvas once at 50% opacity and reduce the default
+  outer halo to 2px blur at 5% opacity; preserve opaque panel and control colors
+  (#484).
+
+- Narrow the initial Notes tree pane and its search minimum; slim the Retron
+  divider and give the appearance toolbar equal 8px gaps below the tabs and
+  above the editor; retain an 8px tabs-to-editor gap when the toolbar is hidden,
+  including on restart (#484).
+
+- Make the Retron Notes tab container transparent, use directional toolbar
+  toggles, and unify the window, header, tree, editor, toolbar and tab frames
+  with the tree's 1px inset line and focus intensity. Round all four Notes tab
+  corners like connection tabs (#484).
+
+- Remove an unused variable from the Retron secondary-window regression test
+  and align clipboard security guidance with the default selection-copy setting
+  (#484).
+
+- Extend Retron frames and native control colors to secondary windows; style
+  Notes, snippets, SFTP, history, preferences and update-log containers with
+  shared scoped roles, preserving standard themes and saved editor colors.
+  Correct the native ListBox CSS node selector and cover provider removal (#484).
+
+- Soften the Retron main-window and focused-terminal borders and halos,
+  retaining a visible focus distinction without changing their geometry (#484).
+
+- Make Retron terminal status bars compact capsules with subdued cyan
+  borders, saved terminal colors and retro monospace text. Keep halos around
+  the shell area only and retain status actions and keyboard focus indicators (#484).
+
+- Use uniform 8px Retron gaps around the main content and between sidebar,
+  tabs and terminal panes; match the main window border to the rounded,
+  softly lit terminal frames while retaining native resize handles (#484).
+
+- Round Retron terminal containers with native GTK clipping and soften
+  focused-terminal and active-tab borders and halos (#484).
+
+- Confine research panel, tab, menu and preview styling to Retron; restore
+  System/Light/Dark spacing and states. Add terminal content insets and soften
+  the Retron main header border without a halo (#484).
+
+- Hide split-separator lines and backgrounds in Retron, retaining native
+  resize interaction and existing separator dimensions between pane borders (#484).
+
+- Make both the outer tab-controls and inner tab-bar backgrounds transparent
+  in Retron, preserving individual tab states and existing spacing (#484).
+
+- Separate the native main header, server sidebar and terminal tabs with scoped
+  panel borders and spacing; retain the sidebar resize handle and theme the
+  multiline-paste preview without changing pasted text or confirmation (#484).
+
+- Align native confirmation alerts with Retron using colored borders,
+  matching header colors, content insets and compact action buttons; cover
+  both headerbar and non-headerbar GTK titlebars, including backdrop (#484).
+
+- Apply the Retron palette to flat and framed buttons, remove inherited
+  button background images and define checked/disabled colors (#484).
+
+- Unify terminal-container, terminal/Notes tab and native menu interaction
+  styling with subdued inactive borders, focused-pane lighting and distinct
+  keyboard focus, using GTK theme colors or the opt-in Retron palette (#484).
+
 - Preserve keyboard activation after delayed search notifications and keep
   group/section selection visible; allow explicit group folding while
   filtering (`#474`).
@@ -27,7 +95,25 @@
 
 ### Added
 
-- Add opt-in automatic copying of completed terminal selections, with a
+- Choose and reset the Retron container-border color in General preferences
+  with a native color picker; preserve border geometry, intensity, other
+  themes and semantic status colors (#484).
+
+- Show each terminal pane's connection name and a colored, translated session
+  indicator in its status bar. Keep process/error details in tooltips and
+  retain names across disconnects, retries and tab renaming (#484).
+
+- Save terminal foreground/background colors independently for each app theme.
+  Retron starts with Solarized text on the sidebar's dark background;
+  existing terminal color controls customize
+  the selected theme and update open panes (#484).
+
+- Research a fixed Retron interface theme with opaque dark surfaces, 1px
+  borders, 10px corners and subtle active-pane/tab lighting; keep terminal colors independent
+  (`#484`).
+
+- Add automatic copying of completed terminal selections, enabled by default
+  for new/missing preferences while preserving saved disabled choices, with a
   success notification and character count. Preserve manual copying and
   native deselection (`#463`).
 
@@ -47,6 +133,9 @@
   preserve Ubuntu 26 independently (`#459`).
 
 ### Changed
+
+- Rename the research theme from Dark Glow to Retron in the interface and
+  documentation, retaining existing saved preferences and internal IDs (#484).
 
 - Separate Termia and snippet shortcut sections with a native GTK separator
   (`#475`).

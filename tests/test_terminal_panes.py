@@ -111,6 +111,12 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    def setUp(self):
+        # These fixtures exercise lifecycle behavior; rendering has its own tests.
+        renderer = patch.object(TerminalSessionsMixin, "update_pane_status", autospec=True)
+        self.status_updates = renderer.start()
+        self.addCleanup(renderer.stop)
+
     def test_split_focus_key_is_consumed_only_when_focus_moves(self):
         terminal = FakeTerminal()
         session = make_session(terminal, make_pane(terminal, "root"))

@@ -2358,3 +2358,23 @@ msgstr "Copiats {count} caràcters al porta-retalls"
 #: src/termia/i18n.py:terminal_selection_copy_failed
 msgid "Could not copy the selected text to the clipboard"
 msgstr "No s'ha pogut copiar el text seleccionat al porta-retalls"
+
+#: src/termia/i18n.py:theme_dark_glow
+msgid "Retron"
+msgstr "Retron"
+
+#: src/termia/i18n.py:terminal_state_connected
+msgid "Connected"
+msgstr "Connectada"
+
+#: src/termia/i18n.py:terminal_ssh_state_detail
+msgid "The SSH process is running; authentication may still be pending."
+msgstr "El procés SSH està actiu; l'autenticació pot continuar pendent."
+
+#: src/termia/i18n.py:border_color
+msgid "Border color"
+msgstr "Color de les vores"
+
+#: src/termia/i18n.py:reset_border_color
+msgid "Reset"
+msgstr "Restableix"

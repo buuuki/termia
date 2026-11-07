@@ -128,10 +128,13 @@ def migrate_embedded_statistics_payload(payload: dict[str, Any]) -> tuple[dict[s
     return migrate_statistics_payload(statistics)
 
 
-def migrate_legacy_terminal_settings(terminal: TerminalSettings) -> tuple[TerminalSettings, bool]:
+def migrate_legacy_terminal_settings(
+    terminal: TerminalSettings, *, migrate_legacy_colors: bool = True,
+) -> tuple[TerminalSettings, bool]:
     changed = False
     if (
-        terminal.font_family == "Ubuntu Mono"
+        migrate_legacy_colors
+        and terminal.font_family == "Ubuntu Mono"
         and terminal.font_size == 13
         and terminal.foreground == "#839496"
         and terminal.background == "#002b36"

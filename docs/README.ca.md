@@ -21,8 +21,10 @@ fitxers en terminals VTE integrats amb GTK 4.
   La drecera no detecta peticions de contrasenya. La protecció depèn de
   Seguretat; consulta la [compatibilitat](STORAGE_MIGRATIONS.md) abans d'actualitzar.
 - Espais de treball desats i restauració opcional de la sessió anterior.
-- Còpia automàtica opcional en acabar de seleccionar text del terminal,
-  desactivada per defecte a Preferències generals. L'avís confirma la còpia i
+- Cada barra d'estat mostra el nom de la connexió i un indicador d'estat amb
+  color; en passar-hi el ratolí es veuen els detalls del procés o error.
+- Còpia automàtica en acabar de seleccionar text del terminal,
+  activada per defecte i configurable a Preferències generals. L'avís confirma la còpia i
   indica els caràcters, inclosos espais i salts de línia, quan el porta-retalls
   accepta el text. Un clic en una altra zona treu el ressaltat sense perdre la còpia.
 - Confirmació abans d'enganxar text amb salts de línia al terminal, activada
@@ -43,6 +45,25 @@ fitxers en terminals VTE integrats amb GTK 4.
 - Aparença i dreceres configurables; interfície en català, castellà i anglès.
   Dreceres s’obre en una finestra independent per continuar fent servir els terminals;
   els canvis s’apliquen en desar i els botons mostren les combinacions completes.
+
+Aquesta branca d'investigació afegeix **Retron** a **General → Tema**:
+superfícies fosques opaques, vores de color subtils d'1px, cantonades de 10px
+i il·luminació suau als panells i les pestanyes actius. Sistema/Clar/Fosc conserven
+l'aspecte anterior. Cada tema desa els seus colors de text i fons del terminal;
+Retron comença amb text Solarized i el fons fosc del panell lateral (`#182231`).
+Pots canviar-los quan vulguis des de les
+preferències del terminal: es desen per al tema seleccionat. Els colors de
+l'editor de Notes continuen sent independents.
+Retron afegeix espai interior al terminal i una barra de títol tènue sense
+halo lluminós. És una
+opció local d'investigació, no una versió publicada.
+Amb Retron seleccionat, Preferències generals permet triar el color de les
+vores o restablir el cian original; s'aplica en desar.
+
+Retron també aplica el seu estil als marcs de finestres secundàries i als contenidors
+compartits de Notes, snippets, SFTP, preferències i registres de l’actualitzador. Els
+colors de l’editor de Notes són independents; els diàlegs del portal de l’escriptori
+poden conservar el tema del sistema.
 
 ## Estat de la versió
 
