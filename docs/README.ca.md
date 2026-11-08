@@ -59,6 +59,10 @@ halo lluminós. És una
 opció local d'investigació, no una versió publicada.
 Amb Retron actiu, obre l’editor d’aparença des d’**Eines**, la quadrícula de la barra de títol,
 o des de **General**. Tots dos accessos obren la mateixa finestra.
+**Camps de text → Component amb focus** permet ajustar les vores i resplendors de les
+entrades de text i numèriques. Personalitzar la vora amb focus substitueix el
+contorn cian fix; conserva una vora o resplendor visible per navegar amb teclat.
+Notes té el seu propi component.
 Pots canviar l’estil comú o un component i estat; marca la casella
 d’una propietat per personalitzar-la. Les vores, els fons llisos o amb degradat
 i fins a tres resplendors es previsualitzen al moment. Aplica és temporal;

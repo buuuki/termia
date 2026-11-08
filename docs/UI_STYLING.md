@@ -6,6 +6,15 @@ inside the Retron root scope in `theme_styles.py`. Standard themes receive no
 launcher-specific colors, borders or glow. Diagnostics reuses the shared dialog
 panel and GTK labels, expanders and scrollers.
 
+Retron window controls retain GTK buttons and native hit targets. Their outer
+buttons are transparent; the compact child images carry the Retron frame,
+background and hover/focus feedback. Saved button appearance overrides target
+those images too, including automatic titlebars on secondary windows.
+Horizontal button padding and image margins are normalized so the native
+control group supplies one consistent 6px gap between visible frames.
+An independent 6px outer group margin keeps the last frame inside the titlebar,
+including automatic secondary-window decorations and reversed text direction.
+
 This inventory records the current sources and ownership of Termia's visual
 rules, originally recorded as a baseline for issue #302. It also defines the
 design guidelines below; these do not imply a custom-theme editor.
@@ -86,6 +95,15 @@ alone. Follow the user's explicit restrictions on running tests.
 ## Quick reference
 
 ### Retron visual editor (#486)
+
+The Text fields component covers native `entry` and `spinbutton` nodes in
+normal, focus and disabled states, using the existing property controls.
+The original cyan focus outline is 1px thick with a 2px offset.
+Explicit focus border overrides replace the fixed cyan outline; background
+and glow-only overrides retain it. Unmodified profiles emit no extra CSS.
+Common overrides also apply to these fields. Notes/text views remain separate.
+Profiles with the new `fields` component require this version or newer;
+older builds reject unknown component identifiers.
 
 `retron_profile.py` defines the reusable property inventory, defaults, component
 selectors, state inheritance and bounded CSS generation. `retron_store.py` owns
@@ -402,7 +420,8 @@ other component rules; this is not a complete replacement GTK theme.
 | `button.destructive-action` | Background `#5A2C37`, border color `red`, foreground `text` |
 | `button:disabled` | Background `surface`, foreground `muted`, border color `border`, box/text shadows `none` |
 | `entry:disabled` | Foreground `muted`, border color `border` |
-| `button:focus-visible`, `entry:focus-within`, `spinbutton:focus-within` | Outline `2px solid cyan`, offset `2px` |
+| `button:focus-visible` | Outline `2px solid cyan`, offset `2px` |
+| `entry:focus-within`, `spinbutton:focus-within` | Outline `1px solid cyan`, offset `2px` |
 | `.termia-tab-label` | Transparent background, transparent `1px solid` border, radius `10px`; shared shadows below apply afterwards |
 | `.termia-notes-notebook`, its `> stack`, `> header` and `> header > tabs` | Transparent background, no container border or shadow; individual tab states remain styled |
 | `.dim-label` | Foreground `muted`, widget opacity `1` |

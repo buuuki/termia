@@ -1064,6 +1064,10 @@ msgstr ""
 msgid "Buttons"
 msgstr ""
 
+#: src/termia/i18n.py:retron_component_fields
+msgid "Text fields"
+msgstr ""
+
 #: src/termia/i18n.py:retron_component_menus
 msgid "Menus and popovers"
 msgstr ""

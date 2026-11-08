@@ -266,6 +266,10 @@ msgstr "Taulers i barres d’eines"
 msgid "Buttons"
 msgstr "Botons"
 
+#: src/termia/i18n.py:retron_component_fields
+msgid "Text fields"
+msgstr "Camps de text"
+
 #: src/termia/i18n.py:retron_component_menus
 msgid "Menus and popovers"
 msgstr "Menús i desplegables"

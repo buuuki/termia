@@ -56,6 +56,9 @@ main header without a halo. This is a local research option, not a
 published release.
 With Retron active, use **Tools → Retron appearance editor** in the titlebar grid or
 **General → Retron appearance editor** to open the same visual editor.
+**Text fields → Focused component** controls entry and numeric-field borders and glows.
+Customizing the focus border replaces the fixed cyan outline; keep a visible
+border or glow for keyboard navigation. Notes uses its separate component.
 Set a common style or customize a component and state;
 check a property's box to override its inherited value. Borders, solid/gradient
 backgrounds and up to three glows update live. Apply is temporary; Save persists

@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Added
+
+- Add Retron text-field appearance controls for normal, focused and disabled
+  entries, including saved borders, backgrounds and glows (#492).
+
+### Fixed
+
+- Reduce the original Retron text-field cyan focus outline to 1px, retaining
+  its 2px offset (#492).
+
+- Render Retron window-control frames on their compact native images rather
+  than full-height click targets, with consistent spacing and saved button
+  appearance overrides (#492).
+
 ## 0.6.2-beta - 2026-11-08
 
 ### Added

@@ -59,6 +59,10 @@ halo luminoso. Es una opción local de
 investigación, no una versión publicada.
 Con Retron activo, abre el editor de apariencia desde **Herramientas**, la cuadrícula de la barra de
 título, o desde **General**. Ambos accesos abren la misma ventana.
+**Campos de texto → Componente con foco** permite ajustar los bordes y halos de entradas
+de texto y numéricas. Personalizar el borde con foco sustituye el contorno cian
+fijo; conserva un borde o halo visible para navegar con teclado. Notas tiene
+su propio componente.
 Puedes cambiar el estilo común o un componente y estado;
 marca la casilla de una propiedad para personalizarla. Los bordes, fondos
 lisos o con gradiente y hasta tres halos se previsualizan al momento.

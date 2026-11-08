@@ -19,6 +19,34 @@ from termia.retron_store import MAX_PRESETS, MAX_STORE_BYTES, RetronStore, prese
 
 
 class RetronProfileTests(unittest.TestCase):
+    def test_field_focus_overrides_preserve_scope_and_inherit_normal_values(self):
+        profile = empty_profile()
+        profile["components"]["fields"] = {
+            "normal": {"background_color": "#112233"},
+            "focus": {"border_color": "#ABCDEF", "shadows": [new_shadow()]},
+            "disabled": {"border_opacity": 0.2},
+        }
+        self.assertEqual(validate_profile(profile), profile)
+        self.assertEqual(resolved(profile, "fields", "focus")["background_color"], "#112233")
+        css = build_profile_css(profile)
+        focus = next(line for line in css.splitlines() if "entry:focus-within" in line)
+        self.assertIn(ROOT + " spinbutton:focus-within", focus)
+        self.assertIn("alpha(#ABCDEF, 1)", focus)
+        self.assertIn("outline: none;", focus)
+        self.assertIn("box-shadow:", focus)
+        self.assertIn("entry:disabled", css)
+        self.assertNotIn("textview", css)
+        self.assertNotIn("button:", css.replace("spinbutton:", ""))
+
+    def test_field_glow_alone_preserves_original_focus_outline(self):
+        profile = empty_profile()
+        profile["components"]["fields"] = {"focus": {"shadows": [new_shadow()]}}
+        self.assertNotIn("outline:", build_profile_css(profile))
+        profile["components"]["fields"]["focus"]["shadows"] = []
+        css = build_profile_css(profile)
+        self.assertIn("box-shadow: none", css)
+        self.assertNotIn("outline:", css)
+
     def test_defaults_have_no_overrides_and_inheritance_is_per_property(self):
         profile = empty_profile()
         self.assertEqual(build_profile_css(profile), "")
