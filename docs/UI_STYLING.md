@@ -4,8 +4,8 @@ This inventory records the current sources and ownership of Termia's visual
 rules, originally recorded as a baseline for issue #302. It also defines the
 design guidelines below; these do not imply a custom-theme editor.
 
-This local research branch additionally implements the fixed Retron option
-described below. It does not implement the custom-theme editor from #303.
+Retron provides the built-in appearance and its scoped visual editor described
+below. The broader custom-theme work from #303 remains separate.
 
 ## Visual design guidelines
 
@@ -79,6 +79,66 @@ alone. Follow the user's explicit restrictions on running tests.
 
 ## Quick reference
 
+### Retron visual editor (#486)
+
+`retron_profile.py` defines the reusable property inventory, defaults, component
+selectors, state inheritance and bounded CSS generation. `retron_store.py` owns
+the independent versioned profile. `retron_runtime.py` owns one display provider
+and one edit transaction; `retron_editor.py` owns native controls and one pending
+50 ms preview source. `app.py` composes these Core services without add-on imports
+or access to connection credentials in the editor.
+
+`retron_style_values.py` owns the immutable Retron palette and shared frame/glow
+values, without GTK or application-state dependencies. Both the base stylesheet
+and profile defaults consume those values; `constants.py` preserves the existing
+accent and surface imports. Component-specific layout and exceptions remain in
+their respective style rules.
+
+The native configuration selector offers the current unnamed appearance, Original
+Retron and up to 32 named presets. Save as establishes a new saved baseline while
+keeping the editor open; Save updates the selected configuration. Rename/Delete
+persist collection changes without saving a pending appearance draft. Switching
+an edited draft asks whether to save, discard or remain. Names stay out of CSS
+and filenames; original Retron cannot be renamed or deleted. Modal name dialogs
+and cancellable native alerts are retired with the editor.
+The property scroller reserves 40px after the override checkboxes so the native
+vertical scrollbar remains separate when it expands under the pointer.
+Numeric adjustment sliders use light handles, muted tracks and cyan highlights,
+scoped to the editor window. Hover brightens the handle; disabled controls stay
+subdued. Native geometry, keyboard focus and pointer interaction are preserved.
+
+The common stylesheet remains at application priority. Retron's original rules
+and generated customizations share one replaceable provider at application + 2;
+this intentionally overrides Notes background preferences only for an explicit
+Retron background. Retiring the provider restores those preferences. Unmodified
+profiles retain original Retron styling. Custom selectors exclude native message
+alerts and the editor, which stays readable. New windows inherit active styles.
+Leaving Retron removes the provider and theme scope; returning resumes the draft.
+
+Inheritance is original component/state defaults, common normal/state values,
+then component normal/state values. Checkboxes enable per-property overrides;
+unchecked values inherit. Focus, selection, backdrop and title holding are distinct
+states. Borders can be 0–8 logical px with 0–48 px corners. Up to three inner/outer
+shadows support 0–32 px blur, -8–16 px spread and -24–24 px offsets. Backgrounds
+support solid, linear and radial fills; alpha applies to paint, not child opacity.
+Gradients do not paint a duplicate translucent solid beneath themselves. Original
+inset frames become real borders when border properties are overridden; changed
+widths may change layout. Existing keyboard focus outlines remain independent.
+
+Terminal cells use a solid RGBA background through VTE's color API. The adapter
+updates existing and newly created panes without resetting font, ANSI palette,
+terminal content or processes. Common gradients reduce to a solid background for
+VTE. Notes scrolling children reveal the customized frame background; document
+content and saved editor preferences are untouched. Native titlebar layout follows
+the desktop; the editor action does not replace window controls. General becomes
+non-modal when opening the editor, retaining its pending preferences independently.
+
+There is no backdrop blur, custom drawing or new dependency. Large effects may
+clip at GTK/window boundaries and transparency depends on compositor/layering.
+GTK 4.14 accepts border styles, gradients and multiple shadows; filter blur is
+not exposed because it would blur readable content. See the regression checklist
+for visual, platform and lifecycle validation.
+
 | Source | Owns | Must not be changed by this inventory |
 |---|---|---|
 | GTK/GNOME | System surfaces, text, borders, selection, focus, and system appearance | The desktop theme or GTK-managed widget behavior |
@@ -94,7 +154,7 @@ Termia's application appearance is selected in General preferences.
 | System | Follows GNOME `color-scheme`; resets the app override when the scheme is unknown | Inherited from GTK |
 | Light | Requests GTK's light variant | Inherited from GTK |
 | Dark | Requests GTK's dark variant | Inherited from GTK |
-| Retron (local research) | Requests GTK's dark variant | Fixed palette from `theme_styles.py`, a 50%-opaque window canvas, opaque panels, 1px borders, 10px corners and soft active-pane/tab lighting |
+| Retron (local research) | Requests GTK's dark variant | Fixed palette from `theme_styles.py`, a 75%-opaque window canvas, opaque panels, 1px borders, 10px corners and soft active-pane/tab lighting |
 
 The shared application CSS provider is replaced when the appearance changes so
 rules from an earlier mode do not remain active.
@@ -107,12 +167,13 @@ it does not change another application's theme or external desktop portals.
 Switching back removes the scope class and replaces the CSS provider. Saving
 a theme change also loads that theme's saved terminal foreground/background.
 
-With Retron selected, General preferences exposes a native opaque color
-picker and Reset button for container borders. Save persists
-`app.dark_glow_border_color` (default `#55BAC9`) and replaces the shared CSS
-provider, updating existing windows and panes. Cancel leaves settings and CSS
-unchanged. The control is hidden for other themes, which ignore the value.
-Reset selects the original cyan in the picker; it takes effect only on Save.
+General preferences and a native titlebar button open the same independent
+Retron editor. The titlebar button is visible only while Retron is active,
+follows language changes and is disabled by the connection-unlock overlay.
+The legacy `app.dark_glow_border_color` (default `#55BAC9`) initializes
+the profile's original accent without rewriting settings. The following
+description concerns that original accent; component overrides are described
+in the visual-editor section above.
 The choice affects the main window, header/sidebar, terminal scrollers, status
 capsules, terminal/Notes tabs and native-alert frames, plus their related
 interaction outlines. Border widths, radii, opacities and halo geometry are
@@ -127,14 +188,15 @@ the border role. Keyboard focus retains an explicit outline. CSS does not
 recolor VTE or the Notes editing surface. Terminal foreground/background pairs
 are saved per app theme and applied through VTE's existing color API; Notes
 editor colors remain independent.
-This is a fixed selectable theme, without a theme editor, animations, background
-blur or prototype imports. The secondary-window changes have automated provider/scope coverage and
+The base theme has no animations, background blur or prototype imports; the
+Retron editor supplies the scoped overrides described above.
+The secondary-window changes have automated provider/scope coverage and
 selected visual checks on Ubuntu 26 Wayland; exhaustive interaction-state
 validation remains pending.
 
-The darkest window background is `#0D1420`, painted at 50% opacity
-(`rgba(13, 20, 32, 0.5)`). The main content root is transparent so this canvas
-is painted only once; painting two 50%-opaque layers would produce 75% opacity.
+The darkest window background is `#0D1420`, painted at 75% opacity (25% transparency)
+(`rgba(13, 20, 32, 0.75)`). The main content root is transparent so this canvas
+is painted only once; overlapping translucent layers would increase its opacity.
 Panels, controls, text, terminal colors and native-alert backgrounds retain
 their own colors and opacity. This changes background paint rather than the
 opacity of the whole widget tree. Actual desktop transparency depends on the
@@ -259,7 +321,7 @@ reduced only where an explicit `alpha(...)` expression is used.
 
 | Key | Exact value | Role/application |
 |---|---|---|
-| `canvas` | `#0D1420` | Window background painted at 50% opacity; main content root is transparent. Native-alert backgrounds retain the opaque base color |
+| `canvas` | `#0D1420` | Window background painted at 75% opacity; main content root is transparent. Native-alert backgrounds retain the opaque base color |
 | `surface` | `#182231` | Header, sidebar, panels, cards, lists, popover contents and Notes toolbar frame |
 | `control` | `#1C2A3C` | All button backgrounds, entries and spin buttons |
 | `hover` | `#23364B` | Hover backgrounds and enabled menu/dropdown focus |
@@ -281,10 +343,13 @@ cyan/green/yellow/red in `TermiaWindow.show_toast()`.
 
 ### Provider order and scope
 
-`build_application_css()` concatenates the base structural CSS, then the fixed
-Retron CSS and interaction CSS only for `theme == "dark_glow"`.
-The application provider uses `Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION` (600).
+`build_application_css()` retains its combined output for existing callers;
+the application requests base structural CSS with `include_retron=False`.
+The base provider uses `Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION` (600).
 Notes has an independent editor provider at application priority + 1 (601).
+`RetronRuntime` installs original Retron rules and customizations at application
+priority + 2 (602), only while Retron is active. Default rules avoid overriding
+the Notes text background; explicit content customizations take precedence.
 Providers apply to the display; selectors determine which widgets they affect.
 
 Retron prefixes its rules with `window.termia-dark-glow`. The top-level
@@ -312,7 +377,7 @@ other component rules; this is not a complete replacement GTK theme.
 
 | Selector | Explicit styling |
 |---|---|
-| Window itself | Background `alpha(canvas, 0.50)`, foreground `text` |
+| Window itself | Background `alpha(canvas, 0.75)`, foreground `text` |
 | `.termia-main-surface` | Transparent background, foreground `text`; avoids stacking a second canvas layer |
 | Every in-process `window.termia-dark-glow` | Border `1px solid alpha(cyan, 0.50)`, radius `10px`, shadow `0 0 2px alpha(cyan, 0.05)`; backdrop border alpha `0.35`, shadow `none`; Notes and native alerts use their documented overrides |
 | `headerbar` | Background `surface`, foreground `text`, shadow `none` |
@@ -720,17 +785,17 @@ interactive or automated validation in this research iteration.
 
 ### Effects not implemented and validation limits
 
-Retron canvas, surface and control colors have opacity 1. There is no
-semitransparent glass panel, background blur, `backdrop-filter`, custom drawing,
-or theme-defined animation/transition. Translucency is limited to the alpha
-expressions and widget opacities explicitly listed above. GTK may supply its
+The original Retron canvas is painted at 75% opacity; surfaces and controls
+are opaque. The editor can override supported background alpha and gradients.
+There is no background blur, `backdrop-filter`, custom drawing or theme-defined
+animation/transition. GTK may supply its
 own animations, metrics, symbolic-icon treatment and inherited effects.
 
 Values describe CSS declarations and their statically identifiable cascade;
 they are not runtime measurements or contrast/performance guarantees. Actual
 native CSS nodes, theme inheritance, clipping, display scaling and interaction
-still require visual validation. Automated and interactive tests have not been
-run for this local styling iteration.
+still require visual validation. Platform rendering, accessibility and performance
+require the relevant checks in `REGRESSION_CHECKS.md` alongside automated coverage.
 
 ## Current visual sources
 

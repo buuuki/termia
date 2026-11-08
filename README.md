@@ -54,8 +54,25 @@ Use Terminal preferences to change those colors for the selected theme at any
 time. Notes editor colors remain independent. Retron adds terminal content padding and a subdued
 main header without a halo. This is a local research option, not a
 published release.
-With Retron selected, General preferences also lets you choose the container
-border color or reset it to cyan; changes apply on Save.
+With Retron active, use the appearance button in the titlebar or
+**General → Retron appearance editor** to open the same visual editor.
+Set a common style or customize a component and state;
+check a property's box to override its inherited value. Borders, solid/gradient
+backgrounds and up to three glows update live. Apply is temporary; Save persists
+the profile. Use **Save as…** to keep a named configuration and continue editing.
+The Configuration selector offers saved profiles, the current unnamed appearance
+and Original Retron. Save updates the selected named profile; switching with
+unsaved edits offers Save, Discard changes or Cancel. Rename and confirmed Delete
+update the saved collection immediately; deleting a profile keeps the current
+appearance. Up to 32 profiles can be stored, with unique names of 1–64 characters.
+Cancel, Escape and closing the editor undo appearance changes since opening or
+the last Save/Save as; they do not undo saved names or deletions. Restore defaults
+is reversible until saved. Original Retron is always available.
+The editor remains readable and native alerts retain their separate appearance.
+Standard themes are unaffected. Terminal backgrounds are solid, with no blur or
+ANSI-palette changes; an explicit Retron background temporarily overrides the
+separate Terminal/Notes preference while Retron is active. See
+[profile storage](docs/STORAGE_MIGRATIONS.md#retron-appearance-profile).
 
 Retron also styles secondary window frames and shared Notes, snippets, SFTP, preferences
 and update-log containers. Notes editor colors remain independent; native desktop portal

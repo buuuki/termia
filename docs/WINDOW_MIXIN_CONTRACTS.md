@@ -14,6 +14,14 @@ couplings are observations, not automatic exceptions to those rules.
 
 ## Shared window services
 
+`app.py` composes the Retron editor's profile store and runtime. The runtime
+receives only a write guard, style context and a background-refresh callback;
+it does not receive the connection store or terminal session objects. The
+terminal mixin queries the runtime's optional effective background when creating
+or configuring a pane. Retron changes only VTE background paint, leaving process
+ownership and other terminal settings with their existing owners. Application
+shutdown retires the editor, sources and CSS provider explicitly.
+
 Most mixins expect the window to provide some combination of these services:
 
 - `store`: the `ConnectionStore` and its app, terminal, connection, history,
@@ -57,8 +65,9 @@ the mixins:
   `server_scroller`, `summary_label`, `title_label`, `info_label`,
   `terminal_stack` (`Gtk.Stack`), `session_tab_bar` (`Gtk.Box`),
   `session_tab_scroller` (`Gtk.ScrolledWindow`) and `session_tab_controls`.
-- Header widgets: sidebar, new-tab, menu, read-only, add, expand, and collapse
-  controls.
+- Header widgets: sidebar, new-tab, Retron editor, menu, read-only, add, expand,
+  and collapse controls. The Retron action shares the General preferences
+  editor entry point and follows theme visibility and unlock-overlay sensitivity.
 
 Some mixins add transient state after construction:
 

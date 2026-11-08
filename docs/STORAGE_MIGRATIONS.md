@@ -29,20 +29,37 @@ to 32 named configurations and the active appearance in one atomic write, within
 a 2 MiB file limit. Names are NFC-normalized, 1–64 characters, unique ignoring
 case, and contain no control characters; they are data, never filenames.
 `active_name` is null for an unnamed appearance or names a matching saved preset.
-Appearance values remain validated colors, bounded numbers, enumerated
-states/styles and up to three shadows per state. CSS, selectors, URLs and
-resources are not accepted. Existing settings and their schema do not change.
+The file respects `TERMIA_CONFIG_DIR`. Appearance values remain validated colors,
+bounded numbers, enumerated states/styles and up to three shadows per state.
+CSS, selectors, URLs and resources are not accepted; no import/export UI exists.
+Existing settings and their schema do not change.
 
 Legacy schema-1 files retain their 64 KiB limit and load as the current unnamed
-appearance without writing. Saving writes schema 2, preserving the supplied
-current appearance and named configurations. Earlier versions without a Retron
-editor ignore the file. Standard application themes remain usable.
+appearance without writing. Explicit Save, Save as, Rename or Delete writes
+schema 2, preserving the current appearance and the remaining configurations.
+Back up this file before downgrading to a single-profile checkout: that reader
+rejects schema 2 and disables saving rather than overwriting it. Earlier versions
+without a Retron editor ignore the file. Standard application themes remain usable.
 
-Loading never writes. Saving writes a private temporary file, flushes it and
-atomically replaces the profile under an injected write guard. Invalid,
-oversized, unknown-field and future-version files remain untouched; saving is
-disabled until the incompatible file is recovered outside the running instance.
+Missing profiles inherit the existing `app.dark_glow_border_color` in memory.
+Loading never writes. Save writes a private temporary file, flushes it and
+atomically replaces the profile under the existing instance write guard.
+Read-only/locked instances may preview but cannot save. Invalid, oversized,
+unknown-field and future-version files remain untouched; saving is disabled
+until the incompatible file is recovered outside the running instance.
 External file changes also prevent overwriting. Retain a copy before recovery.
+Unknown schema versions are protected from overwriting.
+
+Save updates the active configuration; Save as adds a unique name and keeps the
+editor open. Both persist the selected appearance and establish the cancellation
+baseline. Rename and confirmed Delete persist collection changes immediately,
+without saving pending appearance edits. Deleting the active name retains its
+appearance as unnamed. Preview, selection and Apply are temporary until saved;
+Cancel, Escape, close and shutdown revert to the opening or last-saved appearance.
+Switching away from an edited draft requires Save, Discard or Cancel. Cancel does
+not undo saved names or deletions. Restore defaults changes the draft to the
+immutable original Retron preset, without resetting Terminal/Notes settings or other themes.
+An explicit Retron content background overrides those settings only while active.
 
 ### Resource limits and recovery
 
@@ -119,8 +136,9 @@ credentials or private notes. Isolated test instances use their own profile.
   check the preference after downgrading and upgrading again.
   Optional `app.dark_glow_border_color` defaults to `#55BAC9`. It accepts an
   opaque six-digit hex color; missing or malformed values fall back to the
-  default without discarding the remaining settings. General preferences
-  persists it only on Save and exposes Reset while Retron is selected.
+  default without discarding the remaining settings. The Retron editor seeds
+  its independent profile from this legacy preference; General links to the
+  editor instead of maintaining a second border-color control.
   Other themes ignore it; unrelated preference saves preserve it. It adds no
   schema change and is separate from terminal colors and semantic status roles.
   Older clients ignore this app field and discard it on saving, so retain a

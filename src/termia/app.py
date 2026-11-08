@@ -21,7 +21,9 @@ from .connection_history_view import ConnectionHistoryDialog
 from .constants import (
     APP_ID,
     DATA_FILE,
+    DEFAULT_NOTES_EDITOR_BACKGROUND,
     INSTANCE_LOCK_FILE,
+    RETRON_PROFILE_FILE,
     SESSION_SNAPSHOT_FILE,
     SETTINGS_FILE,
     STATE_DIR,
@@ -46,6 +48,8 @@ from .notifications import (
 )
 from .optional_tools_dialog import OptionalToolsDialog
 from .preferences import PreferencesMixin
+from .retron_runtime import RetronRuntime
+from .retron_store import RetronStore
 from .session_observer import NoOpSessionObserver
 from .session_registry import SessionRegistry
 from .session_snapshot import SessionSnapshotStore
@@ -195,6 +199,12 @@ class TermiaWindow(
         log_event("application.window_created", read_only=self.store.read_only)
         if self.store.read_only:
             self.set_title(f"Termia ({self.t('read_only_badge')})")
+        self.retron_runtime = RetronRuntime(
+            RetronStore(RETRON_PROFILE_FILE, lambda: not self.store.read_only and not self.store.encryption_locked),
+            self.get_display(), self.retron_style_context, self.refresh_retron_terminal_backgrounds,
+        )
+        self.connect("destroy", lambda _window: self.retron_runtime.close())
+        app.connect("shutdown", self.retron_runtime.close)
         self.apply_app_theme()
         self.selected: RowObject | None = None
         self.selected_tree_widget: Gtk.Widget | None = None
@@ -464,8 +474,10 @@ class TermiaWindow(
             self.toggle_sidebar_button,
             self.new_tab_button,
             self.main_menu_button,
+            getattr(self, "retron_editor_button", None),
         ):
-            control.set_sensitive(sensitive)
+            if control is not None:
+                control.set_sensitive(sensitive)
 
     def hide_unlock_panel(self) -> None:
         self.unlock_panel.set_visible(False)
@@ -692,6 +704,7 @@ class TermiaWindow(
                 theme,
                 terminal_foreground=terminal_settings.foreground,
                 dark_glow_border_color=self.store.data.app.dark_glow_border_color,
+                include_retron=getattr(self, "retron_runtime", None) is None,
             )
         )
         previous_provider = getattr(self, "_application_css_provider", None)
@@ -701,6 +714,34 @@ class TermiaWindow(
             display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
         self._application_css_provider = provider
+        runtime = getattr(self, "retron_runtime", None)
+        if runtime is not None:
+            runtime.set_enabled(theme == DARK_GLOW_THEME)
+        editor_button = getattr(self, "retron_editor_button", None)
+        if editor_button is not None:
+            editor_button.set_visible(theme == DARK_GLOW_THEME)
+
+    def retron_style_context(self) -> dict:
+        return {
+            "accent": self.store.data.app.dark_glow_border_color,
+            "terminal_background": self.store.data.terminal.background,
+            "terminal_foreground": self.store.data.terminal.foreground,
+            "notes_background": self.store.data.app.notes_editor.get("background") or DEFAULT_NOTES_EDITOR_BACKGROUND,
+        }
+
+    def on_retron_editor(self, _button=None) -> None:
+        for window in self.get_application().get_windows():
+            if isinstance(window, TermiaWindow) and window.retron_runtime.editor is not None:
+                window.retron_runtime.editor.present()
+                return
+        self.retron_runtime.show_editor(self, self.t)
+
+    def refresh_retron_terminal_backgrounds(self) -> None:
+        registry = getattr(self, "session_registry", None)
+        if registry is not None:
+            for session in registry.sessions():
+                for pane in session.panes.values():
+                    self.apply_retron_terminal_background(pane.terminal)
 
     def _build_ui(self) -> None:
         self.add_css_class("termia-main-window")
@@ -721,7 +762,6 @@ class TermiaWindow(
         header.add_css_class("termia-main-header")
         self.header = header
         self.set_titlebar(header)
-
         header_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         header_actions.set_margin_start(6)
 
@@ -736,6 +776,12 @@ class TermiaWindow(
         new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
         new_tab_button.connect("clicked", self.on_open_local_terminal)
         header_actions.append(new_tab_button)
+
+        self.retron_editor_button = Gtk.Button(icon_name="applications-graphics-symbolic")
+        self.retron_editor_button.set_tooltip_text(self.t("retron_editor"))
+        self.retron_editor_button.set_visible(self.store.data.app.theme == DARK_GLOW_THEME)
+        self.retron_editor_button.connect("clicked", self.on_retron_editor)
+        header_actions.append(self.retron_editor_button)
 
         menu_button = Gtk.MenuButton()
         self.main_menu_button = menu_button
@@ -1094,6 +1140,7 @@ class TermiaWindow(
     def refresh_translated_chrome(self) -> None:
         self.toggle_sidebar_button.set_tooltip_text(self.t("servers"))
         self.new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
+        self.retron_editor_button.set_tooltip_text(self.t("retron_editor"))
         self.main_menu_button.set_tooltip_text(self.t("main_menu"))
         self.main_menu_button.set_popover(
             self.build_main_menu(

@@ -14,6 +14,25 @@ Issue [#360](https://github.com/buuuki/termia/issues/360) tracks that comparison
 
 ## Classification
 
+The Retron appearance editor (#486) reuses the non-modal `DialogWindow` shell
+and a native titlebar `Gtk.Button`, visible only while Retron is selected.
+The titlebar and General preferences share the same editor instance,
+with the button disabled while the connection-unlock overlay is active.
+The editor uses a native `Gtk.ListBox`, `Gtk.DropDown`, `Gtk.ColorDialogButton`,
+`Gtk.Scale`, `Gtk.CheckButton`, `Gtk.Switch` and scrolling containers.
+Numeric sliders display their values and retain native keyboard adjustment.
+The property scroller uses GTK's automatically hiding overlay scrollbar and
+reserves a 40px content end margin to keep override checkboxes clear of it.
+The editor is a non-transient application window with a native `Gtk.HeaderBar`
+requesting minimize, maximize and close controls. Its runtime still owns
+shutdown and cancellation; GTK owns window movement and window-state actions.
+GTK owns control interaction. Termia owns per-property inheritance, the single
+editor instance, Save/Apply/Cancel transaction and deferred preview cleanup.
+Named configurations use a native `Gtk.DropDown` with bounded labels and standard
+buttons. Save as and Rename reuse `DialogWindow` with `Gtk.Entry`; unsaved-switch
+and delete confirmations use `Gtk.AlertDialog`. Termia owns name validation,
+selection IDs, atomic persistence and cancellation of pending dialogs on close.
+
 Encrypted connection import uses the shared modal `DialogWindow` with
 `Gtk.PasswordEntry` and native response buttons in `src/termia/config_actions.py`.
 GTK owns dialog presentation; Termia validates the password, handles retry and
@@ -52,7 +71,7 @@ a standard GTK control does not justify crossing those boundaries.
 |---:|---|---|---|
 | — | Retron secondary windows | Existing GTK windows, headers, lists, scrolling regions and native controls | `theme_styles.py` shares scoped frames and palette rules; views add presentation roles only. `DialogWindow` exposes `termia-dialog-panel` around content and actions, with `termia-dialog-content` inside. Native message alerts stay separate; Notes retains its saved editor colors and GTK owns all interactions |
 | — | Retron title-hold feedback | Existing `Gtk.WindowHandle` and native titlebars | `app.py` observes primary-button events without claiming them. Retron briefly strengthens the outer frame; title controls and message alerts are excluded. GTK/compositor owns movement and maximization |
-| — | Retron border color | Native `Gtk.ColorButton` and `Gtk.Button` | `general_preferences.py`; opaque color selection, Reset and visibility while Retron is selected; General Save/Cancel owns persistence |
+| — | Retron appearance | Native controls in the shared non-modal window composition | `retron_editor.py`, `retron_runtime.py`; shared/component/state overrides, live preview and independent Save/Cancel. General links to the editor; existing border preferences seed its profile |
 | — | Native confirmation alerts (session restore, Notes deletion and related confirmations) | `Gtk.AlertDialog` | `app.py`, `notes_dialogs.py` and other alert callers; GTK retains modal/keyboard behavior and response indices; `theme_styles.py` scopes Retron message-window colors, border and compact spacing without replacing the native control |
 | — | Main header and server-sidebar separator | `Gtk.HeaderBar`, `Gtk.Paned` | `app.py` adds scoped classes; `theme_styles.py` styles borders, spacing and separator feedback while GTK owns centering, window dragging/controls and the native wide resize handle |
 | — | Connection private SSH key selection | `Gtk.FileDialog`, `Gtk.Entry` and native icon button | `src/termia/connection_dialogs.py`; fills only a local file path, preserves manual entry and ignores results after the form closes |

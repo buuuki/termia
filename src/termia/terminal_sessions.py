@@ -143,10 +143,12 @@ class TerminalSessionsMixin:
         return Path(shell).name == "bash"
 
     def create_configured_terminal(self) -> Vte.Terminal:
-        return TerminalViewFactory(self.resolved_terminal_font_family).create(
+        terminal = TerminalViewFactory(self.resolved_terminal_font_family).create(
             self.store.data.terminal,
             audible_bell=self.store.data.app.audible_bell,
         )
+        TerminalSessionsMixin.apply_retron_terminal_background(self, terminal)
+        return terminal
 
     def build_session_status_bar(
         self,
@@ -2290,6 +2292,18 @@ class TerminalSessionsMixin:
             self.store.data.terminal,
             audible_bell=self.store.data.app.audible_bell,
         )
+        TerminalSessionsMixin.apply_retron_terminal_background(self, terminal)
+
+    def apply_retron_terminal_background(self, terminal: Vte.Terminal) -> None:
+        runtime = getattr(self, "retron_runtime", None)
+        if runtime is None:
+            return
+        values = runtime.terminal_background()
+        background = Gdk.RGBA()
+        background.parse(values["background_color"] if values else self.store.data.terminal.background)
+        if values:
+            background.alpha = values["background_opacity"]
+        terminal.set_color_background(background)
 
     def apply_terminal_settings_to_open_tabs(self) -> None:
         for session in self.session_registry.sessions():

@@ -1,3 +1,251 @@
+#: src/termia/i18n.py:retron_editor
+msgid "Retron appearance editor"
+msgstr "Editor de apariencia Retron"
+
+#: src/termia/i18n.py:retron_live_preview
+msgid "Preview changes automatically"
+msgstr "Previsualizar los cambios automáticamente"
+
+#: src/termia/i18n.py:retron_apply
+msgid "Apply without saving"
+msgstr "Aplicar sin guardar"
+
+#: src/termia/i18n.py:retron_customize
+msgid "Customize (unchecked: inherit)"
+msgstr "Personalizar (desmarcado: heredar)"
+
+#: src/termia/i18n.py:retron_borders
+msgid "Borders and lines"
+msgstr "Bordes y líneas"
+
+#: src/termia/i18n.py:retron_backgrounds
+msgid "Backgrounds"
+msgstr "Fondos"
+
+#: src/termia/i18n.py:retron_glows
+msgid "Glow and shadows"
+msgstr "Halo y sombras"
+
+#: src/termia/i18n.py:retron_glow_number
+msgid "Glow {number}"
+msgstr "Halo {number}"
+
+#: src/termia/i18n.py:retron_remove_glow
+msgid "Remove glow"
+msgstr "Quitar halo"
+
+#: src/termia/i18n.py:retron_add_glow
+msgid "Add glow (maximum 3)"
+msgstr "Añadir halo (máximo 3)"
+
+#: src/termia/i18n.py:retron_editing
+msgid "Appearance changes are temporary until saved. Cancel undoes changes since opening or the last save."
+msgstr "Los cambios de apariencia son temporales hasta guardar. Cancelar deshace los cambios desde la apertura o el último guardado."
+
+#: src/termia/i18n.py:retron_suspended
+msgid "Preview is suspended while another theme is active. The draft is retained."
+msgstr "La previsualización está suspendida mientras otro tema está activo. El borrador se conserva."
+
+#: src/termia/i18n.py:retron_read_only
+msgid "Read-only profile: preview is available; saving is disabled."
+msgstr "Perfil de solo lectura: puedes previsualizar; guardar está desactivado."
+
+#: src/termia/i18n.py:retron_load_error
+msgid "The saved Retron profile could not be read. Original styling is used and the file is protected from overwriting."
+msgstr "No se ha podido leer el perfil Retron guardado. Se usa el estilo original y el archivo está protegido contra sobrescritura."
+
+#: src/termia/i18n.py:retron_invalid_preview
+msgid "These values could not be applied. The last valid appearance is retained."
+msgstr "No se han podido aplicar estos valores. Se conserva la última apariencia válida."
+
+#: src/termia/i18n.py:retron_save_error
+msgid "The profile could not be saved. Check write access and external file changes. Your draft remains open."
+msgstr "No se ha podido guardar el perfil. Comprueba los permisos y los cambios externos del archivo. El borrador sigue abierto."
+
+#: src/termia/i18n.py:retron_open_hint
+msgid "Save the Retron theme selection first. The appearance editor keeps its own Save and Cancel actions."
+msgstr "Guarda primero la selección del tema Retron. El editor de apariencia tiene sus propias acciones Guardar y Cancelar."
+
+#: src/termia/i18n.py:retron_border_opacity
+msgid "Border opacity (%)"
+msgstr "Opacidad del borde (%)"
+
+#: src/termia/i18n.py:retron_border_width
+msgid "Border width (px)"
+msgstr "Grosor del borde (px)"
+
+#: src/termia/i18n.py:retron_border_style
+msgid "Line style"
+msgstr "Estilo de línea"
+
+#: src/termia/i18n.py:retron_radius
+msgid "Corner radius (px)"
+msgstr "Radio de las esquinas (px)"
+
+#: src/termia/i18n.py:retron_background_color
+msgid "Background color"
+msgstr "Color de fondo"
+
+#: src/termia/i18n.py:retron_background_opacity
+msgid "Background opacity (%)"
+msgstr "Opacidad del fondo (%)"
+
+#: src/termia/i18n.py:retron_background_mode
+msgid "Background type"
+msgstr "Tipo de fondo"
+
+#: src/termia/i18n.py:retron_gradient_color
+msgid "Second gradient color"
+msgstr "Segundo color del gradiente"
+
+#: src/termia/i18n.py:retron_gradient_angle
+msgid "Gradient angle (°)"
+msgstr "Ángulo del gradiente (°)"
+
+#: src/termia/i18n.py:retron_shadow_color
+msgid "Glow color"
+msgstr "Color del halo"
+
+#: src/termia/i18n.py:retron_shadow_opacity
+msgid "Glow opacity / intensity (%)"
+msgstr "Opacidad / intensidad del halo (%)"
+
+#: src/termia/i18n.py:retron_shadow_blur
+msgid "Blur radius (px)"
+msgstr "Radio de difuminado (px)"
+
+#: src/termia/i18n.py:retron_shadow_spread
+msgid "Spread (px)"
+msgstr "Expansión (px)"
+
+#: src/termia/i18n.py:retron_shadow_x
+msgid "Horizontal offset (px)"
+msgstr "Desplazamiento horizontal (px)"
+
+#: src/termia/i18n.py:retron_shadow_y
+msgid "Vertical offset (px)"
+msgstr "Desplazamiento vertical (px)"
+
+#: src/termia/i18n.py:retron_shadow_inset
+msgid "Inner glow"
+msgstr "Halo interior"
+
+#: src/termia/i18n.py:retron_component_common
+msgid "Common style"
+msgstr "Estilo común"
+
+#: src/termia/i18n.py:retron_component_window
+msgid "Main window"
+msgstr "Ventana principal"
+
+#: src/termia/i18n.py:retron_component_header
+msgid "Title bars"
+msgstr "Barras de título"
+
+#: src/termia/i18n.py:retron_component_sidebar
+msgid "Sidebars"
+msgstr "Barras laterales"
+
+#: src/termia/i18n.py:retron_component_tabs
+msgid "Tabs"
+msgstr "Pestañas"
+
+#: src/termia/i18n.py:retron_component_panels
+msgid "Panels and toolbars"
+msgstr "Paneles y barras de herramientas"
+
+#: src/termia/i18n.py:retron_component_buttons
+msgid "Buttons"
+msgstr "Botones"
+
+#: src/termia/i18n.py:retron_component_menus
+msgid "Menus and popovers"
+msgstr "Menús y desplegables"
+
+#: src/termia/i18n.py:retron_component_dialogs
+msgid "Dialog panels"
+msgstr "Paneles de diálogo"
+
+#: src/termia/i18n.py:retron_component_secondary
+msgid "Secondary windows"
+msgstr "Ventanas secundarias"
+
+#: src/termia/i18n.py:retron_component_content
+msgid "Content areas"
+msgstr "Áreas de contenido"
+
+#: src/termia/i18n.py:retron_component_notes
+msgid "Notes editor"
+msgstr "Editor de notas"
+
+#: src/termia/i18n.py:retron_state_normal
+msgid "Normal"
+msgstr "Normal"
+
+#: src/termia/i18n.py:retron_state_focus
+msgid "Focused component"
+msgstr "Componente con foco"
+
+#: src/termia/i18n.py:retron_state_hover
+msgid "Pointer over component"
+msgstr "Puntero sobre el componente"
+
+#: src/termia/i18n.py:retron_state_selected
+msgid "Selected tab"
+msgstr "Pestaña seleccionada"
+
+#: src/termia/i18n.py:retron_state_pressed
+msgid "Pressed"
+msgstr "Pulsado"
+
+#: src/termia/i18n.py:retron_state_backdrop
+msgid "Inactive window"
+msgstr "Ventana inactiva"
+
+#: src/termia/i18n.py:retron_state_held
+msgid "Title bar held"
+msgstr "Barra de título agarrada"
+
+#: src/termia/i18n.py:retron_state_disabled
+msgid "Disabled control"
+msgstr "Control desactivado"
+
+#: src/termia/i18n.py:retron_value_none
+msgid "No line"
+msgstr "Sin línea"
+
+#: src/termia/i18n.py:retron_value_solid
+msgid "Solid"
+msgstr "Continuo"
+
+#: src/termia/i18n.py:retron_value_dashed
+msgid "Dashed"
+msgstr "Discontinuo"
+
+#: src/termia/i18n.py:retron_value_dotted
+msgid "Dotted"
+msgstr "Punteado"
+
+#: src/termia/i18n.py:retron_value_double
+msgid "Double"
+msgstr "Doble"
+
+#: src/termia/i18n.py:retron_value_linear
+msgid "Linear gradient"
+msgstr "Gradiente lineal"
+
+#: src/termia/i18n.py:retron_value_radial
+msgid "Radial gradient"
+msgstr "Gradiente radial"
+
+#: src/termia/i18n.py:retron_glow_enabled
+msgid "Enable glow"
+msgstr "Activar halo"
+
+#: src/termia/i18n.py:retron_unsaved
+msgid "Unsaved changes."
+msgstr "Cambios sin guardar."
+
 # Termia es translation
 # Copyright (C) 2026 Jordi Pons
 # This file is distributed under the same license as the Termia package.
@@ -2378,3 +2626,55 @@ msgstr "Color de los bordes"
 #: src/termia/i18n.py:reset_border_color
 msgid "Reset"
 msgstr "Restablecer"
+
+#: src/termia/i18n.py:retron_presets
+msgid "Configuration"
+msgstr "Configuración"
+
+#: src/termia/i18n.py:retron_current
+msgid "Current appearance (unnamed)"
+msgstr "Apariencia actual (sin nombre)"
+
+#: src/termia/i18n.py:retron_original
+msgid "Original Retron"
+msgstr "Retron original"
+
+#: src/termia/i18n.py:retron_save_as
+msgid "Save as…"
+msgstr "Guardar como…"
+
+#: src/termia/i18n.py:retron_rename
+msgid "Rename…"
+msgstr "Renombrar…"
+
+#: src/termia/i18n.py:retron_delete
+msgid "Delete configuration"
+msgstr "Eliminar configuración"
+
+#: src/termia/i18n.py:retron_name
+msgid "Configuration name"
+msgstr "Nombre de la configuración"
+
+#: src/termia/i18n.py:retron_name_invalid
+msgid "Enter a name of 1–64 characters without control characters."
+msgstr "Introduce un nombre de 1–64 caracteres sin caracteres de control."
+
+#: src/termia/i18n.py:retron_name_duplicate
+msgid "A configuration with this name already exists."
+msgstr "Ya existe una configuración con ese nombre."
+
+#: src/termia/i18n.py:retron_preset_limit
+msgid "You can save up to 32 configurations. Delete one before adding another."
+msgstr "Puedes guardar hasta 32 configuraciones. Elimina una antes de añadir otra."
+
+#: src/termia/i18n.py:retron_switch_unsaved
+msgid "Save your changes before switching configurations?"
+msgstr "¿Guardar los cambios antes de cambiar de configuración?"
+
+#: src/termia/i18n.py:retron_discard
+msgid "Discard changes"
+msgstr "Descartar cambios"
+
+#: src/termia/i18n.py:retron_delete_confirm
+msgid "Delete the saved configuration “{name}”? The current appearance will be kept."
+msgstr "¿Eliminar la configuración guardada «{name}»? Se conservará la apariencia actual."

@@ -262,6 +262,7 @@ class NotesDialogs:
 
         list_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         list_panel.add_css_class("termia-surface-panel")
+        list_panel.add_css_class("termia-notes-tree")
         list_panel.set_vexpand(True)
         self.notes_tree_root = Gio.ListStore.new(NotesTreeNode)
         self.notes_tree_model = Gtk.TreeListModel.new(

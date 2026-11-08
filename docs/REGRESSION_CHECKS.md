@@ -72,6 +72,60 @@ and proposed controls.
 
 ## Protected Behaviors
 
+### Retron visual editor
+
+- Launch `scripts/run_test_instance.sh retron-editor-486`, select Retron in
+  General and save. The titlebar appearance button and the Retron appearance
+  action in General preferences open one non-modal editor; repeated activation
+  focuses that same window. The titlebar button is hidden in other themes and
+  disabled while the connection-unlock overlay is active.
+  Verify English, Spanish and Catalan, keyboard navigation and small screens.
+- Hover and drag the editor's vertical scrollbar: verify that its expanded
+  control remains clear of the override checkboxes, including at the bottom of
+  the form and with a narrow window. Preserve native overlay scrolling.
+- Enable numeric overrides and verify light slider handles and readable tracks
+  in normal, hovered, dragged and keyboard-focused states. Disable overrides:
+  the controls must look subdued and remain noninteractive.
+- Toggle color, numeric, style and glow override checkboxes with the mouse and
+  Space. Focus must stay on the same checkbox, ordinary rows must not jump or
+  scroll, and disabled controls must display their inherited values. Toggle
+  glow visibility repeatedly; preserve checkbox focus and normal Tab navigation.
+- Customize a common border and then override one component/focus state.
+  Exercise line styles, corner radius, background alpha/gradients and three
+  inner/outer glows. Uncheck overrides to inherit. Disable all glows. Native
+  alert styling and the editor itself must remain readable and unaffected.
+- Apply without saving, then Cancel, Escape or close: restore exactly the
+  opening appearance. Turn automatic preview off and verify Apply still works.
+  Save, close Termia and relaunch the same command: the profile must survive.
+  Restore defaults then Cancel, and repeat with Save.
+- Save two distinct configurations with Save as, switch between them and Original
+  Retron, then Save and restart. Verify the selected saved appearance survives.
+  Test duplicate names ignoring case, empty/long names and a legacy single-profile
+  file. Loading alone must not migrate it; a successful save preserves its values.
+- Modify a selected configuration and switch: exercise Save, Discard and Cancel,
+  with automatic preview enabled and disabled. Save as keeps the editor open and
+  establishes a new cancellation baseline. Failed saves keep the draft and selector.
+- Rename a configuration while appearance edits are pending, then Cancel: the new
+  name persists but unsaved appearance edits do not. Confirm/cancel deletion of the
+  active profile; confirmation keeps its appearance as unnamed. Original Retron
+  cannot be renamed or deleted. Reopen after each operation and check EN/ES/CA.
+- Close the editor/application with a name dialog or confirmation open. Reopen;
+  no orphan modal window, pending confirmation or callback may remain. Read-only
+  and externally changed files must reject every collection mutation safely.
+- With an unsaved draft, switch to System/Light/Dark. Previews suspend,
+  custom CSS is removed, the draft is suspended and standard themes keep their
+  appearance. Open secondary windows in each theme, then return to Retron.
+- Review Notes and existing/new/split/detached terminals: an explicit Retron
+  background overrides only appearance, retains text/ANSI colors, and reverts
+  to their separate saved preferences outside Retron. Confirm scrolling,
+  resizing, native title movement, focus and active terminal input/output.
+- Repeat open/edit/close cycles; no retired editor, pending preview timeout or
+  extra display provider may remain. Check failed saves and synthetic corrupt,
+  future-version and read-only profiles without overwriting their files.
+
+Focused automation:
+`python3 scripts/run_sandbox_tests.py tests.test_retron_profile tests.test_retron_editor`.
+
 ### Shared dialog panel frame
 
 - In Retron, open General preferences and verify that one panel frame encloses
@@ -114,7 +168,7 @@ and proposed controls.
   5% opacity). Verify nested splits and
   detached panes, preserving terminal colors and the other container borders.
 - On a composited desktop, select Retron and put the window over contrasting
-  backgrounds. Verify that the darkest canvas uses 50% opacity, with no second
+  backgrounds. Verify that the darkest canvas uses 75% opacity, with no second
   dark canvas layer; panels, controls, text and configured terminal backgrounds
   must retain their own opacity. The default outer halo has 2px blur at 5%
   opacity; inactive windows have no halo. Check rounded edges, menus, secondary
@@ -945,15 +999,12 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Application Appearance and Themes
 
-- General preferences shows Border color and Reset only when Retron is
-  selected. Choose a custom opaque color, Save and restart: main-window,
-  header/sidebar, terminal, status capsule, terminal/Notes tab and native-alert
-  frame colors must follow it, including open detached windows. Widths,
-  radii, border opacities and halos remain unchanged. Connected/starting
-  indicators and success/warning/error roles retain their own colors. Reset
-  restores cyan `#55BAC9` only after Save; Cancel and read-only rejection must
-  preserve the saved choice. System/Light/Dark must retain their base CSS and
-  ignore the chosen border color. Switching away and back must retain it.
+- General preferences links to the Retron editor. Customize a common border,
+  Save and restart; supported component frames must retain the saved override.
+  Component overrides take precedence and native alerts retain their separate
+  appearance. Restore defaults is reversible until Save; Cancel and read-only
+  rejection must preserve the saved profile. System/Light/Dark must retain
+  their base CSS. Switching away and back must retain the Retron profile.
 - Retron research borders, shadows, menu/tab states and panel spacing must
   disappear on switching to System/Light/Dark. Restore the sidebar's 12px
   margins on all sides, including with existing windows and panes open.
