@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Added
+
+- Add Retron text-field appearance controls for normal, focused and disabled
+  entries, including saved borders, backgrounds and glows (#492).
+
+### Fixed
+
+- Reduce the original Retron text-field cyan focus outline to 1px, retaining
+  its 2px offset (#492).
+
+- Render Retron window-control frames on their compact native images rather
+  than full-height click targets, with consistent spacing and saved button
+  appearance overrides (#492).
+
+## 0.6.2-beta - 2026-11-08
+
+### Added
+
+- Add a native titlebar Tools grid replacing the separate Retron editor button,
+  with a shared local diagnostics window separating Termia and child resources.
+  Sample every five seconds only while open; record bounded history only while
+  its section is expanded (#492).
+
+Prerelease since `0.6.1-beta`, including the integrated Retron theme/editor,
+terminal protections and interaction fixes (#492). Connection storage upgrades
+to schema 4; retain a pre-upgrade backup before downgrading. See
+[storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
+
 ### Changed
 
 - Set the default Retron window background to 75% opacity (25% transparency),
@@ -28,6 +56,9 @@
   and preserve existing single-profile settings when upgrading storage (#486).
 
 ### Fixed
+
+- Keep GTK events processing between sidebar click sequences in regression
+  tests, allowing native click timeouts to expire on GTK 4.22 (#492).
 
 - Preserve Retron editor checkbox focus and scroll position when toggling
   appearance overrides, updating inherited values without rebuilding the form.

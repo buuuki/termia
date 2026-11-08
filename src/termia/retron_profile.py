@@ -36,8 +36,13 @@ COMPONENTS = {
                       ("normal", "hover", "selected", "focus"), inset=True, opacity=0.0),
     "panels": Component((".termia-panel", ".termia-surface-panel:not(.termia-notes-tree)", ".stat-card", "frame.card",
                          "frame.termia-preference-frame", "frame.termia-notes-toolbar-frame"), inset=True),
-    "buttons": Component(("button:not(.termia-tab-close)",),
+    "buttons": Component(("button:not(.termia-tab-close):not(.minimize):not(.maximize):not(.close)",
+                          "windowcontrols button.minimize > image",
+                          "windowcontrols button.maximize > image",
+                          "windowcontrols button.close > image"),
                          ("normal", "hover", "pressed", "focus", "disabled"), background=retron.DARK_GLOW_COLORS["control"]),
+    "fields": Component(("entry", "spinbutton"), ("normal", "focus", "disabled"),
+                        background=retron.DARK_GLOW_COLORS["control"]),
     "menus": Component(("popover > contents",)),
     "dialogs": Component((".termia-dialog-panel",), inset=True),
     "secondary": Component(("&:not(.termia-main-window)",), ("normal", "backdrop", "held"), background=retron.DARK_GLOW_COLORS["canvas"], opacity=retron.WINDOW_OPACITY),
@@ -176,7 +181,11 @@ def defaults(component: str, state: str, *, accent: str = ACCENT,
     elif component == "sidebar" and state == "focus":
         shadows = [{**new_shadow(), "color": accent, "blur": retron.SIDEBAR_GLOW_BLUR,
                     "opacity": retron.SIDEBAR_GLOW_OPACITY, "inset": True}]
-    return {"border_color": accent, "border_opacity": alpha, "border_width": retron.BORDER_WIDTH,
+    border_color = accent
+    if component == "fields":
+        border_color = accent if state == "focus" else retron.DARK_GLOW_COLORS["border"]
+        alpha = 1.0
+    return {"border_color": border_color, "border_opacity": alpha, "border_width": retron.BORDER_WIDTH,
             "border_style": "solid", "radius": retron.BORDER_RADIUS, "background_color": background,
             "background_opacity": 1.0 if component == "tabs" and state in ("hover", "selected") else spec.opacity,
             "background_mode": "solid", "gradient_color": retron.DARK_GLOW_COLORS["hover"], "gradient_angle": 90.0,
@@ -213,6 +222,8 @@ def shadow_css(shadow: dict) -> str:
 
 
 def selector_for(selector: str, state: str) -> str:
+    if selector.endswith(" > image"):
+        return selector_for(selector.removesuffix(" > image"), state) + " > image"
     base = ROOT + selector[1:] if selector.startswith("&") else ROOT + " " + selector
     if state == "backdrop":
         return base.replace(ROOT, ROOT + ":backdrop", 1)
@@ -240,6 +251,10 @@ def build_profile_css(profile: dict, **context) -> str:
                 declarations.extend(((f"border: {values['border_width']:g}px {values['border_style']} "
                                       f"{rgba(values['border_color'], values['border_opacity'])};"),
                                      f"border-radius: {values['radius']:g}px;"))
+                if component == "fields" and state == "focus":
+                    # The customized focus border replaces the fixed cyan ring.
+                    # Background/glow-only edits retain the original focus cue.
+                    declarations.append("outline: none;")
             if border_changed or "shadows" in patch:
                 shadows = [shadow_css(item) for item in values["shadows"]]
                 if spec.inset and not border_changed:

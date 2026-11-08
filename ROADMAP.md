@@ -7,28 +7,31 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Current delivery: 0.6.1-beta maintenance
+## Current preparation: 0.6.2-beta
 
-Source version: `0.6.1-beta`; Debian package: `0.6.1~beta-1`. This delivery
-collects maintenance since `0.6.0-beta.4`, including the updater, GTK dialogs,
-focused cleanup and UI corrections. See [CHANGELOG.md](CHANGELOG.md).
-Preparation is tracked in [#452](https://github.com/buuuki/termia/issues/452)
-and publication in [#454](https://github.com/buuuki/termia/issues/454).
+Source version: `0.6.2-beta`; Debian package: `0.6.2~beta-1`. This delivery
+collects all integrated changes since `0.6.1-beta`, including Retron, its
+appearance editor and named configurations, terminal clipboard protections,
+local profile passwords and interaction fixes. See [CHANGELOG.md](CHANGELOG.md).
+Preparation is tracked in [#492](https://github.com/buuuki/termia/issues/492).
+Package, upgrade and release acceptance must pass before publication;
+`0.6.1-beta` remains the latest published release.
 
 Termia remains in beta. Maintenance may increment PATCH while retaining beta
-status; new feature deliveries increment MINOR. New beta deliveries use
+status; new feature deliveries normally increment MINOR. The integrated
+`0.6.2-beta` scope is a release-specific exception. New beta deliveries use
 `-beta` without a serial; new development branches use `X.Y.Z-dev` without
 a `release/` prefix or a maturity suffix. Numbered RCs remain optional.
 See `docs/VERSIONING.md` for the maintenance and transition gates.
 
 ## Development after publication
 
-Use `0.6.1-dev` until `v0.6.1-beta` is published. Then create `0.6.2-dev` from
+Use `0.6.2-dev` until `v0.6.2-beta` is published. Then create `0.6.3-dev` from
 the updated `main` for further maintenance. New issue branches and PRs use that
 active development line. Future features and stable promotion require separate
 scope and readiness approval.
 
-Retain `0.6.1-dev` and `release/0.6.0-beta.5-dev` as historical branches unless
+Retain previous development branches as historical branches unless
 cleanup is approved. Creating a development branch does not change versions.
 `main` remains the latest published release line.
 
@@ -63,6 +66,5 @@ as defined in `docs/VERSIONING.md`.
 
 ## Future features (unscheduled)
 
-- Allow users to create and save custom Termia interface themes and personalize
-  their colors, including selection and accent colors, independently of the
-  desktop GTK theme. Keep terminal color schemes configurable separately.
+- Rearrange split panes using keyboard or drag-and-drop (#316). This is outside
+  the 0.6.2-beta release scope.

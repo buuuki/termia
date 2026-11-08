@@ -62,6 +62,7 @@ class StartupTerminalTests(unittest.TestCase):
             toggle_sidebar_button=Mock(),
             new_tab_button=Mock(),
             main_menu_button=Mock(),
+            tool_launcher=Mock(),
             unlock_password_entry=Mock(),
             unlock_error_label=Mock(),
         )

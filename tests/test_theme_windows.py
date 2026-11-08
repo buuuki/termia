@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import time
 import unittest
+from itertools import pairwise
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -11,10 +12,85 @@ from gi.repository import GLib
 
 from termia.app import Gdk, Gtk, TermiaWindow, WindowThemeScope
 from termia.dialog_window import DialogWindow
+from termia.retron_profile import build_profile_css, empty_profile
 from termia.theme_styles import build_dark_glow_css, build_interaction_css
 
 
 class SecondaryThemeTests(unittest.TestCase):
+    def test_native_control_images_own_frames_and_profile_overrides(self):
+        for automatic_style in (False, True):
+            with self.subTest(automatic_style=automatic_style):
+                window = Gtk.Window(default_width=420, default_height=200)
+                header = Gtk.HeaderBar()
+                header.set_decoration_layout(":minimize,maximize,close")
+                if automatic_style:
+                    header.add_css_class("default-decoration")
+                window.set_titlebar(header)
+                provider = Gtk.CssProvider()
+                provider.load_from_data((build_dark_glow_css()
+                                        + build_interaction_css("dark_glow", "#123456", "#55BAC9")).encode())
+                display = window.get_display()
+                Gtk.StyleContext.add_provider_for_display(display, provider, 600)
+                custom = Gtk.CssProvider()
+
+                def settle():
+                    deadline = time.monotonic() + 0.2
+                    while time.monotonic() < deadline:
+                        GLib.MainContext.default().iteration(False)
+                        time.sleep(0.002)
+
+                def controls(widget):
+                    if isinstance(widget, Gtk.Button) and any(
+                        widget.has_css_class(name) for name in ("minimize", "maximize", "close")
+                    ):
+                        yield widget
+                    child = widget.get_first_child()
+                    while child is not None:
+                        yield from controls(child)
+                        child = child.get_next_sibling()
+
+                try:
+                    window.present()
+                    settle()
+                    buttons = list(controls(header))
+                    self.assertEqual(len(buttons), 3)
+                    baseline = [b.get_style_context().get_border().top for b in buttons]
+                    window.add_css_class("termia-dark-glow")
+                    settle()
+                    frames = []
+                    for button in buttons:
+                        self.assertEqual(button.get_style_context().get_border().top, 0)
+                        image = button.get_child()
+                        self.assertIsInstance(image, Gtk.Image)
+                        self.assertEqual(image.get_style_context().get_border().top, 1)
+                        _, bounds = image.compute_bounds(window)
+                        frames.append(bounds)
+                        _, header_bounds = header.compute_bounds(window)
+                        self.assertGreater(bounds.get_y(), header_bounds.get_y())
+                        self.assertLess(bounds.get_y() + bounds.get_height(),
+                                        header_bounds.get_y() + header_bounds.get_height())
+                        self.assertGreaterEqual(bounds.get_x() - header_bounds.get_x(), 4)
+                        self.assertGreaterEqual(header_bounds.get_x() + header_bounds.get_width()
+                                                - bounds.get_x() - bounds.get_width(), 4)
+                    frames.sort(key=lambda bounds: bounds.get_x())
+                    for left, right in pairwise(frames):
+                        self.assertAlmostEqual(right.get_x() - left.get_x() - left.get_width(), 6, delta=1)
+                    profile = empty_profile()
+                    profile["common"]["normal"] = {"border_width": 3}
+                    custom.load_from_data(build_profile_css(profile).encode())
+                    Gtk.StyleContext.add_provider_for_display(display, custom, 602)
+                    settle()
+                    for button in buttons:
+                        self.assertEqual(button.get_style_context().get_border().top, 0)
+                        self.assertEqual(button.get_child().get_style_context().get_border().top, 3)
+                    window.remove_css_class("termia-dark-glow")
+                    settle()
+                    self.assertEqual([b.get_style_context().get_border().top for b in buttons], baseline)
+                finally:
+                    window.destroy()
+                    Gtk.StyleContext.remove_provider_for_display(display, custom)
+                    Gtk.StyleContext.remove_provider_for_display(display, provider)
+
     @unittest.skipUnless(shutil.which("xdotool"), "Native pointer test requires xdotool")
     def test_real_title_pointer_press_and_release(self):
         window = Gtk.Window(title="Termia native title feedback test")

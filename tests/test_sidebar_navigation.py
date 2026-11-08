@@ -246,8 +246,8 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         self.drain()
 
     @staticmethod
-    def drain():
-        deadline = time.monotonic() + 0.1
+    def drain(seconds=0.1):
+        deadline = time.monotonic() + seconds
         while time.monotonic() < deadline:
             GLib.MainContext.default().iteration(False)
             time.sleep(0.001)
@@ -508,7 +508,7 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         self.drain()
         self.assertEqual((host.selected.kind, host.selected.item_id), ("group", "parent"))
         self.assertFalse(host.get_group_expander("parent").get_expanded())
-        time.sleep(0.5)
+        self.drain(0.5)
         subprocess.run(
             ["xdotool", "click", "--repeat", "2", "--delay", "100", "1"],
             check=True, stdout=subprocess.DEVNULL,

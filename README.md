@@ -54,8 +54,11 @@ Use Terminal preferences to change those colors for the selected theme at any
 time. Notes editor colors remain independent. Retron adds terminal content padding and a subdued
 main header without a halo. This is a local research option, not a
 published release.
-With Retron active, use the appearance button in the titlebar or
+With Retron active, use **Tools → Retron appearance editor** in the titlebar grid or
 **General → Retron appearance editor** to open the same visual editor.
+**Text fields → Focused component** controls entry and numeric-field borders and glows.
+Customizing the focus border replaces the fixed cyan outline; keep a visible
+border or glow for keyboard navigation. Notes uses its separate component.
 Set a common style or customize a component and state;
 check a property's box to override its inherited value. Borders, solid/gradient
 backgrounds and up to three glows update live. Apply is temporary; Save persists
@@ -78,7 +81,32 @@ Retron also styles secondary window frames and shared Notes, snippets, SFTP, pre
 and update-log containers. Notes editor colors remain independent; native desktop portal
 dialogs may retain the system theme.
 
+The titlebar **Tools** grid also opens **Termia diagnostics**, an independent
+window shared by the windows of the same application process. It separates CPU,
+resident memory, threads and file descriptors of Termia and its local children,
+and lists sessions, VTE terminals and SSH clients. Monitoring runs only while
+open, approximately every five seconds. History is off while its section is
+collapsed (the default); expanding it starts a new capture of up to 60 readings
+in memory. Collapsing it stops recording and updating that panel. It never
+contacts or measures remote servers. CPU uses 100% per core; summed resident
+memory can count shared pages multiple times. SSH clients do not prove remote
+authentication/connectivity. Possible orphan detection covers retained process
+identities and children observed while monitoring, not all historical processes.
+Unavailable values show a dash. No commands, environment variables or credentials
+are collected and the tool does not terminate processes.
+
 ## Release status
+
+**0.6.2-beta is in preparation** with the integrated Retron theme/editor,
+named appearance configurations, terminal protections and interaction fixes.
+It is not published yet; the package below remains **0.6.1-beta** and does not
+include these newer features. See [CHANGELOG.md](CHANGELOG.md) and
+[release preparation #492](https://github.com/buuuki/termia/issues/492).
+
+Before first running 0.6.2-beta, close Termia and back up your profile.
+Connections upgrade to schema 4, which older versions cannot read. To downgrade,
+restore the pre-upgrade backup and retain a separate copy of newer data.
+See [storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
 
 **[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** is a
 maintenance prerelease. See [CHANGELOG.md](CHANGELOG.md) for the changes since
@@ -191,7 +219,7 @@ dpkg-buildpackage -us -uc -b
 ```
 
 The package is created in the parent directory as
-`termia_0.6.1~beta-1_all.deb`. It is separate from the official release asset.
+`termia_0.6.2~beta-1_all.deb`. It is separate from the official release asset.
 
 ## Documentation
 

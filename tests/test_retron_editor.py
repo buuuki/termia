@@ -45,23 +45,23 @@ class RetronHeaderTests(unittest.TestCase):
                     patch("termia.app.SESSION_SNAPSHOT_FILE", root / "session.json"):
                 window = TermiaWindow(app)
             try:
-                button = window.retron_editor_button
+                button = window.tool_launcher
                 self.assertTrue(button.get_visible())
                 self.assertIs(button.get_ancestor(Gtk.HeaderBar), window.header)
-                button.emit("clicked")
+                window.tool_registry.activate("appearance")
                 editor = window.retron_runtime.editor
                 self.assertIsNotNone(editor)
                 window.on_retron_editor()
-                button.emit("clicked")
+                window.tool_registry.activate("appearance")
                 self.assertIs(window.retron_runtime.editor, editor)
                 for language in ("en", "es", "ca"):
                     store.data.app.language = language
                     window.refresh_translated_chrome()
-                    self.assertEqual(button.get_tooltip_text(), translate_key("retron_editor", language))
+                    self.assertEqual(button.get_tooltip_text(), translate_key("tools", language))
                 for theme in ("light", "dark", "system", "dark_glow"):
                     store.data.app.theme = theme
                     window.apply_app_theme()
-                    self.assertEqual(button.get_visible(), theme == "dark_glow")
+                    self.assertEqual("appearance" in button.buttons, theme == "dark_glow")
                     self.assertEqual(window.retron_runtime.provider is not None, theme == "dark_glow")
                 window.set_unlock_header_actions_sensitive(False)
                 self.assertFalse(button.get_sensitive())
@@ -105,6 +105,45 @@ class RetronEditorTests(unittest.TestCase):
 
     def editor(self):
         return self.runtime.show_editor(self.parent, lambda key: translate_key(key, "en"))
+
+    def test_text_fields_edit_save_reload_cancel_and_theme_switch(self):
+        entry = Gtk.Entry()
+        self.parent.set_child(entry)
+        self.parent.present()
+        self.settle()
+        original_border = entry.get_style_context().get_border().top
+        editor = self.editor()
+        row = editor.component_list.get_row_at_index(editor.component_ids.index("fields"))
+        editor.component_list.select_row(row)
+        self.assertEqual(editor.state_ids, ("normal", "focus", "disabled"))
+        editor._set("border_width", 4)
+        editor.state_choice.set_selected(editor.state_ids.index("focus"))
+        editor._set("border_color", "#ABCDEF")
+        editor._set("shadows", [new_shadow()])
+        editor.response(Gtk.ResponseType.OK)
+        self.settle()
+        self.assertEqual(entry.get_style_context().get_border().top, 4)
+        saved = RetronStore(self.path, lambda: True).load()
+        self.assertEqual(saved["components"]["fields"]["focus"]["border_color"], "#ABCDEF")
+        self.assertEqual(saved["components"]["fields"]["normal"]["border_width"], 4)
+        for language, label in (("en", "Text fields"), ("es", "Campos de texto"), ("ca", "Camps de text")):
+            self.assertEqual(translate_key("retron_component_fields", language), label)
+        self.runtime.set_enabled(False)
+        self.settle()
+        self.assertEqual(entry.get_style_context().get_border().top, original_border)
+        self.runtime.set_enabled(True)
+        self.settle()
+        self.assertEqual(entry.get_style_context().get_border().top, 4)
+        editor = self.editor()
+        editor.component_list.select_row(editor.component_list.get_row_at_index(editor.component_ids.index("fields")))
+        editor._set("border_width", 6)
+        editor.response(Gtk.ResponseType.APPLY)
+        self.settle()
+        self.assertEqual(entry.get_style_context().get_border().top, 6)
+        editor.response(Gtk.ResponseType.CANCEL)
+        self.settle()
+        self.assertEqual(self.runtime.profile, saved)
+        self.assertEqual(entry.get_style_context().get_border().top, 4)
 
     def test_singleton_close_cancel_and_pending_source_cleanup(self):
         editor = self.editor()

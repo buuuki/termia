@@ -44,7 +44,27 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
     css += rule("button.destructive-action", f"background-color: #5A2C37; border-color: {c['red']}; color: {c['text']};")
     css += rule("button:disabled", f"background-color: {c['surface']}; color: {c['muted']}; border-color: {c['border']}; box-shadow: none; text-shadow: none;")
     css += rule("entry:disabled", f"color: {c['muted']}; border-color: {c['border']};")
-    css += rule("button:focus-visible,entry:focus-within,spinbutton:focus-within", f"outline: 2px solid {c['cyan']}; outline-offset: 2px;")
+    css += rule("button:focus-visible", f"outline: 2px solid {c['cyan']}; outline-offset: 2px;")
+    css += rule("entry:focus-within,spinbutton:focus-within", f"outline: 1px solid {c['cyan']}; outline-offset: 2px;")
+    # Keep GTK's full native hit target transparent; decorate its compact image.
+    controls = tuple(f"windowcontrols button.{action}" for action in ("minimize", "maximize", "close"))
+    css += rule("windowcontrols", "border-spacing: 6px;")
+    css += rule("windowcontrols.end:dir(ltr),windowcontrols.start:dir(rtl)", "margin-right: 6px;")
+    css += rule("windowcontrols.start:dir(ltr),windowcontrols.end:dir(rtl)", "margin-left: 6px;")
+    css += rule(",".join(controls), "background: transparent; border: 0; box-shadow: none; outline: 0; "
+                "padding-left: 0; padding-right: 0; margin-left: 0; margin-right: 0; min-width: 0;")
+    css += rule(",".join(control + " > image" for control in controls),
+                f"background: {c['control']}; border: {retron.BORDER_WIDTH:g}px solid {c['border']}; "
+                f"border-radius: {retron.BORDER_RADIUS:g}px; box-shadow: none; "
+                "min-width: 24px; min-height: 24px; margin-left: 0; margin-right: 0;")
+    for state, background in (("hover", c["hover"]), ("active", c["selection"])):
+        css += rule(",".join(control + f":{state} > image" for control in controls),
+                    f"background: {background}; border-color: {c['cyan']};")
+    css += rule(",".join(control + ":focus-visible > image" for control in controls),
+                f"outline: 2px solid {c['cyan']}; outline-offset: 2px;")
+    css += rule(".termia-tool-grid,.termia-tool-grid > flowboxchild", "background: transparent;")
+    css += rule(".termia-tool-tile:hover,.termia-tool-tile:focus-visible",
+                f"border-color: {c['cyan']}; box-shadow: 0 0 3px alpha({c['cyan']}, 0.12);")
     css += rule(".termia-tab-label", f"background-color: transparent; border: {retron.BORDER_WIDTH:g}px solid transparent; border-radius: {retron.BORDER_RADIUS:g}px; box-shadow: none;")
     css += rule(".termia-notes-notebook,.termia-notes-notebook > stack,.termia-notes-notebook > header,.termia-notes-notebook > header > tabs",
                 "background: transparent; border: 0; box-shadow: none;")
