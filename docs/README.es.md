@@ -57,8 +57,27 @@ del editor de Notas siguen siendo independientes.
 Retron añade espacio interior al terminal y una barra de título tenue sin
 halo luminoso. Es una opción local de
 investigación, no una versión publicada.
-Con Retron seleccionado, Preferencias generales permite elegir el color de
-los bordes o restablecer el cian original; se aplica al guardar.
+Con Retron activo, abre el editor de apariencia con el botón de la barra de
+título o desde **General**. Ambos accesos abren la misma ventana.
+Puedes cambiar el estilo común o un componente y estado;
+marca la casilla de una propiedad para personalizarla. Los bordes, fondos
+lisos o con gradiente y hasta tres halos se previsualizan al momento.
+Aplicar es temporal; Guardar conserva el perfil. **Guardar como…** crea una
+configuración con nombre y permite seguir editando. El selector Configuración
+ofrece los perfiles guardados, la apariencia actual sin nombre y Retron original.
+Guardar actualiza el perfil seleccionado; al cambiar con ajustes pendientes se
+puede guardar, descartar o cancelar. Renombrar y confirmar Eliminar actualizan
+la colección al momento; eliminar conserva la apariencia actual. Se admiten
+hasta 32 perfiles con nombres únicos de 1–64 caracteres.
+Cancelar, Escape y cerrar deshacen los ajustes de apariencia desde la apertura
+o el último Guardar/Guardar como; no deshacen nombres guardados ni eliminaciones.
+Restaurar valores puede cancelarse hasta guardar y Retron original siempre está
+disponible. El editor conserva su legibilidad
+y las alertas su aspecto independiente; los demás temas no cambian.
+El fondo VTE es liso, sin difuminado ni cambios en la paleta ANSI. Un fondo
+Retron explícito prevalece temporalmente sobre las preferencias independientes
+de Terminal/Notas mientras Retron está activo. Consulta el
+[almacenamiento del perfil](STORAGE_MIGRATIONS.md#retron-appearance-profile).
 
 Retron también aplica su estilo a los marcos de ventanas secundarias y los contenedores
 compartidos de Notas, snippets, SFTP, preferencias y registros del actualizador. Los

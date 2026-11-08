@@ -2,11 +2,44 @@
 
 ## Unreleased
 
+### Changed
+
+- Set the default Retron window background to 75% opacity (25% transparency),
+  preserving explicit appearance-profile overrides.
+
+### Refactored
+
+- Share Retron palette, frame and glow defaults between the base theme and
+  appearance profiles, preserving rendered styles and saved configurations (#486).
+
+### Added
+
+- Open the Retron editor from a native header button, sharing the existing
+  editor window with General preferences and following theme and language
+  changes and the connection-unlock overlay (#486).
+
+- Add a Retron-only visual appearance editor with shared and per-component
+  border, background and glow settings, reversible live previews and an
+  independent atomic profile store. Preserve standard themes, native alerts,
+  Notes preferences and terminal sessions (#486).
+
+- Save, select, rename and delete named Retron appearance configurations.
+  Protect unsaved changes when switching, retain the original Retron preset,
+  and preserve existing single-profile settings when upgrading storage (#486).
+
 ### Fixed
+
+- Preserve Retron editor checkbox focus and scroll position when toggling
+  appearance overrides, updating inherited values without rebuilding the form.
 
 - Open terminal context menus on right-button release and ignore releases with
   other mouse buttons held, preventing mouse input loss after combined clicks
   on Wayland.
+
+- Give the independent Retron editor native minimize/maximize/close controls
+  and an automatically hiding scrollbar with a 40px content end margin,
+  keeping override checkboxes reachable; use native sliders with lighter
+  handles and tracks and visible values for numeric appearance properties (#486).
 
 - Enclose dialog content and action buttons in one shared Retron panel,
   preserving action behavior and the separate native message-alert style (#484).

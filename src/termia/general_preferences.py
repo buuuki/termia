@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
-from functools import partial
-
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -15,13 +13,13 @@ from .choice_widgets import (
     select_choice,
     text_choice,
 )
-from .constants import APP_THEMES, DEBUG_LOG_FILE, DEFAULT_DARK_GLOW_BORDER_COLOR
+from .constants import APP_THEMES, DEBUG_LOG_FILE
 from .debug import configure_debug_logging
 from .dialog_window import DialogWindow
 from .i18n import LANGUAGES, detect_system_language
 from .models import AppSettings
 from .stores import ReadOnlyStoreError
-from .terminal_config import parse_color, rgba_to_hex
+from .terminal_config import rgba_to_hex
 from .theme_styles import DARK_GLOW_THEME
 
 GENERAL_PREFERENCE_FIELDS = (
@@ -83,21 +81,16 @@ class GeneralPreferencesMixin:
             append_choice(language_combo, language_id, label)
         select_choice(language_combo, self.store.data.app.language)
 
-        border_color_button = Gtk.ColorButton()
-        border_color_button.set_title(self.t("border_color"))
-        border_color_button.set_use_alpha(False)
-        border_color_button.set_rgba(parse_color(
-            self.store.data.app.dark_glow_border_color, DEFAULT_DARK_GLOW_BORDER_COLOR,
-        ))
-        reset_border_button = Gtk.Button(label=self.t("reset_border_color"))
-        reset_border_button.connect(
-            "clicked", lambda _button: border_color_button.set_rgba(
-                parse_color(DEFAULT_DARK_GLOW_BORDER_COLOR, DEFAULT_DARK_GLOW_BORDER_COLOR)
-            ),
-        )
-        border_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        border_controls.append(border_color_button)
-        border_controls.append(reset_border_button)
+        border_controls = Gtk.Button(label=self.t("retron_editor"))
+        border_controls.set_tooltip_text(self.t("retron_open_hint"))
+        border_controls.set_sensitive(self.store.data.app.theme == DARK_GLOW_THEME)
+
+        def open_retron_editor(_button):
+            # Keep pending General values while the modeless editor is used.
+            dialog.set_modal(False)
+            self.on_retron_editor()
+
+        border_controls.connect("clicked", open_retron_editor)
 
         checks = [
             ("close_tab_on_disconnect", self.store.data.app.close_tab_on_disconnect),
@@ -160,7 +153,7 @@ class GeneralPreferencesMixin:
         )
 
         rows: list[tuple[str, Gtk.Widget]] = [
-            (self.t("theme"), theme_combo), (self.t("border_color"), border_controls),
+            (self.t("theme"), theme_combo), (self.t("theme_dark_glow"), border_controls),
             (self.t("language"), language_combo),
         ]
         rows.extend(("", button) for button in check_buttons[:9])
@@ -189,7 +182,7 @@ class GeneralPreferencesMixin:
             grid.attach(widget, 1, index, 1, 1)
         dialog.get_content_area().append(grid)
         dialog.connect(
-            "response", partial(self.on_app_preferences_response, border_color_button=border_color_button),
+            "response", self.on_app_preferences_response,
             theme_combo, language_combo, *check_buttons,
         )
         dialog.present()

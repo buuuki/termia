@@ -57,8 +57,25 @@ l'editor de Notes continuen sent independents.
 Retron afegeix espai interior al terminal i una barra de títol tènue sense
 halo lluminós. És una
 opció local d'investigació, no una versió publicada.
-Amb Retron seleccionat, Preferències generals permet triar el color de les
-vores o restablir el cian original; s'aplica en desar.
+Amb Retron actiu, obre l’editor d’aparença amb el botó de la barra de títol
+o des de **General**. Tots dos accessos obren la mateixa finestra.
+Pots canviar l’estil comú o un component i estat; marca la casella
+d’una propietat per personalitzar-la. Les vores, els fons llisos o amb degradat
+i fins a tres resplendors es previsualitzen al moment. Aplica és temporal;
+Desa conserva el perfil. **Desa com a…** crea una configuració amb nom i permet
+continuar editant. El selector Configuració ofereix els perfils desats,
+l’aparença actual sense nom i Retron original. Desa actualitza el perfil
+seleccionat; en canviar amb ajustos pendents es pot desar, descartar o cancel·lar.
+Canviar el nom i confirmar Suprimeix actualitzen la col·lecció al moment;
+suprimir conserva l’aparença actual. S’admeten fins a 32 perfils amb noms únics
+d’1–64 caràcters. Cancel·la, Escape i tancar desfan els ajustos d’aparença des de
+l’obertura o l’últim Desa/Desa com a; no desfan noms desats ni supressions.
+Restaura els valors es pot cancel·lar fins que es desa i Retron original sempre
+està disponible. L’editor conserva la llegibilitat i les alertes el seu aspecte
+independent; els altres temes no canvien. El fons VTE és llis, sense difuminat
+ni canvis a la paleta ANSI. Un fons Retron explícit preval temporalment sobre
+les preferències independents de Terminal/Notes mentre Retron està actiu.
+Consulta l’[emmagatzematge del perfil](STORAGE_MIGRATIONS.md#retron-appearance-profile).
 
 Retron també aplica el seu estil als marcs de finestres secundàries i als contenidors
 compartits de Notes, snippets, SFTP, preferències i registres de l’actualitzador. Els

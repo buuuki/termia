@@ -18,6 +18,7 @@ def build_application_css(
     theme: str = "system",
     terminal_foreground: str = DEFAULT_TERMINAL_FOREGROUND,
     dark_glow_border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR,
+    include_retron: bool = True,
 ) -> bytes:
     thickness = max(1, split_separator_thickness)
     handle_size = max(5, thickness)
@@ -94,4 +95,4 @@ def build_application_css(
         "border-color: @theme_selected_bg_color; color: @theme_fg_color; } "
         ".termia-required-marker { font-size: 1.2em; font-weight: 700; } "
         ".termia-required-hint { color: alpha(@theme_fg_color, 0.8); } "
-    ).encode() + (build_dark_glow_css(dark_glow_border_color).encode() if theme == DARK_GLOW_THEME else b"") + build_interaction_css(theme, terminal_background, terminal_foreground, dark_glow_border_color).encode()
+    ).encode() + (build_dark_glow_css(dark_glow_border_color).encode() if include_retron and theme == DARK_GLOW_THEME else b"") + (build_interaction_css(theme, terminal_background, terminal_foreground, dark_glow_border_color).encode() if include_retron else b"")
