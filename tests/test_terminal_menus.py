@@ -8,6 +8,7 @@ from termia.models import Server
 from termia.terminal_menu_actions import TerminalMenuActions
 from termia.terminal_menus import Gdk, Gio, GLib, Gtk, TerminalMenusMixin, Vte
 from termia.terminal_sessions import TerminalSessionsMixin
+from termia.ui_state import SignalConnections
 
 
 class NativeTerminalMenuTests(unittest.TestCase):
@@ -97,6 +98,37 @@ class NativeTerminalMenuTests(unittest.TestCase):
         self.terminal.grab_focus()
         self.drain()
         self.assertIs(self.window.get_focus(), self.terminal)
+
+    def test_other_held_buttons_do_not_open_or_retarget_menu(self):
+        gesture = Mock()
+        for modifier in (Gdk.ModifierType.BUTTON1_MASK, Gdk.ModifierType.BUTTON2_MASK,
+                         Gdk.ModifierType.BUTTON4_MASK, Gdk.ModifierType.BUTTON5_MASK):
+            with self.subTest(button=modifier):
+                gesture.get_current_event_state.return_value = modifier | Gdk.ModifierType.BUTTON3_MASK
+                self.host.on_terminal_right_click(gesture, 1, 10, 12, self.session, self.terminal)
+                self.assertFalse(getattr(self.host, "_terminal_context_menus", {}))
+        gesture.get_current_event_state.return_value = Gdk.ModifierType.BUTTON3_MASK
+        self.host.on_terminal_right_click(gesture, 1, 10, 12, self.session, self.terminal)
+        menu = self.host._terminal_context_menus[self.window]
+        target = menu._termia_target
+        gesture.get_current_event_state.return_value |= Gdk.ModifierType.BUTTON1_MASK
+        self.host.on_terminal_right_click(gesture, 1, 30, 40, self.session, self.terminal)
+        self.assertIs(menu._termia_target, target)
+
+    def test_context_menu_waits_for_right_button_release(self):
+        signals = SignalConnections()
+        self.addCleanup(signals.disconnect)
+        host = Mock()
+        host.pane_state.return_value = SimpleNamespace(ui_signals=signals)
+        host.on_terminal_right_click = self.host.on_terminal_right_click
+        TerminalSessionsMixin.configure_terminal_interactions(host, self.terminal, self.session)
+        controllers = self.terminal.observe_controllers()
+        gesture = next(controller for controller in controllers
+                       if isinstance(controller, Gtk.GestureClick) and controller.get_button() == 3)
+        gesture.emit("pressed", 1, 10.0, 12.0)
+        self.assertFalse(getattr(self.host, "_terminal_context_menus", {}))
+        gesture.emit("released", 1, 10.0, 12.0)
+        self.assertTrue(self.host._terminal_context_menus[self.window].get_visible())
 
     def test_model_nested_order_shortcuts_and_optional_actions(self):
         menu = self.open_menu()

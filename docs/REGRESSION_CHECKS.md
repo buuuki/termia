@@ -1301,6 +1301,11 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Close a tab and confirm focus moves to the next terminal.
 - Middle-click a tab and confirm it follows the configured close confirmation and moves focus to the next terminal.
 - Right-click a terminal and open the context menu.
+- On Wayland, verify the terminal context menu opens on right-button release.
+  Hold left then right, and right then left; release in both orders. Repeat
+  quickly and with pauses, then verify sidebar/header buttons, terminal text
+  selection, normal/double right-clicks and outside-menu dismissal still work.
+  A release while another button is held must not open a context menu.
 - From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
 - Select `Open connection in split…`, search a saved server by name, host, and
   user, then use `Up`/`Down` and `Enter` to open the selected connection.
