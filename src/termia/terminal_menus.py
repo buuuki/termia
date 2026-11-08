@@ -24,7 +24,7 @@ def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
     if isinstance(widget, Gtk.PopoverMenu):
         if not widget.get_visible() or getattr(widget, "_termia_target", None) is None:
             return GLib.SOURCE_REMOVE
-        # VTE can reclaim focus later in the same button-press event.
+        # VTE can reclaim focus later in the same pointer event.
         # Restore it on idle before removing the initial highlight.
         focused = widget.get_root().get_focus()
         if focused is None or not focused.is_ancestor(widget):
@@ -44,9 +44,15 @@ def _clear_initial_menu_selection(widget: Gtk.Widget) -> bool:
 
 class TerminalMenusMixin:
     def on_terminal_right_click(
-        self, _gesture: Gtk.GestureClick, _n_press: int, x: float, y: float,
+        self, gesture: Gtk.GestureClick, _n_press: int, x: float, y: float,
         session: TerminalSession, terminal: Vte.Terminal,
     ) -> None:
+        # A release event may still carry BUTTON3_MASK. Other held buttons
+        # belong to an unfinished pointer sequence (for example VTE selection).
+        other_buttons = (Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON2_MASK
+                         | Gdk.ModifierType.BUTTON4_MASK | Gdk.ModifierType.BUTTON5_MASK)
+        if gesture is not None and gesture.get_current_event_state() & other_buttons:
+            return
         pane = session.pane_for_terminal(terminal)
         window = terminal.get_root()
         if pane is None or not isinstance(window, Gtk.Window):

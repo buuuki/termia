@@ -937,7 +937,8 @@ class TerminalSessionsMixin:
         terminal.add_controller(focus)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
-        signals.connect(right_click, "pressed", self.on_terminal_right_click, session, terminal)
+        # Finish the pointer sequence before a popover takes the Wayland grab.
+        signals.connect(right_click, "released", self.on_terminal_right_click, session, terminal)
         terminal.add_controller(right_click)
         paste_state: dict[str, Any] = {}
         signals.connect(terminal, "paste-clipboard", self.on_terminal_paste_requested, session, paste_state)

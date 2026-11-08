@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Open terminal context menus on right-button release and ignore releases with
+  other mouse buttons held, preventing mouse input loss after combined clicks
+  on Wayland.
+
 - Enclose dialog content and action buttons in one shared Retron panel,
   preserving action behavior and the separate native message-alert style (#484).
 
