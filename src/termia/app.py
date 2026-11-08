@@ -34,6 +34,8 @@ from .debug import (
     log_startup_context,
     log_store_state,
 )
+from .diagnostics import DiagnosticContext, ManagedProcess
+from .diagnostics_view import DiagnosticsTool
 from .dialog_actions import configure_action_area
 from .i18n import translate_key
 from .keybindings import keybinding_matches
@@ -68,6 +70,7 @@ from .terminal_menus import TerminalMenusMixin
 from .terminal_processes import TerminalProcess
 from .terminal_sessions import TerminalSessionsMixin
 from .theme_styles import DARK_GLOW_CLASS, DARK_GLOW_THEME
+from .tool_launcher import Tool, ToolLauncher, ToolRegistry
 from .transfer_lifecycle import ManagedTransfer
 from .ui_state import RowObject
 
@@ -474,7 +477,7 @@ class TermiaWindow(
             self.toggle_sidebar_button,
             self.new_tab_button,
             self.main_menu_button,
-            getattr(self, "retron_editor_button", None),
+            getattr(self, "tool_launcher", None),
         ):
             if control is not None:
                 control.set_sensitive(sensitive)
@@ -717,9 +720,9 @@ class TermiaWindow(
         runtime = getattr(self, "retron_runtime", None)
         if runtime is not None:
             runtime.set_enabled(theme == DARK_GLOW_THEME)
-        editor_button = getattr(self, "retron_editor_button", None)
-        if editor_button is not None:
-            editor_button.set_visible(theme == DARK_GLOW_THEME)
+        launcher = getattr(self, "tool_launcher", None)
+        if launcher is not None:
+            launcher.refresh()
 
     def retron_style_context(self) -> dict:
         return {
@@ -762,6 +765,20 @@ class TermiaWindow(
         header.add_css_class("termia-main-header")
         self.header = header
         self.set_titlebar(header)
+        self.tool_registry = ToolRegistry()
+        self.tool_registry.register(Tool(
+            "appearance", "retron_editor", "applications-graphics-symbolic", self.on_retron_editor,
+            lambda: self.retron_runtime.enabled and not self.shutdown_in_progress,
+        ))
+        self.tool_registry.register(Tool(
+            "diagnostics", "diagnostics", "computer-symbolic",
+            lambda: self.get_application().diagnostics_tool.show(self.t),
+            lambda: not self.shutdown_in_progress,
+        ))
+        self.tool_launcher = ToolLauncher(self.tool_registry, self.t)
+        self.connect("destroy", lambda *_: self.tool_launcher.close())
+        header.pack_end(self.tool_launcher)
+
         header_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         header_actions.set_margin_start(6)
 
@@ -776,12 +793,6 @@ class TermiaWindow(
         new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
         new_tab_button.connect("clicked", self.on_open_local_terminal)
         header_actions.append(new_tab_button)
-
-        self.retron_editor_button = Gtk.Button(icon_name="applications-graphics-symbolic")
-        self.retron_editor_button.set_tooltip_text(self.t("retron_editor"))
-        self.retron_editor_button.set_visible(self.store.data.app.theme == DARK_GLOW_THEME)
-        self.retron_editor_button.connect("clicked", self.on_retron_editor)
-        header_actions.append(self.retron_editor_button)
 
         menu_button = Gtk.MenuButton()
         self.main_menu_button = menu_button
@@ -1140,7 +1151,7 @@ class TermiaWindow(
     def refresh_translated_chrome(self) -> None:
         self.toggle_sidebar_button.set_tooltip_text(self.t("servers"))
         self.new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
-        self.retron_editor_button.set_tooltip_text(self.t("retron_editor"))
+        self.tool_launcher.refresh()
         self.main_menu_button.set_tooltip_text(self.t("main_menu"))
         self.main_menu_button.set_popover(
             self.build_main_menu(
@@ -1329,6 +1340,39 @@ class WindowThemeScope:
 class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
+        self.diagnostics_tool = DiagnosticsTool(self, self.diagnostic_context)
+        self.connect("shutdown", self.diagnostics_tool.close)
+
+    def diagnostic_context(self) -> DiagnosticContext:
+        sessions = terminals = ssh = local = 0
+        processes = {}
+
+        def retain(process, kind="child", orphan=False):
+            if process is None:
+                return
+            if process.start_time is not None:
+                key = (process.pid, process.start_time)
+                processes.setdefault(key, ManagedProcess(*key, kind, orphan))
+            for member in process.session_members:
+                key = (member.pid, member.start_time)
+                processes.setdefault(key, ManagedProcess(*key, "child", orphan))
+
+        for window in self.get_windows():
+            if not isinstance(window, TermiaWindow):
+                continue
+            for session in window.session_registry.sessions():
+                sessions += 1
+                for pane in session.panes.values():
+                    if pane.retired:
+                        continue
+                    terminals += 1
+                    is_ssh = pane.server_id is not None
+                    local += not is_ssh
+                    ssh += bool(is_ssh and pane.connected and pane.child_process is not None)
+                    retain(pane.child_process, "ssh" if is_ssh else "shell")
+            for process in window.orphaned_terminal_processes:
+                retain(process, orphan=True)
+        return DiagnosticContext(sessions, terminals, ssh, local, tuple(processes.values()))
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)

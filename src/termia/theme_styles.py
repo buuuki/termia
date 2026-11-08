@@ -45,6 +45,9 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
     css += rule("button:disabled", f"background-color: {c['surface']}; color: {c['muted']}; border-color: {c['border']}; box-shadow: none; text-shadow: none;")
     css += rule("entry:disabled", f"color: {c['muted']}; border-color: {c['border']};")
     css += rule("button:focus-visible,entry:focus-within,spinbutton:focus-within", f"outline: 2px solid {c['cyan']}; outline-offset: 2px;")
+    css += rule(".termia-tool-grid,.termia-tool-grid > flowboxchild", "background: transparent;")
+    css += rule(".termia-tool-tile:hover,.termia-tool-tile:focus-visible",
+                f"border-color: {c['cyan']}; box-shadow: 0 0 3px alpha({c['cyan']}, 0.12);")
     css += rule(".termia-tab-label", f"background-color: transparent; border: {retron.BORDER_WIDTH:g}px solid transparent; border-radius: {retron.BORDER_RADIUS:g}px; box-shadow: none;")
     css += rule(".termia-notes-notebook,.termia-notes-notebook > stack,.termia-notes-notebook > header,.termia-notes-notebook > header > tabs",
                 "background: transparent; border: 0; box-shadow: none;")

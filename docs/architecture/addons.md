@@ -73,6 +73,19 @@ and owner-session cleanup remain protected behaviors.
 
 ## Future contract direction
 
+The internal `ToolRegistry` in `tool_launcher.py` accepts an identifier,
+translation key, icon, action and availability predicate. `app.py` registers
+concrete built-in tools; the launcher renders available contributions and
+dispatches callbacks. Future add-ons can contribute at that composition point
+without changing the layout. This is not discovery or an external plugin API.
+Availability is checked on popup opening, theme refresh and deferred activation.
+
+Diagnostics consumes an immutable `DiagnosticContext` supplied by `TermiaApp`.
+Its worker receives captured process identities and counts, never GTK widgets,
+stores or sessions. `diagnostics.py` reads Linux process counters;
+`diagnostics_view.py` owns a singleton window, bounded history and cancellable
+worker. Monitoring starts on opening and stops on closing the window.
+
 Do not implement a generic manager from these sketches. When an actual
 refactoring requires it, review small contracts for:
 

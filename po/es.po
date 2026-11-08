@@ -1,3 +1,111 @@
+#: src/termia/i18n.py:tools
+msgid "Tools"
+msgstr "Herramientas"
+
+#: src/termia/i18n.py:diagnostics
+msgid "Termia diagnostics"
+msgstr "Diagnóstico de Termia"
+
+#: src/termia/i18n.py:diagnostics_intro
+msgid "Local resources only. Monitoring stops when this window closes."
+msgstr "Solo recursos locales. La monitorización se detiene al cerrar esta ventana."
+
+#: src/termia/i18n.py:diagnostics_sampling
+msgid "Taking the first resource sample…"
+msgstr "Recogiendo la primera muestra de recursos…"
+
+#: src/termia/i18n.py:diagnostics_unavailable
+msgid "Resource sampling failed. Retrying on the next interval."
+msgstr "No se pudieron medir los recursos. Se reintentará en el siguiente intervalo."
+
+#: src/termia/i18n.py:diagnostics_partial
+msgid "Some process data is unavailable; totals may be incomplete."
+msgstr "Algunos datos de procesos no están disponibles; los totales pueden estar incompletos."
+
+#: src/termia/i18n.py:diagnostics_live
+msgid "Live · refreshes every 5 seconds"
+msgstr "En directo · actualización cada 5 segundos"
+
+#: src/termia/i18n.py:diagnostics_sessions
+msgid "Open sessions: {sessions} · VTE terminals: {terminals}\nActive SSH clients: {ssh} · Local terminals: {local}"
+msgstr "Sesiones abiertas: {sessions} · Terminales VTE: {terminals}\nClientes SSH activos: {ssh} · Terminales locales: {local}"
+
+#: src/termia/i18n.py:diagnostics_main
+msgid "Main Termia process"
+msgstr "Proceso principal de Termia"
+
+#: src/termia/i18n.py:diagnostics_children
+msgid "Associated local processes"
+msgstr "Procesos locales asociados"
+
+#: src/termia/i18n.py:diagnostics_cpu
+msgid "CPU usage"
+msgstr "Uso de CPU"
+
+#: src/termia/i18n.py:diagnostics_memory
+msgid "Resident memory (RSS)"
+msgstr "Memoria residente (RSS)"
+
+#: src/termia/i18n.py:diagnostics_threads
+msgid "Threads"
+msgstr "Hilos"
+
+#: src/termia/i18n.py:diagnostics_descriptors
+msgid "File descriptors"
+msgstr "Descriptores de archivo"
+
+#: src/termia/i18n.py:diagnostics_processes
+msgid "Processes"
+msgstr "Procesos"
+
+#: src/termia/i18n.py:diagnostics_orphans
+msgid "Possible orphan processes: {count}. These are tracked processes outside the current child tree or awaiting cleanup; this is not proof of a leak."
+msgstr "Posibles procesos huérfanos: {count}. Son procesos registrados fuera del árbol actual de hijos o pendientes de limpieza; no confirma una fuga."
+
+#: src/termia/i18n.py:diagnostics_process_list
+msgid "Local process details"
+msgstr "Detalles de procesos locales"
+
+#: src/termia/i18n.py:diagnostics_history
+msgid "Recent resource history (up to 5 minutes)"
+msgstr "Historial reciente de recursos (hasta 5 minutos)"
+
+#: src/termia/i18n.py:diagnostics_measurement_note
+msgid "CPU: 100% equals one core. RSS totals can count shared pages more than once. SSH counts describe local clients, not verified remote authentication. History is kept only in memory while this window is open."
+msgstr "CPU: 100% equivale a un núcleo. Los totales RSS pueden contar páginas compartidas más de una vez. El recuento SSH describe clientes locales, no autenticaciones remotas verificadas. El historial solo se mantiene en memoria mientras esta ventana está abierta."
+
+#: src/termia/i18n.py:diagnostics_process_columns
+msgid "    PID  Name                  CPU           RSS   Thr    FDs  Role"
+msgstr "    PID  Nombre                CPU           RSS Hilos    FDs  Función"
+
+#: src/termia/i18n.py:diagnostics_history_columns
+msgid "Time       Main CPU      Main RSS  Child CPU     Child RSS"
+msgstr "Hora       CPU Termia  RSS Termia   CPU hijos     RSS hijos"
+
+#: src/termia/i18n.py:diagnostics_kind_main
+msgid "Termia"
+msgstr "Termia"
+
+#: src/termia/i18n.py:diagnostics_kind_ssh
+msgid "SSH terminal"
+msgstr "Terminal SSH"
+
+#: src/termia/i18n.py:diagnostics_kind_shell
+msgid "Local terminal"
+msgstr "Terminal local"
+
+#: src/termia/i18n.py:diagnostics_kind_child
+msgid "Child process"
+msgstr "Proceso hijo"
+
+#: src/termia/i18n.py:diagnostics_kind_orphan
+msgid "Possible orphan"
+msgstr "Posible huérfano"
+
+#: src/termia/i18n.py:diagnostics_truncated
+msgid "Showing the first 250 processes; totals include all sampled processes."
+msgstr "Se muestran los primeros 250 procesos; los totales incluyen todos los procesos medidos."
+
 #: src/termia/i18n.py:retron_editor
 msgid "Retron appearance editor"
 msgstr "Editor de apariencia Retron"

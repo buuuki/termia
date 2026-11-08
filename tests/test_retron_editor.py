@@ -45,23 +45,23 @@ class RetronHeaderTests(unittest.TestCase):
                     patch("termia.app.SESSION_SNAPSHOT_FILE", root / "session.json"):
                 window = TermiaWindow(app)
             try:
-                button = window.retron_editor_button
+                button = window.tool_launcher
                 self.assertTrue(button.get_visible())
                 self.assertIs(button.get_ancestor(Gtk.HeaderBar), window.header)
-                button.emit("clicked")
+                window.tool_registry.activate("appearance")
                 editor = window.retron_runtime.editor
                 self.assertIsNotNone(editor)
                 window.on_retron_editor()
-                button.emit("clicked")
+                window.tool_registry.activate("appearance")
                 self.assertIs(window.retron_runtime.editor, editor)
                 for language in ("en", "es", "ca"):
                     store.data.app.language = language
                     window.refresh_translated_chrome()
-                    self.assertEqual(button.get_tooltip_text(), translate_key("retron_editor", language))
+                    self.assertEqual(button.get_tooltip_text(), translate_key("tools", language))
                 for theme in ("light", "dark", "system", "dark_glow"):
                     store.data.app.theme = theme
                     window.apply_app_theme()
-                    self.assertEqual(button.get_visible(), theme == "dark_glow")
+                    self.assertEqual("appearance" in button.buttons, theme == "dark_glow")
                     self.assertEqual(window.retron_runtime.provider is not None, theme == "dark_glow")
                 window.set_unlock_header_actions_sensitive(False)
                 self.assertFalse(button.get_sensitive())

@@ -347,6 +347,13 @@ The principal dependency hotspots are:
 
 ## Recommended extraction order
 
+The launcher is composed in `app.py` using a per-window `ToolRegistry` of
+callbacks, reusing the existing Retron editor runtime. `TermiaApp` owns the
+shared `DiagnosticsTool` and supplies immutable counts and process identities
+across its terminal windows through `diagnostic_context()`. Diagnostics receives
+no main window, connection store or live session. Its worker never calls GTK.
+Window destruction stops monitoring; application shutdown also closes the tool.
+
 1. Define a small host interface for translation, feedback, writability, and
    dialog parenting.
 2. Use the extracted `StatisticsDialog` and the history presenter as the

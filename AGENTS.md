@@ -26,8 +26,8 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Development Workflow
 
-- Base issue branches on `0.6.1-dev` until `v0.6.1-beta` is published, then
-  on `0.6.2-dev`, created from the updated `main`. New target
+- Base issue branches on `0.6.2-dev` until `v0.6.2-beta` is published, then
+  on `0.6.3-dev`, created from the updated `main`. New target
   branches use `X.Y.Z-dev`, such as `0.6.1-dev`, without a `release/` prefix
   or a maturity suffix. Retain the previous branches unless cleanup is approved.
   Use `main` only for release preparation and

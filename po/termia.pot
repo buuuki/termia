@@ -16,6 +16,118 @@ msgstr ""
 msgid "Show or hide server list"
 msgstr ""
 
+#: src/termia/i18n.py:tools
+msgid "Tools"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics
+msgid "Termia diagnostics"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_intro
+msgid "Local resources only. Monitoring stops when this window closes."
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_sampling
+msgid "Taking the first resource sample…"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_unavailable
+msgid "Resource sampling failed. Retrying on the next interval."
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_partial
+msgid "Some process data is unavailable; totals may be incomplete."
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_live
+msgid "Live · refreshes every 5 seconds"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_sessions
+msgid ""
+"Open sessions: {sessions} · VTE terminals: {terminals}\n"
+"Active SSH clients: {ssh} · Local terminals: {local}"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_main
+msgid "Main Termia process"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_children
+msgid "Associated local processes"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_cpu
+msgid "CPU usage"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_memory
+msgid "Resident memory (RSS)"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_threads
+msgid "Threads"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_descriptors
+msgid "File descriptors"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_processes
+msgid "Processes"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_orphans
+msgid "Possible orphan processes: {count}. These are tracked processes outside the current child tree or awaiting cleanup; this is not proof of a leak."
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_process_list
+msgid "Local process details"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_history
+msgid "Recent resource history (up to 5 minutes)"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_measurement_note
+msgid "CPU: 100% equals one core. RSS totals can count shared pages more than once. SSH counts describe local clients, not verified remote authentication. History is kept only in memory while this window is open."
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_process_columns
+msgid "    PID  Name                  CPU           RSS   Thr    FDs  Role"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_history_columns
+msgid "Time       Main CPU      Main RSS  Child CPU     Child RSS"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_kind_main
+msgid "Termia"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_kind_ssh
+msgid "SSH terminal"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_kind_shell
+#: src/termia/i18n.py:history_kind_local
+#: src/termia/i18n.py:local_terminal
+msgid "Local terminal"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_kind_child
+msgid "Child process"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_kind_orphan
+msgid "Possible orphan"
+msgstr ""
+
+#: src/termia/i18n.py:diagnostics_truncated
+msgid "Showing the first 250 processes; totals include all sampled processes."
+msgstr ""
+
 #: src/termia/i18n.py:storage_limit_rejected
 msgid "A storage safety limit was exceeded. Original files are unchanged and editing is disabled. See docs/STORAGE_MIGRATIONS.md for recovery, then restart Termia."
 msgstr ""
@@ -1908,11 +2020,6 @@ msgstr ""
 
 #: src/termia/i18n.py:history_kind_ssh
 msgid "SSH"
-msgstr ""
-
-#: src/termia/i18n.py:history_kind_local
-#: src/termia/i18n.py:local_terminal
-msgid "Local terminal"
 msgstr ""
 
 #: src/termia/i18n.py:history_result_closed

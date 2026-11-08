@@ -1,5 +1,11 @@
 # UI styling guidelines and current inventory
 
+The titlebar tool grid uses native menu-button, popover and button styling.
+`termia-tool-grid` and `termia-tool-tile` add subtle focus/hover accents only
+inside the Retron root scope in `theme_styles.py`. Standard themes receive no
+launcher-specific colors, borders or glow. Diagnostics reuses the shared dialog
+panel and GTK labels, expanders and scrollers.
+
 This inventory records the current sources and ownership of Termia's visual
 rules, originally recorded as a baseline for issue #302. It also defines the
 design guidelines below; these do not imply a custom-theme editor.

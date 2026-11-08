@@ -57,8 +57,8 @@ del editor de Notas siguen siendo independientes.
 Retron añade espacio interior al terminal y una barra de título tenue sin
 halo luminoso. Es una opción local de
 investigación, no una versión publicada.
-Con Retron activo, abre el editor de apariencia con el botón de la barra de
-título o desde **General**. Ambos accesos abren la misma ventana.
+Con Retron activo, abre el editor de apariencia desde **Herramientas**, la cuadrícula de la barra de
+título, o desde **General**. Ambos accesos abren la misma ventana.
 Puedes cambiar el estilo común o un componente y estado;
 marca la casilla de una propiedad para personalizarla. Los bordes, fondos
 lisos o con gradiente y hasta tres halos se previsualizan al momento.
@@ -84,7 +84,33 @@ compartidos de Notas, snippets, SFTP, preferencias y registros del actualizador.
 colores del editor de Notas son independientes; los diálogos del portal del escritorio
 pueden conservar el tema del sistema.
 
+**Herramientas** también abre **Diagnóstico de Termia**, una ventana independiente
+compartida por las ventanas del mismo proceso. Separa CPU, memoria residente,
+hilos y descriptores de Termia y sus hijos locales, y muestra sesiones, terminales
+VTE y clientes SSH. Solo supervisa mientras está abierta, aproximadamente cada cinco
+segundos. El historial está desactivado mientras su sección está plegada, como
+al abrir la ventana. Desplegarlo inicia una nueva captura de hasta 60 lecturas en
+memoria; plegarlo detiene su registro y actualización. No contacta ni mide servidores remotos.
+Un núcleo equivale al 100% de CPU; sumar memoria residente puede contar páginas
+compartidas varias veces. Los clientes SSH no garantizan autenticación ni conexión
+remota. Los posibles huérfanos se detectan mediante identidades conservadas o hijos
+observados durante la supervisión; no cubre todos los procesos históricos.
+Las medidas no disponibles aparecen como un guion. No recoge órdenes, variables
+de entorno ni credenciales, y no termina procesos.
+
 ## Estado de la versión
+
+**0.6.2-beta está en preparación** con el tema y editor Retron,
+configuraciones de apariencia guardadas, protecciones del terminal y correcciones
+de interacción. Todavía no está publicada; el paquete siguiente sigue siendo
+**0.6.1-beta** y no incluye estas novedades. Consulta [CHANGELOG.md](../CHANGELOG.md)
+y la [preparación de la versión #492](https://github.com/buuuki/termia/issues/492).
+
+Antes de ejecutar 0.6.2-beta por primera vez, cierra Termia y copia tu perfil
+como respaldo. Las conexiones pasan al esquema 4, que las versiones anteriores
+no pueden leer. Para volver atrás, restaura la copia previa y conserva aparte
+los datos más recientes. Consulta la
+[compatibilidad del almacenamiento](STORAGE_MIGRATIONS.md#schema-inventory).
 
 **[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** es una
 versión preliminar de mantenimiento. Consulta [CHANGELOG.md](../CHANGELOG.md)
@@ -197,7 +223,7 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquete se crea en el directorio padre como `termia_0.6.1~beta-1_all.deb`.
+El paquete se crea en el directorio padre como `termia_0.6.2~beta-1_all.deb`.
 Es independiente del archivo oficial de la release.
 
 ## Documentación

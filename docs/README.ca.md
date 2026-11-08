@@ -57,7 +57,7 @@ l'editor de Notes continuen sent independents.
 Retron afegeix espai interior al terminal i una barra de títol tènue sense
 halo lluminós. És una
 opció local d'investigació, no una versió publicada.
-Amb Retron actiu, obre l’editor d’aparença amb el botó de la barra de títol
+Amb Retron actiu, obre l’editor d’aparença des d’**Eines**, la quadrícula de la barra de títol,
 o des de **General**. Tots dos accessos obren la mateixa finestra.
 Pots canviar l’estil comú o un component i estat; marca la casella
 d’una propietat per personalitzar-la. Les vores, els fons llisos o amb degradat
@@ -82,7 +82,33 @@ compartits de Notes, snippets, SFTP, preferències i registres de l’actualitza
 colors de l’editor de Notes són independents; els diàlegs del portal de l’escriptori
 poden conservar el tema del sistema.
 
+**Eines** també obre **Diagnòstic de Termia**, una finestra independent compartida
+per les finestres del mateix procés. Separa CPU, memòria resident, fils i descriptors
+de Termia i els seus fills locals, i mostra sessions, terminals VTE i clients SSH.
+Només supervisa mentre és oberta, aproximadament cada cinc segons. L’historial
+està desactivat mentre la seva secció està plegada, com en obrir la finestra.
+Desplegar-lo inicia una captura nova de fins a 60 lectures en memòria; plegar-lo
+atura el registre i l’actualització del panell. No contacta ni mesura servidors remots. Un nucli equival
+al 100% de CPU; sumar memòria resident pot comptar pàgines compartides diverses
+vegades. Els clients SSH no garanteixen autenticació ni connexió remota.
+Els possibles orfes es detecten amb identitats conservades o fills observats durant
+la supervisió; no cobreix tots els processos històrics. Les mesures no disponibles
+apareixen com un guió. No recull ordres, variables d’entorn ni credencials,
+i no acaba processos.
+
 ## Estat de la versió
+
+**0.6.2-beta està en preparació** amb el tema i editor Retron,
+configuracions d’aparença desades, proteccions del terminal i correccions
+d’interacció. Encara no està publicada; el paquet següent continua sent
+**0.6.1-beta** i no inclou aquestes novetats. Consulta [CHANGELOG.md](../CHANGELOG.md)
+i la [preparació de la versió #492](https://github.com/buuuki/termia/issues/492).
+
+Abans d’executar 0.6.2-beta per primera vegada, tanca Termia i fes una còpia
+de seguretat del perfil. Les connexions passen a l’esquema 4, que les versions
+anteriors no poden llegir. Per tornar enrere, restaura la còpia prèvia i conserva
+les dades més recents per separat. Consulta la
+[compatibilitat de l’emmagatzematge](STORAGE_MIGRATIONS.md#schema-inventory).
 
 **[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** és una
 versió preliminar de manteniment. Consulta [CHANGELOG.md](../CHANGELOG.md)
@@ -195,7 +221,7 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquet es crea al directori pare com a `termia_0.6.1~beta-1_all.deb`.
+El paquet es crea al directori pare com a `termia_0.6.2~beta-1_all.deb`.
 És independent del fitxer oficial de la release.
 
 ## Documentació

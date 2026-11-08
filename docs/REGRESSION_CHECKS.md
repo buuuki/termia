@@ -74,6 +74,27 @@ and proposed controls.
 
 ### Retron visual editor
 
+The editor is now available from the titlebar Tools grid. Also check that grid's
+mouse/keyboard activation, arrows, Tab, Enter, Space, Escape, second-click and
+outside dismissal at small, maximized and restored window sizes. Repeat in
+System/Light/Dark/Retron and EN/ES/CA; only Retron offers the appearance editor.
+
+Open diagnostics from two application windows: both must use the same independent
+window and aggregate their sessions. Split/close local terminals and verify VTE
+counts and separate main/child CPU, resident memory, threads and descriptors.
+CPU requires two samples; unavailable values display a dash. History retains at
+most 60 samples only while expanded. It starts collapsed and inactive; expanding
+starts a new capture, collapsing stops recording and buffer updates. While
+reading/scrolled back, new samples must not jump to the bottom or reset the
+selection; repeat when old rows expire at the 60-sample limit. Current metrics
+continue refreshing with history collapsed. Close during sampling and reopen: timers/workers must stop with
+no late UI updates. Closing diagnostics must preserve terminals and main windows.
+Recheck header controls, VTE focus, menus, tabs and splits. No remote host is needed.
+Run `python3 scripts/run_sandbox_tests.py tests.test_tool_launcher tests.test_diagnostics tests.test_diagnostics_view`
+for registry availability, window lifecycle, permission failures, reparenting and
+PID-reuse checks.
+
+
 - Launch `scripts/run_test_instance.sh retron-editor-486`, select Retron in
   General and save. The titlebar appearance button and the Retron appearance
   action in General preferences open one non-modal editor; repeated activation
