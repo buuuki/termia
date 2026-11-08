@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Add bounded, versioned Retron profile storage with atomic writes, validated
+  appearance values and named configurations, preserving legacy profiles and
+  protecting read-only, invalid and externally changed files (#486).
+
 ### Fixed
 
 - Open terminal context menus on right-button release and ignore releases with

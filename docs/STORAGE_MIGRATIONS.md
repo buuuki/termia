@@ -20,6 +20,30 @@ the format is an object or event payload.
 
 ## Current schemas
 
+### Retron appearance profile
+
+`CONFIG_DIR/themes/retron.json` is a separate schema-2 document containing
+`current`, `presets` and `active_name`. Each appearance retains the schema-1
+`theme`, `accent`, `common` and `components` structure. The collection stores up
+to 32 named configurations and the active appearance in one atomic write, within
+a 2 MiB file limit. Names are NFC-normalized, 1–64 characters, unique ignoring
+case, and contain no control characters; they are data, never filenames.
+`active_name` is null for an unnamed appearance or names a matching saved preset.
+Appearance values remain validated colors, bounded numbers, enumerated
+states/styles and up to three shadows per state. CSS, selectors, URLs and
+resources are not accepted. Existing settings and their schema do not change.
+
+Legacy schema-1 files retain their 64 KiB limit and load as the current unnamed
+appearance without writing. Saving writes schema 2, preserving the supplied
+current appearance and named configurations. Earlier versions without a Retron
+editor ignore the file. Standard application themes remain usable.
+
+Loading never writes. Saving writes a private temporary file, flushes it and
+atomically replaces the profile under an injected write guard. Invalid,
+oversized, unknown-field and future-version files remain untouched; saving is
+disabled until the incompatible file is recovered outside the running instance.
+External file changes also prevent overwriting. Retain a copy before recovery.
+
 ### Resource limits and recovery
 
 Connection imports from the menu request the imported file's password when
