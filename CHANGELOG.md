@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.2-beta - 2026-11-09
+
+Publication documentation and release links finalized in #494.
+
 ### Added
 
 - Add Retron text-field appearance controls for normal, focused and disabled
@@ -15,8 +19,6 @@
 - Render Retron window-control frames on their compact native images rather
   than full-height click targets, with consistent spacing and saved button
   appearance overrides (#492).
-
-## 0.6.2-beta - 2026-11-08
 
 ### Added
 

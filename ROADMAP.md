@@ -7,15 +7,18 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Current preparation: 0.6.2-beta
+## Publication target: 0.6.2-beta
 
 Source version: `0.6.2-beta`; Debian package: `0.6.2~beta-1`. This delivery
 collects all integrated changes since `0.6.1-beta`, including Retron, its
 appearance editor and named configurations, terminal clipboard protections,
 local profile passwords and interaction fixes. See [CHANGELOG.md](CHANGELOG.md).
-Preparation is tracked in [#492](https://github.com/buuuki/termia/issues/492).
-Package, upgrade and release acceptance must pass before publication;
-`0.6.1-beta` remains the latest published release.
+Preparation is tracked in [#492](https://github.com/buuuki/termia/issues/492),
+with publication metadata and promotion to `main` in
+[#494](https://github.com/buuuki/termia/issues/494).
+Package builds, upgrade checks and installed-package acceptance passed in the
+Ubuntu 24/26 GNOME Wayland laboratories. Tag, public assets and checksums must
+be verified at publication; package acceptance alone does not publish a release.
 
 Termia remains in beta. Maintenance may increment PATCH while retaining beta
 status; new feature deliveries normally increment MINOR. The integrated

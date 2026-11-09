@@ -45,15 +45,14 @@ together in embedded VTE terminals.
   Keyboard Shortcuts opens independently so terminals remain usable; changes
   apply on Save, and its buttons show full combinations.
 
-This research checkout adds **Retron** under **General → Theme**: solid dark
+**Retron** is available under **General → Theme**: solid dark
 surfaces, subtle colored 1px borders, 10px corners and soft active-pane/tab lighting.
 System/Light/Dark retain their previous interface styling. Each app theme saves
 its own terminal text/background colors; Retron starts with Solarized text
 on the sidebar's dark background (`#182231`).
 Use Terminal preferences to change those colors for the selected theme at any
 time. Notes editor colors remain independent. Retron adds terminal content padding and a subdued
-main header without a halo. This is a local research option, not a
-published release.
+main header without a halo.
 With Retron active, use **Tools → Retron appearance editor** in the titlebar grid or
 **General → Retron appearance editor** to open the same visual editor.
 **Text fields → Focused component** controls entry and numeric-field borders and glows.
@@ -97,28 +96,23 @@ are collected and the tool does not terminate processes.
 
 ## Release status
 
-**0.6.2-beta is in preparation** with the integrated Retron theme/editor,
-named appearance configurations, terminal protections and interaction fixes.
-It is not published yet; the package below remains **0.6.1-beta** and does not
-include these newer features. See [CHANGELOG.md](CHANGELOG.md) and
-[release preparation #492](https://github.com/buuuki/termia/issues/492).
+**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** is a
+prerelease with Retron and named appearance configurations, the Tools launcher,
+local diagnostics, terminal protections and interaction fixes.
+See [CHANGELOG.md](CHANGELOG.md) for changes since 0.6.1-beta.
 
 Before first running 0.6.2-beta, close Termia and back up your profile.
 Connections upgrade to schema 4, which older versions cannot read. To downgrade,
 restore the pre-upgrade backup and retain a separate copy of newer data.
 See [storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
 
-**[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** is a
-maintenance prerelease. See [CHANGELOG.md](CHANGELOG.md) for the changes since
-0.6.0-beta.4.
-
 ## Install on Ubuntu 24.04 or newer
 
 Debian package:
-[termia_0.6.1.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.1-beta/termia_0.6.1.beta-1_all.deb).
+[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.1.beta-1_all.deb
+sudo apt install ./termia_0.6.2.beta-1_all.deb
 ```
 
 APT installs the required dependencies, desktop launcher, and icon.
@@ -146,7 +140,7 @@ do not provide the required GTK 4 VTE runtime.
 
 ## Updates
 
-**Beta.3 and beta.4 require a manual first upgrade to 0.6.1-beta.**
+**Beta.3 and beta.4 require a manual first upgrade.**
 Back up your profile, close Termia, and install the new .deb over the old one.
 There is no need to uninstall first.
 
@@ -154,8 +148,8 @@ For a clean source checkout, after the release tag is published:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.1-beta
-git merge --ff-only v0.6.1-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
+git merge --ff-only v0.6.2-beta
 ./scripts/termia-setup.sh install
 ```
 

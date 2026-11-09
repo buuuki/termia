@@ -46,7 +46,7 @@ de archivos en terminales VTE integrados con GTK 4.
   Atajos se abre en una ventana independiente para seguir usando los terminales;
   los cambios se aplican al guardar y sus botones muestran las combinaciones completas.
 
-Esta rama de investigación añade **Retron** en **General → Tema**: superficies
+**Retron** está disponible en **General → Tema**: superficies
 oscuras opacas, bordes coloreados sutiles de 1px, esquinas de 10px e iluminación
 suave en paneles y pestañas activos. Sistema/Claro/Oscuro conservan su aspecto
 anterior. Cada tema guarda sus propios colores de texto y fondo del terminal;
@@ -55,8 +55,7 @@ Puedes cambiarlos cuando quieras desde las
 preferencias del terminal: se guardan para el tema seleccionado. Los colores
 del editor de Notas siguen siendo independientes.
 Retron añade espacio interior al terminal y una barra de título tenue sin
-halo luminoso. Es una opción local de
-investigación, no una versión publicada.
+halo luminoso.
 Con Retron activo, abre el editor de apariencia desde **Herramientas**, la cuadrícula de la barra de
 título, o desde **General**. Ambos accesos abren la misma ventana.
 **Campos de texto → Componente con foco** permite ajustar los bordes y halos de entradas
@@ -104,11 +103,11 @@ de entorno ni credenciales, y no termina procesos.
 
 ## Estado de la versión
 
-**0.6.2-beta está en preparación** con el tema y editor Retron,
-configuraciones de apariencia guardadas, protecciones del terminal y correcciones
-de interacción. Todavía no está publicada; el paquete siguiente sigue siendo
-**0.6.1-beta** y no incluye estas novedades. Consulta [CHANGELOG.md](../CHANGELOG.md)
-y la [preparación de la versión #492](https://github.com/buuuki/termia/issues/492).
+**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** es una
+versión preliminar con Retron y configuraciones de apariencia guardadas,
+el lanzador de herramientas, diagnóstico local, protecciones del terminal
+y correcciones de interacción. Consulta [CHANGELOG.md](../CHANGELOG.md)
+para ver los cambios desde 0.6.1-beta.
 
 Antes de ejecutar 0.6.2-beta por primera vez, cierra Termia y copia tu perfil
 como respaldo. Las conexiones pasan al esquema 4, que las versiones anteriores
@@ -116,17 +115,13 @@ no pueden leer. Para volver atrás, restaura la copia previa y conserva aparte
 los datos más recientes. Consulta la
 [compatibilidad del almacenamiento](STORAGE_MIGRATIONS.md#schema-inventory).
 
-**[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** es una
-versión preliminar de mantenimiento. Consulta [CHANGELOG.md](../CHANGELOG.md)
-para ver los cambios desde 0.6.0-beta.4.
-
 ## Instalar en Ubuntu 24.04 o posterior
 
 Paquete Debian:
-[termia_0.6.1.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.1-beta/termia_0.6.1.beta-1_all.deb).
+[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.1.beta-1_all.deb
+sudo apt install ./termia_0.6.2.beta-1_all.deb
 ```
 
 APT instala las dependencias necesarias, el lanzador y el icono.
@@ -154,7 +149,7 @@ Ubuntu 22.04 y anteriores no proporcionan el VTE para GTK 4 necesario.
 
 ## Actualizaciones
 
-**Beta.3 y beta.4 requieren una primera actualización manual a 0.6.1-beta.**
+**Beta.3 y beta.4 requieren una primera actualización manual.**
 Haz una copia del perfil, cierra Termia e instala el nuevo .deb sobre el anterior.
 No hace falta desinstalar primero.
 
@@ -162,8 +157,8 @@ Para un checkout limpio, una vez publicada la etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.1-beta
-git merge --ff-only v0.6.1-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
+git merge --ff-only v0.6.2-beta
 ./scripts/termia-setup.sh install
 ```
 

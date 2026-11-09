@@ -46,7 +46,7 @@ fitxers en terminals VTE integrats amb GTK 4.
   Dreceres s’obre en una finestra independent per continuar fent servir els terminals;
   els canvis s’apliquen en desar i els botons mostren les combinacions completes.
 
-Aquesta branca d'investigació afegeix **Retron** a **General → Tema**:
+**Retron** està disponible a **General → Tema**:
 superfícies fosques opaques, vores de color subtils d'1px, cantonades de 10px
 i il·luminació suau als panells i les pestanyes actius. Sistema/Clar/Fosc conserven
 l'aspecte anterior. Cada tema desa els seus colors de text i fons del terminal;
@@ -55,8 +55,7 @@ Pots canviar-los quan vulguis des de les
 preferències del terminal: es desen per al tema seleccionat. Els colors de
 l'editor de Notes continuen sent independents.
 Retron afegeix espai interior al terminal i una barra de títol tènue sense
-halo lluminós. És una
-opció local d'investigació, no una versió publicada.
+halo lluminós.
 Amb Retron actiu, obre l’editor d’aparença des d’**Eines**, la quadrícula de la barra de títol,
 o des de **General**. Tots dos accessos obren la mateixa finestra.
 **Camps de text → Component amb focus** permet ajustar les vores i resplendors de les
@@ -102,11 +101,11 @@ i no acaba processos.
 
 ## Estat de la versió
 
-**0.6.2-beta està en preparació** amb el tema i editor Retron,
-configuracions d’aparença desades, proteccions del terminal i correccions
-d’interacció. Encara no està publicada; el paquet següent continua sent
-**0.6.1-beta** i no inclou aquestes novetats. Consulta [CHANGELOG.md](../CHANGELOG.md)
-i la [preparació de la versió #492](https://github.com/buuuki/termia/issues/492).
+**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** és una
+versió preliminar amb Retron i configuracions d’aparença desades,
+el llançador d’eines, diagnòstic local, proteccions del terminal
+i correccions d’interacció. Consulta [CHANGELOG.md](../CHANGELOG.md)
+per veure els canvis des de 0.6.1-beta.
 
 Abans d’executar 0.6.2-beta per primera vegada, tanca Termia i fes una còpia
 de seguretat del perfil. Les connexions passen a l’esquema 4, que les versions
@@ -114,17 +113,13 @@ anteriors no poden llegir. Per tornar enrere, restaura la còpia prèvia i conse
 les dades més recents per separat. Consulta la
 [compatibilitat de l’emmagatzematge](STORAGE_MIGRATIONS.md#schema-inventory).
 
-**[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** és una
-versió preliminar de manteniment. Consulta [CHANGELOG.md](../CHANGELOG.md)
-per veure els canvis des de 0.6.0-beta.4.
-
 ## Instal·lar a Ubuntu 24.04 o posterior
 
 Paquet Debian:
-[termia_0.6.1.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.1-beta/termia_0.6.1.beta-1_all.deb).
+[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.1.beta-1_all.deb
+sudo apt install ./termia_0.6.2.beta-1_all.deb
 ```
 
 APT instal·la les dependències necessàries, el llançador i la icona.
@@ -152,7 +147,7 @@ Ubuntu 22.04 i anteriors no proporcionen el VTE per a GTK 4 necessari.
 
 ## Actualitzacions
 
-**Beta.3 i beta.4 requereixen una primera actualització manual a 0.6.1-beta.**
+**Beta.3 i beta.4 requereixen una primera actualització manual.**
 Fes una còpia del perfil, tanca Termia i instal·la el nou .deb sobre l'anterior.
 No cal desinstal·lar primer.
 
@@ -160,8 +155,8 @@ Per a un checkout net, un cop publicada l'etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.1-beta
-git merge --ff-only v0.6.1-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
+git merge --ff-only v0.6.2-beta
 ./scripts/termia-setup.sh install
 ```
 
