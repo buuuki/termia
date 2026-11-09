@@ -31,6 +31,8 @@ from .config_io import (
 )
 from .constants import (
     APP_THEMES,
+    DARK_GLOW_SURFACE_COLOR,
+    DEFAULT_DARK_GLOW_BORDER_COLOR,
     DEFAULT_NOTES_EDITOR_BACKGROUND,
     DEFAULT_NOTES_EDITOR_FOREGROUND,
     DEFAULT_PROMPT_COLOR,
@@ -45,6 +47,7 @@ from .constants import (
     NOTES_FILE,
     SETTINGS_FILE,
     STATISTICS_FILE,
+    TERMINAL_PALETTES,
 )
 from .debug import log_lock_failure, log_startup_context, log_store_state
 from .i18n import LANGUAGES, detect_system_language
@@ -427,6 +430,7 @@ class SettingsStore:
 
     def load(self) -> None:
         if not self.path.exists():
+            apply_terminal_theme_colors(self.app, self.terminal)
             return
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
@@ -437,14 +441,20 @@ class SettingsStore:
             app_payload, _ = migrate_app_settings_payload(app_payload)
             app_fields = AppSettings.__dataclass_fields__
             self.app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
-            self.terminal = normalize_terminal_settings(TerminalSettings(**payload.get("terminal", {})))
+            self.terminal = normalize_terminal_settings(
+                TerminalSettings(**payload.get("terminal", {})),
+                migrate_legacy_colors=not bool(self.app.terminal_colors_by_theme),
+            )
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
             backup = backup_invalid_file(self.path, self.read_only)
             self.recovery_messages.append(str(backup or self.path))
 
+        apply_terminal_theme_colors(self.app, self.terminal)
+
     def save(self) -> None:
         if self.read_only:
             return
+        remember_terminal_theme_colors(self.app, self.terminal)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "schema_version": CURRENT_SCHEMA_VERSION,
@@ -472,6 +482,9 @@ def backup_invalid_file(path: Path, read_only: bool = False) -> Path | None:
 
 
 def normalize_app_settings(app: AppSettings) -> AppSettings:
+    app.dark_glow_border_color = normalize_dark_glow_border_color(app.dark_glow_border_color)
+    app.confirm_multiline_paste = app.confirm_multiline_paste is not False
+    app.copy_on_selection = app.copy_on_selection is True
     app.keybindings = normalize_keybindings(app.keybindings)
     values = app.notes_editor if isinstance(app.notes_editor, dict) else {}
     size = values.get("size", 12)
@@ -490,8 +503,16 @@ def normalize_app_settings(app: AppSettings) -> AppSettings:
     return app
 
 
-def normalize_terminal_settings(terminal: TerminalSettings) -> TerminalSettings:
-    terminal, _ = migrate_legacy_terminal_settings(terminal)
+def normalize_dark_glow_border_color(value: object) -> str:
+    if isinstance(value, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", value.strip()):
+        return value.strip().upper()
+    return DEFAULT_DARK_GLOW_BORDER_COLOR
+
+
+def normalize_terminal_settings(
+    terminal: TerminalSettings, *, migrate_legacy_colors: bool = True,
+) -> TerminalSettings:
+    terminal, _ = migrate_legacy_terminal_settings(terminal, migrate_legacy_colors=migrate_legacy_colors)
     terminal.split_separator_thickness = max(
         1,
         min(
@@ -513,6 +534,51 @@ def normalize_css_color(value: str, default: str) -> str:
     if re.fullmatch(r"rgba?\([0-9., %]+\)", color):
         return color
     return default
+
+
+def normalize_terminal_theme_colors(app: AppSettings, terminal: TerminalSettings) -> None:
+    """Seed theme defaults while preserving saved foreground/background pairs."""
+    saved = app.terminal_colors_by_theme
+    saved = saved if isinstance(saved, dict) else {}
+    legacy = {
+        "foreground": DEFAULT_TERMINAL_FOREGROUND,
+        "background": DEFAULT_TERMINAL_BACKGROUND,
+    }
+    for key, default in legacy.items():
+        value = getattr(terminal, key)
+        legacy[key] = normalize_css_color(value, default) if isinstance(value, str) else default
+    solarized_foreground = TERMINAL_PALETTES["Solarized"][0]
+    normalized = {}
+    for theme in APP_THEMES:
+        defaults = (
+            {"foreground": solarized_foreground, "background": DARK_GLOW_SURFACE_COLOR}
+            if theme == "dark_glow" else legacy
+        )
+        values = saved.get(theme)
+        values = values if isinstance(values, dict) else {}
+        normalized[theme] = {
+            key: normalize_css_color(values[key], default)
+            if isinstance(values.get(key), str) else default
+            for key, default in defaults.items()
+        }
+    app.terminal_colors_by_theme = normalized
+
+
+def remember_terminal_theme_colors(app: AppSettings, terminal: TerminalSettings) -> None:
+    normalize_terminal_theme_colors(app, terminal)
+    theme = app.theme if app.theme in APP_THEMES else "system"
+    app.terminal_colors_by_theme[theme] = {
+        "foreground": normalize_css_color(terminal.foreground, DEFAULT_TERMINAL_FOREGROUND),
+        "background": normalize_css_color(terminal.background, DEFAULT_TERMINAL_BACKGROUND),
+    }
+
+
+def apply_terminal_theme_colors(app: AppSettings, terminal: TerminalSettings) -> None:
+    normalize_terminal_theme_colors(app, terminal)
+    theme = app.theme if app.theme in APP_THEMES else "system"
+    colors = app.terminal_colors_by_theme[theme]
+    terminal.foreground = colors["foreground"]
+    terminal.background = colors["background"]
 
 
 class ConnectionStore:
@@ -675,9 +741,13 @@ class ConnectionStore:
                 app_payload, _ = migrate_app_settings_payload(app_payload)
                 app_fields = AppSettings.__dataclass_fields__
                 app = normalize_app_settings(AppSettings(**{key: value for key, value in app_payload.items() if key in app_fields}))
-                terminal = normalize_terminal_settings(TerminalSettings(**embedded_settings.get("terminal", {})))
+                terminal = normalize_terminal_settings(
+                    TerminalSettings(**embedded_settings.get("terminal", {})),
+                    migrate_legacy_colors=not bool(app.terminal_colors_by_theme),
+                )
                 settings_migrated = embedded_settings_migrated
             app.connection_storage_mode = file_storage_mode
+            apply_terminal_theme_colors(app, terminal)
             self.settings_store.app = app
             self.settings_store.terminal = terminal
             self.settings_store.save()
@@ -1391,6 +1461,7 @@ class ConnectionStore:
         command_on_start: str,
         tab_title: str,
         split_layout: str = "none",
+        password: str | None = None,
     ) -> LocalTerminalProfile:
         self.ensure_writable()
         profile = LocalTerminalProfile(
@@ -1403,6 +1474,7 @@ class ConnectionStore:
             tab_title=tab_title.strip(),
             split_layout=normalize_split_layout(split_layout),
         )
+        profile.password = password or ""
         self.data.local_terminals.append(profile)
         self.save_connections()
         return profile
@@ -1417,6 +1489,7 @@ class ConnectionStore:
         command_on_start: str,
         tab_title: str,
         split_layout: str = "none",
+        password: str | None = None,
     ) -> None:
         self.ensure_writable()
         updated = False
@@ -1429,6 +1502,7 @@ class ConnectionStore:
                 profile.command_on_start = command_on_start.strip()
                 profile.tab_title = tab_title.strip()
                 profile.split_layout = normalize_split_layout(split_layout)
+                profile.password = password or ""
                 updated = True
                 break
         if updated:
@@ -1614,11 +1688,18 @@ class ConnectionStore:
         )
         self.save_settings()
 
-    def update_app_settings(self, app: AppSettings) -> None:
+    def update_app_settings(self, app: AppSettings, *, dark_glow_border_color: str | None = None) -> None:
         self.ensure_writable()
         current = self.data.app
+        remember_terminal_theme_colors(current, self.data.terminal)
         self.data.app = AppSettings(
             theme=app.theme if app.theme in APP_THEMES else "system",
+            dark_glow_border_color=normalize_dark_glow_border_color(
+                current.dark_glow_border_color if dark_glow_border_color is None else dark_glow_border_color
+            ),
+            terminal_colors_by_theme={
+                theme: colors.copy() for theme, colors in current.terminal_colors_by_theme.items()
+            },
             language=app.language if app.language in LANGUAGES else detect_system_language(),
             close_tab_on_disconnect=app.close_tab_on_disconnect,
             close_tab_on_ssh_exit=app.close_tab_on_ssh_exit,
@@ -1627,6 +1708,8 @@ class ConnectionStore:
             show_sidebar_on_startup=app.show_sidebar_on_startup,
             show_session_status_bar=app.show_session_status_bar,
             audible_bell=app.audible_bell,
+            confirm_multiline_paste=app.confirm_multiline_paste is not False,
+            copy_on_selection=app.copy_on_selection is True,
             confirm_disconnect=app.confirm_disconnect,
             confirm_close_app=app.confirm_close_app,
             send_password_shortcut=app.send_password_shortcut,
@@ -1638,6 +1721,7 @@ class ConnectionStore:
             notes_editor=current.notes_editor.copy(),
             keybindings=normalize_keybindings(current.keybindings),
         )
+        apply_terminal_theme_colors(self.data.app, self.data.terminal)
         self.save_settings()
 
     def update_notes_editor(self, values: dict[str, Any]) -> None:

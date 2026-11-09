@@ -6,6 +6,12 @@ from types import SimpleNamespace
 from typing import ClassVar
 from unittest.mock import Mock, patch
 
+import gi
+
+gi.require_version("Gdk", "4.0")
+from gi.repository import Gdk
+
+from termia.keybindings import DEFAULT_KEYBINDINGS
 from termia.models import Server
 from termia.terminal_processes import TerminalProcess
 from termia.terminal_sessions import MAX_TERMINAL_PANES, TerminalSessionsMixin
@@ -105,6 +111,59 @@ def make_session(root_terminal, root_pane: TerminalPane) -> TerminalSession:
 
 
 class TerminalPaneStateTests(unittest.TestCase):
+    def setUp(self):
+        # These fixtures exercise lifecycle behavior; rendering has its own tests.
+        renderer = patch.object(TerminalSessionsMixin, "update_pane_status", autospec=True)
+        self.status_updates = renderer.start()
+        self.addCleanup(renderer.stop)
+
+    def test_split_focus_key_is_consumed_only_when_focus_moves(self):
+        terminal = FakeTerminal()
+        session = make_session(terminal, make_pane(terminal, "root"))
+        host = TerminalSessionsMixin()
+        host.store = SimpleNamespace(data=SimpleNamespace(app=SimpleNamespace(
+            keybindings=DEFAULT_KEYBINDINGS.copy(), send_password_shortcut=False,
+        )))
+        host.terminal_shortcut_handler = Mock(return_value=False)
+        host.move_split_pane_focus = Mock()
+        for direction, key in (("left", Gdk.KEY_Left), ("right", Gdk.KEY_Right),
+                               ("up", Gdk.KEY_Up), ("down", Gdk.KEY_Down)):
+            for moved in (False, True):
+                with self.subTest(direction=direction, moved=moved):
+                    host.move_split_pane_focus.return_value = moved
+                    handled = host.on_terminal_key_pressed(
+                        None, key, 0, Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK,
+                        session, terminal,
+                    )
+                    self.assertEqual(handled, moved)
+                    host.move_split_pane_focus.assert_called_with(session, terminal, direction)
+            host.move_split_pane_focus.reset_mock()
+            self.assertFalse(host.on_terminal_key_pressed(
+                None, key, 0, Gdk.ModifierType.CONTROL_MASK, session, terminal,
+            ))
+            host.move_split_pane_focus.assert_not_called()
+        host.store.data.app.keybindings["focus_split_left"] = "Alt+Left"
+        host.move_split_pane_focus.return_value = False
+        self.assertFalse(host.on_terminal_key_pressed(
+            None, Gdk.KEY_Left, 0, Gdk.ModifierType.ALT_MASK, session, terminal,
+        ))
+        host.move_split_pane_focus.assert_called_with(session, terminal, "left")
+        host.store.data.app.keybindings["focus_split_left"] = ""
+        host.move_split_pane_focus.reset_mock()
+        self.assertFalse(host.on_terminal_key_pressed(
+            None, Gdk.KEY_Left, 0, Gdk.ModifierType.ALT_MASK, session, terminal,
+        ))
+        host.move_split_pane_focus.assert_not_called()
+
+    def test_split_focus_with_no_neighbor_does_not_take_focus(self):
+        terminal = FakeTerminal()
+        root = make_pane(terminal, "root")
+        root.container = Mock()
+        root.container.compute_bounds.return_value = (False, None)
+        session = make_session(terminal, root)
+        self.assertFalse(TerminalSessionsMixin().move_split_pane_focus(session, terminal, "right"))
+        self.assertFalse(terminal.focused)
+
     def test_root_ssh_reconnect_preserves_siblings_and_accounts_each_attempt(self):
         terminal, sibling_terminal = Mock(), FakeTerminal()
         server = Server(id="server-a", name="A", host="example.test", user="test")
@@ -856,7 +915,11 @@ class TerminalPaneStateTests(unittest.TestCase):
         self.assertFalse(root.disconnect_requested)
         self.assertTrue(split.disconnect_requested)
 
-    def test_explicitly_disconnected_first_pane_is_removed_for_local_and_ssh(self) -> None:
+    @patch("termia.terminal_processes.process_session_members", return_value=())
+    @patch("termia.terminal_processes.process_start_time", return_value=None)
+    def test_explicitly_disconnected_first_pane_is_removed_for_local_and_ssh(
+        self, process_start_time, process_session_members,
+    ) -> None:
         for kind in ("local", "ssh"):
             with self.subTest(kind=kind):
                 root_terminal = FakeTerminal()
@@ -940,6 +1003,9 @@ class TerminalPaneStateTests(unittest.TestCase):
                     session.split_processes[id(sibling_terminal)],
                     sibling_process,
                 )
+
+        process_start_time.assert_called_with(10)
+        process_session_members.assert_called_with(1000)
 
     def test_completed_split_process_identity_is_cleared_without_touching_siblings(self) -> None:
         root_terminal = FakeTerminal()

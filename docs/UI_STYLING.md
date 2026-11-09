@@ -1,16 +1,173 @@
-# Current UI styling inventory
+# UI styling guidelines and current inventory
+
+The titlebar tool grid uses native menu-button, popover and button styling.
+`termia-tool-grid` and `termia-tool-tile` add subtle focus/hover accents only
+inside the Retron root scope in `theme_styles.py`. Standard themes receive no
+launcher-specific colors, borders or glow. Diagnostics reuses the shared dialog
+panel and GTK labels, expanders and scrollers.
+
+Retron window controls retain GTK buttons and native hit targets. Their outer
+buttons are transparent; the compact child images carry the Retron frame,
+background and hover/focus feedback. Saved button appearance overrides target
+those images too, including automatic titlebars on secondary windows.
+Horizontal button padding and image margins are normalized so the native
+control group supplies one consistent 6px gap between visible frames.
+An independent 6px outer group margin keeps the last frame inside the titlebar,
+including automatic secondary-window decorations and reversed text direction.
 
 This inventory records the current sources and ownership of Termia's visual
-rules. It is a baseline for issue #302, not a proposed palette or a promise of
-custom themes.
+rules, originally recorded as a baseline for issue #302. It also defines the
+design guidelines below; these do not imply a custom-theme editor.
+
+Retron provides the built-in appearance and its scoped visual editor described
+below. The broader custom-theme work from #303 remains separate.
+
+## Visual design guidelines
+
+These guidelines define the intended direction for completing the existing
+style. The inventory below records current behavior; requirements in this
+section are not claims that the corresponding changes are implemented or
+validated. Preserve the current layout and interaction patterns rather than
+performing a general redesign.
+
+- Maintain a native GTK4 interface that is modern, professional, minimalist,
+  and consistent. Reuse existing widgets, components, colors, and CSS classes.
+- Take inspiration from Dark UI and Glow Borders through well-defined
+  rectangular panels, subtle colored 1px borders, slightly rounded corners
+  (6–10px), and restrained lighting. Use transparency inspired by Glassmorphism
+  only where it improves hierarchy and preserves contrast; do not require blur.
+- Reuse the existing cyan role for information and CPU, violet for RAM, green
+  for active connections and success, yellow for warnings, and red for errors
+  and critical states. Do not rely on color alone to communicate meaning.
+- Distinguish active, inactive, selected, and keyboard-focused elements.
+  Active elements may use a brighter border and soft glow; inactive elements
+  should retain the same visual language with lower intensity. Keep keyboard
+  focus independently recognizable and disabled controls clearly identifiable.
+- Preserve accessibility, readability, resizing, and compatibility with System,
+  Light, and Dark appearance. Adapt shared styles to the GTK theme; keep the
+  fixed Retron palette confined to its opt-in mode.
+- Avoid excessive saturation, decorative effects, unnecessary animations,
+  unsolicited redesigns, new dependencies, and custom rendering. Use only
+  CSS properties supported by the project's GTK4 runtime, applied through
+  `Gtk.CssProvider`; verify `border`, `border-radius`, `background-color`,
+  and `box-shadow` support before introducing rules.
+
+### Terminal containers
+
+Apply borders to the GTK containers around each `Vte.Terminal`, preserving
+VTE rendering and configured terminal colors. Use brighter active-pane borders
+and more subdued inactive borders, with clear separation in horizontal,
+vertical, and nested splits. Borders and lighting must not obscure content or
+interfere with focus, scrolling, text selection, resizing, or split dividers.
+
+### Menus and dropdowns
+
+Use consistent, subtle selection backgrounds and readable text and icons for
+main menus, context menus, submenus, and native dropdowns. Inspect the actual
+GTK4 widget hierarchy and CSS nodes before selecting rules for hover, focus,
+selection, and pressed states. Preserve disabled states and native keyboard
+and pointer navigation.
+
+### Tabs
+
+Give active and inactive terminal and Notes tabs consistent colored borders,
+using stronger color and soft lighting for the active tab and subdued borders
+for inactive tabs. Inspect any other tab-based navigation before applying
+shared rules. Keep normal, hover, focused, and active states coherent without
+unnecessary changes to dimensions, spacing, close targets, scrolling,
+reordering, or navigation.
+
+### Implementation and validation
+
+Before changing visual code, identify the responsible widgets and containers,
+review existing CSS and reusable palette values, inspect the real GTK4 CSS
+nodes, and define a consistent state strategy. Centralize shared rules, avoid
+duplicates and conflicting selectors, and make incremental changes within the
+existing Core/add-on boundaries.
+
+Validate individual terminals, multiple splits, active and inactive tabs,
+pane-focus changes, main/context/dropdown menus, keyboard and mouse navigation,
+light and dark appearance, and window/panel resizing against the regression
+checklist. Report changed files, completed checks, skipped checks, and known
+limitations; do not claim visual or functional validation from static review
+alone. Follow the user's explicit restrictions on running tests.
 
 ## Quick reference
+
+### Retron visual editor (#486)
+
+The Text fields component covers native `entry` and `spinbutton` nodes in
+normal, focus and disabled states, using the existing property controls.
+The original cyan focus outline is 1px thick with a 2px offset.
+Explicit focus border overrides replace the fixed cyan outline; background
+and glow-only overrides retain it. Unmodified profiles emit no extra CSS.
+Common overrides also apply to these fields. Notes/text views remain separate.
+Profiles with the new `fields` component require this version or newer;
+older builds reject unknown component identifiers.
+
+`retron_profile.py` defines the reusable property inventory, defaults, component
+selectors, state inheritance and bounded CSS generation. `retron_store.py` owns
+the independent versioned profile. `retron_runtime.py` owns one display provider
+and one edit transaction; `retron_editor.py` owns native controls and one pending
+50 ms preview source. `app.py` composes these Core services without add-on imports
+or access to connection credentials in the editor.
+
+`retron_style_values.py` owns the immutable Retron palette and shared frame/glow
+values, without GTK or application-state dependencies. Both the base stylesheet
+and profile defaults consume those values; `constants.py` preserves the existing
+accent and surface imports. Component-specific layout and exceptions remain in
+their respective style rules.
+
+The native configuration selector offers the current unnamed appearance, Original
+Retron and up to 32 named presets. Save as establishes a new saved baseline while
+keeping the editor open; Save updates the selected configuration. Rename/Delete
+persist collection changes without saving a pending appearance draft. Switching
+an edited draft asks whether to save, discard or remain. Names stay out of CSS
+and filenames; original Retron cannot be renamed or deleted. Modal name dialogs
+and cancellable native alerts are retired with the editor.
+The property scroller reserves 40px after the override checkboxes so the native
+vertical scrollbar remains separate when it expands under the pointer.
+Numeric adjustment sliders use light handles, muted tracks and cyan highlights,
+scoped to the editor window. Hover brightens the handle; disabled controls stay
+subdued. Native geometry, keyboard focus and pointer interaction are preserved.
+
+The common stylesheet remains at application priority. Retron's original rules
+and generated customizations share one replaceable provider at application + 2;
+this intentionally overrides Notes background preferences only for an explicit
+Retron background. Retiring the provider restores those preferences. Unmodified
+profiles retain original Retron styling. Custom selectors exclude native message
+alerts and the editor, which stays readable. New windows inherit active styles.
+Leaving Retron removes the provider and theme scope; returning resumes the draft.
+
+Inheritance is original component/state defaults, common normal/state values,
+then component normal/state values. Checkboxes enable per-property overrides;
+unchecked values inherit. Focus, selection, backdrop and title holding are distinct
+states. Borders can be 0–8 logical px with 0–48 px corners. Up to three inner/outer
+shadows support 0–32 px blur, -8–16 px spread and -24–24 px offsets. Backgrounds
+support solid, linear and radial fills; alpha applies to paint, not child opacity.
+Gradients do not paint a duplicate translucent solid beneath themselves. Original
+inset frames become real borders when border properties are overridden; changed
+widths may change layout. Existing keyboard focus outlines remain independent.
+
+Terminal cells use a solid RGBA background through VTE's color API. The adapter
+updates existing and newly created panes without resetting font, ANSI palette,
+terminal content or processes. Common gradients reduce to a solid background for
+VTE. Notes scrolling children reveal the customized frame background; document
+content and saved editor preferences are untouched. Native titlebar layout follows
+the desktop; the editor action does not replace window controls. General becomes
+non-modal when opening the editor, retaining its pending preferences independently.
+
+There is no backdrop blur, custom drawing or new dependency. Large effects may
+clip at GTK/window boundaries and transparency depends on compositor/layering.
+GTK 4.14 accepts border styles, gradients and multiple shadows; filter blur is
+not exposed because it would blur readable content. See the regression checklist
+for visual, platform and lifecycle validation.
 
 | Source | Owns | Must not be changed by this inventory |
 |---|---|---|
 | GTK/GNOME | System surfaces, text, borders, selection, focus, and system appearance | The desktop theme or GTK-managed widget behavior |
 | Termia | Scoped structural rules: layout insets, dimensions, and component selectors | GTK-managed application colors or VTE internals |
-| Terminal settings | VTE foreground, background, ANSI palette, prompt, and split divider | Application menus, dialogs, or sidebar chrome |
+| Terminal settings | VTE foreground/background saved per app theme; shared ANSI palette, prompt, and split divider | Application menus, dialogs, or sidebar chrome |
 
 ## Appearance modes
 
@@ -21,9 +178,649 @@ Termia's application appearance is selected in General preferences.
 | System | Follows GNOME `color-scheme`; resets the app override when the scheme is unknown | Inherited from GTK |
 | Light | Requests GTK's light variant | Inherited from GTK |
 | Dark | Requests GTK's dark variant | Inherited from GTK |
+| Retron (local research) | Requests GTK's dark variant | Fixed palette from `theme_styles.py`, a 75%-opaque window canvas, opaque panels, 1px borders, 10px corners and soft active-pane/tab lighting |
 
 The shared application CSS provider is replaced when the appearance changes so
 rules from an earlier mode do not remain active.
+
+Retron rules are scoped below `window.termia-dark-glow`. An application-owned
+top-level window observer adds/removes that class for existing and future
+windows, including detached windows and in-process dialogs. It is disconnected
+at application shutdown. This follows the existing process-wide GTK appearance;
+it does not change another application's theme or external desktop portals.
+Switching back removes the scope class and replaces the CSS provider. Saving
+a theme change also loads that theme's saved terminal foreground/background.
+
+General preferences and a native titlebar button open the same independent
+Retron editor. The titlebar button is visible only while Retron is active,
+follows language changes and is disabled by the connection-unlock overlay.
+The legacy `app.dark_glow_border_color` (default `#55BAC9`) initializes
+the profile's original accent without rewriting settings. The following
+description concerns that original accent; component overrides are described
+in the visual-editor section above.
+The choice affects the main window, header/sidebar, terminal scrollers, status
+capsules, terminal/Notes tabs and native-alert frames, plus their related
+interaction outlines. Border widths, radii, opacities and halo geometry are
+unchanged. Semantic notification roles and connection-state colors retain
+their fixed palette; standard button/entry colors and terminal palettes remain
+independent. Neutral card/popover borders retain their existing palette.
+
+`theme_styles.py` centralizes neutral surfaces and cyan/violet/green/yellow/red
+roles. `termia-panel` and `termia-role-*` are reusable internal style classes,
+not an add-on interface. Notifications use their existing severity to choose
+the border role. Keyboard focus retains an explicit outline. CSS does not
+recolor VTE or the Notes editing surface. Terminal foreground/background pairs
+are saved per app theme and applied through VTE's existing color API; Notes
+editor colors remain independent.
+The base theme has no animations, background blur or prototype imports; the
+Retron editor supplies the scoped overrides described above.
+The secondary-window changes have automated provider/scope coverage and
+selected visual checks on Ubuntu 26 Wayland; exhaustive interaction-state
+validation remains pending.
+
+The darkest window background is `#0D1420`, painted at 75% opacity (25% transparency)
+(`rgba(13, 20, 32, 0.75)`). The main content root is transparent so this canvas
+is painted only once; overlapping translucent layers would increase its opacity.
+Panels, controls, text, terminal colors and native-alert backgrounds retain
+their own colors and opacity. This changes background paint rather than the
+opacity of the whole widget tree. Actual desktop transparency depends on the
+window compositor; it adds no blur. Check the result on the target desktop.
+
+The default outer window border is 1px at 50% opacity, with a 10px radius.
+Its halo uses the selected border color with 2px blur, zero offset/spread and
+5% opacity (95% transparency). Blur radius and opacity are separate values.
+Inactive windows use a 35%-opaque border and no halo. Notes retains its
+separately documented inset-only frame; native alerts retain their own frame.
+
+### Secondary windows (#484)
+
+Retron applies the existing subtle outer frame to every in-process top-level
+window. Native headerbars share the main header treatment; native message
+alerts retain their compact, more specific rules. Portal windows remain owned
+by the desktop. Standard themes receive none of these rules.
+
+Secondary views opt into shared roles: `termia-dialog-panel` for complete dialog
+panels, `termia-dialog-content` for their inner content, `termia-surface-panel` for grouped Notes/snippet panels,
+`termia-content-frame` for selected scrolling regions, `termia-text-surface`
+for snippet editors/previews and updater logs, `termia-preference-frame` for
+Terminal preference groups, and `termia-content-paned` for the Notes splitter. Detached session pages use
+`termia-detached-surface` for an 8px inset, removed on reattachment.
+Roles are inert outside Retron. Scrollbars, switches and check/radio indicators
+receive scoped palette rules without replacing native interactions. Notes
+editor colors and VTE colors remain independently owned.
+
+Every `DialogWindow` supplies `termia-dialog-panel` on its outer GTK box. A
+single Retron surface and inset frame enclose both content and the complete
+action row, including General, connections, Terminal/Security preferences,
+groups, local profiles, workspaces, Notes forms, optional tools, transfer/SFTP
+prompts and informational dialogs. Inner content areas have no separate frame
+or extra CSS insets. Native message alerts do not use this component and keep
+their separate treatment.
+The outer panel uses the shared 1px inset line (35%, 50% with focus), 10px
+corners, 8px margin and 8px padding. Existing option and action-row margins
+remain in place. Buttons keep their original actions, order and keyboard behavior.
+
+Holding the primary mouse button over an application-owned native GTK title
+handle adds `termia-title-held` to that window. Its exterior border rises to
+65% opacity with a 2px halo at 8% opacity; Notes retains its inset line at 65%
+and adds that same halo. Geometry and canvas opacity do not change. Native
+title buttons and other interactive controls do not trigger the effect, and
+message alerts are excluded. GTK/compositor window movement is never claimed
+or replaced. One 50ms device-state check runs only while held, covering releases
+consumed by native movement; release, Escape delivered to the application,
+unmapping, theme disable and shutdown clear the state. Server-owned decorations
+outside the GTK surface cannot be observed by this controller. Compositor-side
+event routing still requires interactive Wayland/X11 validation.
+
+Notes uses native `Gtk.Frame` containers around its editor scroller and toolbar
+scroller. In Retron, the tree, editor, toolbar, notebook tabs, headerbar and
+outer window frame share a 1px inset line at 35% of the selected border color,
+raised to 50% with focus within. All use 10px corners without an exterior halo;
+hover and selected tabs retain this same line treatment. Notes tabs have all
+four corners rounded like connection tabs. Editor and toolbar retain 3px
+horizontal margins. The toolbar's top margin is 8px and its bottom margin is
+zero; the editor's top margin is zero, giving equal 8px gaps from tabs to
+toolbar and from toolbar to editor. When the toolbar is hidden, its container's
+`termia-notes-toolbar-hidden` class gives the editor an 8px top margin, keeping
+the same gap below the tabs, including when restoring a saved hidden toolbar.
+The editor frame clips its child to the rounded boundary
+and reserves 2px padding; the toolbar frame uses the shared surface background
+and 6px padding. The native Notes divider has a 4px minimum width. The notebook container,
+stack and tab header are transparent; individual tab states retain their colors.
+The native toolbar toggle points up to hide and down to show, including when
+restoring its saved visibility.
+
+The display provider is replaced on theme changes and the top-level observer
+updates existing and future windows. Tests exercise real secondary windows and
+foreground restoration after provider removal, as well as selector scoping.
+Full interactive review of every control/state remains a separate validation.
+
+### Retron interaction styles (#484)
+
+`build_interaction_css()` in `theme_styles.py` centralizes terminal-container,
+terminal/Notes tab and native menu states exclusively for Retron, using
+its cyan accent and fixed surface colors. System/Light/Dark retain the
+pre-research base CSS and native GTK states.
+Rules target `.termia-terminal-pane` and its scroller/status children,
+`.termia-tab-label`, native Notebook
+`header > tabs > tab`, `.termia-menu-popover modelbutton`, and rows below
+`dropdown.termia-choice popover listview`. The shared dropdown factory supplies
+`termia-choice`; native selection and activation remain GTK-owned.
+
+Terminal scrollers reserve a constant 1px border on every side, at 35% opacity
+without focus and 50% with focus. Focus within also adds a 3px outer shadow at
+5% opacity. This reduces available
+terminal content space by 2px per axis compared with borderless containers.
+VTE content additionally has 6px vertical and 8px horizontal CSS padding in
+Retron only. No foreground, background or ANSI colors are overridden.
+This describes CSS ownership; app-theme selection separately loads the saved
+terminal foreground/background pair through `stores.py`.
+Tab borders use inset shadows to retain their current allocations. Active tabs
+also receive a soft outer shadow, while keyboard focus has a separate outline.
+Pane focus follows GTK's `:focus-within`, including focus on a pane's toolbar;
+opening a menu removes pane focus emphasis without changing session selection.
+Outer shadows may be clipped by existing scrolling/split containers. Static
+review does not establish contrast, performance or regression-free rendering;
+automated and interactive validation remain pending in this research phase.
+
+## Technical specification: palette, CSS values and cascade
+
+This section records the current local implementation, not a proposed design.
+Hexadecimal border values below describe the default color. A saved Retron
+border choice replaces the frame/interaction accent, retaining the documented
+alpha and geometry; semantic palette roles are not replaced.
+Keep it synchronized whenever visual values or selectors change. Sources:
+[`theme_styles.py`](../src/termia/theme_styles.py),
+[`styles.py`](../src/termia/styles.py),
+[`app.py`](../src/termia/app.py),
+[`choice_widgets.py`](../src/termia/choice_widgets.py), and the component
+sources linked below. CSS dimensions are logical pixels unless another unit
+is specified. A value inherited from GTK is theme-dependent; it has no single
+fixed hexadecimal equivalent in Termia.
+
+### Complete Retron palette
+
+All hexadecimal colors in this table are opaque (alpha 1). Their alpha is
+reduced only where an explicit `alpha(...)` expression is used.
+
+| Key | Exact value | Role/application |
+|---|---|---|
+| `canvas` | `#0D1420` | Window background painted at 75% opacity; main content root is transparent. Native-alert backgrounds retain the opaque base color |
+| `surface` | `#182231` | Header, sidebar, panels, cards, lists, popover contents and Notes toolbar frame |
+| `control` | `#1C2A3C` | All button backgrounds, entries and spin buttons |
+| `hover` | `#23364B` | Hover backgrounds and enabled menu/dropdown focus |
+| `selection` | `#29475A` | Selected rows, active tabs and pressed/selected menu items |
+| `text` | `#EDF3F8` | Primary foreground |
+| `muted` | `#B3C1D1` | Secondary labels and disabled-control foreground |
+| `border` | `#345667` | Neutral panel/control/popover border |
+| `cyan` | `#55BAC9` | Information role, interaction accent, pane/tab borders and focus outlines |
+| `violet` | `#A194D6` | RAM role available to styled components |
+| `green` | `#78BD97` | Success role and suggested-action border |
+| `yellow` | `#D2B36F` | Warning role |
+| `red` | `#D8848D` | Error role and destructive-action border |
+| Additional literal | `#264C3A` | `button.suggested-action` background |
+| Additional literal | `#5A2C37` | `button.destructive-action` background |
+
+Role definitions do not imply that CPU, RAM or active-connection indicators
+currently consume them. Notifications map information/success/warning/error to
+cyan/green/yellow/red in `TermiaWindow.show_toast()`.
+
+### Provider order and scope
+
+`build_application_css()` retains its combined output for existing callers;
+the application requests base structural CSS with `include_retron=False`.
+The base provider uses `Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION` (600).
+Notes has an independent editor provider at application priority + 1 (601).
+`RetronRuntime` installs original Retron rules and customizations at application
+priority + 2 (602), only while Retron is active. Default rules avoid overriding
+the Notes text background; explicit content customizations take precedence.
+Providers apply to the display; selectors determine which widgets they affect.
+
+Retron prefixes its rules with `window.termia-dark-glow`. The top-level
+observer adds/removes that class on existing and future windows.
+System/Light/Dark receive no research interaction rules. GTK specificity applies before source order;
+later rules win only at equal specificity and provider priority.
+
+| Interaction variable | Retron |
+|---|---|
+| `accent` | Saved `app.dark_glow_border_color`; default `#55BAC9` |
+| `foreground` | `#EDF3F8` |
+| `hover` | `#23364B` |
+| `selected` | `#29475A` |
+| `muted` | `#B3C1D1` |
+
+`alpha(color, factor)` multiplies the input alpha; it is not a global widget
+opacity. The rendered result depends on the surface behind it. No fixed final
+pixel color is promised for GTK-derived or translucent values.
+
+### Retron surfaces and controls
+
+Selectors below are relative to `window.termia-dark-glow`. Palette names refer
+to the exact values above. Properties not listed remain inherited from GTK or
+other component rules; this is not a complete replacement GTK theme.
+
+| Selector | Explicit styling |
+|---|---|
+| Window itself | Background `alpha(canvas, 0.75)`, foreground `text` |
+| `.termia-main-surface` | Transparent background, foreground `text`; avoids stacking a second canvas layer |
+| Every in-process `window.termia-dark-glow` | Border `1px solid alpha(cyan, 0.50)`, radius `10px`, shadow `0 0 2px alpha(cyan, 0.05)`; backdrop border alpha `0.35`, shadow `none`; Notes and native alerts use their documented overrides |
+| `headerbar` | Background `surface`, foreground `text`, shadow `none` |
+| `.termia-session-tabs`, `.termia-session-tab-controls` | Background `transparent`, foreground `text`, shadow `none`; the main canvas `#0D1420` shows through both containers. Individual tab backgrounds, borders and active lighting remain independently styled. |
+| `.termia-sidebar`, `.termia-panel`, `.stat-card`, `frame.card` | Background `surface`, foreground `text`, border `1px solid border`, radius `10px`, shadow `none` |
+| `listview`, `list` | Background `surface`, foreground `text` |
+| `row` | Transparent background |
+| `row:hover` | Background `hover` |
+| `row:selected`; selected connection-row `.termia-sidebar-object` | Background `selection`, foreground `text`, radius `10px` |
+| `popover > contents` | Background `surface`, foreground `text`, border `1px solid border`, radius `10px`, shadow `none` |
+| `button` | Background image `none`, background `control`, foreground `text`, border color `border`, radius `10px`, box/text shadows `none`; includes flat buttons |
+| `button:not(.flat)`, `entry`, `spinbutton` | Background `control`, foreground `text`, border `1px solid border`, radius `10px`, shadow `none` |
+| `button:hover` | Background `hover`, border color `cyan` |
+| `button:active`, `button:checked` | Background `selection`, border color `cyan` |
+| `button.suggested-action` | Background `#264C3A`, border color `green`, foreground `text` |
+| `button.destructive-action` | Background `#5A2C37`, border color `red`, foreground `text` |
+| `button:disabled` | Background `surface`, foreground `muted`, border color `border`, box/text shadows `none` |
+| `entry:disabled` | Foreground `muted`, border color `border` |
+| `button:focus-visible` | Outline `2px solid cyan`, offset `2px` |
+| `entry:focus-within`, `spinbutton:focus-within` | Outline `1px solid cyan`, offset `2px` |
+| `.termia-tab-label` | Transparent background, transparent `1px solid` border, radius `10px`; shared shadows below apply afterwards |
+| `.termia-notes-notebook`, its `> stack`, `> header` and `> header > tabs` | Transparent background, no container border or shadow; individual tab states remain styled |
+| `.dim-label` | Foreground `muted`, widget opacity `1` |
+| `.termia-panel.termia-role-ROLE`, `.termia-notification.termia-role-ROLE` | Border color from cyan/violet/green/yellow/red role; no extra glow |
+| `.termia-role-ROLE progressbar > trough > progress` | Background and border color from the same role |
+
+The action-specific background selectors have the same specificity as the
+generic `button:hover`/`:active` background rules and are emitted later, so
+their colored backgrounds remain in those states. The disabled-button rule
+is emitted after action-specific rules at equal specificity and replaces the
+background with `#182231`, foreground with `#B3C1D1`, and border with `#345667`.
+
+All button CSS nodes, including flat/header/sidebar buttons, toggle buttons,
+window controls and inner buttons of MenuButton/DropDown/SpinButton, receive
+the common background. `background-image: none` removes theme gradients/images
+that could obscure `background-color`; this is a static diagnosis of a possible
+cause, not a verified runtime finding. Existing flat/framed border widths,
+padding, sizes and interactions remain unchanged. No new border width is
+assigned to flat buttons. Enabled ordinary buttons use `#1C2A3C`, hover
+`#23364B`, pressed/checked `#29475A`, with text `#EDF3F8`; hover and
+pressed/checked borders use `#55BAC9`. Focus outline remains `2px solid
+#55BAC9` at offset `2px`. Suggested/destructive backgrounds remain `#264C3A`
+and `#5A2C37`, with green/red borders, except when disabled. Retron scope
+is unchanged; System/Light/Dark retain their GTK button colors.
+
+Progress trough geometry and unspecified icon colors remain GTK-owned.
+Symbolic icons normally inherit widget foreground; multicolor image assets
+are not recolored. Menu items use their separate modelbutton rules.
+
+### Terminal borders, tab lighting and keyboard focus
+
+In this table `A`, `H` and `S` mean `accent`, `hover` and `selected` from the
+interaction-variable table. Shadow syntax is horizontal offset, vertical
+offset, blur radius, optional spread radius, and color; `inset` draws inward.
+
+| Component/state | Exact declarations |
+|---|---|
+| `.termia-terminal-pane > scrolledwindow`, normal | `border: 1px solid alpha(A, 0.35); border-radius: 10px` |
+| `.termia-terminal-pane:focus-within > scrolledwindow` | `border-color: alpha(A, 0.50); box-shadow: 0 0 3px alpha(A, 0.05)` |
+| Terminal tab and Notes `header > tabs > tab`, normal | `box-shadow: inset 0 0 0 1px alpha(A, 0.35)` |
+| Both tab types, `:hover` | `background-color: H; box-shadow: inset 0 0 0 1px alpha(A, 0.65)` |
+| Terminal `.active` or Notes `:checked` | `background-color: S; box-shadow: inset 0 0 0 1px alpha(A, 0.65), 0 0 3px alpha(A, 0.08)` |
+| Both tab types, `:focus-visible` or `:focus-within` | `outline: 2px solid A; outline-offset: -3px` |
+| Terminal tab `.dragging` | Background `alpha(A, 0.25)`, whole-widget opacity `0.72` |
+
+For Retron, the accent is RGB `(85, 186, 201)`: the normal tab border is
+`rgba(85, 186, 201, 0.35)`, hover border `rgba(85, 186, 201, 0.65)`, active
+tab border `rgba(85, 186, 201, 0.65)` and tab glow
+`rgba(85, 186, 201, 0.08)`. Terminal scroller borders use alpha `0.35` without
+focus and `0.50` with focus. Focused terminals retain glow alpha `0.05` with `3px` blur;
+the active main window retains border alpha `0.50` and glow alpha `0.05`
+with `2px` blur. Glow offsets and spread are `0px`; these are exterior glows.
+The tab's inset
+border has zero blur and `1px` spread. There is no configurable glow-strength
+setting or reusable `GlowPanel` widget.
+
+The terminal scroller's border has a 10px radius and no background override.
+The outer pane has no border or shadow; the status toolbar has its own
+subdued capsule border without a shadow. Status colors
+follow the saved terminal foreground/background. Retron uses native
+`Gtk.Overflow.HIDDEN` on the scroller to clip its contents to the rounded
+padding box, leaving the status controls outside that clip. New scrollers
+receive it at construction; theme
+application updates registered panes, including detached sessions. Other
+modes restore `Gtk.Overflow.VISIBLE` and omit the rounded-border CSS. Its constant
+width reserves 2px per axis; changing focus changes no border width.
+The descendant `vte-terminal` node receives only `padding: 6px 8px` under
+`window.termia-dark-glow .termia-terminal-pane`; its own background fills
+the padding using the configured terminal palette.
+`:focus-within` includes toolbar focus, rather than tracking SSH connection
+state. Tab selection uses `.active`/`:checked` independently of keyboard focus.
+At equal specificity, active tab styling is emitted after hover and wins;
+dragging changes background and opacity without removing the active shadow.
+Focus outlines are drawn inward on tabs. Shadows/outlines do not reserve extra
+layout space, and ancestors may clip outer shadows.
+
+### Terminal status bars in Retron
+
+The existing `.termia-pane-status` box sits above the bordered terminal
+scroller. Normal and `.active` states use the saved terminal background and
+foreground, with a `1px solid alpha(cyan, 0.35)` border, radius `999px`,
+`box-shadow: none`, padding `3px 12px`, bottom margin `8px` and font size
+`0.9em`. The normal selector includes the parent pane so these insets also
+override the base split-status padding. Labels and buttons use the retro
+monospace stack `"Ubuntu Mono", "DejaVu Sans Mono", monospace`; the shell's
+configured font is unchanged. Labels retain the configured foreground at full opacity for
+contrast with custom light or dark terminal backgrounds. Native Hide and
+Disconnect buttons use transparent backgrounds, no border/shadow, minimum
+content height `18px`, padding `2px 6px`, radius `6px` and font size `1em`
+relative to the status bar. Hover/pressed backgrounds use terminal foreground
+at alpha `0.08`/`0.13`; disabled buttons use opacity `0.45`. The existing
+keyboard-focus outline remains. No status update, timer, visibility or
+disconnect behavior changes; other application themes retain their base CSS.
+
+In all application themes, the status label renders a colored dot and a
+translated state followed by the saved connection/profile name. The point
+uses the existing role colors: green `#78BD97` while the session child is
+running, yellow `#D2B36F` while starting and muted `#B3C1D1` after disconnection.
+Text accompanies color for accessibility. Names are escaped before Pango
+markup rendering, ellipsized when necessary and retained in full in the
+tooltip. Process IDs and errors also move to that tooltip. SSH status follows
+the managed client process; it does not independently verify authentication,
+and the tooltip explicitly explains that distinction. Root and split states
+are read from their individual `TerminalPane`, not the whole session's aggregate
+flag. Existing timers refresh names; changing language refreshes even closed
+panes. No extra timer or signal owner is introduced, and retired panes are
+skipped. `TerminalPane.status_detail` is transient UI data, not stored settings.
+
+### Native menu and dropdown states
+
+Targets are `.termia-menu-popover modelbutton` and
+`dropdown.termia-choice popover listview > row`; the common dropdown factory
+adds `termia-choice`. In Retron these selectors also have the window prefix.
+
+| State | Background | Foreground | Outline/shadow |
+|---|---|---|---|
+| Enabled `:hover` or `:focus` | `H` | `foreground` | No additional shadow rule |
+| Enabled `:selected` or `:active` | `S` | `foreground` | Emitted after hover/focus |
+| Enabled `:focus-visible` | Inherited from matching state above | Same | `2px solid A`, offset `-2px` |
+| `:disabled` | `transparent` | `muted` | `outline: none; box-shadow: none` |
+
+Enabled rules explicitly use `:not(:disabled)`. Normal unselected menu-item
+backgrounds, padding, checkmarks and submenu arrows retain native GTK styling.
+Selected/pressed rules win over hover/focus at equal specificity; keyboard
+focus has an independent inward outline. Label/icon-specific GTK rules may
+still affect descendants; no per-icon recoloring is performed here.
+
+### Shared structural CSS values
+
+These are the declarations in `styles.py`. More specific Retron or shared
+interaction rules override them as described above. Four-value padding is
+top/right/bottom/left; two-value padding is vertical/horizontal.
+
+| Selector/component | Base values |
+|---|---|
+| `.termia-connections-tree` | Transparent background; rows `padding: 2px 4px`; active row shadow `none`; selected row background transparent, foreground `@theme_fg_color` |
+| `.termia-sidebar-object` | Padding `2px 6px`, radius `4px`; selected background `@theme_selected_bg_color`, foreground `@theme_selected_fg_color` |
+| `.termia-group-drop-target.drop-target` | Background `alpha(@theme_selected_bg_color, 0.24)`, shadow `inset 0 0 0 1px @theme_selected_bg_color`, radius `4px` |
+| `.termia-server-item.dragging` | Widget opacity `0.65` |
+| `.prompt-preset-button` | Padding `1px 6px`, minimum height `24px` |
+| `.termia-add-icon-badge` | Background `@theme_bg_color`, radius `999px` |
+| `headerbar`, including `:backdrop` | Background `@headerbar_backdrop_color`; ordinary header bottom border width `0`, shadow `none` |
+| `.termia-session-tab-controls` | Background `@headerbar_backdrop_color`, padding `2px 2px 0 2px` |
+| `.termia-session-tabs` | Background `@headerbar_backdrop_color`, padding `2px 2px 1px 2px`, border `0`, shadow `none` |
+| `.termia-session-tab-scroller` | Background transparent, border `0`, shadow `none` |
+| Tab scroller horizontal scrollbar | Minimum height `5px`, margin `0 2px`, padding `0`; slider minimum height `3px`, minimum width `24px` |
+| `.termia-terminal-stack` | Border `0`, shadow `none` |
+| `.termia-pane-status.active` | Base background `alpha(@theme_selected_bg_color, 0.12)`; Retron overrides it with the saved terminal background without focus highlighting |
+| Pane status labels; status bar inside a split | Label minimum width `0`; split status-bar padding `6px` |
+| `.termia-read-only-badge` | Font weight `600` |
+| `.termia-terminal-paste-preview` | Base border `1px solid #000000`; Retron alone overrides surface, selection, border, radius and padding as specified below |
+| `.termia-tab-label` | Padding `7px 10px`, margin `0 2px`, radius `8px`, background transparent, border `0`; Retron reserves a transparent `1px` border and uses radius `10px` |
+| `.termia-tab-title` | Font size `1.05em` |
+| `.termia-tab-close` | Padding `0`, minimum width/height `24px`, base radius `9999px`; base hover black alpha `0.16`, active black alpha `0.24`, hover shadow `none` |
+| `.termia-tab-overflow-button` | Padding `0`, minimum width `0`, minimum height `24px`, margin `1px 0 6px 0`; inner button horizontal padding `1px`, minimum width `16px` |
+| `.termia-status-hide`, `.termia-disconnect-button` | Padding `0 6px`, minimum height `18px`, font size `0.85em` |
+| Notes notebook, stack, header and header tabs | Background transparent, border `0`, shadow `none` before the Retron header background override |
+| Notes header tab | Radius `8px 8px 0 0`; checked background `alpha(@theme_fg_color, 0.13)`; Retron overrides states as above |
+| `.termia-notes-editor` | Border `1px solid @borders`, radius `8px`, default background `#001B33`; text view foreground `#FFFFFF` and background `#001B33` before saved appearance overrides |
+| `.stat-card` | Padding `10px 12px`, border `1px solid @borders`, radius `6px`, background `alpha(@theme_bg_color, 0.58)`; Retron replaces border/background/radius with its surface rule |
+| Statistics title/value/subtitle | Font sizes `0.82em` / `1.55em` / `0.82em`; value font weight `700` |
+| `.stat-row` | Padding `6px 8px`, bottom border `1px solid alpha(@borders, 0.55)` |
+| Snippet category `flowboxchild.termia-snippet-category-tile` | Padding `0`, radius `8px`; selected background transparent, shadow `none`; inner `.termia-snippet-category-frame` radius `8px` |
+| Selected snippet inner frame | Background `alpha(@theme_selected_bg_color, 0.2)`, border color `@theme_selected_bg_color`, foreground `@theme_fg_color` |
+| `.termia-required-marker`, `.termia-required-hint` | Marker font size `1.2em`, weight `700`; hint foreground `alpha(@theme_fg_color, 0.8)` |
+
+`tabs.py` additionally requests a minimum tab width of `118px`, title width
+and maximum width of 8 characters, and title start/end margins of `4px`.
+These requests are separate from CSS padding. They are not fixed allocations.
+
+The generic Retron `button` rule is more specific than the base
+`.termia-tab-close` radius rule: the close button currently receives `10px`
+corners rather than the base circular `9999px` radius. Its hover/pressed
+background also follows the more specific Retron button rules. Similarly,
+Retron's selected-row rule paints the entire selected connection row as
+well as its content block, rather than preserving the ordinary content-only
+selection. These are current cascade effects, not additional design approvals.
+GTK Notebook underline rendering can be affected by the explicit tab
+`box-shadow`; retaining a separate native blue underline is not guaranteed.
+
+### Split separators and independent editor/terminal colors
+
+Each app theme has an editable terminal foreground/background pair in
+`app.terminal_colors_by_theme`. Retron initially uses Solarized foreground
+`#839496` on the sidebar's background `#182231`. The shared
+`DARK_GLOW_SURFACE_COLOR` in `constants.py` supplies both that terminal default
+and the Retron surface palette; saved terminal overrides remain independent.
+Previously saved colors are retained. System/Light/Dark initially copy the previous
+terminal colors. Terminal preferences save changes for the selected theme;
+switching themes applies its saved pair to existing panes and future sessions.
+Font, size, ANSI palette, prompt and split-separator settings remain shared.
+Initialization, read-only behavior and downgrade compatibility are documented
+in [STORAGE_MIGRATIONS.md](STORAGE_MIGRATIONS.md).
+
+Let `T = max(1, configured split_separator_thickness)` and `H = max(5, T)`.
+Horizontal split separators use minimum width `H` and a left solid border of
+width `T`; vertical separators use minimum height `H` and a top solid border
+of width `T`. Both use the configured terminal background for the drag area
+and configured separator color for the line. On hover only the line becomes
+`alpha(configured color, 0.82)`. Default line color is `#008712`, width `1px`;
+preferences bound width to `1–32px`.
+
+Retron overrides `.termia-split-pane > separator` and its `:hover` state
+with `background: transparent; border: 0; margin: 0; padding: 0; box-shadow: none`.
+The shorthand also clears background images. Orientation-specific rules use
+minimum width 8px for horizontal splits and minimum height 8px for vertical
+splits, independent of the configured line thickness. Native cursor,
+`wide_handle=False`, split positions and Gtk.Paned interaction are retained.
+The separator provides the uniform gap; no margins are added to terminal
+panels. Both panel borders remain separately visible.
+The main canvas (`#0D1420`) shows through the transparent gap where not covered
+by another widget. Actual total hit-area size and composition require runtime
+inspection; 8px is the CSS minimum, not a measured runtime allocation.
+
+Separator color preferences remain stored and visible in System/Light/Dark;
+in Retron, changing the configured line color does not produce a visible
+line or change the fixed gap. The existing Terminal preferences separator
+preview continues to display the configured color; it is not a screenshot of
+the Retron transparent divider. No settings migration is introduced.
+
+Terminal settings default to foreground `#D8DEE9`, background `#1F2430`,
+font `JetBrains Mono`, size `13` in the Pango font description, and prompt
+color `#EEEEEC` (custom prompt disabled by default). `TerminalViewFactory`
+passes saved colors directly to VTE; no Retron rule changes its ANSI colors.
+The current default ANSI palette in `models.py`, by index, is:
+
+| Index/name | Normal | Bright index/name | Bright |
+|---|---|---|---|
+| 0 black | `#2E3436` | 8 bright black | `#646B70` |
+| 1 red | `#B45D58` | 9 bright red | `#CF6F68` |
+| 2 green | `#6F8F5F` | 10 bright green | `#8FBF77` |
+| 3 yellow | `#AA8750` | 11 bright yellow | `#D2B45F` |
+| 4 blue | `#5F7F9F` | 12 bright blue | `#82A8C9` |
+| 5 magenta | `#8A6F8F` | 13 bright magenta | `#AA8AAA` |
+| 6 cyan | `#5F9292` | 14 bright cyan | `#83C4C4` |
+| 7 white | `#C9C9C9` | 15 bright white | `#EEEEEC` |
+
+Saved profiles can override this palette. `constants.py` also retains the
+historical `LEGACY_ANSI_PALETTE`, which is not the current default. Foreground /
+background presets are Ubuntu `#EEEEEC` / `#300A24`, Polaris `#D8DEE9` /
+`#1F2430`, Solarized `#839496` / `#002B36`, Tango `#EEEEEC` / `#2E3436`, and
+Claro `#2E3436` / `#F6F5F4`. Prompt preset colors are Verde `#8AE234`, Azul
+`#729FCF`, Ambar `#FCE94F`, Rojo `#EF2929`, and Blanco `#EEEEEC`.
+
+Notes defaults are foreground `#FFFFFF`, background `#001B33`, size `12pt`
+and inherited font family unless a saved font is supplied. Its separate
+provider styles the editor/text nodes, toolbar buttons (padding `2px 5px`,
+minimum width `20px`, minimum height `22px`), toolbar spin buttons (minimum
+height `26px`, inner buttons padding `2px`, minimum width `14px`), and list
+labels (`0.9em`). The GtkSourceView scheme
+[`termia-notes.xml`](../src/termia/assets/termia-notes.xml) sets both ordinary
+and current line numbers to foreground `#0065BF`, background `#000D1A`.
+Notes appearance is independent of the application palette.
+
+The terminal preferences preview in
+[`terminal_preferences.py`](../src/termia/terminal_preferences.py) uses the
+selected font, size in `pt`, foreground and background, with radius `6px`.
+The split preview uses the selected separator color for both background
+properties, a requested width clamped to `1–32px`, and radius `999px`.
+
+### Main regions and multiline-paste preview (#484)
+
+These rules are appended by `build_interaction_css()` only in Retron.
+They retain the existing widget hierarchy and native controls. Main-window
+composition in `app.py` adds `termia-main-header` to the actual `Gtk.HeaderBar`
+and `termia-main-paned` to the existing horizontal `Gtk.Paned`. No wrapper is
+inserted into the title bar and no event handler changes. VTE receives only
+the content padding specified above.
+
+Let `A` be the Retron accent and `F` its foreground from the variable table.
+`P` is the panel surface `#182231`. Text selection uses `#29475A` / `#EDF3F8`.
+All numerical CSS dimensions below are logical pixels.
+
+| Target/state | Exact values |
+|---|---|
+| `headerbar` (all Retron windows; native alerts override spacing) | Background image `none`, background `P`, foreground `F`, border `1px solid alpha(A, 0.18)`, radius `10px`, margin `8px 8px 0`, shadow `none` |
+| Header `:backdrop` | Border color `alpha(A, 0.12)`, shadow `none`; same background and foreground |
+| `.termia-main-surface` | Padding `8px` on every side, separating title bar, body and outer frame |
+| `.termia-sidebar` | Background `P`, foreground `F`, border `1px solid alpha(A, 0.35)`, radius `10px`, padding `8px 10px` |
+| Sidebar `:focus-within` | Border color `alpha(A, 0.65)`, shadow `inset 0 0 4px alpha(A, 0.10)` |
+| `paned.termia-main-paned > separator` | Background image `none`, background transparent, border `0`, minimum width `8px`, margin/padding `0`, shadow `none`; native cursor retained |
+| Main separator `:hover`, `:active`, `:selected` | Background `alpha(A, 0.12)` |
+| Main separator `:focus-visible` | Outline `1px solid A`, offset `-1px` |
+| `.termia-session-tab-controls` | Padding `0`, bottom margin `8px`; no allocation when the controls are hidden |
+| `.termia-session-tabs`; `.termia-tab-label` | Tab-bar padding `0`, border spacing `8px`; individual tab margins `0` |
+| Paste preview scroller, descendant `textview`, direct `text` and `border` nodes | Background `P`, foreground `F` |
+| `.termia-terminal-paste-preview` | Border `1px solid alpha(A, 0.35)`, radius `8px` |
+| Preview `textview` | Padding `8px 10px`, replacing native TextView margin overrides |
+| Preview `textview > text > selection` | Theme-specific selection background and foreground defined above |
+| Preview scrollbar slider | Background image `none`, background `alpha(A, 0.35)`; hover `alpha(A, 0.65)`; pressed `A`; native geometry retained |
+
+The sidebar's GTK widget margins in Retron are `0px` on every side;
+System/Light/Dark retain `12px` on each side. Theme application
+updates these margins on the current window. Every direct child (action row,
+search entry, tree scroller and summary label) shares the parent padding of
+10px horizontally; descendants retain their existing indentation. Its vertical
+box spacing remains 8px, minimum width request 120px and initial splitter
+position 280px. The shared main surface now supplies the 8px outer inset to
+both sidebar and terminal region, keeping their tops aligned. A visible tab
+strip occupies a row above terminal content; it is not empty spacing.
+Content constraints can still require a wider sidebar at some font sizes;
+no controls are shrunk or repositioned.
+
+The native wide sidebar separator supplies an 8px gap with no border, margin
+or padding. Native resizing and keyboard interaction remain in place.
+Separate rules apply the same gap to `.termia-split-pane` separators.
+System/Light/Dark receive none of these overrides. Sidebar visibility and
+remembered-width handling are unchanged.
+
+The header border adds 1px per edge around the same native HeaderBar; its
+centering, drag region and window controls remain GTK-owned. Header/sidebar
+lighting is limited to the focused sidebar (zero offsets, 4px blur, zero
+spread, alpha 0.10). The header has no shadow in either focus state.
+This does not establish that every rounded edge renders without clipping;
+maximized/restored windows and native controls require visual inspection.
+The 8px tab-to-stack margin is outside the tab scroller and applies uniformly
+to all sessions/splits. Existing active/inactive tab and pane rules are retained.
+
+Retron CSS gives the preview TextView horizontal padding of 10px and
+vertical padding of 8px; ordinary modes retain native spacing. These are presentation properties, not
+inserted spaces or newlines: the original `set_text(text)` and
+`terminal.paste_text(text)` calls and the captured text are unchanged. The
+existing 560×320 default dialog size, warning label, content spacing 12px,
+content margins 16px (bottom 0), action top margin 8px, read-only monospace view,
+Cancel default/focus, validity guards and response lifecycle remain unchanged.
+Its controls keep existing GTK/application button styling. No whitespace
+normalization, escaping, truncation, text tags, wrapping change or clipboard
+write is introduced. Long lines retain native horizontal scrolling.
+
+Native CSS-node references: [HeaderBar](https://docs.gtk.org/gtk4/class.HeaderBar.html#css-nodes),
+[Paned](https://docs.gtk.org/gtk4/class.Paned.html#css-nodes), and
+[TextView](https://docs.gtk.org/gtk4/class.TextView.html#css-nodes).
+Only static code/resource inspection has been performed. Font-dependent minimum
+sizes, clipboard-content preservation in execution, native focus, resize areas,
+selection contrast, scrollbar states and clipping remain unvalidated at runtime.
+
+### Native confirmation alerts in Retron
+
+Session restoration after unlock and Notes deletion use `Gtk.AlertDialog` in
+`app.py` and `notes_dialogs.py`. They do not use Termia's `DialogWindow` form
+layout. In the inspected GTK implementation, AlertDialog creates a native
+message window. The installed GTK UI resources expose a header bar,
+`.dialog-vbox`, `.dialog-action-box` and `.dialog-action-area`; the installed
+Yaru CSS targets `window.dialog.message` and adds action-button padding
+`10px 14px`. This resource inspection does not establish which desktop theme
+is active or replace a runtime rendering check.
+
+The following additional rules are restricted to
+`window.termia-dark-glow.dialog.message`, using the existing window observer.
+They do not replace the native alert or change its callbacks/default responses.
+
+| Target (relative to alert window) | Exact declarations |
+|---|---|
+| Window | Background `#0D1420`, foreground `#EDF3F8`, border `1px solid alpha(#55BAC9, 0.65)`, radius `10px`, shadow `0 0 4px alpha(#55BAC9, 0.18)` |
+| Window `:backdrop` | Border color `alpha(#55BAC9, 0.35)`, shadow `none` |
+| `headerbar`, `.titlebar:not(headerbar)` and both `:backdrop` variants | Background image `none`, background `#182231`, foreground `#EDF3F8`, border `0`, radius `9px 9px 0 0`, shadow `none`, minimum height `32px`, padding `4px 8px` |
+| `.dialog-vbox` | Background `#0D1420`, foreground `#EDF3F8`, padding `16px 0 0` |
+| `.dialog-action-box` | Background image `none`, background transparent, border `0`, padding `0 16px 16px` |
+| `.dialog-action-area` | CSS border spacing `8px` |
+| `.dialog-action-area button` | Minimum content height `24px`, padding `4px 12px`, solid border width `1px`, radius `8px`, font size `1em`; existing button state colors still apply |
+
+A button's minimum requested outer height is 34px before any native widget
+margins or larger content request (24 + 2×4 padding + 2×1 border). This is
+not a fixed allocation. GTK retains native horizontal button allocation;
+buttons can still share equal widths. CSS border spacing can be superseded by
+an explicit GtkBox spacing property. The inspected message template retains
+its own 30px horizontal widget margins around the message, 10px message/detail
+spacing, and 20px content-box spacing. The new 16px top inset complements those
+existing margins; no label padding or fixed dialog width is introduced.
+
+The same styling affects other native message alerts carrying those classes,
+including close/unsaved/import confirmations, while System/Light/Dark and
+Termia's separate form-dialog layout keep their existing behavior. Enter,
+Escape, modality and button indices remain GTK/application-owned: restoration
+keeps default index 1 and cancel index 0; note deletion keeps both default and
+cancel index 0. No semantic destructive role is inferred from translated text.
+
+The titlebar rule covers headerbar and non-headerbar client-side GTK
+decorations, explicitly in both normal and backdrop states. It removes inherited
+background images and keeps the same surface color when focus leaves the alert.
+It does not replace the native titlebar or alter global GTK settings. A title bar drawn
+by the window manager cannot be recolored by application CSS. Rounded corners,
+outer glow, text wrapping, localized button widths and these internal GTK
+selectors remain subject to runtime/version validation. There has been no
+interactive or automated validation in this research iteration.
+
+### Effects not implemented and validation limits
+
+The original Retron canvas is painted at 75% opacity; surfaces and controls
+are opaque. The editor can override supported background alpha and gradients.
+There is no background blur, `backdrop-filter`, custom drawing or theme-defined
+animation/transition. GTK may supply its
+own animations, metrics, symbolic-icon treatment and inherited effects.
+
+Values describe CSS declarations and their statically identifiable cascade;
+they are not runtime measurements or contrast/performance guarantees. Actual
+native CSS nodes, theme inheritance, clipping, display scaling and interaction
+still require visual validation. Platform rendering, accessibility and performance
+require the relevant checks in `REGRESSION_CHECKS.md` alongside automated coverage.
 
 ## Current visual sources
 
@@ -59,9 +856,10 @@ separator treatment in `src/termia/styles.py`.
 
 Terminal foreground/background, ANSI palettes, prompt color, and the split
 separator color are user-configurable terminal settings. The split divider
-intentionally combines the terminal background for its drag area with the
-configured separator color for its thin visual line. These values are not
-application-theme tokens.
+combines the terminal background for its drag area with the configured line
+color in System/Light/Dark. Retron instead makes the background and border
+transparent, retaining dimensions and saved preferences as detailed above.
+These configurable terminal values are not application-theme tokens.
 
 ## Component ownership
 
@@ -71,10 +869,10 @@ component's interaction uses a standard GTK control. See the
 
 | Component | Current owner | Current implementation |
 |---|---|---|
-| Main and context menus | GTK | `styles.py`, menu classes |
+| Main and context menus | GTK interaction with scoped Termia hover/selection/focus colors | `theme_styles.py`, `styles.py`, menu classes |
 | Dialogs | GTK | Individual dialog builders |
 | Header and session tabs | Approved custom GTK tab strip with a stack, equal-width labels, an automatically hiding horizontal scrollbar and native down-arrow selector. Scoped theme-derived active, hover and drag colors retain the laboratory appearance. | `app.py`, `tabs.py`, `styles.py` |
-| Note tabs and editor | Native `Gtk.Notebook` tabs with scoped rounded corners, a transparent header, a theme-derived selected-tab background, and GTK's blue underline; saved Notes appearance preferences, native GtkSourceView line numbers, and Termia editor borders and spacing | `notes_dialogs.py`, `styles.py`, `assets/termia-notes.xml`, and settings |
+| Note tabs and editor | Native `Gtk.Notebook` behavior with scoped rounded corners, inset colored borders, active-tab lighting and focus outlines; header/selection colors depend on appearance mode. Saved Notes appearance preferences, native GtkSourceView line numbers, and editor borders/spacing remain separate. | `notes_dialogs.py`, `styles.py`, `theme_styles.py`, `assets/termia-notes.xml`, and settings |
 | Notes tree | GTK `ListView` selection and `TreeExpander` disclosure; Termia row spacing and scoped context/drop feedback | `notes_dialogs.py`, `styles.py` |
 | Connections tree selection and group drop target | Native `Gtk.ListView` selection and `Gtk.TreeExpander` disclosure; selection colors confined to rounded content-width icon/title blocks, scoped spacing, and theme-derived drop feedback | `sidebar.py`, `sidebar_projection.py`, `styles.py` |
 | Split panes | Terminal preferences | `styles.py` and terminal settings |
@@ -87,7 +885,9 @@ The connections list keeps a transparent background, matching the original
 sidebar container and allowing the window background to show through. GTK still
 owns selection, but its full-row background is suppressed. Selection colors are
 painted on the content-width icon/title block with 6 px horizontal padding and
-4 px corner radii, leaving the remaining row background unchanged.
+4 px corner radii, leaving the remaining row background unchanged in
+System/Light/Dark. Retron overrides selected rows and their content blocks
+with `#29475A`, foreground `#EDF3F8` and `10px` radii, as detailed above.
 
 ### Terminal tab selection
 
@@ -98,7 +898,9 @@ horizontal scrolling. Notes keep their separate native Notebook.
 
 Scoped `termia-tab-label` styles use a theme-derived selected background,
 softer inactive hover, 7 px vertical and 10 px horizontal padding, 2 px side
-margins and 8 px rounded corners. Close buttons retain their circular target.
+margins and 8 px rounded corners. Retron uses zero tab margins, 8px spacing
+between tabs and 10px rounded corners. Close buttons have
+the base circular radius, overridden to `10px` by Retron as recorded above.
 The strip's horizontal scrollbar uses GTK overlay scrolling and hides when idle.
 The adjacent native down-arrow menu button appears only when tabs overflow.
 
@@ -120,19 +922,20 @@ They describe the existing implementation, not a reusable window contract:
   notes-list toggle, New note, and Import/Export overflow button appear in
   that order, with 4 px between them and an 8 px start margin. The overflow
   button is hidden for server-scoped notes.
-- The notes-list pane starts at **330 logical px** and restores its last width
-  after being hidden. Its search entry requests at least 300 px and has a 6 px
+- The notes-list pane starts at **280 logical px** and restores its last width
+  after being hidden. Its search entry requests at least 250 px and has a 6 px
   end margin. The editor side keeps a 6 px inset beside the divider while the
   list is visible; hiding the list removes that inset so tabs and editor align.
 - Note tabs stay above the editor toolbar. The editor text has 12 px internal
   margins on all sides. The editor surface has a 1 px theme border and an 8 px
   corner radius. The editor's default foreground and background are white and
   `#001B33`; saved Notes appearance preferences can replace them.
-- `termia-notes-window` marks the window; no window-frame CSS rule currently
-  targets that class. `termia-notes-notebook` keeps GTK's selected-tab and overflow
-  behavior and blue selection underline, with a transparent header, rounded tab
-  corners, and a selected-tab background derived from `@theme_fg_color`, scoped in
-  `src/termia/styles.py`. `termia-notes-editor` has scoped rules there. The
+- `termia-notes-window` scopes Retron's shared frame treatment to this window.
+  `termia-notes-notebook` keeps GTK's selected-tab and overflow
+  behavior, with a transparent header in every theme, rounded tab corners,
+  colored inset borders and active shadows. Selection colors and focus outlines
+  come from `theme_styles.py`; the explicit shadows may replace the theme's
+  native underline. `termia-notes-editor` has scoped rules in `styles.py`. The
   `termia-notes-toolbar` and `termia-notes-list` rules are applied by the
   editor appearance provider in `notes_dialogs.py`. GTK owns ordinary button
   and title-control colors, focus, and interaction states.

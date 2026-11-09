@@ -4,6 +4,7 @@
 import argparse
 import signal
 from time import monotonic
+from weakref import WeakKeyDictionary
 
 import gi
 
@@ -20,7 +21,9 @@ from .connection_history_view import ConnectionHistoryDialog
 from .constants import (
     APP_ID,
     DATA_FILE,
+    DEFAULT_NOTES_EDITOR_BACKGROUND,
     INSTANCE_LOCK_FILE,
+    RETRON_PROFILE_FILE,
     SESSION_SNAPSHOT_FILE,
     SETTINGS_FILE,
     STATE_DIR,
@@ -31,6 +34,8 @@ from .debug import (
     log_startup_context,
     log_store_state,
 )
+from .diagnostics import DiagnosticContext, ManagedProcess
+from .diagnostics_view import DiagnosticsTool
 from .dialog_actions import configure_action_area
 from .i18n import translate_key
 from .keybindings import keybinding_matches
@@ -45,6 +50,8 @@ from .notifications import (
 )
 from .optional_tools_dialog import OptionalToolsDialog
 from .preferences import PreferencesMixin
+from .retron_runtime import RetronRuntime
+from .retron_store import RetronStore
 from .session_observer import NoOpSessionObserver
 from .session_registry import SessionRegistry
 from .session_snapshot import SessionSnapshotStore
@@ -62,6 +69,8 @@ from .terminal_menu_actions import TerminalMenuActions
 from .terminal_menus import TerminalMenusMixin
 from .terminal_processes import TerminalProcess
 from .terminal_sessions import TerminalSessionsMixin
+from .theme_styles import DARK_GLOW_CLASS, DARK_GLOW_THEME
+from .tool_launcher import Tool, ToolLauncher, ToolRegistry
 from .transfer_lifecycle import ManagedTransfer
 from .ui_state import RowObject
 
@@ -193,6 +202,12 @@ class TermiaWindow(
         log_event("application.window_created", read_only=self.store.read_only)
         if self.store.read_only:
             self.set_title(f"Termia ({self.t('read_only_badge')})")
+        self.retron_runtime = RetronRuntime(
+            RetronStore(RETRON_PROFILE_FILE, lambda: not self.store.read_only and not self.store.encryption_locked),
+            self.get_display(), self.retron_style_context, self.refresh_retron_terminal_backgrounds,
+        )
+        self.connect("destroy", lambda _window: self.retron_runtime.close())
+        app.connect("shutdown", self.retron_runtime.close)
         self.apply_app_theme()
         self.selected: RowObject | None = None
         self.selected_tree_widget: Gtk.Widget | None = None
@@ -378,6 +393,15 @@ class TermiaWindow(
         self.toast_messages.append(message)
         self.toast_severity = max(self.toast_severity, severity)
         self.toast_icon.set_from_icon_name(NOTIFICATION_ICONS[self.toast_severity])
+        frame = getattr(self, "toast_frame", None)
+        if frame is not None:
+            for role in ("cyan", "green", "yellow", "red"):
+                frame.remove_css_class(f"termia-role-{role}")
+            role = {
+                NotificationSeverity.INFORMATION: "cyan", NotificationSeverity.SUCCESS: "green",
+                NotificationSeverity.WARNING: "yellow", NotificationSeverity.ERROR: "red",
+            }[self.toast_severity]
+            frame.add_css_class(f"termia-role-{role}")
         self.toast_label.set_grouped_text("\n".join(self.toast_messages))
         if not hasattr(self, "toast_revealer"):
             return
@@ -453,8 +477,10 @@ class TermiaWindow(
             self.toggle_sidebar_button,
             self.new_tab_button,
             self.main_menu_button,
+            getattr(self, "tool_launcher", None),
         ):
-            control.set_sensitive(sensitive)
+            if control is not None:
+                control.set_sensitive(sensitive)
 
     def hide_unlock_panel(self) -> None:
         self.unlock_panel.set_visible(False)
@@ -630,7 +656,7 @@ class TermiaWindow(
                 else:
                     settings.set_property("gtk-application-prefer-dark-theme", prefers_dark)
             else:
-                settings.set_property("gtk-application-prefer-dark-theme", theme == "dark")
+                settings.set_property("gtk-application-prefer-dark-theme", theme in ("dark", DARK_GLOW_THEME))
         self.install_tree_styles()
 
     def connect_system_theme_changes(self) -> None:
@@ -650,12 +676,38 @@ class TermiaWindow(
         if display is None:
             return
         terminal_settings = self.store.data.terminal
+        theme = self.store.data.app.theme
+        sidebar = getattr(self, "sidebar", None)
+        if sidebar is not None:
+            inset = 0 if theme == DARK_GLOW_THEME else 12
+            sidebar.set_margin_top(inset)
+            sidebar.set_margin_bottom(inset)
+            sidebar.set_margin_start(inset)
+            sidebar.set_margin_end(0 if theme == DARK_GLOW_THEME else 12)
+        registry = getattr(self, "session_registry", None)
+        if registry is not None:
+            overflow = Gtk.Overflow.HIDDEN if theme == DARK_GLOW_THEME else Gtk.Overflow.VISIBLE
+            for session in registry.sessions():
+                for pane in session.panes.values():
+                    pane.container.set_overflow(Gtk.Overflow.VISIBLE)
+                    scroller = pane.terminal.get_parent()
+                    if isinstance(scroller, Gtk.ScrolledWindow):
+                        scroller.set_overflow(overflow)
+        get_application = getattr(self, "get_application", None)
+        application = get_application() if get_application is not None else None
+        scope = getattr(application, "_window_theme_scope", None)
+        if scope is not None:
+            scope.set_enabled(theme == DARK_GLOW_THEME)
         provider = Gtk.CssProvider()
         provider.load_from_data(
             build_application_css(
                 terminal_settings.background,
                 terminal_settings.split_separator_color,
                 terminal_settings.split_separator_thickness,
+                theme,
+                terminal_foreground=terminal_settings.foreground,
+                dark_glow_border_color=self.store.data.app.dark_glow_border_color,
+                include_retron=getattr(self, "retron_runtime", None) is None,
             )
         )
         previous_provider = getattr(self, "_application_css_provider", None)
@@ -665,13 +717,43 @@ class TermiaWindow(
             display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
         self._application_css_provider = provider
+        runtime = getattr(self, "retron_runtime", None)
+        if runtime is not None:
+            runtime.set_enabled(theme == DARK_GLOW_THEME)
+        launcher = getattr(self, "tool_launcher", None)
+        if launcher is not None:
+            launcher.refresh()
+
+    def retron_style_context(self) -> dict:
+        return {
+            "accent": self.store.data.app.dark_glow_border_color,
+            "terminal_background": self.store.data.terminal.background,
+            "terminal_foreground": self.store.data.terminal.foreground,
+            "notes_background": self.store.data.app.notes_editor.get("background") or DEFAULT_NOTES_EDITOR_BACKGROUND,
+        }
+
+    def on_retron_editor(self, _button=None) -> None:
+        for window in self.get_application().get_windows():
+            if isinstance(window, TermiaWindow) and window.retron_runtime.editor is not None:
+                window.retron_runtime.editor.present()
+                return
+        self.retron_runtime.show_editor(self, self.t)
+
+    def refresh_retron_terminal_backgrounds(self) -> None:
+        registry = getattr(self, "session_registry", None)
+        if registry is not None:
+            for session in registry.sessions():
+                for pane in session.panes.values():
+                    self.apply_retron_terminal_background(pane.terminal)
 
     def _build_ui(self) -> None:
+        self.add_css_class("termia-main-window")
         window_overlay = Gtk.Overlay()
         self.set_child(window_overlay)
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.main_root = root
+        root.add_css_class("termia-main-surface")
         window_overlay.set_child(root)
 
         window_keys = Gtk.EventControllerKey.new()
@@ -680,8 +762,22 @@ class TermiaWindow(
         self.add_controller(window_keys)
 
         header = Gtk.HeaderBar()
+        header.add_css_class("termia-main-header")
         self.header = header
         self.set_titlebar(header)
+        self.tool_registry = ToolRegistry()
+        self.tool_registry.register(Tool(
+            "appearance", "retron_editor", "applications-graphics-symbolic", self.on_retron_editor,
+            lambda: self.retron_runtime.enabled and not self.shutdown_in_progress,
+        ))
+        self.tool_registry.register(Tool(
+            "diagnostics", "diagnostics", "computer-symbolic",
+            lambda: self.get_application().diagnostics_tool.show(self.t),
+            lambda: not self.shutdown_in_progress,
+        ))
+        self.tool_launcher = ToolLauncher(self.tool_registry, self.t)
+        self.connect("destroy", lambda *_: self.tool_launcher.close())
+        header.pack_end(self.tool_launcher)
 
         header_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         header_actions.set_margin_start(6)
@@ -716,6 +812,7 @@ class TermiaWindow(
         header.pack_end(self.read_only_badge)
 
         body = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        body.add_css_class("termia-main-paned")
         body.set_position(280)
         body.set_wide_handle(True)
         self.body = body
@@ -725,11 +822,13 @@ class TermiaWindow(
 
         sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         sidebar.set_size_request(120, -1)
-        sidebar.set_margin_top(12)
-        sidebar.set_margin_bottom(12)
-        sidebar.set_margin_start(12)
-        sidebar.set_margin_end(12)
+        sidebar_inset = 0 if self.store.data.app.theme == DARK_GLOW_THEME else 12
+        sidebar.set_margin_top(sidebar_inset)
+        sidebar.set_margin_bottom(sidebar_inset)
+        sidebar.set_margin_start(sidebar_inset)
+        sidebar.set_margin_end(0 if self.store.data.app.theme == DARK_GLOW_THEME else 12)
         self.sidebar = sidebar
+        sidebar.add_css_class("termia-sidebar")
         body.set_start_child(sidebar)
         body.set_resize_start_child(False)
         body.set_shrink_start_child(True)
@@ -784,7 +883,7 @@ class TermiaWindow(
 
         self.search_entry = Gtk.SearchEntry()
         self.search_entry.set_placeholder_text(self.t("filter_servers"))
-        self.search_entry.connect("search-changed", lambda _entry: self.refresh_list())
+        self.search_entry.connect("search-changed", self.on_server_filter_changed)
         sidebar.append(self.search_entry)
 
         self.server_list = self.create_sidebar_tree()
@@ -886,6 +985,8 @@ class TermiaWindow(
         toast_revealer.set_can_target(False)
 
         toast_frame = Gtk.Frame()
+        self.toast_frame = toast_frame
+        toast_frame.add_css_class("termia-notification")
         toast_frame.add_css_class("background")
         toast_frame.add_css_class("card")
         toast_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -913,7 +1014,7 @@ class TermiaWindow(
         unlock_panel.add_css_class("card")
         unlock_panel.set_halign(Gtk.Align.CENTER)
         unlock_panel.set_valign(Gtk.Align.CENTER)
-        unlock_panel.set_size_request(420, -1)
+        unlock_panel.set_size_request(380, -1)
         unlock_panel.set_margin_top(20)
         unlock_panel.set_margin_bottom(20)
         unlock_panel.set_margin_start(20)
@@ -1050,6 +1151,7 @@ class TermiaWindow(
     def refresh_translated_chrome(self) -> None:
         self.toggle_sidebar_button.set_tooltip_text(self.t("servers"))
         self.new_tab_button.set_tooltip_text(self.t("open_local_terminal_tooltip"))
+        self.tool_launcher.refresh()
         self.main_menu_button.set_tooltip_text(self.t("main_menu"))
         self.main_menu_button.set_popover(
             self.build_main_menu(
@@ -1081,15 +1183,201 @@ class TermiaWindow(
         self.expand_all_button.set_tooltip_text(self.t("expand_all"))
         self.collapse_all_button.set_tooltip_text(self.t("collapse_all"))
         self.search_entry.set_placeholder_text(self.t("filter_servers"))
+        for session in self.session_registry.sessions():
+            for pane in session.panes.values():
+                self.update_pane_status(pane)
         self.render_detail()
+
+
+class WindowThemeScope:
+    """Scope the process-wide theme to native top-levels, including future dialogs."""
+
+    def __init__(self):
+        self.enabled = False
+        self._title_controllers = WeakKeyDictionary()
+        self._held_window = None
+        self._held_device = None
+        self._title_poll = None
+        self.model = Gtk.Window.get_toplevels()
+        self.handler = self.model.connect("items-changed", self.refresh)
+
+    def set_enabled(self, enabled: bool) -> None:
+        self.enabled = enabled
+        self.refresh()
+
+    def refresh(self, *_args) -> None:
+        if self.model is None:
+            return
+        windows = set()
+        for index in range(self.model.get_n_items()):
+            window = self.model.get_item(index)
+            if window is not None:
+                windows.add(window)
+                if self.enabled:
+                    window.add_css_class(DARK_GLOW_CLASS)
+                    if isinstance(window, Gtk.Window):
+                        self._watch_titlebar(window)
+                else:
+                    window.remove_css_class(DARK_GLOW_CLASS)
+                    self._unwatch_titlebar(window)
+        for window in list(self._title_controllers):
+            if window not in windows:
+                self._unwatch_titlebar(window)
+
+    def _watch_titlebar(self, window: Gtk.Window) -> None:
+        if window in self._title_controllers:
+            return
+        click = Gtk.GestureClick()
+        click.set_button(1)
+        click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        pressed = click.connect("pressed", self._on_title_pressed, window.weak_ref())
+        released = click.connect("released", self._on_title_released, window.weak_ref())
+        keys = Gtk.EventControllerKey()
+        keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        key_pressed = keys.connect("key-pressed", self._on_title_key, window.weak_ref())
+        unmap_handler = window.connect("unmap", self._on_title_unmap)
+        window.add_controller(click)
+        window.add_controller(keys)
+        self._title_controllers[window] = (
+            ((click.weak_ref(), (pressed, released)), (keys.weak_ref(), (key_pressed,))),
+            unmap_handler,
+        )
+
+    def _unwatch_titlebar(self, window: Gtk.Window) -> None:
+        if self._held_window is not None and self._held_window() is window:
+            self._clear_title_feedback()
+        registration = self._title_controllers.pop(window, None)
+        if registration is None:
+            return
+        controllers, unmap_handler = registration
+        for controller_ref, handlers in controllers:
+            controller = controller_ref()
+            if controller is not None:
+                for handler in handlers:
+                    if controller.handler_is_connected(handler):
+                        controller.disconnect(handler)
+                if controller.get_widget() is window:
+                    window.remove_controller(controller)
+        if window.handler_is_connected(unmap_handler):
+            window.disconnect(unmap_handler)
+
+    @staticmethod
+    def _is_title_target(widget: Gtk.Widget | None) -> bool:
+        while widget is not None:
+            if isinstance(widget, (Gtk.Button, Gtk.MenuButton, Gtk.Editable,
+                                   Gtk.DropDown, Gtk.Switch, Gtk.Range, Gtk.WindowControls)):
+                return False
+            if isinstance(widget, Gtk.WindowHandle):
+                return True
+            widget = widget.get_parent()
+        return False
+
+    def _on_title_pressed(self, gesture, _count: int, x: float, y: float, window_ref) -> None:
+        window = window_ref()
+        if not self.enabled or window is None or window.has_css_class("message"):
+            return
+        device = gesture.get_current_event_device()
+        if device is not None and self._is_title_target(window.pick(x, y, Gtk.PickFlags.DEFAULT)):
+            self._clear_title_feedback()
+            self._held_window = window_ref
+            self._held_device = device
+            window.add_css_class("termia-title-held")
+            # Native window moves reset GTK gestures and may consume the
+            # release. Query the pointer surface without claiming the gesture.
+            self._title_poll = GLib.timeout_add(50, self._poll_title_feedback)
+
+    def _on_title_released(self, _gesture, _count, _x, _y, window_ref) -> None:
+        if self._held_window is not None and self._held_window() is window_ref():
+            self._clear_title_feedback()
+
+    def _on_title_key(self, _controller, keyval, _keycode, _state, window_ref) -> bool:
+        if keyval == Gdk.KEY_Escape and self._held_window is not None and self._held_window() is window_ref():
+            self._clear_title_feedback()
+        return False
+
+    def _poll_title_feedback(self) -> bool:
+        window = self._held_window() if self._held_window is not None else None
+        if not self.enabled or window is None or not window.get_mapped() or self._held_device is None:
+            self._title_poll = None
+            self._clear_title_feedback()
+            return GLib.SOURCE_REMOVE
+        surface = window.get_surface()
+        if surface is None:
+            self._title_poll = None
+            self._clear_title_feedback()
+            return GLib.SOURCE_REMOVE
+        over, _x, _y, state = surface.get_device_position(self._held_device)
+        # A compositor may temporarily own the pointer during native movement.
+        # Wait for its return rather than treating missing surface focus as up.
+        if over and not state & Gdk.ModifierType.BUTTON1_MASK:
+            self._title_poll = None
+            self._clear_title_feedback()
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
+
+    def _on_title_unmap(self, window: Gtk.Window) -> None:
+        if self._held_window is not None and self._held_window() is window:
+            self._clear_title_feedback()
+
+    def _clear_title_feedback(self) -> None:
+        if self._title_poll is not None:
+            GLib.source_remove(self._title_poll)
+            self._title_poll = None
+        window = self._held_window() if self._held_window is not None else None
+        if window is not None:
+            window.remove_css_class("termia-title-held")
+        self._held_window = None
+        self._held_device = None
+
+    def close(self, *_args) -> None:
+        self._clear_title_feedback()
+        if self.model is not None:
+            self.set_enabled(False)
+            self.model.disconnect(self.handler)
+            self.model = None
 
 
 class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
+        self.diagnostics_tool = DiagnosticsTool(self, self.diagnostic_context)
+        self.connect("shutdown", self.diagnostics_tool.close)
+
+    def diagnostic_context(self) -> DiagnosticContext:
+        sessions = terminals = ssh = local = 0
+        processes = {}
+
+        def retain(process, kind="child", orphan=False):
+            if process is None:
+                return
+            if process.start_time is not None:
+                key = (process.pid, process.start_time)
+                processes.setdefault(key, ManagedProcess(*key, kind, orphan))
+            for member in process.session_members:
+                key = (member.pid, member.start_time)
+                processes.setdefault(key, ManagedProcess(*key, "child", orphan))
+
+        for window in self.get_windows():
+            if not isinstance(window, TermiaWindow):
+                continue
+            for session in window.session_registry.sessions():
+                sessions += 1
+                for pane in session.panes.values():
+                    if pane.retired:
+                        continue
+                    terminals += 1
+                    is_ssh = pane.server_id is not None
+                    local += not is_ssh
+                    ssh += bool(is_ssh and pane.connected and pane.child_process is not None)
+                    retain(pane.child_process, "ssh" if is_ssh else "shell")
+            for process in window.orphaned_terminal_processes:
+                retain(process, orphan=True)
+        return DiagnosticContext(sessions, terminals, ssh, local, tuple(processes.values()))
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
+        self._window_theme_scope = WindowThemeScope()
+        self.connect("shutdown", self._window_theme_scope.close)
         settings = Gtk.Settings.get_default()
         if settings is not None:
             settings.set_property("gtk-label-select-on-focus", False)

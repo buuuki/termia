@@ -11,31 +11,115 @@ fitxers en terminals VTE integrats amb GTK 4.
 ## Funcionalitats
 
 - Terminals locals i SSH amb pestanyes, panells dividits i finestres separables.
+  Fes servir `Ctrl+Shift+fletxes` per moure't entre panells de Termia;
+  `Ctrl+fletxes` queda disponible per a aplicacions del terminal com tmux.
 - Connexions organitzades en grups imbricats, preferits i connexions recents.
+- Selector nadiu de claus SSH privades en crear o editar una connexió.
+- Contrasenya opcional als perfils de terminal local. Activa la drecera d'enviament
+  a les preferències i prem `Ctrl+P` (per defecte) quan `sudo` la demani;
+  el panell actiu rep la seva contrasenya desada, amb Retorn opcional.
+  La drecera no detecta peticions de contrasenya. La protecció depèn de
+  Seguretat; consulta la [compatibilitat](STORAGE_MIGRATIONS.md) abans d'actualitzar.
 - Espais de treball desats i restauració opcional de la sessió anterior.
+- Cada barra d'estat mostra el nom de la connexió i un indicador d'estat amb
+  color; en passar-hi el ratolí es veuen els detalls del procés o error.
+- Còpia automàtica en acabar de seleccionar text del terminal,
+  activada per defecte i configurable a Preferències generals. L'avís confirma la còpia i
+  indica els caràcters, inclosos espais i salts de línia, quan el porta-retalls
+  accepta el text. Un clic en una altra zona treu el ressaltat sense perdre la còpia.
+- Confirmació abans d'enganxar text amb salts de línia al terminal, activada
+  per defecte a Preferències generals. Revisa la previsualització i prem
+  Enganxar; Cancel·lar o Escapament no envien res. També protegeix el botó
+  central: mentre està activada, Termia el tracta com una enganxada fins i
+  tot en aplicacions del terminal que normalment gestionen el ratolí.
 - Pujades SCP i explorador SFTP nadiu amb transferències i cancel·lació.
 - Snippets reutilitzables amb categories, àmbit, variables i dreceres;
   les ordres es previsualitzen abans d'enviar-les.
 - Notes personals o associades a servidors, amb desament automàtic,
-  categories i importació/exportació.
+  categories i importació/exportació. Fes clic dret en una pestanya per
+  reanomenar, eliminar, clonar, desar o tancar-la; l’editor conserva l’estat
+  de desament i la data de modificació.
 - Dades de connexió locals amb xifratge opcional mitjançant contrasenya mestra.
 - Importació/exportació de Termia i importació de connexions des d'Ásbrú YAML.
 - Historial de connexions i complements opcionals d'Estadístiques i SFTP.
 - Aparença i dreceres configurables; interfície en català, castellà i anglès.
+  Dreceres s’obre en una finestra independent per continuar fent servir els terminals;
+  els canvis s’apliquen en desar i els botons mostren les combinacions completes.
+
+**Retron** està disponible a **General → Tema**:
+superfícies fosques opaques, vores de color subtils d'1px, cantonades de 10px
+i il·luminació suau als panells i les pestanyes actius. Sistema/Clar/Fosc conserven
+l'aspecte anterior. Cada tema desa els seus colors de text i fons del terminal;
+Retron comença amb text Solarized i el fons fosc del panell lateral (`#182231`).
+Pots canviar-los quan vulguis des de les
+preferències del terminal: es desen per al tema seleccionat. Els colors de
+l'editor de Notes continuen sent independents.
+Retron afegeix espai interior al terminal i una barra de títol tènue sense
+halo lluminós.
+Amb Retron actiu, obre l’editor d’aparença des d’**Eines**, la quadrícula de la barra de títol,
+o des de **General**. Tots dos accessos obren la mateixa finestra.
+**Camps de text → Component amb focus** permet ajustar les vores i resplendors de les
+entrades de text i numèriques. Personalitzar la vora amb focus substitueix el
+contorn cian fix; conserva una vora o resplendor visible per navegar amb teclat.
+Notes té el seu propi component.
+Pots canviar l’estil comú o un component i estat; marca la casella
+d’una propietat per personalitzar-la. Les vores, els fons llisos o amb degradat
+i fins a tres resplendors es previsualitzen al moment. Aplica és temporal;
+Desa conserva el perfil. **Desa com a…** crea una configuració amb nom i permet
+continuar editant. El selector Configuració ofereix els perfils desats,
+l’aparença actual sense nom i Retron original. Desa actualitza el perfil
+seleccionat; en canviar amb ajustos pendents es pot desar, descartar o cancel·lar.
+Canviar el nom i confirmar Suprimeix actualitzen la col·lecció al moment;
+suprimir conserva l’aparença actual. S’admeten fins a 32 perfils amb noms únics
+d’1–64 caràcters. Cancel·la, Escape i tancar desfan els ajustos d’aparença des de
+l’obertura o l’últim Desa/Desa com a; no desfan noms desats ni supressions.
+Restaura els valors es pot cancel·lar fins que es desa i Retron original sempre
+està disponible. L’editor conserva la llegibilitat i les alertes el seu aspecte
+independent; els altres temes no canvien. El fons VTE és llis, sense difuminat
+ni canvis a la paleta ANSI. Un fons Retron explícit preval temporalment sobre
+les preferències independents de Terminal/Notes mentre Retron està actiu.
+Consulta l’[emmagatzematge del perfil](STORAGE_MIGRATIONS.md#retron-appearance-profile).
+
+Retron també aplica el seu estil als marcs de finestres secundàries i als contenidors
+compartits de Notes, snippets, SFTP, preferències i registres de l’actualitzador. Els
+colors de l’editor de Notes són independents; els diàlegs del portal de l’escriptori
+poden conservar el tema del sistema.
+
+**Eines** també obre **Diagnòstic de Termia**, una finestra independent compartida
+per les finestres del mateix procés. Separa CPU, memòria resident, fils i descriptors
+de Termia i els seus fills locals, i mostra sessions, terminals VTE i clients SSH.
+Només supervisa mentre és oberta, aproximadament cada cinc segons. L’historial
+està desactivat mentre la seva secció està plegada, com en obrir la finestra.
+Desplegar-lo inicia una captura nova de fins a 60 lectures en memòria; plegar-lo
+atura el registre i l’actualització del panell. No contacta ni mesura servidors remots. Un nucli equival
+al 100% de CPU; sumar memòria resident pot comptar pàgines compartides diverses
+vegades. Els clients SSH no garanteixen autenticació ni connexió remota.
+Els possibles orfes es detecten amb identitats conservades o fills observats durant
+la supervisió; no cobreix tots els processos històrics. Les mesures no disponibles
+apareixen com un guió. No recull ordres, variables d’entorn ni credencials,
+i no acaba processos.
 
 ## Estat de la versió
 
-**[0.6.1-beta](https://github.com/buuuki/termia/releases/tag/v0.6.1-beta)** és una
-versió preliminar de manteniment. Consulta [CHANGELOG.md](../CHANGELOG.md)
-per veure els canvis des de 0.6.0-beta.4.
+**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** és una
+versió preliminar amb Retron i configuracions d’aparença desades,
+el llançador d’eines, diagnòstic local, proteccions del terminal
+i correccions d’interacció. Consulta [CHANGELOG.md](../CHANGELOG.md)
+per veure els canvis des de 0.6.1-beta.
+
+Abans d’executar 0.6.2-beta per primera vegada, tanca Termia i fes una còpia
+de seguretat del perfil. Les connexions passen a l’esquema 4, que les versions
+anteriors no poden llegir. Per tornar enrere, restaura la còpia prèvia i conserva
+les dades més recents per separat. Consulta la
+[compatibilitat de l’emmagatzematge](STORAGE_MIGRATIONS.md#schema-inventory).
 
 ## Instal·lar a Ubuntu 24.04 o posterior
 
 Paquet Debian:
-[termia_0.6.1.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.1-beta/termia_0.6.1.beta-1_all.deb).
+[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.1.beta-1_all.deb
+sudo apt install ./termia_0.6.2.beta-1_all.deb
 ```
 
 APT instal·la les dependències necessàries, el llançador i la icona.
@@ -63,7 +147,7 @@ Ubuntu 22.04 i anteriors no proporcionen el VTE per a GTK 4 necessari.
 
 ## Actualitzacions
 
-**Beta.3 i beta.4 requereixen una primera actualització manual a 0.6.1-beta.**
+**Beta.3 i beta.4 requereixen una primera actualització manual.**
 Fes una còpia del perfil, tanca Termia i instal·la el nou .deb sobre l'anterior.
 No cal desinstal·lar primer.
 
@@ -71,8 +155,8 @@ Per a un checkout net, un cop publicada l'etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.1-beta
-git merge --ff-only v0.6.1-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
+git merge --ff-only v0.6.2-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -136,7 +220,7 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquet es crea al directori pare com a `termia_0.6.1~beta-1_all.deb`.
+El paquet es crea al directori pare com a `termia_0.6.2~beta-1_all.deb`.
 És independent del fitxer oficial de la release.
 
 ## Documentació

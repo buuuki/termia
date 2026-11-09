@@ -16,10 +16,10 @@ DEFAULT_KEYBINDINGS: dict[str, str] = {
     "new_local_terminal": "Ctrl+Shift+T",
     "focus_next_region": "Ctrl+F6",
     "focus_previous_region": "Ctrl+Shift+F6",
-    "focus_split_left": "Ctrl+Left",
-    "focus_split_right": "Ctrl+Right",
-    "focus_split_up": "Ctrl+Up",
-    "focus_split_down": "Ctrl+Down",
+    "focus_split_left": "Ctrl+Shift+Left",
+    "focus_split_right": "Ctrl+Shift+Right",
+    "focus_split_up": "Ctrl+Shift+Up",
+    "focus_split_down": "Ctrl+Shift+Down",
 }
 
 KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (

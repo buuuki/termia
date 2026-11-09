@@ -13,7 +13,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Vte", "3.91")
-from gi.repository import Gdk, GLib, Gtk
+from gi.repository import Gdk, GLib, Gtk, Pango
 
 from termia.dialog_window import DialogWindow
 from termia.i18n import translate_key
@@ -98,7 +98,8 @@ class SnippetShortcutTests(unittest.TestCase):
         self.addCleanup(host.destroy)
         host.on_keybindings_settings(None)
         dialog = next(window for window in Gtk.Window.list_toplevels()
-                      if isinstance(window, DialogWindow) and window.get_transient_for() is host)
+                      if isinstance(window, DialogWindow) and window.get_visible()
+                      and window.get_title() == host.t("keybindings"))
         self.addCleanup(dialog.destroy)
         content = dialog.get_content_area()
         grid = content.get_last_child().get_child()
@@ -124,13 +125,55 @@ class SnippetShortcutTests(unittest.TestCase):
         self.assertEqual(self.store.data.app.keybindings[action], "Ctrl+Alt+D")
         host.on_keybindings_settings(None)
         dialog = next(window for window in Gtk.Window.list_toplevels()
-                      if isinstance(window, DialogWindow) and window.get_transient_for() is host)
+                      if isinstance(window, DialogWindow) and window.get_visible()
+                      and window.get_title() == host.t("keybindings"))
         self.addCleanup(dialog.destroy)
         dialog.response(Gtk.ResponseType.APPLY)
         dialog.response(Gtk.ResponseType.OK)
         self.assertEqual(self.store.data.app.keybindings.get(action, ""), "")
         for action, shortcut in DEFAULT_KEYBINDINGS.items():
             self.assertEqual(self.store.data.app.keybindings[action], shortcut)
+
+    def test_preferences_window_is_independent_and_closes_with_owner(self):
+        host = PreferencesHost(self.store)
+        self.addCleanup(host.destroy)
+        entry = Gtk.Entry()
+        host.set_child(entry)
+        host.present()
+        host.on_keybindings_settings(None)
+        dialog = next(window for window in Gtk.Window.list_toplevels()
+                      if isinstance(window, DialogWindow) and window.get_visible()
+                      and window.get_title() == host.t("keybindings"))
+        self.addCleanup(dialog.destroy)
+        self.assertIsNone(dialog.get_transient_for())
+        self.assertFalse(dialog.get_modal())
+        self.assertTrue(dialog.get_resizable())
+        self.assertEqual(dialog.get_default_size()[0], 576)
+        self.assertTrue(entry.grab_focus())
+        entry.set_text("Terminal input remains available")
+        focused = host.get_focus()
+        self.assertTrue(focused is entry or focused.is_ancestor(entry))
+        host.destroy()
+        self.assertFalse(dialog.get_visible())
+
+    def test_full_shortcut_labels_do_not_change_compact_snippet_controls(self):
+        shortcut = "Ctrl+Shift+Alt+Super+PageDown"
+        compact = KeybindingCaptureRow(shortcut, "Disabled", "Press", "Clear")
+        wide = KeybindingCaptureRow(shortcut, "Disabled", "Press", "Clear", compact=False)
+        self.assertFalse(wide._capture_button.get_hexpand())
+        self.assertEqual(wide.get_halign(), Gtk.Align.END)
+        self.assertEqual(compact._capture_button.get_child().get_ellipsize(), Pango.EllipsizeMode.END)
+        self.assertEqual(compact._capture_button.get_child().get_max_width_chars(), 24)
+        for capturing in (False, True, False):
+            if capturing:
+                wide.on_capture_clicked(None)
+            else:
+                wide.set_accelerator(shortcut)
+            label = wide._capture_button.get_child()
+            self.assertEqual(label.get_ellipsize(), Pango.EllipsizeMode.NONE)
+            self.assertEqual(label.get_max_width_chars(), -1)
+            self.assertEqual(label.get_width_chars(), 14)
+        self.assertEqual(wide._capture_button.get_label(), shortcut)
 
     def test_editor_preferences_and_persistence_share_one_assignment(self):
         snippet = self.store.add_snippet("Example", "true", shortcut="Ctrl+Alt+D")

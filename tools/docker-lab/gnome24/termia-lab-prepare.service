@@ -1,0 +1,13 @@
+[Unit]
+Description=Prepare the persistent Ubuntu 24 GNOME laboratory
+Requires=dbus.service
+After=dbus.service
+Before=gdm.service gnome-remote-desktop.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/python3 /opt/termia-lab/configure.py
+
+[Install]
+WantedBy=graphical.target

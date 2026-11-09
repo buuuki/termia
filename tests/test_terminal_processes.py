@@ -22,6 +22,11 @@ class FakeTerminal:
 
 
 class TerminalProcessTests(unittest.TestCase):
+    def setUp(self):
+        renderer = patch.object(TerminalSessionsMixin, "update_pane_status", autospec=True)
+        self.status_updates = renderer.start()
+        self.addCleanup(renderer.stop)
+
     @patch(
         "termia.terminal_processes.os.getsid",
         return_value=500,
@@ -650,7 +655,7 @@ class TerminalProcessTests(unittest.TestCase):
         )
 
         host.store.record_history_end.assert_called_once_with(session, "disconnected")
-        session.status_label.set_label.assert_called_once_with("Disconnected: Example")
+        self.status_updates.assert_called_with(host, pane, "Disconnected: Example")
         host.toast_label.set_label.assert_not_called()
 
     def test_split_exit_during_shutdown_does_not_reconnect_or_touch_widgets(self) -> None:

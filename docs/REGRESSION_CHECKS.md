@@ -1,5 +1,35 @@
 # Regression Checks and Protected Behaviors
 
+## Local saved passwords
+
+- Before upgrading a real profile, close Termia and back up connections.json;
+  see the schema 4 downgrade instructions in STORAGE_MIGRATIONS.md.
+- Launch `scripts/run_test_instance.sh --fresh`. Create and edit a local profile
+  with a synthetic password, check native visibility controls and the storage
+  warning, save/reopen, clear the password, and cancel an edit. Check EN/ES/CA.
+- Enable the saved-password shortcut. Use a synthetic non-echoing input prompt
+  in a local terminal; verify Ctrl+P sends the exact password, with and without
+  optional Enter. Never put real credentials into an echoing shell prompt.
+- Repeat with two saved local profiles and mixed local/SSH pane identities;
+  only the focused pane receives its own password. No real SSH host is needed
+  for automated pane identity tests. Check missing/deleted profiles, unsaved
+  local terminals, empty passwords, exited panes and a disabled shortcut.
+- Clone a local profile and restart. Export/import plain, obfuscated and
+  encrypted synthetic profiles; confirm passwords survive without changing
+  the selected protection mode. Legacy profiles load with empty passwords,
+  read-only loading preserves original bytes, and future schemas are rejected.
+
+## Connection private SSH key selection
+
+- In an isolated profile, create and edit a connection: use the folder button
+  beside Private SSH key to select a synthetic local file. Confirm its path
+  fills the editable entry; cancellation leaves the previous path unchanged.
+- Save and reopen the connection to confirm the path persists. Cancel the form
+  and confirm no connection changes are saved. No SSH connection is needed.
+- Check EN/ES/CA, keyboard access, light/dark themes and the wrapped password
+  warning: plain text, obfuscation and master-password encryption are listed,
+  and obfuscation is explicitly distinguished from encryption.
+
 ## Storage resource rejection
 
 - Import an encrypted connection export from the menu. Verify the native
@@ -42,6 +72,131 @@ and proposed controls.
 
 ## Protected Behaviors
 
+### Retron visual editor
+
+The editor is now available from the titlebar Tools grid. Also check that grid's
+mouse/keyboard activation, arrows, Tab, Enter, Space, Escape, second-click and
+outside dismissal at small, maximized and restored window sizes. Repeat in
+System/Light/Dark/Retron and EN/ES/CA; only Retron offers the appearance editor.
+
+Open diagnostics from two application windows: both must use the same independent
+window and aggregate their sessions. Split/close local terminals and verify VTE
+counts and separate main/child CPU, resident memory, threads and descriptors.
+CPU requires two samples; unavailable values display a dash. History retains at
+most 60 samples only while expanded. It starts collapsed and inactive; expanding
+starts a new capture, collapsing stops recording and buffer updates. While
+reading/scrolled back, new samples must not jump to the bottom or reset the
+selection; repeat when old rows expire at the 60-sample limit. Current metrics
+continue refreshing with history collapsed. Close during sampling and reopen: timers/workers must stop with
+no late UI updates. Closing diagnostics must preserve terminals and main windows.
+Recheck header controls, VTE focus, menus, tabs and splits. No remote host is needed.
+Run `python3 scripts/run_sandbox_tests.py tests.test_tool_launcher tests.test_diagnostics tests.test_diagnostics_view`
+for registry availability, window lifecycle, permission failures, reparenting and
+PID-reuse checks.
+
+
+- Launch `scripts/run_test_instance.sh retron-editor-486`, select Retron in
+  General and save. The titlebar appearance button and the Retron appearance
+  action in General preferences open one non-modal editor; repeated activation
+  focuses that same window. The titlebar button is hidden in other themes and
+  disabled while the connection-unlock overlay is active.
+  Verify English, Spanish and Catalan, keyboard navigation and small screens.
+- Hover and drag the editor's vertical scrollbar: verify that its expanded
+  control remains clear of the override checkboxes, including at the bottom of
+  the form and with a narrow window. Preserve native overlay scrolling.
+- Enable numeric overrides and verify light slider handles and readable tracks
+  in normal, hovered, dragged and keyboard-focused states. Disable overrides:
+  the controls must look subdued and remain noninteractive.
+- Toggle color, numeric, style and glow override checkboxes with the mouse and
+  Space. Focus must stay on the same checkbox, ordinary rows must not jump or
+  scroll, and disabled controls must display their inherited values. Toggle
+  glow visibility repeatedly; preserve checkbox focus and normal Tab navigation.
+- Customize a common border and then override one component/focus state.
+  Exercise line styles, corner radius, background alpha/gradients and three
+  inner/outer glows. Uncheck overrides to inherit. Disable all glows. Native
+  alert styling and the editor itself must remain readable and unaffected.
+- Apply without saving, then Cancel, Escape or close: restore exactly the
+  opening appearance. Turn automatic preview off and verify Apply still works.
+  Save, close Termia and relaunch the same command: the profile must survive.
+  Restore defaults then Cancel, and repeat with Save.
+- Save two distinct configurations with Save as, switch between them and Original
+  Retron, then Save and restart. Verify the selected saved appearance survives.
+  Test duplicate names ignoring case, empty/long names and a legacy single-profile
+  file. Loading alone must not migrate it; a successful save preserves its values.
+- Modify a selected configuration and switch: exercise Save, Discard and Cancel,
+  with automatic preview enabled and disabled. Save as keeps the editor open and
+  establishes a new cancellation baseline. Failed saves keep the draft and selector.
+- Rename a configuration while appearance edits are pending, then Cancel: the new
+  name persists but unsaved appearance edits do not. Confirm/cancel deletion of the
+  active profile; confirmation keeps its appearance as unnamed. Original Retron
+  cannot be renamed or deleted. Reopen after each operation and check EN/ES/CA.
+- Close the editor/application with a name dialog or confirmation open. Reopen;
+  no orphan modal window, pending confirmation or callback may remain. Read-only
+  and externally changed files must reject every collection mutation safely.
+- With an unsaved draft, switch to System/Light/Dark. Previews suspend,
+  custom CSS is removed, the draft is suspended and standard themes keep their
+  appearance. Open secondary windows in each theme, then return to Retron.
+- Review Notes and existing/new/split/detached terminals: an explicit Retron
+  background overrides only appearance, retains text/ANSI colors, and reverts
+  to their separate saved preferences outside Retron. Confirm scrolling,
+  resizing, native title movement, focus and active terminal input/output.
+- Repeat open/edit/close cycles; no retired editor, pending preview timeout or
+  extra display provider may remain. Check failed saves and synthetic corrupt,
+  future-version and read-only profiles without overwriting their files.
+
+Focused automation:
+`python3 scripts/run_sandbox_tests.py tests.test_retron_profile tests.test_retron_editor`.
+
+### Shared dialog panel frame
+
+- In Retron, open General preferences and verify that one panel frame encloses
+  both the options and Save/Cancel buttons, with no separate inner frame. Check
+  aligned horizontal insets, keyboard focus, Save, Cancel and Escape. Switch
+  between Retron and System/Light/Dark and reopen General; the shared frame is
+  exclusive to Retron. Native message alerts must retain their separate style.
+
+- Open both New connection and Edit connection in Retron. Their single panel
+  must also enclose all fields, the credential warning and Cancel/Save. Exercise
+  Cancel, Escape, validation, Save and the private-key picker with synthetic
+  data. Existing fields, credentials and selected groups must be preserved.
+
+- Repeat the single-frame check for Terminal and Security preferences, groups,
+  local profiles, workspace names, tab names, Notes/category forms, optional
+  tools, SFTP/SCP prompts, split-connection selection, history, statistics, Help
+  and Data Locations. Their content and complete action row must stay inside
+  the same panel. Check narrow/tall layouts, keyboard focus and closing or
+  cancelling without saving. Use only synthetic data for credentials and
+  transfer prompts; no real remote connection is required for a layout review.
+
+### Retron title-hold feedback
+
+- Hold the primary mouse button on an application-owned GTK titlebar and move
+  the window. Verify the outer frame brightens slightly without changing size,
+  then returns immediately on release. Repeat a stationary hold, Escape during
+  movement, hide/close, theme switching and application shutdown; no highlight
+  or timer may remain. Test main, Notes, detached and secondary windows.
+- Check titlebar buttons, menus, double-click maximization and keyboard window
+  movement retain their native behavior. Buttons must not trigger the highlight.
+  Message alerts must retain their original style. Verify real Wayland/X11
+  compositor behavior separately; server-owned title decorations outside the
+  GTK surface cannot produce this application-side visual state.
+
+### Retron canvas transparency
+
+- With Retron and a default or custom border color, compare focused and unfocused
+  terminals: both scroller borders must be 1px, at 35% opacity without focus
+  and 50% with focus. Focus also adds the existing exterior halo (3px blur,
+  5% opacity). Verify nested splits and
+  detached panes, preserving terminal colors and the other container borders.
+- On a composited desktop, select Retron and put the window over contrasting
+  backgrounds. Verify that the darkest canvas uses 75% opacity, with no second
+  dark canvas layer; panels, controls, text and configured terminal backgrounds
+  must retain their own opacity. The default outer halo has 2px blur at 5%
+  opacity; inactive windows have no halo. Check rounded edges, menus, secondary
+  windows, native alerts, Notes frame overrides and detached terminals. Switch
+  to System/Light/Dark and verify the Retron transparency is removed. A private
+  render can verify alpha values but does not establish desktop compositing.
+
 The optional [Docker laboratory](../tools/docker-lab/README.md) provides a
 private browser desktop and synthetic SSH/SFTP/SCP, memory and lifecycle probes.
 When modifying that harness, check its allowlisted contexts, ignored generated
@@ -68,9 +223,10 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Tabs
 
-- Connection group/section headers must toggle expansion without becoming
-  selected objects. Keep object selection compact and rounded, skip headers
-  during keyboard selection, and do not show an inset pressed-row shadow.
+- Connection group/section headers must be selectable during native tree
+  navigation. Content clicks select/focus and toggle a header once, including
+  double clicks; Enter toggles the selected header without opening a connection.
+  Keep selection compact and rounded, without an inset pressed-row shadow.
 - Main, tab, server, group and terminal menus must open without the initial
   selected highlight while preserving visible Up/Down keyboard navigation.
   Test actual right-button press/release on VTE, not only programmatic popup:
@@ -83,6 +239,15 @@ Long measurements and release-platform checks remain separate validation work.
 - Open main-menu Import/Export, return to its parent with Left or the pointer,
   then click outside once: both menus must close. Repeat after reopening and
   verify submenu actions close both menus before presenting their dialogs.
+- Open Import/Export with the pointer: its first action must not be highlighted
+  automatically. Move from its row into the panel: it must remain open. Leave
+  both the row and panel: only the submenu must close after a brief delay.
+  Repeat after reopening; Right/Left, Up/Down, Enter and Escape must still work,
+  with a visible selection when navigating by keyboard. Closing the whole menu
+  during the delay must not leave a timer that closes a newly reopened panel.
+- Open Import/Export with the keyboard, move down through its actions and back
+  with Left/Right, and repeat: the first action must not retain a second
+  highlight after focus moves to another action.
 
 - Repeatedly open and close local/SSH tabs and split panes. Retired sessions,
   native VTE widgets, pages and tab labels must become
@@ -104,6 +269,31 @@ Long measurements and release-platform checks remain separate validation work.
   menu, and verify updated labels or no label for a disabled assignment.
   Other commands must not display unrelated shortcuts (split focus is not
   split creation). Check keyboard activation and menu dismissal still work.
+
+- General preferences: confirm multiline pastes is enabled by default and
+  survives Save/restart. Paste single-line and LF/CR/CRLF text using the
+  configured shortcut, Shift+Insert, the context menu and middle-button primary
+  selection in local/SSH panes and detached windows. Single-line text pastes
+  directly; any line break, including a trailing break, requires confirmation.
+  Cancel, Escape and window close must send nothing. Confirm must paste only
+  the displayed snapshot even if the clipboard changes, using VTE's bracketed
+  paste handling. Closed, reconnected or reparented panes must not receive a
+  pending paste. Check the black 1px preview border and 8px footer gap.
+  Disable the option and repeat; native paste must remain available. With
+  protection enabled, middle-click is reserved for paste even in applications
+  with mouse reporting; review that documented compatibility tradeoff.
+
+- General preferences: automatic selection copying is enabled by default
+  for new profiles and older settings without the option. An explicitly
+  saved disabled value must remain disabled. Select text by drag/double/triple click in local/SSH panes and
+  detached windows, and verify clipboard text plus a success notification with
+  the Unicode character count (including spaces and line breaks). Do not copy
+  partial selections while dragging. A plain click must remove the highlight
+  while retaining the copied text. Empty/deselected or retired panes must not
+  replace the clipboard or report success. Verify singular/plural messages in
+  English, Spanish and Catalan, preference persistence, manual copying and
+  independent saving of copy, paste-confirmation and Debug settings. When
+  disabled, selecting text must leave the standard clipboard unchanged.
 - Terminal tabs, note tabs (including drafts), and saved-note rows must offer
   only their distinct private drag formats. Drag each onto the server filter,
   notes search, note editor, and another application's text field: no internal
@@ -353,10 +543,25 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Focus and Keyboard
 
+- Double-click a saved local profile, wait for the shell prompt and type
+  without clicking inside the terminal. Input must reach that shell, with no
+  existing tabs and with existing tabs, including repeated double-clicks.
+  Enter in the shell must not reopen the profile from the sidebar. Preserve
+  keyboard activation with Enter. Moving focus elsewhere before a deferred
+  activation completes must cancel that pending activation.
 - `Ctrl+PageUp` and `Ctrl+PageDown` must switch between tabs.
 - After keyboard tab switching, focus must return to the terminal, not the tab label.
 - After closing a session, focus must move to the active terminal automatically.
 - Terminal shortcuts such as font size increase/decrease must not break normal terminal input unexpectedly.
+- Open Keyboard Shortcuts and type in a terminal while leaving it open. Confirm
+  it is independent, non-modal and resizable, with complete long combinations
+  visible in its buttons without stretching them across the available space.
+  Check EN/ES/CA, small screens and light/dark.
+  Capture, clear, restore defaults and cancel must preserve existing behavior;
+  Save applies valid changes and still rejects duplicates and stale edits.
+  Returning to a terminal during capture must cancel capture without changing
+  the shortcut. Close Termia and confirm no shortcut window remains. Check that
+  the snippet editor retains its compact shortcut control.
 - `Ctrl+F` must show the server sidebar, focus the server filter, select its current text, and not reach an embedded terminal.
 - `Ctrl+Shift+B` must toggle the server sidebar without changing the `Ctrl+F` behavior.
 - `F10` must open and close the main menu. Other unmodified function keys, including `F6`, must still reach the embedded terminal.
@@ -366,16 +571,27 @@ Long measurements and release-platform checks remain separate validation work.
 - `Ctrl+Shift+T` must open a new local terminal without changing the existing tab-navigation shortcuts.
 - `Ctrl+F6` and `Ctrl+Shift+F6` must cycle focus forward and backward through the visible server list, tab bar, and active terminal, skipping unavailable regions.
 - In horizontal, vertical, nested, and 2x2 split layouts, use the configured
-  `Ctrl+Arrow` shortcuts to move to the nearest pane in each visual direction.
-  At an outer edge, focus must remain in the current pane. Disable one shortcut
-  and confirm its key combination reaches the terminal instead.
+  `Ctrl+Shift+Arrow` defaults to move to the nearest pane in each visual direction.
+  At an outer edge or in a single terminal, focus must stay put and the key must
+  reach the terminal. Custom shortcuts must follow the same rule; disabled
+  shortcuts must pass through. In tmux with its default prefix, use `Ctrl+B`,
+  then `Ctrl+Arrow` to resize a tmux pane by one cell without moving Termia focus.
+- With synthetic old settings, confirm old `Ctrl+Arrow` defaults migrate once
+  to `Ctrl+Shift+Arrow`; custom/disabled bindings and occupied destinations are
+  preserved. Save/restart and confirm deliberately reassigned old shortcuts
+  are not migrated again. Read-only loading must not rewrite settings.
 - After selecting a visible server-list item, `Up`, `Down`, `Home`, `End`, and `Enter` must navigate or activate visible groups, servers, favorites, recent servers, and local terminal profiles. Keyboard navigation must scroll just enough to keep the selected item visible. These keys must still reach the VTE while a terminal has focus.
 - The selected group, subgroup, or server must use a single consistent sidebar selection highlight; selecting a new item must clear the previous highlight. Starting navigation from the server filter must focus the selected row, GTK expander focus must not create a second selector, and `Up` must never leave the list for the sidebar action buttons while an earlier visible row exists. GTK must automatically scroll the focused row into view, while terminal focus must keep sidebar navigation disabled.
+- Type a server query and immediately press Down before the search delay
+  expires. Wait, then press Enter: exactly the selected connection must open
+  and its terminal must receive focus. Repeat with changing queries, existing
+  tabs, and the same server in Recent, Favorites and its ordinary group.
 - In the native connections tree, use GTK disclosure keys (`Shift+Right`,
   `Shift+Left`, `+`, and `-`) and pointer disclosure on nested groups. Collapsing
   a parent must retain its children's expansion preferences. Search must reveal
-  matching descendants without changing expansion preferences; clearing it
-  must restore the previous state. Expand/collapse all must include hidden
+  matching descendants without changing expansion preferences. Allow manual
+  folding while filtering; clearing search must restore the previous state.
+  Expand/collapse all must include hidden
   descendants. Keep workspace, local, Recent, Favorites, and Ungrouped sections.
 - Scroll a large connection list until rows are recycled. Open server and group
   context menus on a different selection and verify the clicked identity.
@@ -400,6 +616,13 @@ Long measurements and release-platform checks remain separate validation work.
   target the clicked tab even when another tab is active. Dismiss/reopen the
   menu repeatedly and confirm no stale popup remains; if the target closes or
   detaches before dispatch, its pending action must do nothing.
+- Note tabs offer Rename note, Delete note, Clone note, Save note and Close tab.
+  Save, Clone and Delete activate the clicked tab before using existing flows;
+  a failed previous save must prevent changing the target. Close acts directly
+  on the clicked tab. Unsaved drafts disable Clone and Delete; read-only or
+  locked storage disables mutations while retaining Close. Revalidate pending
+  targets and permissions after popup dismissal. The editor has no Save,
+  Delete or Close buttons; saved status and modification time remain visible.
 - The note-tab context menu must follow the right-click position and rename
   the clicked saved note or draft even when another tab is active. Rename must
   be disabled for read-only or locked storage. Dismiss/reopen with Escape and
@@ -548,6 +771,24 @@ Long measurements and release-platform checks remain separate validation work.
   or search entry. Their vertical position stays fixed independently of the editor.
   When horizontal scrolling is needed, reserve space below the controls instead
   of covering them. Keep toolbar controls compact and list text slightly smaller.
+- In Retron, verify the Notes tab container is transparent while individual tabs
+  retain their active/inactive states. The toolbar toggle points up when visible
+  and down when hidden, including after restart. Check the editor and toolbar's
+  rounded borders at all four corners, with and without focus and at narrow
+  window widths. Compare the tree, editor, toolbar, tabs, headerbar and outer
+  frame: each uses the same 1px inset line (35% without focus, 50% with focus),
+  10px corners and no exterior halo. Notes tabs must have all four corners
+  rounded like connection tabs; selection and hover must not add a stronger
+  border or halo. Scroll in both directions, change editor colors, switch
+  to System/Light/Dark and back, and verify text, line numbers, selection,
+  keyboard focus, tab reordering and autosave remain usable.
+- Open Notes with its narrower 280px initial tree pane and 250px search minimum.
+  In Retron, drag the 4px divider in both directions and hide/show the tree;
+  its last width must be restored. Check that the toolbar has equal 8px gaps
+  below the tabs and above the editor, including after hiding and
+  restoring the toolbar. With the toolbar hidden, the tabs-to-editor gap must
+  also be 8px. Restart with the toolbar hidden and verify that gap is retained.
+  Resize the window and verify controls remain usable.
 - Notes are plain text. Verify that typing and saving preserves Markdown-looking
   punctuation such as `**`, `#`, and backticks, along with Unicode, spaces, and
   line breaks. Existing note content must remain unchanged when opened and saved.
@@ -721,7 +962,7 @@ Long measurements and release-platform checks remain separate validation work.
   opening an already open note activates its existing tab, and Save/autosave
   affect only that note. Closing a clean tab must close only that tab. Close a
   dirty tab and test Save and close, Close without saving, and Keep editing.
-  The editor's Close tab button must follow the same behavior as the tab's X;
+  The tab menu's Close tab action must follow the same behavior as the tab's X;
   neither can undo changes that were already saved automatically.
   Confirm the active tab highlight follows the selected note. With no saved
   notes, switch between multiple unsaved drafts and verify each editor appears
@@ -742,7 +983,7 @@ Long measurements and release-platform checks remain separate validation work.
   remains until explicitly deleted or non-empty content is restored.
   Drag a note onto another category and onto Uncategorized; verify list grouping
   updates and an already-open editor keeps the new category after autosaving.
-  Confirm the explicit Save button persists server-linked notes even before the
+  Confirm the tab menu Save action persists server-linked notes even before the
   autosave delay. Close an incomplete draft tab and confirm Keep editing
   preserves it while Close without saving removes only that draft.
   Open server notes from a sidebar context menu and confirm the notes window
@@ -779,6 +1020,37 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Application Appearance and Themes
 
+- General preferences links to the Retron editor. Customize a common border,
+  Save and restart; supported component frames must retain the saved override.
+  Component overrides take precedence and native alerts retain their separate
+  appearance. Restore defaults is reversible until Save; Cancel and read-only
+  rejection must preserve the saved profile. System/Light/Dark must retain
+  their base CSS. Switching away and back must retain the Retron profile.
+- Retron research borders, shadows, menu/tab states and panel spacing must
+  disappear on switching to System/Light/Dark. Restore the sidebar's 12px
+  margins on all sides, including with existing windows and panes open.
+  In Retron, the main header has a subdued border and no halo. Terminal
+  content has 8px horizontal and 6px vertical padding, without changing its
+  configured background or foreground. Check selection, scrolling, cursor
+  visibility and nested split resizing with dark and light terminal palettes.
+  Paste-preview padding is exclusive to Retron and must not alter text.
+  Terminal containers have 10px rounded corners with native GTK clipping;
+  existing and new panes must restore ordinary overflow when leaving Dark
+  Glow. Confirm no character, cursor, status control or scrollbar is cut off,
+  including nested splits and detached windows. Active terminal/Notes tabs
+  use 65%-opacity borders and an 8%-opacity, 3px halo;
+  keyboard focus outlines remain distinct. Focused-terminal and active
+  main-window borders use 50% opacity and their halos use 5% opacity with
+  3px blur; inactive borders remain 35%. Tab emphasis retains 65%/8% values.
+  Retron uses 8px content insets and gaps between the sidebar and terminal
+  region, terminal tabs and panes, adjacent tabs and split panes. Sidebar and
+  terminal-region tops align below the header; a visible tab strip occupies
+  its own row above the terminal. Check hidden sidebar/tab controls as well.
+  Retron resize handles occupy the 8px gap independently of the saved
+  separator thickness; other themes restore their configured line and sizing.
+  The main window has a 1px cyan border, 10px corners and the subdued terminal
+  halo, dimmed on backdrop. Check window-edge resizing, titlebar dragging,
+  maximize/restore and keyboard navigation without clipped controls.
 - Configured application colors and theme styling must remain consistent after UI changes.
 - System follows GNOME's active appearance, while Light and Dark request the
   corresponding GTK variant. None of these built-in modes may impose a
@@ -786,15 +1058,19 @@ Long measurements and release-platform checks remain separate validation work.
 - Header bar, main menu, configuration menu, statistics menu, popovers, sidebars, tabs, buttons, selected rows, warning text, and dialogs must remain readable in light, dark, system, and any custom app themes.
 - Tab colors, borders, spacing, close button contrast, selected tab state, and hover/active states must remain visually clear.
 - Context menus and popovers must use readable foreground/background colors and must not inherit terminal colors.
-- Required asterisks in server, local-terminal, workspace-name, and split-connection
-  forms must match normal label text. The explanatory hint in server,
-  local-terminal, and workspace-name forms must remain readable as secondary
-  text. Sidebar Delete server, Delete local terminal, and Delete workspace
+- Required asterisks in server, local-terminal, and split-connection
+  forms must match normal label text. The explanatory hint in server and
+  local-terminal forms must remain readable as secondary text. The
+  single-field Save/Rename workspace dialogs must omit both the asterisk and
+  that explanation, remain compact in EN/ES/CA and both light/dark themes, and
+  use a single 16-pixel gap above the action row. Retain empty-name validation,
+  Save/Cancel and Enter/Escape behavior.
+  Sidebar Delete server, Delete local terminal, and Delete workspace
   actions must use normal menu text while real validation errors retain their
   error styling.
 - Sidebar group/server selection colors must remain readable and must preserve the distinction between folders/groups and server entries.
 - New CSS rules must be scoped to Termia classes where practical and must not unintentionally override GTK/VTE internals.
-- Split pane dividers have two deliberately different visual parts that must be
+- In System/Light/Dark, split pane dividers have two visual parts that must be
   checked separately:
   - The thin visual separator line uses the configured split-separator color
     (green `#008712` by default) and configured thickness. It must remain
@@ -805,12 +1081,41 @@ Long measurements and release-platform checks remain separate validation work.
     active terminal theme/background. Its minimum drag size is 5 px, or the
     configured separator thickness when that is larger; it is vertical for
     horizontal splits and horizontal for vertical splits.
+- In Retron, split separators must have transparent backgrounds and
+  transparent borders, including hover, with no central green line. Pane
+  borders must remain distinct and the underlying canvas must show through.
+  Use an 8px separator with no border, margin or padding in Retron and
+  preserve native mouse/keyboard resizing in nested splits.
+  Verify configured colors reappear after switching to System/Light/Dark;
+  Retron uses a fixed 8px gap independently of the thickness preference.
+  The settings preview still shows the configured color and thickness.
+  Runtime checks for this change remain pending.
 - Split dividers must remain readable on both light and dark themes. Confirm
   that the thin configured line remains visible while the wider drag area
-  blends with the terminal background.
+  blends with the terminal background in System/Light/Dark.
 - Showing pane status bars must not enlarge either the thin separator line or
   the draggable area; narrow panes may ellipsize the connection name while
   keeping the timer and actions usable.
+- In Retron, status bars use the terminal's saved foreground/background
+  with secondary labels and compact native buttons, a capsule outline at
+  1px/35%-opacity cyan and no active-state fill or halo. Labels/buttons use
+  Ubuntu Mono with DejaVu Sans Mono/monospace fallbacks, without changing the
+  shell font. Check capsule corners, 8px below the bar and equal status
+  padding in single/split panes. The rounded focus border encloses the terminal
+  scroller only. Check dark/light custom terminal colors, Hide, Disconnect,
+  timer/status updates and keyboard focus, including nested and detached panes.
+  Showing/hiding the bar must retain divider positions and terminal focus.
+- In all themes, each status bar shows a colored dot, a translated session
+  state and its saved connection/profile name. Verify yellow while starting,
+  green once the child process starts and muted on exit/disconnect/failure.
+  SSH green indicates an active client process, not verified authentication;
+  the tooltip must state that authentication may still be pending. Check
+  startup failures, retries and mixed nested local/SSH panes independently,
+  including a closed root with a live sibling. Renamed tabs and automatic
+  directory titles must not replace saved connection/profile names. Names
+  containing markup characters must display literally. Full names, PID and
+  errors belong in tooltips; language changes must refresh all open labels,
+  including disconnected panes. Retired panes must not receive UI updates.
 - Showing or hiding a pane status bar must preserve the existing position of
   every affected split divider.
 - Adding a split inside an existing nested layout must preserve every ancestor
@@ -819,6 +1124,15 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Terminal Appearance
 
+- Each application theme saves its own terminal text/background colors.
+  Retron starts with Solarized text on the sidebar surface (`#839496` on
+  `#182231`), preserving any previously saved pair; legacy standard
+  themes start with the existing terminal colors. Change colors in Terminal
+  preferences, switch themes and restart: each pair must remain independent,
+  including for open splits and detached tabs. General preference changes
+  must preserve all pairs. Font, size, ANSI palette and prompt remain shared;
+  switching themes must not send commands, restart shells or reconnect SSH.
+  Read-only loading must apply the active pair without rewriting settings.
 - Terminal foreground, background, font, font size, ANSI palette, and prompt settings must apply to new terminal sessions.
 - The audible terminal bell must be disabled by default, and its preference
   must apply to newly opened and already open VTE terminals.
@@ -1059,6 +1373,11 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Close a tab and confirm focus moves to the next terminal.
 - Middle-click a tab and confirm it follows the configured close confirmation and moves focus to the next terminal.
 - Right-click a terminal and open the context menu.
+- On Wayland, verify the terminal context menu opens on right-button release.
+  Hold left then right, and right then left; release in both orders. Repeat
+  quickly and with pauses, then verify sidebar/header buttons, terminal text
+  selection, normal/double right-clicks and outside-menu dismissal still work.
+  A release while another button is held must not open a context menu.
 - From the terminal context menu, confirm the translated `Split` submenu appears above `Tab` and is separated by a thin divider.
 - Select `Open connection in split…`, search a saved server by name, host, and
   user, then use `Up`/`Down` and `Enter` to open the selected connection.
@@ -1070,10 +1389,10 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Drag a horizontal split divider away from the centre, then show and hide its
   pane status bar from both the context menu and `Hide` button; the divider
   must remain at the chosen position and long status titles must ellipsize.
-  Check the divider's two visual parts independently: the thin line must keep
+  In System/Light/Dark, check the divider's two visual parts: the line must keep
   its configured color and thickness, while the wider drag area must retain its
   minimum drag size and terminal-background color.
-- In both light and dark application themes, change the terminal background in
+- In System/Light/Dark, change the terminal background in
   Terminal preferences and save it. Confirm that the wider draggable area
   changes to the new terminal background while the thin separator line keeps
   its configured color. Change the separator thickness as well and confirm
@@ -1191,6 +1510,60 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   confirm the snapshot remains restorable.
 - In the read-only instance, confirm add/edit/delete/import/clear/preferences actions are disabled or rejected, while connecting and exporting still work.
 - Switch between available app themes and confirm header, menus, sidebars, dialogs, selected rows, and tabs remain readable.
+- In the Retron research checkout, select General → Theme → Retron and
+  save. Verify opaque surfaces, 1px borders, 10px corners, soft lighting on
+  focused panes/active tabs and visible keyboard focus. Check existing/new Notes and preference windows,
+  detached tabs and menus; notification borders must follow severity.
+  Switch back to System/Light/Dark with those windows open and verify that the
+  fixed interface palette is removed and each theme's saved terminal colors
+  are loaded. Restart to check preference persistence. Notes editor colors,
+  split layout, terminal focus and read-only guards must remain unchanged.
+  Automated theme tests have not been run in this phase.
+- For #484 region separation, inspect maximized/restored windows in
+  Retron: the main header keeps native centering, drag and window
+  controls, with a 1px contour and 8px gaps to the outer frame and body. Check
+  sidebar child alignment at 10px horizontal padding, all four panel edges,
+  hidden/shown sidebar, remembered width, narrow/wide resizing and the native
+  separator's full mouse/keyboard resize area. Check that removing its lines
+  causes no intense doubled borders. Verify 8px between visible tab controls
+  and the terminal stack with one/many tabs, overflow and nested splits.
+  Switch to System/Light/Dark and confirm the research frame, spacing and
+  resize-handle overrides disappear, restoring the native/base styling.
+- For #484 paste-preview styling, use synthetic multiline text with long
+  lines, leading/trailing spaces, tabs, LF/CRLF, Unicode and literal escape
+  characters. Inspect theme surface/selection colors, both scrollbars, text
+  margins, warning/button separation, narrow/resized dialogs and keyboard
+  navigation. In a safe local receiver verify the exact original clipboard
+  text reaches only the intended pane after confirmation; Cancel/Escape/close
+  and invalidated targets must paste nothing. Do not normalize the sample or
+  run arbitrary shell commands while inspecting control sequences. These
+  runtime checks remain pending and do not replace existing paste safety checks.
+- For #484 native alerts, inspect restoration after unlocking a synthetic
+  saved workspace and deletion of a synthetic note. In Retron check the
+  cyan 1px border, matching dark header, 16px top content inset, footer insets,
+  compact action heights, readable EN/ES/CA text and keyboard focus. Verify
+  restore/skip, deletion/cancel, Enter, Escape and window close retain their
+  existing outcomes. Include unsaved-note/close/import alerts affected by the
+  same native selectors, inactive windows, wrapping and System/Light/Dark.
+  Check headerbar and non-headerbar `.titlebar` decorations in focused and
+  backdrop states: background `#182231`, text `#EDF3F8`, no inherited gradient.
+  Check client-side header rendering separately from window-manager titles.
+  These checks remain pending; do not use real credentials or destructive data.
+- For #484 buttons, select Retron and inspect header/sidebar controls,
+  action buttons, flat close buttons, toggles, dropdown/menu inner buttons,
+  Notes and dialog buttons. Verify normal `#1C2A3C`, hover `#23364B`, pressed/
+  checked `#29475A`, disabled `#182231`, suggested `#264C3A`, destructive
+  `#5A2C37`, readable symbolic icons and independent keyboard focus. Check
+  disabled actions cannot activate and that switching back restores native
+  System/Light/Dark button colors. Visual/runtime checks remain pending.
+- For #484, check System/Light/Dark/Retron with individual terminals and
+  nested horizontal/vertical splits. Verify subdued inactive pane/tab borders,
+  brighter focused panes, active terminal/Notes tabs and separate keyboard
+  outlines. Check first/last terminal cells, selection, scrolling, resizing,
+  split-divider drag areas, tab reordering, close targets and overflow. Inspect
+  main/context/submenus and dropdown rows with mouse and keyboard, including
+  selected, pressed and disabled items; check icon/text contrast and clipped
+  shadows. These checks remain pending until explicitly performed.
 - Change terminal foreground/background/palette and confirm only VTE terminal colors change, not the app chrome.
 - Open Terminal preferences and change appearance and prompt controls together;
   confirm the shared preview updates both, appearance updates all open panes on
@@ -1212,6 +1585,24 @@ light/dark appearance. Start an isolated instance with
 `scripts/run_test_instance.sh --fresh`.
 
 ## Automated Checks
+
+### Persistent Ubuntu 24.04 GNOME laboratory
+
+Follow `tools/docker-lab/gnome24/README.md`. Run the focused
+`tests.test_gnome24_lab` module for snapshot filtering, symlink/path rejection,
+resource ownership, preparation/build failure and private credentials. A source
+snapshot must contain the selected tracked bytes, not personal/untracked files.
+
+Before accepting the infrastructure, verify Ubuntu 24, native GNOME/Wayland,
+RDP image/keyboard input and GNOME authentication with no alternate desktop or
+PAM/polkit bypass. Listener health alone is insufficient. Exercise the panel,
+persistent and isolated Termia profiles, native Firefox and EN/ES/CA languages.
+Record Git, Xvfb and pinned analyzer availability and executable test temporaries.
+Run the required suite before publication. Check profile, password and TLS
+persistence through stop/resume and controlled recreation; preserve all older
+laboratories. Keep credentials, profiles and raw evidence out of Git. Confirm
+that remote Docker and foreign resource ownership are rejected and that the
+running snapshot matches the prepared source. Document unvalidated paths.
 
 ### Ubuntu 26.04 GNOME base image
 
@@ -1451,3 +1842,19 @@ manual installation commands or add a separate Copy commands or Copy log button.
 The log supports selection and Ctrl+C; a new check clears it.
 Verify that collapsing installation details keeps footer
 actions at the bottom, and dependency buttons do not stretch on window resize.
+
+## Retron secondary-window coverage (#484)
+
+- Launch `scripts/run_test_instance.sh --fresh`. Compare System, Light and Dark
+  before and after Retron with Notes, snippets, preferences and detached
+  terminals open. Repeat with windows opened after each transition.
+- Check focused/inactive window borders, native titles, panels, selections,
+  scrollbars, switches and keyboard focus. Resize windows and inspect clipping.
+- Preserve customized Notes/VTE colors. Check snippets' edit/preview pages,
+  multiline paste, history, connection forms, security prompts and native alerts.
+- Exercise statistics and SFTP enabled/disabled with synthetic data; check
+  updater logs with fixtures without contacting release hosting services.
+- Portal dialogs may retain the desktop theme. Record this separately from
+  in-process GTK dialogs. Run
+  `python3 scripts/run_sandbox_tests.py tests.test_styles tests.test_app_theme tests.test_theme_windows` for automated
+  provider/scope checks; these do not replace the visual review.

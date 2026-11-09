@@ -1,0 +1,11 @@
+**
+!Dockerfile
+!.dockerignore
+!configure.py
+!panel.py
+!termia-lab-prepare.service
+!org.termia.Lab24.desktop
+!infra/
+!infra/**
+!source/
+!source/**

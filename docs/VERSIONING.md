@@ -47,6 +47,17 @@ Before `1.0.0`:
 Alpha, beta, and release-candidate versions are prereleases. GitHub releases
 for them must be marked as prereleases.
 
+### 0.6.2-beta release scope
+
+`0.6.2-beta` includes the complete integrated `0.6.2-dev` scope: Retron and
+its saved appearance configurations, terminal clipboard protections, local
+profile passwords and interaction fixes. This is a release-specific exception
+to PATCH maintenance scope; it does not change the general versioning rules or
+promote the application beyond beta. Preparation is tracked in
+[#492](https://github.com/buuuki/termia/issues/492). Connection schema 4 requires
+a pre-upgrade backup for downgrade compatibility; see
+[storage migrations](STORAGE_MIGRATIONS.md#schema-inventory).
+
 A release candidate is optional. A beta may become the stable release directly
 once it meets the release criteria. Publish an `rc` when an additional round
 of public validation would be useful.
@@ -86,10 +97,9 @@ state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `<MAJOR.MINOR.PATCH>-dev` branch from the updated
 `main`.
 
-The prepared maintenance delivery is `0.6.1-beta`, tracked in
-[#452](https://github.com/buuuki/termia/issues/452) and
-[#454](https://github.com/buuuki/termia/issues/454). Use `0.6.1-dev` until
-`v0.6.1-beta` is published. Then create `0.6.2-dev` from the updated `main` for
+The delivery in preparation is `0.6.2-beta`, tracked in
+[#492](https://github.com/buuuki/termia/issues/492). Use `0.6.2-dev` until
+`v0.6.2-beta` is published. Then create `0.6.3-dev` from the updated `main` for
 further maintenance, retaining the previous branches unless cleanup is approved.
 The branch transition does not change the application version. Future feature
 work or stable promotion requires separate approval; do not automatically
@@ -109,7 +119,7 @@ An illustrative sequence is:
 | --- | --- |
 | `0.6.0-beta.4` | Existing published baseline, preserved unchanged |
 | `0.6.1-beta` | Maintenance of the 0.6 delivery |
-| `0.6.2-beta` | Further maintenance |
+| `0.6.2-beta` | Integrated beta delivery; release-specific scope above |
 | `0.7.0-beta` | Next feature delivery |
 | `0.7.1-beta` | Maintenance while still beta |
 | `0.7.2-beta` | Further maintenance |
@@ -239,6 +249,7 @@ use the unnumbered form. The mapping is:
 | `0.6.0-beta.3` | `0.6.0~beta.3-1` |
 | `0.6.0-beta.4` | `0.6.0~beta.4-1` |
 | `0.6.1-beta` | `0.6.1~beta-1` |
+| `0.6.2-beta` | `0.6.2~beta-1` |
 | `0.7.3` | `0.7.3-1` |
 | `0.9.0-beta.1` | `0.9.0~beta.1-1` |
 | `0.9.0-rc.1` | `0.9.0~rc.1-1` |

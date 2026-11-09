@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import shlex
+from os.path import expanduser
 from pathlib import Path
 from typing import Any
 
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import GLib, Gtk
+from gi.repository import Gio, GLib, Gtk
 
 from .choice_widgets import (
     append_choice,
@@ -132,6 +133,12 @@ class ConnectionDialogsMixin:
         password_entry = Gtk.PasswordEntry()
         password_entry.set_show_peek_icon(True)
         public_key_entry = Gtk.Entry()
+        key_picker = Gtk.Button(icon_name="folder-open-symbolic")
+        key_picker.set_tooltip_text(self.t("select_private_ssh_key"))
+        key_picker.connect("clicked", lambda *_: self.select_private_ssh_key(dialog, public_key_entry))
+        key_field = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        key_field.append(public_key_entry)
+        key_field.append(key_picker)
         run_command_entry = Gtk.Entry()
         split_layout_combo = self.build_split_layout_combo(server.split_layout if server else "none")
         favorite_check = Gtk.CheckButton(label=self.t("favorite_server"))
@@ -165,7 +172,7 @@ class ConnectionDialogsMixin:
             (self.t("ssh_port"), port_spin, False),
             (self.t("group"), group_combo, False),
             (self.t("credential"), password_entry, False),
-            (self.t("public_key"), public_key_entry, False),
+            (self.t("public_key"), key_field, False),
             (self.t("run_command_on_start"), run_command_entry, False),
             (self.t("split"), split_layout_combo, False),
             ("", favorite_check, False),
@@ -180,6 +187,7 @@ class ConnectionDialogsMixin:
         warning = Gtk.Label()
         warning.set_markup(f"<i>{GLib.markup_escape_text(self.t('credential_warning'))}</i>")
         warning.set_wrap(True)
+        warning.set_max_width_chars(60)
         warning.set_xalign(0)
         warning.set_margin_start(16)
         warning.set_margin_end(16)
@@ -204,6 +212,25 @@ class ConnectionDialogsMixin:
             server,
         )
         dialog.present()
+
+    def select_private_ssh_key(self, parent: DialogWindow, entry: Gtk.Entry) -> None:
+        picker = Gtk.FileDialog(title=self.t("select_private_ssh_key"), modal=True)
+        current_path = entry.get_text().strip()
+        if current_path:
+            picker.set_initial_file(Gio.File.new_for_path(expanduser(current_path)))
+
+        def selected(dialog: Gtk.FileDialog, result: Gio.AsyncResult) -> None:
+            try:
+                file = dialog.open_finish(result)
+            except GLib.Error:
+                return
+            if file is None or entry.get_root() is not parent or not parent.get_visible():
+                return
+            path = file.get_path()
+            if path:
+                entry.set_text(path)
+
+        picker.open(parent, None, selected)
 
     def on_server_dialog_response(
         self,
@@ -290,6 +317,8 @@ class ConnectionDialogsMixin:
         arguments_entry = Gtk.Entry()
         run_command_entry = Gtk.Entry()
         tab_title_entry = Gtk.Entry()
+        password_entry = Gtk.PasswordEntry()
+        password_entry.set_show_peek_icon(True)
         split_layout_combo = self.build_split_layout_combo(profile.split_layout if profile else "none")
 
         name_entry.set_placeholder_text(self.t("name"))
@@ -306,6 +335,7 @@ class ConnectionDialogsMixin:
             arguments_entry.set_text(profile.arguments)
             run_command_entry.set_text(profile.command_on_start)
             tab_title_entry.set_text(profile.tab_title)
+            password_entry.set_text(profile.password)
         else:
             working_directory_entry.set_text(str(Path.home()))
             shell_entry.set_text(self.default_local_terminal_shell())
@@ -317,6 +347,7 @@ class ConnectionDialogsMixin:
             arguments_entry,
             run_command_entry,
             tab_title_entry,
+            password_entry,
             split_layout_combo,
         ):
             widget.set_hexpand(True)
@@ -330,6 +361,7 @@ class ConnectionDialogsMixin:
             (self.t("run_command_on_start"), run_command_entry, False),
             (self.t("title_shown_in_tab"), tab_title_entry, False),
             (self.t("split"), split_layout_combo, False),
+            (self.t("credential"), password_entry, False),
         ]
         for index, (label_text, widget, required) in enumerate(rows):
             grid.attach(self.build_form_label(label_text, required), 0, index, 1, 1)
@@ -337,6 +369,16 @@ class ConnectionDialogsMixin:
         grid.attach(self.build_required_hint(), 1, len(rows), 1, 1)
 
         dialog.get_content_area().append(grid)
+        warning = Gtk.Label()
+        warning.set_markup(f"<i>{GLib.markup_escape_text(self.t('credential_warning'))}</i>")
+        warning.set_wrap(True)
+        warning.set_max_width_chars(60)
+        warning.set_xalign(0)
+        warning.set_margin_start(16)
+        warning.set_margin_end(16)
+        warning.set_margin_bottom(14)
+        warning.add_css_class("warning")
+        dialog.get_content_area().append(warning)
         dialog.connect(
             "response",
             self.on_local_terminal_dialog_response,
@@ -347,6 +389,7 @@ class ConnectionDialogsMixin:
                 "arguments": arguments_entry,
                 "command_on_start": run_command_entry,
                 "tab_title": tab_title_entry,
+                "password": password_entry,
                 "split_layout": split_layout_combo,
             },
             profile,
@@ -367,6 +410,7 @@ class ConnectionDialogsMixin:
         command_on_start = widgets["command_on_start"].get_text().strip()
         tab_title = widgets["tab_title"].get_text().strip()
         split_layout = choice_id(widgets['split_layout']) or "none"
+        password = widgets["password"].get_text()
 
         if response == Gtk.ResponseType.OK:
             if not name or not shell:
@@ -394,6 +438,7 @@ class ConnectionDialogsMixin:
                         command_on_start,
                         tab_title,
                         split_layout,
+                        password=password,
                     )
                 else:
                     self.store.add_local_terminal(
@@ -404,6 +449,7 @@ class ConnectionDialogsMixin:
                         command_on_start,
                         tab_title,
                         split_layout,
+                        password=password,
                     )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))

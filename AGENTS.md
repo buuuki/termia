@@ -26,8 +26,8 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Development Workflow
 
-- Base issue branches on `0.6.1-dev` until `v0.6.1-beta` is published, then
-  on `0.6.2-dev`, created from the updated `main`. New target
+- Base issue branches on `0.6.2-dev` until `v0.6.2-beta` is published, then
+  on `0.6.3-dev`, created from the updated `main`. New target
   branches use `X.Y.Z-dev`, such as `0.6.1-dev`, without a `release/` prefix
   or a maturity suffix. Retain the previous branches unless cleanup is approved.
   Use `main` only for release preparation and
@@ -158,6 +158,16 @@ scripts/run_test_instance.sh --fresh
 - Never send signals to a process group or session unless it was captured for that VTE child and is known not to be Termia's own group. Keep the PID-reuse safeguard and the bounded `SIGTERM`/`SIGKILL` cleanup behavior intact.
 - Scope CSS changes to Termia classes where practical and avoid overriding GTK or VTE internals unintentionally.
 - Preserve readability on both light and dark terminal backgrounds.
+
+## Design and Graphical Interface
+
+- Maintain a native GTK4 interface that is modern, minimalist, and consistent.
+- Apply the visual style defined in `docs/UI_STYLING.md`.
+- Reuse existing components, colors, and CSS classes.
+- Maintain a clear visual hierarchy between active, inactive, selected, and focused elements.
+- Preserve the behavior of VTE, tabs, splits, and menus.
+- Avoid unnecessary visual changes or unsolicited redesigns.
+- Before modifying visual components, consult `docs/UI_STYLING.md`.
 
 ## Security Notes
 

@@ -198,7 +198,7 @@ class MainMenuUITests(unittest.TestCase):
             "export_config", "import_config", "import_asbru", "clear_config",
         ])
 
-    def test_connection_submenu_opens_beside_main_menu_and_resets_on_close(self) -> None:
+    def open_connection_submenu(self):
         popover = self.host.build_main_menu(self.actions, write_allowed=True)
         self.assertTrue(popover.get_flags() & Gtk.PopoverMenuFlags.NESTED)
         window = Gtk.Window()
@@ -232,6 +232,10 @@ class MainMenuUITests(unittest.TestCase):
         settle()
         submenu = next(item for item in descendants(popover)
                        if isinstance(item, Gtk.Popover) and item is not popover and item.get_visible())
+        return window, popover, row, submenu, settle, descendants
+
+    def test_connection_submenu_opens_beside_main_menu_and_resets_on_close(self) -> None:
+        window, popover, row, submenu, settle, _descendants = self.open_connection_submenu()
         self.assertTrue(popover.get_visible())
         self.assertTrue(popover.get_autohide())
         self.assertFalse(submenu.get_autohide())
@@ -250,3 +254,81 @@ class MainMenuUITests(unittest.TestCase):
         settle()
         self.assertFalse(submenu.get_visible())
         self.assertEqual(popover.get_property("visible-submenu"), "main")
+
+    def submenu_motion(self, widget):
+        controllers = widget.observe_controllers()
+        return next(controllers.get_item(index) for index in range(controllers.get_n_items())
+                    if controllers.get_item(index).get_name() == "termia-main-submenu-leave")
+
+    def test_submenu_pointer_crossing_and_leave_preserve_root_and_clear_initial_highlight(self):
+        window, popover, row, submenu, settle, descendants = self.open_connection_submenu()
+        model = popover.get_menu_model()
+        root_hides = Mock()
+        popover.connect("hide", root_hides)
+        row_motion = self.submenu_motion(row)
+        panel_motion = self.submenu_motion(submenu)
+
+        for _attempt in range(2):
+            if not submenu.get_visible():
+                self.assertTrue(row.activate())
+                settle()
+            entries = [item for item in descendants(submenu)
+                       if item.get_css_name() == "modelbutton" and item.get_mapped()]
+            self.assertTrue(entries)
+            self.assertFalse(any(item.get_state_flags() & Gtk.StateFlags.SELECTED for item in entries))
+            self.assertTrue(window.get_focus().is_ancestor(submenu))
+            row_motion.emit("enter", 1.0, 1.0)
+            row_motion.emit("leave")
+            panel_motion.emit("enter", 1.0, 1.0)
+            settle()
+            settle()
+            self.assertTrue(submenu.get_visible())
+            panel_motion.emit("leave")
+            settle()
+            settle()
+            self.assertFalse(submenu.get_visible())
+            self.assertTrue(popover.get_visible())
+            self.assertIs(window.get_focus(), row)
+            self.assertIs(popover.get_menu_model(), model)
+        root_hides.assert_not_called()
+
+    def test_closing_root_cancels_pending_submenu_leave_before_reopening(self):
+        _window, popover, row, submenu, settle, _descendants = self.open_connection_submenu()
+        motion = self.submenu_motion(submenu)
+        motion.emit("enter", 1.0, 1.0)
+        motion.emit("leave")
+        with patch("termia.main_menu.GLib.source_remove", wraps=GLib.source_remove) as remove:
+            popover.popdown()
+            settle()
+            remove.assert_called()
+        popover.popup()
+        settle()
+        row.activate()
+        settle()
+        settle()
+        self.assertTrue(popover.get_visible())
+        self.assertTrue(submenu.get_visible())
+
+    def test_submenu_keyboard_focus_does_not_leave_first_action_highlighted(self):
+        window, _popover, row, submenu, settle, descendants = self.open_connection_submenu()
+        for _attempt in range(2):
+            if not submenu.get_visible():
+                row.grab_focus()
+                row.child_focus(Gtk.DirectionType.RIGHT)
+                settle()
+            entries = [item for item in descendants(submenu)
+                       if item.get_css_name() == "modelbutton" and item.get_mapped()]
+            self.assertGreaterEqual(len(entries), 3)
+            entries[0].grab_focus()
+            # Reproduce a pointer-selected row left behind during keyboard use.
+            entries[0].set_state_flags(Gtk.StateFlags.SELECTED, False)
+            for expected in entries[1:3]:
+                submenu.emit("move-focus", Gtk.DirectionType.DOWN)
+                settle()
+                self.assertIs(window.get_focus(), expected)
+                self.assertFalse(entries[0].get_state_flags() & Gtk.StateFlags.SELECTED)
+                self.assertTrue(expected.get_state_flags() & Gtk.StateFlags.FOCUSED)
+            submenu.emit("move-focus", Gtk.DirectionType.LEFT)
+            settle()
+            self.assertFalse(submenu.get_visible())
+            self.assertIs(window.get_focus(), row)

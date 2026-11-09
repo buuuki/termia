@@ -2,7 +2,221 @@
 
 ## Unreleased
 
-No changes yet.
+## 0.6.2-beta - 2026-11-09
+
+Publication documentation and release links finalized in #494.
+
+### Added
+
+- Add Retron text-field appearance controls for normal, focused and disabled
+  entries, including saved borders, backgrounds and glows (#492).
+
+### Fixed
+
+- Reduce the original Retron text-field cyan focus outline to 1px, retaining
+  its 2px offset (#492).
+
+- Render Retron window-control frames on their compact native images rather
+  than full-height click targets, with consistent spacing and saved button
+  appearance overrides (#492).
+
+### Added
+
+- Add a native titlebar Tools grid replacing the separate Retron editor button,
+  with a shared local diagnostics window separating Termia and child resources.
+  Sample every five seconds only while open; record bounded history only while
+  its section is expanded (#492).
+
+Prerelease since `0.6.1-beta`, including the integrated Retron theme/editor,
+terminal protections and interaction fixes (#492). Connection storage upgrades
+to schema 4; retain a pre-upgrade backup before downgrading. See
+[storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
+
+### Changed
+
+- Set the default Retron window background to 75% opacity (25% transparency),
+  preserving explicit appearance-profile overrides.
+
+### Refactored
+
+- Share Retron palette, frame and glow defaults between the base theme and
+  appearance profiles, preserving rendered styles and saved configurations (#486).
+
+### Added
+
+- Open the Retron editor from a native header button, sharing the existing
+  editor window with General preferences and following theme and language
+  changes and the connection-unlock overlay (#486).
+
+- Add a Retron-only visual appearance editor with shared and per-component
+  border, background and glow settings, reversible live previews and an
+  independent atomic profile store. Preserve standard themes, native alerts,
+  Notes preferences and terminal sessions (#486).
+
+- Save, select, rename and delete named Retron appearance configurations.
+  Protect unsaved changes when switching, retain the original Retron preset,
+  and preserve existing single-profile settings when upgrading storage (#486).
+
+### Fixed
+
+- Keep GTK events processing between sidebar click sequences in regression
+  tests, allowing native click timeouts to expire on GTK 4.22 (#492).
+
+- Preserve Retron editor checkbox focus and scroll position when toggling
+  appearance overrides, updating inherited values without rebuilding the form.
+
+- Open terminal context menus on right-button release and ignore releases with
+  other mouse buttons held, preventing mouse input loss after combined clicks
+  on Wayland.
+
+- Give the independent Retron editor native minimize/maximize/close controls
+  and an automatically hiding scrollbar with a 40px content end margin,
+  keeping override checkboxes reachable; use native sliders with lighter
+  handles and tracks and visible values for numeric appearance properties (#486).
+
+- Enclose dialog content and action buttons in one shared Retron panel,
+  preserving action behavior and the separate native message-alert style (#484).
+
+- Add subtle outer-frame feedback while holding native GTK title handles;
+  preserve native movement and exclude message alerts (#484).
+
+- Paint the Retron window canvas once at 50% opacity and reduce the default
+  outer halo to 2px blur at 5% opacity; preserve opaque panel and control colors
+  (#484).
+
+- Narrow the initial Notes tree pane and its search minimum; slim the Retron
+  divider and give the appearance toolbar equal 8px gaps below the tabs and
+  above the editor; retain an 8px tabs-to-editor gap when the toolbar is hidden,
+  including on restart (#484).
+
+- Make the Retron Notes tab container transparent, use directional toolbar
+  toggles, and unify the window, header, tree, editor, toolbar and tab frames
+  with the tree's 1px inset line and focus intensity. Round all four Notes tab
+  corners like connection tabs (#484).
+
+- Remove an unused variable from the Retron secondary-window regression test
+  and align clipboard security guidance with the default selection-copy setting
+  (#484).
+
+- Extend Retron frames and native control colors to secondary windows; style
+  Notes, snippets, SFTP, history, preferences and update-log containers with
+  shared scoped roles, preserving standard themes and saved editor colors.
+  Correct the native ListBox CSS node selector and cover provider removal (#484).
+
+- Soften the Retron main-window and focused-terminal borders and halos,
+  retaining a visible focus distinction without changing their geometry (#484).
+
+- Make Retron terminal status bars compact capsules with subdued cyan
+  borders, saved terminal colors and retro monospace text. Keep halos around
+  the shell area only and retain status actions and keyboard focus indicators (#484).
+
+- Use uniform 8px Retron gaps around the main content and between sidebar,
+  tabs and terminal panes; match the main window border to the rounded,
+  softly lit terminal frames while retaining native resize handles (#484).
+
+- Round Retron terminal containers with native GTK clipping and soften
+  focused-terminal and active-tab borders and halos (#484).
+
+- Confine research panel, tab, menu and preview styling to Retron; restore
+  System/Light/Dark spacing and states. Add terminal content insets and soften
+  the Retron main header border without a halo (#484).
+
+- Hide split-separator lines and backgrounds in Retron, retaining native
+  resize interaction and existing separator dimensions between pane borders (#484).
+
+- Make both the outer tab-controls and inner tab-bar backgrounds transparent
+  in Retron, preserving individual tab states and existing spacing (#484).
+
+- Separate the native main header, server sidebar and terminal tabs with scoped
+  panel borders and spacing; retain the sidebar resize handle and theme the
+  multiline-paste preview without changing pasted text or confirmation (#484).
+
+- Align native confirmation alerts with Retron using colored borders,
+  matching header colors, content insets and compact action buttons; cover
+  both headerbar and non-headerbar GTK titlebars, including backdrop (#484).
+
+- Apply the Retron palette to flat and framed buttons, remove inherited
+  button background images and define checked/disabled colors (#484).
+
+- Unify terminal-container, terminal/Notes tab and native menu interaction
+  styling with subdued inactive borders, focused-pane lighting and distinct
+  keyboard focus, using GTK theme colors or the opt-in Retron palette (#484).
+
+- Preserve keyboard activation after delayed search notifications and keep
+  group/section selection visible; allow explicit group folding while
+  filtering (`#474`).
+- Increase right spacing in Keyboard Shortcuts to prevent the expanded
+  overlay scrollbar from overlapping clear buttons (`#475`).
+- Keep keyboard input in the real local shell after double-clicking a saved
+  profile, deferring native activation until the event finishes and preserving
+  deliberate focus changes; cover repeated pointer activation (`#473`).
+- Keep Save/Rename workspace dialogs compact by removing the redundant
+  required-field marker, explanation and duplicate spacing above the buttons
+  while preserving empty-name validation (`#477`).
+- Normalize optional local-profile passwords and format regression-test
+  imports to resolve static-analysis blockers (`#471`).
+- Isolate synthetic process identities in the root-pane exit test from host
+  process/session metadata to avoid environment-dependent CI failures (`#468`).
+- Let terminal applications receive split-focus keys when no focus move is
+  possible; use Ctrl+Shift+Arrow defaults and migrate legacy defaults once
+  without replacing custom, disabled or conflicting assignments (`#456`).
+- Close the main-menu Import/Export submenu on pointer leave and clear its
+  initial and stale pointer highlights while preserving keyboard navigation (`#466`).
+
+### Added
+
+- Choose and reset the Retron container-border color in General preferences
+  with a native color picker; preserve border geometry, intensity, other
+  themes and semantic status colors (#484).
+
+- Show each terminal pane's connection name and a colored, translated session
+  indicator in its status bar. Keep process/error details in tooltips and
+  retain names across disconnects, retries and tab renaming (#484).
+
+- Save terminal foreground/background colors independently for each app theme.
+  Retron starts with Solarized text on the sidebar's dark background;
+  existing terminal color controls customize
+  the selected theme and update open panes (#484).
+
+- Research a fixed Retron interface theme with opaque dark surfaces, 1px
+  borders, 10px corners and subtle active-pane/tab lighting; keep terminal colors independent
+  (`#484`).
+
+- Add automatic copying of completed terminal selections, enabled by default
+  for new/missing preferences while preserving saved disabled choices, with a
+  success notification and character count. Preserve manual copying and
+  native deselection (`#463`).
+
+- Confirm terminal pastes containing line breaks by default, with a read-only
+  preview and safe cancellation. Add a General preference to disable the
+  protection; include middle-button primary-selection pastes (`#462`).
+
+- Save an optional local-terminal profile password and send it to the active
+  pane with the saved-password shortcut; preserve it on clone and export.
+  Upgrade connections to schema 4 (`#471`).
+
+- Add a native private SSH key picker to connection forms and clarify password
+  storage options, including master-password encryption (`#461`).
+- Add an Ubuntu 24.04 GNOME Docker laboratory with native remote
+  login, persistent profiles, source snapshots, a GTK panel, pinned test tools
+  and English/Spanish/Catalan guides; validate native Wayland/RDP login and
+  preserve Ubuntu 26 independently (`#459`).
+
+### Changed
+
+- Rename the research theme from Dark Glow to Retron in the interface and
+  documentation, retaining existing saved preferences and internal IDs (#484).
+
+- Separate Termia and snippet shortcut sections with a native GTK separator
+  (`#475`).
+- Make Keyboard Shortcuts an independent, non-modal, resizable window with
+  buttons showing full combinations; preserve compact snippet controls
+  (`#468`).
+- Move note Save, Delete and Close actions from the editor footer into its
+  native tab menu, add Clone, and retain autosave status and modification time
+  (`#457`).
+- Reduce Notes status-row vertical margins to give the editor more space,
+  retaining the shared action-area spacing and horizontal insets (`#457`).
 
 ## 0.6.1-beta - 2026-11-02
 

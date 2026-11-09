@@ -961,11 +961,51 @@ class NotesDomainTests(unittest.TestCase):
         dialog.notes_list_paned = MagicMock()
         dialog.notes_list_visible = True
         dialog.update_editor_appearance = MagicMock()
-        button = SimpleNamespace(get_active=lambda: False)
+        button = Gtk.ToggleButton()
         dialog.on_toolbar_toggled(button)
         dialog.editor_toolbar.set_visible.assert_called_once_with(False)
+        self.assertEqual(button.get_icon_name(), "pan-down-symbolic")
+        button.set_active(True)
+        dialog.on_toolbar_toggled(button)
+        dialog.editor_toolbar.set_visible.assert_called_with(True)
+        self.assertEqual(button.get_icon_name(), "pan-up-symbolic")
         dialog.notes_list_paned.set_start_child.assert_not_called()
         self.assertTrue(dialog.notes_list_visible)
+
+    def test_toolbar_restores_saved_visibility_without_changing_note_text(self):
+        for visible in (False, True):
+            with self.subTest(visible=visible):
+                dialog = NotesDialogs.__new__(NotesDialogs)
+                dialog.store = SimpleNamespace(data=SimpleNamespace(
+                    app=SimpleNamespace(notes_editor={"visible": visible}),
+                ))
+                dialog.translate = lambda key: key
+                dialog.text_view = create_notes_text_view(True)
+                buffer = dialog.text_view.get_buffer()
+                buffer.set_text("Synthetic note\nwith two lines")
+                dialog.toolbar_toggle = Gtk.ToggleButton()
+                dialog.apply_editor_appearance = MagicMock()
+                editor = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+                try:
+                    dialog.build_editor_toolbar(editor)
+                    self.assertEqual(dialog.editor_toolbar.get_visible(), visible)
+                    self.assertEqual(editor.has_css_class("termia-notes-toolbar-hidden"), not visible)
+                    self.assertEqual(dialog.toolbar_toggle.get_icon_name(),
+                                     "pan-up-symbolic" if visible else "pan-down-symbolic")
+                    self.assertEqual(buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False),
+                                     "Synthetic note\nwith two lines")
+                    scroller = dialog.editor_toolbar.get_child()
+                    self.assertIsInstance(scroller, Gtk.ScrolledWindow)
+                    self.assertFalse(scroller.get_overlay_scrolling())
+                    dialog.update_editor_appearance = MagicMock()
+                    dialog.toolbar_toggle.set_active(not visible)
+                    self.assertEqual(editor.has_css_class("termia-notes-toolbar-hidden"), visible)
+                    dialog.toolbar_toggle.set_active(visible)
+                    self.assertEqual(editor.has_css_class("termia-notes-toolbar-hidden"), not visible)
+                finally:
+                    Gtk.StyleContext.remove_provider_for_display(
+                        dialog.text_view.get_display(), dialog.editor_css_provider,
+                    )
 
     def test_opening_notes_restores_window_before_presenting(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -1024,20 +1064,13 @@ class NotesDomainTests(unittest.TestCase):
             set_editable=lambda value: states.update(editable=value),
             set_cursor_visible=lambda value: states.update(cursor=value),
         )
-        dialog.save_button = SimpleNamespace(
-            set_sensitive=lambda value: states.update(save=value)
-        )
-        dialog.delete_button = SimpleNamespace(
-            set_sensitive=lambda value: states.update(delete=value)
-        )
         dialog.current_note_id = "note-id"
 
         dialog.set_editor_enabled(True)
 
         self.assertEqual(
             states,
-            {"sensitive": True, "editable": False, "cursor": False,
-             "save": False, "delete": False},
+            {"sensitive": True, "editable": False, "cursor": False},
         )
 
     def test_presenter_search_filters_and_sorts_by_modified_time(self):
@@ -1164,7 +1197,7 @@ class NoteTabContextMenuTests(unittest.TestCase):
                 self.assertTrue(valid)
                 self.assertEqual((rect.x, rect.y, rect.width, rect.height), (int(x), int(y), 1, 1))
                 model = menu.get_menu_model()
-                self.assertEqual(model.get_n_items(), 1)
+                self.assertEqual(model.get_n_items(), 5)
                 self.assertEqual(model.get_item_attribute_value(0, "label", None).unpack(), "Rename")
                 menu.popdown()
                 self.assertIsNone(self.dialog.tab_context_popover)
@@ -1269,6 +1302,59 @@ class NoteTabContextMenuTests(unittest.TestCase):
         self.dialog.show_note_rename_dialog.assert_called_once_with(
             self.tab.title, self.dialog.on_editor_tab_rename_response, self.tab.key,
         )
+
+    def test_new_actions_target_clicked_tab_and_preserve_close_in_read_only(self):
+        self.dialog.find_note = MagicMock(return_value=object())
+        self.dialog.save_editor = MagicMock()
+        self.dialog.clone_note = MagicMock()
+        self.dialog.confirm_delete_note = MagicMock()
+        self.dialog.close_editor_tab = MagicMock()
+
+        def activate(key):
+            self.dialog.active_editor_tab_key = key
+
+        self.dialog.activate_editor_tab = MagicMock(side_effect=activate)
+        for name, method in (
+            ("save", self.dialog.save_editor),
+            ("clone", self.dialog.clone_note),
+            ("delete", self.dialog.confirm_delete_note),
+            ("close", self.dialog.close_editor_tab),
+        ):
+            with self.subTest(action=name):
+                self.dialog.active_editor_tab_key = self.other.key
+                menu = self.open_menu()
+                menu.activate_action(f"note-tab.{name}", None)
+                method.assert_not_called()
+                self.drain_events(wait_for_rename=True)
+                args = () if name == "save" else (
+                    self.tab.key if name == "close" else self.tab.note_id,
+                )
+                method.assert_called_once_with(*args)
+                method.reset_mock()
+        for flag in ("read_only", "encryption_locked"):
+            with patch.object(self.dialog.store, flag, True):
+                self.open_menu()
+                for name, action in self.dialog._note_tab_actions.items():
+                    self.assertEqual(action.get_enabled(), name == "close")
+        self.other.container_widget = self.parent
+        self.open_menu(self.other.key)
+        self.assertTrue(self.dialog._note_tab_actions["save"].get_enabled())
+        self.assertFalse(self.dialog._note_tab_actions["clone"].get_enabled())
+        self.assertFalse(self.dialog._note_tab_actions["delete"].get_enabled())
+
+    def test_pending_save_rejects_removed_target_or_changed_permissions(self):
+        self.dialog.activate_editor_tab = MagicMock()
+        for stale in (True, False):
+            menu = self.open_menu()
+            menu.activate_action("note-tab.save", None)
+            if stale:
+                self.dialog.editor_tabs.pop(self.tab.key)
+            else:
+                self.dialog.store.read_only = True
+            self.drain_events(wait_for_rename=True)
+            self.dialog.activate_editor_tab.assert_not_called()
+            self.dialog.editor_tabs[self.tab.key] = self.tab
+            self.dialog.store.read_only = False
 
     def test_missing_or_replaced_tab_cannot_dispatch_old_menu(self):
         self.dialog.show_note_tab_context_menu("missing")
@@ -1804,7 +1890,9 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(boxes[0].append.call_args_list[1], call(dialog.add_button))
         self.assertEqual(boxes[0].append.call_args_list[2], call(dialog.import_export_menu_button))
         buttons[1].add_css_class.assert_not_called()
-        dialog.save_button.add_css_class.assert_not_called()
+        self.assertFalse(hasattr(dialog, "save_button"))
+        self.assertFalse(hasattr(dialog, "delete_button"))
+        self.assertFalse(hasattr(dialog, "close_editor_button"))
 
     def test_category_and_bulk_navigation_controls_above_search(self):
         dialog = NotesDialogs.__new__(NotesDialogs)

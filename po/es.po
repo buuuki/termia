@@ -1,3 +1,363 @@
+#: src/termia/i18n.py:tools
+msgid "Tools"
+msgstr "Herramientas"
+
+#: src/termia/i18n.py:diagnostics
+msgid "Termia diagnostics"
+msgstr "Diagnóstico de Termia"
+
+#: src/termia/i18n.py:diagnostics_intro
+msgid "Local resources only. Monitoring stops when this window closes."
+msgstr "Solo recursos locales. La monitorización se detiene al cerrar esta ventana."
+
+#: src/termia/i18n.py:diagnostics_sampling
+msgid "Taking the first resource sample…"
+msgstr "Recogiendo la primera muestra de recursos…"
+
+#: src/termia/i18n.py:diagnostics_unavailable
+msgid "Resource sampling failed. Retrying on the next interval."
+msgstr "No se pudieron medir los recursos. Se reintentará en el siguiente intervalo."
+
+#: src/termia/i18n.py:diagnostics_partial
+msgid "Some process data is unavailable; totals may be incomplete."
+msgstr "Algunos datos de procesos no están disponibles; los totales pueden estar incompletos."
+
+#: src/termia/i18n.py:diagnostics_live
+msgid "Live · refreshes every 5 seconds"
+msgstr "En directo · actualización cada 5 segundos"
+
+#: src/termia/i18n.py:diagnostics_sessions
+msgid "Open sessions: {sessions} · VTE terminals: {terminals}\nActive SSH clients: {ssh} · Local terminals: {local}"
+msgstr "Sesiones abiertas: {sessions} · Terminales VTE: {terminals}\nClientes SSH activos: {ssh} · Terminales locales: {local}"
+
+#: src/termia/i18n.py:diagnostics_main
+msgid "Main Termia process"
+msgstr "Proceso principal de Termia"
+
+#: src/termia/i18n.py:diagnostics_children
+msgid "Associated local processes"
+msgstr "Procesos locales asociados"
+
+#: src/termia/i18n.py:diagnostics_cpu
+msgid "CPU usage"
+msgstr "Uso de CPU"
+
+#: src/termia/i18n.py:diagnostics_memory
+msgid "Resident memory (RSS)"
+msgstr "Memoria residente (RSS)"
+
+#: src/termia/i18n.py:diagnostics_threads
+msgid "Threads"
+msgstr "Hilos"
+
+#: src/termia/i18n.py:diagnostics_descriptors
+msgid "File descriptors"
+msgstr "Descriptores de archivo"
+
+#: src/termia/i18n.py:diagnostics_processes
+msgid "Processes"
+msgstr "Procesos"
+
+#: src/termia/i18n.py:diagnostics_orphans
+msgid "Possible orphan processes: {count}. These are tracked processes outside the current child tree or awaiting cleanup; this is not proof of a leak."
+msgstr "Posibles procesos huérfanos: {count}. Son procesos registrados fuera del árbol actual de hijos o pendientes de limpieza; no confirma una fuga."
+
+#: src/termia/i18n.py:diagnostics_process_list
+msgid "Local process details"
+msgstr "Detalles de procesos locales"
+
+#: src/termia/i18n.py:diagnostics_history
+msgid "Recent resource history (up to 5 minutes)"
+msgstr "Historial reciente de recursos (hasta 5 minutos)"
+
+#: src/termia/i18n.py:diagnostics_measurement_note
+msgid "CPU: 100% equals one core. RSS totals can count shared pages more than once. SSH counts describe local clients, not verified remote authentication. History is kept only in memory while this window is open."
+msgstr "CPU: 100% equivale a un núcleo. Los totales RSS pueden contar páginas compartidas más de una vez. El recuento SSH describe clientes locales, no autenticaciones remotas verificadas. El historial solo se mantiene en memoria mientras esta ventana está abierta."
+
+#: src/termia/i18n.py:diagnostics_process_columns
+msgid "    PID  Name                  CPU           RSS   Thr    FDs  Role"
+msgstr "    PID  Nombre                CPU           RSS Hilos    FDs  Función"
+
+#: src/termia/i18n.py:diagnostics_history_columns
+msgid "Time       Main CPU      Main RSS  Child CPU     Child RSS"
+msgstr "Hora       CPU Termia  RSS Termia   CPU hijos     RSS hijos"
+
+#: src/termia/i18n.py:diagnostics_kind_main
+msgid "Termia"
+msgstr "Termia"
+
+#: src/termia/i18n.py:diagnostics_kind_ssh
+msgid "SSH terminal"
+msgstr "Terminal SSH"
+
+#: src/termia/i18n.py:diagnostics_kind_shell
+msgid "Local terminal"
+msgstr "Terminal local"
+
+#: src/termia/i18n.py:diagnostics_kind_child
+msgid "Child process"
+msgstr "Proceso hijo"
+
+#: src/termia/i18n.py:diagnostics_kind_orphan
+msgid "Possible orphan"
+msgstr "Posible huérfano"
+
+#: src/termia/i18n.py:diagnostics_truncated
+msgid "Showing the first 250 processes; totals include all sampled processes."
+msgstr "Se muestran los primeros 250 procesos; los totales incluyen todos los procesos medidos."
+
+#: src/termia/i18n.py:retron_editor
+msgid "Retron appearance editor"
+msgstr "Editor de apariencia Retron"
+
+#: src/termia/i18n.py:retron_live_preview
+msgid "Preview changes automatically"
+msgstr "Previsualizar los cambios automáticamente"
+
+#: src/termia/i18n.py:retron_apply
+msgid "Apply without saving"
+msgstr "Aplicar sin guardar"
+
+#: src/termia/i18n.py:retron_customize
+msgid "Customize (unchecked: inherit)"
+msgstr "Personalizar (desmarcado: heredar)"
+
+#: src/termia/i18n.py:retron_borders
+msgid "Borders and lines"
+msgstr "Bordes y líneas"
+
+#: src/termia/i18n.py:retron_backgrounds
+msgid "Backgrounds"
+msgstr "Fondos"
+
+#: src/termia/i18n.py:retron_glows
+msgid "Glow and shadows"
+msgstr "Halo y sombras"
+
+#: src/termia/i18n.py:retron_glow_number
+msgid "Glow {number}"
+msgstr "Halo {number}"
+
+#: src/termia/i18n.py:retron_remove_glow
+msgid "Remove glow"
+msgstr "Quitar halo"
+
+#: src/termia/i18n.py:retron_add_glow
+msgid "Add glow (maximum 3)"
+msgstr "Añadir halo (máximo 3)"
+
+#: src/termia/i18n.py:retron_editing
+msgid "Appearance changes are temporary until saved. Cancel undoes changes since opening or the last save."
+msgstr "Los cambios de apariencia son temporales hasta guardar. Cancelar deshace los cambios desde la apertura o el último guardado."
+
+#: src/termia/i18n.py:retron_suspended
+msgid "Preview is suspended while another theme is active. The draft is retained."
+msgstr "La previsualización está suspendida mientras otro tema está activo. El borrador se conserva."
+
+#: src/termia/i18n.py:retron_read_only
+msgid "Read-only profile: preview is available; saving is disabled."
+msgstr "Perfil de solo lectura: puedes previsualizar; guardar está desactivado."
+
+#: src/termia/i18n.py:retron_load_error
+msgid "The saved Retron profile could not be read. Original styling is used and the file is protected from overwriting."
+msgstr "No se ha podido leer el perfil Retron guardado. Se usa el estilo original y el archivo está protegido contra sobrescritura."
+
+#: src/termia/i18n.py:retron_invalid_preview
+msgid "These values could not be applied. The last valid appearance is retained."
+msgstr "No se han podido aplicar estos valores. Se conserva la última apariencia válida."
+
+#: src/termia/i18n.py:retron_save_error
+msgid "The profile could not be saved. Check write access and external file changes. Your draft remains open."
+msgstr "No se ha podido guardar el perfil. Comprueba los permisos y los cambios externos del archivo. El borrador sigue abierto."
+
+#: src/termia/i18n.py:retron_open_hint
+msgid "Save the Retron theme selection first. The appearance editor keeps its own Save and Cancel actions."
+msgstr "Guarda primero la selección del tema Retron. El editor de apariencia tiene sus propias acciones Guardar y Cancelar."
+
+#: src/termia/i18n.py:retron_border_opacity
+msgid "Border opacity (%)"
+msgstr "Opacidad del borde (%)"
+
+#: src/termia/i18n.py:retron_border_width
+msgid "Border width (px)"
+msgstr "Grosor del borde (px)"
+
+#: src/termia/i18n.py:retron_border_style
+msgid "Line style"
+msgstr "Estilo de línea"
+
+#: src/termia/i18n.py:retron_radius
+msgid "Corner radius (px)"
+msgstr "Radio de las esquinas (px)"
+
+#: src/termia/i18n.py:retron_background_color
+msgid "Background color"
+msgstr "Color de fondo"
+
+#: src/termia/i18n.py:retron_background_opacity
+msgid "Background opacity (%)"
+msgstr "Opacidad del fondo (%)"
+
+#: src/termia/i18n.py:retron_background_mode
+msgid "Background type"
+msgstr "Tipo de fondo"
+
+#: src/termia/i18n.py:retron_gradient_color
+msgid "Second gradient color"
+msgstr "Segundo color del gradiente"
+
+#: src/termia/i18n.py:retron_gradient_angle
+msgid "Gradient angle (°)"
+msgstr "Ángulo del gradiente (°)"
+
+#: src/termia/i18n.py:retron_shadow_color
+msgid "Glow color"
+msgstr "Color del halo"
+
+#: src/termia/i18n.py:retron_shadow_opacity
+msgid "Glow opacity / intensity (%)"
+msgstr "Opacidad / intensidad del halo (%)"
+
+#: src/termia/i18n.py:retron_shadow_blur
+msgid "Blur radius (px)"
+msgstr "Radio de difuminado (px)"
+
+#: src/termia/i18n.py:retron_shadow_spread
+msgid "Spread (px)"
+msgstr "Expansión (px)"
+
+#: src/termia/i18n.py:retron_shadow_x
+msgid "Horizontal offset (px)"
+msgstr "Desplazamiento horizontal (px)"
+
+#: src/termia/i18n.py:retron_shadow_y
+msgid "Vertical offset (px)"
+msgstr "Desplazamiento vertical (px)"
+
+#: src/termia/i18n.py:retron_shadow_inset
+msgid "Inner glow"
+msgstr "Halo interior"
+
+#: src/termia/i18n.py:retron_component_common
+msgid "Common style"
+msgstr "Estilo común"
+
+#: src/termia/i18n.py:retron_component_window
+msgid "Main window"
+msgstr "Ventana principal"
+
+#: src/termia/i18n.py:retron_component_header
+msgid "Title bars"
+msgstr "Barras de título"
+
+#: src/termia/i18n.py:retron_component_sidebar
+msgid "Sidebars"
+msgstr "Barras laterales"
+
+#: src/termia/i18n.py:retron_component_tabs
+msgid "Tabs"
+msgstr "Pestañas"
+
+#: src/termia/i18n.py:retron_component_panels
+msgid "Panels and toolbars"
+msgstr "Paneles y barras de herramientas"
+
+#: src/termia/i18n.py:retron_component_buttons
+msgid "Buttons"
+msgstr "Botones"
+
+#: src/termia/i18n.py:retron_component_fields
+msgid "Text fields"
+msgstr "Campos de texto"
+
+#: src/termia/i18n.py:retron_component_menus
+msgid "Menus and popovers"
+msgstr "Menús y desplegables"
+
+#: src/termia/i18n.py:retron_component_dialogs
+msgid "Dialog panels"
+msgstr "Paneles de diálogo"
+
+#: src/termia/i18n.py:retron_component_secondary
+msgid "Secondary windows"
+msgstr "Ventanas secundarias"
+
+#: src/termia/i18n.py:retron_component_content
+msgid "Content areas"
+msgstr "Áreas de contenido"
+
+#: src/termia/i18n.py:retron_component_notes
+msgid "Notes editor"
+msgstr "Editor de notas"
+
+#: src/termia/i18n.py:retron_state_normal
+msgid "Normal"
+msgstr "Normal"
+
+#: src/termia/i18n.py:retron_state_focus
+msgid "Focused component"
+msgstr "Componente con foco"
+
+#: src/termia/i18n.py:retron_state_hover
+msgid "Pointer over component"
+msgstr "Puntero sobre el componente"
+
+#: src/termia/i18n.py:retron_state_selected
+msgid "Selected tab"
+msgstr "Pestaña seleccionada"
+
+#: src/termia/i18n.py:retron_state_pressed
+msgid "Pressed"
+msgstr "Pulsado"
+
+#: src/termia/i18n.py:retron_state_backdrop
+msgid "Inactive window"
+msgstr "Ventana inactiva"
+
+#: src/termia/i18n.py:retron_state_held
+msgid "Title bar held"
+msgstr "Barra de título agarrada"
+
+#: src/termia/i18n.py:retron_state_disabled
+msgid "Disabled control"
+msgstr "Control desactivado"
+
+#: src/termia/i18n.py:retron_value_none
+msgid "No line"
+msgstr "Sin línea"
+
+#: src/termia/i18n.py:retron_value_solid
+msgid "Solid"
+msgstr "Continuo"
+
+#: src/termia/i18n.py:retron_value_dashed
+msgid "Dashed"
+msgstr "Discontinuo"
+
+#: src/termia/i18n.py:retron_value_dotted
+msgid "Dotted"
+msgstr "Punteado"
+
+#: src/termia/i18n.py:retron_value_double
+msgid "Double"
+msgstr "Doble"
+
+#: src/termia/i18n.py:retron_value_linear
+msgid "Linear gradient"
+msgstr "Gradiente lineal"
+
+#: src/termia/i18n.py:retron_value_radial
+msgid "Radial gradient"
+msgstr "Gradiente radial"
+
+#: src/termia/i18n.py:retron_glow_enabled
+msgid "Enable glow"
+msgstr "Activar halo"
+
+#: src/termia/i18n.py:retron_unsaved
+msgid "Unsaved changes."
+msgstr "Cambios sin guardar."
+
 # Termia es translation
 # Copyright (C) 2026 Jordi Pons
 # This file is distributed under the same license as the Termia package.
@@ -410,13 +770,17 @@ msgstr "Contraseña"
 msgid "Private SSH key"
 msgstr "Clave SSH privada"
 
+#: src/termia/i18n.py:select_private_ssh_key
+msgid "Select private SSH key"
+msgstr "Seleccionar clave SSH privada"
+
 #: src/termia/i18n.py:ssh_fingerprint_manual
 msgid "New host: answer the fingerprint prompt in this terminal. Then enter the password manually or with Ctrl+P."
 msgstr "Host nuevo: responde al fingerprint en esta terminal. Después introduce la contraseña manualmente o con Ctrl+P."
 
 #: src/termia/i18n.py:credential_warning
-msgid "Warning: the password will be stored in connections.json. You can switch between plain text and obfuscated storage from Security."
-msgstr "Aviso: la contraseña se guardará en connections.json. Puedes cambiar entre texto plano y ofuscado desde Seguridad."
+msgid "If you enter a password, it will be saved with the connection in connections.json. Configure storage in Security: plain text, obfuscation or encryption with a master password. Obfuscation is not encryption."
+msgstr "Si introduces una contraseña, se guardará con la conexión en connections.json. Configura el almacenamiento en Seguridad: texto plano, ofuscación o cifrado con contraseña maestra. La ofuscación no es cifrado."
 
 #: src/termia/i18n.py:server_required_fields
 msgid "Name, host, and SSH user are required."
@@ -1044,12 +1408,12 @@ msgid "Unlock connections"
 msgstr "Desbloquear conexiones"
 
 #: src/termia/i18n.py:unlock_connections_detail
-msgid "Enter the master password to unlock your Termia connections."
-msgstr "Introduce la contraseña maestra para desbloquear tus conexiones de Termia."
+msgid "Enter your connections master password"
+msgstr "Introduce tu contraseña maestra de conexiones"
 
 #: src/termia/i18n.py:unlock_connections_failed
-msgid "Could not unlock connections with this master password."
-msgstr "No se pudieron desbloquear las conexiones con esta contraseña maestra."
+msgid "Incorrect password"
+msgstr "Contraseña incorrecta"
 
 #: src/termia/i18n.py:connections_locked
 msgid "Connections are locked until the master password is entered."
@@ -2318,3 +2682,111 @@ msgstr "Revisar dependencias"
 #: src/termia/i18n.py:snippet_name_too_long
 msgid "Use 30 characters or fewer for the snippet name."
 msgstr "Usa un máximo de 30 caracteres para el nombre del snippet."
+
+#: src/termia/i18n.py:notes_save
+msgid "Save note"
+msgstr "Guardar nota"
+
+#: src/termia/i18n.py:confirm_multiline_paste
+msgid "Confirm before pasting multiple lines"
+msgstr "Confirmar antes de pegar varias líneas"
+
+#: src/termia/i18n.py:terminal_paste_confirm_title
+msgid "Confirm multiline paste"
+msgstr "Confirmar pegado de varias líneas"
+
+#: src/termia/i18n.py:terminal_paste_confirm_body
+msgid "The text contains line breaks and may execute commands. Review it before pasting."
+msgstr "El texto contiene saltos de línea y puede ejecutar comandos. Revísalo antes de pegarlo."
+
+#: src/termia/i18n.py:terminal_paste_read_failed
+msgid "Could not read text from the clipboard"
+msgstr "No se pudo leer el texto del portapapeles"
+
+#: src/termia/i18n.py:copy_on_selection
+msgid "Automatically copy terminal text on selection"
+msgstr "Copiar automáticamente el texto del terminal al seleccionar"
+
+#: src/termia/i18n.py:terminal_selection_copied_one
+msgid "Copied 1 character to the clipboard"
+msgstr "Copiado 1 carácter al portapapeles"
+
+#: src/termia/i18n.py:terminal_selection_copied
+msgid "Copied {count} characters to the clipboard"
+msgstr "Copiados {count} caracteres al portapapeles"
+
+#: src/termia/i18n.py:terminal_selection_copy_failed
+msgid "Could not copy the selected text to the clipboard"
+msgstr "No se pudo copiar el texto seleccionado al portapapeles"
+
+#: src/termia/i18n.py:theme_dark_glow
+msgid "Retron"
+msgstr "Retron"
+
+#: src/termia/i18n.py:terminal_state_connected
+msgid "Connected"
+msgstr "Conectada"
+
+#: src/termia/i18n.py:terminal_ssh_state_detail
+msgid "The SSH process is running; authentication may still be pending."
+msgstr "El proceso SSH está activo; la autenticación puede seguir pendiente."
+
+#: src/termia/i18n.py:border_color
+msgid "Border color"
+msgstr "Color de los bordes"
+
+#: src/termia/i18n.py:reset_border_color
+msgid "Reset"
+msgstr "Restablecer"
+
+#: src/termia/i18n.py:retron_presets
+msgid "Configuration"
+msgstr "Configuración"
+
+#: src/termia/i18n.py:retron_current
+msgid "Current appearance (unnamed)"
+msgstr "Apariencia actual (sin nombre)"
+
+#: src/termia/i18n.py:retron_original
+msgid "Original Retron"
+msgstr "Retron original"
+
+#: src/termia/i18n.py:retron_save_as
+msgid "Save as…"
+msgstr "Guardar como…"
+
+#: src/termia/i18n.py:retron_rename
+msgid "Rename…"
+msgstr "Renombrar…"
+
+#: src/termia/i18n.py:retron_delete
+msgid "Delete configuration"
+msgstr "Eliminar configuración"
+
+#: src/termia/i18n.py:retron_name
+msgid "Configuration name"
+msgstr "Nombre de la configuración"
+
+#: src/termia/i18n.py:retron_name_invalid
+msgid "Enter a name of 1–64 characters without control characters."
+msgstr "Introduce un nombre de 1–64 caracteres sin caracteres de control."
+
+#: src/termia/i18n.py:retron_name_duplicate
+msgid "A configuration with this name already exists."
+msgstr "Ya existe una configuración con ese nombre."
+
+#: src/termia/i18n.py:retron_preset_limit
+msgid "You can save up to 32 configurations. Delete one before adding another."
+msgstr "Puedes guardar hasta 32 configuraciones. Elimina una antes de añadir otra."
+
+#: src/termia/i18n.py:retron_switch_unsaved
+msgid "Save your changes before switching configurations?"
+msgstr "¿Guardar los cambios antes de cambiar de configuración?"
+
+#: src/termia/i18n.py:retron_discard
+msgid "Discard changes"
+msgstr "Descartar cambios"
+
+#: src/termia/i18n.py:retron_delete_confirm
+msgid "Delete the saved configuration “{name}”? The current appearance will be kept."
+msgstr "¿Eliminar la configuración guardada «{name}»? Se conservará la apariencia actual."

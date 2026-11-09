@@ -11,6 +11,10 @@ La [base independiente Ubuntu 26.04 GNOME](gnome26/README.es.md) se está
 construyendo en #430. Su escritorio experimental GNOME Wayland/RDP tiene
 comprobaciones funcionales; faltan Termia y la aceptación completa del laboratorio.
 
+Para el escritorio persistente Ubuntu 24.04 con GNOME/Wayland y RDP nativo,
+consulta [la guía Ubuntu 24 GNOME](gnome24/README.es.md). Allí se indica su
+estado de validación; el laboratorio X11/Weston siguiente es independiente.
+
 ## Primer arranque en otro PC
 
 Necesitas Linux, Docker Engine local accesible para tu usuario, Git, Python 3,

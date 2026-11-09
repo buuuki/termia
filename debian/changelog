@@ -1,3 +1,12 @@
+termia (0.6.2~beta-1) unstable; urgency=medium
+
+  * Prepare the integrated beta delivery with Retron, saved appearance
+    configurations, terminal clipboard protections and GTK interaction fixes.
+  * Include local profile passwords and connection schema 4; retain explicit
+    backup and downgrade guidance (#492).
+
+ -- Jordi Pons <jpons.git@proton.me>  Sun, 08 Nov 2026 18:20:00 +0100
+
 termia (0.6.1~beta-1) unstable; urgency=medium
 
   * Prepare beta maintenance: dependency-aware updates, GTK modernization,

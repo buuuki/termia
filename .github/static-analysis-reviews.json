@@ -19,7 +19,13 @@
     "tools/docker-lab/upgrade-preview/launch.py": "89f527f6b4d4fe409d16c89e955b9ac19bf792f2c0863337647fb7dc8b421b37",
     "tools/docker-lab/upgrade-preview/panel.py": "0026a6e053bf3560cd0497e84c9cf56a63ae84356bc1a60690f1e0db1ec6a511",
     "tools/docker-lab/upgrade-preview/prepare.py": "a09a116e46a8046446bd25a60fe5196290d7bb75ac35e5d5a7b7d4c889846896",
-    "tools/docker-lab/upgrade-preview/reset.py": "71124ffc6550322924bd8bba397cee2e7ed93bfaa52deb0c56e06c2d3c4d618e"
+    "tools/docker-lab/upgrade-preview/reset.py": "71124ffc6550322924bd8bba397cee2e7ed93bfaa52deb0c56e06c2d3c4d618e",
+    "tools/docker-lab/gnome24/lab.py": "984c095f870569bf96b77d0d8386f5bcd2fb419b791723a4b47b0d3f2a8cae23",
+    "tools/docker-lab/gnome24/configure.py": "428d7b784376da031ff40832895973afdd7b405bd3f1bd16a4b7b4e7737189b3",
+    "tools/docker-lab/gnome24/Dockerfile": "b535307138dcf4d94bb992990c19033458798d5a4e413e821a186c0713249b4c",
+    "tools/docker-lab/gnome24/compose.yaml": "4379db395f2aeac9f4aefd578a04acb8f2d61dbd96565fbe0fe41090ea382a74",
+    "tools/docker-lab/gnome24/termia-lab-prepare.service": "8874c72d0ccba72c0059f927cbcae560b716348875301acecebf258b6b239df5",
+    "tools/docker-lab/gnome26/seccomp-desktop.json": "8a5756b32d57d35c6aef6f30ba3cf5b7e77b555fc21286c70895edbfca1b2443"
   },
   "findings": [
     {
@@ -210,6 +216,60 @@
       "fingerprint": "c7b77efa64188f7f0d0d39b7a24450315be850632ebf6a35bb30ab2daeeb2613",
       "reason": "Fixed runuser and openssl executables run certificate generation as lab with localhost certificate names and fixed output-path construction, using argument vectors without a shell or real user credentials. This entry reviews subprocess execution, not the separate root ownership setup.",
       "reference": "#454"
+    },
+    {
+      "id": "bandit-459-01",
+      "file": "tools/docker-lab/gnome24/configure.py",
+      "rule": "B404",
+      "severity": "LOW/HIGH",
+      "fingerprint": "f89811ea07254c4770d20e9dd4924c63b50a150cf46cfa929b916fe58b9dc2c1",
+      "reason": "Required subprocess import; individual argument-vector invocations are reviewed separately.",
+      "reference": "#459"
+    },
+    {
+      "id": "bandit-459-02",
+      "file": "tools/docker-lab/gnome24/configure.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "602f5a9d18f5ace6a70c75778d96f8adcb222971335e0b3a2474ae321b218d26",
+      "reason": "Fixed in-image absolute executables and argument vectors without a shell configure only synthetic lab accounts, TLS and native GNOME RDP. Credential arguments and captured output are excluded from diagnostics.",
+      "reference": "#459"
+    },
+    {
+      "id": "bandit-459-03",
+      "file": "tools/docker-lab/gnome24/lab.py",
+      "rule": "B404",
+      "severity": "LOW/HIGH",
+      "fingerprint": "1f7980e4f068d458e16089d08581a3916c33087ef0634969ca2d68ed538a8388",
+      "reason": "Required subprocess import; individual argument-vector invocations are reviewed separately.",
+      "reference": "#459"
+    },
+    {
+      "id": "bandit-459-04",
+      "file": "tools/docker-lab/gnome24/lab.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "14f0b24fb8385a6e993cb5a9cb326d9733e3bf04330152d4ac5239aa9a6844e4",
+      "reason": "Runner resolves the executable to an absolute path and uses argument vectors without a shell. Callers construct Git queries or owned local Docker operations; remote endpoints and foreign persistent resources are rejected before lifecycle actions.",
+      "reference": "#459"
+    },
+    {
+      "id": "bandit-459-05",
+      "file": "tools/docker-lab/gnome24/lab.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "806df22d0688ef58710411660f647b943a085acdc455d4604ab5b507e8c1a55a",
+      "reason": "Docker executable is resolved to an absolute path. Fixed inspect operations use argument vectors without a shell and read only the expected laboratory resource names or its image identity.",
+      "reference": "#459"
+    },
+    {
+      "id": "bandit-459-06",
+      "file": "tools/docker-lab/gnome24/lab.py",
+      "rule": "B603",
+      "severity": "LOW/HIGH",
+      "fingerprint": "14462167b5d973d8df28a1a6980188c0fd0bdc08a8d4f5b358c377eecfa0a973",
+      "reason": "Docker executable is resolved to an absolute path. Fixed inspect operations use argument vectors without a shell and read only the expected laboratory resource names or its image identity.",
+      "reference": "#459"
     }
   ]
 }

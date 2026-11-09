@@ -11,6 +11,7 @@ from gi.repository import Gtk, Pango
 
 def text_choice() -> Gtk.DropDown:
     widget = Gtk.DropDown(model=Gtk.StringList.new([]))
+    widget.add_css_class("termia-choice")
     widget._termia_choice_ids = []
     return widget
 

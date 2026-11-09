@@ -219,7 +219,7 @@ class ServerGroupWidgetTests(unittest.TestCase):
         item = SimpleNamespace(get_item=lambda: model.get_row(0), get_child=lambda: expander,
                                set_selectable=Mock())
         self.host.bind_sidebar_tree_item(None, item)
-        item.set_selectable.assert_called_once_with(kind not in {"group", "section"})
+        item.set_selectable.assert_called_once_with(True)
         self.addCleanup(self.host.unbind_sidebar_tree_item, None, item)
         return expander.get_child()
 

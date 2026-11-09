@@ -7,6 +7,8 @@ from pathlib import Path
 
 from gi.repository import GLib
 
+from . import retron_style_values as retron
+
 APP_ID = "local.termia"
 APP_DIR = Path(__file__).resolve().parent
 CONFIG_DIR = Path(
@@ -16,6 +18,7 @@ CONFIG_DIR = Path(
 DATA_FILE = CONFIG_DIR / "connections.json"
 NOTES_FILE = CONFIG_DIR / "notes.json"
 SETTINGS_FILE = CONFIG_DIR / "settings.json"
+RETRON_PROFILE_FILE = CONFIG_DIR / "themes" / "retron.json"
 INSTANCE_LOCK_FILE = CONFIG_DIR / "instance.lock"
 STATE_DIR = Path(
     os.environ.get("TERMIA_STATE_DIR")
@@ -30,6 +33,8 @@ ISSUES_URL = "https://github.com/buuuki/termia/issues"
 DEFAULT_TERMINAL_FONT_FAMILY = "JetBrains Mono"
 DEFAULT_TERMINAL_FOREGROUND = "#d8dee9"
 DEFAULT_TERMINAL_BACKGROUND = "#1f2430"
+DEFAULT_DARK_GLOW_BORDER_COLOR = retron.DEFAULT_DARK_GLOW_BORDER_COLOR
+DARK_GLOW_SURFACE_COLOR = retron.DARK_GLOW_SURFACE_COLOR
 DEFAULT_NOTES_EDITOR_FOREGROUND = "#ffffff"
 DEFAULT_NOTES_EDITOR_BACKGROUND = "#001b33"
 DEFAULT_SPLIT_SEPARATOR_COLOR = "#008712"
@@ -72,4 +77,4 @@ PROMPT_PRESETS = {
     "Blanco": (r"\u@\h:\w\$ ", "#eeeeec"),
 }
 
-APP_THEMES = ("system", "light", "dark")
+APP_THEMES = ("system", "light", "dark", "dark_glow")

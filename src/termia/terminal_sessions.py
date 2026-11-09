@@ -6,6 +6,7 @@ import os
 import shlex
 import signal
 import time
+import weakref
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
@@ -53,6 +54,7 @@ from .terminal_processes import (
     terminal_process_is_active,
 )
 from .terminal_view import TerminalViewFactory
+from .theme_styles import DARK_GLOW_COLORS, DARK_GLOW_THEME
 from .transfer_lifecycle import ManagedTransfer
 from .ui_state import TerminalPane, TerminalSession
 from .workspace_layout import (
@@ -141,10 +143,12 @@ class TerminalSessionsMixin:
         return Path(shell).name == "bash"
 
     def create_configured_terminal(self) -> Vte.Terminal:
-        return TerminalViewFactory(self.resolved_terminal_font_family).create(
+        terminal = TerminalViewFactory(self.resolved_terminal_font_family).create(
             self.store.data.terminal,
             audible_bell=self.store.data.app.audible_bell,
         )
+        TerminalSessionsMixin.apply_retron_terminal_background(self, terminal)
+        return terminal
 
     def build_session_status_bar(
         self,
@@ -179,6 +183,38 @@ class TerminalSessionsMixin:
         toolbar.append(timer_label)
         toolbar.append(disconnect_button)
         return toolbar, status_label, timer_label, focus_button, disconnect_button
+
+    def update_pane_status(self, pane: TerminalPane, detail: str | None = None) -> None:
+        if pane.retired:
+            return
+        if detail is not None:
+            pane.status_detail = detail
+        if pane.server_id is not None:
+            connection = find_server(self.store.data.servers, pane.server_id)
+            name = connection.name if connection is not None else (pane.history_server_name or pane.title)
+        elif pane.local_profile_id is not None:
+            profile = find_local_terminal_profile(self.store.data.local_terminals, pane.local_profile_id)
+            name = profile.name if profile is not None else pane.title
+        else:
+            name = self.t("local_terminal")
+        if pane.disconnect_requested or not pane.connected:
+            state, color = self.t("terminal_state_disconnected"), DARK_GLOW_COLORS["muted"]
+        elif pane.child_process is None:
+            state, color = self.t("connecting"), DARK_GLOW_COLORS["yellow"]
+        else:
+            state, color = self.t("terminal_state_connected"), DARK_GLOW_COLORS["green"]
+        text = GLib.markup_escape_text(f"{state} · {name}")
+        markup = f'<span foreground="{color}">●</span> {text}'
+        if pane.status_label.get_label() != markup:
+            pane.status_label.set_markup(markup)
+        details = [name, state]
+        if pane.status_detail:
+            details.append(pane.status_detail)
+        if pane.server_id is not None and pane.connected and not pane.disconnect_requested and pane.child_process is not None:
+            details.append(self.t("terminal_ssh_state_detail"))
+        tooltip = "\n".join(details)
+        if pane.status_label.get_tooltip_text() != tooltip:
+            pane.status_label.set_tooltip_text(tooltip)
 
     def build_terminal_pane(self, toolbar: Gtk.Widget, terminal: Vte.Terminal) -> Gtk.Box:
         pane = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -241,6 +277,7 @@ class TerminalSessionsMixin:
             server_id=server_id,
             local_profile_id=local_profile_id,
         )
+        self.update_pane_status(session.panes[id(terminal)], "")
         session.active_terminal_ids.add(id(terminal))
         log_event(
             "session.created",
@@ -292,10 +329,10 @@ class TerminalSessionsMixin:
             retry_prompt = self.t("local_terminal_retry_prompt")
             terminal.feed(f"{message}\r\n".encode())
             terminal.feed(f"{retry_prompt}\r\n".encode())
-            session.status_label.set_label("Error")
             session.connected = False
             session.pending_reconnect = True
             self.sync_root_pane_state(session)
+            self.update_pane_status(pane, message)
             self.show_pane_reconnect_controls(self.pane_state(session, terminal))
             self.store.record_history_end(session, "failed", detail=exc.message)
             self.update_session_tab_title(session, self.t("tab_error_title").format(title=session.title))
@@ -314,7 +351,7 @@ class TerminalSessionsMixin:
         self.update_local_session_directory_title(session)
         self.start_terminal_timer(session, terminal)
         pane.exit_handler_id = terminal.connect("child-exited", self.on_process_terminal_exited, session)
-        session.status_label.set_label(f"{title} · PID {child_process.pid}")
+        self.update_pane_status(pane, f"PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, fallback_working_directory=working_directory)
         if initial_command.strip():
             GLib.timeout_add(INITIAL_LOCAL_COMMAND_DELAY_MS, self.feed_initial_local_command, terminal, initial_command.strip())
@@ -347,6 +384,7 @@ class TerminalSessionsMixin:
             pane.release_exit_handler()
         if getattr(self, "shutdown_in_progress", False):
             return
+        self.update_pane_status(pane)
         pane.disconnect_button.set_sensitive(False)
         if not pane.disconnect_requested and self.child_status_successful(_status) and session.active_terminal_ids:
             self.remove_terminal_pane_if_split(terminal, session)
@@ -361,7 +399,7 @@ class TerminalSessionsMixin:
                 self.toast_label.set_label(self.t("local_terminal_closed").format(title=session.title))
                 return
             self.remove_terminal_pane_if_split(terminal, session)
-            session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
+            self.update_pane_status(pane, self.t("session_closed_status").format(title=session.title))
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
 
     def can_open_terminal_tabs(self, requested_tabs: int = 1) -> bool:
@@ -653,14 +691,13 @@ class TerminalSessionsMixin:
         self.sync_root_pane_state(session)
         session.disconnect_button.set_label(self.t("disconnect"))
         session.disconnect_button.set_sensitive(True)
-        session.status_label.set_label(self.t("connecting"))
+        self.update_pane_status(self.pane_state(session, terminal), "")
         self.store.record_history_start(session, "ssh", server)
 
         ssh_path = GLib.find_program_in_path("ssh")
         if ssh_path is None:
             message = self.t("ssh_missing")
             terminal.feed(f"{message}\r\n".encode())
-            session.status_label.set_label(self.t("ssh_missing_status"))
             self.store.record_history_end(session, "failed", detail=message)
             self.mark_session_for_reconnect(session, message)
             return
@@ -703,7 +740,6 @@ class TerminalSessionsMixin:
             if sshpass_path is None:
                 message = self.t("sshpass_missing")
                 terminal.feed(f"{message}\r\n".encode())
-                session.status_label.set_label(self.t("sshpass_missing_status"))
                 self.store.record_history_end(session, "failed", detail=message)
                 self.mark_session_for_reconnect(session, message)
                 return
@@ -726,7 +762,6 @@ class TerminalSessionsMixin:
         except GLib.Error as exc:
             message = self.t("ssh_start_failed").format(error=exc.message)
             terminal.feed(f"{message}\r\n".encode())
-            session.status_label.set_label("Error")
             self.store.record_history_end(session, "failed", detail=exc.message)
             self.mark_session_for_reconnect(session, self.t("ssh_start_failed_toast").format(name=server.name))
             return
@@ -745,7 +780,7 @@ class TerminalSessionsMixin:
         root_pane.release_exit_handler()
         root_pane.exit_handler_id = terminal.connect("child-exited", self.on_terminal_exited, server, session)
         self.session_observer.connection_started(server.id)
-        session.status_label.set_label(f"{server.name} · PID {child_process.pid}")
+        self.update_pane_status(root_pane, f"PID {child_process.pid}")
         self.apply_split_layout(session, split_layout, server=server)
         self.toast_label.set_label(self.t("session_opened").format(title=session.title))
 
@@ -754,6 +789,7 @@ class TerminalSessionsMixin:
         session.pending_reconnect = True
         session.active_terminal_ids.discard(id(session.terminal))
         self.sync_root_pane_state(session)
+        self.update_pane_status(self.pane_state(session, session.terminal), toast)
         self.show_pane_reconnect_controls(self.pane_state(session, session.terminal))
         self.toast_label.set_error(toast)
         prompt = f"  {self.t('reconnect_prompt')}  "
@@ -792,6 +828,7 @@ class TerminalSessionsMixin:
     ) -> None:
         pane.connected = False
         pane.pending_reconnect = True
+        self.update_pane_status(pane, toast)
         if pane.terminal is session.terminal:
             session.pending_reconnect = True
         self.show_pane_reconnect_controls(pane)
@@ -902,8 +939,180 @@ class TerminalSessionsMixin:
         terminal.add_controller(focus)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
-        signals.connect(right_click, "pressed", self.on_terminal_right_click, session, terminal)
+        # Finish the pointer sequence before a popover takes the Wayland grab.
+        signals.connect(right_click, "released", self.on_terminal_right_click, session, terminal)
         terminal.add_controller(right_click)
+        paste_state: dict[str, Any] = {}
+        signals.connect(terminal, "paste-clipboard", self.on_terminal_paste_requested, session, paste_state)
+        signals.connect(terminal, "unrealize", self.on_terminal_paste_unrealize, paste_state)
+        middle_click = Gtk.GestureClick.new()
+        middle_click.set_button(2)
+        middle_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        signals.connect(middle_click, "pressed", self.on_terminal_primary_paste_requested, session, terminal, paste_state)
+        terminal.add_controller(middle_click)
+        signals.connect(terminal, "selection-changed", self.on_terminal_selection_changed, session)
+
+    @staticmethod
+    def on_terminal_paste_unrealize(_terminal: Vte.Terminal, state: dict[str, Any]) -> None:
+        cancellable = state.pop("cancellable", None)
+        if cancellable is not None:
+            cancellable.cancel()
+        dialog = state.pop("dialog", None)
+        if dialog is not None:
+            dialog.destroy()
+
+    def on_terminal_paste_requested(
+        self, terminal: Vte.Terminal, session: TerminalSession, state: dict[str, Any]
+    ) -> None:
+        if not self.store.data.app.confirm_multiline_paste:
+            return
+        terminal.stop_emission_by_name("paste-clipboard")
+        self.request_protected_terminal_paste(terminal, session, state)
+
+    def on_terminal_primary_paste_requested(
+        self, gesture: Gtk.GestureClick, _presses: int, _x: float, _y: float,
+        session: TerminalSession, terminal: Vte.Terminal, state: dict[str, Any],
+    ) -> None:
+        if not self.store.data.app.confirm_multiline_paste:
+            return
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        terminal.grab_focus()
+        self.request_protected_terminal_paste(terminal, session, state, primary=True)
+
+    def request_protected_terminal_paste(
+        self, terminal: Vte.Terminal, session: TerminalSession,
+        state: dict[str, Any], *, primary: bool = False,
+    ) -> None:
+        if state.get("cancellable") is not None:
+            return
+        pane = session.pane_for_terminal(terminal)
+        root = terminal.get_root()
+        if pane is None or pane.retired or not pane.connected or not isinstance(root, Gtk.Window):
+            return
+        owner_ref = weakref.ref(self)
+        pane_ref = weakref.ref(pane)
+        root_ref = weakref.ref(root)
+        process = pane.child_process
+        cancellable = Gio.Cancellable()
+        state["cancellable"] = cancellable
+
+        def target_is_valid() -> bool:
+            current = pane_ref()
+            return (
+                not cancellable.is_cancelled()
+                and state.get("cancellable") is cancellable
+                and owner_ref() is not None
+                and current is not None
+                and not current.retired
+                and current.connected
+                and not current.pending_reconnect
+                and current.child_process is process
+                and root_ref() is not None
+                and current.terminal.get_root() is root_ref()
+                and current.terminal.get_input_enabled()
+            )
+
+        def finish_request() -> None:
+            if state.get("cancellable") is cancellable:
+                state.pop("cancellable", None)
+                state.pop("dialog", None)
+
+        def clipboard_ready(clipboard: Gdk.Clipboard, result: Gio.AsyncResult) -> None:
+            try:
+                text = clipboard.read_text_finish(result)
+            except GLib.Error:
+                owner = owner_ref()
+                if target_is_valid() and owner is not None:
+                    owner.toast_label.set_error(owner.t("terminal_paste_read_failed"))
+                finish_request()
+                return
+            if not text or not target_is_valid():
+                finish_request()
+                return
+            current = pane_ref()
+            if "\n" not in text and "\r" not in text:
+                current.terminal.grab_focus()
+                current.terminal.paste_text(text)
+                finish_request()
+                return
+            owner = owner_ref()
+            dialog = DialogWindow(
+                title=owner.t("terminal_paste_confirm_title"),
+                transient_for=root_ref(), modal=True, destroy_with_parent=True,
+            )
+            dialog.set_default_size(560, 320)
+            cancel, _paste = owner.add_dialog_action_buttons(dialog, owner.t("paste"))
+            cancel.get_parent().set_margin_top(8)
+            dialog.set_default_response(Gtk.ResponseType.CANCEL)
+            content = dialog.get_content_area()
+            content.set_spacing(12)
+            for margin in ("top", "bottom", "start", "end"):
+                getattr(content, f"set_margin_{margin}")(16)
+            content.set_margin_bottom(0)
+            content.append(Gtk.Label(label=owner.t("terminal_paste_confirm_body"), wrap=True, xalign=0))
+            preview = Gtk.TextView(editable=False, cursor_visible=False, monospace=True)
+            preview.get_buffer().set_text(text)
+            scroller = Gtk.ScrolledWindow()
+            scroller.add_css_class("termia-terminal-paste-preview")
+            scroller.set_vexpand(True)
+            scroller.set_child(preview)
+            content.append(scroller)
+
+            def respond(window: DialogWindow, response: int) -> None:
+                valid = target_is_valid()
+                target = pane_ref()
+                finish_request()
+                window.destroy()
+                if valid and target is not None:
+                    target.terminal.grab_focus()
+                    if response == Gtk.ResponseType.OK:
+                        target.terminal.paste_text(text)
+
+            dialog.connect("response", respond)
+            state["dialog"] = dialog
+            dialog.present()
+            cancel.grab_focus()
+
+        clipboard = terminal.get_primary_clipboard() if primary else terminal.get_clipboard()
+        clipboard.read_text_async(cancellable, clipboard_ready)
+
+    def on_terminal_selection_changed(
+        self,
+        terminal: Vte.Terminal,
+        session: TerminalSession,
+    ) -> None:
+        if not self.store.data.app.copy_on_selection or not terminal.get_has_selection():
+            return
+        pane = session.pane_for_terminal(terminal)
+        if pane is None or pane.retired:
+            return
+        owner_ref = weakref.ref(self)
+        pane_ref = weakref.ref(pane)
+
+        def copy_finished_selection() -> bool:
+            owner = owner_ref()
+            current = pane_ref()
+            if (
+                owner is not None
+                and current is not None
+                and not current.retired
+                and owner.store.data.app.copy_on_selection
+                and current.terminal.get_has_selection()
+            ):
+                text = current.terminal.get_text_selected(Vte.Format.TEXT)
+                if not text:
+                    return GLib.SOURCE_REMOVE
+                clipboard = current.terminal.get_clipboard()
+                provider = Gdk.ContentProvider.new_for_value(text)
+                if clipboard.set_content(provider):
+                    count = len(text)
+                    message = "terminal_selection_copied_one" if count == 1 else "terminal_selection_copied"
+                    owner.toast_label.set_success(owner.t(message).format(count=count))
+                else:
+                    owner.toast_label.set_error(owner.t("terminal_selection_copy_failed"))
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(copy_finished_selection)
 
     def on_terminal_focus_enter(
         self,
@@ -955,8 +1164,7 @@ class TerminalSessionsMixin:
             return True
         for direction in ("left", "right", "up", "down"):
             if keybinding_matches(keybindings.get(f"focus_split_{direction}", ""), keyval, state):
-                self.move_split_pane_focus(session, terminal, direction)
-                return True
+                return self.move_split_pane_focus(session, terminal, direction)
         if keybinding_matches(keybindings.get("font_increase", ""), keyval, state):
             self.change_terminal_font_size(1)
             return True
@@ -1092,11 +1300,14 @@ class TerminalSessionsMixin:
     def send_saved_password(self, session: TerminalSession, terminal: Vte.Terminal | None = None) -> None:
         target = terminal or session.terminal
         pane = self.pane_state(session, target)
-        server = find_server(self.store.data.servers, pane.server_id) if pane.server_id is not None else None
-        if not pane.connected or server is None or not server.password:
+        if pane.server_id is not None:
+            connection = find_server(self.store.data.servers, pane.server_id)
+        else:
+            connection = find_local_terminal_profile(self.store.data.local_terminals, pane.local_profile_id)
+        if not pane.connected or connection is None or not connection.password:
             self.toast_label.set_warning(self.t("send_credential_unavailable"))
             return
-        payload = server.password.encode()
+        payload = connection.password.encode()
         if self.store.data.app.send_password_enter:
             payload += b"\r"
         target.feed_child(payload)
@@ -1256,6 +1467,7 @@ class TerminalSessionsMixin:
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_min_content_height(260)
+        scroller.add_css_class("termia-content-frame")
         scroller.set_vexpand(True)
         scroller.set_child(connection_list)
         connection_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -1473,6 +1685,7 @@ class TerminalSessionsMixin:
             local_profile_id=source.local_profile_id if source is not None else session.local_profile_id,
         )
         session.panes[id(terminal)] = pane
+        self.update_pane_status(pane, "")
         pane.ui_signals.connect(focus_button, "clicked", self.on_hide_pane_status_bar, session, terminal)
         pane.ui_signals.connect(disconnect_button, "clicked", self.on_request_disconnect_pane, session, terminal)
         self.configure_terminal_interactions(terminal, session)
@@ -1482,6 +1695,9 @@ class TerminalSessionsMixin:
 
     def wrap_terminal_in_scroller(self, terminal: Vte.Terminal) -> Gtk.ScrolledWindow:
         scroller = Gtk.ScrolledWindow()
+        scroller.set_overflow(
+            Gtk.Overflow.HIDDEN if self.store.data.app.theme == DARK_GLOW_THEME else Gtk.Overflow.VISIBLE
+        )
         scroller.set_child(terminal)
         scroller.set_hexpand(True)
         scroller.set_vexpand(True)
@@ -1527,7 +1743,7 @@ class TerminalSessionsMixin:
         pane.disconnect_requested = False
         pane.disconnect_button.set_label(self.t("disconnect"))
         pane.disconnect_button.set_sensitive(True)
-        pane.status_label.set_label(self.t("connecting"))
+        self.update_pane_status(pane, "")
         session.connected = True
         try:
             command = self.build_local_terminal_command(profile)
@@ -1535,7 +1751,6 @@ class TerminalSessionsMixin:
             message = self.t("local_terminal_invalid_arguments").format(error=exc)
             terminal.feed(f"{message}\r\n".encode())
             pane.connected = False
-            pane.status_label.set_label("Error")
             self.mark_pane_for_reconnect(session, pane, message)
             return
         working_directory = working_directory_override or (
@@ -1557,7 +1772,6 @@ class TerminalSessionsMixin:
             message = self.t("local_terminal_start_failed").format(error=exc.message)
             terminal.feed(f"{message}\r\n".encode())
             pane.connected = False
-            pane.status_label.set_label("Error")
             self.store.record_history_end(history_owner, "failed", detail=exc.message)
             self.mark_pane_for_reconnect(session, pane, message)
             return
@@ -1570,7 +1784,7 @@ class TerminalSessionsMixin:
             kind="local",
             pid=child_process.pid,
         )
-        pane.status_label.set_label(f"{pane.title} · PID {child_process.pid}")
+        self.update_pane_status(pane, f"PID {child_process.pid}")
         if is_root:
             session.child_pid = child_process.pid
             session.child_process = child_process
@@ -1610,7 +1824,7 @@ class TerminalSessionsMixin:
         pane.disconnect_requested = False
         pane.disconnect_button.set_label(self.t("disconnect"))
         pane.disconnect_button.set_sensitive(True)
-        pane.status_label.set_label(self.t("connecting"))
+        self.update_pane_status(pane, "")
         session.connected = True
         self.store.record_history_start(pane, "ssh", server)
         ssh_path = GLib.find_program_in_path("ssh")
@@ -1618,7 +1832,6 @@ class TerminalSessionsMixin:
             message = self.t("ssh_missing")
             terminal.feed(f"{message}\r\n".encode())
             pane.connected = False
-            pane.status_label.set_label(self.t("ssh_missing_status"))
             self.store.record_history_end(pane, "failed", detail=message)
             self.mark_pane_for_reconnect(session, pane, message)
             return
@@ -1668,7 +1881,6 @@ class TerminalSessionsMixin:
                 message = self.t("sshpass_missing")
                 terminal.feed(f"{message}\r\n".encode())
                 pane.connected = False
-                pane.status_label.set_label(self.t("sshpass_missing_status"))
                 self.store.record_history_end(pane, "failed", detail=message)
                 self.mark_pane_for_reconnect(session, pane, message)
                 return
@@ -1691,7 +1903,6 @@ class TerminalSessionsMixin:
             message = self.t("ssh_start_failed").format(error=exc.message)
             terminal.feed(f"{message}\r\n".encode())
             pane.connected = False
-            pane.status_label.set_label("Error")
             self.store.record_history_end(pane, "failed", detail=exc.message)
             self.mark_pane_for_reconnect(
                 session,
@@ -1708,7 +1919,7 @@ class TerminalSessionsMixin:
             kind="ssh",
             pid=child_process.pid,
         )
-        pane.status_label.set_label(f"{server.name} · PID {child_process.pid}")
+        self.update_pane_status(pane, f"PID {child_process.pid}")
         self.start_terminal_timer(session, terminal)
         session.split_child_pids[id(terminal)] = child_process.pid
         session.split_processes[id(terminal)] = child_process
@@ -1773,7 +1984,7 @@ class TerminalSessionsMixin:
             return
         if pane is not None:
             pane.disconnect_button.set_sensitive(False)
-            pane.status_label.set_label(
+            self.update_pane_status(pane,
                 self.t("session_disconnected_status").format(title=pane.title)
                 if pane.disconnect_requested
                 else self.t("session_closed_status").format(title=pane.title)
@@ -1797,7 +2008,7 @@ class TerminalSessionsMixin:
         if not session.active_terminal_ids:
             session.connected = False
             session.disconnect_button.set_sensitive(False)
-            session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
+            self.update_pane_status(self.pane_state(session, session.terminal), self.t("session_closed_status").format(title=session.title))
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
         GLib.idle_add(self.remove_split_terminal_pane, terminal, session)
 
@@ -1917,7 +2128,7 @@ class TerminalSessionsMixin:
         session: TerminalSession,
         terminal: Vte.Terminal,
     ) -> None:
-        session.status_label.set_label(
+        self.update_pane_status(self.pane_state(session, terminal),
             self.t("session_disconnected_status").format(title=session.title)
         )
         if session.active_terminal_ids:
@@ -2081,6 +2292,18 @@ class TerminalSessionsMixin:
             self.store.data.terminal,
             audible_bell=self.store.data.app.audible_bell,
         )
+        TerminalSessionsMixin.apply_retron_terminal_background(self, terminal)
+
+    def apply_retron_terminal_background(self, terminal: Vte.Terminal) -> None:
+        runtime = getattr(self, "retron_runtime", None)
+        if runtime is None:
+            return
+        values = runtime.terminal_background()
+        background = Gdk.RGBA()
+        background.parse(values["background_color"] if values else self.store.data.terminal.background)
+        if values:
+            background.alpha = values["background_opacity"]
+        terminal.set_color_background(background)
 
     def apply_terminal_settings_to_open_tabs(self) -> None:
         for session in self.session_registry.sessions():
@@ -2111,6 +2334,7 @@ class TerminalSessionsMixin:
         minutes, seconds = divmod(remainder, 60)
         session.timer_label.set_label(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
         self.update_local_session_directory_title(session)
+        self.update_pane_status(self.pane_state(session, session.terminal))
         return GLib.SOURCE_CONTINUE
 
     def update_pane_timer(self, session: TerminalSession, terminal: Vte.Terminal) -> bool:
@@ -2121,6 +2345,7 @@ class TerminalSessionsMixin:
         hours, remainder = divmod(elapsed, 3600)
         minutes, seconds = divmod(remainder, 60)
         pane.timer_label.set_label(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+        self.update_pane_status(pane)
         return GLib.SOURCE_CONTINUE
 
     def terminate_split_processes(self, session: TerminalSession) -> None:
@@ -2262,7 +2487,7 @@ class TerminalSessionsMixin:
             pane.disconnect_requested = False
             return
         pane.disconnect_button.set_sensitive(False)
-        pane.status_label.set_label(self.t("session_disconnected_status").format(title=pane.title))
+        self.update_pane_status(pane, self.t("session_disconnected_status").format(title=pane.title))
         terminal.feed(f"\r\n{self.t('session_disconnected_terminal')}\r\n".encode())
         self.toast_label.set_label(self.t("session_disconnected_toast").format(title=pane.title))
         if process is None:
@@ -2296,7 +2521,8 @@ class TerminalSessionsMixin:
         self.session_observer.flush()
         session.connected = False
         session.disconnect_button.set_sensitive(False)
-        session.status_label.set_label(self.t("session_disconnected_status").format(title=session.title))
+        for pane in session.panes.values():
+            self.update_pane_status(pane, self.t("session_disconnected_status").format(title=pane.title))
         session.terminal.feed(f"\r\n{self.t('session_disconnected_terminal')}\r\n".encode())
         self.update_session_tab_title(session, self.t("tab_disconnected_title").format(title=session.title))
         self.toast_label.set_label(self.t("session_disconnected_toast").format(title=session.title))
@@ -2370,6 +2596,7 @@ class TerminalSessionsMixin:
             pane.release_exit_handler()
         if getattr(self, "shutdown_in_progress", False):
             return
+        self.update_pane_status(pane)
         pane.disconnect_button.set_sensitive(False)
         if not pane.disconnect_requested and clean_exit and session.active_terminal_ids:
             self.remove_terminal_pane_if_split(terminal, session)
@@ -2384,9 +2611,8 @@ class TerminalSessionsMixin:
                 self.toast_label.set_label(self.t("session_closed_toast").format(title=server.name))
                 return
             self.remove_terminal_pane_if_split(terminal, session)
-            session.status_label.set_label(self.t("session_closed_status").format(title=session.title))
+            self.update_pane_status(pane, self.t("session_closed_status").format(title=session.title))
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
             self.toast_label.set_label(self.t("session_closed_toast").format(title=server.name))
             return
-        session.status_label.set_label(f"Error: {session.title}")
         self.mark_session_for_reconnect(session, self.t("connection_failed_toast").format(title=server.name))

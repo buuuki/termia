@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .constants import (
+    DEFAULT_DARK_GLOW_BORDER_COLOR,
     DEFAULT_PROMPT_COLOR,
     DEFAULT_SPLIT_SEPARATOR_COLOR,
     DEFAULT_SPLIT_SEPARATOR_THICKNESS,
@@ -53,6 +54,7 @@ class LocalTerminalProfile:
     command_on_start: str = ""
     tab_title: str = ""
     split_layout: str = "none"
+    password: str = ""
 
 
 @dataclass
@@ -127,6 +129,8 @@ class AppSettings:
     show_sidebar_on_startup: bool = True
     show_session_status_bar: bool = False
     audible_bell: bool = False
+    confirm_multiline_paste: bool = True
+    copy_on_selection: bool = True
     confirm_disconnect: bool = True
     confirm_close_app: bool = False
     send_password_shortcut: bool = False
@@ -137,6 +141,9 @@ class AppSettings:
     debug_enabled: bool = False
     notes_editor: dict[str, Any] = field(default_factory=dict)
     keybindings: dict[str, str] = field(default_factory=lambda: DEFAULT_KEYBINDINGS.copy())
+    split_focus_shortcuts_version: int = 1
+    terminal_colors_by_theme: dict[str, dict[str, str]] = field(default_factory=dict)
+    dark_glow_border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR
 
 
 @dataclass

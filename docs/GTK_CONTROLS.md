@@ -14,6 +14,30 @@ Issue [#360](https://github.com/buuuki/termia/issues/360) tracks that comparison
 
 ## Classification
 
+The Retron appearance editor (#486) reuses the non-modal `DialogWindow` shell
+and a native titlebar `Gtk.Button`, visible only while Retron is selected.
+The titlebar and General preferences share the same editor instance,
+with the button disabled while the connection-unlock overlay is active.
+The editor uses a native `Gtk.ListBox`, `Gtk.DropDown`, `Gtk.ColorDialogButton`,
+`Gtk.Scale`, `Gtk.CheckButton`, `Gtk.Switch` and scrolling containers.
+Numeric sliders display their values and retain native keyboard adjustment.
+The property scroller uses GTK's automatically hiding overlay scrollbar and
+reserves a 40px content end margin to keep override checkboxes clear of it.
+The editor is a non-transient application window with a native `Gtk.HeaderBar`
+requesting minimize, maximize and close controls. Its runtime still owns
+shutdown and cancellation; GTK owns window movement and window-state actions.
+GTK owns control interaction. Termia owns per-property inheritance, the single
+editor instance, Save/Apply/Cancel transaction and deferred preview cleanup.
+The titlebar launcher (`tool_launcher.py`) uses native `Gtk.MenuButton`,
+`Gtk.Popover`, adaptive `Gtk.FlowBox` and icon/label buttons. GTK owns wrapping,
+focus, activation and dismissal; Termia owns availability and deferred dispatch.
+Diagnostics (`diagnostics_view.py`) reuses `DialogWindow`, labels, grids,
+expanders, text views and scrollers; its controller owns sampling lifetime.
+Named configurations use a native `Gtk.DropDown` with bounded labels and standard
+buttons. Save as and Rename reuse `DialogWindow` with `Gtk.Entry`; unsaved-switch
+and delete confirmations use `Gtk.AlertDialog`. Termia owns name validation,
+selection IDs, atomic persistence and cancellation of pending dialogs on close.
+
 Encrypted connection import uses the shared modal `DialogWindow` with
 `Gtk.PasswordEntry` and native response buttons in `src/termia/config_actions.py`.
 GTK owns dialog presentation; Termia validates the password, handles retry and
@@ -50,8 +74,15 @@ a standard GTK control does not justify crossing those boundaries.
 
 | # | Surface | Standard GTK control | Source and Termia-owned behavior |
 |---:|---|---|---|
+| — | Retron secondary windows | Existing GTK windows, headers, lists, scrolling regions and native controls | `theme_styles.py` shares scoped frames and palette rules; views add presentation roles only. `DialogWindow` exposes `termia-dialog-panel` around content and actions, with `termia-dialog-content` inside. Native message alerts stay separate; Notes retains its saved editor colors and GTK owns all interactions |
+| — | Retron title-hold feedback | Existing `Gtk.WindowHandle` and native titlebars | `app.py` observes primary-button events without claiming them. Retron briefly strengthens the outer frame; title controls and message alerts are excluded. GTK/compositor owns movement and maximization |
+| — | Retron appearance | Native controls in the shared non-modal window composition | `retron_editor.py`, `retron_runtime.py`; shared/component/state overrides, live preview and independent Save/Cancel. General links to the editor; existing border preferences seed its profile |
+| — | Native confirmation alerts (session restore, Notes deletion and related confirmations) | `Gtk.AlertDialog` | `app.py`, `notes_dialogs.py` and other alert callers; GTK retains modal/keyboard behavior and response indices; `theme_styles.py` scopes Retron message-window colors, border and compact spacing without replacing the native control |
+| — | Main header and server-sidebar separator | `Gtk.HeaderBar`, `Gtk.Paned` | `app.py` adds scoped classes; `theme_styles.py` styles borders, spacing and separator feedback while GTK owns centering, window dragging/controls and the native wide resize handle |
+| — | Connection private SSH key selection | `Gtk.FileDialog`, `Gtk.Entry` and native icon button | `src/termia/connection_dialogs.py`; fills only a local file path, preserves manual entry and ignores results after the form closes |
+| — | Multiline terminal paste confirmation | Existing `DialogWindow`, read-only `Gtk.TextView`, `Gtk.ScrolledWindow` and native buttons | `src/termia/terminal_sessions.py`; Cancel is the default; Termia snapshots clipboard text, validates the original pane/process and intercepts middle-button primary pastes while protection is enabled; scoped preview surface/selection/scrollbar CSS and native text margins do not transform the buffer |
 | — | Update dependency review | Selectable `Gtk.Label`, `Gtk.ScrolledWindow`, native `Gtk.Button`, `Gtk.Expander` and read-only `Gtk.TextView` | `src/termia/update_view.py`; installation type, requirements, assisted installation, recheck dispatch and bounded copyable diagnostics; shared content/action insets without nested padding |
-| — | Main menu | `Gtk.PopoverMenu` with `Gio.Menu` and native nested submenus | `src/termia/main_menu.py`; actions and submenu reset |
+| — | Main menu | `Gtk.PopoverMenu` with `Gio.Menu` and native nested submenus | `src/termia/main_menu.py`; actions, submenu reset, delayed leave-to-close on the submenu row/panel, and initial-highlight clearing without removing keyboard focus |
 | — | Notes Import/Export menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; scope and write guards |
 | 1 | Terminal context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/terminal_menus.py`; scoped actions |
 | 2 | Terminal Split submenu | Nested GTK menu model | `src/termia/terminal_menus.py`; submenu leave handling |
@@ -63,8 +94,9 @@ a standard GTK control does not justify crossing those boundaries.
 | 8 | Terminal-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/tabs.py`; clicked-session validation |
 | 9 | Note-list item context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; note identity and write guards |
 | 10 | Notes category context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; category identity and write guards |
-| 11 | Notes editor-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; saved-note and draft identity |
+| 11 | Notes editor-tab context menu | `Gtk.PopoverMenu` with `Gio.Menu` | `src/termia/notes_dialogs.py`; saved-note and draft identity; Rename, Delete, Clone, Save and Close tab dispatch |
 | 13 | Notes editor tab bar | `Gtk.Notebook` | `src/termia/notes_dialogs.py`; shared editor, draft identity, save guards, close action, and tab menu |
+| — | Notes editor and appearance toolbar | `Gtk.Frame`, `Gtk.ScrolledWindow`, `GtkSource.View`, and `Gtk.ToggleButton` | `src/termia/notes_dialogs.py`; native frames contain the scrolling editor and toolbar. The toggle points up to hide and down to show; Retron supplies rounded glow borders without changing saved editor colors |
 | 14 | Connections tree | `Gtk.TreeListModel`, `Gtk.TreeExpander`, `Gtk.ListView`, and `Gtk.SingleSelection` | `src/termia/sidebar.py`, `src/termia/sidebar_projection.py`; Termia supplies projected identities, filtering, expansion preferences, context actions, and private group drop targets; GTK owns selection, disclosure, and navigation |
 | 15 | Notes tree | `Gtk.TreeListModel`, `Gtk.TreeExpander`, `Gtk.ListView`, and `Gtk.SingleSelection` | `src/termia/notes_dialogs.py`; Notes supplies hierarchy data, scope actions, saved expansion, menus, and private drag targets |
 | 16 | Notes line-number gutter | `GtkSource.View` from GtkSourceView 5 | `src/termia/notes_dialogs.py`; saved visibility and Notes colors |
@@ -96,8 +128,10 @@ and native popover menu; this approval does not extend to other custom controls.
 Item 14 retains its native GTK control. Items 17–19 have documented reasons for
 retaining their current compositions.
 
-Under #380, item 14 also supplies nonselectable headers and content-click
-expansion, with scoped flat pressed-row styling and compact object selection.
+Under #474, item 14 restores selectable group/section headers, revising #380.
+Content clicks select, focus and toggle a header once; native activation toggles
+it with Enter. Compact selection and flat pressed-row styling remain. Search
+notifications already applied by keyboard navigation do not rebuild the model.
 Main/tab/server/group/terminal menus clear their initial selected state once;
 terminal menus restore focus after VTE click handling. Nested terminal menus
 leave dismissal to the root and restore parent focus without reopening it.
@@ -106,6 +140,10 @@ menu widgets. Tab/server/group arrows are drawn and positioned by GTK.
 See [the laboratory record](DOCKER_LABORATORY.md) for the investigations.
 
 ### Item 17: justified capture exception
+
+Keyboard Shortcuts uses an independent non-modal, resizable `DialogWindow`
+with full-width capture labels; the snippet editor retains compact labels.
+The settings window closes when its owning main window is destroyed.
 
 `KeybindingCaptureRow` is shared by preferences and the snippet editor. It uses
 standard GTK buttons and event/focus controllers, but Termia owns the recording

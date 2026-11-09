@@ -255,11 +255,14 @@ class NotesDialogs:
         header_actions.append(self.import_export_menu_button)
 
         paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        paned.set_position(330)
+        paned.add_css_class("termia-content-paned")
+        paned.set_position(280)
         paned.set_vexpand(True)
         root.append(paned)
 
         list_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        list_panel.add_css_class("termia-surface-panel")
+        list_panel.add_css_class("termia-notes-tree")
         list_panel.set_vexpand(True)
         self.notes_tree_root = Gio.ListStore.new(NotesTreeNode)
         self.notes_tree_model = Gtk.TreeListModel.new(
@@ -279,7 +282,7 @@ class NotesDialogs:
         creation_controls = self.build_creation_controls()
         list_panel.append(creation_controls)
         self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_size_request(300, -1)
+        self.search_entry.set_size_request(250, -1)
         self.search_entry.set_margin_end(6)
         self.search_entry.set_placeholder_text(self.translate("notes_search"))
         self.search_entry.connect("search-changed", self.on_search_changed)
@@ -293,7 +296,7 @@ class NotesDialogs:
         paned.set_start_child(list_panel)
         self.notes_list_panel = list_panel
         self.notes_list_paned = paned
-        self.notes_list_width = 330
+        self.notes_list_width = 280
         self.update_notes_list_toggle()
 
         detail_area = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -307,7 +310,7 @@ class NotesDialogs:
         self.editor_notebook.connect("page-reordered", self.on_editor_notebook_page_reordered)
         self.editor_tabs_bar = self.editor_notebook
         self._syncing_editor_notebook = False
-        self.toolbar_toggle = Gtk.ToggleButton(icon_name="view-reveal-symbolic")
+        self.toolbar_toggle = Gtk.ToggleButton(icon_name="pan-up-symbolic")
         self.toolbar_toggle.set_tooltip_text(self.translate("notes_toolbar"))
         self.editor_notebook.set_action_widget(self.toolbar_toggle, Gtk.PackType.END)
 
@@ -332,14 +335,20 @@ class NotesDialogs:
         self.text_view = text_view
         self.build_editor_toolbar(editor)
         text_scroller = Gtk.ScrolledWindow()
-        text_scroller.add_css_class("termia-notes-editor")
         text_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         text_scroller.set_vexpand(True)
         text_scroller.set_child(text_view)
-        editor.append(text_scroller)
+        editor_frame = Gtk.Frame()
+        editor_frame.add_css_class("termia-notes-editor")
+        editor_frame.set_overflow(Gtk.Overflow.HIDDEN)
+        editor_frame.set_vexpand(True)
+        editor_frame.set_child(text_scroller)
+        editor.append(editor_frame)
 
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         configure_action_area(footer)
+        footer.set_margin_top(0)
+        footer.set_margin_bottom(4)
         self.status_label = Gtk.Label()
         self.status_label.set_xalign(0)
         self.status_label.set_hexpand(True)
@@ -347,16 +356,6 @@ class NotesDialogs:
         self.modified_label = Gtk.Label()
         self.modified_label.add_css_class("dim-label")
         footer.append(self.modified_label)
-        self.save_button = Gtk.Button(label=self.translate("save"))
-        self.save_button.connect("clicked", lambda *_: self.save_editor())
-        footer.append(self.save_button)
-        self.delete_button = Gtk.Button(label=self.translate("notes_delete"))
-        self.delete_button.add_css_class("destructive-action")
-        self.delete_button.connect("clicked", lambda *_: self.confirm_delete_note())
-        footer.append(self.delete_button)
-        self.close_editor_button = Gtk.Button(label=self.translate("close_tab"))
-        self.close_editor_button.connect("clicked", lambda *_: self.close_active_editor_tab())
-        footer.append(self.close_editor_button)
         editor.append(footer)
         editor_workspace.append(editor)
         self.editor_workspace = editor_workspace
@@ -409,14 +408,17 @@ class NotesDialogs:
             color.set_tooltip_text(self.translate(key) + " · " + self.translate("notes_editor_appearance"))
             color.connect("color-set", lambda widget, name=key: self.update_editor_appearance({name: widget.get_rgba().to_string()}))
             toolbar.append(color)
-        self.editor_toolbar = Gtk.ScrolledWindow()
-        self.editor_toolbar.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
-        self.editor_toolbar.set_overlay_scrolling(False)
-        self.editor_toolbar.set_propagate_natural_height(True)
-        self.editor_toolbar.set_child(toolbar)
+        toolbar_scroller = Gtk.ScrolledWindow()
+        toolbar_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        toolbar_scroller.set_overlay_scrolling(False)
+        toolbar_scroller.set_propagate_natural_height(True)
+        toolbar_scroller.set_child(toolbar)
+        self.editor_toolbar = Gtk.Frame()
+        self.editor_toolbar.add_css_class("termia-notes-toolbar-frame")
+        self.editor_toolbar.set_child(toolbar_scroller)
         editor.append(self.editor_toolbar)
         self.toolbar_toggle.set_active(settings.get("visible", True))
-        self.editor_toolbar.set_visible(self.toolbar_toggle.get_active())
+        self.sync_editor_toolbar_visibility(self.toolbar_toggle)
         self.toolbar_toggle.connect("toggled", self.on_toolbar_toggled)
         self.editor_css_provider = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_display(
@@ -429,10 +431,19 @@ class NotesDialogs:
         self.text_view.set_show_line_numbers(enabled)
         self.update_editor_appearance({"line_numbers": enabled})
 
-    def on_toolbar_toggled(self, button: Gtk.ToggleButton) -> None:
+    def sync_editor_toolbar_visibility(self, button: Gtk.ToggleButton) -> None:
         visible = button.get_active()
+        button.set_icon_name("pan-up-symbolic" if visible else "pan-down-symbolic")
         self.editor_toolbar.set_visible(visible)
-        self.update_editor_appearance({"visible": visible})
+        container = self.editor_toolbar.get_parent()
+        if visible:
+            container.remove_css_class("termia-notes-toolbar-hidden")
+        else:
+            container.add_css_class("termia-notes-toolbar-hidden")
+
+    def on_toolbar_toggled(self, button: Gtk.ToggleButton) -> None:
+        self.sync_editor_toolbar_visibility(button)
+        self.update_editor_appearance({"visible": button.get_active()})
 
     def update_editor_appearance(self, values: dict[str, Any]) -> None:
         settings = {**self.store.data.app.notes_editor, **values}
@@ -617,8 +628,6 @@ class NotesDialogs:
             self.category_add_button,
             self.add_button,
             self.text_view,
-            self.save_button,
-            self.delete_button,
         ):
             widget.set_sensitive(writable)
         self.set_import_export_actions_visible(self.scope_mode == "personal")
@@ -1798,12 +1807,26 @@ class NotesDialogs:
             popover = self.build_note_tab_context_menu()
             self._note_tab_menu = popover
         model = Gio.Menu()
-        model.append(self.translate("notes_rename"), "note-tab.rename")
+        for label, action in (
+            ("notes_rename", "rename"),
+            ("notes_delete", "delete"),
+            ("notes_clone", "clone"),
+            ("notes_save", "save"),
+            ("close_tab", "close"),
+        ):
+            model.append(self.translate(label), f"note-tab.{action}")
         popover.set_menu_model(model)
         self._note_tab_menu_target = (key, tab, parent, self.window)
         self._note_tab_rename_action.set_enabled(
             not self.store.read_only and not self.store.encryption_locked
         )
+        writable = not self.store.read_only and not self.store.encryption_locked
+        for name, action in self._note_tab_actions.items():
+            action.set_enabled(
+                name == "close" or (
+                    writable and (name == "save" or tab.note_id is not None)
+                )
+            )
         rect = Gdk.Rectangle()
         rect.x, rect.y = int(point.x), int(point.y)
         rect.width = rect.height = 1
@@ -1831,6 +1854,12 @@ class NotesDialogs:
         rename.connect("activate", activate_rename)
         actions.add_action(rename)
         self._note_tab_rename_action = rename
+        self._note_tab_actions = {}
+        for name in ("delete", "clone", "save", "close"):
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", self.on_note_tab_menu_action, name)
+            actions.add_action(action)
+            self._note_tab_actions[name] = action
         popover = Gtk.PopoverMenu.new_from_model(None)
         popover.add_css_class("termia-menu-popover")
         popover.set_has_arrow(False)
@@ -1841,6 +1870,49 @@ class NotesDialogs:
         # can be removed while GTK is returning focus from its rename dialog.
         popover.set_parent(self.editor_tabs_bar)
         return popover
+
+    def on_note_tab_menu_action(self, _action, _parameter, name: str) -> None:
+        target = self._note_tab_menu_target
+        self._note_tab_menu_target = None
+        self.close_note_tab_context_menu()
+        if target is None:
+            return
+        key, tab, parent, window = target
+
+        def dispatch_if_current() -> bool:
+            if (
+                self.editor_tabs.get(key) is not tab
+                or tab.container_widget is not parent
+                or self.window is not window
+                or window is None
+                or not window.get_visible()
+                or parent.get_root() is not window
+            ):
+                return GLib.SOURCE_REMOVE
+            if name == "close":
+                self.close_editor_tab(key)
+                return GLib.SOURCE_REMOVE
+            if self.store.read_only or self.store.encryption_locked:
+                return GLib.SOURCE_REMOVE
+            if name not in ("save", "clone", "delete"):
+                return GLib.SOURCE_REMOVE
+            if name != "save" and (
+                tab.note_id is None or self.find_note(tab.note_id) is None
+            ):
+                return GLib.SOURCE_REMOVE
+            self.activate_editor_tab(key)
+            if self.active_editor_tab_key != key:
+                return GLib.SOURCE_REMOVE
+            if name == "save":
+                self.save_editor()
+            elif name == "clone":
+                self.clone_note(tab.note_id)
+            else:
+                self.confirm_delete_note(tab.note_id)
+            return GLib.SOURCE_REMOVE
+
+        # Release GTK's popup grab before opening confirmation dialogs.
+        GLib.timeout_add(100, dispatch_if_current)
 
     def on_note_tab_rename_action(self, key: str) -> None:
         tab = self.editor_tabs.get(key)
@@ -2452,8 +2524,6 @@ class NotesDialogs:
         self.text_view.set_sensitive(enabled)
         self.text_view.set_editable(writable)
         self.text_view.set_cursor_visible(writable)
-        self.save_button.set_sensitive(writable)
-        self.delete_button.set_sensitive(writable and self.current_note_id is not None)
 
     def create_note(self) -> None:
         if not self.ensure_writable():

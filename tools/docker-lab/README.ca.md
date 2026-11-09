@@ -11,6 +11,10 @@ La [base independent Ubuntu 26.04 GNOME](gnome26/README.ca.md) s'està
 construint a #430. L'escriptori experimental GNOME Wayland/RDP té comprovacions
 funcionals; falten Termia i l'acceptació completa del laboratori.
 
+Per a l’escriptori persistent Ubuntu 24.04 amb GNOME/Wayland i RDP nadiu,
+consulta [la guia Ubuntu 24 GNOME](gnome24/README.ca.md). Hi consta l’estat
+de validació; el laboratori X11/Weston següent és independent.
+
 ## Primera arrencada en un altre PC
 
 Cal Linux, Docker Engine local accessible per al teu usuari, Git, Python 3,

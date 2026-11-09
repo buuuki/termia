@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from termia.app import (
     Gtk,
     TermiaWindow,
+    WindowThemeScope,
     gnome_interface_settings,
     system_prefers_dark_theme,
 )
@@ -60,12 +61,14 @@ class AppThemeTests(unittest.TestCase):
 
         TermiaWindow.apply_app_theme(self.host("dark"))
         TermiaWindow.apply_app_theme(self.host("light"))
+        TermiaWindow.apply_app_theme(self.host("dark_glow"))
 
         self.assertEqual(
             settings.set_property.call_args_list,
             [
                 (("gtk-application-prefer-dark-theme", True),),
                 (("gtk-application-prefer-dark-theme", False),),
+                (("gtk-application-prefer-dark-theme", True),),
             ],
         )
 
@@ -161,9 +164,10 @@ class AppThemeTests(unittest.TestCase):
         host = SimpleNamespace(
             store=SimpleNamespace(
                 data=SimpleNamespace(
-                    app=SimpleNamespace(theme="system"),
+                    app=SimpleNamespace(theme="system", dark_glow_border_color="#55BAC9"),
                     terminal=SimpleNamespace(
                         background="#202020",
+                        foreground="#ffffff",
                         split_separator_color="#008712",
                         split_separator_thickness=1,
                     ),
@@ -183,6 +187,26 @@ class AppThemeTests(unittest.TestCase):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
         self.assertIs(host._application_css_provider, provider)
+
+    @patch("termia.app.Gtk.Window.get_toplevels")
+    def test_fixed_theme_marks_existing_and_future_windows_and_releases_observer(self, get_toplevels):
+        model = Mock()
+        get_toplevels.return_value = model
+        window = Mock()
+        model.get_n_items.return_value = 1
+        model.get_item.return_value = window
+        scope = WindowThemeScope()
+        scope.set_enabled(True)
+        window.add_css_class.assert_called_with("termia-dark-glow")
+        future = Mock()
+        model.get_item.return_value = future
+        model.connect.call_args.args[1](model, 1, 0, 1)
+        future.add_css_class.assert_called_with("termia-dark-glow")
+        scope.set_enabled(False)
+        future.remove_css_class.assert_called_with("termia-dark-glow")
+        scope.close()
+        model.disconnect.assert_called_once_with(model.connect.return_value)
+        self.assertIsNone(scope.model)
 
 
 if __name__ == "__main__":

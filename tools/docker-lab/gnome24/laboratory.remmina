@@ -1,0 +1,13 @@
+[remmina]
+name=Termia Ubuntu 24 GNOME laboratory
+protocol=RDP
+server=127.0.0.1:12389
+username=lab
+resolution_mode=0
+resolution_width=1440
+resolution_height=900
+colordepth=63
+disableclipboard=1
+disablepasswordstoring=1
+cert_ignore=0
+viewmode=1

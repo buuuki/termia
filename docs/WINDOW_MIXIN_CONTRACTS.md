@@ -14,6 +14,14 @@ couplings are observations, not automatic exceptions to those rules.
 
 ## Shared window services
 
+`app.py` composes the Retron editor's profile store and runtime. The runtime
+receives only a write guard, style context and a background-refresh callback;
+it does not receive the connection store or terminal session objects. The
+terminal mixin queries the runtime's optional effective background when creating
+or configuring a pane. Retron changes only VTE background paint, leaving process
+ownership and other terminal settings with their existing owners. Application
+shutdown retires the editor, sources and CSS provider explicitly.
+
 Most mixins expect the window to provide some combination of these services:
 
 - `store`: the `ConnectionStore` and its app, terminal, connection, history,
@@ -57,8 +65,9 @@ the mixins:
   `server_scroller`, `summary_label`, `title_label`, `info_label`,
   `terminal_stack` (`Gtk.Stack`), `session_tab_bar` (`Gtk.Box`),
   `session_tab_scroller` (`Gtk.ScrolledWindow`) and `session_tab_controls`.
-- Header widgets: sidebar, new-tab, menu, read-only, add, expand, and collapse
-  controls.
+- Header widgets: sidebar, new-tab, Retron editor, menu, read-only, add, expand,
+  and collapse controls. The Retron action shares the General preferences
+  editor entry point and follows theme visibility and unlock-overlay sensitivity.
 
 Some mixins add transient state after construction:
 
@@ -137,7 +146,10 @@ keybinding dialogs have comparatively small contracts.
   and private server-to-group drags. Recycled rows and deferred callbacks are
   checked against the current model generation. GTK model reads and expansion
   persistence wait until expansion notifications finish; disappearing child
-  rows must not overwrite their saved expansion preferences.
+  rows must not overwrite their saved expansion preferences. Group/section
+  headers participate in native selection; content clicks select/focus and
+  toggle once. Redundant search notifications preserve the current model.
+  Manual folding while filtering does not change saved expansion preferences.
 - Owns reusable native menus for servers, groups, local profiles and saved
   workspaces. Each dispatch revalidates the captured object ID and permissions;
   menu construction no longer supplies generic custom rows to other mixins.
@@ -207,6 +219,11 @@ keybinding dialogs have comparatively small contracts.
   explicit `TerminalPane` state for every VTE pane, including its connection
   identity, managed process, status widgets, reconnect state, history, and
   statistics timing.
+- `update_pane_status()` renders each pane's process state and saved
+  connection/profile name, with escaped markup and transient `status_detail`
+  in a tooltip. Existing timers and language refresh update the presentation;
+  retired panes are skipped. No additional process probe, timer or signal is
+  added; an active SSH client is not proof of completed authentication.
 - Cross-mixin dependencies: tab creation, ordering, activation, title updates,
   closing, terminal menus, and terminal preferences. Tab-triggered duplication,
   disconnection, confirmation, and split cleanup are exposed through the
@@ -329,6 +346,13 @@ The principal dependency hotspots are:
    preference changes call back into sidebar refresh and selection state.
 
 ## Recommended extraction order
+
+The launcher is composed in `app.py` using a per-window `ToolRegistry` of
+callbacks, reusing the existing Retron editor runtime. `TermiaApp` owns the
+shared `DiagnosticsTool` and supplies immutable counts and process identities
+across its terminal windows through `diagnostic_context()`. Diagnostics receives
+no main window, connection store or live session. Its worker never calls GTK.
+Window destruction stops monitoring; application shutdown also closes the tool.
 
 1. Define a small host interface for translation, feedback, writability, and
    dialog parenting.

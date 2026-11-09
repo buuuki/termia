@@ -19,6 +19,8 @@ from .dialog_window import DialogWindow
 from .i18n import LANGUAGES, detect_system_language
 from .models import AppSettings
 from .stores import ReadOnlyStoreError
+from .terminal_config import rgba_to_hex
+from .theme_styles import DARK_GLOW_THEME
 
 GENERAL_PREFERENCE_FIELDS = (
     ("theme", "theme"),
@@ -30,6 +32,8 @@ GENERAL_PREFERENCE_FIELDS = (
     ("show_sidebar_on_startup", "show_sidebar_on_startup"),
     ("show_session_status_bar", "show_session_status_bar"),
     ("audible_bell", "audible_bell"),
+    ("confirm_multiline_paste", "confirm_multiline_paste"),
+    ("copy_on_selection", "copy_on_selection"),
     ("confirm_disconnect", "confirm_disconnect"),
     ("confirm_close_app", "confirm_close_app"),
     ("send_credential_shortcut", "send_password_shortcut"),
@@ -77,6 +81,17 @@ class GeneralPreferencesMixin:
             append_choice(language_combo, language_id, label)
         select_choice(language_combo, self.store.data.app.language)
 
+        border_controls = Gtk.Button(label=self.t("retron_editor"))
+        border_controls.set_tooltip_text(self.t("retron_open_hint"))
+        border_controls.set_sensitive(self.store.data.app.theme == DARK_GLOW_THEME)
+
+        def open_retron_editor(_button):
+            # Keep pending General values while the modeless editor is used.
+            dialog.set_modal(False)
+            self.on_retron_editor()
+
+        border_controls.connect("clicked", open_retron_editor)
+
         checks = [
             ("close_tab_on_disconnect", self.store.data.app.close_tab_on_disconnect),
             ("close_tab_on_ssh_exit", self.store.data.app.close_tab_on_ssh_exit),
@@ -89,6 +104,8 @@ class GeneralPreferencesMixin:
             ("confirm_close_app", self.store.data.app.confirm_close_app),
             ("send_credential_shortcut", self.store.data.app.send_password_shortcut),
             ("send_credential_enter", self.store.data.app.send_password_enter),
+            ("confirm_multiline_paste", self.store.data.app.confirm_multiline_paste),
+            ("copy_on_selection", self.store.data.app.copy_on_selection),
             ("debug_mode", self.store.data.app.debug_enabled),
         ]
         check_buttons = [Gtk.CheckButton(label=self.t(key)) for key, _ in checks]
@@ -135,7 +152,10 @@ class GeneralPreferencesMixin:
             self.t("debug_log_path").format(path=DEBUG_LOG_FILE)
         )
 
-        rows: list[tuple[str, Gtk.Widget]] = [(self.t("theme"), theme_combo), (self.t("language"), language_combo)]
+        rows: list[tuple[str, Gtk.Widget]] = [
+            (self.t("theme"), theme_combo), (self.t("theme_dark_glow"), border_controls),
+            (self.t("language"), language_combo),
+        ]
         rows.extend(("", button) for button in check_buttons[:9])
         shortcut_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         shortcut_box.set_hexpand(True)
@@ -145,15 +165,26 @@ class GeneralPreferencesMixin:
         enter_box.set_hexpand(True)
         enter_box.append(send_password_enter)
         enter_box.append(enter_hint)
-        rows.extend((("", shortcut_box), ("", enter_box), ("", check_buttons[-1])))
+        rows.extend((("", shortcut_box), ("", enter_box), ("", check_buttons[11]), ("", check_buttons[12]), ("", check_buttons[-1])))
         for index, (label_text, widget) in enumerate(rows):
             label = Gtk.Label(label=label_text)
             label.set_xalign(0)
+            if widget is border_controls:
+                def update_border_visibility(_combo, _spec, label=label):
+                    visible = choice_id(theme_combo) == DARK_GLOW_THEME
+                    label.set_visible(visible)
+                    border_controls.set_visible(visible)
+
+                theme_combo.connect("notify::selected", update_border_visibility)
+                update_border_visibility(theme_combo, None)
             widget.set_hexpand(True)
             grid.attach(label, 0, index, 1, 1)
             grid.attach(widget, 1, index, 1, 1)
         dialog.get_content_area().append(grid)
-        dialog.connect("response", self.on_app_preferences_response, theme_combo, language_combo, *check_buttons)
+        dialog.connect(
+            "response", self.on_app_preferences_response,
+            theme_combo, language_combo, *check_buttons,
+        )
         dialog.present()
 
     @staticmethod
@@ -164,10 +195,15 @@ class GeneralPreferencesMixin:
         }
 
     def on_app_preferences_response(self, dialog: DialogWindow, response: Gtk.ResponseType, theme_combo: Gtk.DropDown,
-                                    language_combo: Gtk.DropDown, *check_buttons: Gtk.CheckButton) -> None:
+                                    language_combo: Gtk.DropDown, *check_buttons: Gtk.CheckButton,
+                                    border_color_button: Gtk.ColorButton | None = None) -> None:
         if response == Gtk.ResponseType.OK:
             previous_values = self.general_preference_values(self.store.data.app)
             values = [button.get_active() for button in check_buttons]
+            color_options = (
+                {"dark_glow_border_color": rgba_to_hex(border_color_button.get_rgba())}
+                if border_color_button is not None else {}
+            )
             try:
                 self.store.update_app_settings(AppSettings(
                     theme=choice_id(theme_combo) or "system",
@@ -180,9 +216,11 @@ class GeneralPreferencesMixin:
                     confirm_disconnect=values[7], confirm_close_app=values[8],
                     send_password_shortcut=values[9], send_password_enter=values[10],
                     connection_storage_mode=self.store.data.app.connection_storage_mode,
-                    debug_enabled=values[11],
+                    confirm_multiline_paste=values[11],
+                    copy_on_selection=values[12],
+                    debug_enabled=values[13],
                     keybindings=self.store.data.app.keybindings,
-                ))
+                ), **color_options)
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
                 dialog.destroy()
@@ -194,7 +232,10 @@ class GeneralPreferencesMixin:
                     self.pending_session_snapshot = []
                     self.session_snapshot_store.clear()
             self.apply_app_theme()
-            if previous_values["audible_bell"] != self.store.data.app.audible_bell:
+            if (
+                previous_values["audible_bell"] != self.store.data.app.audible_bell
+                or previous_values["theme"] != self.store.data.app.theme
+            ):
                 self.apply_terminal_settings_to_open_tabs()
             self.apply_session_status_bar_visibility_to_open_tabs()
             self.set_sidebar_visible(self.store.data.app.show_sidebar_on_startup)

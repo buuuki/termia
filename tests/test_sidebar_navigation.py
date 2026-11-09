@@ -1,9 +1,12 @@
+import shlex
 import shutil
 import subprocess
+import tempfile
 import time
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from termia.models import Group, LocalTerminalProfile, Server, StoreData, Workspace
 from termia.sidebar import (
@@ -103,6 +106,87 @@ class SidebarNavigationTests(unittest.TestCase):
         host.on_send_files_to_server.assert_called_once_with(popover, None, server)
 
 
+class LocalProfilePointerFocusTests(unittest.TestCase):
+    def wait_until(self, predicate, timeout=3):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            GLib.MainContext.default().iteration(False)
+            if predicate():
+                return
+            time.sleep(0.005)
+        self.fail("Timed out waiting for native local-profile activation")
+
+    def test_double_click_local_profile_accepts_typing_in_real_shell(self):
+        xdotool = shutil.which("xdotool")
+        if xdotool is None or not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("Native pointer test requires xdotool and a GTK display")
+        import gi
+        gi.require_version("GdkX11", "4.0")
+        from gi.repository import GdkX11
+
+        if not isinstance(Gdk.Display.get_default(), GdkX11.X11Display):
+            self.skipTest("Native pointer test requires the private X11 display")
+        from termia.app import TermiaApp, TermiaWindow
+        from termia.stores import ConnectionStore
+
+        app = TermiaApp()
+        app.set_application_id("local.termia.PointerFocusTest")
+        self.assertTrue(app.register(None))
+        with tempfile.TemporaryDirectory(prefix="termia-pointer-focus-") as temporary:
+            root = Path(temporary)
+            store = ConnectionStore(root / "connections.json", root / "settings.json",
+                                    root / "statistics.json", root / "lock", root / "history")
+            store.data.app.open_local_terminal_on_startup = False
+            store.data.app.restore_sessions_on_startup = False
+            store.data.app.confirm_disconnect = False
+            store.data.terminal.prompt_enabled = False
+            profile = store.add_local_terminal("Synthetic local profile", temporary, "/bin/sh", "", "", "")
+            with patch("termia.app.ConnectionStore", return_value=store), \
+                    patch("termia.app.SESSION_SNAPSHOT_FILE", root / "session.json"):
+                window = TermiaWindow(app)
+            window.present()
+            try:
+                self.wait_until(lambda: window.tree_widgets.get(("local_terminal", profile.id)) is not None
+                                and window.tree_widgets[("local_terminal", profile.id)].get_mapped()
+                                and window.tree_widgets[("local_terminal", profile.id)].get_width() > 0
+                                and window.tree_widgets[("local_terminal", profile.id)].get_height() > 0)
+                xid = str(GdkX11.X11Surface.get_xid(window.get_surface()))
+                subprocess.run([xdotool, "windowfocus", "--sync", xid], check=True)
+                self.wait_until(window.is_active)
+                for previous_tabs in range(3):
+                    with self.subTest(existing_tabs=previous_tabs):
+                        row = window.tree_widgets[("local_terminal", profile.id)]
+                        valid, point = row.compute_point(
+                            window, Graphene.Point().init(row.get_width() / 2, row.get_height() / 2),
+                        )
+                        self.assertTrue(valid)
+                        subprocess.run(
+                            [xdotool, "mousemove", "--window", xid, str(int(point.x)), str(int(point.y)),
+                             "click", "--repeat", "2", "--delay", "100", "1"], check=True,
+                        )
+                        self.wait_until(lambda expected=previous_tabs + 1:
+                                        len(window.session_registry.sessions()) == expected)
+                        session = window.session_registry.sessions()[-1]
+                        self.wait_until(lambda current=session: current.child_process is not None)
+                        marker = root / f"typed-{previous_tabs}"
+                        command = "printf focused > " + shlex.quote(str(marker))
+                        subprocess.run([xdotool, "type", "--clearmodifiers", command], check=True)
+                        subprocess.run([xdotool, "key", "Return"], check=True)
+                        self.wait_until(lambda output=marker: output.exists() and output.read_text() == "focused")
+                        self.assertEqual(marker.read_text(), "focused")
+                        self.assertIs(window.get_focus(), session.terminal)
+                        self.assertEqual(len(window.session_registry.sessions()), previous_tabs + 1)
+            finally:
+                window.shutdown_in_progress = True
+                window.prepare_terminal_sessions_for_shutdown()
+                window.terminate_open_terminal_processes(force=True)
+                window.snippet_dialogs.shutdown()
+                window.notes_dialogs.shutdown()
+                window.destroy()
+                store.close()
+                app.quit()
+
+
 class NativeConnectionsTreeTests(unittest.TestCase):
     def setUp(self):
         if not Gtk.init_check() or Gdk.Display.get_default() is None:
@@ -138,6 +222,7 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         host.preserve_sidebar_scroll = Mock()
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         host.search_entry = Gtk.SearchEntry()
+        host.search_entry.connect("search-changed", host.on_server_filter_changed)
         box.append(host.search_entry)
         host.server_list = host.create_sidebar_tree()
         host.server_scroller = Gtk.ScrolledWindow()
@@ -161,8 +246,8 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         self.drain()
 
     @staticmethod
-    def drain():
-        deadline = time.monotonic() + 0.1
+    def drain(seconds=0.1):
+        deadline = time.monotonic() + seconds
         while time.monotonic() < deadline:
             GLib.MainContext.default().iteration(False)
             time.sleep(0.001)
@@ -188,27 +273,27 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         self.assertLessEqual(content.get_width(), host.server_list.get_width())
         self.assertEqual(host.selected.item_id, "two")
 
-    def test_headers_toggle_without_replacing_server_selection(self):
+    def test_headers_toggle_and_replace_server_selection(self):
         host = self.host
         self.select("server", "two")
         row = SidebarRow("group", "parent", "Parent")
         token = host.sidebar_model_token
         tree_row = host.get_group_expander("parent")
         expanded = tree_row.get_expanded()
-        host.on_sidebar_tree_header_clicked(None, 1, 0, 0, row, token)
+        host.on_sidebar_tree_header_clicked(Mock(), 1, 0, 0, row, token)
         self.assertEqual(tree_row.get_expanded(), not expanded)
-        self.assertEqual((host.selected.kind, host.selected.item_id), ("server", "two"))
+        self.assertEqual((host.selected.kind, host.selected.item_id), ("group", "parent"))
         # A recycled row must not act on the replacement projection.
         host.refresh_list()
         tree_row = host.get_group_expander("parent")
         expanded = tree_row.get_expanded()
-        host.on_sidebar_tree_header_clicked(None, 1, 0, 0, row, token)
+        host.on_sidebar_tree_header_clicked(Mock(), 1, 0, 0, row, token)
         self.assertEqual(tree_row.get_expanded(), expanded)
         current_token = host.sidebar_model_token
-        host.on_sidebar_tree_header_clicked(None, 2, 0, 0, row, current_token)
+        host.on_sidebar_tree_header_clicked(Mock(), 2, 0, 0, row, current_token)
         self.assertEqual(tree_row.get_expanded(), expanded)
 
-    def test_keyboard_selection_skips_group_and_section_headers(self):
+    def test_search_entry_navigation_skips_group_and_section_headers(self):
         host = self.host
         for _ in range(len(host.visible_tree_rows) + 2):
             self.assertTrue(host.move_visible_tree_selection(1))
@@ -241,7 +326,11 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         self.assertTrue(host.get_group_expander("child").get_expanded())
         host.get_group_expander("parent").set_expanded(False)
         self.drain()
-        self.assertTrue(host.get_group_expander("parent").get_expanded())
+        self.assertFalse(host.get_group_expander("parent").get_expanded())
+        self.assertFalse(host.group_expanded_state["parent"])
+        host.get_group_expander("parent").set_expanded(True)
+        self.drain()
+        self.assertFalse(host.group_expanded_state["parent"])
         host.search_entry.set_text("")
         host.refresh_list()
         self.assertFalse(host.get_group_expander("parent").get_expanded())
@@ -303,6 +392,7 @@ class NativeConnectionsTreeTests(unittest.TestCase):
             host.open_terminal_tab.assert_called_with(host.store.data.servers[0])
         index = self.select("local_terminal", "local")
         host.on_sidebar_tree_activated(host.server_list, index)
+        self.drain()
         host.open_local_terminal_profile.assert_called_once_with(host.store.data.local_terminals[0])
         index = self.select("workspace", "work")
         host.on_sidebar_tree_activated(host.server_list, index)
@@ -311,6 +401,43 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         host.refresh_list()
         self.assertIsNone(host.selected)
         self.assertFalse(host.activate_selected_tree_row())
+
+    def test_pending_local_activation_preserves_deliberate_focus_change(self):
+        host = self.host
+        index = self.select("local_terminal", "local")
+        host.focus_sidebar_tree_position(index)
+        self.drain()
+        host.on_sidebar_tree_activated(host.server_list, index)
+        host.open_local_terminal_profile.assert_not_called()
+        host.search_entry.grab_focus()
+        self.drain()
+        host.open_local_terminal_profile.assert_not_called()
+
+    def test_native_enter_local_profile_keeps_terminal_focus(self):
+        if not shutil.which("xdotool"):
+            self.skipTest("GTK keyboard test requires xdotool")
+        import gi
+        gi.require_version("GdkX11", "4.0")
+        gi.require_version("Vte", "3.91")
+        from gi.repository import GdkX11, Vte
+
+        host = self.host
+        terminal = Vte.Terminal()
+        host.get_child().append(terminal)
+        host.open_local_terminal_profile.side_effect = lambda _profile: terminal.grab_focus()
+        index = self.select("local_terminal", "local")
+        host.focus_sidebar_tree_position(index)
+        self.drain()
+        xid = GdkX11.X11Surface.get_xid(host.get_surface())
+        subprocess.run(
+            ["xdotool", "windowfocus", str(xid), "key", "--clearmodifiers", "Return"],
+            check=True, stdout=subprocess.DEVNULL,
+        )
+        self.drain()
+        host.open_local_terminal_profile.assert_called_once_with(
+            host.store.data.local_terminals[0],
+        )
+        self.assertIs(host.get_focus(), terminal)
 
     def test_right_click_keeps_target_and_rejects_rebuilt_rows(self):
         host = self.host
@@ -358,6 +485,86 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         self.assertTrue(focused is host.server_list or focused.is_ancestor(host.server_list))
         self.assertFalse(host.on_sidebar_navigation_key_pressed(None, Gdk.KEY_Down, 0, Gdk.ModifierType(0)))
 
+    def test_native_header_clicks_select_and_toggle_only_once(self):
+        if not shutil.which("xdotool"):
+            self.skipTest("GTK pointer test requires xdotool")
+        import gi
+        gi.require_version("GdkX11", "4.0")
+        from gi.repository import GdkX11
+
+        host = self.host
+        self.select("server", "two")
+        content = host.tree_widgets[("group", "parent")]
+        valid, point = content.compute_point(
+            host, Graphene.Point().init(content.get_width() / 2, content.get_height() / 2),
+        )
+        self.assertTrue(valid)
+        xid = str(GdkX11.X11Surface.get_xid(host.get_surface()))
+        subprocess.run(
+            ["xdotool", "windowfocus", xid, "mousemove", "--window", xid,
+             str(int(point.x)), str(int(point.y)), "click", "1"],
+            check=True, stdout=subprocess.DEVNULL,
+        )
+        self.drain()
+        self.assertEqual((host.selected.kind, host.selected.item_id), ("group", "parent"))
+        self.assertFalse(host.get_group_expander("parent").get_expanded())
+        self.drain(0.5)
+        subprocess.run(
+            ["xdotool", "click", "--repeat", "2", "--delay", "100", "1"],
+            check=True, stdout=subprocess.DEVNULL,
+        )
+        self.drain()
+        self.assertTrue(host.get_group_expander("parent").get_expanded())
+        self.assertEqual((host.selected.kind, host.selected.item_id), ("group", "parent"))
+        host.open_terminal_tab.assert_not_called()
+
+    def test_selected_section_clears_previous_server_details(self):
+        host = self.host
+        self.select("section", "__recent__")
+        host.title_label = Gtk.Label()
+        host.info_label = Gtk.Label(label="Previous server")
+
+        SidebarMixin.render_detail(host)
+
+        self.assertEqual(host.title_label.get_label(), host.selected.title)
+        self.assertEqual(host.info_label.get_label(), "")
+
+    def test_delayed_search_signal_preserves_native_enter_and_terminal_focus(self):
+        if not shutil.which("xdotool"):
+            self.skipTest("GTK keyboard test requires xdotool")
+        import gi
+        gi.require_version("GdkX11", "4.0")
+        gi.require_version("Vte", "3.91")
+        from gi.repository import GdkX11, Vte
+
+        host = self.host
+        terminal = Vte.Terminal()
+        host.get_child().append(terminal)
+        host.open_terminal_tab.side_effect = lambda _server: terminal.grab_focus()
+        keys = Gtk.EventControllerKey.new()
+        keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        keys.connect("key-pressed", host.on_sidebar_navigation_key_pressed)
+        host.add_controller(keys)
+        host.search_entry.set_search_delay(1000)
+        host.search_entry.grab_focus()
+        host.search_entry.set_text("Second")
+        xid = str(GdkX11.X11Surface.get_xid(host.get_surface()))
+        subprocess.run(
+            ["xdotool", "windowfocus", xid, "key", "--clearmodifiers", "Down"],
+            check=True, stdout=subprocess.DEVNULL,
+        )
+        self.drain()
+        self.assertEqual((host.selected.kind, host.selected.item_id), ("server", "two"))
+        host.search_entry.emit("search-changed")
+        self.drain()
+        subprocess.run(
+            ["xdotool", "windowfocus", xid, "key", "--clearmodifiers", "Return"],
+            check=True, stdout=subprocess.DEVNULL,
+        )
+        self.drain()
+        host.open_terminal_tab.assert_called_once_with(host.store.data.servers[1])
+        self.assertIs(host.get_focus(), terminal)
+
     def test_immediate_search_enter_uses_current_text_and_skips_group_headers(self):
         host = self.host
         host.search_entry.grab_focus()
@@ -400,15 +607,21 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         parent = host.get_group_expander("parent")
         parent.set_expanded(False)
         index = host.get_visible_tree_row_index(SidebarRow("group", "parent", ""))
-        host.select_visible_tree_row(index)
+        host.sidebar_tree_selection.set_selected(index)
         self.drain()
-        self.assertEqual(host.selected.item_id, "two")
-        # Headers can receive disclosure focus without becoming selected.
+        self.assertEqual((host.selected.kind, host.selected.item_id), ("group", "parent"))
+        # Native navigation selects headers as well as their child rows.
         host.focus_sidebar_tree_position(index)
+        self.drain()
         key("shift+Right")
         self.assertTrue(parent.get_expanded(), str(host.get_focus()))
         key("Down")
-        self.assertEqual(host.selected.item_id, "two")
+        self.assertEqual((host.selected.kind, host.selected.item_id), ("group", "child"))
+        key("Return")
+        self.assertFalse(host.get_group_expander("child").get_expanded())
+        host.open_terminal_tab.assert_not_called()
+        key("Return")
+        self.assertTrue(host.get_group_expander("child").get_expanded())
         key("Down")
         self.assertEqual((host.selected.kind, host.selected.item_id), ("server", "one"))
         key("Return")
@@ -416,7 +629,7 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         key("End")
         self.assertEqual(host.selected.item_id, "two")
         key("Home")
-        self.assertEqual(host.selected.item_id, "two")
+        self.assertEqual((host.selected.kind, host.selected.item_id), ("section", "__workspaces__"))
         key("Down")
         self.assertEqual(host.selected.item_id, "work")
 

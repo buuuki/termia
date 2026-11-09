@@ -46,7 +46,7 @@ class KeybindingTests(unittest.TestCase):
 
     def test_snippet_shortcuts_require_modifiers_and_cannot_conflict(self):
         for shortcut in ("D", "F8", "Shift+D", "Ctrl+Shift+C", "Ctrl+Shift++", "Ctrl+Shift+-",
-                         "Ctrl+KP_Page_Up", "Ctrl+KP_Left"):
+                         "Ctrl+KP_Page_Up", "Ctrl+Shift+KP_Left"):
             with self.subTest(shortcut=shortcut), self.assertRaises(KeybindingError):
                 merge_keybindings(DEFAULT_KEYBINDINGS, {snippet_action("one"): shortcut})
         with self.assertRaises(KeybindingError):
@@ -78,8 +78,8 @@ class KeybindingTests(unittest.TestCase):
         self.assertEqual(normalized["paste"], DEFAULT_KEYBINDINGS["paste"])
         self.assertEqual(set(normalized), set(DEFAULT_KEYBINDINGS))
 
-    def test_split_focus_defaults_use_control_and_arrow_keys(self) -> None:
-        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_left"], "Ctrl+Left")
-        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_right"], "Ctrl+Right")
-        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_up"], "Ctrl+Up")
-        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_down"], "Ctrl+Down")
+    def test_split_focus_defaults_use_control_shift_and_arrow_keys(self) -> None:
+        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_left"], "Ctrl+Shift+Left")
+        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_right"], "Ctrl+Shift+Right")
+        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_up"], "Ctrl+Shift+Up")
+        self.assertEqual(DEFAULT_KEYBINDINGS["focus_split_down"], "Ctrl+Shift+Down")

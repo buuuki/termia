@@ -316,6 +316,11 @@ class SidebarMixin:
             return self.group_expanded_state.get(group_id, True)
         return self.group_expanded_state.get(group_id, not self.collapse_groups_on_startup)
 
+    def on_server_filter_changed(self, _entry: Gtk.SearchEntry) -> None:
+        query = self.search_entry.get_text().lower().strip()
+        if query != self.sidebar_query:
+            self.refresh_list()
+
     def refresh_list(self) -> None:
         if not hasattr(self, "server_list"):
             return
@@ -455,12 +460,6 @@ class SidebarMixin:
         if getattr(self, "_sidebar_tree_loading", False):
             return
         if self.search_entry.get_text().strip():
-            if not tree_row.get_expanded():
-                def expand():
-                    if tree_row in self._sidebar_tree_wired_rows and self.search_entry.get_text().strip():
-                        tree_row.set_expanded(True)
-                    return GLib.SOURCE_REMOVE
-                GLib.idle_add(expand)
             return
         model = self.sidebar_tree_model
         expanded = tree_row.get_expanded()
@@ -481,7 +480,7 @@ class SidebarMixin:
         node = tree_row.get_item()
         row = node.row
         is_header = row.kind in {"group", "section"}
-        item.set_selectable(not is_header)
+        item.set_selectable(True)
         expander = item.get_child()
         expander.set_list_row(tree_row)
         expander.set_hide_expander(node.expanded_key is None)
@@ -504,6 +503,7 @@ class SidebarMixin:
         if is_header:
             click = Gtk.GestureClick()
             click.set_button(1)
+            click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
             click.connect("released", self.on_sidebar_tree_header_clicked, row, self.sidebar_model_token)
             content.add_controller(click)
         self.tree_widgets[(row.kind, row.item_id)] = content
@@ -554,11 +554,16 @@ class SidebarMixin:
         GLib.idle_add(render)
 
     def on_sidebar_tree_header_clicked(self, _gesture, clicks, _x, _y, row, model_token) -> None:
-        if clicks != 1 or model_token is not self.sidebar_model_token:
+        if model_token is not self.sidebar_model_token:
+            return
+        _gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        if clicks != 1:
             return
         tree_row = self.get_group_expander(row.item_id)
         if tree_row is not None:
             self.cancel_sidebar_scroll_restore()
+            self.sidebar_tree_selection.set_selected(tree_row.get_position())
+            self.focus_sidebar_tree_position(tree_row.get_position())
             tree_row.set_expanded(not tree_row.get_expanded())
 
     def on_sidebar_tree_activated(self, _view, position) -> None:
@@ -566,10 +571,29 @@ class SidebarMixin:
         if row is None:
             return
         if row.get_item().expanded_key is not None:
+            self.sidebar_tree_selection.set_selected(position)
+            self.activate_selected_tree_row()
             return
         else:
             self.sidebar_tree_selection.set_selected(position)
-            self.activate_selected_tree_row()
+            if row.get_item().row.kind != "local_terminal":
+                self.activate_selected_tree_row()
+                return
+            model = self.sidebar_tree_model
+            selected = self.selected
+            focused = self.get_focus()
+
+            def activate_local():
+                if (
+                    not getattr(self, "shutdown_in_progress", False)
+                    and self.sidebar_tree_model is model
+                    and self.selected is selected
+                    and self.get_focus() is focused
+                ):
+                    self.activate_selected_tree_row()
+                return GLib.SOURCE_REMOVE
+
+            GLib.idle_add(activate_local)
 
     def on_sidebar_tree_context_pressed(self, gesture, _count, x, y, row, content) -> None:
         root = self.get_child()
@@ -1373,6 +1397,7 @@ class SidebarMixin:
             profile.command_on_start,
             profile.tab_title,
             profile.split_layout,
+            password=profile.password,
         )
         self.selected = RowObject("local_terminal", clone.id, clone.name)
         self.toast_label.set_label(f"{self.t('local_terminal_cloned')}: {clone.name}")
@@ -1429,16 +1454,15 @@ class SidebarMixin:
         content = dialog.get_content_area()
         content.set_spacing(12)
         content.set_margin_top(16)
-        content.set_margin_bottom(16)
+        content.set_margin_bottom(0)
         content.set_margin_start(16)
         content.set_margin_end(16)
         entry = Gtk.Entry(text=initial_name)
         entry.set_hexpand(True)
         entry.set_activates_default(True)
         grid = Gtk.Grid(column_spacing=12, row_spacing=12)
-        grid.attach(self.build_form_label(self.t("workspace_name"), True), 0, 0, 1, 1)
+        grid.attach(self.build_form_label(self.t("workspace_name")), 0, 0, 1, 1)
         grid.attach(entry, 1, 0, 1, 1)
-        grid.attach(self.build_required_hint(), 1, 1, 1, 1)
         content.append(grid)
         dialog.connect("response", self.on_workspace_name_dialog_response, entry, tabs, workspace_id)
         dialog.present()
@@ -1567,6 +1591,11 @@ class SidebarMixin:
         if self.selected is None:
             self.title_label.set_label(self.t("select_server"))
             self.info_label.set_label(self.t("empty_detail_hint"))
+            return
+
+        if self.selected.kind == "section":
+            self.title_label.set_label(self.selected.title)
+            self.info_label.set_label("")
             return
 
         if self.selected.kind == "group":

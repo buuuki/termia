@@ -622,7 +622,8 @@ class DetachTabTests(unittest.TestCase):
         self.assertFalse(host.requested)
 
     def test_explicit_reattach_preserves_session_and_destroys_only_window(self) -> None:
-        page = object()
+        page = Gtk.Box()
+        page.add_css_class("termia-detached-surface")
         window = FakeWindow()
         window.set_child(page)
         session = SimpleNamespace(id="detached", page=page, detached_window=window)
@@ -645,6 +646,7 @@ class DetachTabTests(unittest.TestCase):
         self.assertIsNone(window.child)
         self.assertTrue(window.destroyed)
         self.assertIs(host.attached, session)
+        self.assertFalse(page.has_css_class("termia-detached-surface"))
         self.assertTrue(host.session_registry.contains(session.id))
 
     def test_dialog_owner_uses_detached_window_when_available(self) -> None:
@@ -664,7 +666,7 @@ class DetachTabTests(unittest.TestCase):
         session = SimpleNamespace(
             id="detached",
             title="Detached",
-            page=object(),
+            page=Gtk.Box(),
             detached_window=None,
         )
         previous_session = SimpleNamespace(
@@ -716,6 +718,7 @@ class DetachTabTests(unittest.TestCase):
         self.assertIsInstance(session.detached_window.titlebar, FakeHeaderBar)
         self.assertEqual(session.detached_window.titlebar.title_widget.label, session.title)
         self.assertTrue(session.detached_window.presented)
+        self.assertTrue(session.page.has_css_class("termia-detached-surface"))
 
     def test_renaming_detached_tab_updates_window_and_header_titles(self) -> None:
         window = FakeWindow(title="Old title")

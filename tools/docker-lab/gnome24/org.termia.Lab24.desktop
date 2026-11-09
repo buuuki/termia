@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Termia testing laboratory
+Name[es]=Laboratorio de pruebas de Termia
+Name[ca]=Laboratori de proves de Termia
+Exec=/usr/bin/python3 /opt/termia-lab/panel.py
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;
