@@ -33,8 +33,16 @@ def validate(release: dict, directory: Path, approved_sha: str,
     require(bool(re.fullmatch(r"termia_[0-9A-Za-z.+_-]+_all\.deb", name)),
             "Unsafe or noncanonical public filename")
     require({item["name"] for item in assets} == {name, "SHA256SUMS"}, "Unexpected assets")
+    download_tag = tag
+    if not published:
+        draft_url = re.fullmatch(
+            re.escape(REPOSITORY) + r"/releases/tag/(untagged-[0-9a-f]+)",
+            release.get("html_url", ""),
+        )
+        if draft_url:
+            download_tag = draft_url.group(1)
     for item in assets:
-        expected_url = f"{REPOSITORY}/releases/download/{tag}/{item['name']}"
+        expected_url = f"{REPOSITORY}/releases/download/{download_tag}/{item['name']}"
         require(item["browser_download_url"] == expected_url, "Asset URL/name mismatch")
         path = directory / item["name"]
         require(path.is_file() and not path.is_symlink(), "Missing or symlinked asset")
@@ -55,7 +63,8 @@ def validate(release: dict, directory: Path, approved_sha: str,
                               version)), "Internal Debian version differs from source")
     require(name == f"termia_{version.replace('~', '.')}_all.deb",
             "Public filename differs from internal Debian version")
-    url = asset["browser_download_url"]
+    # Documentation must use the final URL even while GitHub stages draft assets.
+    url = f"{REPOSITORY}/releases/download/{tag}/{name}"
     require(f"sudo apt install ./{name}" in release["body"], "Release install command mismatch")
     require(f"\x60{name}\x60" in release["body"], "Release download filename mismatch")
     for readme in readmes:
