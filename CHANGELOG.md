@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Record bounded pointer-event diagnostics on Notes category drag test
+  timeouts to investigate intermittent CI failures (#489).
+
 ### Fixed
 
 - Validate GitHub draft asset URLs against their release's temporary identifier,

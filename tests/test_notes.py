@@ -525,6 +525,36 @@ class NoteHierarchyTests(unittest.TestCase):
         dialog.window = window
         source = None
         point = None
+        pointer_events = []
+
+        def record_pointer_event(_controller, event, location):
+            if event is None:
+                pointer_events.append((
+                    location, "event-unavailable",
+                    _controller.get_current_event_time(),
+                    int(_controller.get_current_event_state()),
+                ))
+                del pointer_events[:-30]
+                return False
+            event_type = event.get_event_type()
+            if event_type in (
+                Gdk.EventType.BUTTON_PRESS, Gdk.EventType.BUTTON_RELEASE,
+                Gdk.EventType.MOTION_NOTIFY, Gdk.EventType.ENTER_NOTIFY,
+                Gdk.EventType.LEAVE_NOTIFY,
+            ):
+                pointer_events.append(
+                    (location, event_type.value_nick, event.get_position())
+                )
+                del pointer_events[:-30]
+            return False
+
+        def observe_pointer_events(widget, location):
+            observer = Gtk.EventControllerLegacy.new()
+            observer.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+            observer.connect("event", record_pointer_event, location)
+            widget.add_controller(observer)
+
+        observe_pointer_events(window, "window")
 
         def drain():
             while GLib.MainContext.default().pending():
@@ -534,6 +564,18 @@ class NoteHierarchyTests(unittest.TestCase):
             deadline = time.monotonic() + 2
             while not condition():
                 if time.monotonic() >= deadline:
+                    try:
+                        result = subprocess.run(
+                            ["xdotool", "getmouselocation", "--shell"],
+                            capture_output=True, text=True, timeout=1,
+                            check=False,
+                        )
+                        pointer_state = (
+                            result.returncode, result.stdout.strip(),
+                            result.stderr.strip(),
+                        )
+                    except (OSError, subprocess.SubprocessError) as error:
+                        pointer_state = type(error).__name__
                     self.fail(
                         f"Timed out waiting for {phase}: "
                         f"window_mapped={window.get_mapped()}, "
@@ -543,7 +585,10 @@ class NoteHierarchyTests(unittest.TestCase):
                         f"point={(point.x, point.y) if point is not None else None}, "
                         f"origin={getattr(dialog, 'category_group_drag_origin', None)}, "
                         f"drag_begin_calls={dialog.on_category_group_drag_begin.call_count}, "
-                        f"header_click_calls={dialog.on_note_tree_header_clicked.call_count}"
+                        f"header_click_calls={dialog.on_note_tree_header_clicked.call_count}, "
+                        f"gtk_version={(Gtk.get_major_version(), Gtk.get_minor_version(), Gtk.get_micro_version())}, "
+                        f"pointer_state={pointer_state!r}, "
+                        f"pointer_events={pointer_events!r}"
                     )
                 GLib.MainContext.default().iteration(False)
                 time.sleep(0.005)
@@ -577,6 +622,7 @@ class NoteHierarchyTests(unittest.TestCase):
                 widgets.append(child)
                 child = child.get_next_sibling()
         self.assertIsNotNone(source)
+        observe_pointer_events(source, "source")
         wait_for(lambda: source.get_mapped() and source.get_width() > 0 and source.get_height() > 0,
                  "mapped and allocated source row")
         valid, point = source.compute_point(window, Graphene.Point().init(35, source.get_height() / 2))
