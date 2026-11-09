@@ -42,6 +42,41 @@ class ReleaseAssetTests(unittest.TestCase):
                 public = copy.deepcopy(release)
                 public["draft"] = False
                 validate(public, root, sha, [readme], published=True)
+                temporary = copy.deepcopy(release)
+                draft_id = "untagged-0123456789abcdef"
+                temporary["html_url"] = f"{REPOSITORY}/releases/tag/{draft_id}"
+                for item in temporary["assets"]:
+                    item["browser_download_url"] = (
+                        f"{REPOSITORY}/releases/download/{draft_id}/{item['name']}"
+                    )
+                validate(temporary, root, sha, [readme])
+                for html_url in ("", f"{REPOSITORY}/releases/tag/untagged-9876543210",
+                                 f"https://example.invalid/releases/tag/{draft_id}",
+                                 f"{REPOSITORY}/releases/tag/{draft_id}?redirect=1"):
+                    broken = copy.deepcopy(temporary)
+                    broken["html_url"] = html_url
+                    with self.subTest(html_url=html_url), self.assertRaises(ValueError):
+                        validate(broken, root, sha, [readme])
+                for field, value in (
+                    ("browser_download_url", f"{REPOSITORY}/releases/download/untagged-ffff/{name}"),
+                    ("browser_download_url", f"https://example.invalid/releases/download/{draft_id}/{name}"),
+                    ("browser_download_url", temporary["assets"][0]["browser_download_url"] + "?redirect=1"),
+                    ("digest", "sha256:" + "0" * 64),
+                    ("size", 1),
+                ):
+                    broken = copy.deepcopy(temporary)
+                    broken["assets"][0][field] = value
+                    with self.subTest(draft_field=field, value=value), self.assertRaises(ValueError):
+                        validate(broken, root, sha, [readme])
+                broken = copy.deepcopy(temporary)
+                broken["draft"] = False
+                with self.assertRaises(ValueError):
+                    validate(broken, root, sha, [readme], published=True)
+                canonical_readme = readme.read_text()
+                readme.write_text(canonical_readme.replace("v" + __version__, draft_id))
+                with self.assertRaises(ValueError):
+                    validate(temporary, root, sha, [readme])
+                readme.write_text(canonical_readme)
                 cases = [
                     ("tag_name", "v0.0.0"),
                     ("prerelease", False),

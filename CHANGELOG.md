@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Validate GitHub draft asset URLs against their release's temporary identifier,
+  retaining canonical published links and all integrity checks (#496).
+
 ## 0.6.2-beta - 2026-11-09
 
 Publication documentation and release links finalized in #494.

@@ -347,6 +347,18 @@ Create the ignored directory first. Omit `--published` for the mandatory draft
 check; it rejects an already published release. Metadata must come from the REST
 endpoint, not `gh release view`, whose JSON field names differ.
 
+GitHub may return `untagged-…` URLs for draft assets even when the annotated
+tag already exists. In that case, the validator requires the asset URLs to use
+the exact temporary identifier from the same repository's release `html_url`.
+Published assets and README links must always use the final version tag.
+Version, filenames, sizes and checksum checks apply in both states.
+
+If the tag endpoint returns 404 for a draft, obtain its release ID with
+`gh api repos/buuuki/termia/releases`, then retrieve fresh REST metadata from
+`gh api repos/buuuki/termia/releases/<release-id>` instead. Never substitute
+edited metadata to make validation pass. Review previous publication records
+for known draft/published differences before starting a new release.
+
 Do not publish when the command fails. This is a read-only validation gate,
 not a publishing wrapper: manual GitHub operations can bypass it. Explicit
 publication authorization is still required. After publishing, repeat with fresh
