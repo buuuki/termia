@@ -1055,6 +1055,7 @@ class NotesDomainTests(unittest.TestCase):
 
     def test_opening_notes_restores_window_before_presenting(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.window = MagicMock()
         dialog.store = SimpleNamespace(encryption_locked=False, read_only=True)
         dialog.ensure_window = MagicMock()
@@ -2872,6 +2873,7 @@ class NotesDialogSignalTests(unittest.TestCase):
                 return self.active_id
 
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=True,
             data=SimpleNamespace(note_categories=[], servers=[], notes=[]),
@@ -2985,6 +2987,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_failed_save_still_presents_notes_window(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False,
             data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),
@@ -3004,6 +3007,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_entry_modes_keep_global_actions_out_of_server_view(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=True,
             data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")], notes=[], note_categories=[]),
@@ -3045,6 +3049,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_opening_hidden_notes_window_starts_a_draft_in_the_current_scope(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=False,
             data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),
@@ -3094,6 +3099,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_reopening_notes_reuses_a_draft_for_the_same_scope(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=False,
             data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),

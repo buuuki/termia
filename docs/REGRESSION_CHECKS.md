@@ -212,6 +212,12 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Main Toolbar Icons
 
+- At startup, the connections sidebar must be hidden before the first frame,
+  for either legacy show-sidebar setting. Reveal, resize, hide and reveal it
+  with its header button; preserve width and terminal/session restoration.
+  General preferences must not expose the obsolete startup visibility option
+  or change current sidebar visibility when saving unrelated preferences.
+
 - Main toolbar action icons are protected UI decisions and must not be changed without explicit user approval.
 - The local/new terminal tab action icon and sidebar toggle icon must remain stable unless a change is requested directly.
 - Header actions must retain the same six-pixel spacing as sidebar actions and
@@ -739,6 +745,14 @@ Long measurements and release-platform checks remain separate validation work.
 - Security preferences must clearly warn before enabling encryption that Termia will ask for the master password on every startup and that lost master passwords cannot be recovered.
 
 ### Notes
+
+- Open Tools → Notes in System/Light/Dark/Retron and EN/ES/CA. Confirm
+  the existing manager is reused, with its sidebar hidden before presentation
+  on every invocation, including the main-menu and server-context paths.
+  Reveal and resize the sidebar, invoke management again and reveal it once
+  more: preserve its width, editor tabs, autosave and scope. Merely switching
+  focus must not hide a manually revealed sidebar. Recheck locked/read-only
+  profiles and failed editor saves; no pending text may be lost.
 
 - In the native Notes tree, use pointer and keyboard disclosure on personal,
   server, and nested category rows. Select and open saved notes and drafts;

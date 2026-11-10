@@ -14,6 +14,7 @@ together in embedded VTE terminals.
   Use `Ctrl+Shift+Arrow` to move between Termia panes; `Ctrl+Arrow` remains
   available to terminal applications such as tmux.
 - Connections organized in nested groups, favorites, and recent connections.
+  The connections sidebar starts hidden; use its header button to show it.
 - Native private SSH key file picker when creating or editing a connection.
 - Optional saved passwords for local terminal profiles. Enable the saved-password
   shortcut in preferences and press `Ctrl+P` (default) when `sudo` requests it;
@@ -36,6 +37,8 @@ together in embedded VTE terminals.
 - Reusable command snippets with categories, scope, variables, and shortcuts;
   commands are previewed before sending them.
 - Personal and server-linked notes with autosave, categories, and import/export.
+  Open **Tools → Notes**; the notes sidebar opens hidden each time and can
+  be shown with its header button.
   Right-click a note tab to rename, delete, clone, save, or close it; the editor
   retains its save status and modification time.
 - Local connection storage with optional master-password encryption.

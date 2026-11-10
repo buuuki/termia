@@ -144,6 +144,7 @@ class LocalProfilePointerFocusTests(unittest.TestCase):
             with patch("termia.app.ConnectionStore", return_value=store), \
                     patch("termia.app.SESSION_SNAPSHOT_FILE", root / "session.json"):
                 window = TermiaWindow(app)
+            window.toggle_sidebar_button.emit("clicked")
             window.present()
             try:
                 self.wait_until(lambda: window.tree_widgets.get(("local_terminal", profile.id)) is not None

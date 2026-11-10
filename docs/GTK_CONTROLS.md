@@ -31,6 +31,8 @@ editor instance, Save/Apply/Cancel transaction and deferred preview cleanup.
 The titlebar launcher (`tool_launcher.py`) uses native `Gtk.MenuButton`,
 `Gtk.Popover`, adaptive `Gtk.FlowBox` and icon/label buttons. GTK owns wrapping,
 focus, activation and dismissal; Termia owns availability and deferred dispatch.
+The Notes tile reuses the existing management window; each management
+invocation hides its native sidebar while retaining its toggle and width.
 Diagnostics (`diagnostics_view.py`) reuses `DialogWindow`, labels, grids,
 expanders, text views and scrollers; its controller owns sampling lifetime.
 Named configurations use a native `Gtk.DropDown` with bounded labels and standard

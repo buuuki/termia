@@ -14,6 +14,7 @@ fitxers en terminals VTE integrats amb GTK 4.
   Fes servir `Ctrl+Shift+fletxes` per moure't entre panells de Termia;
   `Ctrl+fletxes` queda disponible per a aplicacions del terminal com tmux.
 - Connexions organitzades en grups imbricats, preferits i connexions recents.
+  La barra lateral de connexions comença oculta; mostra-la amb el botó de capçalera.
 - Selector nadiu de claus SSH privades en crear o editar una connexió.
 - Contrasenya opcional als perfils de terminal local. Activa la drecera d'enviament
   a les preferències i prem `Ctrl+P` (per defecte) quan `sudo` la demani;
@@ -38,7 +39,8 @@ fitxers en terminals VTE integrats amb GTK 4.
 - Notes personals o associades a servidors, amb desament automàtic,
   categories i importació/exportació. Fes clic dret en una pestanya per
   reanomenar, eliminar, clonar, desar o tancar-la; l’editor conserva l’estat
-  de desament i la data de modificació.
+  de desament i la data de modificació. Obre **Eines → Notes**; la barra
+  lateral s’oculta en cada obertura i pots mostrar-la amb el botó de capçalera.
 - Dades de connexió locals amb xifratge opcional mitjançant contrasenya mestra.
 - Importació/exportació de Termia i importació de connexions des d'Ásbrú YAML.
 - Historial de connexions i complements opcionals d'Estadístiques i SFTP.
