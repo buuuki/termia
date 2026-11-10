@@ -170,6 +170,8 @@ class NotesDialogs:
             return
         opening_window = self.window is None or not self.window.get_visible()
         self.ensure_window()
+        if self.notes_list_visible:
+            self.toggle_notes_list()
         self.window.unminimize()
         if not self.set_notes_scope(
             "server" if server_id else "personal", server_id,

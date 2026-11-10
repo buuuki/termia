@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Open Notes from Tools, hide its sidebar on each management invocation and
+  start Termia with the connections sidebar hidden; retain manual toggles
+  and remove the obsolete startup visibility preference (#503).
+
 - Require basic environment details in bug reports and provide commands
   to collect versions without installing tools (#501).
 

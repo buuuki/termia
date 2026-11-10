@@ -160,7 +160,7 @@ class ClipboardPreferenceTests(unittest.TestCase):
         host.store.data = data
         host.general_preference_values = GeneralPreferencesMixin.general_preference_values
         host.store.update_app_settings.side_effect = lambda app: setattr(data, "app", app)
-        values = [False, False, True, False, True, False, False,
+        values = [False, False, True, False, False, False,
                   True, False, False, False, False, True, True]
         checks = [Mock(get_active=Mock(return_value=value)) for value in values]
         with patch("termia.general_preferences.choice_id", side_effect=["dark", "en"]):
@@ -169,6 +169,8 @@ class ClipboardPreferenceTests(unittest.TestCase):
         self.assertFalse(data.app.confirm_multiline_paste)
         self.assertTrue(data.app.copy_on_selection)
         self.assertTrue(data.app.debug_enabled)
+        self.assertTrue(data.app.show_sidebar_on_startup)
+        host.set_sidebar_visible.assert_not_called()
 
 
 @unittest.skipUnless(Gtk.init_check(), "GTK display unavailable")

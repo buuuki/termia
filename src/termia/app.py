@@ -330,7 +330,7 @@ class TermiaWindow(
             )
         elif self.store.read_only:
             self.toast_label.set_label(self.t("read_only_mode_enabled"))
-        self.set_sidebar_visible(self.store.data.app.show_sidebar_on_startup)
+        self.set_sidebar_visible(False)
         self.refresh_list()
         if self.store.encryption_locked:
             self.toast_label.set_label(self.t("connections_locked"))
@@ -774,6 +774,11 @@ class TermiaWindow(
             "diagnostics", "diagnostics", "computer-symbolic",
             lambda: self.get_application().diagnostics_tool.show(self.t),
             lambda: not self.shutdown_in_progress,
+        ))
+        self.tool_registry.register(Tool(
+            "notes", "notes_title", "accessories-text-editor-symbolic",
+            self.notes_dialogs.show_manager,
+            lambda: not self.shutdown_in_progress and not self.store.encryption_locked,
         ))
         self.tool_launcher = ToolLauncher(self.tool_registry, self.t)
         self.connect("destroy", lambda *_: self.tool_launcher.close())

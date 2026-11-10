@@ -14,6 +14,7 @@ de archivos en terminales VTE integrados con GTK 4.
   Usa `Ctrl+Shift+flechas` para moverte entre paneles de Termia; `Ctrl+flechas`
   queda disponible para aplicaciones del terminal como tmux.
 - Conexiones organizadas en grupos anidados, favoritos y conexiones recientes.
+  El sidebar de conexiones empieza oculto; usa su botón de cabecera para mostrarlo.
 - Selector nativo de claves SSH privadas al crear o editar una conexión.
 - Contraseña opcional en los perfiles de terminal local. Activa el atajo de envío
   en las preferencias y pulsa `Ctrl+P` (predeterminado) cuando `sudo` la solicite;
@@ -38,7 +39,8 @@ de archivos en terminales VTE integrados con GTK 4.
 - Notas personales o asociadas a servidores, con guardado automático,
   categorías e importación/exportación. Haz clic derecho en una pestaña para
   renombrar, eliminar, clonar, guardar o cerrarla; el editor conserva el estado
-  de guardado y la fecha de modificación.
+  de guardado y la fecha de modificación. Abre **Herramientas → Notas**;
+  su sidebar se oculta en cada apertura y puedes mostrarlo con su botón de cabecera.
 - Datos de conexión locales con cifrado opcional mediante contraseña maestra.
 - Importación/exportación de Termia e importación de conexiones desde Ásbrú YAML.
 - Historial de conexiones y complementos opcionales de Estadísticas y SFTP.
