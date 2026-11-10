@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Focus Paste by default in multiline paste confirmation and allow editing
+  its text before sending it to the original terminal pane (#500).
+
 - Open Notes from Tools, hide its sidebar on each management invocation and
   start Termia with the connections sidebar hidden; retain manual toggles
   and remove the obsolete startup visibility preference (#503).

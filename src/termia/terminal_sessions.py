@@ -1041,16 +1041,18 @@ class TerminalSessionsMixin:
                 transient_for=root_ref(), modal=True, destroy_with_parent=True,
             )
             dialog.set_default_size(560, 320)
-            cancel, _paste = owner.add_dialog_action_buttons(dialog, owner.t("paste"))
+            cancel, paste = owner.add_dialog_action_buttons(dialog, owner.t("paste"))
             cancel.get_parent().set_margin_top(8)
-            dialog.set_default_response(Gtk.ResponseType.CANCEL)
+            dialog.set_default_response(Gtk.ResponseType.OK)
             content = dialog.get_content_area()
             content.set_spacing(12)
             for margin in ("top", "bottom", "start", "end"):
                 getattr(content, f"set_margin_{margin}")(16)
             content.set_margin_bottom(0)
             content.append(Gtk.Label(label=owner.t("terminal_paste_confirm_body"), wrap=True, xalign=0))
-            preview = Gtk.TextView(editable=False, cursor_visible=False, monospace=True)
+            preview = Gtk.TextView(
+                editable=True, cursor_visible=True, monospace=True, accepts_tab=False,
+            )
             preview.get_buffer().set_text(text)
             scroller = Gtk.ScrolledWindow()
             scroller.add_css_class("termia-terminal-paste-preview")
@@ -1061,17 +1063,21 @@ class TerminalSessionsMixin:
             def respond(window: DialogWindow, response: int) -> None:
                 valid = target_is_valid()
                 target = pane_ref()
+                edited_text = None
+                if valid and response == Gtk.ResponseType.OK:
+                    buffer = preview.get_buffer()
+                    edited_text = buffer.get_text(*buffer.get_bounds(), True)
                 finish_request()
                 window.destroy()
                 if valid and target is not None:
                     target.terminal.grab_focus()
-                    if response == Gtk.ResponseType.OK:
-                        target.terminal.paste_text(text)
+                    if edited_text:
+                        target.terminal.paste_text(edited_text)
 
             dialog.connect("response", respond)
             state["dialog"] = dialog
             dialog.present()
-            cancel.grab_focus()
+            paste.grab_focus()
 
         clipboard = terminal.get_primary_clipboard() if primary else terminal.get_clipboard()
         clipboard.read_text_async(cancellable, clipboard_ready)

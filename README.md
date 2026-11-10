@@ -29,8 +29,9 @@ together in embedded VTE terminals.
   count, including spaces and line breaks, once the clipboard accepts the text.
   Click elsewhere in the terminal to clear the highlight without losing the copy.
 - Confirmation before pasting terminal text containing line breaks, enabled
-  by default in General preferences. Review the preview and choose Paste;
-  Cancel or Escape sends nothing. Middle-button pastes are also protected;
+  by default in General preferences. Review or edit the text, then choose Paste,
+  which receives initial focus. Enter in the editor inserts a newline; Tab
+  moves to the buttons. Cancel or Escape sends nothing. Middle-button pastes are also protected;
   with protection enabled, Termia handles that button as paste even in
   terminal applications that normally handle mouse events.
 - SCP uploads and a native SFTP file explorer with transfers and cancellation.
