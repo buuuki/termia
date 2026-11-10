@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Require basic environment details in bug reports and provide commands
+  to collect versions without installing tools (#501).
+
 - Record bounded pointer-event diagnostics on Notes category drag test
   timeouts to investigate intermittent CI failures (#489).
 
