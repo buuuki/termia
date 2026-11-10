@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import shutil
+import subprocess
 import tempfile
 import time
 import unittest
@@ -114,7 +116,9 @@ class ProtectedPasteTests(unittest.TestCase):
         for response in (Gtk.ResponseType.CANCEL, Gtk.ResponseType.DELETE_EVENT):
             with self.subTest(response=response):
                 self.request("one\ntwo")
-                self.state["dialog"].response(response)
+                dialog = self.state["dialog"]
+                dialog.get_content_area().get_last_child().get_child().get_buffer().set_text("edited\ntext")
+                dialog.response(response)
                 self.terminal.paste_text.assert_not_called()
                 self.assertFalse(self.state)
 
@@ -125,20 +129,88 @@ class ProtectedPasteTests(unittest.TestCase):
         self.terminal.paste_text.assert_called_once_with("one\ntwo")
         self.terminal.grab_focus.assert_called_once_with()
 
-    def test_preview_is_read_only_with_compact_footer_and_cancel_default(self):
+    def test_preview_is_editable_with_compact_footer_and_paste_focus(self):
         self.request("one\ntwo")
         dialog = self.state["dialog"]
         content = dialog.get_content_area()
         scroller = content.get_last_child()
         preview = scroller.get_child()
-        self.assertFalse(preview.get_editable())
+        self.assertTrue(preview.get_editable())
+        self.assertTrue(preview.get_cursor_visible())
+        self.assertFalse(preview.get_accepts_tab())
         self.assertTrue(scroller.has_css_class("termia-terminal-paste-preview"))
         self.assertEqual(content.get_margin_bottom(), 0)
         cancel = dialog.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        self.assertIs(dialog.get_default_widget(), cancel)
+        paste = dialog.get_widget_for_response(Gtk.ResponseType.OK)
+        self.assertIs(dialog.get_default_widget(), paste)
+        self.assertIs(dialog.get_focus(), paste)
         self.assertEqual(cancel.get_parent().get_margin_top(), 8)
         buffer = preview.get_buffer()
         self.assertEqual(buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True), "one\ntwo")
+
+    def test_confirmation_sends_edited_text_once_without_rewriting_clipboards(self):
+        for primary in (False, True):
+            for edited in ("updated\ncommand", "updated\rcommand", "updated\r\ncommand",
+                           "single line", "  synthetic\tαβ\n", ""):
+                with self.subTest(primary=primary, edited=edited):
+                    self.terminal.paste_text.reset_mock()
+                    self.request("original\ntext", primary=primary)
+                    dialog = self.state["dialog"]
+                    preview = dialog.get_content_area().get_last_child().get_child()
+                    preview.get_buffer().set_text(edited)
+                    dialog.response(Gtk.ResponseType.OK)
+                    dialog.response(Gtk.ResponseType.OK)
+                    if edited:
+                        self.terminal.paste_text.assert_called_once_with(edited)
+                    else:
+                        self.terminal.paste_text.assert_not_called()
+                    self.clipboard.set.assert_not_called()
+                    self.terminal.get_primary_clipboard.return_value.set.assert_not_called()
+                    self.assertFalse(self.state)
+
+    def test_native_editor_enter_inserts_newline_and_tab_reaches_actions(self):
+        xdotool = shutil.which("xdotool")
+        if xdotool is None:
+            self.skipTest("Native keyboard test requires xdotool")
+        gi.require_version("GdkX11", "4.0")
+        from gi.repository import GdkX11
+
+        self.root.present()
+        self.request("one\ntwo")
+        dialog = self.state["dialog"]
+        if not isinstance(dialog.get_display(), GdkX11.X11Display):
+            self.skipTest("Native keyboard test requires the private X11 display")
+
+        def wait_until(predicate):
+            deadline = time.monotonic() + 3
+            while time.monotonic() < deadline:
+                GLib.MainContext.default().iteration(False)
+                if predicate():
+                    return
+                time.sleep(0.005)
+            self.fail("Timed out waiting for paste dialog keyboard interaction")
+
+        wait_until(dialog.get_mapped)
+        xid = str(GdkX11.X11Surface.get_xid(dialog.get_surface()))
+        subprocess.run([xdotool, "windowfocus", "--sync", xid], check=True)
+        preview = dialog.get_content_area().get_last_child().get_child()
+        paste = dialog.get_widget_for_response(Gtk.ResponseType.OK)
+        wait_until(lambda: dialog.is_active() and preview.get_width() > 0
+                   and paste.get_mapped() and paste.get_width() > 0)
+        buffer = preview.get_buffer()
+        preview.grab_focus()
+        buffer.place_cursor(buffer.get_end_iter())
+        subprocess.run([xdotool, "key", "Return"], check=True)
+        wait_until(lambda: buffer.get_text(*buffer.get_bounds(), True) == "one\ntwo\n")
+        self.assertIs(self.state["dialog"], dialog)
+        self.terminal.paste_text.assert_not_called()
+        subprocess.run([xdotool, "key", "Tab"], check=True)
+        wait_until(lambda: not preview.has_focus())
+        self.assertIsInstance(dialog.get_focus(), Gtk.Button)
+        paste.grab_focus()
+        subprocess.run([xdotool, "key", "Return"], check=True)
+        wait_until(lambda: not self.state)
+        self.terminal.paste_text.assert_called_once_with("one\ntwo\n")
 
     def test_duplicate_requests_do_not_read_or_create_another_dialog(self):
         self.request("one\ntwo")
@@ -151,6 +223,8 @@ class ProtectedPasteTests(unittest.TestCase):
         for change in ("retired", "disconnected", "process", "root", "input"):
             with self.subTest(change=change):
                 self.request("one\ntwo")
+                preview = self.state["dialog"].get_content_area().get_last_child().get_child()
+                preview.get_buffer().set_text("edited\ntext")
                 if change == "retired":
                     self.pane.retired = True
                 elif change == "disconnected":

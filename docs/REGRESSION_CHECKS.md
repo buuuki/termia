@@ -281,9 +281,14 @@ Long measurements and release-platform checks remain separate validation work.
   configured shortcut, Shift+Insert, the context menu and middle-button primary
   selection in local/SSH panes and detached windows. Single-line text pastes
   directly; any line break, including a trailing break, requires confirmation.
-  Cancel, Escape and window close must send nothing. Confirm must paste only
-  the displayed snapshot even if the clipboard changes, using VTE's bracketed
-  paste handling. Closed, reconnected or reparented panes must not receive a
+  Paste must receive initial focus. Enter with Paste focused confirms; Enter
+  inside the editable preview inserts a newline. Tab/Shift+Tab navigate
+  between the editor and buttons. Edit/remove text and verify confirmation
+  sends the current buffer exactly once, preserving whitespace and line
+  endings, even if the clipboard changes. Leave an empty buffer: send nothing.
+  Cancel, Escape and window close must discard edits and send nothing. Keep
+  clipboard/primary contents unchanged and use VTE's bracketed paste handling.
+  Closed, reconnected or reparented panes must not receive a
   pending paste. Check the black 1px preview border and 8px footer gap.
   Disable the option and repeat; native paste must remain available. With
   protection enabled, middle-click is reserved for paste even in applications
@@ -1547,8 +1552,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   lines, leading/trailing spaces, tabs, LF/CRLF, Unicode and literal escape
   characters. Inspect theme surface/selection colors, both scrollbars, text
   margins, warning/button separation, narrow/resized dialogs and keyboard
-  navigation. In a safe local receiver verify the exact original clipboard
-  text reaches only the intended pane after confirmation; Cancel/Escape/close
+  navigation. In a safe local receiver verify the exact displayed text
+  (original or edited) reaches only the intended pane after confirmation; Cancel/Escape/close
   and invalidated targets must paste nothing. Do not normalize the sample or
   run arbitrary shell commands while inspecting control sequences. These
   runtime checks remain pending and do not replace existing paste safety checks.

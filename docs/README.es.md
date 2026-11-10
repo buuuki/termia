@@ -29,8 +29,9 @@ de archivos en terminales VTE integrados con GTK 4.
   e indica los caracteres, incluidos espacios y saltos de línea, cuando el
   portapapeles acepta el texto. Un clic en otra zona quita el resaltado sin perder la copia.
 - Confirmación antes de pegar texto con saltos de línea en el terminal,
-  activada por defecto en Preferencias generales. Revisa la vista previa y
-  pulsa Pegar; Cancelar o Escape no envían nada. También protege el botón
+  activada por defecto en Preferencias generales. Revisa o edita el texto y
+  pulsa Pegar, que recibe el foco inicial. Enter en el editor inserta una línea;
+  Tab lleva a los botones. Cancelar o Escape no envían nada. También protege el botón
   central: mientras está activada, Termia lo trata como pegado incluso en
   aplicaciones del terminal que normalmente gestionan el ratón.
 - Subidas SCP y explorador SFTP nativo con transferencias y cancelación.
