@@ -47,11 +47,98 @@ body:
       required: true
 
   - type: input
-    id: environment
+    id: termia_version
     attributes:
-      label: Environment
-      description: Linux distribution, desktop, display server, and Termia version if known.
-      placeholder: "Ubuntu 24.04.4 LTS, GNOME 46.0, Wayland, Termia 0.1.0"
+      label: Termia version
+      description: 'See About. For a Debian package, run `dpkg-query -W -f=''${Version}\n'' termia`. Enter Unknown if unavailable.'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - Debian package (.deb)
+        - Source checkout
+        - Other
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: distribution
+    attributes:
+      label: Linux distribution and version
+      description: 'Run `cat /etc/os-release`. Enter Unknown if unavailable.'
+    validations:
+      required: true
+
+  - type: input
+    id: desktop
+    attributes:
+      label: Desktop environment and version
+      description: 'Run `printenv XDG_CURRENT_DESKTOP`. For GNOME, also run `gnome-shell --version`. Enter Unknown for unavailable details.'
+      placeholder: "GNOME 46.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: session
+    attributes:
+      label: Graphical session
+      description: 'Run `printenv XDG_SESSION_TYPE` in the affected desktop session.'
+      options:
+        - Wayland
+        - X11 (Xorg)
+        - Other
+        - Unknown
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        Run this command with the Python interpreter used to launch Termia
+        to obtain GTK and VTE versions. It does not install anything.
+        If it fails, enter Unknown; do not install packages just for this report.
+
+        ```bash
+        python3 - <<'PY'
+        import gi
+        gi.require_version("Gtk", "4.0")
+        gi.require_version("Vte", "3.91")
+        from gi.repository import Gtk, Vte
+        for name, library in (("GTK", Gtk), ("VTE", Vte)):
+            print(name + ":", ".".join(str(value) for value in (
+                library.get_major_version(),
+                library.get_minor_version(),
+                library.get_micro_version(),
+            )))
+        PY
+        ```
+
+  - type: input
+    id: gtk_vte
+    attributes:
+      label: GTK and VTE versions
+      description: Copy the versions from the command above, or enter Unknown.
+    validations:
+      required: true
+
+  - type: input
+    id: kernel
+    attributes:
+      label: Kernel version (optional)
+      description: 'Run `uname -r`. Especially useful for crashes or graphics problems.'
+    validations:
+      required: false
+
+  - type: textarea
+    id: graphics
+    attributes:
+      label: GPU and graphics driver (optional)
+      description: 'For graphics problems, include relevant output from `lspci -k` if already available. Do not install tools just for this report.'
     validations:
       required: false
 
