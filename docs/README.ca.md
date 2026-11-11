@@ -24,6 +24,11 @@ fitxers en terminals VTE integrats amb GTK 4.
 - Espais de treball desats i restauració opcional de la sessió anterior.
 - Cada barra d'estat mostra el nom de la connexió i un indicador d'estat amb
   color; en passar-hi el ratolí es veuen els detalls del procés o error.
+  Els terminals locals mostren Iniciant, En execució o Finalitzat i fan servir
+  Finalitzar terminal / Obrir terminal. Després de finalitzar manualment l'únic
+  terminal d'una pestanya que continua oberta, Obrir terminal (local) o
+  Connectar (SSH) inicia una sessió nova en aquell panell. Desconnectar un split
+  continua eliminant-lo; es conserva l'opció de tancar la pestanya automàticament.
 - Còpia automàtica en acabar de seleccionar text del terminal,
   activada per defecte i configurable a Preferències generals. L'avís confirma la còpia i
   indica els caràcters, inclosos espais i salts de línia, quan el porta-retalls

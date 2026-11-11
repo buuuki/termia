@@ -2908,3 +2908,26 @@ msgstr ""
 #: src/termia/i18n.py:snippet_terminal_unavailable
 msgid "The selected terminal is no longer available."
 msgstr ""
+#: src/termia/i18n.py:end_local_terminal
+msgid "End terminal"
+msgstr ""
+
+#: src/termia/i18n.py:open_local_terminal
+msgid "Open terminal"
+msgstr ""
+
+#: src/termia/i18n.py:end_local_terminal_detail
+msgid "Do you want to end {title}?"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_starting
+msgid "Starting…"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_running
+msgid "Running"
+msgstr ""
+
+#: src/termia/i18n.py:local_terminal_finished
+msgid "Finished"
+msgstr ""

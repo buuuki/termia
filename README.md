@@ -24,6 +24,10 @@ together in embedded VTE terminals.
 - Saved workspaces and optional restoration of the previous session.
 - Per-pane status bars show the connection name and a colored session-state
   indicator; process and error details are available in the tooltip.
+  Local terminals show Starting, Running or Finished and use End terminal /
+  Open terminal. After manually ending the only terminal in a retained tab,
+  Open terminal (local) or Connect (SSH) starts a new session in that pane.
+  Disconnecting a split still removes it; automatic tab closure is unchanged.
 - Automatic copying when terminal selection finishes, enabled by default
   and configurable in General preferences. A success notification reports the character
   count, including spaces and line breaks, once the clipboard accepts the text.

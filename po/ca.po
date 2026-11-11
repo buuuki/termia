@@ -2790,3 +2790,26 @@ msgstr "Descarta els canvis"
 #: src/termia/i18n.py:retron_delete_confirm
 msgid "Delete the saved configuration “{name}”? The current appearance will be kept."
 msgstr "Vols suprimir la configuració desada «{name}»? Es conservarà l’aparença actual."
+#: src/termia/i18n.py:end_local_terminal
+msgid "End terminal"
+msgstr "Finalitzar terminal"
+
+#: src/termia/i18n.py:open_local_terminal
+msgid "Open terminal"
+msgstr "Obrir terminal"
+
+#: src/termia/i18n.py:end_local_terminal_detail
+msgid "Do you want to end {title}?"
+msgstr "Vols finalitzar {title}?"
+
+#: src/termia/i18n.py:local_terminal_starting
+msgid "Starting…"
+msgstr "Iniciant…"
+
+#: src/termia/i18n.py:local_terminal_running
+msgid "Running"
+msgstr "En execució"
+
+#: src/termia/i18n.py:local_terminal_finished
+msgid "Finished"
+msgstr "Finalitzat"

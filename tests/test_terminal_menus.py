@@ -27,8 +27,11 @@ class NativeTerminalMenuTests(unittest.TestCase):
         self.host.store = SimpleNamespace(data=SimpleNamespace(
             servers=[self.server], app=SimpleNamespace(keybindings={"copy": "<Control><Shift>c"}),
         ))
-        self.pane = SimpleNamespace(server_id="server", status_bar=Gtk.Box())
-        self.session = SimpleNamespace(id="session", detached_window=None)
+        self.pane = SimpleNamespace(server_id="server", status_bar=Gtk.Box(),
+                                    connected=True, disconnect_requested=False,
+                                    child_process=object(), retired=False)
+        self.session = SimpleNamespace(id="session", detached_window=None,
+                                       panes={id(self.terminal): self.pane})
         self.session.pane_for_terminal = lambda widget: self.pane if widget is self.terminal else None
         self.sessions = {"session": self.session}
         self.host.session_registry = SimpleNamespace(get=self.sessions.get)
@@ -129,6 +132,28 @@ class NativeTerminalMenuTests(unittest.TestCase):
         self.assertFalse(getattr(self.host, "_terminal_context_menus", {}))
         gesture.emit("released", 1, 10.0, 12.0)
         self.assertTrue(self.host._terminal_context_menus[self.window].get_visible())
+
+    def test_local_and_ssh_menu_actions_follow_manual_disconnect(self):
+        for server_id, active, ended in (
+            (None, "end_local_terminal", "open_local_terminal"),
+            ("server", "disconnect", "connect"),
+        ):
+            with self.subTest(server_id=server_id):
+                self.pane.server_id = server_id
+                self.pane.connected = True
+                self.pane.disconnect_requested = False
+                self.pane.child_process = object()
+                menu = self.open_menu()
+                self.assertEqual(self.labels(menu.get_menu_model())[0], active)
+                menu.popdown()
+                self.drain()
+                self.pane.connected = False
+                self.pane.disconnect_requested = True
+                self.pane.child_process = None
+                menu = self.open_menu()
+                self.assertEqual(self.labels(menu.get_menu_model())[0], ended)
+                menu.popdown()
+                self.drain()
 
     def test_model_nested_order_shortcuts_and_optional_actions(self):
         menu = self.open_menu()

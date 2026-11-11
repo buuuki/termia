@@ -19,6 +19,11 @@
 
 ### Fixed
 
+- Reopen manually ended local and SSH terminals retained as the only pane;
+  use process-specific local actions and status labels, preserving split
+  removal and automatic tab closure. Avoid accessing a removed original pane
+  when the remaining split exits (#505).
+
 - Validate GitHub draft asset URLs against their release's temporary identifier,
   retaining canonical published links and all integrity checks (#496).
 
