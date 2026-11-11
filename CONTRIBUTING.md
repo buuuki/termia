@@ -63,9 +63,9 @@ from the published baseline, as described in [Versioning](docs/VERSIONING.md).
 Handle maintenance and future development sequentially; do not work on
 multiple issues/branches or publish multiple open PRs concurrently.
 
-Use `0.6.2-dev` until `v0.6.2-beta` is published. After publication, create
-`0.6.3-dev` from the updated `main` for further maintenance. Retain the previous
-branches unless their cleanup is approved. The 0.6.2-beta delivery includes
+Use `0.6.3-dev` until `v0.6.3-beta` is published. After publication, create
+`0.6.4-dev` from the updated `main` for further maintenance. Retain the previous
+branches unless their cleanup is approved. The 0.6.3-beta delivery includes
 the integrated feature scope as the release-specific exception documented in
 [Versioning](docs/VERSIONING.md). Future feature deliveries and stable promotion
 require separate approval.

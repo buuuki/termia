@@ -109,25 +109,29 @@ i no acaba processos.
 
 ## Estat de la versió
 
-**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** és una
-versió preliminar amb Retron i configuracions d’aparença desades,
-el llançador d’eines, diagnòstic local, proteccions del terminal
-i correccions d’interacció. Consulta [CHANGELOG.md](../CHANGELOG.md)
-per veure els canvis des de 0.6.1-beta.
+**0.6.3-beta** és la versió preliminar en preparació, amb correccions de
+reobertura de terminals, enganxament multilínia editable i canvis d’interacció
+a Notes i les barres laterals. Consulta [CHANGELOG.md](../CHANGELOG.md)
+per veure els canvis des de 0.6.2-beta.
+Les instruccions de baixada i actualització següents estaran disponibles
+després de la publicació; l’última versió publicada actualment és
+[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta).
+El tancament inesperat de GTK/Wayland (#499) i la fallada intermitent
+d’arrossegament a Notes (#489) continuen en investigació.
 
-Abans d’executar 0.6.2-beta per primera vegada, tanca Termia i fes una còpia
-de seguretat del perfil. Les connexions passen a l’esquema 4, que les versions
-anteriors no poden llegir. Per tornar enrere, restaura la còpia prèvia i conserva
+Abans d’actualitzar, tanca Termia i fes una còpia de seguretat del perfil.
+Les versions anteriors a 0.6.2-beta no poden llegir l’esquema 4 de connexions.
+Per tornar enrere, restaura la còpia prèvia i conserva
 les dades més recents per separat. Consulta la
 [compatibilitat de l’emmagatzematge](STORAGE_MIGRATIONS.md#schema-inventory).
 
 ## Instal·lar a Ubuntu 24.04 o posterior
 
 Paquet Debian:
-[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
+[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.2.beta-1_all.deb
+sudo apt install ./termia_0.6.3.beta-1_all.deb
 ```
 
 APT instal·la les dependències necessàries, el llançador i la icona.
@@ -163,8 +167,8 @@ Per a un checkout net, un cop publicada l'etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
-git merge --ff-only v0.6.2-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
+git merge --ff-only v0.6.3-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -228,7 +232,7 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquet es crea al directori pare com a `termia_0.6.2~beta-1_all.deb`.
+El paquet es crea al directori pare com a `termia_0.6.3~beta-1_all.deb`.
 És independent del fitxer oficial de la release.
 
 ## Documentació

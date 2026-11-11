@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.6.3-beta - 2026-11-12
+
+Integrated beta delivery prepared in #508. This release includes the paste
+and Notes interaction changes as a release-specific PATCH scope exception.
+The reported GTK/Wayland crash (#499) and intermittent Notes drag failure
+(#489) remain under investigation; neither is claimed as fixed.
+
 ### Changed
 
 - Focus Paste by default in multiline paste confirmation and allow editing

@@ -58,6 +58,16 @@ promote the application beyond beta. Preparation is tracked in
 a pre-upgrade backup for downgrade compatibility; see
 [storage migrations](STORAGE_MIGRATIONS.md#schema-inventory).
 
+### 0.6.3-beta release scope
+
+`0.6.3-beta` includes the integrated `0.6.3-dev` changes since `0.6.2-beta`:
+terminal reopening and split lifecycle fixes, editable multiline paste,
+Notes/sidebar interactions, release asset validation and diagnostics.
+This is a release-specific exception to PATCH maintenance scope; the general
+versioning rules and beta maturity remain unchanged. Preparation is tracked in
+[#508](https://github.com/buuuki/termia/issues/508). The GTK/Wayland crash
+(#499) and intermittent Notes drag failure (#489) remain under investigation.
+
 A release candidate is optional. A beta may become the stable release directly
 once it meets the release criteria. Publish an `rc` when an additional round
 of public validation would be useful.
@@ -97,9 +107,9 @@ state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `<MAJOR.MINOR.PATCH>-dev` branch from the updated
 `main`.
 
-The delivery in preparation is `0.6.2-beta`, tracked in
-[#492](https://github.com/buuuki/termia/issues/492). Use `0.6.2-dev` until
-`v0.6.2-beta` is published. Then create `0.6.3-dev` from the updated `main` for
+The delivery in preparation is `0.6.3-beta`, tracked in
+[#508](https://github.com/buuuki/termia/issues/508). Use `0.6.3-dev` until
+`v0.6.3-beta` is published. Then create `0.6.4-dev` from the updated `main` for
 further maintenance, retaining the previous branches unless cleanup is approved.
 The branch transition does not change the application version. Future feature
 work or stable promotion requires separate approval; do not automatically
@@ -250,6 +260,7 @@ use the unnumbered form. The mapping is:
 | `0.6.0-beta.4` | `0.6.0~beta.4-1` |
 | `0.6.1-beta` | `0.6.1~beta-1` |
 | `0.6.2-beta` | `0.6.2~beta-1` |
+| `0.6.3-beta` | `0.6.3~beta-1` |
 | `0.7.3` | `0.7.3-1` |
 | `0.9.0-beta.1` | `0.9.0~beta.1-1` |
 | `0.9.0-rc.1` | `0.9.0~rc.1-1` |

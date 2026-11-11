@@ -7,29 +7,29 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Publication target: 0.6.2-beta
+## Publication target: 0.6.3-beta
 
-Source version: `0.6.2-beta`; Debian package: `0.6.2~beta-1`. This delivery
-collects all integrated changes since `0.6.1-beta`, including Retron, its
-appearance editor and named configurations, terminal clipboard protections,
-local profile passwords and interaction fixes. See [CHANGELOG.md](CHANGELOG.md).
-Preparation is tracked in [#492](https://github.com/buuuki/termia/issues/492),
-with publication metadata and promotion to `main` in
-[#494](https://github.com/buuuki/termia/issues/494).
-Package builds, upgrade checks and installed-package acceptance passed in the
-Ubuntu 24/26 GNOME Wayland laboratories. Tag, public assets and checksums must
-be verified at publication; package acceptance alone does not publish a release.
+Source version: `0.6.3-beta`; Debian package: `0.6.3~beta-1`. This delivery
+collects the integrated changes since `0.6.2-beta`: terminal reopening and
+split lifecycle fixes, editable multiline paste, Notes/sidebar interactions,
+release asset validation and diagnostics. See [CHANGELOG.md](CHANGELOG.md).
+Preparation and validation are tracked in
+[#508](https://github.com/buuuki/termia/issues/508).
+Candidate package installation and upgrade acceptance on Ubuntu 24/26, plus
+tag, public assets and checksum verification, are release gates. Preparation
+does not publish a release. The GTK/Wayland crash (#499) and intermittent
+Notes drag failure (#489) remain under investigation.
 
 Termia remains in beta. Maintenance may increment PATCH while retaining beta
 status; new feature deliveries normally increment MINOR. The integrated
-`0.6.2-beta` scope is a release-specific exception. New beta deliveries use
+`0.6.3-beta` scope is a release-specific exception. New beta deliveries use
 `-beta` without a serial; new development branches use `X.Y.Z-dev` without
 a `release/` prefix or a maturity suffix. Numbered RCs remain optional.
 See `docs/VERSIONING.md` for the maintenance and transition gates.
 
 ## Development after publication
 
-Use `0.6.2-dev` until `v0.6.2-beta` is published. Then create `0.6.3-dev` from
+Use `0.6.3-dev` until `v0.6.3-beta` is published. Then create `0.6.4-dev` from
 the updated `main` for further maintenance. New issue branches and PRs use that
 active development line. Future features and stable promotion require separate
 scope and readiness approval.
@@ -70,4 +70,4 @@ as defined in `docs/VERSIONING.md`.
 ## Future features (unscheduled)
 
 - Rearrange split panes using keyboard or drag-and-drop (#316). This is outside
-  the 0.6.2-beta release scope.
+  the 0.6.3-beta release scope.
