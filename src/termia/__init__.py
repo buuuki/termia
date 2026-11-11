@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Termia terminal workspace and SSH connection manager."""
 
-__version__ = "0.6.2-beta"
+__version__ = "0.6.3-beta"

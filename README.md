@@ -104,23 +104,27 @@ are collected and the tool does not terminate processes.
 
 ## Release status
 
-**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** is a
-prerelease with Retron and named appearance configurations, the Tools launcher,
-local diagnostics, terminal protections and interaction fixes.
-See [CHANGELOG.md](CHANGELOG.md) for changes since 0.6.1-beta.
+**0.6.3-beta** is the prerelease in preparation, with terminal reopening fixes,
+editable multiline paste and Notes/sidebar interaction changes.
+See [CHANGELOG.md](CHANGELOG.md) for changes since 0.6.2-beta.
+The download and update instructions below become available after publication;
+the latest published release is currently
+[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta).
+The GTK/Wayland crash (#499) and intermittent Notes drag failure (#489) remain
+under investigation.
 
-Before first running 0.6.2-beta, close Termia and back up your profile.
-Connections upgrade to schema 4, which older versions cannot read. To downgrade,
+Before upgrading, close Termia and back up your profile.
+Versions before 0.6.2-beta cannot read connection schema 4. To downgrade,
 restore the pre-upgrade backup and retain a separate copy of newer data.
 See [storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
 
 ## Install on Ubuntu 24.04 or newer
 
 Debian package:
-[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
+[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.2.beta-1_all.deb
+sudo apt install ./termia_0.6.3.beta-1_all.deb
 ```
 
 APT installs the required dependencies, desktop launcher, and icon.
@@ -156,8 +160,8 @@ For a clean source checkout, after the release tag is published:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
-git merge --ff-only v0.6.2-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
+git merge --ff-only v0.6.3-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -221,7 +225,7 @@ dpkg-buildpackage -us -uc -b
 ```
 
 The package is created in the parent directory as
-`termia_0.6.2~beta-1_all.deb`. It is separate from the official release asset.
+`termia_0.6.3~beta-1_all.deb`. It is separate from the official release asset.
 
 ## Documentation
 

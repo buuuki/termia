@@ -111,25 +111,29 @@ de entorno ni credenciales, y no termina procesos.
 
 ## Estado de la versión
 
-**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** es una
-versión preliminar con Retron y configuraciones de apariencia guardadas,
-el lanzador de herramientas, diagnóstico local, protecciones del terminal
-y correcciones de interacción. Consulta [CHANGELOG.md](../CHANGELOG.md)
-para ver los cambios desde 0.6.1-beta.
+**0.6.3-beta** es la versión preliminar en preparación, con correcciones de
+reapertura de terminales, pegado multilínea editable y cambios de interacción
+en Notas y las barras laterales. Consulta [CHANGELOG.md](../CHANGELOG.md)
+para ver los cambios desde 0.6.2-beta.
+Las instrucciones de descarga y actualización siguientes estarán disponibles
+tras la publicación; la última versión publicada actualmente es
+[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta).
+El cierre inesperado de GTK/Wayland (#499) y el fallo intermitente de arrastre
+en Notas (#489) siguen en investigación.
 
-Antes de ejecutar 0.6.2-beta por primera vez, cierra Termia y copia tu perfil
-como respaldo. Las conexiones pasan al esquema 4, que las versiones anteriores
-no pueden leer. Para volver atrás, restaura la copia previa y conserva aparte
+Antes de actualizar, cierra Termia y copia tu perfil como respaldo.
+Las versiones anteriores a 0.6.2-beta no pueden leer el esquema 4 de conexiones.
+Para volver atrás, restaura la copia previa y conserva aparte
 los datos más recientes. Consulta la
 [compatibilidad del almacenamiento](STORAGE_MIGRATIONS.md#schema-inventory).
 
 ## Instalar en Ubuntu 24.04 o posterior
 
 Paquete Debian:
-[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
+[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.2.beta-1_all.deb
+sudo apt install ./termia_0.6.3.beta-1_all.deb
 ```
 
 APT instala las dependencias necesarias, el lanzador y el icono.
@@ -165,8 +169,8 @@ Para un checkout limpio, una vez publicada la etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
-git merge --ff-only v0.6.2-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
+git merge --ff-only v0.6.3-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -230,7 +234,7 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquete se crea en el directorio padre como `termia_0.6.2~beta-1_all.deb`.
+El paquete se crea en el directorio padre como `termia_0.6.3~beta-1_all.deb`.
 Es independiente del archivo oficial de la release.
 
 ## Documentación
