@@ -24,6 +24,11 @@ de archivos en terminales VTE integrados con GTK 4.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
 - Cada barra de estado muestra el nombre de la conexión y un indicador de
   estado con color; al pasar el ratón se ven los detalles del proceso o error.
+  Los terminales locales muestran Iniciando, En ejecución o Finalizado y usan
+  Finalizar terminal / Abrir terminal. Tras finalizar manualmente el único
+  terminal de una pestaña que permanece abierta, Abrir terminal (local) o
+  Conectar (SSH) inicia una sesión nueva en ese panel. Desconectar un split
+  sigue eliminándolo; se conserva la opción de cerrar la pestaña automáticamente.
 - Copia automática al terminar de seleccionar texto del terminal,
   activada por defecto y configurable en Preferencias generales. El aviso confirma la copia
   e indica los caracteres, incluidos espacios y saltos de línea, cuando el

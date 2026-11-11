@@ -492,6 +492,17 @@ Long measurements and release-platform checks remain separate validation work.
 - SCP diagnostics may record only lifecycle phase and outcome; they must not
   contain passwords, server identities, usernames, or selected paths.
 - Failed SSH connections must leave the tab usable and show the reconnect prompt.
+- With automatic tab closure disabled, manually end the only local/SSH
+  terminal. After its child exits, the menu and status-bar button must offer
+  Open terminal / Connect and start exactly one new process in the same pane.
+  Repeat using a named local profile and the last remaining pane from a split.
+  Local states must read Starting / Running / Finished in EN/ES/CA; local
+  active actions and confirmation must say End terminal, not Disconnect.
+  Repeated cycles must retain output and not duplicate exit accounting.
+  During termination, reopening must not start another process. Cancelling
+  SSH startup and reopening must ignore the old host-key lookup callback.
+  With automatic tab closure enabled, disconnect must still close the tab.
+  Disconnecting a pane with siblings must still remove only that pane.
 - The reconnect prompt must be readable on both light and dark terminal backgrounds.
 - Pressing Enter on a failed SSH tab must reconnect to the same server.
 - Reconnecting the original SSH pane must preserve its tab, detached window,

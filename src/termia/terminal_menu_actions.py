@@ -6,10 +6,26 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from .models import Server
-from .ui_state import TerminalSession
+from .ui_state import TerminalPane, TerminalSession
 
 MenuPopover = object
 TerminalWidget = object
+
+
+def can_reopen_terminal(session: TerminalSession, pane: TerminalPane) -> bool:
+    return (
+        len(session.panes) == 1
+        and not pane.retired
+        and pane.disconnect_requested
+        and not pane.connected
+        and pane.child_process is None
+    )
+
+
+def terminal_action_label_key(session: TerminalSession, pane: TerminalPane) -> str:
+    if can_reopen_terminal(session, pane):
+        return "connect" if pane.server_id is not None else "open_local_terminal"
+    return "disconnect" if pane.server_id is not None else "end_local_terminal"
 
 
 def status_bar_action_label_key(status_bar_visible: bool) -> str:

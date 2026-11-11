@@ -499,6 +499,7 @@ class TerminalProcessTests(unittest.TestCase):
             server_id="server",
             connected=True,
             disconnect_requested=False,
+            retired=False,
             disconnect_button=Mock(),
             status_label=Mock(),
         )
@@ -509,6 +510,7 @@ class TerminalProcessTests(unittest.TestCase):
             active_terminal_ids=set(),
             connected=True,
             pane_for_terminal=lambda current: pane if current is terminal else None,
+            panes={id(terminal): pane},
             split_terminals=[terminal],
             status_label=Mock(),
             disconnect_button=Mock(),
@@ -631,7 +633,10 @@ class TerminalProcessTests(unittest.TestCase):
         class Host(TerminalSessionsMixin):
             def __init__(self) -> None:
                 self.shutdown_in_progress = False
-                self.store = SimpleNamespace(record_history_end=Mock())
+                self.store = SimpleNamespace(
+                    record_history_end=Mock(),
+                    data=SimpleNamespace(app=SimpleNamespace(close_tab_on_disconnect=True)),
+                )
                 self.session_observer = Mock()
                 self.toast_label = Mock()
 

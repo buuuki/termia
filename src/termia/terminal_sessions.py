@@ -46,6 +46,7 @@ from .terminal_config import (
     build_terminal_environment,
     split_layout_plan,
 )
+from .terminal_menu_actions import can_reopen_terminal, terminal_action_label_key
 from .terminal_processes import (
     TerminalProcess,
     signal_terminal_process,
@@ -197,12 +198,19 @@ class TerminalSessionsMixin:
             name = profile.name if profile is not None else pane.title
         else:
             name = self.t("local_terminal")
+        is_local = pane.server_id is None
         if pane.disconnect_requested or not pane.connected:
-            state, color = self.t("terminal_state_disconnected"), DARK_GLOW_COLORS["muted"]
+            state = self.t("local_terminal_finished" if is_local else "terminal_state_disconnected")
+            color = DARK_GLOW_COLORS["muted"]
         elif pane.child_process is None:
-            state, color = self.t("connecting"), DARK_GLOW_COLORS["yellow"]
+            state = self.t("local_terminal_starting" if is_local else "connecting")
+            color = DARK_GLOW_COLORS["yellow"]
         else:
-            state, color = self.t("terminal_state_connected"), DARK_GLOW_COLORS["green"]
+            state = self.t("local_terminal_running" if is_local else "terminal_state_connected")
+            color = DARK_GLOW_COLORS["green"]
+        if pane.connected and not pane.disconnect_requested:
+            pane.disconnect_button.set_label(self.t("end_local_terminal" if is_local else "disconnect"))
+            pane.disconnect_button.add_css_class("destructive-action")
         text = GLib.markup_escape_text(f"{state} · {name}")
         markup = f'<span foreground="{color}">●</span> {text}'
         if pane.status_label.get_label() != markup:
@@ -703,10 +711,13 @@ class TerminalSessionsMixin:
             return
 
         if server.password:
+            root_pane = self.pane_state(session, terminal)
+            generation = root_pane.timer_generation
             inspect_known_host_async(
                 server.host,
                 server.port,
-                lambda known: self.finish_start_ssh_session(server, session, split_layout, ssh_path, known),
+                lambda known: self.finish_start_ssh_session(server, session, split_layout, ssh_path, known)
+                if root_pane.timer_generation == generation else None,
             )
             return
         self.finish_start_ssh_session(server, session, split_layout, ssh_path, False)
@@ -1843,6 +1854,7 @@ class TerminalSessionsMixin:
             return
 
         if server.password:
+            generation = pane.timer_generation
             inspect_known_host_async(
                 server.host,
                 server.port,
@@ -1853,7 +1865,7 @@ class TerminalSessionsMixin:
                     announce,
                     ssh_path,
                     known,
-                ),
+                ) if pane.timer_generation == generation else None,
             )
             return
         self.finish_start_ssh_split_terminal(session, terminal, server, announce, ssh_path, False)
@@ -2006,6 +2018,10 @@ class TerminalSessionsMixin:
                 self.t("connection_failed_toast").format(title=pane.title),
             )
             return
+        if can_reopen_terminal(session, pane) and not self.store.data.app.close_tab_on_disconnect:
+            session.connected = False
+            self.show_terminal_reopen_action(session, terminal)
+            return
         if terminal in session.split_terminals:
             session.split_terminals.remove(terminal)
         if self.should_close_tab_after_terminal_exit(session):
@@ -2013,8 +2029,13 @@ class TerminalSessionsMixin:
             return
         if not session.active_terminal_ids:
             session.connected = False
-            session.disconnect_button.set_sensitive(False)
-            self.update_pane_status(self.pane_state(session, session.terminal), self.t("session_closed_status").format(title=session.title))
+            root_pane = session.pane_for_terminal(session.terminal)
+            if root_pane is not None:
+                root_pane.disconnect_button.set_sensitive(False)
+                self.update_pane_status(
+                    root_pane,
+                    self.t("session_closed_status").format(title=session.title),
+                )
             self.update_session_tab_title(session, self.t("tab_closed_title").format(title=session.title))
         GLib.idle_add(self.remove_split_terminal_pane, terminal, session)
 
@@ -2139,6 +2160,15 @@ class TerminalSessionsMixin:
         )
         if session.active_terminal_ids:
             self.remove_terminal_pane_if_split(terminal, session)
+        elif not self.store.data.app.close_tab_on_disconnect:
+            self.show_terminal_reopen_action(session, terminal)
+
+    def show_terminal_reopen_action(self, session: TerminalSession, terminal: Vte.Terminal) -> None:
+        pane = self.pane_state(session, terminal)
+        if can_reopen_terminal(session, pane):
+            pane.disconnect_button.set_label(self.t(terminal_action_label_key(session, pane)))
+            pane.disconnect_button.remove_css_class("destructive-action")
+            pane.disconnect_button.set_sensitive(True)
 
     def should_close_tab_after_terminal_exit(self, session: TerminalSession) -> bool:
         has_pending_reconnect = any(pane.pending_reconnect for pane in session.panes.values())
@@ -2462,6 +2492,20 @@ class TerminalSessionsMixin:
         terminal: Vte.Terminal,
     ) -> None:
         pane = self.pane_state(session, terminal)
+        if can_reopen_terminal(session, pane):
+            if getattr(self, "shutdown_in_progress", False):
+                return
+            pane.pending_reconnect = True
+            if terminal is session.terminal:
+                session.pending_reconnect = True
+                if pane.server_id is None:
+                    self.retry_local_terminal_session(session)
+                else:
+                    self.reconnect_session(session)
+            else:
+                self.retry_split_pane(session, terminal)
+            terminal.grab_focus()
+            return
         if not pane.connected:
             if pane.pending_reconnect:
                 self.close_pending_reconnect_pane(session, terminal)
@@ -2471,9 +2515,9 @@ class TerminalSessionsMixin:
             return
         self.confirm_session_action(
             session,
-            self.t("disconnect_session_title"),
-            self.t("disconnect_session_detail").format(title=pane.title),
-            self.t("disconnect_session_confirm"),
+            self.t("end_local_terminal" if pane.server_id is None else "disconnect_session_title"),
+            self.t("end_local_terminal_detail" if pane.server_id is None else "disconnect_session_detail").format(title=pane.title),
+            self.t("end_local_terminal" if pane.server_id is None else "disconnect_session_confirm"),
             lambda: self.disconnect_pane(session, terminal),
         )
 
@@ -2499,8 +2543,12 @@ class TerminalSessionsMixin:
         if process is None:
             self.mark_terminal_inactive(terminal, session)
             pane.connected = False
+            if terminal is session.terminal:
+                session.connected = bool(session.active_terminal_ids)
             self.store.record_history_end(pane, "disconnected")
             self.remove_terminal_pane_if_split(terminal, session)
+            if not self.store.data.app.close_tab_on_disconnect:
+                self.show_terminal_reopen_action(session, terminal)
         if (
             not (session.active_terminal_ids - {id(terminal)})
             and not any(
