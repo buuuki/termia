@@ -66,7 +66,7 @@ Notes/sidebar interactions, release asset validation and diagnostics.
 This is a release-specific exception to PATCH maintenance scope; the general
 versioning rules and beta maturity remain unchanged. Preparation is tracked in
 [#508](https://github.com/buuuki/termia/issues/508). The GTK/Wayland crash
-(#499) and intermittent Notes drag failure (#489) remain under investigation.
+(#499) and broader Notes movement investigation (#489) remain open.
 
 A release candidate is optional. A beta may become the stable release directly
 once it meets the release criteria. Publish an `rc` when an additional round
@@ -107,10 +107,10 @@ state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `<MAJOR.MINOR.PATCH>-dev` branch from the updated
 `main`.
 
-The delivery in preparation is `0.6.3-beta`, tracked in
-[#508](https://github.com/buuuki/termia/issues/508). Use `0.6.3-dev` until
-`v0.6.3-beta` is published. Then create `0.6.4-dev` from the updated `main` for
-further maintenance, retaining the previous branches unless cleanup is approved.
+The published delivery is `0.6.3-beta`, tracked in
+[#508](https://github.com/buuuki/termia/issues/508). The active maintenance branch
+is `0.6.4-dev`, created from the updated `main` after publication. Retain the
+previous branches unless cleanup is approved.
 The branch transition does not change the application version. Future feature
 work or stable promotion requires separate approval; do not automatically
 allocate work to `0.7.0`. Update release metadata only during approved release

@@ -111,15 +111,13 @@ de entorno ni credenciales, y no termina procesos.
 
 ## Estado de la versión
 
-**0.6.3-beta** es la versión preliminar en preparación, con correcciones de
+**[0.6.3-beta](https://github.com/buuuki/termia/releases/tag/v0.6.3-beta)** es una
+versión preliminar con correcciones de
 reapertura de terminales, pegado multilínea editable y cambios de interacción
 en Notas y las barras laterales. Consulta [CHANGELOG.md](../CHANGELOG.md)
 para ver los cambios desde 0.6.2-beta.
-Las instrucciones de descarga y actualización siguientes estarán disponibles
-tras la publicación; la última versión publicada actualmente es
-[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta).
-El cierre inesperado de GTK/Wayland (#499) y el fallo intermitente de arrastre
-en Notas (#489) siguen en investigación.
+El cierre inesperado de GTK/Wayland (#499) y la investigación general sobre
+el movimiento de Notas (#489) siguen abiertos.
 
 Antes de actualizar, cierra Termia y copia tu perfil como respaldo.
 Las versiones anteriores a 0.6.2-beta no pueden leer el esquema 4 de conexiones.

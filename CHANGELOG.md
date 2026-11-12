@@ -4,10 +4,12 @@
 
 ## 0.6.3-beta - 2026-11-12
 
+Publication, annotated tag and fresh public asset checks verified in #508.
+
 Integrated beta delivery prepared in #508. This release includes the paste
 and Notes interaction changes as a release-specific PATCH scope exception.
-The reported GTK/Wayland crash (#499) and intermittent Notes drag failure
-(#489) remain under investigation; neither is claimed as fixed.
+The reported GTK/Wayland crash (#499) and broader Notes movement investigation
+(#489) remain open; this delivery does not claim to resolve them.
 
 ### Changed
 
