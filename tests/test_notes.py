@@ -5,6 +5,7 @@ import tempfile
 import time
 import unittest
 from datetime import datetime
+from itertools import cycle
 from pathlib import Path
 from types import SimpleNamespace
 from typing import get_type_hints
@@ -632,12 +633,16 @@ class NoteHierarchyTests(unittest.TestCase):
         pointer("mousemove", "--window", str(xid), str(int(point.x)), str(int(point.y)))
         pointer("mousedown", "1")
         self.assertFalse(dialog.on_note_tree_header_clicked.called)
-        for offset in (12, 24, 48, 80):
-            pointer("mousemove", "--window", str(xid), str(int(point.x + offset)), str(int(point.y)))
-            # Pace the gesture; completion is checked separately with a deadline.
-            time.sleep(0.03)
-            drain()
-        wait_for(lambda: dialog.on_category_group_drag_begin.called, "native drag-begin")
+        offsets = cycle((12, 24, 48, 80))
+
+        def move_until_drag_starts():
+            if not dialog.on_category_group_drag_begin.called:
+                pointer("mousemove", "--window", str(xid),
+                        str(int(point.x + next(offsets))), str(int(point.y)))
+            return dialog.on_category_group_drag_begin.called
+
+        # GTK needs a motion after its native minimum drag time has elapsed.
+        wait_for(move_until_drag_starts, "native drag-begin")
         self.assertTrue(dialog.on_category_group_drag_begin.called)
         pointer("mouseup", "1")
         wait_for(lambda: getattr(dialog, "category_group_drag", None) is None, "native drag-end")
