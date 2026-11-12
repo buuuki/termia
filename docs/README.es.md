@@ -14,6 +14,7 @@ de archivos en terminales VTE integrados con GTK 4.
   Usa `Ctrl+Shift+flechas` para moverte entre paneles de Termia; `Ctrl+flechas`
   queda disponible para aplicaciones del terminal como tmux.
 - Conexiones organizadas en grupos anidados, favoritos y conexiones recientes.
+  El sidebar de conexiones empieza oculto; usa su botón de cabecera para mostrarlo.
 - Selector nativo de claves SSH privadas al crear o editar una conexión.
 - Contraseña opcional en los perfiles de terminal local. Activa el atajo de envío
   en las preferencias y pulsa `Ctrl+P` (predeterminado) cuando `sudo` la solicite;
@@ -23,13 +24,19 @@ de archivos en terminales VTE integrados con GTK 4.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
 - Cada barra de estado muestra el nombre de la conexión y un indicador de
   estado con color; al pasar el ratón se ven los detalles del proceso o error.
+  Los terminales locales muestran Iniciando, En ejecución o Finalizado y usan
+  Finalizar terminal / Abrir terminal. Tras finalizar manualmente el único
+  terminal de una pestaña que permanece abierta, Abrir terminal (local) o
+  Conectar (SSH) inicia una sesión nueva en ese panel. Desconectar un split
+  sigue eliminándolo; se conserva la opción de cerrar la pestaña automáticamente.
 - Copia automática al terminar de seleccionar texto del terminal,
   activada por defecto y configurable en Preferencias generales. El aviso confirma la copia
   e indica los caracteres, incluidos espacios y saltos de línea, cuando el
   portapapeles acepta el texto. Un clic en otra zona quita el resaltado sin perder la copia.
 - Confirmación antes de pegar texto con saltos de línea en el terminal,
-  activada por defecto en Preferencias generales. Revisa la vista previa y
-  pulsa Pegar; Cancelar o Escape no envían nada. También protege el botón
+  activada por defecto en Preferencias generales. Revisa o edita el texto y
+  pulsa Pegar, que recibe el foco inicial. Enter en el editor inserta una línea;
+  Tab lleva a los botones. Cancelar o Escape no envían nada. También protege el botón
   central: mientras está activada, Termia lo trata como pegado incluso en
   aplicaciones del terminal que normalmente gestionan el ratón.
 - Subidas SCP y explorador SFTP nativo con transferencias y cancelación.
@@ -38,7 +45,8 @@ de archivos en terminales VTE integrados con GTK 4.
 - Notas personales o asociadas a servidores, con guardado automático,
   categorías e importación/exportación. Haz clic derecho en una pestaña para
   renombrar, eliminar, clonar, guardar o cerrarla; el editor conserva el estado
-  de guardado y la fecha de modificación.
+  de guardado y la fecha de modificación. Abre **Herramientas → Notas**;
+  su sidebar se oculta en cada apertura y puedes mostrarlo con su botón de cabecera.
 - Datos de conexión locales con cifrado opcional mediante contraseña maestra.
 - Importación/exportación de Termia e importación de conexiones desde Ásbrú YAML.
 - Historial de conexiones y complementos opcionales de Estadísticas y SFTP.
@@ -103,25 +111,29 @@ de entorno ni credenciales, y no termina procesos.
 
 ## Estado de la versión
 
-**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** es una
-versión preliminar con Retron y configuraciones de apariencia guardadas,
-el lanzador de herramientas, diagnóstico local, protecciones del terminal
-y correcciones de interacción. Consulta [CHANGELOG.md](../CHANGELOG.md)
-para ver los cambios desde 0.6.1-beta.
+**0.6.3-beta** es la versión preliminar en preparación, con correcciones de
+reapertura de terminales, pegado multilínea editable y cambios de interacción
+en Notas y las barras laterales. Consulta [CHANGELOG.md](../CHANGELOG.md)
+para ver los cambios desde 0.6.2-beta.
+Las instrucciones de descarga y actualización siguientes estarán disponibles
+tras la publicación; la última versión publicada actualmente es
+[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta).
+El cierre inesperado de GTK/Wayland (#499) y el fallo intermitente de arrastre
+en Notas (#489) siguen en investigación.
 
-Antes de ejecutar 0.6.2-beta por primera vez, cierra Termia y copia tu perfil
-como respaldo. Las conexiones pasan al esquema 4, que las versiones anteriores
-no pueden leer. Para volver atrás, restaura la copia previa y conserva aparte
+Antes de actualizar, cierra Termia y copia tu perfil como respaldo.
+Las versiones anteriores a 0.6.2-beta no pueden leer el esquema 4 de conexiones.
+Para volver atrás, restaura la copia previa y conserva aparte
 los datos más recientes. Consulta la
 [compatibilidad del almacenamiento](STORAGE_MIGRATIONS.md#schema-inventory).
 
 ## Instalar en Ubuntu 24.04 o posterior
 
 Paquete Debian:
-[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
+[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.2.beta-1_all.deb
+sudo apt install ./termia_0.6.3.beta-1_all.deb
 ```
 
 APT instala las dependencias necesarias, el lanzador y el icono.
@@ -157,8 +169,8 @@ Para un checkout limpio, una vez publicada la etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
-git merge --ff-only v0.6.2-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
+git merge --ff-only v0.6.3-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -222,7 +234,7 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquete se crea en el directorio padre como `termia_0.6.2~beta-1_all.deb`.
+El paquete se crea en el directorio padre como `termia_0.6.3~beta-1_all.deb`.
 Es independiente del archivo oficial de la release.
 
 ## Documentación

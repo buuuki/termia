@@ -1,3 +1,11 @@
+termia (0.6.3~beta-1) unstable; urgency=medium
+
+  * Prepare the integrated beta delivery with terminal reopening fixes,
+    editable multiline paste and Notes/sidebar interaction changes (#508).
+  * Include draft release validation fixes and diagnostic improvements.
+
+ -- Jordi Pons <jpons.git@proton.me>  Thu, 12 Nov 2026 12:00:00 +0100
+
 termia (0.6.2~beta-1) unstable; urgency=medium
 
   * Prepare the integrated beta delivery with Retron, saved appearance

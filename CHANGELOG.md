@@ -2,7 +2,40 @@
 
 ## Unreleased
 
+## 0.6.3-beta - 2026-11-12
+
+Integrated beta delivery prepared in #508. This release includes the paste
+and Notes interaction changes as a release-specific PATCH scope exception.
+The reported GTK/Wayland crash (#499) and intermittent Notes drag failure
+(#489) remain under investigation; neither is claimed as fixed.
+
+### Changed
+
+- Focus Paste by default in multiline paste confirmation and allow editing
+  its text before sending it to the original terminal pane (#500).
+
+- Open Notes from Tools, hide its sidebar on each management invocation and
+  start Termia with the connections sidebar hidden; retain manual toggles
+  and remove the obsolete startup visibility preference (#503).
+
+- Require basic environment details in bug reports and provide commands
+  to collect versions without installing tools (#501).
+
+- Record bounded pointer-event diagnostics on Notes category drag test
+  timeouts to investigate intermittent CI failures (#489).
+
 ### Fixed
+
+- Handle process disappearance during proc stat reads in terminal cleanup
+  tests without masking other read errors.
+
+- Keep native pointer motion active until GTK starts category drags in the
+  Notes regression test, preserving its deadline and assertions (#489).
+
+- Reopen manually ended local and SSH terminals retained as the only pane;
+  use process-specific local actions and status labels, preserving split
+  removal and automatic tab closure. Avoid accessing a removed original pane
+  when the remaining split exits (#505).
 
 - Validate GitHub draft asset URLs against their release's temporary identifier,
   retaining canonical published links and all integrity checks (#496).

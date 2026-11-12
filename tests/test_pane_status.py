@@ -20,7 +20,7 @@ class PaneStatusTests(unittest.TestCase):
             server_id="server-a", local_profile_id=None, title="Renamed tab",
             history_server_name="Original example", status_detail="",
             connected=True, disconnect_requested=False, child_process=object(),
-            status_label=Mock(), retired=False,
+            status_label=Mock(), disconnect_button=Mock(), retired=False,
         )
 
     def render(self, detail=None):
@@ -57,7 +57,7 @@ class PaneStatusTests(unittest.TestCase):
         self.assertIn("Original example", self.render())
         self.pane.server_id = None
         self.pane.local_profile_id = "local-a"
-        self.assertIn("Connected · Local example", self.render())
+        self.assertIn("Running · Local example", self.render())
         self.assertNotIn("authentication", self.pane.status_label.set_tooltip_text.call_args.args[0])
 
     def test_labels_follow_spanish_and_catalan_and_retired_panes_are_untouched(self):
@@ -68,6 +68,24 @@ class PaneStatusTests(unittest.TestCase):
         self.pane.retired = True
         TerminalSessionsMixin.update_pane_status(self.host, self.pane)
         self.pane.status_label.set_markup.assert_not_called()
+
+    def test_local_states_and_action_use_process_language(self):
+        self.pane.server_id = None
+        for language, running, starting, finished, action in (
+            ("en", "Running", "Starting…", "Finished", "End terminal"),
+            ("es", "En ejecución", "Iniciando…", "Finalizado", "Finalizar terminal"),
+            ("ca", "En execució", "Iniciant…", "Finalitzat", "Finalitzar terminal"),
+        ):
+            with self.subTest(language=language):
+                self.host.t = lambda key, language=language: translate_key(key, language)
+                self.pane.connected = True
+                self.pane.child_process = object()
+                self.assertIn(running, self.render())
+                self.pane.disconnect_button.set_label.assert_called_with(action)
+                self.pane.child_process = None
+                self.assertIn(starting, self.render())
+                self.pane.connected = False
+                self.assertIn(finished, self.render())
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ fitxers en terminals VTE integrats amb GTK 4.
   Fes servir `Ctrl+Shift+fletxes` per moure't entre panells de Termia;
   `Ctrl+fletxes` queda disponible per a aplicacions del terminal com tmux.
 - Connexions organitzades en grups imbricats, preferits i connexions recents.
+  La barra lateral de connexions comença oculta; mostra-la amb el botó de capçalera.
 - Selector nadiu de claus SSH privades en crear o editar una connexió.
 - Contrasenya opcional als perfils de terminal local. Activa la drecera d'enviament
   a les preferències i prem `Ctrl+P` (per defecte) quan `sudo` la demani;
@@ -23,13 +24,19 @@ fitxers en terminals VTE integrats amb GTK 4.
 - Espais de treball desats i restauració opcional de la sessió anterior.
 - Cada barra d'estat mostra el nom de la connexió i un indicador d'estat amb
   color; en passar-hi el ratolí es veuen els detalls del procés o error.
+  Els terminals locals mostren Iniciant, En execució o Finalitzat i fan servir
+  Finalitzar terminal / Obrir terminal. Després de finalitzar manualment l'únic
+  terminal d'una pestanya que continua oberta, Obrir terminal (local) o
+  Connectar (SSH) inicia una sessió nova en aquell panell. Desconnectar un split
+  continua eliminant-lo; es conserva l'opció de tancar la pestanya automàticament.
 - Còpia automàtica en acabar de seleccionar text del terminal,
   activada per defecte i configurable a Preferències generals. L'avís confirma la còpia i
   indica els caràcters, inclosos espais i salts de línia, quan el porta-retalls
   accepta el text. Un clic en una altra zona treu el ressaltat sense perdre la còpia.
 - Confirmació abans d'enganxar text amb salts de línia al terminal, activada
-  per defecte a Preferències generals. Revisa la previsualització i prem
-  Enganxar; Cancel·lar o Escapament no envien res. També protegeix el botó
+  per defecte a Preferències generals. Revisa o edita el text i prem Enganxar,
+  que rep el focus inicial. Retorn a l’editor insereix una línia; Tab porta
+  als botons. Cancel·lar o Escapament no envien res. També protegeix el botó
   central: mentre està activada, Termia el tracta com una enganxada fins i
   tot en aplicacions del terminal que normalment gestionen el ratolí.
 - Pujades SCP i explorador SFTP nadiu amb transferències i cancel·lació.
@@ -38,7 +45,8 @@ fitxers en terminals VTE integrats amb GTK 4.
 - Notes personals o associades a servidors, amb desament automàtic,
   categories i importació/exportació. Fes clic dret en una pestanya per
   reanomenar, eliminar, clonar, desar o tancar-la; l’editor conserva l’estat
-  de desament i la data de modificació.
+  de desament i la data de modificació. Obre **Eines → Notes**; la barra
+  lateral s’oculta en cada obertura i pots mostrar-la amb el botó de capçalera.
 - Dades de connexió locals amb xifratge opcional mitjançant contrasenya mestra.
 - Importació/exportació de Termia i importació de connexions des d'Ásbrú YAML.
 - Historial de connexions i complements opcionals d'Estadístiques i SFTP.
@@ -101,25 +109,29 @@ i no acaba processos.
 
 ## Estat de la versió
 
-**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** és una
-versió preliminar amb Retron i configuracions d’aparença desades,
-el llançador d’eines, diagnòstic local, proteccions del terminal
-i correccions d’interacció. Consulta [CHANGELOG.md](../CHANGELOG.md)
-per veure els canvis des de 0.6.1-beta.
+**0.6.3-beta** és la versió preliminar en preparació, amb correccions de
+reobertura de terminals, enganxament multilínia editable i canvis d’interacció
+a Notes i les barres laterals. Consulta [CHANGELOG.md](../CHANGELOG.md)
+per veure els canvis des de 0.6.2-beta.
+Les instruccions de baixada i actualització següents estaran disponibles
+després de la publicació; l’última versió publicada actualment és
+[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta).
+El tancament inesperat de GTK/Wayland (#499) i la fallada intermitent
+d’arrossegament a Notes (#489) continuen en investigació.
 
-Abans d’executar 0.6.2-beta per primera vegada, tanca Termia i fes una còpia
-de seguretat del perfil. Les connexions passen a l’esquema 4, que les versions
-anteriors no poden llegir. Per tornar enrere, restaura la còpia prèvia i conserva
+Abans d’actualitzar, tanca Termia i fes una còpia de seguretat del perfil.
+Les versions anteriors a 0.6.2-beta no poden llegir l’esquema 4 de connexions.
+Per tornar enrere, restaura la còpia prèvia i conserva
 les dades més recents per separat. Consulta la
 [compatibilitat de l’emmagatzematge](STORAGE_MIGRATIONS.md#schema-inventory).
 
 ## Instal·lar a Ubuntu 24.04 o posterior
 
 Paquet Debian:
-[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
+[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.2.beta-1_all.deb
+sudo apt install ./termia_0.6.3.beta-1_all.deb
 ```
 
 APT instal·la les dependències necessàries, el llançador i la icona.
@@ -155,8 +167,8 @@ Per a un checkout net, un cop publicada l'etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
-git merge --ff-only v0.6.2-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
+git merge --ff-only v0.6.3-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -220,7 +232,7 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquet es crea al directori pare com a `termia_0.6.2~beta-1_all.deb`.
+El paquet es crea al directori pare com a `termia_0.6.3~beta-1_all.deb`.
 És independent del fitxer oficial de la release.
 
 ## Documentació

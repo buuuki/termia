@@ -741,12 +741,14 @@ The 8px tab-to-stack margin is outside the tab scroller and applies uniformly
 to all sessions/splits. Existing active/inactive tab and pane rules are retained.
 
 Retron CSS gives the preview TextView horizontal padding of 10px and
-vertical padding of 8px; ordinary modes retain native spacing. These are presentation properties, not
-inserted spaces or newlines: the original `set_text(text)` and
-`terminal.paste_text(text)` calls and the captured text are unchanged. The
-existing 560×320 default dialog size, warning label, content spacing 12px,
-content margins 16px (bottom 0), action top margin 8px, read-only monospace view,
-Cancel default/focus, validity guards and response lifecycle remain unchanged.
+vertical padding of 8px; ordinary modes retain native spacing. These presentation
+properties do not insert spaces or newlines. The captured clipboard text fills
+an editable monospace TextView; confirmation reads its current buffer before
+closing and sends it once to the validated original terminal pane. Paste is the
+default action and receives initial focus. Native editor Enter inserts a newline;
+Tab navigates to the action buttons. The existing 560×320 default dialog size,
+warning label, content spacing 12px, content margins 16px (bottom 0), action top
+margin 8px, validity guards and response lifecycle remain unchanged.
 Its controls keep existing GTK/application button styling. No whitespace
 normalization, escaping, truncation, text tags, wrapping change or clipboard
 write is introduced. Long lines retain native horizontal scrolling.

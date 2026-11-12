@@ -15,6 +15,7 @@ from .keybindings import keybinding_accelerator
 from .terminal_menu_actions import (
     TerminalMenuActions,
     status_bar_action_label_key,
+    terminal_action_label_key,
 )
 from .ui_state import TerminalSession
 
@@ -110,7 +111,8 @@ class TerminalMenusMixin:
                 item.set_attribute_value("accel", GLib.Variant("s", accelerator))
             model.append_item(item)
 
-        add(menu, "disconnect", "disconnect", lambda: actions.disconnect(popover, session, terminal))
+        add(menu, "disconnect", terminal_action_label_key(session, pane),
+            lambda: actions.disconnect(popover, session, terminal))
         add(menu, "status", status_bar_action_label_key(pane.status_bar.get_visible()),
             lambda: actions.toggle_status_bar(popover, session, terminal))
         if session.detached_window is not None:

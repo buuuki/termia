@@ -5,6 +5,7 @@ import tempfile
 import time
 import unittest
 from datetime import datetime
+from itertools import cycle
 from pathlib import Path
 from types import SimpleNamespace
 from typing import get_type_hints
@@ -525,6 +526,36 @@ class NoteHierarchyTests(unittest.TestCase):
         dialog.window = window
         source = None
         point = None
+        pointer_events = []
+
+        def record_pointer_event(_controller, event, location):
+            if event is None:
+                pointer_events.append((
+                    location, "event-unavailable",
+                    _controller.get_current_event_time(),
+                    int(_controller.get_current_event_state()),
+                ))
+                del pointer_events[:-30]
+                return False
+            event_type = event.get_event_type()
+            if event_type in (
+                Gdk.EventType.BUTTON_PRESS, Gdk.EventType.BUTTON_RELEASE,
+                Gdk.EventType.MOTION_NOTIFY, Gdk.EventType.ENTER_NOTIFY,
+                Gdk.EventType.LEAVE_NOTIFY,
+            ):
+                pointer_events.append(
+                    (location, event_type.value_nick, event.get_position())
+                )
+                del pointer_events[:-30]
+            return False
+
+        def observe_pointer_events(widget, location):
+            observer = Gtk.EventControllerLegacy.new()
+            observer.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+            observer.connect("event", record_pointer_event, location)
+            widget.add_controller(observer)
+
+        observe_pointer_events(window, "window")
 
         def drain():
             while GLib.MainContext.default().pending():
@@ -534,6 +565,18 @@ class NoteHierarchyTests(unittest.TestCase):
             deadline = time.monotonic() + 2
             while not condition():
                 if time.monotonic() >= deadline:
+                    try:
+                        result = subprocess.run(
+                            ["xdotool", "getmouselocation", "--shell"],
+                            capture_output=True, text=True, timeout=1,
+                            check=False,
+                        )
+                        pointer_state = (
+                            result.returncode, result.stdout.strip(),
+                            result.stderr.strip(),
+                        )
+                    except (OSError, subprocess.SubprocessError) as error:
+                        pointer_state = type(error).__name__
                     self.fail(
                         f"Timed out waiting for {phase}: "
                         f"window_mapped={window.get_mapped()}, "
@@ -543,7 +586,10 @@ class NoteHierarchyTests(unittest.TestCase):
                         f"point={(point.x, point.y) if point is not None else None}, "
                         f"origin={getattr(dialog, 'category_group_drag_origin', None)}, "
                         f"drag_begin_calls={dialog.on_category_group_drag_begin.call_count}, "
-                        f"header_click_calls={dialog.on_note_tree_header_clicked.call_count}"
+                        f"header_click_calls={dialog.on_note_tree_header_clicked.call_count}, "
+                        f"gtk_version={(Gtk.get_major_version(), Gtk.get_minor_version(), Gtk.get_micro_version())}, "
+                        f"pointer_state={pointer_state!r}, "
+                        f"pointer_events={pointer_events!r}"
                     )
                 GLib.MainContext.default().iteration(False)
                 time.sleep(0.005)
@@ -577,6 +623,7 @@ class NoteHierarchyTests(unittest.TestCase):
                 widgets.append(child)
                 child = child.get_next_sibling()
         self.assertIsNotNone(source)
+        observe_pointer_events(source, "source")
         wait_for(lambda: source.get_mapped() and source.get_width() > 0 and source.get_height() > 0,
                  "mapped and allocated source row")
         valid, point = source.compute_point(window, Graphene.Point().init(35, source.get_height() / 2))
@@ -586,12 +633,16 @@ class NoteHierarchyTests(unittest.TestCase):
         pointer("mousemove", "--window", str(xid), str(int(point.x)), str(int(point.y)))
         pointer("mousedown", "1")
         self.assertFalse(dialog.on_note_tree_header_clicked.called)
-        for offset in (12, 24, 48, 80):
-            pointer("mousemove", "--window", str(xid), str(int(point.x + offset)), str(int(point.y)))
-            # Pace the gesture; completion is checked separately with a deadline.
-            time.sleep(0.03)
-            drain()
-        wait_for(lambda: dialog.on_category_group_drag_begin.called, "native drag-begin")
+        offsets = cycle((12, 24, 48, 80))
+
+        def move_until_drag_starts():
+            if not dialog.on_category_group_drag_begin.called:
+                pointer("mousemove", "--window", str(xid),
+                        str(int(point.x + next(offsets))), str(int(point.y)))
+            return dialog.on_category_group_drag_begin.called
+
+        # GTK needs a motion after its native minimum drag time has elapsed.
+        wait_for(move_until_drag_starts, "native drag-begin")
         self.assertTrue(dialog.on_category_group_drag_begin.called)
         pointer("mouseup", "1")
         wait_for(lambda: getattr(dialog, "category_group_drag", None) is None, "native drag-end")
@@ -1009,6 +1060,7 @@ class NotesDomainTests(unittest.TestCase):
 
     def test_opening_notes_restores_window_before_presenting(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.window = MagicMock()
         dialog.store = SimpleNamespace(encryption_locked=False, read_only=True)
         dialog.ensure_window = MagicMock()
@@ -2826,6 +2878,7 @@ class NotesDialogSignalTests(unittest.TestCase):
                 return self.active_id
 
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=True,
             data=SimpleNamespace(note_categories=[], servers=[], notes=[]),
@@ -2939,6 +2992,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_failed_save_still_presents_notes_window(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False,
             data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),
@@ -2958,6 +3012,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_entry_modes_keep_global_actions_out_of_server_view(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=True,
             data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")], notes=[], note_categories=[]),
@@ -2999,6 +3054,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_opening_hidden_notes_window_starts_a_draft_in_the_current_scope(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=False,
             data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),
@@ -3048,6 +3104,7 @@ class NotesDialogSignalTests(unittest.TestCase):
 
     def test_reopening_notes_reuses_a_draft_for_the_same_scope(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
+        dialog.notes_list_visible = False
         dialog.store = SimpleNamespace(
             encryption_locked=False, read_only=False,
             data=SimpleNamespace(servers=[SimpleNamespace(id="server-id", name="Build host")]),

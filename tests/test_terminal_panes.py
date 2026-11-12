@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import unittest
+from functools import partial
 from types import SimpleNamespace
 from typing import ClassVar
 from unittest.mock import Mock, patch
@@ -53,6 +54,12 @@ class FakeControl:
 
     def set_visible(self, visible: bool) -> None:
         self.visible = visible
+
+    def add_css_class(self, name: str) -> None:
+        pass
+
+    def remove_css_class(self, name: str) -> None:
+        pass
 
     def get_visible(self) -> bool:
         return self.visible
@@ -116,6 +123,143 @@ class TerminalPaneStateTests(unittest.TestCase):
         renderer = patch.object(TerminalSessionsMixin, "update_pane_status", autospec=True)
         self.status_updates = renderer.start()
         self.addCleanup(renderer.stop)
+
+    def test_manual_disconnect_waits_for_exit_then_reopens_local_or_ssh(self):
+        for server_id in (None, "server-a"):
+            with self.subTest(server_id=server_id):
+                terminal = FakeTerminal()
+                process = TerminalProcess(42, 42, 42, "synthetic")
+                pane = make_pane(terminal, "root", server_id=server_id, process=process)
+                session = make_session(terminal, pane)
+                host = TerminalSessionsMixin()
+                host.store = SimpleNamespace(data=SimpleNamespace(app=SimpleNamespace(
+                    close_tab_on_disconnect=False, confirm_disconnect=False,
+                )), record_history_end=Mock())
+                host.t = lambda key: key
+                host.toast_label = Mock()
+                host.session_observer = Mock()
+                host.terminate_terminal_process = Mock(return_value=True)
+                host.remove_terminal_pane_if_split = Mock()
+                host.reconnect_session = Mock()
+                host.retry_local_terminal_session = Mock()
+                host.on_request_disconnect_pane(None, session, terminal)
+                host.terminate_terminal_process.assert_called_once_with(process)
+                host.reconnect_session.assert_not_called()
+                host.retry_local_terminal_session.assert_not_called()
+                self.assertFalse(pane.disconnect_button.sensitive)
+                with patch("termia.terminal_sessions.snapshot_terminal_process", return_value=process), \
+                     patch("termia.terminal_sessions.terminal_process_is_active", return_value=False):
+                    if server_id is None:
+                        host.on_process_terminal_exited(terminal, 0, session)
+                    else:
+                        host.on_terminal_exited(terminal, 0, Mock(), session)
+                expected = "connect" if server_id else "open_local_terminal"
+                self.assertEqual(pane.disconnect_button.label, expected)
+                self.assertTrue(pane.disconnect_button.sensitive)
+                self.assertIsNone(pane.child_process)
+                host.on_request_disconnect_pane(None, session, terminal)
+                retry = host.reconnect_session if server_id else host.retry_local_terminal_session
+                retry.assert_called_once_with(session)
+                self.assertTrue(session.pending_reconnect)
+                self.assertTrue(terminal.focused)
+                host.remove_terminal_pane_if_split.assert_not_called()
+
+    def test_manual_disconnect_respects_automatic_tab_closure(self):
+        terminal = FakeTerminal()
+        pane = make_pane(terminal, "root", process=TerminalProcess(42, 42, 42, "synthetic"))
+        session = make_session(terminal, pane)
+        host = TerminalSessionsMixin()
+        host.store = SimpleNamespace(data=SimpleNamespace(app=SimpleNamespace(close_tab_on_disconnect=True)))
+        host.t = lambda key: key
+        host.toast_label = Mock()
+        host.terminate_terminal_process = Mock(return_value=True)
+        host.close_tab = Mock()
+        host.disconnect_pane(session, terminal)
+        host.close_tab.assert_called_once_with(session.id, session.page, disconnect=False)
+
+    def test_last_remaining_split_can_reopen_without_removal(self):
+        terminal = FakeTerminal()
+        pane = make_pane(terminal, "remaining")
+        pane.disconnect_requested = True
+        session = make_session(object(), pane)
+        session.panes = {id(terminal): pane}
+        session.active_terminal_ids = {id(terminal)}
+        session.split_terminals = [terminal]
+        host = TerminalSessionsMixin()
+        host.store = SimpleNamespace(data=SimpleNamespace(app=SimpleNamespace(
+            close_tab_on_disconnect=False,
+        )), record_history_end=Mock())
+        host.t = lambda key: key
+        host.session_observer = Mock()
+        host.retry_split_pane = Mock()
+        host.close_tab = Mock()
+        with patch("termia.terminal_sessions.GLib.idle_add") as idle:
+            host.on_split_terminal_exited(terminal, 0, session)
+            idle.assert_not_called()
+        self.assertEqual(pane.disconnect_button.label, "open_local_terminal")
+        self.assertIn(terminal, session.split_terminals)
+        host.on_request_disconnect_pane(None, session, terminal)
+        host.retry_split_pane.assert_called_once_with(session, terminal)
+        host.close_tab.assert_not_called()
+
+    def test_last_split_exit_does_not_access_removed_root(self):
+        for server_id in (None, "server-a"):
+            with self.subTest(server_id=server_id):
+                root_terminal, terminal = FakeTerminal(), FakeTerminal()
+                root = make_pane(root_terminal, "removed-root")
+                pane = make_pane(terminal, "remaining", server_id=server_id)
+                session = make_session(root_terminal, root)
+                session.panes = {id(terminal): pane}
+                session.active_terminal_ids = {id(terminal)}
+                session.split_terminals = [terminal]
+                root.disconnect_button = Mock()
+                session.disconnect_button = root.disconnect_button
+                host = TerminalSessionsMixin()
+                host.store = SimpleNamespace(data=SimpleNamespace(app=SimpleNamespace(
+                    close_tab_on_disconnect=False, close_tab_on_ssh_exit=False,
+                )), record_history_end=Mock())
+                host.t = lambda key: key
+                host.session_observer = Mock()
+                host.update_session_tab_title = Mock()
+                host.close_tab = Mock()
+                self.status_updates.reset_mock()
+                with patch("termia.terminal_sessions.GLib.idle_add") as idle:
+                    host.on_split_terminal_exited(terminal, 0, session)
+                    idle.assert_called_once_with(host.remove_split_terminal_pane, terminal, session)
+                root.disconnect_button.set_sensitive.assert_not_called()
+                self.status_updates.assert_called_once_with(host, pane, "session_closed_status")
+                self.assertFalse(pane.connected)
+                self.assertFalse(session.connected)
+                self.assertFalse(session.active_terminal_ids)
+                host.close_tab.assert_not_called()
+
+    def test_old_host_lookup_cannot_complete_a_reopened_attempt(self):
+        for split in (False, True):
+            with self.subTest(split=split):
+                terminal = FakeTerminal()
+                pane = make_pane(terminal, "root", server_id="server-a")
+                session = make_session(terminal, pane)
+                host = TerminalSessionsMixin()
+                host.t = lambda key: key
+                host.store = SimpleNamespace(record_history_start=Mock())
+                host.finish_start_ssh_session = Mock()
+                host.finish_start_ssh_split_terminal = Mock()
+                server = Server("server-a", "Synthetic", "example.test", "test", password="synthetic")
+                with patch("termia.terminal_sessions.GLib.find_program_in_path", return_value="ssh"), \
+                     patch("termia.terminal_sessions.inspect_known_host_async") as lookup:
+                    start = partial(host.start_ssh_split_terminal, session, terminal, server, announce=False) \
+                        if split else partial(host.start_ssh_session, server, session)
+                    start()
+                    old_callback = lookup.call_args.args[2]
+                    host.reset_pane_connection_attempt(pane)
+                    start()
+                    new_callback = lookup.call_args.args[2]
+                    old_callback(True)
+                    host.finish_start_ssh_session.assert_not_called()
+                    host.finish_start_ssh_split_terminal.assert_not_called()
+                    new_callback(True)
+                    finish = host.finish_start_ssh_split_terminal if split else host.finish_start_ssh_session
+                    finish.assert_called_once()
 
     def test_split_focus_key_is_consumed_only_when_focus_moves(self):
         terminal = FakeTerminal()

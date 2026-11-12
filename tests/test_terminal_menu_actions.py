@@ -1,12 +1,28 @@
 import unittest
+from types import SimpleNamespace
 
 from termia.terminal_menu_actions import (
     TerminalMenuActions,
+    can_reopen_terminal,
     status_bar_action_label_key,
 )
 
 
 class TerminalMenuActionsTests(unittest.TestCase):
+    def test_reopen_requires_finished_manual_disconnect_in_only_live_pane(self):
+        pane = SimpleNamespace(retired=False, connected=False,
+                               disconnect_requested=True, child_process=None)
+        session = SimpleNamespace(panes={1: pane})
+        self.assertTrue(can_reopen_terminal(session, pane))
+        for attribute, value in (("retired", True), ("connected", True),
+                                 ("disconnect_requested", False), ("child_process", object())):
+            previous = getattr(pane, attribute)
+            setattr(pane, attribute, value)
+            self.assertFalse(can_reopen_terminal(session, pane), attribute)
+            setattr(pane, attribute, previous)
+        session.panes[2] = object()
+        self.assertFalse(can_reopen_terminal(session, pane))
+
     def test_status_bar_action_label_matches_selected_pane_visibility(self) -> None:
         self.assertEqual(
             status_bar_action_label_key(False),

@@ -212,6 +212,12 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Main Toolbar Icons
 
+- At startup, the connections sidebar must be hidden before the first frame,
+  for either legacy show-sidebar setting. Reveal, resize, hide and reveal it
+  with its header button; preserve width and terminal/session restoration.
+  General preferences must not expose the obsolete startup visibility option
+  or change current sidebar visibility when saving unrelated preferences.
+
 - Main toolbar action icons are protected UI decisions and must not be changed without explicit user approval.
 - The local/new terminal tab action icon and sidebar toggle icon must remain stable unless a change is requested directly.
 - Header actions must retain the same six-pixel spacing as sidebar actions and
@@ -275,9 +281,14 @@ Long measurements and release-platform checks remain separate validation work.
   configured shortcut, Shift+Insert, the context menu and middle-button primary
   selection in local/SSH panes and detached windows. Single-line text pastes
   directly; any line break, including a trailing break, requires confirmation.
-  Cancel, Escape and window close must send nothing. Confirm must paste only
-  the displayed snapshot even if the clipboard changes, using VTE's bracketed
-  paste handling. Closed, reconnected or reparented panes must not receive a
+  Paste must receive initial focus. Enter with Paste focused confirms; Enter
+  inside the editable preview inserts a newline. Tab/Shift+Tab navigate
+  between the editor and buttons. Edit/remove text and verify confirmation
+  sends the current buffer exactly once, preserving whitespace and line
+  endings, even if the clipboard changes. Leave an empty buffer: send nothing.
+  Cancel, Escape and window close must discard edits and send nothing. Keep
+  clipboard/primary contents unchanged and use VTE's bracketed paste handling.
+  Closed, reconnected or reparented panes must not receive a
   pending paste. Check the black 1px preview border and 8px footer gap.
   Disable the option and repeat; native paste must remain available. With
   protection enabled, middle-click is reserved for paste even in applications
@@ -481,6 +492,17 @@ Long measurements and release-platform checks remain separate validation work.
 - SCP diagnostics may record only lifecycle phase and outcome; they must not
   contain passwords, server identities, usernames, or selected paths.
 - Failed SSH connections must leave the tab usable and show the reconnect prompt.
+- With automatic tab closure disabled, manually end the only local/SSH
+  terminal. After its child exits, the menu and status-bar button must offer
+  Open terminal / Connect and start exactly one new process in the same pane.
+  Repeat using a named local profile and the last remaining pane from a split.
+  Local states must read Starting / Running / Finished in EN/ES/CA; local
+  active actions and confirmation must say End terminal, not Disconnect.
+  Repeated cycles must retain output and not duplicate exit accounting.
+  During termination, reopening must not start another process. Cancelling
+  SSH startup and reopening must ignore the old host-key lookup callback.
+  With automatic tab closure enabled, disconnect must still close the tab.
+  Disconnecting a pane with siblings must still remove only that pane.
 - The reconnect prompt must be readable on both light and dark terminal backgrounds.
 - Pressing Enter on a failed SSH tab must reconnect to the same server.
 - Reconnecting the original SSH pane must preserve its tab, detached window,
@@ -739,6 +761,14 @@ Long measurements and release-platform checks remain separate validation work.
 - Security preferences must clearly warn before enabling encryption that Termia will ask for the master password on every startup and that lost master passwords cannot be recovered.
 
 ### Notes
+
+- Open Tools → Notes in System/Light/Dark/Retron and EN/ES/CA. Confirm
+  the existing manager is reused, with its sidebar hidden before presentation
+  on every invocation, including the main-menu and server-context paths.
+  Reveal and resize the sidebar, invoke management again and reveal it once
+  more: preserve its width, editor tabs, autosave and scope. Merely switching
+  focus must not hide a manually revealed sidebar. Recheck locked/read-only
+  profiles and failed editor saves; no pending text may be lost.
 
 - In the native Notes tree, use pointer and keyboard disclosure on personal,
   server, and nested category rows. Select and open saved notes and drafts;
@@ -1533,8 +1563,8 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
   lines, leading/trailing spaces, tabs, LF/CRLF, Unicode and literal escape
   characters. Inspect theme surface/selection colors, both scrollbars, text
   margins, warning/button separation, narrow/resized dialogs and keyboard
-  navigation. In a safe local receiver verify the exact original clipboard
-  text reaches only the intended pane after confirmation; Cancel/Escape/close
+  navigation. In a safe local receiver verify the exact displayed text
+  (original or edited) reaches only the intended pane after confirmation; Cancel/Escape/close
   and invalidated targets must paste nothing. Do not normalize the sample or
   run arbitrary shell commands while inspecting control sequences. These
   runtime checks remain pending and do not replace existing paste safety checks.

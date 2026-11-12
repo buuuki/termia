@@ -14,6 +14,7 @@ together in embedded VTE terminals.
   Use `Ctrl+Shift+Arrow` to move between Termia panes; `Ctrl+Arrow` remains
   available to terminal applications such as tmux.
 - Connections organized in nested groups, favorites, and recent connections.
+  The connections sidebar starts hidden; use its header button to show it.
 - Native private SSH key file picker when creating or editing a connection.
 - Optional saved passwords for local terminal profiles. Enable the saved-password
   shortcut in preferences and press `Ctrl+P` (default) when `sudo` requests it;
@@ -23,19 +24,26 @@ together in embedded VTE terminals.
 - Saved workspaces and optional restoration of the previous session.
 - Per-pane status bars show the connection name and a colored session-state
   indicator; process and error details are available in the tooltip.
+  Local terminals show Starting, Running or Finished and use End terminal /
+  Open terminal. After manually ending the only terminal in a retained tab,
+  Open terminal (local) or Connect (SSH) starts a new session in that pane.
+  Disconnecting a split still removes it; automatic tab closure is unchanged.
 - Automatic copying when terminal selection finishes, enabled by default
   and configurable in General preferences. A success notification reports the character
   count, including spaces and line breaks, once the clipboard accepts the text.
   Click elsewhere in the terminal to clear the highlight without losing the copy.
 - Confirmation before pasting terminal text containing line breaks, enabled
-  by default in General preferences. Review the preview and choose Paste;
-  Cancel or Escape sends nothing. Middle-button pastes are also protected;
+  by default in General preferences. Review or edit the text, then choose Paste,
+  which receives initial focus. Enter in the editor inserts a newline; Tab
+  moves to the buttons. Cancel or Escape sends nothing. Middle-button pastes are also protected;
   with protection enabled, Termia handles that button as paste even in
   terminal applications that normally handle mouse events.
 - SCP uploads and a native SFTP file explorer with transfers and cancellation.
 - Reusable command snippets with categories, scope, variables, and shortcuts;
   commands are previewed before sending them.
 - Personal and server-linked notes with autosave, categories, and import/export.
+  Open **Tools → Notes**; the notes sidebar opens hidden each time and can
+  be shown with its header button.
   Right-click a note tab to rename, delete, clone, save, or close it; the editor
   retains its save status and modification time.
 - Local connection storage with optional master-password encryption.
@@ -96,23 +104,27 @@ are collected and the tool does not terminate processes.
 
 ## Release status
 
-**[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta)** is a
-prerelease with Retron and named appearance configurations, the Tools launcher,
-local diagnostics, terminal protections and interaction fixes.
-See [CHANGELOG.md](CHANGELOG.md) for changes since 0.6.1-beta.
+**0.6.3-beta** is the prerelease in preparation, with terminal reopening fixes,
+editable multiline paste and Notes/sidebar interaction changes.
+See [CHANGELOG.md](CHANGELOG.md) for changes since 0.6.2-beta.
+The download and update instructions below become available after publication;
+the latest published release is currently
+[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta).
+The GTK/Wayland crash (#499) and intermittent Notes drag failure (#489) remain
+under investigation.
 
-Before first running 0.6.2-beta, close Termia and back up your profile.
-Connections upgrade to schema 4, which older versions cannot read. To downgrade,
+Before upgrading, close Termia and back up your profile.
+Versions before 0.6.2-beta cannot read connection schema 4. To downgrade,
 restore the pre-upgrade backup and retain a separate copy of newer data.
 See [storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
 
 ## Install on Ubuntu 24.04 or newer
 
 Debian package:
-[termia_0.6.2.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.2-beta/termia_0.6.2.beta-1_all.deb).
+[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.2.beta-1_all.deb
+sudo apt install ./termia_0.6.3.beta-1_all.deb
 ```
 
 APT installs the required dependencies, desktop launcher, and icon.
@@ -148,8 +160,8 @@ For a clean source checkout, after the release tag is published:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.2-beta
-git merge --ff-only v0.6.2-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
+git merge --ff-only v0.6.3-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -213,7 +225,7 @@ dpkg-buildpackage -us -uc -b
 ```
 
 The package is created in the parent directory as
-`termia_0.6.2~beta-1_all.deb`. It is separate from the official release asset.
+`termia_0.6.3~beta-1_all.deb`. It is separate from the official release asset.
 
 ## Documentation
 
