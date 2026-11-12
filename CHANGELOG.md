@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- Remember the connections sidebar width between sessions, enforce a minimum
+  of 280 pixels or the controls' required width, and cap it at 25% of the
+  available width unless the minimum requires more (#464).
+
 ## 0.6.3-beta - 2026-11-12
 
 Publication, annotated tag and fresh public asset checks verified in #508.

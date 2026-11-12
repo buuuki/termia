@@ -15,6 +15,9 @@ de archivos en terminales VTE integrados con GTK 4.
   queda disponible para aplicaciones del terminal como tmux.
 - Conexiones organizadas en grupos anidados, favoritos y conexiones recientes.
   El sidebar de conexiones empieza oculto; usa su botón de cabecera para mostrarlo.
+  Recuerda el último ancho elegido entre sesiones, con un mínimo de 280 píxeles
+  (más si sus controles lo necesitan) y un máximo del 25 % del ancho disponible;
+  en ventanas pequeñas prevalece el mínimo.
 - Selector nativo de claves SSH privadas al crear o editar una conexión.
 - Contraseña opcional en los perfiles de terminal local. Activa el atajo de envío
   en las preferencias y pulsa `Ctrl+P` (predeterminado) cuando `sudo` la solicite;

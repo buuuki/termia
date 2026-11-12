@@ -1,5 +1,19 @@
 # Regression Checks and Protected Behaviors
 
+## Connections sidebar width
+
+- Launch `scripts/run_test_instance.sh issue-464-width` with an isolated,
+  reusable profile. Reveal the sidebar, change its width, close Termia and
+  run the same command again. Reveal the sidebar and verify width restoration.
+- Check native pointer and keyboard resizing: minimum 280 logical pixels or
+  the controls' measured minimum, whichever is larger; maximum 25% of the
+  paned area's width. The minimum overrides the maximum in small windows.
+- Check every toolbar button remains complete in System/Light/Dark/Retron,
+  EN/ES/CA and larger desktop fonts. Shrink and expand the window: temporary
+  constraints must not replace the preferred width. Hide/show retains it.
+- Changing General preferences must not reset the width. A read-only instance
+  must not write it. Startup remains hidden and Notes behavior is unchanged.
+
 ## Local saved passwords
 
 - Before upgrading a real profile, close Termia and back up connections.json;

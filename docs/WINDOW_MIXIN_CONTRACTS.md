@@ -134,7 +134,11 @@ keybinding dialogs have comparatively small contracts.
 - Reads: `store`, the sidebar widgets, selection state, expansion state,
   `toast_label`, and current GTK focus.
 - Writes: selection, projection, expansion widgets, context-menu state,
-  sidebar visibility and width, visible rows, and scroll-restoration state.
+  sidebar visibility and preferred width, a pending idle sizing update,
+  allocation tracking, visible rows, and scroll-restoration state. The preferred
+  width is persisted through `store.save_settings()` on hide or shutdown;
+  layout constraints do not overwrite it. Native `Gtk.Paned` remains responsible
+  for pointer and keyboard interaction.
 - Cross-mixin dependencies: connection dialogs, terminal opening, file
   transfer, writable checks, and local-shell defaults.
 - Architectural note: this is both a renderer and a controller. Projection,

@@ -104,7 +104,14 @@ credentials or private notes. Isolated test instances use their own profile.
   read-only loading does not rewrite them. Previous Termia versions cannot read
   schema 4. Restore the pre-upgrade backup before downgrading, keeping a separate
   protected copy of newer data. Do not open a schema 4 file with an older client.
-- `settings.json`: object schema `1`; legacy terminal palette and color values
+- `settings.json`: object schema `1`; optional `app.connection_sidebar_width`
+  remembers the preferred connections sidebar width in logical pixels, defaulting
+  to 280. Invalid values use the default; integer values below 280 use 280.
+  Window constraints do not replace the preferred width. Loading does not write;
+  writable instances save an adjusted preference when hiding the sidebar or
+  shutting down. Older clients ignore this field and discard it when saving.
+  This additive setting requires no schema bump.
+  Legacy terminal palette and color values
   are normalized by a named migration.
   The local Retron research theme adds the `dark_glow` value to the existing
   `app.theme` string without a schema change. Choose System/Light/Dark before

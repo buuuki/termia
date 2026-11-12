@@ -127,6 +127,7 @@ class AppSettings:
     open_local_terminal_on_startup: bool = True
     restore_sessions_on_startup: bool = False
     show_sidebar_on_startup: bool = True
+    connection_sidebar_width: int = 280
     show_session_status_bar: bool = False
     audible_bell: bool = False
     confirm_multiline_paste: bool = True

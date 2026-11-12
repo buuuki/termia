@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import tempfile
+import time
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
+
+from gi.repository import GLib
 
 from termia.app import TermiaApp, TermiaWindow
 from termia.i18n import translate_key
@@ -52,11 +55,54 @@ class StartupSidebarTests(unittest.TestCase):
                 window.on_toggle_sidebar(None)
                 self.assertTrue(window.sidebar_visible)
                 self.assertTrue(window.sidebar.get_visible())
-                window.body.set_position(345)
                 window.on_toggle_sidebar(None)
                 window.on_toggle_sidebar(None)
-                self.assertEqual(window.body.get_position(), 345)
+                self.assertEqual(window.body.get_position(), 280)
                 self.assertEqual(window.store.data.app.show_sidebar_on_startup, legacy_value)
+
+    def test_mapped_sidebar_bounds_controls_and_preferred_width(self):
+        def wait_for(predicate):
+            deadline = time.monotonic() + 3
+            while time.monotonic() < deadline:
+                while GLib.MainContext.default().pending():
+                    GLib.MainContext.default().iteration(False)
+                if predicate():
+                    return
+                time.sleep(0.01)
+            self.fail("Sidebar layout did not settle")
+
+        for theme in ("system", "light", "dark", "dark_glow"):
+            with self.subTest(theme=theme), self.window(theme=theme) as window:
+                window.set_default_size(1600, 800)
+                window.present()
+                window.on_toggle_sidebar(None)
+                wait_for(lambda: window.body.get_width() >= 1500
+                         and window.body.get_position() >= 280)
+                window.body.set_position(370)
+                wait_for(lambda: window.sidebar_width == 370)
+                window.on_toggle_sidebar(None)
+                self.assertEqual(window.store.settings_store.app.connection_sidebar_width, 370)
+                window.on_toggle_sidebar(None)
+                wait_for(lambda: window.body.get_position() == 370)
+                window.set_default_size(1000, 800)
+                wait_for(lambda: window.body.get_width() < 1100
+                         and window.body.get_position() < 370)
+                self.assertEqual(window.sidebar_width, 370)
+                window.set_default_size(1600, 800)
+                wait_for(lambda: window.body.get_position() == 370)
+                for language in ("en", "es", "ca"):
+                    window.store.data.app.language = language
+                    window.refresh_translated_chrome()
+                    window.body.set_position(1)
+                    wait_for(lambda: window.body.get_position() >= 280)
+                    for button in (window.add_group_button, window.add_server_button,
+                                   window.add_local_terminal_button, window.save_workspace_button,
+                                   window.expand_all_button, window.collapse_all_button):
+                        self.assertGreater(button.get_width(), 0)
+                        self.assertGreaterEqual(button.get_width(), button.measure(0, -1)[0])
+                    window.body.set_position(100000)
+                    wait_for(lambda: window.body.get_position() <= max(
+                        280, window.sidebar.measure(0, -1)[0], window.body.get_width() // 4))
 
     def test_notes_tool_labels_availability_and_window_reuse_across_themes(self):
         for theme in ("system", "light", "dark", "dark_glow"):
