@@ -2,14 +2,6 @@
 
 ## Unreleased
 
-### Fixed
-
-- Handle process disappearance during proc stat reads in terminal cleanup
-  tests without masking other read errors.
-
-- Keep native pointer motion active until GTK starts category drags in the
-  Notes regression test, preserving its deadline and assertions (#489).
-
 ## 0.6.3-beta - 2026-11-12
 
 Integrated beta delivery prepared in #508. This release includes the paste
@@ -33,6 +25,12 @@ The reported GTK/Wayland crash (#499) and intermittent Notes drag failure
   timeouts to investigate intermittent CI failures (#489).
 
 ### Fixed
+
+- Handle process disappearance during proc stat reads in terminal cleanup
+  tests without masking other read errors.
+
+- Keep native pointer motion active until GTK starts category drags in the
+  Notes regression test, preserving its deadline and assertions (#489).
 
 - Reopen manually ended local and SSH terminals retained as the only pane;
   use process-specific local actions and status labels, preserving split
