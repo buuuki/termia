@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Keep native pointer motion active until GTK starts category drags in the
+  Notes regression test, preserving its deadline and assertions (#489).
+
 ## 0.6.3-beta - 2026-11-12
 
 Integrated beta delivery prepared in #508. This release includes the paste
