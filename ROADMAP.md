@@ -7,18 +7,17 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Publication target: 0.6.3-beta
+## Published release: 0.6.3-beta
 
 Source version: `0.6.3-beta`; Debian package: `0.6.3~beta-1`. This delivery
 collects the integrated changes since `0.6.2-beta`: terminal reopening and
 split lifecycle fixes, editable multiline paste, Notes/sidebar interactions,
 release asset validation and diagnostics. See [CHANGELOG.md](CHANGELOG.md).
-Preparation and validation are tracked in
-[#508](https://github.com/buuuki/termia/issues/508).
-Candidate package installation and upgrade acceptance on Ubuntu 24/26, plus
-tag, public assets and checksum verification, are release gates. Preparation
-does not publish a release. The GTK/Wayland crash (#499) and intermittent
-Notes drag failure (#489) remain under investigation.
+The [prerelease](https://github.com/buuuki/termia/releases/tag/v0.6.3-beta) is
+published. Its annotated tag, fresh public downloads and checksums are verified.
+Preparation, prior Ubuntu 24/26 package acceptance and validation limitations are
+recorded in [#508](https://github.com/buuuki/termia/issues/508). The GTK/Wayland
+crash (#499) and broader Notes movement investigation (#489) remain open.
 
 Termia remains in beta. Maintenance may increment PATCH while retaining beta
 status; new feature deliveries normally increment MINOR. The integrated
@@ -29,10 +28,10 @@ See `docs/VERSIONING.md` for the maintenance and transition gates.
 
 ## Development after publication
 
-Use `0.6.3-dev` until `v0.6.3-beta` is published. Then create `0.6.4-dev` from
-the updated `main` for further maintenance. New issue branches and PRs use that
-active development line. Future features and stable promotion require separate
-scope and readiness approval.
+The active maintenance branch is `0.6.4-dev`, created from `main` after
+`v0.6.3-beta` was published. New issue branches and PRs use this development
+line. The branch transition does not change the application version. Future
+features and stable promotion require separate scope and readiness approval.
 
 Retain previous development branches as historical branches unless
 cleanup is approved. Creating a development branch does not change versions.

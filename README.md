@@ -104,14 +104,12 @@ are collected and the tool does not terminate processes.
 
 ## Release status
 
-**0.6.3-beta** is the prerelease in preparation, with terminal reopening fixes,
+**[0.6.3-beta](https://github.com/buuuki/termia/releases/tag/v0.6.3-beta)** is a
+prerelease with terminal reopening fixes,
 editable multiline paste and Notes/sidebar interaction changes.
 See [CHANGELOG.md](CHANGELOG.md) for changes since 0.6.2-beta.
-The download and update instructions below become available after publication;
-the latest published release is currently
-[0.6.2-beta](https://github.com/buuuki/termia/releases/tag/v0.6.2-beta).
-The GTK/Wayland crash (#499) and intermittent Notes drag failure (#489) remain
-under investigation.
+The GTK/Wayland crash (#499) and broader Notes movement investigation (#489)
+remain open.
 
 Before upgrading, close Termia and back up your profile.
 Versions before 0.6.2-beta cannot read connection schema 4. To downgrade,
