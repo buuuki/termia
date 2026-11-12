@@ -148,7 +148,7 @@ class TerminalCleanupIntegrationTests(unittest.TestCase):
     def running(pid):
         try:
             fields = Path(f"/proc/{pid}/stat").read_text().rpartition(")")[2].split()
-        except FileNotFoundError:
+        except (FileNotFoundError, ProcessLookupError):
             return False
         return bool(fields) and fields[0] != "Z"
 
@@ -247,6 +247,17 @@ class TerminalCleanupIntegrationTests(unittest.TestCase):
             self.assertEqual(controller.shutdown_cleanup_state(), "pending")
             self.wait_until(lambda: controller.shutdown_cleanup_state() == "stopped")
             self.assertFalse(self.running(child))
+
+
+class ProcessStateProbeTests(unittest.TestCase):
+    def test_exited_process_is_not_running(self):
+        for error in (FileNotFoundError, ProcessLookupError):
+            with self.subTest(error=error.__name__), patch.object(Path, "read_text", side_effect=error):
+                self.assertFalse(TerminalCleanupIntegrationTests.running(12345))
+
+    def test_other_read_errors_propagate(self):
+        with patch.object(Path, "read_text", side_effect=PermissionError), self.assertRaises(PermissionError):
+            TerminalCleanupIntegrationTests.running(12345)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Handle process disappearance during proc stat reads in terminal cleanup
+  tests without masking other read errors.
+
 - Keep native pointer motion active until GTK starts category drags in the
   Notes regression test, preserving its deadline and assertions (#489).
 
