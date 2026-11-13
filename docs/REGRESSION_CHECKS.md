@@ -308,6 +308,8 @@ Long measurements and release-platform checks remain separate validation work.
   clipboard/primary contents unchanged and use VTE's bracketed paste handling.
   Closed, reconnected or reparented panes must not receive a
   pending paste. Check the black 1px preview border and 8px footer gap.
+  The preview requests an initial size of 600 × 400. Check that its editor
+  expands when resizing and its action buttons remain accessible on small screens.
   Disable the option and repeat; native paste must remain available. With
   protection enabled, middle-click is reserved for paste even in applications
   with mouse reporting; review that documented compatibility tradeoff.

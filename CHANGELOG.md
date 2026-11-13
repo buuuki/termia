@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Increase the multiline paste preview's initial size to 600 × 400 while
+  retaining native resizing and editable command confirmation (#518).
+
 ### Fixed
 
 - Remember connections and Notes sidebar widths between sessions using native

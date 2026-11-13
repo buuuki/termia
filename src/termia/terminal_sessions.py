@@ -1051,7 +1051,7 @@ class TerminalSessionsMixin:
                 title=owner.t("terminal_paste_confirm_title"),
                 transient_for=root_ref(), modal=True, destroy_with_parent=True,
             )
-            dialog.set_default_size(560, 320)
+            dialog.set_default_size(600, 400)
             cancel, paste = owner.add_dialog_action_buttons(dialog, owner.t("paste"))
             cancel.get_parent().set_margin_top(8)
             dialog.set_default_response(Gtk.ResponseType.OK)
