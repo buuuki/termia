@@ -154,6 +154,11 @@ Admite los gestores de paquetes de Debian/Ubuntu/Linux Mint, Fedora y Arch.
 Reinicia Termia solo cuando termine correctamente; repítelo si mueves el checkout.
 Usa `./scripts/termia-setup.sh uninstall` para quitar el lanzador conservando los datos.
 
+Pulsa con el botón derecho en el icono de Termia del dock o de la cuadrícula
+de aplicaciones de GNOME y elige **Nueva instancia**. Si comparte el mismo
+perfil, la segunda instancia será de solo lectura. En instalaciones desde
+el código, repite `./scripts/termia-setup.sh install` para actualizar el lanzador.
+
 ### Requisitos
 
 Python 3.10+, GTK 4, GtkSourceView 5 y el namespace VTE para GTK 4 `Vte 3.91`.
