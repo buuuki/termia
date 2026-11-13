@@ -75,16 +75,82 @@ class SidebarMixin:
         if visible == self.sidebar_visible:
             return
         if visible:
-            self.sidebar.set_visible(True)
-            self.body.set_position(self.sidebar_width)
             self.sidebar_visible = True
+            self.sidebar.set_visible(True)
+            self._set_sidebar_position(self.sidebar_width)
+            self.queue_sidebar_width_update(layout_changed=True)
             self.toggle_sidebar_button.set_icon_name("sidebar-hide-symbolic")
         else:
-            self.sidebar_width = max(self.body.get_position(), 180)
-            self.sidebar.set_visible(False)
-            self.body.set_position(0)
+            self.save_sidebar_width()
             self.sidebar_visible = False
+            self.sidebar.set_visible(False)
+            self._set_sidebar_position(0)
             self.toggle_sidebar_button.set_icon_name("sidebar-show-symbolic")
+
+    def initialize_sidebar_width_tracking(self) -> None:
+        self._sidebar_width_source = None
+        self._sidebar_layout_changed = True
+        self._sidebar_allocated_width = 0
+        self._sidebar_setting_position = False
+        self.body.connect("notify::position", self.on_sidebar_position_changed)
+        for property_name in ("min-position", "max-position"):
+            self.body.connect(f"notify::{property_name}", self.on_sidebar_limits_changed)
+        self.connect("destroy", self.stop_sidebar_width_tracking)
+
+    def _set_sidebar_position(self, position: int) -> None:
+        self._sidebar_setting_position = True
+        try:
+            self.body.set_position(position)
+        finally:
+            self._sidebar_setting_position = False
+
+    def on_sidebar_position_changed(self, _paned, _property) -> None:
+        if self.sidebar_visible and not self._sidebar_setting_position:
+            self.queue_sidebar_width_update()
+
+    def on_sidebar_limits_changed(self, _paned, _property) -> None:
+        self.queue_sidebar_width_update(layout_changed=True)
+
+    def queue_sidebar_width_update(self, *, layout_changed: bool = False) -> None:
+        self._sidebar_layout_changed |= layout_changed
+        if self._sidebar_width_source is None:
+            self._sidebar_width_source = GLib.idle_add(self.update_sidebar_width)
+
+    def update_sidebar_width(self) -> bool:
+        self._sidebar_width_source = None
+        width = self.body.get_width()
+        if not self.sidebar_visible or width <= 0:
+            return GLib.SOURCE_REMOVE
+        layout_changed = self._sidebar_layout_changed or width != self._sidebar_allocated_width
+        if layout_changed:
+            minimum = self.body.get_property("min-position")
+            maximum = self.body.get_property("max-position")
+            position = max(minimum, min(self.sidebar_width, maximum))
+            if position != self.body.get_position():
+                self._set_sidebar_position(position)
+        else:
+            # GTK owns pointer/keyboard movement and enforces the child minima.
+            # Observing a move must not reposition the handle during the drag.
+            self.sidebar_width = self.body.get_position()
+        self._sidebar_allocated_width = width
+        self._sidebar_layout_changed = False
+        return GLib.SOURCE_REMOVE
+
+    def save_sidebar_width(self) -> None:
+        if self._sidebar_width_source is not None:
+            GLib.source_remove(self._sidebar_width_source)
+            self._sidebar_width_source = None
+            self.update_sidebar_width()
+        if self.store.read_only:
+            return
+        if self.store.data.app.connection_sidebar_width != self.sidebar_width:
+            self.store.data.app.connection_sidebar_width = self.sidebar_width
+            self.store.save_settings()
+
+    def stop_sidebar_width_tracking(self, *_args) -> None:
+        if self._sidebar_width_source is not None:
+            GLib.source_remove(self._sidebar_width_source)
+            self._sidebar_width_source = None
 
     def focus_server_filter(self) -> bool:
         self.set_sidebar_visible(True)

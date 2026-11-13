@@ -562,6 +562,7 @@ class TermiaWindow(
             return
         if not self.notes_dialogs.prepare_shutdown():
             return
+        self.save_sidebar_width()
         self.shutdown_in_progress = True
         self.stop_tab_drag_scroll()
         self.shutdown_deadline = monotonic() + SHUTDOWN_CLEANUP_DEADLINE_SECONDS
@@ -818,15 +819,14 @@ class TermiaWindow(
 
         body = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         body.add_css_class("termia-main-paned")
-        body.set_position(280)
+        body.set_position(self.store.data.app.connection_sidebar_width)
         body.set_wide_handle(True)
         self.body = body
         self.sidebar_visible = True
-        self.sidebar_width = 280
+        self.sidebar_width = self.store.data.app.connection_sidebar_width
         root.append(body)
 
         sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        sidebar.set_size_request(120, -1)
         sidebar_inset = 0 if self.store.data.app.theme == DARK_GLOW_THEME else 12
         sidebar.set_margin_top(sidebar_inset)
         sidebar.set_margin_bottom(sidebar_inset)
@@ -838,7 +838,7 @@ class TermiaWindow(
         body.set_resize_start_child(False)
         body.set_shrink_start_child(True)
         body.set_resize_end_child(True)
-        body.set_shrink_end_child(False)
+        body.set_shrink_end_child(True)
 
         sidebar_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         add_group = Gtk.Button(icon_name="folder-new-symbolic")
@@ -906,6 +906,7 @@ class TermiaWindow(
         self.summary_label.set_xalign(0)
         self.summary_label.add_css_class("dim-label")
         sidebar.append(self.summary_label)
+        self.initialize_sidebar_width_tracking()
 
         detail = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         detail.set_margin_top(0)

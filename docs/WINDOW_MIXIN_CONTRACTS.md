@@ -134,7 +134,11 @@ keybinding dialogs have comparatively small contracts.
 - Reads: `store`, the sidebar widgets, selection state, expansion state,
   `toast_label`, and current GTK focus.
 - Writes: selection, projection, expansion widgets, context-menu state,
-  sidebar visibility and width, visible rows, and scroll-restoration state.
+  sidebar visibility and preferred width, a pending idle sizing update,
+  allocation tracking, visible rows, and scroll-restoration state. The preferred
+  width is persisted through `store.save_settings()` on hide or shutdown;
+  layout constraints do not overwrite it. Native `Gtk.Paned` remains responsible
+  for pointer and keyboard interaction.
 - Cross-mixin dependencies: connection dialogs, terminal opening, file
   transfer, writable checks, and local-shell defaults.
 - Architectural note: this is both a renderer and a controller. Projection,
@@ -178,6 +182,9 @@ keybinding dialogs have comparatively small contracts.
   translation callback, writable guard, error callback, and toast callback.
 - Owns the reusable modeless notes/category windows and import/export flows;
   it does not inherit `TermiaWindow` or manage terminal sessions.
+- Persists the native Notes sidebar position through `store.save_settings()`
+  on hide, window close or shutdown, excluding read-only and locked instances.
+  GTK owns resizing; no fixed sidebar width limits are added.
 - `NotesPresenter` owns the personal/server/category tree, search filtering,
   server labels, and note ordering; `ConnectionStore` owns note persistence and
   per-scope category rules. `NotesDialogs` owns tree expansion, creation scope,

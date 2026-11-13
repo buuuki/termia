@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- Remember connections and Notes sidebar widths between sessions using native
+  GTK resizing, without additional fixed minimum widths or percentage caps.
+  Allow dragging the separators to the edges to collapse either pane and
+  remove deferred corrections during connections-sidebar dragging (#464).
+
 ## 0.6.3-beta - 2026-11-12
 
 Publication, annotated tag and fresh public asset checks verified in #508.

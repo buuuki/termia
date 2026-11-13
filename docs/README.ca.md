@@ -15,6 +15,9 @@ fitxers en terminals VTE integrats amb GTK 4.
   `Ctrl+fletxes` queda disponible per a aplicacions del terminal com tmux.
 - Connexions organitzades en grups imbricats, preferits i connexions recents.
   La barra lateral de connexions comença oculta; mostra-la amb el botó de capçalera.
+  Les barres laterals de connexions i Notes recorden l’amplada entre sessions.
+  Els separadors nadius es poden arrossegar fins als extrems per amagar
+  un panell, sense mínims fixos ni màxims percentuals.
 - Selector nadiu de claus SSH privades en crear o editar una connexió.
 - Contrasenya opcional als perfils de terminal local. Activa la drecera d'enviament
   a les preferències i prem `Ctrl+P` (per defecte) quan `sudo` la demani;

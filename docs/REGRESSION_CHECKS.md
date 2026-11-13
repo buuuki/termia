@@ -1,5 +1,23 @@
 # Regression Checks and Protected Behaviors
 
+## Connections sidebar width
+
+- Launch `scripts/run_test_instance.sh issue-464-width` with an isolated,
+  reusable profile. Reveal the sidebar, change its width, close Termia and
+  run the same command again. Reveal the sidebar and verify width restoration.
+- Check native pointer and keyboard resizing without an imposed 280-pixel
+  minimum or 25% maximum. Drag to the left edge to collapse the sidebar to
+  zero, then drag back to reveal it. Both children allow native shrinking.
+  Drag past both limits and return without releasing: the separator must
+  remain stable at each limit and follow the pointer again within its range.
+- Check every toolbar button remains complete in System/Light/Dark/Retron,
+  EN/ES/CA and larger desktop fonts when enough width is available; deliberately
+  narrowing a pane may clip its contents. Shrink and expand the window: temporary
+  constraints must not replace the preferred width. Hide/show retains it.
+- Changing General preferences must not reset either sidebar width. A read-only
+  instance must not write them. Connections startup remains hidden; the Notes
+  sidebar retains its independent width and starts hidden on tool invocation.
+
 ## Local saved passwords
 
 - Before upgrading a real profile, close Termia and back up connections.json;
@@ -812,7 +830,11 @@ Long measurements and release-platform checks remain separate validation work.
   border or halo. Scroll in both directions, change editor colors, switch
   to System/Light/Dark and back, and verify text, line numbers, selection,
   keyboard focus, tab reordering and autosave remain usable.
-- Open Notes with its narrower 280px initial tree pane and 250px search minimum.
+- Open Notes with its saved tree width (280px only when no preference exists),
+  without a fixed search-entry minimum. Resize, hide/show, close/reopen Notes
+  and restart Termia with the same profile: the width must be retained.
+  Drag the Notes separator to zero and back without using the toggle button.
+  Check that small widths are saved and read-only instances do not write them.
   In Retron, drag the 4px divider in both directions and hide/show the tree;
   its last width must be restored. Check that the toolbar has equal 8px gaps
   below the tabs and above the editor, including after hiding and
