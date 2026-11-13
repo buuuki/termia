@@ -159,6 +159,11 @@ de aplicaciones de GNOME y elige **Nueva instancia**. Si comparte el mismo
 perfil, la segunda instancia será de solo lectura. En instalaciones desde
 el código, repite `./scripts/termia-setup.sh install` para actualizar el lanzador.
 
+En Preferencias generales, **Claro** y **Oscuro** usan la apariencia integrada
+de GTK, independientemente del tema del escritorio. **Sistema** sigue el
+escritorio y **Retron** aplica sus estilos propios. No cambia la configuración
+del escritorio.
+
 ### Requisitos
 
 Python 3.10+, GTK 4, GtkSourceView 5 y el namespace VTE para GTK 4 `Vte 3.91`.

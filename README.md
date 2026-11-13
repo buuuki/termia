@@ -150,6 +150,10 @@ Right-click Termia's icon in GNOME's dock or application grid and select
 second instance is read-only. Existing source installations must rerun
 `./scripts/termia-setup.sh install` to update the launcher.
 
+In General preferences, **Light** and **Dark** use GTK's built-in appearance,
+independently of the desktop theme. **System** follows the desktop; **Retron**
+uses its own styling. This does not change the desktop's settings.
+
 ### Runtime requirements
 
 Python 3.10+, GTK 4, GtkSourceView 5, and the GTK 4 VTE namespace `Vte 3.91`.

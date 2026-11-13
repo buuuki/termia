@@ -176,9 +176,15 @@ Termia's application appearance is selected in General preferences.
 | Mode | GTK variant | Termia surface colors |
 |---|---|---|
 | System | Follows GNOME `color-scheme`; resets the app override when the scheme is unknown | Inherited from GTK |
-| Light | Requests GTK's light variant | Inherited from GTK |
-| Dark | Requests GTK's dark variant | Inherited from GTK |
+| Light | Uses the light variant of GTK's built-in Default theme | Inherited from GTK |
+| Dark | Uses the dark variant of GTK's built-in Default theme | Inherited from GTK |
 | Retron (local research) | Requests GTK's dark variant | Fixed palette from `theme_styles.py`, a 75%-opaque window canvas, opaque panels, 1px borders, 10px corners and soft active-pane/tab lighting |
+
+Explicit Light/Dark appearance is independent of desktop theme names and does
+not retain third-party theme styling. Returning to System or Retron removes
+the theme-name override. These settings apply only to Termia, never to the
+global desktop. See the protected appearance contract in
+[AGENTS.md](../AGENTS.md#protected-appearance-selection).
 
 The shared application CSS provider is replaced when the appearance changes so
 rules from an earlier mode do not remain active.

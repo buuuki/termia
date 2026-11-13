@@ -169,6 +169,19 @@ scripts/run_test_instance.sh --fresh
 - Avoid unnecessary visual changes or unsolicited redesigns.
 - Before modifying visual components, consult `docs/UI_STYLING.md`.
 
+### Protected appearance selection
+
+- Light and Dark must use the respective variants of GTK's built-in theme,
+  independently of the desktop theme name. System must follow the desktop
+  appearance. Retron must retain its own styles, including borders, shadows
+  and glow. Theme selection must not change global desktop settings.
+- Before changing this behavior, identify the protected behavior affected,
+  explain the consequences and alternatives, and obtain explicit confirmation
+  specifically for that change before editing. This also applies when a task
+  appears to request the change; generic implementation approval is insufficient.
+- Keep the corresponding behavior and checks in
+  `docs/REGRESSION_CHECKS.md` aligned with any explicitly approved change.
+
 ## Security Notes
 
 - Saved SSH passwords and exported configuration files can contain plain-text credentials. Treat examples and test data accordingly.

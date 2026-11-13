@@ -1085,6 +1085,18 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Application Appearance and Themes
 
+- Protected appearance selection: Light and Dark use the corresponding
+  variants of GTK's built-in theme, independently of the desktop theme name.
+  System follows the desktop appearance; Retron retains its own borders,
+  shadows and glow. No mode changes global desktop settings. Altering this
+  contract requires specific prior confirmation under
+  [AGENTS.md](../AGENTS.md#protected-appearance-selection), even when a task
+  appears to request it; generic implementation approval is insufficient.
+- With a dark desktop theme, select Light and verify a light interface; select
+  Dark and verify a dark interface. Return to System and verify the desktop
+  appearance is restored. Switch to Retron and back, including with Notes,
+  detached windows and dialogs open: Retron styles must appear only in Retron.
+  Preserve saved terminal and Notes editor colors and the desktop's settings.
 - General preferences links to the Retron editor. Customize a common border,
   Save and restart; supported component frames must retain the saved override.
   Component overrides take precedence and native alerts retain their separate
