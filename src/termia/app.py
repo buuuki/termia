@@ -648,6 +648,13 @@ class TermiaWindow(
         settings = Gtk.Settings.get_default()
         if settings is not None:
             theme = self.store.data.app.theme
+            if theme in ("light", "dark"):
+                # Use GTK's built-in theme instead of guessing a desktop variant.
+                settings.set_property("gtk-theme-name", "Default")
+                self._explicit_theme_name_override = True
+            elif getattr(self, "_explicit_theme_name_override", False):
+                settings.reset_property("gtk-theme-name")
+                self._explicit_theme_name_override = False
             if theme == "system":
                 prefers_dark = system_prefers_dark_theme(
                     getattr(self, "_gnome_interface_settings", None)

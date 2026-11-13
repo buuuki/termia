@@ -157,6 +157,11 @@ d'aplicacions del GNOME i tria **Nova instància**. Si comparteix el mateix
 perfil, la segona instància serà de només lectura. En instal·lacions des
 del codi, repeteix `./scripts/termia-setup.sh install` per actualitzar el llançador.
 
+A Preferències generals, **Clar** i **Fosc** fan servir l'aparença integrada
+de GTK, independentment del tema de l'escriptori. **Sistema** segueix
+l'escriptori i **Retron** aplica els seus estils propis. No canvia la configuració
+de l'escriptori.
+
 ### Requisits
 
 Python 3.10+, GTK 4, GtkSourceView 5 i l'espai VTE per a GTK 4 `Vte 3.91`.

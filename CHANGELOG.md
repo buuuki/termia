@@ -9,6 +9,9 @@
 
 ### Fixed
 
+- Use GTK's built-in theme for explicit Light/Dark appearance even with a dark
+  desktop theme, restoring desktop theme selection for System and Retron (#522).
+
 - Expose a localized New instance action in source and Debian desktop launchers
   so GNOME can explicitly launch another Termia process (#520).
 
