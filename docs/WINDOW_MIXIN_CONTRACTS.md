@@ -182,6 +182,9 @@ keybinding dialogs have comparatively small contracts.
   translation callback, writable guard, error callback, and toast callback.
 - Owns the reusable modeless notes/category windows and import/export flows;
   it does not inherit `TermiaWindow` or manage terminal sessions.
+- Persists the native Notes sidebar position through `store.save_settings()`
+  on hide, window close or shutdown, excluding read-only and locked instances.
+  GTK owns resizing; no fixed sidebar width limits are added.
 - `NotesPresenter` owns the personal/server/category tree, search filtering,
   server labels, and note ordering; `ConnectionStore` owns note persistence and
   per-scope category rules. `NotesDialogs` owns tree expansion, creation scope,

@@ -15,9 +15,9 @@ together in embedded VTE terminals.
   available to terminal applications such as tmux.
 - Connections organized in nested groups, favorites, and recent connections.
   The connections sidebar starts hidden; use its header button to show it.
-  Its last chosen width is remembered between sessions, with a 280-pixel
-  minimum (more if its controls need it) and a 25% window-width maximum;
-  the minimum takes priority in small windows.
+  Connections and Notes remember their sidebar widths between sessions.
+  Their native separators can be dragged to either edge to collapse a pane,
+  without fixed minimum widths or percentage caps.
 - Native private SSH key file picker when creating or editing a connection.
 - Optional saved passwords for local terminal profiles. Enable the saved-password
   shortcut in preferences and press `Ctrl+P` (default) when `sudo` requests it;

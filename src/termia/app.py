@@ -827,7 +827,6 @@ class TermiaWindow(
         root.append(body)
 
         sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        sidebar.set_size_request(120, -1)
         sidebar_inset = 0 if self.store.data.app.theme == DARK_GLOW_THEME else 12
         sidebar.set_margin_top(sidebar_inset)
         sidebar.set_margin_bottom(sidebar_inset)
@@ -837,9 +836,9 @@ class TermiaWindow(
         sidebar.add_css_class("termia-sidebar")
         body.set_start_child(sidebar)
         body.set_resize_start_child(False)
-        body.set_shrink_start_child(False)
+        body.set_shrink_start_child(True)
         body.set_resize_end_child(True)
-        body.set_shrink_end_child(False)
+        body.set_shrink_end_child(True)
 
         sidebar_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         add_group = Gtk.Button(icon_name="folder-new-symbolic")

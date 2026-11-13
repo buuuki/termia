@@ -105,12 +105,15 @@ credentials or private notes. Isolated test instances use their own profile.
   schema 4. Restore the pre-upgrade backup before downgrading, keeping a separate
   protected copy of newer data. Do not open a schema 4 file with an older client.
 - `settings.json`: object schema `1`; optional `app.connection_sidebar_width`
-  remembers the preferred connections sidebar width in logical pixels, defaulting
-  to 280. Invalid values use the default; integer values below 280 use 280.
-  Window constraints do not replace the preferred width. Loading does not write;
+  and `app.notes_sidebar_width` remember sidebar widths in logical pixels,
+  defaulting to 280. Nonnegative integers are retained without a fixed minimum;
+  invalid values use the default. Loading does not write.
+  Connections window constraints do not replace the preferred width;
   writable instances save an adjusted preference when hiding the sidebar or
-  shutting down. Older clients ignore this field and discard it when saving.
-  This additive setting requires no schema bump.
+  shutting down. Notes saves its current width when hiding the list, closing
+  its window or shutting down; read-only or locked instances do not write it.
+  Older clients ignore unsupported fields and discard them when saving.
+  These additive settings require no schema bump.
   Legacy terminal palette and color values
   are normalized by a named migration.
   The local Retron research theme adds the `dark_glow` value to the existing

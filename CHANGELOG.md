@@ -4,9 +4,10 @@
 
 ### Fixed
 
-- Remember the connections sidebar width between sessions, enforce a minimum
-  of 280 pixels or the controls' required width, and cap it at 25% of the
-  available width unless the minimum requires more (#464).
+- Remember connections and Notes sidebar widths between sessions using native
+  GTK resizing, without additional fixed minimum widths or percentage caps.
+  Allow dragging the separators to the edges to collapse either pane and
+  remove deferred corrections during connections-sidebar dragging (#464).
 
 ## 0.6.3-beta - 2026-11-12
 

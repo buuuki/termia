@@ -482,8 +482,9 @@ def backup_invalid_file(path: Path, read_only: bool = False) -> Path | None:
 
 
 def normalize_app_settings(app: AppSettings) -> AppSettings:
-    width = app.connection_sidebar_width
-    app.connection_sidebar_width = max(280, width) if type(width) is int else 280
+    for field in ("connection_sidebar_width", "notes_sidebar_width"):
+        width = getattr(app, field)
+        setattr(app, field, width if type(width) is int and width >= 0 else 280)
     app.dark_glow_border_color = normalize_dark_glow_border_color(app.dark_glow_border_color)
     app.confirm_multiline_paste = app.confirm_multiline_paste is not False
     app.copy_on_selection = app.copy_on_selection is True
@@ -1709,6 +1710,7 @@ class ConnectionStore:
             restore_sessions_on_startup=app.restore_sessions_on_startup,
             show_sidebar_on_startup=app.show_sidebar_on_startup,
             connection_sidebar_width=current.connection_sidebar_width,
+            notes_sidebar_width=current.notes_sidebar_width,
             show_session_status_bar=app.show_session_status_bar,
             audible_bell=app.audible_bell,
             confirm_multiline_paste=app.confirm_multiline_paste is not False,

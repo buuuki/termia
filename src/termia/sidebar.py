@@ -121,16 +121,19 @@ class SidebarMixin:
         width = self.body.get_width()
         if not self.sidebar_visible or width <= 0:
             return GLib.SOURCE_REMOVE
-        minimum = max(280, self.sidebar.measure(Gtk.Orientation.HORIZONTAL, -1)[0])
-        maximum = max(minimum, width // 4)
         layout_changed = self._sidebar_layout_changed or width != self._sidebar_allocated_width
-        requested = self.sidebar_width if layout_changed else self.body.get_position()
-        position = max(minimum, min(requested, maximum))
-        if not layout_changed:
-            self.sidebar_width = position
+        if layout_changed:
+            minimum = self.body.get_property("min-position")
+            maximum = self.body.get_property("max-position")
+            position = max(minimum, min(self.sidebar_width, maximum))
+            if position != self.body.get_position():
+                self._set_sidebar_position(position)
+        else:
+            # GTK owns pointer/keyboard movement and enforces the child minima.
+            # Observing a move must not reposition the handle during the drag.
+            self.sidebar_width = self.body.get_position()
         self._sidebar_allocated_width = width
         self._sidebar_layout_changed = False
-        self._set_sidebar_position(position)
         return GLib.SOURCE_REMOVE
 
     def save_sidebar_width(self) -> None:

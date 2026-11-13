@@ -258,7 +258,10 @@ class NotesDialogs:
 
         paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         paned.add_css_class("termia-content-paned")
-        paned.set_position(280)
+        paned.set_position(self.store.data.app.notes_sidebar_width)
+        paned.set_resize_start_child(False)
+        paned.set_shrink_start_child(True)
+        paned.set_shrink_end_child(True)
         paned.set_vexpand(True)
         root.append(paned)
 
@@ -284,7 +287,6 @@ class NotesDialogs:
         creation_controls = self.build_creation_controls()
         list_panel.append(creation_controls)
         self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_size_request(250, -1)
         self.search_entry.set_margin_end(6)
         self.search_entry.set_placeholder_text(self.translate("notes_search"))
         self.search_entry.connect("search-changed", self.on_search_changed)
@@ -298,7 +300,7 @@ class NotesDialogs:
         paned.set_start_child(list_panel)
         self.notes_list_panel = list_panel
         self.notes_list_paned = paned
-        self.notes_list_width = 280
+        self.notes_list_width = self.store.data.app.notes_sidebar_width
         self.update_notes_list_toggle()
 
         detail_area = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -666,11 +668,20 @@ class NotesDialogs:
         self.capture_active_editor_tab()
         return True
 
+    def save_notes_list_width(self) -> None:
+        if not hasattr(self, "notes_list_paned"):
+            return
+        if self.notes_list_visible:
+            self.notes_list_width = self.notes_list_paned.get_position()
+        if self.store.read_only or self.store.encryption_locked:
+            return
+        if self.store.data.app.notes_sidebar_width != self.notes_list_width:
+            self.store.data.app.notes_sidebar_width = self.notes_list_width
+            self.store.save_settings()
+
     def toggle_notes_list(self) -> None:
         if self.notes_list_visible:
-            position = self.notes_list_paned.get_position()
-            if position > 64:
-                self.notes_list_width = position
+            self.save_notes_list_width()
             self.notes_list_visible = False
             self.notes_list_paned.set_start_child(None)
         else:
@@ -2615,6 +2626,7 @@ class NotesDialogs:
             return False
 
     def on_close_request(self, _window: Gtk.Window) -> bool:
+        self.save_notes_list_width()
         self.pending_note_drop = None
         self.close_note_context_menu()
         self.close_category_context_menu()
@@ -3073,6 +3085,7 @@ class NotesDialogs:
         return GLib.SOURCE_REMOVE
 
     def shutdown(self) -> None:
+        self.save_notes_list_width()
         self.cancel_autosave()
         self.dispose_note_context_menu()
         self.dispose_category_context_menu()

@@ -73,36 +73,56 @@ class StartupSidebarTests(unittest.TestCase):
 
         for theme in ("system", "light", "dark", "dark_glow"):
             with self.subTest(theme=theme), self.window(theme=theme) as window:
-                window.set_default_size(1600, 800)
+                window.set_default_size(1200, 700)
                 window.present()
                 window.on_toggle_sidebar(None)
-                wait_for(lambda: window.body.get_width() >= 1500
-                         and window.body.get_position() >= 280)
-                window.body.set_position(370)
-                wait_for(lambda: window.sidebar_width == 370)
+                wait_for(lambda: window.body.get_width() >= 1100
+                         and window.body.get_property("max-position") > 0)
+                self.assertTrue(window.body.get_shrink_start_child())
+                self.assertTrue(window.body.get_shrink_end_child())
+                self.assertEqual(window.body.get_property("min-position"), 0)
+                preferred = window.body.get_property("max-position") - 20
+                self.assertGreater(preferred, window.body.get_width() // 4)
+                window.body.set_position(preferred)
+                wait_for(lambda preferred=preferred: window.sidebar_width == preferred)
                 window.on_toggle_sidebar(None)
-                self.assertEqual(window.store.settings_store.app.connection_sidebar_width, 370)
+                self.assertEqual(window.store.settings_store.app.connection_sidebar_width, preferred)
                 window.on_toggle_sidebar(None)
-                wait_for(lambda: window.body.get_position() == 370)
-                window.set_default_size(1000, 800)
-                wait_for(lambda: window.body.get_width() < 1100
-                         and window.body.get_position() < 370)
-                self.assertEqual(window.sidebar_width, 370)
-                window.set_default_size(1600, 800)
-                wait_for(lambda: window.body.get_position() == 370)
+                wait_for(lambda preferred=preferred: window.body.get_position() == preferred)
+                window.set_default_size(900, 700)
+                wait_for(lambda preferred=preferred: window.body.get_width() < 1000
+                         and window.body.get_position() < preferred)
+                self.assertEqual(window.sidebar_width, preferred)
+                window.set_default_size(1200, 700)
+                wait_for(lambda preferred=preferred: window.body.get_position() == preferred)
                 for language in ("en", "es", "ca"):
                     window.store.data.app.language = language
                     window.refresh_translated_chrome()
-                    window.body.set_position(1)
-                    wait_for(lambda: window.body.get_position() >= 280)
+                    window.body.set_position(0)
+                    wait_for(lambda: window.body.get_position()
+                             == window.body.get_property("min-position"))
+                    wait_for(lambda: window.sidebar_width == 0)
+                    window.body.set_position(preferred)
+                    wait_for(lambda preferred=preferred: window.body.get_position() == preferred)
                     for button in (window.add_group_button, window.add_server_button,
                                    window.add_local_terminal_button, window.save_workspace_button,
                                    window.expand_all_button, window.collapse_all_button):
                         self.assertGreater(button.get_width(), 0)
-                        self.assertGreaterEqual(button.get_width(), button.measure(0, -1)[0])
+                        # measure() includes the CSS box and widget margins;
+                        # get_width() reports only the content area.
+                        style = button.get_style_context()
+                        horizontal_insets = sum(
+                            box.left + box.right
+                            for box in (style.get_padding(), style.get_border(), style.get_margin())
+                        )
+                        allocated_width = (
+                            button.get_width() + horizontal_insets
+                            + button.get_margin_start() + button.get_margin_end()
+                        )
+                        self.assertGreaterEqual(allocated_width, button.measure(0, -1)[0])
                     window.body.set_position(100000)
-                    wait_for(lambda: window.body.get_position() <= max(
-                        280, window.sidebar.measure(0, -1)[0], window.body.get_width() // 4))
+                    wait_for(lambda: window.body.get_position()
+                             == window.body.get_property("max-position"))
 
     def test_notes_tool_labels_availability_and_window_reuse_across_themes(self):
         for theme in ("system", "light", "dark", "dark_glow"):
@@ -114,6 +134,8 @@ class StartupSidebarTests(unittest.TestCase):
                     self.assertEqual(button.get_tooltip_text(), translate_key("notes_title", language))
                 notes = window.notes_dialogs
                 window.tool_registry.activate("notes")
+                self.assertTrue(notes.notes_list_paned.get_shrink_start_child())
+                self.assertTrue(notes.notes_list_paned.get_shrink_end_child())
                 original_window = notes.window
                 original_tabs = tuple(notes.editor_tabs)
                 self.assertFalse(notes.notes_list_visible)

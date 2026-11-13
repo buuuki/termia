@@ -128,6 +128,7 @@ class AppSettings:
     restore_sessions_on_startup: bool = False
     show_sidebar_on_startup: bool = True
     connection_sidebar_width: int = 280
+    notes_sidebar_width: int = 280
     show_session_status_bar: bool = False
     audible_bell: bool = False
     confirm_multiline_paste: bool = True
