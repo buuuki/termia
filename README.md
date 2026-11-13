@@ -145,6 +145,11 @@ It supports Debian/Ubuntu/Linux Mint, Fedora, and Arch package managers.
 Restart Termia only after setup succeeds; rerun setup if you move the checkout.
 Use `./scripts/termia-setup.sh uninstall` to remove its launcher while keeping data.
 
+Right-click Termia's icon in GNOME's dock or application grid and select
+**New instance** to open another process. When sharing the same profile, the
+second instance is read-only. Existing source installations must rerun
+`./scripts/termia-setup.sh install` to update the launcher.
+
 ### Runtime requirements
 
 Python 3.10+, GTK 4, GtkSourceView 5, and the GTK 4 VTE namespace `Vte 3.91`.

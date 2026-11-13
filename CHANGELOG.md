@@ -9,6 +9,9 @@
 
 ### Fixed
 
+- Expose a localized New instance action in source and Debian desktop launchers
+  so GNOME can explicitly launch another Termia process (#520).
+
 - Remember connections and Notes sidebar widths between sessions using native
   GTK resizing, without additional fixed minimum widths or percentage caps.
   Allow dragging the separators to the edges to collapse either pane and

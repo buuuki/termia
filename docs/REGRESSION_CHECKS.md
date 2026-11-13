@@ -1,5 +1,16 @@
 # Regression Checks and Protected Behaviors
 
+## Desktop launcher instances
+
+- In an isolated GNOME laboratory, install the source launcher with
+  `./scripts/termia-setup.sh install`. Open Termia from the application grid,
+  then right-click its icon and choose New instance. Check the dock too.
+- Both processes must stay open; the second must be read-only when sharing
+  the first process's profile. Ordinary activation must still work. Check
+  EN/ES/CA action labels and repeat with the Debian launcher after installation.
+- Ctrl+click and middle-click behavior depends on the desktop/dock; record
+  those results separately from the explicit New instance action.
+
 ## Connections sidebar width
 
 - Launch `scripts/run_test_instance.sh issue-464-width` with an isolated,

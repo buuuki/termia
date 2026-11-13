@@ -152,6 +152,11 @@ Admet els gestors de paquets de Debian/Ubuntu/Linux Mint, Fedora i Arch.
 Reinicia Termia només quan acabi correctament; repeteix-lo si mous el checkout.
 Usa `./scripts/termia-setup.sh uninstall` per treure el llançador conservant les dades.
 
+Fes clic amb el botó dret a la icona de Termia del dock o de la graella
+d'aplicacions del GNOME i tria **Nova instància**. Si comparteix el mateix
+perfil, la segona instància serà de només lectura. En instal·lacions des
+del codi, repeteix `./scripts/termia-setup.sh install` per actualitzar el llançador.
+
 ### Requisits
 
 Python 3.10+, GTK 4, GtkSourceView 5 i l'espai VTE per a GTK 4 `Vte 3.91`.
