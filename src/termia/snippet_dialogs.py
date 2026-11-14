@@ -244,7 +244,7 @@ class SnippetDialogs:
         search.set_placeholder_text(self.translate("search_snippets"))
         search.set_hexpand(True)
         manage_categories = self.button(self.translate("snippet_manage_categories"))
-        add = self.button(self.translate("snippet_create"), suggested=True)
+        add = self.button(self.translate("snippet_create"))
         manager_page.append(search)
 
         category_grid = Gtk.FlowBox()
@@ -266,6 +266,7 @@ class SnippetDialogs:
         listing = Gtk.ListBox()
         listing.set_selection_mode(Gtk.SelectionMode.SINGLE)
         list_scroller = Gtk.ScrolledWindow()
+        list_scroller.set_has_frame(True)
         list_scroller.set_size_request(240, -1)
         list_scroller.set_hexpand(True)
         list_scroller.set_vexpand(True)
@@ -310,6 +311,7 @@ class SnippetDialogs:
         preview_scroller = Gtk.ScrolledWindow()
         preview_scroller.add_css_class("termia-content-frame")
         preview_scroller.add_css_class("termia-text-surface")
+        preview_scroller.set_has_frame(True)
         preview_scroller.set_vexpand(True)
         preview_scroller.set_child(preview_view)
         preview_panel.append(preview_heading)
@@ -416,6 +418,7 @@ class SnippetDialogs:
         command_scroller = Gtk.ScrolledWindow()
         command_scroller.add_css_class("termia-content-frame")
         command_scroller.add_css_class("termia-text-surface")
+        command_scroller.set_has_frame(True)
         command_scroller.set_vexpand(True)
         command_scroller.set_child(command)
         editor_page.append(command_scroller)
@@ -745,8 +748,6 @@ class SnippetDialogs:
             button.set_tooltip_text(
                 f"{title}: {self.translate('snippet_category_count').format(count=count_value)}"
             )
-            if key == state.category_filter:
-                button.add_css_class("suggested-action")
             content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
             image = Gtk.Image.new_from_icon_name(icon_name)
             image.set_pixel_size(20)

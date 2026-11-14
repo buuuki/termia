@@ -411,6 +411,10 @@ Long measurements and release-platform checks remain separate validation work.
 - Command snippets must be stored locally and run only after explicit selection,
   variable entry when required, and confirmation of the final preview. Their
   command text and variable values must never be written to debug logs.
+- Category buttons and Create snippet use regular button styling (neither
+  uses suggested-action highlighting). The snippet list, command preview and
+  command editor use native scroller frames; the category scroller does not
+  gain a frame. Existing Retron content-frame styling remains applicable.
 - Snippet management must open with three visible columns: compact categories
   with counts, a snippet list, and a read-only command preview. The preview and
   Edit/Duplicate/Delete actions must remain empty or disabled until a snippet
