@@ -52,6 +52,24 @@ def format_note_timestamp(value: str) -> str:
     return timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 
 
+def reject_notes_color_drop(target: Gtk.DropTarget, _drop: Gdk.Drop) -> bool:
+    """Reject colors before GtkSourceView's native insertion handler runs."""
+    target.stop_emission_by_name("accept")
+    return False
+
+
+def filter_notes_color_drops(text_view: GtkSource.View) -> None:
+    """Restrict only the editor's dedicated RGBA receiver, leaving text alone."""
+    controllers = text_view.observe_controllers()
+    for index in range(controllers.get_n_items()):
+        controller = controllers.get_item(index)
+        if (
+            isinstance(controller, Gtk.DropTarget)
+            and list(controller.get_gtypes()) == [Gdk.RGBA.__gtype__]
+        ):
+            controller.connect("accept", reject_notes_color_drop)
+
+
 def create_notes_text_view(show_line_numbers: bool) -> GtkSource.View:
     """Build the plain-text Notes editor with GtkSource's native line numbers."""
     GtkSource.init()
@@ -65,6 +83,7 @@ def create_notes_text_view(show_line_numbers: bool) -> GtkSource.View:
         raise RuntimeError("Termia Notes style scheme is unavailable")
     buffer.set_style_scheme(scheme)
     text_view = GtkSource.View.new_with_buffer(buffer)
+    filter_notes_color_drops(text_view)
     text_view.set_show_line_numbers(show_line_numbers)
     text_view.set_auto_indent(False)
     text_view.set_smart_backspace(False)
@@ -236,7 +255,8 @@ class NotesDialogs:
         header.pack_start(header_actions)
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        for side in ("top", "bottom", "start", "end"):
+        root.set_margin_top(8)
+        for side in ("bottom", "start", "end"):
             getattr(root, f"set_margin_{side}")(14)
         window.set_child(root)
 
@@ -333,6 +353,7 @@ class NotesDialogs:
 
         editor_workspace = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         editor = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        editor.add_css_class("termia-notes-editor-content")
         text_view = create_notes_text_view(True)
         buffer = text_view.get_buffer()
         buffer.connect("changed", self.on_editor_changed)
@@ -364,7 +385,7 @@ class NotesDialogs:
         editor_workspace.append(editor)
         self.editor_workspace = editor_workspace
         self.detail_stack.add_named(self.editor_notebook, "editor")
-        self.note_detail_inset_widgets = (self.editor_notebook, empty, editor)
+        self.note_detail_inset_widgets = (self.editor_notebook, empty)
         self.update_note_detail_inset()
 
         self.configure_write_controls()
@@ -466,6 +487,8 @@ class NotesDialogs:
             rules.append(f'font-family: "{font}";')
         foreground = settings.get("foreground") or DEFAULT_NOTES_EDITOR_FOREGROUND
         rules.append(f"color: {foreground};")
+        rules.append(f"caret-color: {foreground};")
+        rules.append(f"-gtk-secondary-caret-color: {foreground};")
         css = ".termia-notes-editor textview {" + "".join(rules) + "}"
         css += (
             ".termia-notes-toolbar button {padding: 2px 5px; min-width: 20px; min-height: 22px;}"
@@ -764,7 +787,7 @@ class NotesDialogs:
             needle = query.casefold()
             return [
                 tab for tab in drafts
-                if needle in " ".join((tab.title, tab.content, tab.category, name)).casefold()
+                if needle in f"{tab.title} {tab.content} {tab.category} {name}".casefold()
             ]
 
         def categories_for(categories, scope_id: str | None) -> Gio.ListStore:
@@ -1006,6 +1029,7 @@ class NotesDialogs:
             click.connect("released", self.on_note_tree_header_clicked, node)
             add(click)
             if node.kind == "category":
+                content.add_css_class("termia-tree-drop-target")
                 target = Gtk.DropTargetAsync.new(
                     Gdk.ContentFormats.new([NOTE_ROW_DND_MIME_TYPE]), Gdk.DragAction.MOVE,
                 )
@@ -1048,6 +1072,8 @@ class NotesDialogs:
         content._note_tree_controllers = []
         content.note_id = None
         content.draft_key = None
+        content.remove_css_class("termia-tree-drop-target")
+        content.remove_css_class("drop-target")
         expander.set_list_row(None)
 
     def on_note_tree_header_clicked(self, _gesture, clicks, _x, _y, node) -> None:
@@ -1148,6 +1174,7 @@ class NotesDialogs:
         self.refresh_list(self.selected_note_id)
 
     def add_category_group_drop_target(self, button, server_id, parent) -> None:
+        button.add_css_class("termia-tree-drop-target")
         target = Gtk.DropTargetAsync.new(
             Gdk.ContentFormats.new([NOTE_CATEGORY_DND_MIME_TYPE]), Gdk.DragAction.MOVE,
         )

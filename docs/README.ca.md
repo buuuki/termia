@@ -50,6 +50,8 @@ fitxers en terminals VTE integrats amb GTK 4.
   reanomenar, eliminar, clonar, desar o tancar-la; l’editor conserva l’estat
   de desament i la data de modificació. Obre **Eines → Notes**; la barra
   lateral s’oculta en cada obertura i pots mostrar-la amb el botó de capçalera.
+  El cursor d’inserció segueix el color del text de l’editor. Canvia els colors
+  amb els selectors de la barra; arrossegar un color sobre la nota no l’insereix.
 - Dades de connexió locals amb xifratge opcional mitjançant contrasenya mestra.
 - Importació/exportació de Termia i importació de connexions des d'Ásbrú YAML.
 - Historial de connexions i complements opcionals d'Estadístiques i SFTP.

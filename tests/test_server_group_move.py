@@ -228,6 +228,7 @@ class ServerGroupWidgetTests(unittest.TestCase):
         controllers = label.observe_controllers()
 
         self.assertEqual(label.get_last_child().get_text(), "no_group (0)")
+        self.assertTrue(label.has_css_class("termia-tree-drop-target"))
         self.assertTrue(any(
             isinstance(controllers.get_item(index), Gtk.DropTargetAsync)
             for index in range(controllers.get_n_items())
@@ -235,6 +236,7 @@ class ServerGroupWidgetTests(unittest.TestCase):
 
     def test_regular_group_heading_has_drop_target(self) -> None:
         label = self.bind_row("group", "group", "Group", "group")
+        self.assertTrue(label.has_css_class("termia-tree-drop-target"))
         controllers = label.observe_controllers()
 
         self.assertTrue(any(

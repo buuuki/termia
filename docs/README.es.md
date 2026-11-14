@@ -50,6 +50,8 @@ de archivos en terminales VTE integrados con GTK 4.
   renombrar, eliminar, clonar, guardar o cerrarla; el editor conserva el estado
   de guardado y la fecha de modificación. Abre **Herramientas → Notas**;
   su sidebar se oculta en cada apertura y puedes mostrarlo con su botón de cabecera.
+  El cursor de inserción sigue el color del texto del editor. Cambia los colores
+  con los selectores de la barra; arrastrar un color sobre la nota no lo inserta.
 - Datos de conexión locales con cifrado opcional mediante contraseña maestra.
 - Importación/exportación de Termia e importación de conexiones desde Ásbrú YAML.
 - Historial de conexiones y complementos opcionales de Estadísticas y SFTP.
