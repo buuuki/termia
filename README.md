@@ -31,6 +31,11 @@ together in embedded VTE terminals.
   Open terminal. After manually ending the only terminal in a retained tab,
   Open terminal (local) or Connect (SSH) starts a new session in that pane.
   Disconnecting a split still removes it; automatic tab closure is unchanged.
+  The × icon ends/disconnects the session, ↑ hides the bar, and the circular
+  arrow opens/reconnects a finished session. Tooltips name each action.
+  When hidden, ↓ in the terminal's upper-right corner reveals that pane's bar.
+  Terminal preferences contains default bar visibility and the reveal-button
+  option (enabled by default).
 - Automatic copying when terminal selection finishes, enabled by default
   and configurable in General preferences. A success notification reports the character
   count, including spaces and line breaks, once the clipboard accepts the text.

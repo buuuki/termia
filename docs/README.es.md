@@ -32,6 +32,11 @@ de archivos en terminales VTE integrados con GTK 4.
   terminal de una pestaña que permanece abierta, Abrir terminal (local) o
   Conectar (SSH) inicia una sesión nueva en ese panel. Desconectar un split
   sigue eliminándolo; se conserva la opción de cerrar la pestaña automáticamente.
+  El icono × finaliza/desconecta la sesión, ↑ oculta la barra y la flecha
+  circular abre/reconecta una sesión finalizada. Cada acción tiene una ayuda.
+  Cuando está oculta, ↓ en la esquina superior derecha del terminal muestra
+  la barra de ese panel. Preferencias de terminal reúne la visibilidad inicial
+  de la barra y la opción del botón ↓, activada por defecto.
 - Copia automática al terminar de seleccionar texto del terminal,
   activada por defecto y configurable en Preferencias generales. El aviso confirma la copia
   e indica los caracteres, incluidos espacios y saltos de línea, cuando el

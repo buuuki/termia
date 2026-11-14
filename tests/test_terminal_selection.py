@@ -155,12 +155,12 @@ class ClipboardPreferenceTests(unittest.TestCase):
                     self.assertEqual(store.settings_store.app.confirm_multiline_paste, confirm)
 
     def test_general_preferences_save_keeps_copy_paste_and_debug_distinct(self):
-        data = SimpleNamespace(app=AppSettings(language="en"), groups=[])
+        data = SimpleNamespace(app=AppSettings(language="en", show_session_status_bar=True), groups=[])
         host = Mock()
         host.store.data = data
         host.general_preference_values = GeneralPreferencesMixin.general_preference_values
         host.store.update_app_settings.side_effect = lambda app: setattr(data, "app", app)
-        values = [False, False, True, False, False, False,
+        values = [False, False, True, False, False,
                   True, False, False, False, False, True, True]
         checks = [Mock(get_active=Mock(return_value=value)) for value in values]
         with patch("termia.general_preferences.choice_id", side_effect=["dark", "en"]):
@@ -170,6 +170,8 @@ class ClipboardPreferenceTests(unittest.TestCase):
         self.assertTrue(data.app.copy_on_selection)
         self.assertTrue(data.app.debug_enabled)
         self.assertTrue(data.app.show_sidebar_on_startup)
+        self.assertTrue(data.app.show_session_status_bar)
+        host.apply_session_status_bar_visibility_to_open_tabs.assert_not_called()
         host.set_sidebar_visible.assert_not_called()
 
 

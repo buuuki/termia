@@ -1173,11 +1173,10 @@ Long measurements and release-platform checks remain separate validation work.
     (green `#008712` by default) and configured thickness. It must remain
     distinct from the drag area and must not be replaced by the terminal
     background color.
-  - The wider draggable area uses the configured terminal background color, so
-    it must change when the terminal background changes and must follow the
-    active terminal theme/background. Its minimum drag size is 5 px, or the
-    configured separator thickness when that is larger; it is vertical for
-    horizontal splits and horizontal for vertical splits.
+  - The wider native drag area is transparent and adds no layout gap beyond
+    the line thickness. Side-by-side splits extend it 4px each way; stacked
+    splits extend it 8px above the line. Dragging must remain usable, while
+    clicks at the top of lower status-bar buttons must activate the buttons.
 - In Retron, split separators must have transparent backgrounds and
   transparent borders, including hover, with no central green line. Pane
   borders must remain distinct and the underlying canvas must show through.
@@ -1186,10 +1185,9 @@ Long measurements and release-platform checks remain separate validation work.
   Verify configured colors reappear after switching to System/Light/Dark;
   Retron uses a fixed 8px gap independently of the thickness preference.
   The settings preview still shows the configured color and thickness.
-  Runtime checks for this change remain pending.
 - Split dividers must remain readable on both light and dark themes. Confirm
-  that the thin configured line remains visible while the wider drag area
-  blends with the terminal background in System/Light/Dark.
+  that the thin configured line remains visible without an opaque drag-area
+  band in System/Light/Dark.
 - Showing pane status bars must not enlarge either the thin separator line or
   the draggable area; narrow panes may ellipsize the connection name while
   keeping the timer and actions usable.
@@ -1215,6 +1213,16 @@ Long measurements and release-platform checks remain separate validation work.
   including disconnected panes. Retired panes must not receive UI updates.
 - Showing or hiding a pane status bar must preserve the existing position of
   every affected split divider.
+- Standard-theme bars must touch lower/right split dividers without clipping,
+  outer gaps or a blue focus stripe. Check custom light/dark terminal colors.
+  The × action precedes ↑ (Hide); retained finished panes use a reconnect icon.
+  Check translated tooltips, keyboard activation and focus indication.
+- Terminal preferences contains default bar visibility and the reveal-button
+  option; General no longer contains the former. With a hidden bar, ↓ reveals
+  only its pane and returns focus to VTE. Disable the reveal option and check
+  existing/new panes, nested splits and detached tabs; the context menu must
+  still reveal the bar. Restart to check persistence. Saving unrelated Terminal
+  or General options must retain individual pane visibility.
 - Adding a split inside an existing nested layout must preserve every ancestor
   divider and divide only the selected pane approximately 50/50, allowing a
   one-pixel difference for odd dimensions.
@@ -1486,16 +1494,12 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Drag a horizontal split divider away from the centre, then show and hide its
   pane status bar from both the context menu and `Hide` button; the divider
   must remain at the chosen position and long status titles must ellipsize.
-  In System/Light/Dark, check the divider's two visual parts: the line must keep
-  its configured color and thickness, while the wider drag area must retain its
-  minimum drag size and terminal-background color.
+  In System/Light/Dark, the line must keep its configured color and thickness
+  while the wider drag area remains transparent and usable.
 - In System/Light/Dark, change the terminal background in
-  Terminal preferences and save it. Confirm that the wider draggable area
-  changes to the new terminal background while the thin separator line keeps
-  its configured color. Change the separator thickness as well and confirm
-  that only the thin line's configured thickness changes, with the drag area
-  remaining at least 5 px wide/tall or growing to the configured thickness when
-  that exceeds 5 px.
+  Terminal preferences and save it. Confirm that no opaque strip remains next
+  to the separator. Change separator thickness and verify that the reserved gap
+  matches the line, with an additional transparent 8px native drag area.
 - Starting from one pane, create the second, third, and fourth panes. Before
   every insertion, move all existing dividers away from their defaults. Repeat
   the sequence as needed to cover left, right, up, and down. Confirm each new

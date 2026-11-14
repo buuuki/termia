@@ -209,6 +209,11 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TerminalSessionsMixin`
 
+- Pane layout is status bar followed by a native overlay containing the VTE
+  scroller and reveal-button wrapper. An inverse visibility binding follows
+  the bar; wrapper visibility follows the terminal preference. Reveal callbacks
+  retain weak window/terminal references and resolve a live, non-retired pane
+  through the session registry before changing visibility.
 - Each `TerminalPane` owns its Termia UI handler IDs through `SignalConnections`,
   using native weak emitter references. Retiring a tab or removing a pane
   disconnects those UI handlers; its separately owned `child-exited` handler

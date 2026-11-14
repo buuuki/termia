@@ -19,7 +19,7 @@ gi.require_version("Gio", "2.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Pango", "1.0")
 gi.require_version("Vte", "3.91")
-from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
+from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Pango, Vte
 
 from .choice_widgets import (
     append_choice,
@@ -161,8 +161,8 @@ class TerminalSessionsMixin:
         if include_margins:
             toolbar.set_margin_top(0)
             toolbar.set_margin_bottom(0)
-            toolbar.set_margin_start(4)
-            toolbar.set_margin_end(4)
+            toolbar.set_margin_start(0)
+            toolbar.set_margin_end(0)
 
         status_label = Gtk.Label(label=self.t("connecting"))
         status_label.set_xalign(0)
@@ -171,19 +171,30 @@ class TerminalSessionsMixin:
         status_label.set_ellipsize(Pango.EllipsizeMode.END)
         status_label.add_css_class("dim-label")
         timer_label = Gtk.Label(label="00:00:00")
-        focus_button = Gtk.Button(label=self.t("hide_status_bar"))
+        timer_label.add_css_class("termia-status-timer")
+        focus_button = Gtk.Button()
+        self.set_status_button_action(focus_button, self.t("hide_status_bar"), "pan-up-symbolic")
         focus_button.add_css_class("termia-status-hide")
         focus_button.set_size_request(-1, 18)
-        disconnect_button = Gtk.Button(label=self.t("disconnect"))
+        disconnect_button = Gtk.Button()
+        self.set_status_button_action(disconnect_button, self.t("disconnect"))
         disconnect_button.add_css_class("destructive-action")
         disconnect_button.add_css_class("termia-disconnect-button")
         disconnect_button.set_size_request(-1, 18)
         toolbar.set_visible(self.should_show_session_status_bar())
         toolbar.append(status_label)
-        toolbar.append(focus_button)
         toolbar.append(timer_label)
         toolbar.append(disconnect_button)
+        toolbar.append(focus_button)
         return toolbar, status_label, timer_label, focus_button, disconnect_button
+
+    @staticmethod
+    def set_status_button_action(
+        button: Gtk.Button, label: str, icon: str = "window-close-symbolic",
+    ) -> None:
+        button.set_icon_name(icon)
+        button.set_tooltip_text(label)
+        button.update_property([Gtk.AccessibleProperty.LABEL], [label])
 
     def update_pane_status(self, pane: TerminalPane, detail: str | None = None) -> None:
         if pane.retired:
@@ -209,7 +220,9 @@ class TerminalSessionsMixin:
             state = self.t("local_terminal_running" if is_local else "terminal_state_connected")
             color = DARK_GLOW_COLORS["green"]
         if pane.connected and not pane.disconnect_requested:
-            pane.disconnect_button.set_label(self.t("end_local_terminal" if is_local else "disconnect"))
+            self.set_status_button_action(
+                pane.disconnect_button, self.t("end_local_terminal" if is_local else "disconnect"),
+            )
             pane.disconnect_button.add_css_class("destructive-action")
         text = GLib.markup_escape_text(f"{state} · {name}")
         markup = f'<span foreground="{color}">●</span> {text}'
@@ -228,10 +241,46 @@ class TerminalSessionsMixin:
         pane = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         pane.add_css_class("termia-terminal-pane")
         pane.append(toolbar)
-        pane.append(self.wrap_terminal_in_scroller(terminal))
+        overlay = Gtk.Overlay()
+        overlay.set_hexpand(True)
+        overlay.set_vexpand(True)
+        overlay.set_child(self.wrap_terminal_in_scroller(terminal))
+        reveal = Gtk.Button()
+        reveal.add_css_class("termia-status-reveal")
+        self.set_status_button_action(reveal, self.t("show_session_status_bar"), "pan-down-symbolic")
+        reveal_container = Gtk.Box()
+        reveal_container.add_css_class("termia-status-reveal-container")
+        reveal_container.set_halign(Gtk.Align.END)
+        reveal_container.set_valign(Gtk.Align.START)
+        reveal_container.set_margin_top(4)
+        reveal_container.set_margin_end(4)
+        reveal_container.set_visible(self.store.data.terminal.show_status_bar_button)
+        reveal_container.append(reveal)
+        overlay.add_overlay(reveal_container)
+        toolbar.bind_property(
+            "visible", reveal, "visible",
+            GObject.BindingFlags.SYNC_CREATE | GObject.BindingFlags.INVERT_BOOLEAN,
+        )
+        reveal.connect(
+            "clicked", TerminalSessionsMixin.on_show_pane_status_bar,
+            weakref.ref(self), weakref.ref(terminal),
+        )
+        pane.append(overlay)
         pane.set_hexpand(True)
         pane.set_vexpand(True)
         return pane
+
+    @staticmethod
+    def on_show_pane_status_bar(_button, host_ref, terminal_ref) -> None:
+        host, terminal = host_ref(), terminal_ref()
+        if host is None or terminal is None or getattr(host, "shutdown_in_progress", False):
+            return
+        for session in host.session_registry.sessions():
+            pane = session.pane_for_terminal(terminal)
+            if pane is not None and not pane.retired:
+                host.set_pane_status_bar_visibility(pane, True)
+                terminal.grab_focus()
+                return
 
     def build_terminal_page(self, pane: Gtk.Widget) -> Gtk.Box:
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -697,7 +746,7 @@ class TerminalSessionsMixin:
         session.connected = True
         session.active_terminal_ids.add(id(terminal))
         self.sync_root_pane_state(session)
-        session.disconnect_button.set_label(self.t("disconnect"))
+        self.set_status_button_action(session.disconnect_button, self.t("disconnect"))
         session.disconnect_button.set_sensitive(True)
         self.update_pane_status(self.pane_state(session, terminal), "")
         self.store.record_history_start(session, "ssh", server)
@@ -858,7 +907,7 @@ class TerminalSessionsMixin:
 
     def show_pane_reconnect_controls(self, pane: TerminalPane) -> None:
         pane.status_bar.set_visible(True)
-        pane.disconnect_button.set_label(self.t("close"))
+        self.set_status_button_action(pane.disconnect_button, self.t("close"))
         pane.disconnect_button.set_sensitive(True)
 
     def reset_pane_connection_attempt(self, pane: TerminalPane | TerminalSession) -> None:
@@ -866,7 +915,7 @@ class TerminalSessionsMixin:
             pane.timer_generation += 1
         pane.pending_reconnect = False
         pane.disconnect_requested = False
-        pane.disconnect_button.set_label(self.t("disconnect"))
+        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"))
         pane.disconnect_button.set_sensitive(True)
         pane.duration_recorded = False
         pane.history_start_recorded = False
@@ -1296,6 +1345,15 @@ class TerminalSessionsMixin:
         for session in self.session_registry.sessions():
             for pane in session.panes.values():
                 self.set_pane_status_bar_visibility(pane, visible)
+
+    def apply_status_bar_button_visibility_to_open_tabs(self) -> None:
+        visible = self.store.data.terminal.show_status_bar_button
+        for session in self.session_registry.sessions():
+            for pane in session.panes.values():
+                overlay = pane.terminal.get_parent().get_parent()
+                container = overlay.get_last_child()
+                if container is not None and container.has_css_class("termia-status-reveal-container"):
+                    container.set_visible(visible)
 
     def change_terminal_font_size(self, delta: int) -> None:
         if not self.ensure_writable():
@@ -1758,7 +1816,7 @@ class TerminalSessionsMixin:
         pane.connected = True
         pane.pending_reconnect = False
         pane.disconnect_requested = False
-        pane.disconnect_button.set_label(self.t("disconnect"))
+        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"))
         pane.disconnect_button.set_sensitive(True)
         self.update_pane_status(pane, "")
         session.connected = True
@@ -1839,7 +1897,7 @@ class TerminalSessionsMixin:
         pane.connected = True
         pane.pending_reconnect = False
         pane.disconnect_requested = False
-        pane.disconnect_button.set_label(self.t("disconnect"))
+        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"))
         pane.disconnect_button.set_sensitive(True)
         self.update_pane_status(pane, "")
         session.connected = True
@@ -2166,7 +2224,10 @@ class TerminalSessionsMixin:
     def show_terminal_reopen_action(self, session: TerminalSession, terminal: Vte.Terminal) -> None:
         pane = self.pane_state(session, terminal)
         if can_reopen_terminal(session, pane):
-            pane.disconnect_button.set_label(self.t(terminal_action_label_key(session, pane)))
+            self.set_status_button_action(
+                pane.disconnect_button, self.t(terminal_action_label_key(session, pane)),
+                "view-refresh-symbolic",
+            )
             pane.disconnect_button.remove_css_class("destructive-action")
             pane.disconnect_button.set_sensitive(True)
 

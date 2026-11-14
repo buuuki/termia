@@ -76,6 +76,7 @@ a standard GTK control does not justify crossing those boundaries.
 
 | # | Surface | Standard GTK control | Source and Termia-owned behavior |
 |---:|---|---|---|
+| — | Terminal status actions and reveal button | `Gtk.Button`, `Gtk.Overlay`, `Gtk.CheckButton` | `terminal_sessions.py` retains native icon-button input and accessible labels; an inverse visibility binding follows the bar. `terminal_preferences.py` stores bar defaults and reveal visibility. VTE remains in its scroller; `Gtk.Paned` owns resizing |
 | — | Retron secondary windows | Existing GTK windows, headers, lists, scrolling regions and native controls | `theme_styles.py` shares scoped frames and palette rules; views add presentation roles only. `DialogWindow` exposes `termia-dialog-panel` around content and actions, with `termia-dialog-content` inside. Native message alerts stay separate; Notes retains its saved editor colors and GTK owns all interactions |
 | — | Retron title-hold feedback | Existing `Gtk.WindowHandle` and native titlebars | `app.py` observes primary-button events without claiming them. Retron briefly strengthens the outer frame; title controls and message alerts are excluded. GTK/compositor owns movement and maximization |
 | — | Retron appearance | Native controls in the shared non-modal window composition | `retron_editor.py`, `retron_runtime.py`; shared/component/state overrides, live preview and independent Save/Cancel. General links to the editor; existing border preferences seed its profile |

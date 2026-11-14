@@ -114,6 +114,13 @@ credentials or private notes. Isolated test instances use their own profile.
   its window or shutting down; read-only or locked instances do not write it.
   Older clients ignore unsupported fields and discard them when saving.
   These additive settings require no schema bump.
+  Optional `terminal.show_status_bar_button` defaults to `true` when absent;
+  loading does not rewrite settings. `app.show_session_status_bar` stays in
+  place even though its control moves to Terminal preferences. No schema bump
+  is needed to read older settings. Before downgrading, retain a pre-upgrade
+  settings backup: older terminal-settings constructors reject the new field
+  and may recover using defaults. Restore the older backup rather than opening
+  newer settings in an incompatible client.
   Legacy terminal palette and color values
   are normalized by a named migration.
   The local Retron research theme adds the `dark_glow` value to the existing

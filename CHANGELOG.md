@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Integrate terminal status bars with terminal colors and accessible icon
+  actions. Group bar visibility and the optional reveal arrow in Terminal
+  preferences (#526).
+
 - Simplify Notes draft-search formatting, bind color-drop test callbacks to
   their own results, and format local-profile details through a mapping to
   avoid an unrelated shell-execution analyzer warning (#524).
@@ -31,6 +35,10 @@
   retaining native resizing and editable command confirmation (#518).
 
 ### Fixed
+
+- Prevent split dividers from clipping lower status bars or intercepting their
+  buttons, and remove extra status-bar gaps in standard themes while retaining
+  Retron's separate spacing (#526).
 
 - Match Notes insertion cursor colors to the configured text color, keeping
   the cursor visible on the default dark editor background in Light mode (#524).

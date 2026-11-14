@@ -242,10 +242,10 @@ def build_interaction_css(
     rule(".termia-pane-status button:active", f"background-color: alpha({terminal_foreground}, 0.13);")
     rule(".termia-pane-status button:disabled", "background-color: transparent; opacity: 0.45;")
 
-    rule(".termia-terminal-pane > scrolledwindow",
+    rule(".termia-terminal-pane > overlay > scrolledwindow",
          f"border: {retron.BORDER_WIDTH:g}px solid alpha({accent}, {retron.FRAME_OPACITY:.2f}); border-radius: {retron.BORDER_RADIUS:g}px;")
     rule(".termia-terminal-pane vte-terminal", "padding: 6px 8px;")
-    rule(".termia-terminal-pane:focus-within > scrolledwindow",
+    rule(".termia-terminal-pane:focus-within > overlay > scrolledwindow",
          f"border-color: alpha({accent}, {retron.FOCUS_FRAME_OPACITY:.2f}); box-shadow: 0 0 {retron.GLOW_BLUR:g}px alpha({accent}, {retron.WINDOW_GLOW_OPACITY:.2f});")
 
     note_tab = ".termia-notes-notebook > header > tabs > tab"

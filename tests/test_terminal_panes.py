@@ -39,6 +39,18 @@ class FakeControl:
         self.label = ""
         self.sensitive = False
         self.visible = False
+        self.tooltip = ""
+        self.icon = ""
+        self.accessible_label = ""
+
+    def set_icon_name(self, icon: str) -> None:
+        self.icon = icon
+
+    def set_tooltip_text(self, text: str) -> None:
+        self.tooltip = text
+
+    def update_property(self, properties, values) -> None:
+        self.accessible_label = values[0]
 
     def set_label(self, label: str) -> None:
         self.label = label
@@ -154,7 +166,8 @@ class TerminalPaneStateTests(unittest.TestCase):
                     else:
                         host.on_terminal_exited(terminal, 0, Mock(), session)
                 expected = "connect" if server_id else "open_local_terminal"
-                self.assertEqual(pane.disconnect_button.label, expected)
+                self.assertEqual(pane.disconnect_button.tooltip, expected)
+                self.assertEqual(pane.disconnect_button.icon, "view-refresh-symbolic")
                 self.assertTrue(pane.disconnect_button.sensitive)
                 self.assertIsNone(pane.child_process)
                 host.on_request_disconnect_pane(None, session, terminal)
@@ -196,7 +209,7 @@ class TerminalPaneStateTests(unittest.TestCase):
         with patch("termia.terminal_sessions.GLib.idle_add") as idle:
             host.on_split_terminal_exited(terminal, 0, session)
             idle.assert_not_called()
-        self.assertEqual(pane.disconnect_button.label, "open_local_terminal")
+        self.assertEqual(pane.disconnect_button.tooltip, "open_local_terminal")
         self.assertIn(terminal, session.split_terminals)
         host.on_request_disconnect_pane(None, session, terminal)
         host.retry_split_pane.assert_called_once_with(session, terminal)
@@ -1227,7 +1240,9 @@ class TerminalPaneStateTests(unittest.TestCase):
 
         self.assertTrue(split.pending_reconnect)
         self.assertTrue(split.status_bar.visible)
-        self.assertEqual(split.disconnect_button.label, "Close")
+        self.assertEqual(split.disconnect_button.tooltip, "Close")
+        self.assertEqual(split.disconnect_button.icon, "window-close-symbolic")
+        self.assertEqual(split.disconnect_button.accessible_label, "Close")
         self.assertTrue(split.disconnect_button.sensitive)
 
     def test_close_action_closes_tab_when_failed_pane_is_the_only_pane(self) -> None:

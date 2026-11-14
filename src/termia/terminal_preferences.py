@@ -162,6 +162,14 @@ class TerminalPreferencesMixin:
         appearance_frame.set_child(grid)
         preferences_box.append(appearance_frame)
 
+        show_status_bar = Gtk.CheckButton(label=self.t("show_session_status_bar"))
+        show_status_bar.set_active(self.store.data.app.show_session_status_bar)
+        show_status_button = Gtk.CheckButton(label=self.t("show_status_bar_button"))
+        show_status_button.set_active(settings.show_status_bar_button)
+        show_status_button.set_tooltip_text(self.t("show_status_bar_button_hint"))
+        preferences_box.append(show_status_bar)
+        preferences_box.append(show_status_button)
+
         preview_title = Gtk.Label(label=self.t("terminal_preview"))
         preview_title.set_xalign(0)
         preview_title.add_css_class("heading")
@@ -294,6 +302,8 @@ class TerminalPreferencesMixin:
             prompt_datetime_combo,
             prompt_template_entry,
             prompt_color_button,
+            show_status_bar,
+            show_status_button,
         )
         dialog.connect("destroy", cleanup_preview_providers)
         dialog.present()
@@ -388,8 +398,11 @@ class TerminalPreferencesMixin:
         prompt_datetime_combo: Gtk.DropDown,
         prompt_template_entry: Gtk.Entry,
         prompt_color_button: Gtk.ColorButton,
+        show_status_bar: Gtk.CheckButton,
+        show_status_button: Gtk.CheckButton,
     ) -> None:
         if response == Gtk.ResponseType.OK:
+            previous_status_bar = self.store.data.app.show_session_status_bar
             try:
                 self.store.update_terminal_settings(
                     font_family=self.selected_terminal_font_family(font_combo),
@@ -404,12 +417,17 @@ class TerminalPreferencesMixin:
                         choice_id(prompt_datetime_combo) or "none",
                     ),
                     prompt_color=rgba_to_hex(prompt_color_button.get_rgba()),
+                    show_session_status_bar=show_status_bar.get_active(),
+                    show_status_bar_button=show_status_button.get_active(),
                 )
             except ReadOnlyStoreError:
                 self.toast_label.set_label(self.t("read_only_mode_enabled"))
                 dialog.destroy()
                 return
             self.apply_terminal_settings_to_open_tabs()
+            if previous_status_bar != self.store.data.app.show_session_status_bar:
+                self.apply_session_status_bar_visibility_to_open_tabs()
+            self.apply_status_bar_button_visibility_to_open_tabs()
             self.install_tree_styles()
             self.toast_label.set_label(self.t("terminal_settings_saved"))
         dialog.destroy()
