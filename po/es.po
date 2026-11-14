@@ -952,6 +952,14 @@ msgstr "Cerrar la pestaña al desconectar una sesión"
 msgid "Show session status bar"
 msgstr "Mostrar barra de estado de la sesión"
 
+#: src/termia/i18n.py:show_status_bar_button
+msgid "Show button to reveal the status bar"
+msgstr "Mostrar botón para desplegar la barra de estado"
+
+#: src/termia/i18n.py:show_status_bar_button_hint
+msgid "Show a down arrow in the terminal corner while its status bar is hidden."
+msgstr "Mostrar una flecha hacia abajo en la esquina del terminal mientras su barra de estado esté oculta."
+
 #: src/termia/i18n.py:hide_session_status_bar
 msgid "Hide session status bar"
 msgstr "Ocultar barra de estado de la sesión"

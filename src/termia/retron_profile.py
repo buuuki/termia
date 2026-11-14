@@ -46,7 +46,7 @@ COMPONENTS = {
     "menus": Component(("popover > contents",)),
     "dialogs": Component((".termia-dialog-panel",), inset=True),
     "secondary": Component(("&:not(.termia-main-window)",), ("normal", "backdrop", "held"), background=retron.DARK_GLOW_COLORS["canvas"], opacity=retron.WINDOW_OPACITY),
-    "terminal": Component((".termia-terminal-pane > scrolledwindow",)),
+    "terminal": Component((".termia-terminal-pane > overlay > scrolledwindow",)),
     "content": Component((".termia-content-frame", ".termia-text-surface"),
                          background_children=(".termia-text-surface textview", ".termia-text-surface textview > text")),
     "notes": Component(("frame.termia-notes-editor",), inset=True,
@@ -229,7 +229,7 @@ def selector_for(selector: str, state: str) -> str:
         return base.replace(ROOT, ROOT + ":backdrop", 1)
     if state == "held":
         return base + ".termia-title-held"
-    if state == "focus" and selector == ".termia-terminal-pane > scrolledwindow":
+    if state == "focus" and selector == ".termia-terminal-pane > overlay > scrolledwindow":
         return base.replace(".termia-terminal-pane >", ".termia-terminal-pane:focus-within >")
     suffix = {"normal": "", "focus": ":focus-within", "hover": ":hover", "pressed": ":active",
               "selected": ".active" if selector == ".termia-tab-label" else ":checked", "disabled": ":disabled"}

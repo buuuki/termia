@@ -14,13 +14,12 @@ class SplitSeparatorStyleTests(unittest.TestCase):
         css = build_application_css("#202020", "#008712", 1).decode()
 
         self.assertIn(".termia-split-pane.horizontal > separator", css)
-        self.assertIn("min-width: 5px", css)
-        self.assertIn("background: #202020; border-left: 1px solid #008712", css)
-        self.assertIn("border-left: 1px solid #008712", css)
+        self.assertIn("min-width: 1px; margin: 0 -4px; padding: 0 4px", css)
+        self.assertIn("background-size: 1px 100%", css)
         self.assertIn(".termia-split-pane.vertical > separator", css)
-        self.assertIn("min-height: 5px", css)
-        self.assertIn("background: #202020; border-top: 1px solid #008712", css)
-        self.assertIn("border-top: 1px solid #008712", css)
+        self.assertIn("min-height: 1px; margin: -8px 0 0; padding: 8px 0 0", css)
+        self.assertIn("background-size: 100% 1px; background-position: bottom", css)
+        self.assertIn("background-image: linear-gradient(#008712, #008712)", css)
         self.assertIn(".termia-pane-status > label { min-width: 0; }", css)
         self.assertIn(
             ".termia-add-icon-badge { background: @theme_bg_color; border-radius: 999px; }",
@@ -32,8 +31,8 @@ class SplitSeparatorStyleTests(unittest.TestCase):
 
         self.assertIn("min-width: 8px", css)
         self.assertIn("min-height: 8px", css)
-        self.assertIn("border-left: 8px solid #008712", css)
-        self.assertIn("border-top: 8px solid #008712", css)
+        self.assertIn("background-size: 8px 100%", css)
+        self.assertIn("background-size: 100% 8px", css)
 
     def test_generated_css_is_accepted_by_gtk(self) -> None:
         provider = Gtk.CssProvider()

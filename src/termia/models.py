@@ -105,6 +105,7 @@ class NoteCategory:
 
 @dataclass
 class TerminalSettings:
+    show_status_bar_button: bool = True
     font_family: str = DEFAULT_TERMINAL_FONT_FAMILY
     font_size: int = 13
     foreground: str = DEFAULT_TERMINAL_FOREGROUND

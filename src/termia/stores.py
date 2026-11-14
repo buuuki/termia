@@ -1665,10 +1665,14 @@ class ConnectionStore:
         prompt_enabled: bool | None = None,
         prompt_template: str | None = None,
         prompt_color: str | None = None,
+        show_session_status_bar: bool | None = None,
+        show_status_bar_button: bool | None = None,
     ) -> None:
         self.ensure_writable()
         current = self.data.terminal
         self.data.terminal = TerminalSettings(
+            show_status_bar_button=(current.show_status_bar_button
+                                    if show_status_bar_button is None else show_status_bar_button),
             font_family=font_family.strip() or DEFAULT_TERMINAL_FONT_FAMILY,
             font_size=max(6, min(font_size, 72)),
             foreground=foreground.strip() or DEFAULT_TERMINAL_FOREGROUND,
@@ -1689,6 +1693,8 @@ class ConnectionStore:
             prompt_template=(prompt_template if prompt_template is not None else current.prompt_template) if (prompt_template if prompt_template is not None else current.prompt_template).strip() else r"\u@\h:\w\$ ",
             prompt_color=(prompt_color if prompt_color is not None else current.prompt_color).strip() or DEFAULT_PROMPT_COLOR,
         )
+        if show_session_status_bar is not None:
+            self.data.app.show_session_status_bar = show_session_status_bar
         self.save_settings()
 
     def update_app_settings(self, app: AppSettings, *, dark_glow_border_color: str | None = None) -> None:

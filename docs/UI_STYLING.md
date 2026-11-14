@@ -504,7 +504,18 @@ dragging changes background and opacity without removing the active shadow.
 Focus outlines are drawn inward on tabs. Shadows/outlines do not reserve extra
 layout space, and ancestors may clip outer shadows.
 
-### Terminal status bars in Retron
+### Terminal status bars
+
+In System/Light/Dark, bars use terminal foreground and opaque background,
+with a subtle 4% foreground mix for the active pane, no focus stripe, border
+or outer margins, and `4px 8px` padding. Split bars reach the divider
+independently of the terminal text inset. Native icon buttons place
+End/Disconnect before Hide; tooltips and accessible labels name the actions.
+The reveal button sits in a native overlay at the terminal's upper-right
+corner with 4px top/end margins and terminal colors. Its preference is
+independent of bar visibility. VTE remains inside its existing scroller.
+
+#### Retron
 
 The existing `.termia-pane-status` box sits above the bordered terminal
 scroller. Normal and `.active` states use the saved terminal background and
@@ -575,15 +586,15 @@ top/right/bottom/left; two-value padding is vertical/horizontal.
 | `.termia-session-tab-scroller` | Background transparent, border `0`, shadow `none` |
 | Tab scroller horizontal scrollbar | Minimum height `5px`, margin `0 2px`, padding `0`; slider minimum height `3px`, minimum width `24px` |
 | `.termia-terminal-stack` | Border `0`, shadow `none` |
-| `.termia-pane-status.active` | Base background `alpha(@theme_selected_bg_color, 0.12)`; Retron overrides it with the saved terminal background without focus highlighting |
-| Pane status labels; status bar inside a split | Label minimum width `0`; split status-bar padding `6px` |
+| `.termia-pane-status.active` | Base background mixes terminal background with 4% foreground; Retron retains its saved terminal background |
+| Pane status labels; status bar inside a split | Label minimum width `0`; standard padding `4px 8px`, no outer margins |
 | `.termia-read-only-badge` | Font weight `600` |
 | `.termia-terminal-paste-preview` | Base border `1px solid #000000`; Retron alone overrides surface, selection, border, radius and padding as specified below |
 | `.termia-tab-label` | Padding `7px 10px`, margin `0 2px`, radius `8px`, background transparent, border `0`; Retron reserves a transparent `1px` border and uses radius `10px` |
 | `.termia-tab-title` | Font size `1.05em` |
 | `.termia-tab-close` | Padding `0`, minimum width/height `24px`, base radius `9999px`; base hover black alpha `0.16`, active black alpha `0.24`, hover shadow `none` |
 | `.termia-tab-overflow-button` | Padding `0`, minimum width `0`, minimum height `24px`, margin `1px 0 6px 0`; inner button horizontal padding `1px`, minimum width `16px` |
-| `.termia-status-hide`, `.termia-disconnect-button` | Padding `0 6px`, minimum height `18px`, font size `0.85em` |
+| `.termia-status-hide`, `.termia-disconnect-button` | Standard themes: padding `2px 8px`, minimum height `20px`; Retron uses its compact overrides above |
 | Notes notebook, stack, header and header tabs | Background transparent, border `0`, shadow `none` before the Retron header background override |
 | Notes header tab | Radius `8px 8px 0 0`; checked background `alpha(@theme_fg_color, 0.13)`; Retron overrides states as above |
 | `.termia-notes-editor` | Border `1px solid @borders`, radius `8px`, default background `#001B33`; text view foreground `#FFFFFF` and background `#001B33` before saved appearance overrides |
@@ -622,11 +633,14 @@ Font, size, ANSI palette, prompt and split-separator settings remain shared.
 Initialization, read-only behavior and downgrade compatibility are documented
 in [STORAGE_MIGRATIONS.md](STORAGE_MIGRATIONS.md).
 
-Let `T = max(1, configured split_separator_thickness)` and `H = max(5, T)`.
-Horizontal split separators use minimum width `H` and a left solid border of
-width `T`; vertical separators use minimum height `H` and a top solid border
-of width `T`. Both use the configured terminal background for the drag area
-and configured separator color for the line. On hover only the line becomes
+Let `T = max(1, configured split_separator_thickness)`.
+Standard themes reserve only `T` pixels between panes and paint a gradient
+line in the configured separator color on a transparent native drag area.
+Side-by-side panes use `0 -4px` margins and `0 4px` padding; stacked panes use
+`-8px 0 0` margins and `8px 0 0` padding, extending the hit area above the
+line so it cannot intercept lower status-bar buttons. The line is centered
+for side-by-side panes and bottom-aligned for stacked panes.
+On hover only the line becomes
 `alpha(configured color, 0.82)`. Default line color is `#008712`, width `1px`;
 preferences bound width to `1–32px`.
 

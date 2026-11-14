@@ -15,6 +15,7 @@ class PaneStatusTests(unittest.TestCase):
                 servers=[self.connection], local_terminals=[self.profile],
             )),
             t=lambda key: translate_key(key, "en"),
+            set_status_button_action=TerminalSessionsMixin.set_status_button_action,
         )
         self.pane = SimpleNamespace(
             server_id="server-a", local_profile_id=None, title="Renamed tab",
@@ -81,7 +82,8 @@ class PaneStatusTests(unittest.TestCase):
                 self.pane.connected = True
                 self.pane.child_process = object()
                 self.assertIn(running, self.render())
-                self.pane.disconnect_button.set_label.assert_called_with(action)
+                self.pane.disconnect_button.set_tooltip_text.assert_called_with(action)
+                self.pane.disconnect_button.set_icon_name.assert_called_with("window-close-symbolic")
                 self.pane.child_process = None
                 self.assertIn(starting, self.render())
                 self.pane.connected = False

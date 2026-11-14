@@ -32,6 +32,11 @@ fitxers en terminals VTE integrats amb GTK 4.
   terminal d'una pestanya que continua oberta, Obrir terminal (local) o
   Connectar (SSH) inicia una sessió nova en aquell panell. Desconnectar un split
   continua eliminant-lo; es conserva l'opció de tancar la pestanya automàticament.
+  La icona × finalitza/desconnecta la sessió, ↑ amaga la barra i la fletxa
+  circular obre/reconnecta una sessió finalitzada. Cada acció té una ajuda.
+  Quan està amagada, ↓ a la cantonada superior dreta del terminal mostra la
+  barra d'aquell panell. Preferències de terminal reuneix la visibilitat inicial
+  de la barra i l'opció del botó ↓, activada per defecte.
 - Còpia automàtica en acabar de seleccionar text del terminal,
   activada per defecte i configurable a Preferències generals. L'avís confirma la còpia i
   indica els caràcters, inclosos espais i salts de línia, quan el porta-retalls

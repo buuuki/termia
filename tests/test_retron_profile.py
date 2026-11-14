@@ -67,7 +67,7 @@ class RetronProfileTests(unittest.TestCase):
             for selector in rule.split(" {")[0].split(", "):
                 self.assertTrue(selector.startswith(ROOT), selector)
         self.assertNotIn("opacity:", css.replace("background-opacity:", ""))
-        self.assertIn(".termia-terminal-pane:focus-within > scrolledwindow", css)
+        self.assertIn(".termia-terminal-pane:focus-within > overlay > scrolledwindow", css)
 
     def test_untrusted_profiles_cannot_inject_css_or_unbounded_effects(self):
         for key, value in (("border_color", "red; } * {color: red"), ("radius", -1),
@@ -89,7 +89,7 @@ class RetronProfileTests(unittest.TestCase):
         profile["common"] = {"normal": {"background_mode": "linear", "background_opacity": 0.5}}
         css = build_profile_css(profile)
         self.assertIn("background-color: transparent; background-image: linear-gradient", css)
-        terminal_rule = next(line for line in css.splitlines() if ".termia-terminal-pane > scrolledwindow" in line)
+        terminal_rule = next(line for line in css.splitlines() if ".termia-terminal-pane > overlay > scrolledwindow" in line)
         self.assertNotIn("gradient(", terminal_rule)
         self.assertIn("background-color: transparent", terminal_rule)
         profile["components"] = {"terminal": {"focus": {"background_opacity": 0.5}}}

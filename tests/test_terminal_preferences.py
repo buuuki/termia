@@ -54,9 +54,12 @@ class TerminalPreferencesTests(unittest.TestCase):
 
     def test_combined_save_persists_prompt_and_applies_only_appearance_live(self) -> None:
         host = SimpleNamespace(
-            store=SimpleNamespace(update_terminal_settings=Mock()),
+            store=SimpleNamespace(update_terminal_settings=Mock(),
+                                  data=SimpleNamespace(app=SimpleNamespace(show_session_status_bar=False))),
             selected_terminal_font_family=lambda _combo: "Monospace",
             apply_terminal_settings_to_open_tabs=Mock(),
+            apply_session_status_bar_visibility_to_open_tabs=Mock(),
+            apply_status_bar_button_visibility_to_open_tabs=Mock(),
             install_tree_styles=Mock(),
             toast_label=SimpleNamespace(set_label=Mock()),
             t=lambda key: key,
@@ -79,12 +82,18 @@ class TerminalPreferencesTests(unittest.TestCase):
             SimpleNamespace(get_selected=lambda: 0, _termia_choice_ids=["time"]),
             SimpleNamespace(get_text=lambda: r"\u@\h:\w\$ "),
             color_button,
+            SimpleNamespace(get_active=lambda: False),
+            SimpleNamespace(get_active=lambda: True),
         )
 
         saved = host.store.update_terminal_settings.call_args.kwargs
         self.assertTrue(saved["prompt_enabled"])
         self.assertIn(r"[\A]", saved["prompt_template"])
         self.assertEqual(saved["prompt_color"], "#336699")
+        self.assertFalse(saved["show_session_status_bar"])
+        self.assertTrue(saved["show_status_bar_button"])
+        host.apply_session_status_bar_visibility_to_open_tabs.assert_not_called()
+        host.apply_status_bar_button_visibility_to_open_tabs.assert_called_once_with()
         host.apply_terminal_settings_to_open_tabs.assert_called_once_with()
         host.install_tree_styles.assert_called_once_with()
         dialog.destroy.assert_called_once_with()
