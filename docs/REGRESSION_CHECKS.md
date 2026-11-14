@@ -729,6 +729,15 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Server Tree
 
+- Compare valid drag destinations in the server tree and Notes tree under the
+  same theme: both use the theme selection color at 24% opacity, a 1px inset
+  outline and 4px corners. Both destination containers retain 2px vertical and
+  6px horizontal padding even outside a drag, keeping the outline away from
+  their contents without resizing when highlighted. Check that the highlight clears on leaving the
+  destination, cancelling, dropping, and rebuilding/recycling Notes rows.
+  Include note-to-category and category-to-category/scope moves; preserve
+  existing acceptance rules and check Light, Dark, System and Retron.
+
 - Server, Favorite and Recent connection menus must share native GTK entries
   anchored to the click. Preserve favorite toggling, Connect, View notes, Edit,
   Clone, Send files, optional Browse files (SFTP), and Delete on the clicked
@@ -867,6 +876,17 @@ Long measurements and release-platform checks remain separate validation work.
   fresh isolated profile before any appearance setting has been saved. In
   read-only instances, appearance changes may apply for that session but must
   not persist.
+  In Light mode, focus the editor and verify the insertion cursor is white on
+  the default dark background. Change the text color and verify the cursor
+  follows it; repeat in Dark, System and Retron with contrasting custom colors.
+  Drag each toolbar color button onto the note text: the color drop must be
+  rejected without inserting text or producing GTK criticals or invalid-iterator
+  warnings. Clicking either button must still open its chooser and apply the
+  selected color. Verify ordinary text drag-and-drop within the editor and from
+  another text field, copy/paste, and typing still work. Repeat with multiple
+  note tabs, all appearance modes, and Ubuntu 24/26 GTK environments. External
+  RGBA color drops must also be rejected; this does not disable the buttons'
+  native drag behavior or modify other editors.
   The notes window must be an independent, modeless application window using
   the same standard GTK title controls as the main window, including theme
   colors, hover/pressed feedback, transitions, and desktop button order. Reopen

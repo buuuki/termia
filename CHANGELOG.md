@@ -4,10 +4,39 @@
 
 ### Changed
 
+- Simplify Notes draft-search formatting, bind color-drop test callbacks to
+  their own results, and format local-profile details through a mapping to
+  avoid an unrelated shell-execution analyzer warning (#524).
+
+- Share drag-destination highlighting between server groups and Notes tree
+  destinations, using the theme selection color, matching permanent inner
+  spacing, and clearing recycled row state.
+
+- Remove the additional 6px left inset from the Notes editor contents while
+  retaining the notebook's sidebar spacing.
+
+- Use a transparent Notes list background in Light, Dark and System appearance
+  to match the surrounding window, preserving row highlights and Retron styling.
+
+- Make the Notes toolbar frame border transparent without changing its width,
+  preserving Retron's dedicated frame styling.
+- Add 8px above the Notes toolbar and hide the selected tab's border and shadow
+  in Light, Dark and System appearance, retaining its background and Retron styling.
+- Show a theme-colored separator above the Notes editor while its toolbar is
+  visible in Light, Dark and System appearance, reserving its width when hidden.
+- Make Notes toolbar button and font-size control borders transparent in Light,
+  Dark and System appearance, preserving their dimensions and Retron styling.
+
 - Increase the multiline paste preview's initial size to 600 × 400 while
   retaining native resizing and editable command confirmation (#518).
 
 ### Fixed
+
+- Match Notes insertion cursor colors to the configured text color, keeping
+  the cursor visible on the default dark editor background in Light mode (#524).
+
+- Reject native RGBA color drops in the Notes editor before GtkSourceView's
+  color insertion handler, retaining color chooser buttons and text receivers.
 
 - Use GTK's built-in theme for explicit Light/Dark appearance even with a dark
   desktop theme, restoring desktop theme selection for System and Retron (#522).

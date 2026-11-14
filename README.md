@@ -49,6 +49,8 @@ together in embedded VTE terminals.
   be shown with its header button.
   Right-click a note tab to rename, delete, clone, save, or close it; the editor
   retains its save status and modification time.
+  The insertion cursor follows the editor text color. Use the toolbar color
+  choosers to change colors; dragging a color onto note text does not insert it.
 - Local connection storage with optional master-password encryption.
 - Termia configuration import/export and connection import from Ásbrú YAML.
 - Connection history and optional Statistics and SFTP add-ons.
