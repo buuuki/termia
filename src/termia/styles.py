@@ -86,6 +86,8 @@ def build_application_css(
         f"background-image: linear-gradient(alpha({split_separator_color}, 0.82), "
         f"alpha({split_separator_color}, 0.82)); }} "
         ".termia-read-only-badge { font-weight: 600; } "
+        "window:not(.termia-dark-glow) frame.termia-notification { "
+        "background: alpha(@theme_bg_color, 0.75); } "
         ".termia-terminal-paste-preview { border: 1px solid #000000; } "
         ".termia-tab-label { padding: 7px 10px; margin: 0 2px; border-radius: 8px; "
         "background: transparent; border: 0; box-shadow: none; } "

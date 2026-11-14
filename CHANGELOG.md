@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Set notification backgrounds to 75% opacity while preserving their theme
+  colors and leaving text and icons unaffected by background opacity (#530).
+
 - Use regular button styling for snippet creation and category filters in
   the snippet manager, and enable native GTK frames for the snippet list,
   command preview and command editor (#528).

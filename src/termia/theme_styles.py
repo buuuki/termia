@@ -31,6 +31,7 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
     # raise its effective opacity above the configured value.
     css += rule(".termia-main-surface", f"background-color: transparent; color: {c['text']};")
     css += rule(".termia-sidebar,.termia-panel,.stat-card,frame.card", f"background-color: {c['surface']}; color: {c['text']}; border: {retron.BORDER_WIDTH:g}px solid {c['border']}; border-radius: {retron.BORDER_RADIUS:g}px; box-shadow: none;")
+    css += rule("frame.termia-notification", f"background: alpha({c['surface']}, 0.75);")
     css += rule("listview,list", f"background-color: {c['surface']}; color: {c['text']};")
     css += rule("row", "background-color: transparent;")
     css += rule("row:hover", f"background-color: {c['hover']};")
