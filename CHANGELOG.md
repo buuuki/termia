@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Use regular button styling for snippet creation and category filters in
+  the snippet manager, and enable native GTK frames for the snippet list,
+  command preview and command editor (#528).
+
 - Integrate terminal status bars with terminal colors and accessible icon
   actions. Group bar visibility and the optional reveal arrow in Terminal
   preferences (#526).
