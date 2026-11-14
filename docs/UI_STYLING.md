@@ -370,6 +370,10 @@ reduced only where an explicit `alpha(...)` expression is used.
 Role definitions do not imply that CPU, RAM or active-connection indicators
 currently consume them. Notifications map information/success/warning/error to
 cyan/green/yellow/red in `TermiaWindow.show_toast()`.
+Notification frames use a 75%-opaque background: the GTK theme background in
+standard themes and the Retron surface color in Retron. Alpha applies only to
+the background, not the text/icon widget subtree; grouping and placement are
+unchanged.
 
 ### Provider order and scope
 

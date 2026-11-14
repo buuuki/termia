@@ -394,6 +394,9 @@ Long measurements and release-platform checks remain separate validation work.
   immediately restore one available slot.
 - Application notifications must appear in a visible temporary overlay and
   hide automatically without blocking terminal input.
+  In Light, Dark, System and Retron, check the 75%-opaque background over
+  terminal output: text and icons must retain their own opacity, remain
+  readable, and severity borders must remain visible.
 - Notifications triggered while the overlay is visible must remain grouped in
   arrival order, including repeated messages, and each new message must restart
   the hide timer instead of replacing earlier feedback.
