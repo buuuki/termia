@@ -589,7 +589,7 @@ class SidebarMixin:
             content.add_controller(source)
             content.add_css_class("termia-server-item")
         if row.kind == "group" or row.item_id == "__ungrouped__":
-            content.add_css_class("termia-group-drop-target")
+            content.add_css_class("termia-tree-drop-target")
             self.add_server_group_drop_target(content, row.item_id if row.kind == "group" else None)
 
     def unbind_sidebar_tree_item(self, _factory, item) -> None:
@@ -1680,13 +1680,13 @@ class SidebarMixin:
                 return
             self.title_label.set_label(profile.name or self.t("local_terminal"))
             self.info_label.set_label(
-                self.t("local_terminal_detail_info").format(
-                    working_directory=profile.working_directory or str(Path.home()),
-                    shell=profile.shell or self.default_local_terminal_shell(),
-                    arguments=profile.arguments or "-",
-                    command_on_start=profile.command_on_start or "-",
-                    tab_title=profile.tab_title or profile.name or self.t("local_terminal"),
-                )
+                self.t("local_terminal_detail_info").format_map({
+                    "working_directory": profile.working_directory or str(Path.home()),
+                    "shell": profile.shell or self.default_local_terminal_shell(),
+                    "arguments": profile.arguments or "-",
+                    "command_on_start": profile.command_on_start or "-",
+                    "tab_title": profile.tab_title or profile.name or self.t("local_terminal"),
+                })
             )
             return
 

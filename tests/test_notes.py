@@ -39,6 +39,7 @@ from termia.notes_dialogs import (
     NotesDialogs,
     NotesTreeNode,
     create_notes_text_view,
+    filter_notes_color_drops,
     format_note_timestamp,
 )
 from termia.notes_io import (
@@ -396,6 +397,7 @@ class NoteHierarchyTests(unittest.TestCase):
         for expander in expanders:
             content = expander.get_child()
             title = content.get_first_child().get_next_sibling().get_label()
+            self.assertEqual(content.has_css_class("termia-tree-drop-target"), title == "Folder")
             controllers = content.observe_controllers()
             controllers_by_title[title] = [controllers.get_item(i)
                                            for i in range(controllers.get_n_items())]
@@ -858,6 +860,7 @@ class NoteHierarchyTests(unittest.TestCase):
         dialog = make_note_tree_dialog()
         node = NotesTreeNode("category", "Child", category="Child", count=1)
         content = bind_note_tree_node(self, dialog, node)
+        self.assertTrue(content.has_css_class("termia-tree-drop-target"))
         controllers = content.observe_controllers()
         sources = [controllers.get_item(i) for i in range(controllers.get_n_items())
                    if isinstance(controllers.get_item(i), Gtk.DragSource)]
@@ -868,6 +871,11 @@ class NoteHierarchyTests(unittest.TestCase):
         mime_types = {mime_type for target in targets
                       for mime_type in target.get_property("formats").get_mime_types()}
         self.assertEqual(mime_types, {NOTE_CATEGORY_DND_MIME_TYPE, NOTE_ROW_DND_MIME_TYPE})
+        content.add_css_class("drop-target")
+        expander = content.get_parent()
+        dialog.unbind_note_tree_item(None, SimpleNamespace(get_child=lambda: expander))
+        self.assertFalse(content.has_css_class("termia-tree-drop-target"))
+        self.assertFalse(content.has_css_class("drop-target"))
 
 
 class NotesDomainTests(unittest.TestCase):
@@ -996,6 +1004,54 @@ class NotesDomainTests(unittest.TestCase):
         )
         view.set_show_line_numbers(False)
         self.assertFalse(view.get_show_line_numbers())
+
+    def test_notes_editor_rejects_native_color_receiver_before_default_handler(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GtkSourceView integration requires a graphical display")
+        view = create_notes_text_view(True)
+        buffer = view.get_buffer()
+        buffer.set_text("Keep this note")
+        controllers = view.observe_controllers()
+        targets = [controllers.get_item(i) for i in range(controllers.get_n_items())]
+        color_targets = [target for target in targets if (
+            isinstance(target, Gtk.DropTarget)
+            and list(target.get_gtypes()) == [Gdk.RGBA.__gtype__]
+        )]
+        self.assertTrue(color_targets, "Native RGBA receiver changed; review the filter")
+        for target in color_targets:
+            subsequent_handler = MagicMock(return_value=True)
+            target.connect("accept", subsequent_handler)
+            # No drop is inspected: rejection must stop all later accept handlers,
+            # including GTK's default handler, before native insertion is possible.
+            self.assertFalse(target.emit("accept", None))
+            subsequent_handler.assert_not_called()
+        self.assertEqual(
+            buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False),
+            "Keep this note",
+        )
+
+    def test_notes_color_filter_leaves_text_and_mixed_receivers_untouched(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GtkSourceView integration requires a graphical display")
+        view = create_notes_text_view(True)
+        for types in ([GObject.TYPE_STRING], [GObject.TYPE_STRING, Gdk.RGBA.__gtype__]):
+            with self.subTest(types=types):
+                target = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.COPY)
+                target.set_gtypes(types)
+                view.add_controller(target)
+                filter_notes_color_drops(view)
+                accept = MagicMock(return_value=True)
+                target.connect("accept", accept)
+                self.assertTrue(target.emit("accept", None))
+                accept.assert_called_once()
+                self.assertEqual(list(target.get_gtypes()), types)
+                received = []
+                target.connect(
+                    "drop",
+                    lambda _target, value, _x, _y, received=received: received.append(value) or True,
+                )
+                self.assertTrue(target.emit("drop", "Text stays supported", 0.0, 0.0))
+                self.assertEqual(received, ["Text stays supported"])
 
     def test_editor_appearance_uses_dark_defaults_when_settings_are_empty(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
