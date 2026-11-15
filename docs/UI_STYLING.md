@@ -742,12 +742,14 @@ System/Light/Dark retain `12px` on each side. Theme application
 updates these margins on the current window. Every direct child (action row,
 search entry, tree scroller and summary label) shares the parent padding of
 10px horizontally; descendants retain their existing indentation. Its vertical
-box spacing remains 8px, minimum width request 120px and initial splitter
-position 280px. The shared main surface now supplies the 8px outer inset to
+box spacing remains 8px. The splitter restores `app.connection_sidebar_width`,
+defaulting to 280 logical pixels, without an explicit sidebar minimum-width
+request or percentage cap. Both panes allow native shrinking, including collapse
+at the edges. The shared main surface now supplies the 8px outer inset to
 both sidebar and terminal region, keeping their tops aligned. A visible tab
 strip occupies a row above terminal content; it is not empty spacing.
-Content constraints can still require a wider sidebar at some font sizes;
-no controls are shrunk or repositioned.
+Content may be clipped when the pane is narrowed below its natural width;
+widen it to reveal the controls. No custom resize correction repositions it.
 
 The native wide sidebar separator supplies an 8px gap with no border, margin
 or padding. Native resizing and keyboard interaction remain in place.

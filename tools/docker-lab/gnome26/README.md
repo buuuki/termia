@@ -12,11 +12,11 @@ or remove the runtime and portability limitations documented below.
 ## Reopen the existing desktop
 
 If the container already exists on this computer, reuse it instead of rebuilding.
-Start from a clean checkout; save local changes before switching branches.
+Run these commands from the repository root. Reopening the existing desktop
+does not require switching branches or pulling source; it uses the image and
+data already installed in that container.
 
 ```bash
-git switch maintenance/430-docker-gnome
-git pull --ff-only
 docker start termia-430-gnome26-desktop-1
 docker inspect --format '{{.State.Health.Status}}' termia-430-gnome26-desktop-1
 docker exec termia-430-gnome26-desktop-1 cat /var/lib/termia-lab/password
@@ -52,14 +52,14 @@ In the build commands below, replace `docker compose` with
 ## Reconstruction on another PC and portability limits
 
 The recipes rebuild the system without exporting an image, importing a disk or
-manually installing Ubuntu in a volume. As of 2026-10-28 these changes remain
-under development on branch `maintenance/430-docker-gnome`. Use that branch
-and record the selected commit; `main` does not contain this deployment.
-Reconstruction on a second PC and a second uncached download have not yet
-been validated.
+manually installing Ubuntu in a volume. The recipes are now included in `main`;
+the original development branch is not required. Record the selected commit.
+For an unpublished Termia candidate, use its designated checkout instead of
+changing the branch of an active working tree. Reconstruction on a second PC
+and a second uncached download remain unvalidated by this guide.
 
 ```bash
-git clone --branch maintenance/430-docker-gnome --single-branch https://github.com/buuuki/termia.git
+git clone --branch main --single-branch https://github.com/buuuki/termia.git
 cd termia
 git rev-parse HEAD
 ```

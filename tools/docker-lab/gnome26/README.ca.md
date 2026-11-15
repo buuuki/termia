@@ -13,11 +13,11 @@ documentades més avall.
 ## Reobrir l'escriptori existent
 
 Si el contenidor ja existeix en aquest equip, reutilitza'l sense reconstruir-lo.
-Parteix d'un checkout net; desa els canvis locals abans de canviar de branca.
+Executa aquestes ordres des de l'arrel del repositori. Reobrir l'escriptori
+existent no requereix canviar de branca ni descarregar codi; utilitza la imatge
+i les dades ja instal·lades en aquell contenidor.
 
 ```bash
-git switch maintenance/430-docker-gnome
-git pull --ff-only
 docker start termia-430-gnome26-desktop-1
 docker inspect --format '{{.State.Health.Status}}' termia-430-gnome26-desktop-1
 docker exec termia-430-gnome26-desktop-1 cat /var/lib/termia-lab/password
@@ -54,14 +54,14 @@ A les ordres de construcció següents, substitueix `docker compose` per
 ## Reconstrucció en un altre PC i límits de portabilitat
 
 Les receptes reconstrueixen el sistema sense exportar una imatge, importar un
-disc ni instal·lar manualment Ubuntu en un volum. A data 2026-10-28, els canvis
-continuen en desenvolupament a la branca `maintenance/430-docker-gnome`.
-Cal utilitzar aquesta branca i registrar el commit escollit; `main` no conté
-aquest desplegament. No s'ha validat encara la reconstrucció en un
-segon PC ni una segona descàrrega sense memòria cau.
+disc ni instal·lar manualment Ubuntu en un volum. Les receptes ja són a `main`;
+no requereixen la branca original de desenvolupament. Registra el commit escollit.
+Per a un candidat de Termia sense publicar, utilitza el seu checkout en lloc de
+canviar de branca en un arbre de treball actiu. Aquesta guia no acredita la
+reconstrucció en un segon PC ni una segona descàrrega sense memòria cau.
 
 ```bash
-git clone --branch maintenance/430-docker-gnome --single-branch https://github.com/buuuki/termia.git
+git clone --branch main --single-branch https://github.com/buuuki/termia.git
 cd termia
 git rev-parse HEAD
 ```

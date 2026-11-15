@@ -4,6 +4,17 @@ Termia és un gestor de connexions SSH i espais de treball de terminal per a Lin
 Reuneix sessions locals i remotes, espais de treball desats i transferències de
 fitxers en terminals VTE integrats amb GTK 4.
 
+**Aquest README descriu el candidat de manteniment `0.6.4-beta`, encara sense publicar.**
+Inclou correccions de temes, barres laterals, barres d'estat i divisions del
+terminal, Notes, previsualització d'enganxament, snippets i llançadors. Han passat
+les proves de l'aplicació i les comprovacions d'instal·lació, actualització
+i Wayland del paquet als laboratoris existents d'Ubuntu 24/26.
+Els resultats, les limitacions i les comprovacions pendents del llançament
+són a [#532](https://github.com/buuuki/termia/issues/532). Queden pendents
+la publicació i la verificació final dels fitxers de la release.
+Les instruccions de descàrrega i actualització continuen apuntant a la versió
+publicada `0.6.3-beta`; aquest paquet no inclou tots els canvis del candidat.
+
 ![Termia amb diverses sessions SSH integrades](../img/termia-screenshot.png)
 
 [English](../README.md) · [Castellà](README.es.md) · [Full de ruta](../ROADMAP.md)
@@ -66,8 +77,9 @@ fitxers en terminals VTE integrats amb GTK 4.
 
 **Retron** està disponible a **General → Tema**:
 superfícies fosques opaques, vores de color subtils d'1px, cantonades de 10px
-i il·luminació suau als panells i les pestanyes actius. Sistema/Clar/Fosc conserven
-l'aspecte anterior. Cada tema desa els seus colors de text i fons del terminal;
+i il·luminació suau als panells i les pestanyes actius. Clar i Fosc fan servir
+les variants del tema integrat de GTK; Sistema segueix l'escriptori. No canvien
+els ajustos de l'escriptori. Cada tema desa els seus colors de text i fons del terminal;
 Retron comença amb text Solarized i el fons fosc del panell lateral (`#182231`).
 Pots canviar-los quan vulguis des de les
 preferències del terminal: es desen per al tema seleccionat. Els colors de
@@ -128,6 +140,10 @@ El tancament inesperat de GTK/Wayland (#499) i la investigació general sobre
 el moviment de Notes (#489) continuen oberts.
 
 Abans d’actualitzar, tanca Termia i fes una còpia de seguretat del perfil.
+Abans de tornar de `0.6.4-beta` a `0.6.3-beta`, restaura el `settings.json`
+previ: la versió anterior rebutja la nova preferència del botó per mostrar
+la barra d'estat i pot restablir les preferències del terminal als valors
+predeterminats. Les versions anteriors ignoren les amplades de les barres laterals.
 Les versions anteriors a 0.6.2-beta no poden llegir l’esquema 4 de connexions.
 Per tornar enrere, restaura la còpia prèvia i conserva
 les dades més recents per separat. Consulta la
@@ -177,7 +193,7 @@ Ubuntu 22.04 i anteriors no proporcionen el VTE per a GTK 4 necessari.
 
 ## Actualitzacions
 
-**Beta.3 i beta.4 requereixen una primera actualització manual.**
+**`0.6.0-beta.3` i `0.6.0-beta.4` requereixen una primera actualització manual a una versió PATCH posterior.**
 Fes una còpia del perfil, tanca Termia i instal·la el nou .deb sobre l'anterior.
 No cal desinstal·lar primer.
 
@@ -212,15 +228,23 @@ Obre **Ajuda** des del menú principal per consultar els fluxos d'ús i les drec
 Els complements opcionals d'Estadístiques i SFTP es gestionen des de
 **Complements**; els canvis requereixen reiniciar i desactivar-los conserva les dades.
 
-Per provar un checkout amb un perfil buit o una còpia separada de les teves dades:
+Per provar un checkout amb un perfil buit o una còpia separada d'algunes dades:
 
 ```bash
 ./scripts/run_test_instance.sh --fresh
-./scripts/run_test_instance.sh --copy-current-config review
+./scripts/run_test_instance.sh --fresh --copy-current-config review
 ```
 
-La primera ordre crea un perfil buit; la segona copia les dades actuals.
-Cap de les dues modifica el perfil habitual. Consulta
+Totes dues ordres creen un perfil aïllat nou i mantenen intacte l'habitual.
+La segona copia connexions, notes, preferències, historial de connexions,
+estadístiques i registre de depuració des de les ubicacions XDG habituals.
+No copia els perfils d'aparença Retron ni l'última sessió desada, i no utilitza
+`TERMIA_CONFIG_DIR` ni `TERMIA_STATE_DIR` per localitzar el perfil d'origen.
+Les còpies poden contenir credencials i dades privades. Aïllar el perfil no
+impedeix connectar-se als servidors desats; fes servir dades fictícies per a les proves.
+El llançador mostra les rutes de configuració i estat del perfil. Els fitxers
+romanen després de tancar Termia; elimina el perfil de prova quan no el necessitis.
+Consulta
 [CONTRIBUTING.md](../CONTRIBUTING.md) per a les comprovacions i el diagnòstic.
 
 ## Dades i seguretat
@@ -250,8 +274,8 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquet es crea al directori pare com a `termia_0.6.3~beta-1_all.deb`.
-És independent del fitxer oficial de la release.
+El paquet es crea al directori pare com a `termia_0.6.4~beta-1_all.deb`.
+Aquest candidat és independent del fitxer publicat de `0.6.3-beta`.
 
 ## Documentació
 
