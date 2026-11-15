@@ -4,16 +4,15 @@ Termia es un gestor de conexiones SSH y espacios de trabajo de terminal para Lin
 Reúne sesiones locales y remotas, espacios de trabajo guardados y transferencias
 de archivos en terminales VTE integrados con GTK 4.
 
-**Este README describe el candidato de mantenimiento `0.6.4-beta`, aún sin publicar.**
+**Este README describe `0.6.4-beta`, una versión preliminar de mantenimiento.**
 Incluye correcciones de temas, paneles laterales, barras de estado y divisiones
 del terminal, Notas, vista previa de pegado, snippets y lanzadores. Han pasado
 las pruebas de la aplicación y las comprobaciones de instalación, actualización
 y Wayland del paquete en los laboratorios existentes de Ubuntu 24/26.
-Los resultados, las limitaciones y las comprobaciones pendientes del lanzamiento
-están en [#532](https://github.com/buuuki/termia/issues/532). Quedan pendientes
-la publicación y la verificación final de los archivos de la release.
-Las instrucciones de descarga y actualización siguen apuntando a la versión
-publicada `0.6.3-beta`; ese paquete no incluye todos los cambios del candidato.
+Los resultados, las limitaciones y el estado de publicación están en
+[#532](https://github.com/buuuki/termia/issues/532). Los enlaces de descarga y
+las órdenes de actualización mediante el tag estarán disponibles cuando se
+publique esta versión.
 
 ![Termia con varias sesiones SSH integradas](../img/termia-screenshot.png)
 
@@ -133,11 +132,10 @@ de entorno ni credenciales, y no termina procesos.
 
 ## Estado de la versión
 
-**[0.6.3-beta](https://github.com/buuuki/termia/releases/tag/v0.6.3-beta)** es una
-versión preliminar con correcciones de
-reapertura de terminales, pegado multilínea editable y cambios de interacción
-en Notas y las barras laterales. Consulta [CHANGELOG.md](../CHANGELOG.md)
-para ver los cambios desde 0.6.2-beta.
+**[0.6.4-beta](https://github.com/buuuki/termia/releases/tag/v0.6.4-beta)** sigue
+en beta e incluye correcciones de temas, paneles laterales, terminales, Notas
+y lanzadores. Consulta [CHANGELOG.md](../CHANGELOG.md)
+para ver los cambios desde 0.6.3-beta.
 El cierre inesperado de GTK/Wayland (#499) y la investigación general sobre
 el movimiento de Notas (#489) siguen abiertos.
 
@@ -154,10 +152,10 @@ los datos más recientes. Consulta la
 ## Instalar en Ubuntu 24.04 o posterior
 
 Paquete Debian:
-[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
+[termia_0.6.4.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.4-beta/termia_0.6.4.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.3.beta-1_all.deb
+sudo apt install ./termia_0.6.4.beta-1_all.deb
 ```
 
 APT instala las dependencias necesarias, el lanzador y el icono.
@@ -203,8 +201,8 @@ Para un checkout limpio, una vez publicada la etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
-git merge --ff-only v0.6.3-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.4-beta
+git merge --ff-only v0.6.4-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -277,7 +275,8 @@ dpkg-buildpackage -us -uc -b
 ```
 
 El paquete se crea en el directorio padre como `termia_0.6.4~beta-1_all.deb`.
-Este candidato es independiente del archivo publicado de `0.6.3-beta`.
+Una compilación local es independiente del archivo oficial de la release
+y no tiene necesariamente la misma suma de comprobación.
 
 ## Documentación
 
