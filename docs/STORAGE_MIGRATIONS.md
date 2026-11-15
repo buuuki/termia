@@ -101,10 +101,33 @@ credentials or private notes. Isolated test instances use their own profile.
   storage protection mode and are included in connection exports and clones.
   Before first launch with schema 4 support, close Termia and make an offline
   backup of connections.json. Writable startup migrates and saves older schemas;
-  read-only loading does not rewrite them. Previous Termia versions cannot read
-  schema 4. Restore the pre-upgrade backup before downgrading, keeping a separate
-  protected copy of newer data. Do not open a schema 4 file with an older client.
-- `settings.json`: object schema `1`; legacy terminal palette and color values
+  read-only loading does not rewrite them. Versions before `0.6.2-beta` cannot
+  read schema 4; `0.6.2-beta`, `0.6.3-beta` and the `0.6.4-beta` candidate can.
+  Before downgrading to a version without schema 4 support, restore the
+  pre-upgrade backup and keep a separate protected copy of newer data.
+- `settings.json`: object schema `1`; optional `app.connection_sidebar_width`
+  and `app.notes_sidebar_width` remember sidebar widths in logical pixels,
+  defaulting to 280. Nonnegative integers are retained without a fixed minimum;
+  invalid values use the default. Loading does not write.
+  Connections window constraints do not replace the preferred width;
+  writable instances save an adjusted preference when hiding the sidebar or
+  shutting down. Notes saves its current width when hiding the list, closing
+  its window or shutting down; read-only or locked instances do not write it.
+  `0.6.3-beta` ignores these two new `app` width fields and discards them when
+  saving. This does not apply to unknown fields in the `terminal` object below.
+  The width fields require no schema bump.
+  Optional `terminal.show_status_bar_button` defaults to `true` when absent;
+  loading does not rewrite settings. `app.show_session_status_bar` stays in
+  place even though its control moves to Terminal preferences. No schema bump
+  is needed to read older settings. Before upgrading to `0.6.4-beta`, retain a
+  pre-upgrade settings backup: `0.6.3-beta` rejects `terminal.show_status_bar_button`
+  when loading, attempts to move the file to `settings.json.invalid-*`, and
+  continues with default terminal settings. This field is written on a normal
+  settings save even if its default value was never changed. Before returning
+  to `0.6.3-beta`, close Termia and restore compatible pre-upgrade settings,
+  retaining newer data separately. The application can still start after this
+  recovery, but customized terminal settings may no longer be active.
+  Legacy terminal palette and color values
   are normalized by a named migration.
   The local Retron research theme adds the `dark_glow` value to the existing
   `app.theme` string without a schema change. Choose System/Light/Dark before

@@ -232,7 +232,14 @@ install_desktop_launcher() {
     'Terminal=false' \
     'Categories=Network;RemoteAccess;GTK;' \
     'StartupNotify=true' \
-    "StartupWMClass=${APP_ID}" > "${DESKTOP_FILE}"
+    "StartupWMClass=${APP_ID}" \
+    'Actions=new-window;' \
+    '' \
+    '[Desktop Action new-window]' \
+    'Name=New instance' \
+    'Name[es]=Nueva instancia' \
+    'Name[ca]=Nova instància' \
+    "Exec=python3 \"${APP_SCRIPT}\"" > "${DESKTOP_FILE}"
   chmod 0644 "${DESKTOP_FILE}"
   refresh_desktop_caches
   echo "Installed launcher: ${DESKTOP_FILE}"

@@ -31,6 +31,7 @@ def build_dark_glow_css(border_color: str = DEFAULT_DARK_GLOW_BORDER_COLOR) -> s
     # raise its effective opacity above the configured value.
     css += rule(".termia-main-surface", f"background-color: transparent; color: {c['text']};")
     css += rule(".termia-sidebar,.termia-panel,.stat-card,frame.card", f"background-color: {c['surface']}; color: {c['text']}; border: {retron.BORDER_WIDTH:g}px solid {c['border']}; border-radius: {retron.BORDER_RADIUS:g}px; box-shadow: none;")
+    css += rule("frame.termia-notification", f"background: alpha({c['surface']}, 0.75);")
     css += rule("listview,list", f"background-color: {c['surface']}; color: {c['text']};")
     css += rule("row", "background-color: transparent;")
     css += rule("row:hover", f"background-color: {c['hover']};")
@@ -242,10 +243,10 @@ def build_interaction_css(
     rule(".termia-pane-status button:active", f"background-color: alpha({terminal_foreground}, 0.13);")
     rule(".termia-pane-status button:disabled", "background-color: transparent; opacity: 0.45;")
 
-    rule(".termia-terminal-pane > scrolledwindow",
+    rule(".termia-terminal-pane > overlay > scrolledwindow",
          f"border: {retron.BORDER_WIDTH:g}px solid alpha({accent}, {retron.FRAME_OPACITY:.2f}); border-radius: {retron.BORDER_RADIUS:g}px;")
     rule(".termia-terminal-pane vte-terminal", "padding: 6px 8px;")
-    rule(".termia-terminal-pane:focus-within > scrolledwindow",
+    rule(".termia-terminal-pane:focus-within > overlay > scrolledwindow",
          f"border-color: alpha({accent}, {retron.FOCUS_FRAME_OPACITY:.2f}); box-shadow: 0 0 {retron.GLOW_BLUR:g}px alpha({accent}, {retron.WINDOW_GLOW_OPACITY:.2f});")
 
     note_tab = ".termia-notes-notebook > header > tabs > tab"

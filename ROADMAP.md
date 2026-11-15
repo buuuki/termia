@@ -29,9 +29,18 @@ See `docs/VERSIONING.md` for the maintenance and transition gates.
 ## Development after publication
 
 The active maintenance branch is `0.6.4-dev`, created from `main` after
-`v0.6.3-beta` was published. New issue branches and PRs use this development
-line. The branch transition does not change the application version. Future
-features and stable promotion require separate scope and readiness approval.
+`v0.6.3-beta` was published. The `0.6.4-beta` maintenance candidate is being
+prepared in [#532](https://github.com/buuuki/termia/issues/532), with source
+version `0.6.4-beta` and Debian version `0.6.4~beta-1`. It collects theme,
+sidebar, terminal status-bar/split, Notes, paste-preview, snippet and launcher
+corrections. Application tests and package installation, upgrade and Wayland
+checks have passed in the existing Ubuntu 24/26 laboratories. Validation limits
+and remaining release checks are recorded in #532. Publication and final release
+asset verification remain pending; the published download remains `0.6.3-beta`.
+
+After `v0.6.4-beta` is published, create `0.6.5-dev` from the updated `main`
+for further maintenance. Future features and stable promotion require separate
+scope and readiness approval.
 
 Retain previous development branches as historical branches unless
 cleanup is approved. Creating a development branch does not change versions.

@@ -76,7 +76,10 @@ Some mixins add transient state after construction:
   `sidebar_model_token`, `scroll_restore_id`, `sidebar_visible`, and
   `sidebar_width`.
 - `TabsMixin`: `tab_drag_session_id`.
-- `TerminalSessionsMixin`: updates `run_connections` and `stats_save_id`.
+- `TerminalSessionsMixin`: notifies the injected `session_observer` about
+  connection starts and finished panes. `StatisticsCollector` owns
+  `run_connections` and its deferred-save source `_save_source`; the no-op
+  observer retains the disabled behavior. These are not terminal-mixin fields.
 
 ## Mixin dependency inventory
 
@@ -134,7 +137,11 @@ keybinding dialogs have comparatively small contracts.
 - Reads: `store`, the sidebar widgets, selection state, expansion state,
   `toast_label`, and current GTK focus.
 - Writes: selection, projection, expansion widgets, context-menu state,
-  sidebar visibility and width, visible rows, and scroll-restoration state.
+  sidebar visibility and preferred width, a pending idle sizing update,
+  allocation tracking, visible rows, and scroll-restoration state. The preferred
+  width is persisted through `store.save_settings()` on hide or shutdown;
+  layout constraints do not overwrite it. Native `Gtk.Paned` remains responsible
+  for pointer and keyboard interaction.
 - Cross-mixin dependencies: connection dialogs, terminal opening, file
   transfer, writable checks, and local-shell defaults.
 - Architectural note: this is both a renderer and a controller. Projection,
@@ -178,6 +185,9 @@ keybinding dialogs have comparatively small contracts.
   translation callback, writable guard, error callback, and toast callback.
 - Owns the reusable modeless notes/category windows and import/export flows;
   it does not inherit `TermiaWindow` or manage terminal sessions.
+- Persists the native Notes sidebar position through `store.save_settings()`
+  on hide, window close or shutdown, excluding read-only and locked instances.
+  GTK owns resizing; no fixed sidebar width limits are added.
 - `NotesPresenter` owns the personal/server/category tree, search filtering,
   server labels, and note ordering; `ConnectionStore` owns note persistence and
   per-scope category rules. `NotesDialogs` owns tree expansion, creation scope,
@@ -202,6 +212,11 @@ keybinding dialogs have comparatively small contracts.
 
 ### `TerminalSessionsMixin`
 
+- Pane layout is status bar followed by a native overlay containing the VTE
+  scroller and reveal-button wrapper. An inverse visibility binding follows
+  the bar; wrapper visibility follows the terminal preference. Reveal callbacks
+  retain weak window/terminal references and resolve a live, non-retired pane
+  through the session registry before changing visibility.
 - Each `TerminalPane` owns its Termia UI handler IDs through `SignalConnections`,
   using native weak emitter references. Retiring a tab or removing a pane
   disconnects those UI handlers; its separately owned `child-exited` handler

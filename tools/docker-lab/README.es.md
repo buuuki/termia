@@ -7,9 +7,9 @@ SSH/SFTP/SCP y las pruebas de memoria y ciclos de vida desde un clon nuevo. El
 cliente monta el código en solo lectura, sin tu escritorio, agente SSH ni perfil
 personal de Termia.
 
-La [base independiente Ubuntu 26.04 GNOME](gnome26/README.es.md) se está
-construyendo en #430. Su escritorio experimental GNOME Wayland/RDP tiene
-comprobaciones funcionales; faltan Termia y la aceptación completa del laboratorio.
+El [laboratorio independiente Ubuntu 26.04 GNOME](gnome26/README.es.md), incorporado
+en #430, tiene su propio escritorio y límites de validación. Sus recetas están en
+`main`; comprobar la infraestructura no sustituye la validación de cada release.
 
 Para el escritorio persistente Ubuntu 24.04 con GNOME/Wayland y RDP nativo,
 consulta [la guía Ubuntu 24 GNOME](gnome24/README.es.md). Allí se indica su
@@ -23,12 +23,14 @@ de disco y RAM disponibles. Zenity y `xdg-open` son opcionales para el gestor.
 La imagen usa Ubuntu 24.04. La construcción descarga paquetes; las redes SSH
 de ejecución son internas. No se han validado Windows/macOS ni Docker remoto.
 
-Usa la rama activa de desarrollo, que contiene el laboratorio publicado.
+Usa `main` para las recetas publicadas del laboratorio. Para probar un candidato
+sin publicar, usa su checkout y registra el commit y los cambios locales; no
+cambies un árbol de trabajo activo a una rama histórica del laboratorio.
 
 ```bash
-git clone https://github.com/buuuki/termia.git
+git clone --branch main https://github.com/buuuki/termia.git
 cd termia
-git switch release/0.6.0-beta.4-dev
+git rev-parse HEAD
 docker info
 bash tools/docker-lab/run.sh prepare
 bash tools/docker-lab/run.sh check

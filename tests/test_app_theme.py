@@ -66,11 +66,36 @@ class AppThemeTests(unittest.TestCase):
         self.assertEqual(
             settings.set_property.call_args_list,
             [
+                (("gtk-theme-name", "Default"),),
                 (("gtk-application-prefer-dark-theme", True),),
+                (("gtk-theme-name", "Default"),),
                 (("gtk-application-prefer-dark-theme", False),),
                 (("gtk-application-prefer-dark-theme", True),),
             ],
         )
+
+    @patch("termia.app.Gtk.Settings.get_default")
+    @patch("termia.app.system_prefers_dark_theme", return_value=True)
+    def test_leaving_explicit_modes_restores_desktop_theme(self, _preference, get_default):
+        for initial in ("light", "dark"):
+            for destination in ("system", "dark_glow"):
+                with self.subTest(initial=initial, destination=destination):
+                    settings = Mock()
+                    get_default.return_value = settings
+                    host = self.host(initial)
+                    TermiaWindow.apply_app_theme(host)
+                    settings.reset_mock()
+
+                    host.store.data.app.theme = destination
+                    TermiaWindow.apply_app_theme(host)
+
+                    settings.reset_property.assert_called_once_with("gtk-theme-name")
+                    settings.set_property.assert_called_once_with(
+                        "gtk-application-prefer-dark-theme", True,
+                    )
+                    settings.reset_mock()
+                    TermiaWindow.apply_app_theme(host)
+                    settings.reset_property.assert_not_called()
 
     @patch("termia.app.Gio.Settings.new_full")
     @patch("termia.app.Gio.SettingsSchemaSource.get_default")

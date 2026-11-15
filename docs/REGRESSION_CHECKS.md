@@ -1,5 +1,34 @@
 # Regression Checks and Protected Behaviors
 
+## Desktop launcher instances
+
+- In an isolated GNOME laboratory, install the source launcher with
+  `./scripts/termia-setup.sh install`. Open Termia from the application grid,
+  then right-click its icon and choose New instance. Check the dock too.
+- Both processes must stay open; the second must be read-only when sharing
+  the first process's profile. Ordinary activation must still work. Check
+  EN/ES/CA action labels and repeat with the Debian launcher after installation.
+- Ctrl+click and middle-click behavior depends on the desktop/dock; record
+  those results separately from the explicit New instance action.
+
+## Connections sidebar width
+
+- Launch `scripts/run_test_instance.sh issue-464-width` with an isolated,
+  reusable profile. Reveal the sidebar, change its width, close Termia and
+  run the same command again. Reveal the sidebar and verify width restoration.
+- Check native pointer and keyboard resizing without an imposed 280-pixel
+  minimum or 25% maximum. Drag to the left edge to collapse the sidebar to
+  zero, then drag back to reveal it. Both children allow native shrinking.
+  Drag past both limits and return without releasing: the separator must
+  remain stable at each limit and follow the pointer again within its range.
+- Check every toolbar button remains complete in System/Light/Dark/Retron,
+  EN/ES/CA and larger desktop fonts when enough width is available; deliberately
+  narrowing a pane may clip its contents. Shrink and expand the window: temporary
+  constraints must not replace the preferred width. Hide/show retains it.
+- Changing General preferences must not reset either sidebar width. A read-only
+  instance must not write them. Connections startup remains hidden; the Notes
+  sidebar retains its independent width and starts hidden on tool invocation.
+
 ## Local saved passwords
 
 - Before upgrading a real profile, close Termia and back up connections.json;
@@ -290,6 +319,8 @@ Long measurements and release-platform checks remain separate validation work.
   clipboard/primary contents unchanged and use VTE's bracketed paste handling.
   Closed, reconnected or reparented panes must not receive a
   pending paste. Check the black 1px preview border and 8px footer gap.
+  The preview requests an initial size of 600 × 400. Check that its editor
+  expands when resizing and its action buttons remain accessible on small screens.
   Disable the option and repeat; native paste must remain available. With
   protection enabled, middle-click is reserved for paste even in applications
   with mouse reporting; review that documented compatibility tradeoff.
@@ -363,6 +394,9 @@ Long measurements and release-platform checks remain separate validation work.
   immediately restore one available slot.
 - Application notifications must appear in a visible temporary overlay and
   hide automatically without blocking terminal input.
+  In Light, Dark, System and Retron, check the 75%-opaque background over
+  terminal output: text and icons must retain their own opacity, remain
+  readable, and severity borders must remain visible.
 - Notifications triggered while the overlay is visible must remain grouped in
   arrival order, including repeated messages, and each new message must restart
   the hide timer instead of replacing earlier feedback.
@@ -380,6 +414,10 @@ Long measurements and release-platform checks remain separate validation work.
 - Command snippets must be stored locally and run only after explicit selection,
   variable entry when required, and confirmation of the final preview. Their
   command text and variable values must never be written to debug logs.
+- Category buttons and Create snippet use regular button styling (neither
+  uses suggested-action highlighting). The snippet list, command preview and
+  command editor use native scroller frames; the category scroller does not
+  gain a frame. Existing Retron content-frame styling remains applicable.
 - Snippet management must open with three visible columns: compact categories
   with counts, a snippet list, and a read-only command preview. The preview and
   Edit/Duplicate/Delete actions must remain empty or disabled until a snippet
@@ -698,6 +736,15 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Server Tree
 
+- Compare valid drag destinations in the server tree and Notes tree under the
+  same theme: both use the theme selection color at 24% opacity, a 1px inset
+  outline and 4px corners. Both destination containers retain 2px vertical and
+  6px horizontal padding even outside a drag, keeping the outline away from
+  their contents without resizing when highlighted. Check that the highlight clears on leaving the
+  destination, cancelling, dropping, and rebuilding/recycling Notes rows.
+  Include note-to-category and category-to-category/scope moves; preserve
+  existing acceptance rules and check Light, Dark, System and Retron.
+
 - Server, Favorite and Recent connection menus must share native GTK entries
   anchored to the click. Preserve favorite toggling, Connect, View notes, Edit,
   Clone, Send files, optional Browse files (SFTP), and Delete on the clicked
@@ -812,7 +859,11 @@ Long measurements and release-platform checks remain separate validation work.
   border or halo. Scroll in both directions, change editor colors, switch
   to System/Light/Dark and back, and verify text, line numbers, selection,
   keyboard focus, tab reordering and autosave remain usable.
-- Open Notes with its narrower 280px initial tree pane and 250px search minimum.
+- Open Notes with its saved tree width (280px only when no preference exists),
+  without a fixed search-entry minimum. Resize, hide/show, close/reopen Notes
+  and restart Termia with the same profile: the width must be retained.
+  Drag the Notes separator to zero and back without using the toggle button.
+  Check that small widths are saved and read-only instances do not write them.
   In Retron, drag the 4px divider in both directions and hide/show the tree;
   its last width must be restored. Check that the toolbar has equal 8px gaps
   below the tabs and above the editor, including after hiding and
@@ -832,6 +883,17 @@ Long measurements and release-platform checks remain separate validation work.
   fresh isolated profile before any appearance setting has been saved. In
   read-only instances, appearance changes may apply for that session but must
   not persist.
+  In Light mode, focus the editor and verify the insertion cursor is white on
+  the default dark background. Change the text color and verify the cursor
+  follows it; repeat in Dark, System and Retron with contrasting custom colors.
+  Drag each toolbar color button onto the note text: the color drop must be
+  rejected without inserting text or producing GTK criticals or invalid-iterator
+  warnings. Clicking either button must still open its chooser and apply the
+  selected color. Verify ordinary text drag-and-drop within the editor and from
+  another text field, copy/paste, and typing still work. Repeat with multiple
+  note tabs, all appearance modes, and Ubuntu 24/26 GTK environments. External
+  RGBA color drops must also be rejected; this does not disable the buttons'
+  native drag behavior or modify other editors.
   The notes window must be an independent, modeless application window using
   the same standard GTK title controls as the main window, including theme
   colors, hover/pressed feedback, transitions, and desktop button order. Reopen
@@ -1050,6 +1112,18 @@ Long measurements and release-platform checks remain separate validation work.
 
 ### Application Appearance and Themes
 
+- Protected appearance selection: Light and Dark use the corresponding
+  variants of GTK's built-in theme, independently of the desktop theme name.
+  System follows the desktop appearance; Retron retains its own borders,
+  shadows and glow. No mode changes global desktop settings. Altering this
+  contract requires specific prior confirmation under
+  [AGENTS.md](../AGENTS.md#protected-appearance-selection), even when a task
+  appears to request it; generic implementation approval is insufficient.
+- With a dark desktop theme, select Light and verify a light interface; select
+  Dark and verify a dark interface. Return to System and verify the desktop
+  appearance is restored. Switch to Retron and back, including with Notes,
+  detached windows and dialogs open: Retron styles must appear only in Retron.
+  Preserve saved terminal and Notes editor colors and the desktop's settings.
 - General preferences links to the Retron editor. Customize a common border,
   Save and restart; supported component frames must retain the saved override.
   Component overrides take precedence and native alerts retain their separate
@@ -1106,11 +1180,10 @@ Long measurements and release-platform checks remain separate validation work.
     (green `#008712` by default) and configured thickness. It must remain
     distinct from the drag area and must not be replaced by the terminal
     background color.
-  - The wider draggable area uses the configured terminal background color, so
-    it must change when the terminal background changes and must follow the
-    active terminal theme/background. Its minimum drag size is 5 px, or the
-    configured separator thickness when that is larger; it is vertical for
-    horizontal splits and horizontal for vertical splits.
+  - The wider native drag area is transparent and adds no layout gap beyond
+    the line thickness. Side-by-side splits extend it 4px each way; stacked
+    splits extend it 8px above the line. Dragging must remain usable, while
+    clicks at the top of lower status-bar buttons must activate the buttons.
 - In Retron, split separators must have transparent backgrounds and
   transparent borders, including hover, with no central green line. Pane
   borders must remain distinct and the underlying canvas must show through.
@@ -1119,10 +1192,9 @@ Long measurements and release-platform checks remain separate validation work.
   Verify configured colors reappear after switching to System/Light/Dark;
   Retron uses a fixed 8px gap independently of the thickness preference.
   The settings preview still shows the configured color and thickness.
-  Runtime checks for this change remain pending.
 - Split dividers must remain readable on both light and dark themes. Confirm
-  that the thin configured line remains visible while the wider drag area
-  blends with the terminal background in System/Light/Dark.
+  that the thin configured line remains visible without an opaque drag-area
+  band in System/Light/Dark.
 - Showing pane status bars must not enlarge either the thin separator line or
   the draggable area; narrow panes may ellipsize the connection name while
   keeping the timer and actions usable.
@@ -1148,6 +1220,16 @@ Long measurements and release-platform checks remain separate validation work.
   including disconnected panes. Retired panes must not receive UI updates.
 - Showing or hiding a pane status bar must preserve the existing position of
   every affected split divider.
+- Standard-theme bars must touch lower/right split dividers without clipping,
+  outer gaps or a blue focus stripe. Check custom light/dark terminal colors.
+  The × action precedes ↑ (Hide); retained finished panes use a reconnect icon.
+  Check translated tooltips, keyboard activation and focus indication.
+- Terminal preferences contains default bar visibility and the reveal-button
+  option; General no longer contains the former. With a hidden bar, ↓ reveals
+  only its pane and returns focus to VTE. Disable the reveal option and check
+  existing/new panes, nested splits and detached tabs; the context menu must
+  still reveal the bar. Restart to check persistence. Saving unrelated Terminal
+  or General options must retain individual pane visibility.
 - Adding a split inside an existing nested layout must preserve every ancestor
   divider and divide only the selected pane approximately 50/50, allowing a
   one-pixel difference for odd dimensions.
@@ -1419,16 +1501,12 @@ Before merging changes that touch UI, terminals, tabs, or configuration, verify:
 - Drag a horizontal split divider away from the centre, then show and hide its
   pane status bar from both the context menu and `Hide` button; the divider
   must remain at the chosen position and long status titles must ellipsize.
-  In System/Light/Dark, check the divider's two visual parts: the line must keep
-  its configured color and thickness, while the wider drag area must retain its
-  minimum drag size and terminal-background color.
+  In System/Light/Dark, the line must keep its configured color and thickness
+  while the wider drag area remains transparent and usable.
 - In System/Light/Dark, change the terminal background in
-  Terminal preferences and save it. Confirm that the wider draggable area
-  changes to the new terminal background while the thin separator line keeps
-  its configured color. Change the separator thickness as well and confirm
-  that only the thin line's configured thickness changes, with the drag area
-  remaining at least 5 px wide/tall or growing to the configured thickness when
-  that exceeds 5 px.
+  Terminal preferences and save it. Confirm that no opaque strip remains next
+  to the separator. Change separator thickness and verify that the reserved gap
+  matches the line, with an additional transparent 8px native drag area.
 - Starting from one pane, create the second, third, and fourth panes. Before
   every insertion, move all existing dividers away from their defaults. Repeat
   the sequence as needed to cover left, right, up, and down. Confirm each new

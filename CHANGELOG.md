@@ -2,6 +2,93 @@
 
 ## Unreleased
 
+### Changed
+
+- Clarify candidate versus published README instructions in EN/ES/CA, theme
+  behavior, isolated-profile copy limits and downgrade compatibility. Update
+  analyzer and laboratory branch guidance, sidebar/statistics ownership notes
+  and the third-party component inventory (#532).
+
+- Require a documented review of current project guidance before every release,
+  including prereleases, and block publication on important documentation errors
+  (#532).
+
+- Prepare source/package metadata and release guidance for `0.6.4-beta` (#532).
+  Application tests and Ubuntu 24/26 package checks have passed; validation
+  limits and remaining release checks are recorded in #532. Publication and
+  final release asset verification remain pending.
+
+## 0.6.4-beta - 2026-11-15
+
+Maintenance candidate since `0.6.3-beta`, prepared in #532; not yet published.
+The GTK/Wayland crash (#499) and Notes observation (#489) remain open.
+Back up settings before upgrading: older clients reject the new terminal
+status-bar reveal preference and may recover terminal preferences using defaults.
+Restore compatible pre-upgrade settings before downgrading; see
+[storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
+
+### Changed
+
+- Set notification backgrounds to 75% opacity while preserving their theme
+  colors and leaving text and icons unaffected by background opacity (#530).
+
+- Use regular button styling for snippet creation and category filters in
+  the snippet manager, and enable native GTK frames for the snippet list,
+  command preview and command editor (#528).
+
+- Integrate terminal status bars with terminal colors and accessible icon
+  actions. Group bar visibility and the optional reveal arrow in Terminal
+  preferences (#526).
+
+- Simplify Notes draft-search formatting, bind color-drop test callbacks to
+  their own results, and format local-profile details through a mapping to
+  avoid an unrelated shell-execution analyzer warning (#524).
+
+- Share drag-destination highlighting between server groups and Notes tree
+  destinations, using the theme selection color, matching permanent inner
+  spacing, and clearing recycled row state.
+
+- Remove the additional 6px left inset from the Notes editor contents while
+  retaining the notebook's sidebar spacing.
+
+- Use a transparent Notes list background in Light, Dark and System appearance
+  to match the surrounding window, preserving row highlights and Retron styling.
+
+- Make the Notes toolbar frame border transparent without changing its width,
+  preserving Retron's dedicated frame styling.
+- Add 8px above the Notes toolbar and hide the selected tab's border and shadow
+  in Light, Dark and System appearance, retaining its background and Retron styling.
+- Show a theme-colored separator above the Notes editor while its toolbar is
+  visible in Light, Dark and System appearance, reserving its width when hidden.
+- Make Notes toolbar button and font-size control borders transparent in Light,
+  Dark and System appearance, preserving their dimensions and Retron styling.
+
+- Increase the multiline paste preview's initial size to 600 × 400 while
+  retaining native resizing and editable command confirmation (#518).
+
+### Fixed
+
+- Prevent split dividers from clipping lower status bars or intercepting their
+  buttons, and remove extra status-bar gaps in standard themes while retaining
+  Retron's separate spacing (#526).
+
+- Match Notes insertion cursor colors to the configured text color, keeping
+  the cursor visible on the default dark editor background in Light mode (#524).
+
+- Reject native RGBA color drops in the Notes editor before GtkSourceView's
+  color insertion handler, retaining color chooser buttons and text receivers.
+
+- Use GTK's built-in theme for explicit Light/Dark appearance even with a dark
+  desktop theme, restoring desktop theme selection for System and Retron (#522).
+
+- Expose a localized New instance action in source and Debian desktop launchers
+  so GNOME can explicitly launch another Termia process (#520).
+
+- Remember connections and Notes sidebar widths between sessions using native
+  GTK resizing, without additional fixed minimum widths or percentage caps.
+  Allow dragging the separators to the edges to collapse either pane and
+  remove deferred corrections during connections-sidebar dragging (#464).
+
 ## 0.6.3-beta - 2026-11-12
 
 Publication, annotated tag and fresh public asset checks verified in #508.

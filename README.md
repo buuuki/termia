@@ -4,6 +4,16 @@ Termia is a GTK 4 terminal workspace and SSH connection manager for Linux.
 It brings local and remote sessions, saved workspaces, and file transfers
 together in embedded VTE terminals.
 
+**This README describes the unpublished `0.6.4-beta` maintenance candidate.**
+It includes theme, sidebar, terminal status-bar/split, Notes, paste-preview,
+snippet and launcher corrections. Application tests and package installation,
+upgrade and Wayland checks have passed in the existing Ubuntu 24/26 laboratories.
+Results, limitations and remaining release checks are recorded in
+[#532](https://github.com/buuuki/termia/issues/532). Publication and final release
+asset verification remain pending. The download and update instructions below
+still target the published `0.6.3-beta`; that package does not include all
+candidate changes.
+
 ![Termia showing multiple embedded SSH terminal sessions](img/termia-screenshot.png)
 
 [Español](docs/README.es.md) · [Català](docs/README.ca.md) · [Roadmap](ROADMAP.md)
@@ -15,6 +25,9 @@ together in embedded VTE terminals.
   available to terminal applications such as tmux.
 - Connections organized in nested groups, favorites, and recent connections.
   The connections sidebar starts hidden; use its header button to show it.
+  Connections and Notes remember their sidebar widths between sessions.
+  Their native separators can be dragged to either edge to collapse a pane,
+  without fixed minimum widths or percentage caps.
 - Native private SSH key file picker when creating or editing a connection.
 - Optional saved passwords for local terminal profiles. Enable the saved-password
   shortcut in preferences and press `Ctrl+P` (default) when `sudo` requests it;
@@ -28,6 +41,11 @@ together in embedded VTE terminals.
   Open terminal. After manually ending the only terminal in a retained tab,
   Open terminal (local) or Connect (SSH) starts a new session in that pane.
   Disconnecting a split still removes it; automatic tab closure is unchanged.
+  The × icon ends/disconnects the session, ↑ hides the bar, and the circular
+  arrow opens/reconnects a finished session. Tooltips name each action.
+  When hidden, ↓ in the terminal's upper-right corner reveals that pane's bar.
+  Terminal preferences contains default bar visibility and the reveal-button
+  option (enabled by default).
 - Automatic copying when terminal selection finishes, enabled by default
   and configurable in General preferences. A success notification reports the character
   count, including spaces and line breaks, once the clipboard accepts the text.
@@ -46,6 +64,8 @@ together in embedded VTE terminals.
   be shown with its header button.
   Right-click a note tab to rename, delete, clone, save, or close it; the editor
   retains its save status and modification time.
+  The insertion cursor follows the editor text color. Use the toolbar color
+  choosers to change colors; dragging a color onto note text does not insert it.
 - Local connection storage with optional master-password encryption.
 - Termia configuration import/export and connection import from Ásbrú YAML.
 - Connection history and optional Statistics and SFTP add-ons.
@@ -55,7 +75,8 @@ together in embedded VTE terminals.
 
 **Retron** is available under **General → Theme**: solid dark
 surfaces, subtle colored 1px borders, 10px corners and soft active-pane/tab lighting.
-System/Light/Dark retain their previous interface styling. Each app theme saves
+Light and Dark use GTK's built-in theme variants; System follows the desktop.
+These choices do not change desktop settings. Each app theme saves
 its own terminal text/background colors; Retron starts with Solarized text
 on the sidebar's dark background (`#182231`).
 Use Terminal preferences to change those colors for the selected theme at any
@@ -112,6 +133,10 @@ The GTK/Wayland crash (#499) and broader Notes movement investigation (#489)
 remain open.
 
 Before upgrading, close Termia and back up your profile.
+Before returning from `0.6.4-beta` to `0.6.3-beta`, restore the pre-upgrade
+`settings.json`: the older client rejects the new status-bar reveal-button
+preference and may reset terminal preferences to defaults. Sidebar width
+preferences are ignored by older clients.
 Versions before 0.6.2-beta cannot read connection schema 4. To downgrade,
 restore the pre-upgrade backup and retain a separate copy of newer data.
 See [storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
@@ -142,6 +167,15 @@ It supports Debian/Ubuntu/Linux Mint, Fedora, and Arch package managers.
 Restart Termia only after setup succeeds; rerun setup if you move the checkout.
 Use `./scripts/termia-setup.sh uninstall` to remove its launcher while keeping data.
 
+Right-click Termia's icon in GNOME's dock or application grid and select
+**New instance** to open another process. When sharing the same profile, the
+second instance is read-only. Existing source installations must rerun
+`./scripts/termia-setup.sh install` to update the launcher.
+
+In General preferences, **Light** and **Dark** use GTK's built-in appearance,
+independently of the desktop theme. **System** follows the desktop; **Retron**
+uses its own styling. This does not change the desktop's settings.
+
 ### Runtime requirements
 
 Python 3.10+, GTK 4, GtkSourceView 5, and the GTK 4 VTE namespace `Vte 3.91`.
@@ -150,7 +184,7 @@ do not provide the required GTK 4 VTE runtime.
 
 ## Updates
 
-**Beta.3 and beta.4 require a manual first upgrade.**
+**`0.6.0-beta.3` and `0.6.0-beta.4` require a manual first upgrade to a later PATCH version.**
 Back up your profile, close Termia, and install the new .deb over the old one.
 There is no need to uninstall first.
 
@@ -184,15 +218,23 @@ Open **Help** from the main menu for workflows and your configured shortcuts.
 The optional Statistics and SFTP add-ons are managed from **Add-ons**; changes
 take effect after restarting and disabling them preserves their saved data.
 
-To try a checkout using an empty profile, or a separate copy of your current data:
+To try a checkout with an empty profile, or a separate copy of selected data:
 
 ```bash
 ./scripts/run_test_instance.sh --fresh
-./scripts/run_test_instance.sh --copy-current-config review
+./scripts/run_test_instance.sh --fresh --copy-current-config review
 ```
 
-The first command creates a fresh profile; the second copies your current data.
-Neither changes your usual profile. Read
+Both commands create a new isolated profile and leave your usual profile unchanged.
+The second copies connections, notes, settings, connection history, statistics
+and the debug log from the standard XDG locations. It does not copy saved Retron
+appearance profiles or the previous-session snapshot, and it does not use
+`TERMIA_CONFIG_DIR` or `TERMIA_STATE_DIR` to locate the source profile.
+Copied files may contain credentials and private data. Isolation of the profile
+does not prevent connections to saved servers; use synthetic data for trials.
+The launcher prints the profile's configuration and state paths. These files
+remain after closing Termia; remove the disposable profile when no longer needed.
+Read
 [CONTRIBUTING.md](CONTRIBUTING.md) for development checks and diagnostics.
 
 ## Data and security
@@ -223,7 +265,8 @@ dpkg-buildpackage -us -uc -b
 ```
 
 The package is created in the parent directory as
-`termia_0.6.3~beta-1_all.deb`. It is separate from the official release asset.
+`termia_0.6.4~beta-1_all.deb`. This candidate is separate from the published
+`0.6.3-beta` release asset.
 
 ## Documentation
 

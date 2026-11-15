@@ -29,7 +29,6 @@ GENERAL_PREFERENCE_FIELDS = (
     ("close_tab_on_ssh_exit", "close_tab_on_ssh_exit"),
     ("open_local_terminal_on_startup", "open_local_terminal_on_startup"),
     ("restore_sessions_on_startup", "restore_sessions_on_startup"),
-    ("show_session_status_bar", "show_session_status_bar"),
     ("audible_bell", "audible_bell"),
     ("confirm_multiline_paste", "confirm_multiline_paste"),
     ("copy_on_selection", "copy_on_selection"),
@@ -96,7 +95,6 @@ class GeneralPreferencesMixin:
             ("close_tab_on_ssh_exit", self.store.data.app.close_tab_on_ssh_exit),
             ("open_local_terminal_on_startup", self.store.data.app.open_local_terminal_on_startup),
             ("restore_sessions_on_startup", self.store.data.app.restore_sessions_on_startup),
-            ("show_session_status_bar", self.store.data.app.show_session_status_bar),
             ("audible_bell", self.store.data.app.audible_bell),
             ("confirm_disconnect", self.store.data.app.confirm_disconnect),
             ("confirm_close_app", self.store.data.app.confirm_close_app),
@@ -110,8 +108,8 @@ class GeneralPreferencesMixin:
         for button, (_, active) in zip(check_buttons, checks):
             button.set_active(active)
             button.set_halign(Gtk.Align.START)
-        send_password_shortcut = check_buttons[8]
-        send_password_enter = check_buttons[9]
+        send_password_shortcut = check_buttons[7]
+        send_password_enter = check_buttons[8]
         shortcut_sensitive, enter_sensitive = password_preference_sensitivity(
             self.store.data.app.keybindings,
             send_password_shortcut.get_active(),
@@ -154,7 +152,7 @@ class GeneralPreferencesMixin:
             (self.t("theme"), theme_combo), (self.t("theme_dark_glow"), border_controls),
             (self.t("language"), language_combo),
         ]
-        rows.extend(("", button) for button in check_buttons[:8])
+        rows.extend(("", button) for button in check_buttons[:7])
         shortcut_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         shortcut_box.set_hexpand(True)
         shortcut_box.append(send_password_shortcut)
@@ -163,7 +161,7 @@ class GeneralPreferencesMixin:
         enter_box.set_hexpand(True)
         enter_box.append(send_password_enter)
         enter_box.append(enter_hint)
-        rows.extend((("", shortcut_box), ("", enter_box), ("", check_buttons[10]), ("", check_buttons[11]), ("", check_buttons[-1])))
+        rows.extend((("", shortcut_box), ("", enter_box), ("", check_buttons[9]), ("", check_buttons[10]), ("", check_buttons[-1])))
         for index, (label_text, widget) in enumerate(rows):
             label = Gtk.Label(label=label_text)
             label.set_xalign(0)
@@ -210,14 +208,15 @@ class GeneralPreferencesMixin:
                     open_local_terminal_on_startup=values[2],
                     show_sidebar_on_startup=self.store.data.app.show_sidebar_on_startup,
                     restore_sessions_on_startup=values[3],
-                    show_session_status_bar=values[4], audible_bell=values[5],
+                    show_session_status_bar=self.store.data.app.show_session_status_bar,
+                    audible_bell=values[4],
                     statistics_enabled=self.store.data.app.statistics_enabled,
-                    confirm_disconnect=values[6], confirm_close_app=values[7],
-                    send_password_shortcut=values[8], send_password_enter=values[9],
+                    confirm_disconnect=values[5], confirm_close_app=values[6],
+                    send_password_shortcut=values[7], send_password_enter=values[8],
                     connection_storage_mode=self.store.data.app.connection_storage_mode,
-                    confirm_multiline_paste=values[10],
-                    copy_on_selection=values[11],
-                    debug_enabled=values[12],
+                    confirm_multiline_paste=values[9],
+                    copy_on_selection=values[10],
+                    debug_enabled=values[11],
                     keybindings=self.store.data.app.keybindings,
                 ), **color_options)
             except ReadOnlyStoreError:
@@ -236,7 +235,6 @@ class GeneralPreferencesMixin:
                 or previous_values["theme"] != self.store.data.app.theme
             ):
                 self.apply_terminal_settings_to_open_tabs()
-            self.apply_session_status_bar_visibility_to_open_tabs()
             self.collapse_groups_on_startup = True
             self.group_expanded_state = {group.id: False for group in self.store.data.groups}
             self.group_expanded_state["__ungrouped__"] = False

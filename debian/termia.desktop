@@ -8,3 +8,10 @@ Terminal=false
 Categories=Network;RemoteAccess;GTK;
 StartupNotify=true
 StartupWMClass=local.termia
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New instance
+Name[es]=Nueva instancia
+Name[ca]=Nova instància
+Exec=termia

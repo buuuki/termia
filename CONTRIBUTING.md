@@ -63,12 +63,18 @@ from the published baseline, as described in [Versioning](docs/VERSIONING.md).
 Handle maintenance and future development sequentially; do not work on
 multiple issues/branches or publish multiple open PRs concurrently.
 
-Use `0.6.3-dev` until `v0.6.3-beta` is published. After publication, create
-`0.6.4-dev` from the updated `main` for further maintenance. Retain the previous
-branches unless their cleanup is approved. The 0.6.3-beta delivery includes
-the integrated feature scope as the release-specific exception documented in
-[Versioning](docs/VERSIONING.md). Future feature deliveries and stable promotion
-require separate approval.
+Use `0.6.4-dev` until `v0.6.4-beta` is published. After publication, create
+`0.6.5-dev` from the updated `main` for further maintenance. Retain the previous
+branches unless their cleanup is approved. Preparation of the `0.6.4-beta`
+maintenance delivery is tracked in #532. Follow [Versioning](docs/VERSIONING.md)
+for candidate validation and publication. Future feature deliveries and stable
+promotion require separate approval.
+
+Every release, including prereleases, must complete the
+[mandatory documentation review](docs/VERSIONING.md#mandatory-documentation-review).
+Check that the README in all three languages and the current project guides
+correctly describe the version being released, update outdated content where
+needed, and record the result in the release issue before publication.
 
 ## Code Guidelines
 
@@ -161,13 +167,16 @@ Core/add-on isolation; review the relevant tests and missing branches.
 ### Ruff and Bandit
 
 Install the development-only tools in a virtual environment, then compare your
-working changes against the release-development branch. After the publication
-transition, use `origin/0.6.2-dev` in place of `origin/0.6.1-dev` below:
+working changes against the target branch of the change. For ordinary maintenance,
+use the active development branch named above; for a release promotion into `main`,
+use `origin/main`. Confirm that the corresponding local remote-tracking reference
+is current. The example below targets `0.6.4-dev`; replace it when the target changes.
 
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-ci.txt
-PATH="$PWD/.venv/bin:$PATH" python3 scripts/check_static_analysis.py --base origin/0.6.1-dev
+TERMIA_ANALYSIS_BASE=$(git merge-base HEAD origin/0.6.4-dev)
+PATH="$PWD/.venv/bin:$PATH" python3 scripts/check_static_analysis.py --base "$TERMIA_ANALYSIS_BASE"
 ```
 
 The independent CI job uses the pinned versions in `requirements-ci.txt`.

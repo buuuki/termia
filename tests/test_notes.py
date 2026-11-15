@@ -39,6 +39,7 @@ from termia.notes_dialogs import (
     NotesDialogs,
     NotesTreeNode,
     create_notes_text_view,
+    filter_notes_color_drops,
     format_note_timestamp,
 )
 from termia.notes_io import (
@@ -396,6 +397,7 @@ class NoteHierarchyTests(unittest.TestCase):
         for expander in expanders:
             content = expander.get_child()
             title = content.get_first_child().get_next_sibling().get_label()
+            self.assertEqual(content.has_css_class("termia-tree-drop-target"), title == "Folder")
             controllers = content.observe_controllers()
             controllers_by_title[title] = [controllers.get_item(i)
                                            for i in range(controllers.get_n_items())]
@@ -416,7 +418,8 @@ class NoteHierarchyTests(unittest.TestCase):
             self.skipTest("GTK widget integration requires a graphical display")
         parent = Gtk.Window()
         store = SimpleNamespace(read_only=True, encryption_locked=False, data=SimpleNamespace(
-            app=SimpleNamespace(notes_editor={}), notes=[], note_categories=[], servers=[],
+            app=SimpleNamespace(notes_editor={}, notes_sidebar_width=280),
+            notes=[], note_categories=[], servers=[],
         ))
         presenter = NotesPresenter(list, list, list)
         dialog = NotesDialogs(parent, store, presenter, lambda key: key,
@@ -857,6 +860,7 @@ class NoteHierarchyTests(unittest.TestCase):
         dialog = make_note_tree_dialog()
         node = NotesTreeNode("category", "Child", category="Child", count=1)
         content = bind_note_tree_node(self, dialog, node)
+        self.assertTrue(content.has_css_class("termia-tree-drop-target"))
         controllers = content.observe_controllers()
         sources = [controllers.get_item(i) for i in range(controllers.get_n_items())
                    if isinstance(controllers.get_item(i), Gtk.DragSource)]
@@ -867,6 +871,11 @@ class NoteHierarchyTests(unittest.TestCase):
         mime_types = {mime_type for target in targets
                       for mime_type in target.get_property("formats").get_mime_types()}
         self.assertEqual(mime_types, {NOTE_CATEGORY_DND_MIME_TYPE, NOTE_ROW_DND_MIME_TYPE})
+        content.add_css_class("drop-target")
+        expander = content.get_parent()
+        dialog.unbind_note_tree_item(None, SimpleNamespace(get_child=lambda: expander))
+        self.assertFalse(content.has_css_class("termia-tree-drop-target"))
+        self.assertFalse(content.has_css_class("drop-target"))
 
 
 class NotesDomainTests(unittest.TestCase):
@@ -995,6 +1004,54 @@ class NotesDomainTests(unittest.TestCase):
         )
         view.set_show_line_numbers(False)
         self.assertFalse(view.get_show_line_numbers())
+
+    def test_notes_editor_rejects_native_color_receiver_before_default_handler(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GtkSourceView integration requires a graphical display")
+        view = create_notes_text_view(True)
+        buffer = view.get_buffer()
+        buffer.set_text("Keep this note")
+        controllers = view.observe_controllers()
+        targets = [controllers.get_item(i) for i in range(controllers.get_n_items())]
+        color_targets = [target for target in targets if (
+            isinstance(target, Gtk.DropTarget)
+            and list(target.get_gtypes()) == [Gdk.RGBA.__gtype__]
+        )]
+        self.assertTrue(color_targets, "Native RGBA receiver changed; review the filter")
+        for target in color_targets:
+            subsequent_handler = MagicMock(return_value=True)
+            target.connect("accept", subsequent_handler)
+            # No drop is inspected: rejection must stop all later accept handlers,
+            # including GTK's default handler, before native insertion is possible.
+            self.assertFalse(target.emit("accept", None))
+            subsequent_handler.assert_not_called()
+        self.assertEqual(
+            buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False),
+            "Keep this note",
+        )
+
+    def test_notes_color_filter_leaves_text_and_mixed_receivers_untouched(self):
+        if not Gtk.init_check() or Gdk.Display.get_default() is None:
+            self.skipTest("GtkSourceView integration requires a graphical display")
+        view = create_notes_text_view(True)
+        for types in ([GObject.TYPE_STRING], [GObject.TYPE_STRING, Gdk.RGBA.__gtype__]):
+            with self.subTest(types=types):
+                target = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.COPY)
+                target.set_gtypes(types)
+                view.add_controller(target)
+                filter_notes_color_drops(view)
+                accept = MagicMock(return_value=True)
+                target.connect("accept", accept)
+                self.assertTrue(target.emit("accept", None))
+                accept.assert_called_once()
+                self.assertEqual(list(target.get_gtypes()), types)
+                received = []
+                target.connect(
+                    "drop",
+                    lambda _target, value, _x, _y, received=received: received.append(value) or True,
+                )
+                self.assertTrue(target.emit("drop", "Text stays supported", 0.0, 0.0))
+                self.assertEqual(received, ["Text stays supported"])
 
     def test_editor_appearance_uses_dark_defaults_when_settings_are_empty(self):
         dialog = NotesDialogs.__new__(NotesDialogs)
@@ -1907,7 +1964,10 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.window = None
         dialog.parent = MagicMock()
-        dialog.store = SimpleNamespace(read_only=False, encryption_locked=False, data=SimpleNamespace(servers=[]))
+        dialog.store = SimpleNamespace(
+            read_only=False, encryption_locked=False,
+            data=SimpleNamespace(servers=[], app=SimpleNamespace(notes_sidebar_width=280)),
+        )
         dialog.scope_mode = "personal"
         dialog.server_filter_id = None
         dialog.scope_mode = "personal"
@@ -2337,6 +2397,10 @@ class NotesDialogSignalTests(unittest.TestCase):
         dialog = NotesDialogs.__new__(NotesDialogs)
         dialog.notes_list_visible = True
         dialog.notes_list_width = 330
+        dialog.store = SimpleNamespace(
+            read_only=False, encryption_locked=False, save_settings=MagicMock(),
+            data=SimpleNamespace(app=SimpleNamespace(notes_sidebar_width=330)),
+        )
         dialog.notes_list_paned = Paned()
         dialog.notes_list_panel = panel
         dialog.note_detail_inset_widgets = tuple(
@@ -2349,6 +2413,8 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertEqual(children, [None])
         self.assertFalse(dialog.notes_list_visible)
         self.assertEqual(dialog.notes_list_width, 352)
+        self.assertEqual(dialog.store.data.app.notes_sidebar_width, 352)
+        dialog.store.save_settings.assert_called_once_with()
         self.assertEqual(insets, [(0, 0), (1, 0), (2, 0)])
 
         dialog.toggle_notes_list()
@@ -2356,6 +2422,30 @@ class NotesDialogSignalTests(unittest.TestCase):
         self.assertTrue(dialog.notes_list_visible)
         self.assertEqual(dialog.notes_list_paned.position, 352)
         self.assertEqual(insets[3:], [(0, 6), (1, 6), (2, 6)])
+
+    def test_notes_sidebar_saves_small_widths_without_writing_read_only_settings(self):
+        for read_only, locked in ((False, False), (True, False), (False, True)):
+            with self.subTest(read_only=read_only, locked=locked):
+                dialog = NotesDialogs.__new__(NotesDialogs)
+                dialog.notes_list_visible = True
+                dialog.notes_list_width = 330
+                dialog.notes_list_paned = SimpleNamespace(get_position=lambda: 40)
+                dialog.store = SimpleNamespace(
+                    read_only=read_only, encryption_locked=locked, save_settings=MagicMock(),
+                    data=SimpleNamespace(app=SimpleNamespace(notes_sidebar_width=330)),
+                )
+                dialog.save_notes_list_width()
+                self.assertEqual(dialog.notes_list_width, 40)
+                if read_only or locked:
+                    self.assertEqual(dialog.store.data.app.notes_sidebar_width, 330)
+                    dialog.store.save_settings.assert_not_called()
+                else:
+                    self.assertEqual(dialog.store.data.app.notes_sidebar_width, 40)
+                    dialog.store.save_settings.assert_called_once_with()
+                dialog.notes_list_visible = False
+                dialog.notes_list_paned.get_position = lambda: 0
+                dialog.save_notes_list_width()
+                self.assertEqual(dialog.notes_list_width, 40)
 
     def test_import_export_menu_is_hidden_for_server_scoped_notes(self):
         visibility = []

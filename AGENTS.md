@@ -26,8 +26,8 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Development Workflow
 
-- Base issue branches on `0.6.3-dev` until `v0.6.3-beta` is published, then
-  on `0.6.4-dev`, created from the updated `main`. New target
+- Base issue branches on `0.6.4-dev` until `v0.6.4-beta` is published, then
+  on `0.6.5-dev`, created from the updated `main`. New target
   branches use `X.Y.Z-dev`, such as `0.6.1-dev`, without a `release/` prefix
   or a maturity suffix. Retain the previous branches unless cleanup is approved.
   Use `main` only for release preparation and
@@ -91,6 +91,13 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
   changes; reserve Debian revision increments for packaging-only changes.
 - Keep the source version, changelog, Debian version, annotated Git tag, GitHub
   release, and published download links consistent.
+- Before every release, including alpha, beta and release candidates, complete
+  the [mandatory documentation review](docs/VERSIONING.md#mandatory-documentation-review).
+  Review the README in all three languages and the rest of the current project
+  documentation to confirm that they correctly explain how the version being
+  released works. Correct outdated content where needed and record the result
+  in the release issue. Do not publish while important documentation errors
+  remain unresolved; changing version numbers and links alone is insufficient.
 
 ## Validation
 
@@ -169,6 +176,19 @@ scripts/run_test_instance.sh --fresh
 - Avoid unnecessary visual changes or unsolicited redesigns.
 - Before modifying visual components, consult `docs/UI_STYLING.md`.
 
+### Protected appearance selection
+
+- Light and Dark must use the respective variants of GTK's built-in theme,
+  independently of the desktop theme name. System must follow the desktop
+  appearance. Retron must retain its own styles, including borders, shadows
+  and glow. Theme selection must not change global desktop settings.
+- Before changing this behavior, identify the protected behavior affected,
+  explain the consequences and alternatives, and obtain explicit confirmation
+  specifically for that change before editing. This also applies when a task
+  appears to request the change; generic implementation approval is insufficient.
+- Keep the corresponding behavior and checks in
+  `docs/REGRESSION_CHECKS.md` aligned with any explicitly approved change.
+
 ## Security Notes
 
 - Saved SSH passwords and exported configuration files can contain plain-text credentials. Treat examples and test data accordingly.
@@ -183,6 +203,9 @@ Before opening or merging a PR, confirm:
   when the task explicitly targets the published-release line.
 - The diff contains only files related to the task.
 - User-facing docs and translations are updated when needed.
+- For release PRs, the release issue records the mandatory documentation review
+  and any outstanding corrections; publication requires those corrections to be
+  resolved as defined in `docs/VERSIONING.md`.
 - Validation commands were run, or any skipped checks are explicitly noted.
 - `CHANGELOG.md` was updated under `Unreleased`.
 - The PR description includes a concise summary, test notes, and `Closes #<issue>` when applicable.
