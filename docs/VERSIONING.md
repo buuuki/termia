@@ -73,7 +73,8 @@ versioning rules and beta maturity remain unchanged. Preparation is tracked in
 `0.6.4-beta` is PATCH maintenance of `0.6.3-beta`, collecting theme, sidebar,
 terminal status-bar/split, Notes, paste-preview, snippet and launcher corrections.
 Preparation is tracked in [#532](https://github.com/buuuki/termia/issues/532).
-It retains beta maturity; final candidate validation and publication are pending.
+It retains beta maturity. Application and laboratory package checks have passed;
+publication status, remaining gates and validation limits are tracked in #532.
 The GTK/Wayland crash (#499) and Notes observation (#489) remain open.
 Restore compatible pre-upgrade settings before downgrading because older
 terminal-settings constructors reject the new status-bar reveal preference;
@@ -118,10 +119,11 @@ state into `main`, create the matching annotated tag and GitHub release, and
 then create the next `<MAJOR.MINOR.PATCH>-dev` branch from the updated
 `main`.
 
-The published delivery is `0.6.3-beta`, tracked in
-[#508](https://github.com/buuuki/termia/issues/508). The active maintenance branch
-is `0.6.4-dev`, created from the updated `main` after publication. Preparation
-of `0.6.4-beta` is tracked in #532. After its publication, create `0.6.5-dev`
+The previous delivery, `0.6.3-beta`, is tracked in
+[#508](https://github.com/buuuki/termia/issues/508). The `0.6.4-beta` preparation
+has been promoted from `0.6.4-dev` into `main`; publication status is tracked
+in #532. Promotion does not publish release assets. Keep `0.6.4-dev` active
+until publication completes, then create `0.6.5-dev`
 from the updated `main`. Retain previous branches unless cleanup is approved.
 The branch transition does not change the application version. Future feature
 work or stable promotion requires separate approval; do not automatically

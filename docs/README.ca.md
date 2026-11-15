@@ -4,16 +4,15 @@ Termia és un gestor de connexions SSH i espais de treball de terminal per a Lin
 Reuneix sessions locals i remotes, espais de treball desats i transferències de
 fitxers en terminals VTE integrats amb GTK 4.
 
-**Aquest README descriu el candidat de manteniment `0.6.4-beta`, encara sense publicar.**
+**Aquest README descriu `0.6.4-beta`, una versió preliminar de manteniment.**
 Inclou correccions de temes, barres laterals, barres d'estat i divisions del
 terminal, Notes, previsualització d'enganxament, snippets i llançadors. Han passat
 les proves de l'aplicació i les comprovacions d'instal·lació, actualització
 i Wayland del paquet als laboratoris existents d'Ubuntu 24/26.
-Els resultats, les limitacions i les comprovacions pendents del llançament
-són a [#532](https://github.com/buuuki/termia/issues/532). Queden pendents
-la publicació i la verificació final dels fitxers de la release.
-Les instruccions de descàrrega i actualització continuen apuntant a la versió
-publicada `0.6.3-beta`; aquest paquet no inclou tots els canvis del candidat.
+Els resultats, les limitacions i l'estat de publicació són a
+[#532](https://github.com/buuuki/termia/issues/532). Els enllaços de descàrrega i
+les ordres d'actualització mitjançant l'etiqueta estaran disponibles quan es
+publiqui aquesta versió.
 
 ![Termia amb diverses sessions SSH integrades](../img/termia-screenshot.png)
 
@@ -131,11 +130,10 @@ i no acaba processos.
 
 ## Estat de la versió
 
-**[0.6.3-beta](https://github.com/buuuki/termia/releases/tag/v0.6.3-beta)** és una
-versió preliminar amb correccions de
-reobertura de terminals, enganxament multilínia editable i canvis d’interacció
-a Notes i les barres laterals. Consulta [CHANGELOG.md](../CHANGELOG.md)
-per veure els canvis des de 0.6.2-beta.
+**[0.6.4-beta](https://github.com/buuuki/termia/releases/tag/v0.6.4-beta)** continua
+en beta i inclou correccions de temes, barres laterals, terminals, Notes
+i llançadors. Consulta [CHANGELOG.md](../CHANGELOG.md)
+per veure els canvis des de 0.6.3-beta.
 El tancament inesperat de GTK/Wayland (#499) i la investigació general sobre
 el moviment de Notes (#489) continuen oberts.
 
@@ -152,10 +150,10 @@ les dades més recents per separat. Consulta la
 ## Instal·lar a Ubuntu 24.04 o posterior
 
 Paquet Debian:
-[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
+[termia_0.6.4.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.4-beta/termia_0.6.4.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.3.beta-1_all.deb
+sudo apt install ./termia_0.6.4.beta-1_all.deb
 ```
 
 APT instal·la les dependències necessàries, el llançador i la icona.
@@ -201,8 +199,8 @@ Per a un checkout net, un cop publicada l'etiqueta:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
-git merge --ff-only v0.6.3-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.4-beta
+git merge --ff-only v0.6.4-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -275,7 +273,8 @@ dpkg-buildpackage -us -uc -b
 ```
 
 El paquet es crea al directori pare com a `termia_0.6.4~beta-1_all.deb`.
-Aquest candidat és independent del fitxer publicat de `0.6.3-beta`.
+Una compilació local és independent del fitxer oficial de la release
+i no té necessàriament la mateixa suma de comprovació.
 
 ## Documentació
 

@@ -4,15 +4,13 @@ Termia is a GTK 4 terminal workspace and SSH connection manager for Linux.
 It brings local and remote sessions, saved workspaces, and file transfers
 together in embedded VTE terminals.
 
-**This README describes the unpublished `0.6.4-beta` maintenance candidate.**
+**This README describes `0.6.4-beta`, a maintenance prerelease.**
 It includes theme, sidebar, terminal status-bar/split, Notes, paste-preview,
 snippet and launcher corrections. Application tests and package installation,
 upgrade and Wayland checks have passed in the existing Ubuntu 24/26 laboratories.
-Results, limitations and remaining release checks are recorded in
-[#532](https://github.com/buuuki/termia/issues/532). Publication and final release
-asset verification remain pending. The download and update instructions below
-still target the published `0.6.3-beta`; that package does not include all
-candidate changes.
+Results, limitations and publication status are recorded in
+[#532](https://github.com/buuuki/termia/issues/532). Download links and tag-based
+update commands below become available when this release is published.
 
 ![Termia showing multiple embedded SSH terminal sessions](img/termia-screenshot.png)
 
@@ -125,10 +123,9 @@ are collected and the tool does not terminate processes.
 
 ## Release status
 
-**[0.6.3-beta](https://github.com/buuuki/termia/releases/tag/v0.6.3-beta)** is a
-prerelease with terminal reopening fixes,
-editable multiline paste and Notes/sidebar interaction changes.
-See [CHANGELOG.md](CHANGELOG.md) for changes since 0.6.2-beta.
+**[0.6.4-beta](https://github.com/buuuki/termia/releases/tag/v0.6.4-beta)** retains
+beta maturity with theme, sidebar, terminal, Notes and launcher corrections.
+See [CHANGELOG.md](CHANGELOG.md) for changes since 0.6.3-beta.
 The GTK/Wayland crash (#499) and broader Notes movement investigation (#489)
 remain open.
 
@@ -144,10 +141,10 @@ See [storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
 ## Install on Ubuntu 24.04 or newer
 
 Debian package:
-[termia_0.6.3.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.3-beta/termia_0.6.3.beta-1_all.deb).
+[termia_0.6.4.beta-1_all.deb](https://github.com/buuuki/termia/releases/download/v0.6.4-beta/termia_0.6.4.beta-1_all.deb).
 
 ```bash
-sudo apt install ./termia_0.6.3.beta-1_all.deb
+sudo apt install ./termia_0.6.4.beta-1_all.deb
 ```
 
 APT installs the required dependencies, desktop launcher, and icon.
@@ -192,8 +189,8 @@ For a clean source checkout, after the release tag is published:
 
 ```bash
 git status --short
-git fetch https://github.com/buuuki/termia.git tag v0.6.3-beta
-git merge --ff-only v0.6.3-beta
+git fetch https://github.com/buuuki/termia.git tag v0.6.4-beta
+git merge --ff-only v0.6.4-beta
 ./scripts/termia-setup.sh install
 ```
 
@@ -265,8 +262,8 @@ dpkg-buildpackage -us -uc -b
 ```
 
 The package is created in the parent directory as
-`termia_0.6.4~beta-1_all.deb`. This candidate is separate from the published
-`0.6.3-beta` release asset.
+`termia_0.6.4~beta-1_all.deb`. A local build is separate from the official
+release asset and does not necessarily have the same checksum.
 
 ## Documentation
 

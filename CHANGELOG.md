@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.6.4-beta - 2026-11-15
+
+Maintenance since `0.6.3-beta`. Publication status and validation limits are
+tracked in [#532](https://github.com/buuuki/termia/issues/532).
+The GTK/Wayland crash (#499) and Notes observation (#489) remain open.
+Back up settings before upgrading: older clients reject the new terminal
+status-bar reveal preference and may recover terminal preferences using defaults.
+Restore compatible pre-upgrade settings before downgrading; see
+[storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
+
 ### Changed
 
 - Clarify candidate versus published README instructions in EN/ES/CA, theme
@@ -14,20 +24,6 @@
   (#532).
 
 - Prepare source/package metadata and release guidance for `0.6.4-beta` (#532).
-  Application tests and Ubuntu 24/26 package checks have passed; validation
-  limits and remaining release checks are recorded in #532. Publication and
-  final release asset verification remain pending.
-
-## 0.6.4-beta - 2026-11-15
-
-Maintenance candidate since `0.6.3-beta`, prepared in #532; not yet published.
-The GTK/Wayland crash (#499) and Notes observation (#489) remain open.
-Back up settings before upgrading: older clients reject the new terminal
-status-bar reveal preference and may recover terminal preferences using defaults.
-Restore compatible pre-upgrade settings before downgrading; see
-[storage compatibility](docs/STORAGE_MIGRATIONS.md#schema-inventory).
-
-### Changed
 
 - Set notification backgrounds to 75% opacity while preserving their theme
   colors and leaving text and icons unaffected by background opacity (#530).

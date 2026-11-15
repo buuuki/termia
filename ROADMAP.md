@@ -7,7 +7,7 @@ issues even when they were not listed here in advance. For example, the native
 SFTP explorer was defined in [issue #269](https://github.com/buuuki/termia/issues/269)
 and delivered in `0.6.0-beta.2`; its release details are in `CHANGELOG.md`.
 
-## Published release: 0.6.3-beta
+## Previous release: 0.6.3-beta
 
 Source version: `0.6.3-beta`; Debian package: `0.6.3~beta-1`. This delivery
 collects the integrated changes since `0.6.2-beta`: terminal reopening and
@@ -36,7 +36,8 @@ sidebar, terminal status-bar/split, Notes, paste-preview, snippet and launcher
 corrections. Application tests and package installation, upgrade and Wayland
 checks have passed in the existing Ubuntu 24/26 laboratories. Validation limits
 and remaining release checks are recorded in #532. Publication and final release
-asset verification remain pending; the published download remains `0.6.3-beta`.
+asset verification must complete before the delivery is available. The README
+download instructions target `0.6.4-beta` and become usable on publication.
 
 After `v0.6.4-beta` is published, create `0.6.5-dev` from the updated `main`
 for further maintenance. Future features and stable promotion require separate
@@ -44,7 +45,8 @@ scope and readiness approval.
 
 Retain previous development branches as historical branches unless
 cleanup is approved. Creating a development branch does not change versions.
-`main` remains the latest published release line.
+`main` contains the promoted release preparation; promotion alone does not
+publish a tag or downloadable package.
 
 The `0.6.1-beta` updater supports cross-PATCH beta maintenance and dependency
 review/installation. Beta.3 and beta.4 require a manual first upgrade, documented
