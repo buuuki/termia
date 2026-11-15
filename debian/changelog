@@ -1,3 +1,11 @@
+termia (0.6.4~beta-1) unstable; urgency=medium
+
+  * Prepare beta maintenance with theme, sidebar, terminal status-bar and
+    split corrections, Notes polish, and desktop launcher fixes (#532).
+  * Document terminal-settings downgrade compatibility and retain beta status.
+
+ -- Jordi Pons <jpons.git@proton.me>  Sun, 15 Nov 2026 20:19:25 +0100
+
 termia (0.6.3~beta-1) unstable; urgency=medium
 
   * Prepare the integrated beta delivery with terminal reopening fixes,

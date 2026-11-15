@@ -68,6 +68,17 @@ versioning rules and beta maturity remain unchanged. Preparation is tracked in
 [#508](https://github.com/buuuki/termia/issues/508). The GTK/Wayland crash
 (#499) and broader Notes movement investigation (#489) remain open.
 
+### 0.6.4-beta release scope
+
+`0.6.4-beta` is PATCH maintenance of `0.6.3-beta`, collecting theme, sidebar,
+terminal status-bar/split, Notes, paste-preview, snippet and launcher corrections.
+Preparation is tracked in [#532](https://github.com/buuuki/termia/issues/532).
+It retains beta maturity; final candidate validation and publication are pending.
+The GTK/Wayland crash (#499) and Notes observation (#489) remain open.
+Restore compatible pre-upgrade settings before downgrading because older
+terminal-settings constructors reject the new status-bar reveal preference;
+see [storage compatibility](STORAGE_MIGRATIONS.md#schema-inventory).
+
 A release candidate is optional. A beta may become the stable release directly
 once it meets the release criteria. Publish an `rc` when an additional round
 of public validation would be useful.
@@ -109,8 +120,9 @@ then create the next `<MAJOR.MINOR.PATCH>-dev` branch from the updated
 
 The published delivery is `0.6.3-beta`, tracked in
 [#508](https://github.com/buuuki/termia/issues/508). The active maintenance branch
-is `0.6.4-dev`, created from the updated `main` after publication. Retain the
-previous branches unless cleanup is approved.
+is `0.6.4-dev`, created from the updated `main` after publication. Preparation
+of `0.6.4-beta` is tracked in #532. After its publication, create `0.6.5-dev`
+from the updated `main`. Retain previous branches unless cleanup is approved.
 The branch transition does not change the application version. Future feature
 work or stable promotion requires separate approval; do not automatically
 allocate work to `0.7.0`. Update release metadata only during approved release
@@ -261,6 +273,7 @@ use the unnumbered form. The mapping is:
 | `0.6.1-beta` | `0.6.1~beta-1` |
 | `0.6.2-beta` | `0.6.2~beta-1` |
 | `0.6.3-beta` | `0.6.3~beta-1` |
+| `0.6.4-beta` | `0.6.4~beta-1` |
 | `0.7.3` | `0.7.3-1` |
 | `0.9.0-beta.1` | `0.9.0~beta.1-1` |
 | `0.9.0-rc.1` | `0.9.0~rc.1-1` |
@@ -308,6 +321,52 @@ Debian prerelease representation. Public download filenames use periods,
 such as `termia_0.6.1.beta-1_all.deb`, under the publication gate below.
 The public filename rule is a Termia convention, not a general GitHub ban
 on `~` in every context.
+
+## Mandatory documentation review
+
+Before publishing any release, including alpha, beta and release candidates,
+review the README and the rest of the current project documentation to check
+that they correctly explain how the version being released works. Update
+outdated instructions, requirements, features, limitations, screenshots and
+links where needed. Reviewing is mandatory even when no edits are necessary.
+Changing version numbers and download links alone does not satisfy this review.
+
+Complete the review during release preparation, before the release PR is ready:
+
+1. Read `README.md`, `docs/README.es.md` and `docs/README.ca.md`. Check feature
+   descriptions, requirements, installation, everyday use, updates, screenshots
+   and known limitations. Keep all three languages consistent.
+2. Review `ROADMAP.md` and `CHANGELOG.md` against the changes included since
+   the previous release. Distinguish implemented behavior, future work, known
+   issues and candidate versus published status.
+3. Review `SECURITY.md` and `docs/STORAGE_MIGRATIONS.md` for accurate credential,
+   backup, upgrade and downgrade guidance. Check that warnings reflect the
+   actual supported paths and do not promise unverified compatibility.
+4. Review `AGENTS.md`, `CONTRIBUTING.md`, this versioning policy and
+   `docs/REGRESSION_CHECKS.md` for current branches, commands and release steps.
+   Review the remaining current guides, including architecture, window/mixin
+   contracts, GTK controls, UI styling and laboratory instructions, for stale
+   statements; use the release changes to identify where deeper checks are needed.
+   Preserve historical records and label historical instructions clearly instead
+   of rewriting them as instructions for the new version.
+5. Correct discrepancies and check documented behavior against the relevant
+   code and available validation evidence. Review rendered Markdown, links and
+   applicable commands. Keep manual review and automated validation as separate
+   steps; this requirement does not authorize tests or state-changing commands.
+6. Record a short result in the release issue: documents reviewed, corrections
+   made or confirmation that no changes were needed, and any remaining gaps.
+   Keep detailed working notes local rather than adding a permanent audit report.
+
+Do not publish while important documentation errors remain unresolved. An error
+is important when it can mislead installation, use, security, data preservation,
+compatibility or the release process. A purely editorial reorganization is not
+required when the information is already correct and understandable.
+
+Before tagging and uploading assets, confirm that the review still covers the
+final release contents; recheck affected documents if those contents change.
+Keep candidate and published download instructions distinct. Verify final public
+links after publication as part of the asset checks below. Track review progress
+in the release issue; automated asset checks do not establish that prose is accurate.
 
 ## Release consistency
 

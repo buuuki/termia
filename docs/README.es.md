@@ -4,6 +4,17 @@ Termia es un gestor de conexiones SSH y espacios de trabajo de terminal para Lin
 Reúne sesiones locales y remotas, espacios de trabajo guardados y transferencias
 de archivos en terminales VTE integrados con GTK 4.
 
+**Este README describe el candidato de mantenimiento `0.6.4-beta`, aún sin publicar.**
+Incluye correcciones de temas, paneles laterales, barras de estado y divisiones
+del terminal, Notas, vista previa de pegado, snippets y lanzadores. Han pasado
+las pruebas de la aplicación y las comprobaciones de instalación, actualización
+y Wayland del paquete en los laboratorios existentes de Ubuntu 24/26.
+Los resultados, las limitaciones y las comprobaciones pendientes del lanzamiento
+están en [#532](https://github.com/buuuki/termia/issues/532). Quedan pendientes
+la publicación y la verificación final de los archivos de la release.
+Las instrucciones de descarga y actualización siguen apuntando a la versión
+publicada `0.6.3-beta`; ese paquete no incluye todos los cambios del candidato.
+
 ![Termia con varias sesiones SSH integradas](../img/termia-screenshot.png)
 
 [English](../README.md) · [Català](README.ca.md) · [Hoja de ruta](../ROADMAP.md)
@@ -66,8 +77,9 @@ de archivos en terminales VTE integrados con GTK 4.
 
 **Retron** está disponible en **General → Tema**: superficies
 oscuras opacas, bordes coloreados sutiles de 1px, esquinas de 10px e iluminación
-suave en paneles y pestañas activos. Sistema/Claro/Oscuro conservan su aspecto
-anterior. Cada tema guarda sus propios colores de texto y fondo del terminal;
+suave en paneles y pestañas activos. Claro y Oscuro usan las variantes del tema
+integrado de GTK; Sistema sigue el escritorio. No cambian los ajustes del
+escritorio. Cada tema guarda sus propios colores de texto y fondo del terminal;
 Retron empieza con texto Solarized y el fondo oscuro del sidebar (`#182231`).
 Puedes cambiarlos cuando quieras desde las
 preferencias del terminal: se guardan para el tema seleccionado. Los colores
@@ -130,6 +142,10 @@ El cierre inesperado de GTK/Wayland (#499) y la investigación general sobre
 el movimiento de Notas (#489) siguen abiertos.
 
 Antes de actualizar, cierra Termia y copia tu perfil como respaldo.
+Antes de volver de `0.6.4-beta` a `0.6.3-beta`, restaura el `settings.json`
+previo: la versión anterior rechaza la nueva preferencia del botón para revelar
+la barra de estado y puede restablecer las preferencias del terminal a sus
+valores predeterminados. Las versiones anteriores ignoran las anchuras de paneles.
 Las versiones anteriores a 0.6.2-beta no pueden leer el esquema 4 de conexiones.
 Para volver atrás, restaura la copia previa y conserva aparte
 los datos más recientes. Consulta la
@@ -179,7 +195,7 @@ Ubuntu 22.04 y anteriores no proporcionan el VTE para GTK 4 necesario.
 
 ## Actualizaciones
 
-**Beta.3 y beta.4 requieren una primera actualización manual.**
+**`0.6.0-beta.3` y `0.6.0-beta.4` requieren una primera actualización manual a una versión PATCH posterior.**
 Haz una copia del perfil, cierra Termia e instala el nuevo .deb sobre el anterior.
 No hace falta desinstalar primero.
 
@@ -214,15 +230,23 @@ Abre **Ayuda** desde el menú principal para consultar los flujos de uso y tus a
 Los complementos opcionales de Estadísticas y SFTP se gestionan desde
 **Complementos**; los cambios requieren reiniciar y desactivarlos conserva sus datos.
 
-Para probar un checkout con un perfil vacío o una copia separada de tus datos:
+Para probar un checkout con un perfil vacío o una copia separada de algunos datos:
 
 ```bash
 ./scripts/run_test_instance.sh --fresh
-./scripts/run_test_instance.sh --copy-current-config review
+./scripts/run_test_instance.sh --fresh --copy-current-config review
 ```
 
-El primer comando crea un perfil vacío; el segundo copia los datos actuales.
-Ninguno modifica tu perfil habitual. Consulta
+Ambos comandos crean un perfil aislado nuevo y mantienen intacto el habitual.
+El segundo copia conexiones, notas, preferencias, historial de conexiones,
+estadísticas y registro de depuración desde las ubicaciones XDG habituales.
+No copia los perfiles de apariencia Retron ni la última sesión guardada, y no
+utiliza `TERMIA_CONFIG_DIR` ni `TERMIA_STATE_DIR` para localizar el perfil de origen.
+Las copias pueden contener credenciales y datos privados. Aislar el perfil no
+impide conectarse a los servidores guardados; usa datos ficticios para las pruebas.
+El lanzador muestra las rutas de configuración y estado del perfil. Los archivos
+permanecen después de cerrar Termia; elimina el perfil de prueba cuando no lo necesites.
+Consulta
 [CONTRIBUTING.md](../CONTRIBUTING.md) para las comprobaciones y el diagnóstico.
 
 ## Datos y seguridad
@@ -252,8 +276,8 @@ sudo apt build-dep .
 dpkg-buildpackage -us -uc -b
 ```
 
-El paquete se crea en el directorio padre como `termia_0.6.3~beta-1_all.deb`.
-Es independiente del archivo oficial de la release.
+El paquete se crea en el directorio padre como `termia_0.6.4~beta-1_all.deb`.
+Este candidato es independiente del archivo publicado de `0.6.3-beta`.
 
 ## Documentación
 

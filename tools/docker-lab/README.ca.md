@@ -7,9 +7,9 @@ SSH/SFTP/SCP i les proves de memòria i cicles de vida des d'un clon nou. El cli
 munta el codi en només lectura, sense l'escriptori, l'agent SSH ni el perfil
 personal de Termia de l'amfitrió.
 
-La [base independent Ubuntu 26.04 GNOME](gnome26/README.ca.md) s'està
-construint a #430. L'escriptori experimental GNOME Wayland/RDP té comprovacions
-funcionals; falten Termia i l'acceptació completa del laboratori.
+El [laboratori independent Ubuntu 26.04 GNOME](gnome26/README.ca.md), incorporat
+a #430, té el seu propi escriptori i límits de validació. Les receptes són a
+`main`; comprovar la infraestructura no substitueix la validació de cada versió.
 
 Per a l’escriptori persistent Ubuntu 24.04 amb GNOME/Wayland i RDP nadiu,
 consulta [la guia Ubuntu 24 GNOME](gnome24/README.ca.md). Hi consta l’estat
@@ -23,12 +23,14 @@ de disc i RAM disponibles. Zenity i `xdg-open` són opcionals per al gestor.
 La imatge utilitza Ubuntu 24.04. La construcció descarrega paquets; les xarxes
 SSH d'execució són internes. No s'han validat Windows/macOS ni Docker remot.
 
-Utilitza la branca activa de desenvolupament, que conté el laboratori publicat.
+Utilitza `main` per a les receptes publicades del laboratori. Per provar un candidat
+sense publicar, utilitza el seu checkout i registra el commit i els canvis locals;
+no canviïs un arbre de treball actiu a una branca històrica del laboratori.
 
 ```bash
-git clone https://github.com/buuuki/termia.git
+git clone --branch main https://github.com/buuuki/termia.git
 cd termia
-git switch release/0.6.0-beta.4-dev
+git rev-parse HEAD
 docker info
 bash tools/docker-lab/run.sh prepare
 bash tools/docker-lab/run.sh check

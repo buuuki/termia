@@ -13,11 +13,11 @@ documentadas más abajo.
 ## Reabrir el escritorio existente
 
 Si el contenedor ya existe en este equipo, reutilízalo sin reconstruirlo.
-Parte de un checkout limpio; guarda los cambios locales antes de cambiar de rama.
+Ejecuta estas órdenes desde la raíz del repositorio. Reabrir el escritorio
+existente no requiere cambiar de rama ni descargar código; utiliza la imagen
+y los datos ya instalados en ese contenedor.
 
 ```bash
-git switch maintenance/430-docker-gnome
-git pull --ff-only
 docker start termia-430-gnome26-desktop-1
 docker inspect --format '{{.State.Health.Status}}' termia-430-gnome26-desktop-1
 docker exec termia-430-gnome26-desktop-1 cat /var/lib/termia-lab/password
@@ -54,14 +54,14 @@ En los comandos de construcción siguientes, sustituye `docker compose` por
 ## Reconstrucción en otro PC y alcance de la portabilidad
 
 Las recetas permiten reconstruir el sistema; no hace falta exportar una imagen,
-importar un disco ni instalar manualmente Ubuntu dentro de un volumen. A fecha
-2026-10-28, el despliegue sigue en desarrollo en la rama
-`maintenance/430-docker-gnome`. Usar esa rama y registrar el commit elegido;
-`main` no contiene este despliegue. No se ha validado aún
-la reconstrucción en un segundo PC ni una segunda descarga sin caché.
+importar un disco ni instalar manualmente Ubuntu dentro de un volumen. Las
+recetas ya están en `main`; no requieren la rama original de desarrollo.
+Registra el commit elegido. Para un candidato de Termia sin publicar, usa su
+checkout en lugar de cambiar de rama en un árbol de trabajo activo. Esta guía
+no acredita la reconstrucción en un segundo PC ni una segunda descarga sin caché.
 
 ```bash
-git clone --branch maintenance/430-docker-gnome --single-branch https://github.com/buuuki/termia.git
+git clone --branch main --single-branch https://github.com/buuuki/termia.git
 cd termia
 git rev-parse HEAD
 ```

@@ -76,7 +76,10 @@ Some mixins add transient state after construction:
   `sidebar_model_token`, `scroll_restore_id`, `sidebar_visible`, and
   `sidebar_width`.
 - `TabsMixin`: `tab_drag_session_id`.
-- `TerminalSessionsMixin`: updates `run_connections` and `stats_save_id`.
+- `TerminalSessionsMixin`: notifies the injected `session_observer` about
+  connection starts and finished panes. `StatisticsCollector` owns
+  `run_connections` and its deferred-save source `_save_source`; the no-op
+  observer retains the disabled behavior. These are not terminal-mixin fields.
 
 ## Mixin dependency inventory
 

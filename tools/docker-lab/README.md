@@ -6,9 +6,9 @@ Run the visual desktop, synthetic SSH/SFTP/SCP fixtures, memory diagnostics and
 process-lifecycle tests from a fresh checkout. The source stays read-only inside
 the client; the host desktop, SSH agent and personal Termia profile are not mounted.
 
-The separate [Ubuntu 26.04 GNOME base](gnome26/README.md) is being built in
-issue #430. Its experimental GNOME Wayland/RDP desktop has functional checks;
-Termia integration and full laboratory acceptance remain pending.
+The separate [Ubuntu 26.04 GNOME laboratory](gnome26/README.md), introduced in
+issue #430, has its own desktop and validation limits. Its recipes are included
+in `main`; infrastructure checks do not replace validation of each Termia release.
 
 For a separate persistent Ubuntu 24.04 GNOME/Wayland desktop with native RDP,
 see the [Ubuntu 24 GNOME guide](gnome24/README.md). Its runtime acceptance
@@ -22,12 +22,14 @@ several GB of free disk/RAM. Zenity and `xdg-open` are optional for the manager.
 The image runs Ubuntu 24.04. Builds download packages; runtime SSH networks are
 internal. Windows/macOS and remote Docker daemons are not validated.
 
-Use the active release-development branch, which contains the published laboratory.
+Use `main` for the published laboratory recipes. To test an unpublished candidate,
+use its designated checkout and record the commit and any local changes; do not
+switch an active working tree to a historical laboratory branch.
 
 ```bash
-git clone https://github.com/buuuki/termia.git
+git clone --branch main https://github.com/buuuki/termia.git
 cd termia
-git switch release/0.6.0-beta.4-dev
+git rev-parse HEAD
 docker info
 bash tools/docker-lab/run.sh prepare
 bash tools/docker-lab/run.sh check
