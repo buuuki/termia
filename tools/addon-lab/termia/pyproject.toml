@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "termia"
+dynamic = ["version"]
+description = "GTK SSH connection manager with embedded terminals"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = ["cryptography>=3.4", "PyYAML>=6.0", "paramiko>=2.12"]
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+]
+
+[project.scripts]
+termia = "termia.app:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.dynamic]
+version = { attr = "termia.__version__" }
+
+[tool.setuptools.package-data]
+termia = ["assets/*", "locale/*/LC_MESSAGES/*.mo"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/termia"]
+relative_files = true
+patch = ["subprocess"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+
+[tool.coverage.html]
+directory = "htmlcov"

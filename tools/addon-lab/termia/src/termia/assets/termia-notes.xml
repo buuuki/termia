@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<style-scheme id="termia-notes" _name="Termia Notes" version="1.0">
+  <author>Termia</author>
+  <style name="line-numbers" foreground="#0065BF" background="#000D1A"/>
+  <style name="current-line-number" foreground="#0065BF" background="#000D1A"/>
+</style-scheme>
