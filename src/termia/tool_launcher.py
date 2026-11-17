@@ -14,7 +14,7 @@ from gi.repository import GLib, Gtk
 @dataclass(frozen=True)
 class Tool:
     id: str
-    name: str
+    name: str | Callable[[], str]
     icon: str
     action: Callable[[], None]
     available: Callable[[], bool] = lambda: True
@@ -76,7 +76,7 @@ class ToolLauncher(Gtk.MenuButton):
         if self._closed:
             return
         tools = self.registry.available()
-        signature = tuple((tool.id, self.t(tool.name), tool.icon) for tool in tools)
+        signature = tuple((tool.id, (tool.name() if callable(tool.name) else self.t(tool.name)), tool.icon) for tool in tools)
         self.set_tooltip_text(self.t("tools"))
         self.update_property([Gtk.AccessibleProperty.LABEL], [self.t("tools")])
         if signature == self._signature:
@@ -87,7 +87,7 @@ class ToolLauncher(Gtk.MenuButton):
             self.grid.remove(child)
         self.buttons.clear()
         for tool in tools:
-            label = self.t(tool.name)
+            label = (tool.name() if callable(tool.name) else self.t(tool.name))
             button = Gtk.Button(tooltip_text=label)
             button.add_css_class("termia-tool-tile")
             button.update_property([Gtk.AccessibleProperty.LABEL], [label])

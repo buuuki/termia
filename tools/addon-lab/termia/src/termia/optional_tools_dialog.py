@@ -157,7 +157,13 @@ class OptionalToolsDialog:
                 try:
                     self.external_apply(identifier, switch.get_active())
                 except Exception:
-                    message = self.translate("addon_external_failed").format(name=title)
+                    option = next(item for item in self.external_options() if item[0] == identifier)
+                    message = (f"{title}: {self.translate(option[2])}" if option[2]
+                               else self.translate("addon_external_failed").format(name=title))
+                    switch.set_active(option[3])
+                    switch.set_sensitive(
+                        option[4] and not self.store.read_only and not self.store.encryption_locked
+                    )
                     status.set_text(message)
                     status.set_visible(True)
                     if applied:
@@ -170,7 +176,9 @@ class OptionalToolsDialog:
                     return
                 else:
                     applied.append(title)
-                    status.set_visible(False)
+                    option = next(item for item in self.external_options() if item[0] == identifier)
+                    status.set_text(self.translate(option[2]) if option[2] else "")
+                    status.set_visible(bool(option[2]))
             if applied:
                 messages.append(self.translate("addon_external_applied").format(addons=", ".join(applied)))
             self.notify("\n".join(messages))

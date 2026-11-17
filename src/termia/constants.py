@@ -15,6 +15,11 @@ CONFIG_DIR = Path(
     os.environ.get("TERMIA_CONFIG_DIR")
     or Path(GLib.get_user_config_dir()) / "termia"
 )
+PLUGINS_DIR = Path(
+    os.environ.get("TERMIA_PLUGINS_DIR")
+    or Path(GLib.get_user_data_dir()) / "termia" / "plugins"
+).expanduser().resolve()
+PLUGIN_SETTINGS_DIR = CONFIG_DIR / "plugins"
 DATA_FILE = CONFIG_DIR / "connections.json"
 NOTES_FILE = CONFIG_DIR / "notes.json"
 SETTINGS_FILE = CONFIG_DIR / "settings.json"

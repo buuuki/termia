@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: GPL-3.0-or-later
 import argparse
+import os
+from dataclasses import asdict
 import signal
 from time import monotonic
 from weakref import WeakKeyDictionary
@@ -20,6 +22,8 @@ from .connection_history_presenter import ConnectionHistoryPresenter
 from .connection_history_view import ConnectionHistoryDialog
 from .constants import (
     APP_ID,
+    PLUGINS_DIR,
+    PLUGIN_SETTINGS_DIR,
     DATA_FILE,
     DEFAULT_NOTES_EDITOR_BACKGROUND,
     INSTANCE_LOCK_FILE,
@@ -34,10 +38,9 @@ from .debug import (
     log_startup_context,
     log_store_state,
 )
-from .diagnostics import DiagnosticContext, ManagedProcess
-from .diagnostics_view import DiagnosticsTool
+from .diagnostics_contract import DiagnosticContext, ManagedProcess
 from .dialog_actions import configure_action_area
-from .i18n import translate_key
+from .i18n import normalize_language, translate_key
 from .keybindings import keybinding_matches
 from .main_menu import MainMenuMixin
 from .main_menu_actions import MainMenuActions
@@ -49,6 +52,7 @@ from .notifications import (
     NotificationSeverity,
 )
 from .optional_tools_dialog import OptionalToolsDialog
+from .plugin_runtime import PluginRuntime
 from .preferences import PreferencesMixin
 from .retron_runtime import RetronRuntime
 from .retron_store import RetronStore
@@ -176,7 +180,12 @@ class TermiaWindow(
         self.toast_label.set_margin_bottom(10)
         self.toast_hide_id: int | None = None
         self.optional_tools_dialog = OptionalToolsDialog(
-            self, self.store, self.t, self.toast_label.set_label
+            self, self.store, self.t, self.toast_label.set_label,
+            external_options=lambda: self.get_application().plugins.options(
+                normalize_language(self.store.data.app.language)
+            ),
+            external_apply=self.get_application().plugins.set_enabled,
+            running_tools=(self.builtin_tools.statistics, self.builtin_tools.sftp),
         )
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
@@ -778,11 +787,17 @@ class TermiaWindow(
             "appearance", "retron_editor", "applications-graphics-symbolic", self.on_retron_editor,
             lambda: self.retron_runtime.enabled and not self.shutdown_in_progress,
         ))
-        self.tool_registry.register(Tool(
-            "diagnostics", "diagnostics", "computer-symbolic",
-            lambda: self.get_application().diagnostics_tool.show(self.t),
-            lambda: not self.shutdown_in_progress,
-        ))
+        for plugin in self.get_application().plugins.plugins.values():
+            self.tool_registry.register(Tool(
+                "external:" + plugin.id,
+                lambda plugin=plugin: plugin.name(normalize_language(self.store.data.app.language)),
+                plugin.icon,
+                lambda identifier=plugin.id: self.get_application().plugins.show(
+                    identifier, normalize_language(self.store.data.app.language)
+                ),
+                lambda plugin=plugin: (not self.shutdown_in_progress
+                                       and plugin.instance is not None and not plugin.problem),
+            ))
         self.tool_registry.register(Tool(
             "notes", "notes_title", "accessories-text-editor-symbolic",
             self.notes_dialogs.show_manager,
@@ -1353,8 +1368,36 @@ class WindowThemeScope:
 class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
-        self.diagnostics_tool = DiagnosticsTool(self, self.diagnostic_context)
-        self.connect("shutdown", self.diagnostics_tool.close)
+        self.plugins = PluginRuntime(
+            PLUGINS_DIR, PLUGIN_SETTINGS_DIR,
+            {
+                "context": lambda: asdict(self.diagnostic_context()),
+                "attach_window": self.add_window,
+                "apply_style": self.apply_addon_style,
+            },
+            blocked=os.environ.get("TERMIA_DISABLE_PLUGINS") == "1",
+            changed=self.refresh_plugin_actions,
+        )
+        self.connect("shutdown", self.plugins.close)
+
+    @staticmethod
+    def apply_addon_style(widget, role):
+        roles = {
+            "panel": ("termia-dialog-panel",),
+            "content": ("termia-dialog-content",),
+            "text_frame": ("termia-content-frame", "termia-text-surface"),
+        }
+        if role not in roles:
+            raise ValueError(f"Unsupported add-on visual role: {role}")
+        for css_class in roles[role]:
+            widget.add_css_class(css_class)
+
+    def refresh_plugin_actions(self):
+        for window in self.get_windows():
+            if isinstance(window, TermiaWindow):
+                launcher = getattr(window, "tool_launcher", None)
+                if launcher is not None:
+                    launcher.refresh()
 
     def diagnostic_context(self) -> DiagnosticContext:
         sessions = terminals = ssh = local = 0

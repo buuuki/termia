@@ -70,6 +70,16 @@ LAB_ADDON_MESSAGES.update({
 })
 
 
+LAB_ADDON_MESSAGES.update({
+    'addon_incompatible': {'en': 'Incompatible plugin or required capabilities.', 'es': 'Plugin o capacidades requeridas incompatibles.', 'ca': 'Plugin o capacitats requerides incompatibles.'},
+    'addon_metadata_failed': {'en': 'Invalid plugin metadata.', 'es': 'Metadatos del plugin no válidos.', 'ca': 'Metadades del plugin no vàlides.'},
+    'addon_state_failed': {'en': 'Could not read the saved plugin preference.', 'es': 'No se pudo leer la preferencia guardada del plugin.', 'ca': 'No s’ha pogut llegir la preferència desada del plugin.'},
+    'addon_load_failed': {'en': 'Plugin could not start. You can disable it; restart after correcting the problem.', 'es': 'No se pudo iniciar el plugin. Puedes desactivarlo; reinicia tras corregir el problema.', 'ca': 'No s’ha pogut iniciar el plugin. Pots desactivar-lo; reinicia després de corregir el problema.'},
+    'addon_open_failed': {'en': 'Plugin window could not open. You can disable it.', 'es': 'No se pudo abrir la ventana del plugin. Puedes desactivarlo.', 'ca': 'No s’ha pogut obrir la finestra del plugin. Pots desactivar-lo.'},
+    'addon_cleanup_pending': {'en': 'Plugin cleanup is incomplete. Restart Termia to finish closing it.', 'es': 'El cierre del plugin está incompleto. Reinicia Termia para terminar de cerrarlo.', 'ca': 'El tancament del plugin és incomplet. Reinicia Termia per acabar de tancar-lo.'},
+})
+
+
 MESSAGES = {'servers': 'Show or hide server list',
 "tools": "Tools",
 "diagnostics": "Termia diagnostics",
