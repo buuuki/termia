@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-from functools import cache
 import json
+from functools import cache
 from pathlib import Path
 
 

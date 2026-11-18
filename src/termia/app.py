@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import argparse
 import os
-from dataclasses import asdict
 import signal
+from dataclasses import asdict
 from time import monotonic
 from weakref import WeakKeyDictionary
 
@@ -22,11 +22,11 @@ from .connection_history_presenter import ConnectionHistoryPresenter
 from .connection_history_view import ConnectionHistoryDialog
 from .constants import (
     APP_ID,
-    PLUGINS_DIR,
-    PLUGIN_SETTINGS_DIR,
     DATA_FILE,
     DEFAULT_NOTES_EDITOR_BACKGROUND,
     INSTANCE_LOCK_FILE,
+    PLUGIN_SETTINGS_DIR,
+    PLUGINS_DIR,
     RETRON_PROFILE_FILE,
     SESSION_SNAPSHOT_FILE,
     SETTINGS_FILE,

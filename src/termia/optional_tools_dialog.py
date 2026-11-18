@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 
 import gi
@@ -14,6 +15,8 @@ from gi.repository import Gtk
 from .dialog_actions import add_dialog_action_button
 from .dialog_window import DialogWindow
 from .stores import ConnectionStore, ReadOnlyStoreError
+
+logger = logging.getLogger(__name__)
 
 
 class OptionalToolsDialog:
@@ -29,7 +32,7 @@ class OptionalToolsDialog:
         self.store = store
         self.translate = translate
         self.notify = notify
-        self.external_options = external_options or (lambda: [])
+        self.external_options = external_options or list
         self.external_apply = external_apply
         self.running_tools = running_tools if running_tools is not None else (
             store.data.app.statistics_enabled, store.data.app.sftp_enabled
@@ -157,6 +160,7 @@ class OptionalToolsDialog:
                 try:
                     self.external_apply(identifier, switch.get_active())
                 except Exception:
+                    logger.exception("Cannot apply plugin preference: %s", identifier)
                     option = next(item for item in self.external_options() if item[0] == identifier)
                     message = (f"{title}: {self.translate(option[2])}" if option[2]
                                else self.translate("addon_external_failed").format(name=title))

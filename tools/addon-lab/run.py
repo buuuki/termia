@@ -11,10 +11,20 @@ os.environ["XDG_CACHE_HOME"] = str(profile / "cache")
 os.environ["XDG_DATA_HOME"] = str(profile / "data")
 os.environ["TERMIA_CONFIG_DIR"] = str(profile / "config" / "termia")
 os.environ["TERMIA_STATE_DIR"] = str(profile / "state" / "termia")
-os.environ["TERMIA_LAB_PLUGINS"] = "0" if "--without-addon" in sys.argv else "1"
+os.environ["TERMIA_PLUGINS_DIR"] = str(root / "termia-plugins")
+os.environ["TERMIA_DISABLE_PLUGINS"] = "1" if "--without-addon" in sys.argv else "0"
 if "--without-addon" in sys.argv:
     sys.argv.remove("--without-addon")
-sys.path.insert(0, str(root / "termia" / "src"))
+# Preserve choices from the original laboratory without replacing newer ones.
+for source in (profile / "config").glob("*-addon.disabled"):
+    destination = profile / "config" / "termia" / "plugins" / source.name
+    if not destination.exists():
+        data = source.read_bytes()
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with destination.open("xb") as stream:
+            stream.write(data)
+
+sys.path.insert(0, str(root.parents[1] / "src"))
 
 from termia.app import main
 

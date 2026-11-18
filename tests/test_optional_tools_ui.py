@@ -82,7 +82,7 @@ class OptionalToolsUITests(unittest.TestCase):
         store.update_optional_tools.assert_called_once_with(
             statistics_enabled=True, sftp_enabled=False
         )
-        notifier.assert_called_once_with("optional_tools_restart")
+        notifier.assert_called_once_with("addon_pending_restart")
 
     def test_read_only_instance_cannot_save_tool_changes(self) -> None:
         parent = Gtk.Window()

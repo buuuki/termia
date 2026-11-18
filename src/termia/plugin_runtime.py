@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-from dataclasses import dataclass
 import importlib.util
 import json
 import logging
 import os
-from pathlib import Path
 import re
 import sys
 import tempfile
-
+from dataclasses import dataclass
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 API_VERSION = 2
@@ -163,7 +162,7 @@ class PluginRuntime:
                 if getattr(module, "API_VERSION", None) != API_VERSION:
                     raise PluginIncompatible("Incompatible module API")
                 if not callable(getattr(module, "create", None)):
-                    raise RuntimeError("Missing factory")
+                    raise TypeError("Missing factory")
             except Exception:
                 for key in tuple(sys.modules):
                     if key == namespace or key.startswith(namespace + "."):
@@ -177,7 +176,7 @@ class PluginRuntime:
             close = getattr(instance, "close", None)
             if callable(close):
                 close()
-            raise RuntimeError("Invalid plugin controller")
+            raise TypeError("Invalid plugin controller")
         return instance
 
     def options(self, language):

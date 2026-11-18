@@ -16,9 +16,9 @@ gi.require_version("Pango", "1.0")
 from gi.repository import GLib, Gtk, Pango
 
 from .diagnostics import LocalProcessSampler
-from .i18n import translator
 from .dialog_actions import add_dialog_action_button, configure_dialog_content
 from .dialog_window import DialogWindow
+from .i18n import translator
 
 logger = logging.getLogger(__name__)
 
