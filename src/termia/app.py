@@ -1368,10 +1368,14 @@ class WindowThemeScope:
 class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
+        def diagnostics_context():
+            return asdict(self.diagnostic_context())
+
         self.plugins = PluginRuntime(
             PLUGINS_DIR, PLUGIN_SETTINGS_DIR,
             {
-                "context": lambda: asdict(self.diagnostic_context()),
+                "diagnostics_context": diagnostics_context,
+                "context": diagnostics_context,  # Compatibility alias for API 2 plugins.
                 "attach_window": self.add_window,
                 "apply_style": self.apply_addon_style,
             },

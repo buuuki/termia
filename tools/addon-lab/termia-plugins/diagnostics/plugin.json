@@ -10,7 +10,7 @@
   "module": "termia_diagnostics",
   "icon": "computer-symbolic",
   "capabilities": [
-    "context",
+    "diagnostics_context",
     "attach_window",
     "apply_style"
   ],

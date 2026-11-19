@@ -33,7 +33,7 @@ class ExternalDiagnosticsTests(unittest.TestCase):
         cls.style = Mock()
         root = Path(__file__).resolve().parents[1] / "tools/addon-lab/termia-plugins"
         cls.runtime = PluginRuntime(root, temporary.name, {
-            "context": cls.context, "attach_window": cls.attach, "apply_style": cls.style,
+            "diagnostics_context": cls.context, "attach_window": cls.attach, "apply_style": cls.style,
         })
         cls.addClassCleanup(cls.runtime.close)
         cls.plugin = cls.runtime.plugins["diagnostics"]
@@ -76,6 +76,21 @@ class ExternalDiagnosticsTests(unittest.TestCase):
         self.assertIsNone(window._timer)
         self.assertIsNone(window._poll)
         self.assertIsNone(window._future)
+
+    def test_host_keeps_legacy_context_alias_and_returns_fresh_snapshots(self):
+        from termia.app import TermiaApp
+        from termia.diagnostics_contract import DiagnosticContext
+
+        with patch("termia.app.PluginRuntime") as runtime_factory:
+            app = TermiaApp()
+        capabilities = runtime_factory.call_args.args[2]
+        self.assertIs(capabilities["context"], capabilities["diagnostics_context"])
+        with patch.object(app, "diagnostic_context", return_value=DiagnosticContext(sessions=2)):
+            legacy = capabilities["context"]()
+            legacy["sessions"] = 99
+            current = capabilities["diagnostics_context"]()
+        self.assertEqual(current["sessions"], 2)
+        self.assertIsNot(legacy, current)
 
     def test_real_factory_converts_context_without_starting_monitoring(self):
         self.assertEqual(self.plugin.loaded_module.API_VERSION, 2)

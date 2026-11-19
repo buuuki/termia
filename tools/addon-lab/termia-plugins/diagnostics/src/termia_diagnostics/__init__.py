@@ -2,12 +2,12 @@
 API_VERSION = 2
 
 
-def create(*, context, attach_window, apply_style):
+def create(*, diagnostics_context, attach_window, apply_style):
     from .diagnostics import DiagnosticContext, ManagedProcess
     from .diagnostics_view import DiagnosticsTool
 
     def snapshot():
-        data = context()
+        data = diagnostics_context()
         return DiagnosticContext(
             sessions=data["sessions"],
             terminals=data["terminals"],
