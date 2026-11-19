@@ -27,6 +27,7 @@ def create(**capabilities):
 
 class PluginRuntimeTests(unittest.TestCase):
     def setUp(self):
+        self.initial_modules = set(sys.modules)
         self.temp = tempfile.TemporaryDirectory(prefix="termia-plugin-test-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / "plugins"
@@ -50,7 +51,7 @@ class PluginRuntimeTests(unittest.TestCase):
 
     def tearDown(self):
         for key in tuple(sys.modules):
-            if key == "termia_plugin_sample" or key.startswith("termia_plugin_sample."):
+            if key.startswith("termia_plugin_") and key not in self.initial_modules:
                 del sys.modules[key]
 
     def save_manifest(self):
@@ -80,6 +81,37 @@ class PluginRuntimeTests(unittest.TestCase):
         self.assertTrue(instance.closed)
         self.assertEqual(self.state.read_text().strip(), "disabled")
         self.assertFalse(runtime.options("en")[0][3])
+
+    def test_similar_identifiers_load_independent_packages(self):
+        identifiers = ("mi-plugin", "mi_plugin", "mi_hplugin")
+        for identifier in identifiers:
+            directory = self.root / identifier
+            package = directory / "src/sample"
+            package.mkdir(parents=True)
+            (package / "__init__.py").write_text("from .identity import IDENTITY\n" + CODE)
+            (package / "identity.py").write_text(f"IDENTITY = {identifier!r}\n")
+            manifest = {**self.data, "id": identifier, "default_enabled": True}
+            (directory / "plugin.json").write_text(json.dumps(manifest))
+
+        runtime = self.runtime()
+        self.addCleanup(runtime.close)
+        modules = []
+        instances = []
+        for identifier in identifiers:
+            with self.subTest(identifier=identifier):
+                plugin = runtime.plugins[identifier]
+                self.assertEqual(plugin.problem, "")
+                self.assertIsNotNone(plugin.instance)
+                self.assertEqual(plugin.loaded_module.IDENTITY, identifier)
+                modules.append(plugin.loaded_module.__name__)
+                instances.append(plugin.instance)
+                runtime.show(identifier, "en")
+                self.assertTrue(plugin.instance.opened)
+        self.assertEqual(len(set(modules)), len(identifiers))
+        self.assertEqual(len({id(instance) for instance in instances}), len(identifiers))
+        runtime.set_enabled(identifiers[0], False)
+        self.assertTrue(instances[0].closed)
+        self.assertTrue(all(not instance.closed for instance in instances[1:]))
 
     def test_saved_activation_loaded(self):
         self.saved("enabled")

@@ -148,7 +148,7 @@ class PluginRuntime:
     def _create(self, plugin):
         if plugin.loaded_module is None:
             entry = plugin.directory / "src" / plugin.module / "__init__.py"
-            namespace = "termia_plugin_" + plugin.id.replace("-", "_")
+            namespace = "termia_plugin_" + plugin.id.replace("_", "__").replace("-", "_h")
             if namespace in sys.modules:
                 raise RuntimeError("Plugin module namespace collision")
             spec = importlib.util.spec_from_file_location(namespace, entry,
