@@ -1,0 +1,18 @@
+{
+  "id": "diagnostics",
+  "name": {
+    "en": "Diagnostics",
+    "es": "Diagnósticos",
+    "ca": "Diagnòstics"
+  },
+  "version": "0.1.0.dev0",
+  "api_version": 2,
+  "module": "termia_diagnostics",
+  "icon": "computer-symbolic",
+  "capabilities": [
+    "diagnostics_context",
+    "attach_window",
+    "apply_style"
+  ],
+  "default_enabled": true
+}

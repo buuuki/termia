@@ -37,8 +37,47 @@ def get_translation(language: str | None) -> gettext.NullTranslations:
 
 
 def translate_key(key: str, language: str | None) -> str:
+    if key in ADDON_MESSAGES:
+        return ADDON_MESSAGES[key][normalize_language(language)]
     message = MESSAGES.get(key, key)
     return get_translation(language).gettext(message)
+
+
+ADDON_MESSAGES = {'addon_diagnostics_external': {'en': 'Diagnostics · External', 'es': 'Diagnósticos · Externo', 'ca': 'Diagnòstics · Extern'}, 'addon_active': {'en': 'Available · active', 'es': 'Disponible · activo', 'ca': 'Disponible · actiu'}, 'addon_disabled': {'en': 'Available · disabled', 'es': 'Disponible · desactivado', 'ca': 'Disponible · desactivat'}, 'addon_missing': {'en': 'External add-on not found', 'es': 'No se encuentra el add-on externo', 'ca': 'No es troba el complement extern'}, 'addon_launch_disabled': {'en': 'Disabled by launcher (--without-addon)', 'es': 'Desactivado por el lanzador (--without-addon)', 'ca': 'Desactivat pel llançador (--without-addon)'}, 'addon_failed': {'en': 'Loading failed or incompatible API', 'es': 'Fallo de carga o API incompatible', 'ca': 'Error de càrrega o API incompatible'}, 'addon_change_failed': {'en': 'Could not apply the change. Check the launcher output.', 'es': 'No se pudo aplicar el cambio. Revisa la salida del lanzador.', 'ca': 'No s’ha pogut aplicar el canvi. Revisa la sortida del llançador.'}, 'addon_immediate': {'en': 'Diagnostics changes apply and save immediately. Cancel does not undo them.', 'es': 'Los cambios de Diagnósticos se aplican y guardan al instante. Cancelar no los deshace.', 'ca': 'Els canvis de Diagnòstics s’apliquen i es desen immediatament. Cancel·lar no els desfà.'}, 'addon_builtin_restart': {'en': 'Statistics and SFTP: Save and restart Termia to apply changes.', 'es': 'Estadísticas y SFTP: guarda y reinicia Termia para aplicar los cambios.', 'ca': 'Estadístiques i SFTP: desa i reinicia Termia per aplicar els canvis.'}}
+
+
+ADDON_MESSAGES.update({
+    'addon_diagnostics_applied': {'en': 'Diagnostics: change applied and saved. No restart required.', 'es': 'Diagnósticos: cambio aplicado y guardado. No es necesario reiniciar.', 'ca': 'Diagnòstics: canvi aplicat i desat. No cal reiniciar.'},
+    'addon_pending_save_restart': {'en': '{addons}: save and restart Termia to apply changes.', 'es': '{addons}: guarda y reinicia Termia para aplicar los cambios.', 'ca': '{addons}: desa i reinicia Termia per aplicar els canvis.'},
+    'addon_pending_restart': {'en': '{addons}: changes saved; restart Termia to apply them.', 'es': '{addons}: cambios guardados; reinicia Termia para aplicarlos.', 'ca': '{addons}: canvis desats; reinicia Termia per aplicar-los.'},
+    'addon_save_no_restart': {'en': 'Save to keep this choice. No restart required.', 'es': 'Guarda para conservar esta elección. No es necesario reiniciar.', 'ca': 'Desa per conservar aquesta opció. No cal reiniciar.'},
+    'addon_saved_no_restart': {'en': 'Changes saved. No restart required.', 'es': 'Cambios guardados. No es necesario reiniciar.', 'ca': 'Canvis desats. No cal reiniciar.'},
+})
+
+
+ADDON_MESSAGES["addon_diagnostics_pending"] = {
+    "en": "Diagnostics: pending change. Save to apply it; no restart required.",
+    "es": "Diagnósticos: cambio pendiente. Guarda para aplicarlo; no es necesario reiniciar.",
+    "ca": "Diagnòstics: canvi pendent. Desa per aplicar-lo; no cal reiniciar.",
+}
+
+
+ADDON_MESSAGES.update({
+    'addon_external_title': {'en': '{name} · External', 'es': '{name} · Externo', 'ca': '{name} · Extern'},
+    'addon_external_pending': {'en': '{addons}: pending changes. Save to apply; no restart required.', 'es': '{addons}: cambios pendientes. Guarda para aplicarlos; no es necesario reiniciar.', 'ca': '{addons}: canvis pendents. Desa per aplicar-los; no cal reiniciar.'},
+    'addon_external_applied': {'en': '{addons}: changes applied and saved. No restart required.', 'es': '{addons}: cambios aplicados y guardados. No es necesario reiniciar.', 'ca': '{addons}: canvis aplicats i desats. No cal reiniciar.'},
+    'addon_external_failed': {'en': '{name}: could not apply the change.', 'es': '{name}: no se pudo aplicar el cambio.', 'ca': '{name}: no s’ha pogut aplicar el canvi.'},
+})
+
+
+ADDON_MESSAGES.update({
+    'addon_incompatible': {'en': 'Incompatible plugin or required capabilities.', 'es': 'Plugin o capacidades requeridas incompatibles.', 'ca': 'Plugin o capacitats requerides incompatibles.'},
+    'addon_metadata_failed': {'en': 'Invalid plugin metadata.', 'es': 'Metadatos del plugin no válidos.', 'ca': 'Metadades del plugin no vàlides.'},
+    'addon_state_failed': {'en': 'Could not read the saved plugin preference.', 'es': 'No se pudo leer la preferencia guardada del plugin.', 'ca': 'No s’ha pogut llegir la preferència desada del plugin.'},
+    'addon_load_failed': {'en': 'Plugin could not start. You can disable it; restart after correcting the problem.', 'es': 'No se pudo iniciar el plugin. Puedes desactivarlo; reinicia tras corregir el problema.', 'ca': 'No s’ha pogut iniciar el plugin. Pots desactivar-lo; reinicia després de corregir el problema.'},
+    'addon_open_failed': {'en': 'Plugin window could not open. You can disable it.', 'es': 'No se pudo abrir la ventana del plugin. Puedes desactivarlo.', 'ca': 'No s’ha pogut obrir la finestra del plugin. Pots desactivar-lo.'},
+    'addon_cleanup_pending': {'en': 'Plugin cleanup is incomplete. Restart Termia to finish closing it.', 'es': 'El cierre del plugin está incompleto. Reinicia Termia para terminar de cerrarlo.', 'ca': 'El tancament del plugin és incomplet. Reinicia Termia per acabar de tancar-lo.'},
+})
 
 
 MESSAGES = {'servers': 'Show or hide server list',
