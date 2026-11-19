@@ -9,7 +9,13 @@ def catalog(language):
     if language not in {"en", "es", "ca"}:
         language = "en"
     path = Path(__file__).resolve().parent / "locales" / f"{language}.json"
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        if language == "en":
+            raise
+        return catalog("en")
+    return json.loads(text)
 
 
 def translator(language):
