@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Pin external Diagnostics sources in CI, run host and plugin integration suites,
+  and verify combined coverage inventory with separate totals (#536).
+
 - Separate Diagnostics sources, packaging and plugin tests into the local
   `termia-plugins` tree; retain host contract tests and require both suites
   for combined integration and coverage validation (#536).
