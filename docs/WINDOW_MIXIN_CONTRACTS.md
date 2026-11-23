@@ -364,10 +364,12 @@ The principal dependency hotspots are:
 
 The launcher is composed in `app.py` using a per-window `ToolRegistry` of
 callbacks, reusing the existing Retron editor runtime. `TermiaApp` owns the
-shared `DiagnosticsTool` and supplies immutable counts and process identities
-across its terminal windows through `diagnostic_context()`. Diagnostics receives
-no main window, connection store or live session. Its worker never calls GTK.
-Window destruction stops monitoring; application shutdown also closes the tool.
+external `PluginRuntime`; the Diagnostics plugin owns its shared controller.
+The host supplies counts and captured process identities across its terminal
+windows through a dictionary snapshot of `diagnostic_context()`, plus focused
+window-attachment and styling callbacks. Diagnostics receives no main window,
+connection store or live session. Its worker never calls GTK. Window destruction
+stops monitoring; disabling the plugin or application shutdown also closes it.
 
 1. Define a small host interface for translation, feedback, writability, and
    dialog parenting.

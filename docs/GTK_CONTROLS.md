@@ -33,8 +33,11 @@ The titlebar launcher (`tool_launcher.py`) uses native `Gtk.MenuButton`,
 focus, activation and dismissal; Termia owns availability and deferred dispatch.
 The Notes tile reuses the existing management window; each management
 invocation hides its native sidebar while retaining its toggle and width.
-Diagnostics (`diagnostics_view.py`) reuses `DialogWindow`, labels, grids,
-expanders, text views and scrollers; its controller owns sampling lifetime.
+The external Diagnostics plugin's `diagnostics_view.py`, under
+`diagnostics/src/termia_diagnostics/` in the separate `termia-plugins` source
+tree, uses its
+plugin-owned `DialogWindow`, labels, grids, expanders, text views and scrollers.
+Its controller owns sampling lifetime; the host supplies styling callbacks.
 Named configurations use a native `Gtk.DropDown` with bounded labels and standard
 buttons. Save as and Rename reuse `DialogWindow` with `Gtk.Entry`; unsaved-switch
 and delete confirmations use `Gtk.AlertDialog`. Termia owns name validation,

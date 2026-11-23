@@ -2,16 +2,18 @@
 
 This document records the initial direction for Termia's gradual architectural
 evolution. It is a working boundary, not a final decomposition of the codebase.
-The implementation remains in the `termia` Python package; no physical
-Core/add-on package split is implied.
+Core and built-in add-ons remain in the `termia` Python package. Trusted
+external plugins have separate packages and distribution under
+[ADR-0002](decisions/ADR-0002-trusted-external-plugins.md).
 
 ## Approved direction
 
-Termia is evolving around a cohesive Core and trusted, built-in optional
-add-ons. The Core remains useful when an optional add-on is disabled. Add-ons
-are internal implementation units, not third-party plugins or a public
-extension API. See [the add-on policy](addons.md) and
-[ADR-0001](decisions/ADR-0001-built-in-addons.md).
+Termia is evolving around a cohesive Core, trusted built-in optional add-ons
+and trusted external plugins. The Core remains useful when optional components
+are disabled or absent. External API 2 is experimental, with no stable
+third-party compatibility promise or process isolation. See
+[the add-on policy](addons.md), [ADR-0001](decisions/ADR-0001-built-in-addons.md)
+and its amendment [ADR-0002](decisions/ADR-0002-trusted-external-plugins.md).
 
 The dependency direction is:
 
@@ -74,8 +76,10 @@ Approved decisions:
 
 - Refactor incrementally and preserve behavior unless a change is explicitly
   requested.
-- Keep add-ons trusted and built into Termia; there is no external plugin API
-  in scope.
+- Keep optional code trusted. Statistics and SFTP remain built in;
+  Diagnostics is the separately distributed external-plugin pilot under API 2.
+- Discover external plugins through the generic runtime assembled by `app.py`;
+  Core modules must not import concrete external implementations.
 - Treat `app.py` as the sole composition-root exception for concrete add-on
   implementations.
 - Prefer explicit, minimal contracts over dependencies on broad window or
@@ -98,6 +102,7 @@ Record a concrete proposal and review it before changing a boundary.
 
 - [Internal add-on policy and current pilot](addons.md)
 - [Initial architecture decision](decisions/ADR-0001-built-in-addons.md)
+- [Trusted external plugins](decisions/ADR-0002-trusted-external-plugins.md)
 - [Current UI styling inventory](../UI_STYLING.md)
 - [Window and mixin contracts](../WINDOW_MIXIN_CONTRACTS.md)
 - [Storage schemas and migration policy](../STORAGE_MIGRATIONS.md)

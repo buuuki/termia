@@ -11,7 +11,11 @@ os.environ["XDG_CACHE_HOME"] = str(profile / "cache")
 os.environ["XDG_DATA_HOME"] = str(profile / "data")
 os.environ["TERMIA_CONFIG_DIR"] = str(profile / "config" / "termia")
 os.environ["TERMIA_STATE_DIR"] = str(profile / "state" / "termia")
-os.environ["TERMIA_PLUGINS_DIR"] = str(root / "termia-plugins")
+plugin_root = Path(os.environ.get("TERMIA_PLUGINS_DIR") or
+                   root.parents[2] / "termia-plugins").expanduser().resolve()
+if "--without-addon" not in sys.argv and not (plugin_root / "diagnostics/plugin.json").is_file():
+    raise SystemExit("Diagnostics sources missing; set TERMIA_PLUGINS_DIR to the plugins directory")
+os.environ["TERMIA_PLUGINS_DIR"] = str(plugin_root)
 os.environ["TERMIA_DISABLE_PLUGINS"] = "1" if "--without-addon" in sys.argv else "0"
 if "--without-addon" in sys.argv:
     sys.argv.remove("--without-addon")

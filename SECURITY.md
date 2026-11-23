@@ -113,6 +113,21 @@ are disabled for updater commands. Git configuration is trusted local state;
 do not run a checkout supplied by an untrusted third party. The fetched tag may
 remain after cancellation, but the working tree is not changed by preparation.
 
+## External plugins
+
+External plugins execute in Termia's process with the same operating-system
+permissions. The supplied capabilities limit architectural coupling, not access
+to files, credentials or other process state. Only install trusted plugins;
+plugin code can crash or block Termia. Compatibility checks and caught Python
+exceptions do not provide isolation.
+
+Install or update plugins manually while Termia is closed. Verify archive
+checksums obtained from the trusted distributor; a SHA-256 checksum alone does
+not authenticate a publisher. Termia does not automatically download, install
+or update plugins. `TERMIA_DISABLE_PLUGINS=1` prevents external code from loading
+without deleting the installed files or saved choices. See
+[ADR-0002](docs/architecture/decisions/ADR-0002-trusted-external-plugins.md).
+
 ## Reporting a vulnerability
 
 Do not include credentials, private keys, exported configurations, or server

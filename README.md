@@ -107,7 +107,35 @@ Retron also styles secondary window frames and shared Notes, snippets, SFTP, pre
 and update-log containers. Notes editor colors remain independent; native desktop portal
 dialogs may retain the system theme.
 
-The titlebar **Tools** grid also opens **Termia diagnostics**, an independent
+In this development branch, Diagnostics is a separately distributed plugin.
+Existing users must install it manually to keep using it after upgrading.
+Termia does not download or install it automatically. This change does not
+apply retroactively to published releases.
+
+Obtain the compatible Diagnostics archive and its `.sha256` file from the
+trusted plugin distributor. No public download is available for this development
+package yet. Close Termia and, from the directory containing both files, run:
+
+```bash
+sha256sum -c termia-plugin-diagnostics-0.1.0.dev0.tar.gz.sha256 &&
+plugin_root="${XDG_DATA_HOME:-$HOME/.local/share}/termia/plugins" &&
+test ! -e "$plugin_root/diagnostics" &&
+mkdir -p "$plugin_root" &&
+tar -xzf termia-plugin-diagnostics-0.1.0.dev0.tar.gz -C "$plugin_root"
+```
+
+These commands are for a first installation and stop if Diagnostics already
+exists. If `TERMIA_PLUGINS_DIR` is set, use that directory instead.
+The package requires plugin API 2; its version is independent of Termia's.
+Plugins execute with Termia's permissions, without sandboxing. A checksum
+checks integrity, not publisher authenticity.
+
+Restart Termia. Diagnostics is enabled by default on first installation;
+saved choices take precedence. Manage activation in the optional tools dialog;
+Save applies changes. Removing the plugin does not delete its saved preference.
+
+With the plugin installed and enabled, the titlebar **Tools** grid opens
+**Termia diagnostics**, an independent
 window shared by the windows of the same application process. It separates CPU,
 resident memory, threads and file descriptors of Termia and its local children,
 and lists sessions, VTE terminals and SSH clients. Monitoring runs only while

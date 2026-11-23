@@ -114,7 +114,37 @@ compartits de Notes, snippets, SFTP, preferències i registres de l’actualitza
 colors de l’editor de Notes són independents; els diàlegs del portal de l’escriptori
 poden conservar el tema del sistema.
 
-**Eines** també obre **Diagnòstic de Termia**, una finestra independent compartida
+En aquesta branca de desenvolupament, Diagnòstic es distribueix com a plugin
+separat. Els usuaris actuals l'han d'instal·lar manualment per continuar
+utilitzant-lo després d'actualitzar. Termia no el descarrega ni l'instal·la
+automàticament. Aquest canvi no modifica les versions ja publicades.
+
+Obtén l'arxiu de Diagnòstic compatible i el seu fitxer `.sha256` del
+distribuïdor de plugins de confiança. Encara no hi ha cap descàrrega pública
+d'aquest paquet de desenvolupament. Tanca Termia i, des del directori que
+conté tots dos fitxers, executa:
+
+```bash
+sha256sum -c termia-plugin-diagnostics-0.1.0.dev0.tar.gz.sha256 &&
+plugin_root="${XDG_DATA_HOME:-$HOME/.local/share}/termia/plugins" &&
+test ! -e "$plugin_root/diagnostics" &&
+mkdir -p "$plugin_root" &&
+tar -xzf termia-plugin-diagnostics-0.1.0.dev0.tar.gz -C "$plugin_root"
+```
+
+Aquestes ordres són per a una primera instal·lació i s'aturen si Diagnòstic
+ja existeix. Si has definit `TERMIA_PLUGINS_DIR`, utilitza aquell directori.
+El paquet requereix l'API de plugins 2; la seva versió és independent de Termia.
+Els plugins s'executen amb els permisos de Termia, sense aïllament. La suma
+de comprovació verifica la integritat, no l'autenticitat del distribuïdor.
+
+Reinicia Termia. Diagnòstic s'activa per defecte en la primera instal·lació;
+les preferències desades tenen prioritat. Gestiona'n l'activació des del diàleg
+d'eines opcionals; Desa aplica els canvis. Eliminar el plugin no esborra la
+preferència desada.
+
+Amb el plugin instal·lat i activat, **Eines** obre
+**Diagnòstic de Termia**, una finestra independent compartida
 per les finestres del mateix procés. Separa CPU, memòria resident, fils i descriptors
 de Termia i els seus fills locals, i mostra sessions, terminals VTE i clients SSH.
 Només supervisa mentre és oberta, aproximadament cada cinc segons. L’historial

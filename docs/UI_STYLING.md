@@ -3,8 +3,9 @@
 The titlebar tool grid uses native menu-button, popover and button styling.
 `termia-tool-grid` and `termia-tool-tile` add subtle focus/hover accents only
 inside the Retron root scope in `theme_styles.py`. Standard themes receive no
-launcher-specific colors, borders or glow. Diagnostics reuses the shared dialog
-panel and GTK labels, expanders and scrollers.
+launcher-specific colors, borders or glow. The external Diagnostics plugin uses
+GTK labels, expanders and scrollers; its own dialog composition requests the
+host's panel, content and text-frame styles through explicit callbacks.
 
 Retron window controls retain GTK buttons and native hit targets. Their outer
 buttons are transparent; the compact child images carry the Retron frame,

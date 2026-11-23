@@ -108,6 +108,14 @@ mouse/keyboard activation, arrows, Tab, Enter, Space, Escape, second-click and
 outside dismissal at small, maximized and restored window sizes. Repeat in
 System/Light/Dark/Retron and EN/ES/CA; only Retron offers the appearance editor.
 
+For the external Diagnostics implementation, launch
+`python3 tools/addon-lab/run.py` with its isolated laboratory profile and the
+sibling `termia-plugins` sources (or explicit `TERMIA_PLUGINS_DIR`). Repeat
+with `python3 tools/addon-lab/run.py --without-addon`: Diagnostics must be absent
+and ordinary terminal operations must remain available. No remote host is needed.
+In the enabled run, disable and re-enable Diagnostics through optional tools and
+Save; verify that disabling closes its window and stops monitoring.
+
 Open diagnostics from two application windows: both must use the same independent
 window and aggregate their sessions. Split/close local terminals and verify VTE
 counts and separate main/child CPU, resident memory, threads and descriptors.
@@ -119,9 +127,12 @@ selection; repeat when old rows expire at the 60-sample limit. Current metrics
 continue refreshing with history collapsed. Close during sampling and reopen: timers/workers must stop with
 no late UI updates. Closing diagnostics must preserve terminals and main windows.
 Recheck header controls, VTE focus, menus, tabs and splits. No remote host is needed.
-Run `python3 scripts/run_sandbox_tests.py tests.test_tool_launcher tests.test_diagnostics tests.test_diagnostics_view`
-for registry availability, window lifecycle, permission failures, reparenting and
-PID-reuse checks.
+Run the host checks with
+`python3 scripts/run_sandbox_tests.py tests.test_tool_launcher tests.test_diagnostics_contract tests.test_plugin_runtime`.
+Run the plugin's window, sampling, translation and packaging checks separately:
+`python3 scripts/run_sandbox_tests.py discover -s ../termia-plugins/termia_plugins_tests -t ../termia-plugins`.
+Both suites are required for plugin integration changes; missing external sources
+must fail validation. Neither suite replaces the other.
 
 
 - Launch `scripts/run_test_instance.sh retron-editor-486`, select Retron in
@@ -1899,8 +1910,11 @@ For a fresh line/branch coverage baseline, use the commands in
 [Contributing: Coverage with unittest](../CONTRIBUTING.md#coverage-with-unittest).
 Keep unittest and its existing test modules and runner. Coverage subprocess
 measurement must include the child test process, preserve the unittest exit
-status and keep GTK/SFTP resources isolated. Confirm all production modules
-appear in the reports, including those never imported. Review terminal/VTE
+status and keep GTK/SFTP resources isolated. Confirm all application and
+Diagnostics plugin production modules appear in the combined reports, including
+those never imported. Use the separate plugin checkout's combined coverage
+procedure; the standalone host measurement covers only `src/termia`. Report separate application/plugin totals and the combined
+result; retain the plugin measurement when its sources move. Review terminal/VTE
 cleanup, orphan handling, SSH/SFTP shutdown, GTK signal disposal and add-on
 enabled/disabled paths. Record gaps and skipped tests without adding a minimum
 percentage or treating unexecuted/native code as verified.
