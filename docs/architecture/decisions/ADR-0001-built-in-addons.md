@@ -2,6 +2,9 @@
 
 - Status: Accepted
 - Date: 2026-10-09
+- Amended by: [ADR-0002](ADR-0002-trusted-external-plugins.md) for trusted
+  external loading, separate distribution and activation on Save. The original
+  decision below is retained as historical context.
 
 ## Context
 

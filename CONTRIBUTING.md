@@ -151,10 +151,23 @@ coverage json -o htmlcov/coverage.json
 Open `htmlcov/index.html` for module details and missing branches. A focused
 run can use `coverage run scripts/run_sandbox_tests.py tests.test_terminal_cleanup`;
 its results are not a full-suite baseline. Erase old data before a new baseline.
-All production Python under `src/termia` is included, even if never imported.
+The commands above measure all host production Python under `src/termia`,
+including unimported modules. Diagnostics sources and tests now live in the
+separate sibling `termia-plugins` checkout. For plugin or shared-contract work,
+also run its suite and the combined coverage procedure in that checkout's
+`README.md`; a host-only report does not establish plugin coverage. Keep separate
+application/plugin subtotals and a combined result. Missing plugin sources must
+block combined validation rather than silently reduce its scope.
 Dependencies, tests and generated reports are outside that measurement scope.
-There is initially no minimum percentage. CI preserves HTML and JSON reports
-for 14 days; test failures and report-generation failures still fail CI.
+There is initially no minimum percentage. The combined CI checks out
+`${{ github.repository_owner }}/termia-plugins` at the full commit SHA pinned in
+`.github/workflows/tests.yml`. It must fail if that repository or revision is
+unavailable; there is no host-only fallback. The plugin repository and pinned
+revision must be published before running this workflow remotely. Updating the
+pin requires reviewing that revision and validating both suites locally first.
+CI checks the production-module inventory, reports host/plugin totals, and
+preserves HTML and JSON reports for 14 days. Test failures and report-generation
+failures still fail CI. Local standalone commands above remain host-only.
 
 Coverage records Python lines and branches, including supported Python
 subprocesses. It does not measure native GTK/VTE code, remote SSH execution or

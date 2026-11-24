@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+### Changed
+
+- Pin external Diagnostics sources in CI, run host and plugin integration suites,
+  and verify combined coverage inventory with separate totals (#536).
+
+- Separate Diagnostics sources, packaging and plugin tests into the local
+  `termia-plugins` tree; retain host contract tests and require both suites
+  for combined integration and coverage validation (#536).
+
+- Include external Diagnostics production modules in line and branch coverage
+  and document separate application/plugin reporting (#536).
+
+- Cover external-plugin Save/Cancel, locked profiles and partial-failure retry
+  in the optional tools dialog regression tests (#536).
+
+- Define experimental API 2 for trusted external plugins, separate Diagnostics
+  distribution, lifecycle contracts and in-process security limits (#536).
+
+- Document separate Diagnostics distribution and manual installation for
+  existing users in English, Spanish and Catalan (#536).
+
+### Removed
+
+- Remove the duplicate built-in Diagnostics implementation; retain its Core
+  context contract and run sampler/window regression tests against the external
+  plugin sources (#536).
+
 ## 0.6.4-beta - 2026-11-15
 
 Maintenance since `0.6.3-beta`. Publication status and validation limits are

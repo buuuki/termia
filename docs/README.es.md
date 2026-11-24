@@ -116,7 +116,37 @@ compartidos de Notas, snippets, SFTP, preferencias y registros del actualizador.
 colores del editor de Notas son independientes; los diálogos del portal del escritorio
 pueden conservar el tema del sistema.
 
-**Herramientas** también abre **Diagnóstico de Termia**, una ventana independiente
+En esta rama de desarrollo, Diagnóstico se distribuye como plugin separado.
+Los usuarios actuales deben instalarlo manualmente para seguir utilizándolo
+tras actualizar. Termia no lo descarga ni instala automáticamente. Este cambio
+no modifica las versiones ya publicadas.
+
+Obtén el archivo de Diagnóstico compatible y su archivo `.sha256` del
+distribuidor de plugins de confianza. Todavía no hay una descarga pública de
+este paquete de desarrollo. Cierra Termia y, desde el directorio que contiene
+ambos archivos, ejecuta:
+
+```bash
+sha256sum -c termia-plugin-diagnostics-0.1.0.dev0.tar.gz.sha256 &&
+plugin_root="${XDG_DATA_HOME:-$HOME/.local/share}/termia/plugins" &&
+test ! -e "$plugin_root/diagnostics" &&
+mkdir -p "$plugin_root" &&
+tar -xzf termia-plugin-diagnostics-0.1.0.dev0.tar.gz -C "$plugin_root"
+```
+
+Estos comandos son para una primera instalación y se detienen si Diagnóstico
+ya existe. Si has definido `TERMIA_PLUGINS_DIR`, utiliza ese directorio.
+El paquete requiere la API de plugins 2; su versión es independiente de Termia.
+Los plugins se ejecutan con los permisos de Termia, sin aislamiento. La suma
+de comprobación verifica la integridad, no la autenticidad del distribuidor.
+
+Reinicia Termia. Diagnóstico se activa por defecto en la primera instalación;
+las preferencias guardadas tienen prioridad. Gestiona su activación desde el
+diálogo de herramientas opcionales; Guardar aplica los cambios. Eliminar el
+plugin no borra su preferencia guardada.
+
+Con el plugin instalado y activado, **Herramientas** abre
+**Diagnóstico de Termia**, una ventana independiente
 compartida por las ventanas del mismo proceso. Separa CPU, memoria residente,
 hilos y descriptores de Termia y sus hijos locales, y muestra sesiones, terminales
 VTE y clientes SSH. Solo supervisa mientras está abierta, aproximadamente cada cinco

@@ -53,6 +53,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check out compatible external plugins
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ github.repository_owner }}/termia-plugins
+          ref: 39e946463347b63ba5dde6a791da6aac5e44af53
+          path: _ci/termia-plugins
+          persist-credentials: false
+
+      - name: Configure combined coverage
+        run: |
+          test -f "$GITHUB_WORKSPACE/_ci/termia-plugins/diagnostics/plugin.json"
+          echo "TERMIA_SOURCE_DIR=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "TERMIA_PLUGINS_SOURCE=$GITHUB_WORKSPACE/_ci/termia-plugins" >> "$GITHUB_ENV"
+          echo "COVERAGE_RCFILE=$GITHUB_WORKSPACE/_ci/termia-plugins/.coveragerc" >> "$GITHUB_ENV"
+
       - name: Require changelog update
         if: github.event_name == 'pull_request'
         run: |
@@ -86,10 +101,22 @@ jobs:
           .venv/bin/python -m pip install -r requirements-ci.txt -r requirements-coverage.txt
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
-      - name: Run unittest with branch coverage and a private GTK display
+      - name: Check external plugin Python
+        working-directory: _ci/termia-plugins
+        run: |
+          ruff check --isolated --target-version py310 --ignore-noqa --no-cache .
+          bandit --ignore-nosec -r diagnostics package_plugin.py
+
+      - name: Run host unittest with branch coverage and a private GTK display
         run: |
           coverage erase
           coverage run scripts/run_sandbox_tests.py
+
+      - name: Run external plugin and host integration tests
+        run: |
+          coverage run scripts/run_sandbox_tests.py discover \
+            -s "$TERMIA_PLUGINS_SOURCE/termia_plugins_tests" \
+            -t "$TERMIA_PLUGINS_SOURCE"
 
       - name: Generate console and HTML coverage reports
         if: ${{ !cancelled() }}
@@ -98,6 +125,37 @@ jobs:
           coverage report
           coverage html
           coverage json -o htmlcov/coverage.json
+
+      - name: Verify coverage inventory and report separate totals
+        run: |
+          python - <<'PYCODE'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads(Path("htmlcov/coverage.json").read_text())
+          files = {Path(name).resolve(): data for name, data in report["files"].items()}
+          roots = {
+              "Termia": Path(os.environ["TERMIA_SOURCE_DIR"]) / "src/termia",
+              "Diagnostics": Path(os.environ["TERMIA_PLUGINS_SOURCE"]) / "diagnostics/src/termia_diagnostics",
+          }
+          lines = ["| Scope | Lines | Branches |", "| --- | ---: | ---: |"]
+          for label, source in roots.items():
+              expected = set(source.rglob("*.py"))
+              if not expected or expected - files.keys():
+                  raise SystemExit(f"Incomplete production coverage inventory: {label}")
+              summaries = [files[path]["summary"] for path in expected]
+              totals = {key: sum(item[key] for item in summaries) for key in (
+                  "covered_lines", "num_statements", "covered_branches", "num_branches"
+              )}
+              line_pct = 100 * totals["covered_lines"] / totals["num_statements"]
+              branch_pct = 100 * totals["covered_branches"] / totals["num_branches"]
+              lines.append(f"| {label} | {line_pct:.2f}% | {branch_pct:.2f}% |")
+          summary = "\n".join(lines) + "\n"
+          print(summary)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
+              stream.write(summary)
+          PYCODE
 
       - name: Preserve coverage reports
         if: ${{ !cancelled() }}
@@ -118,3 +176,7 @@ jobs:
             scripts/compile_translations.py \
             src/termia/*.py \
             tests/*.py
+          python3 -m compileall -q \
+            "$TERMIA_PLUGINS_SOURCE/diagnostics" \
+            "$TERMIA_PLUGINS_SOURCE/termia_plugins_tests" \
+            "$TERMIA_PLUGINS_SOURCE/package_plugin.py"

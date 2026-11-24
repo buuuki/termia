@@ -2,7 +2,8 @@
 
 Termia stores connections, notes, settings, statistics, and connection history
 in separate local files. Each format carries an explicit schema version where
-the format is an object or event payload.
+the format is an object or event payload. External-plugin enablement uses
+separate text markers, described below, without a schema version.
 
 ## Compatibility policy
 
@@ -19,6 +20,52 @@ the format is an object or event payload.
   discard fields from a future format.
 
 ## Current schemas
+
+### External-plugin preferences
+
+The runtime stores each choice in
+`CONFIG_DIR/plugins/<plugin-id>-addon.disabled`. `CONFIG_DIR` respects
+`TERMIA_CONFIG_DIR`; otherwise it uses the XDG configuration directory's
+`termia` subdirectory. Despite the historical filename suffix, the file can
+record either state:
+
+| File contents after trimming whitespace | Meaning |
+| --- | --- |
+| `enabled` | Request activation |
+| `disabled` or empty | Request deactivation |
+| File absent | Use the installed manifest's `default_enabled` value |
+
+Other contents or read failures report a plugin-state error and prevent
+automatic activation. Reading does not rewrite, back up or rename the marker.
+These scalar markers are not schema-0 JSON documents and do not use the
+connection/settings migration or recovery machinery.
+
+Explicit activation changes write `enabled` or `disabled` followed by a newline
+to a private temporary file in the same directory, flush and fsync it, then
+atomically replace the marker. This is atomic per plugin, not across all tools.
+The optional-tools dialog prevents saving from read-only or encrypted-locked
+profiles. The runtime itself does not own the connection store's write guard.
+
+Disabling retains the marker even if closing the plugin fails. Removing plugin
+files preserves the saved choice; a retained marker allows the runtime to show
+the missing plugin. Reinstalling the same identifier restores that choice.
+`TERMIA_DISABLE_PLUGINS=1` blocks loading without changing the saved preference.
+
+Installed code is separate from preferences: it lives in the XDG data
+directory's `termia/plugins` subdirectory, overridden by `TERMIA_PLUGINS_DIR`.
+Changing that code directory does not move preferences. Connection exports
+do not include these markers or plugin packages. Back them up separately when
+moving a profile; use compatible, trusted plugin packages on the destination.
+
+The laboratory launcher alone copies legacy
+`tools/addon-lab/profile/config/*-addon.disabled` markers into its
+`config/termia/plugins` directory when the destination does not exist. It
+preserves the source and does not overwrite newer choices. Normal application
+startup does not perform that laboratory migration.
+
+No connection, settings or notes schema changes are required. Versions without
+external-plugin support do not interpret these choices. Keep the markers when
+downgrading if the choices must survive a later return to plugin support.
 
 ### Retron appearance profile
 

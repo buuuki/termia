@@ -42,12 +42,15 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 
 ## Architecture Boundaries
 
-- Evolve Termia incrementally around a cohesive Core and trusted, built-in
-  optional add-ons. This is an internal architecture, not a public plugin API.
+- Evolve Termia incrementally around a cohesive Core, trusted built-in add-ons
+  and trusted external plugins under
+  `docs/architecture/decisions/ADR-0002-trusted-external-plugins.md`.
+  External API 2 is experimental, not a stable third-party compatibility promise.
 - `src/termia/app.py` is the composition root and the only approved place for
-  importing and assembling concrete add-on implementations. Other Core modules
-  must not depend directly on those implementations; pass narrow, explicit
-  contracts or callbacks instead.
+  assembling built-in add-ons and the generic external plugin runtime.
+  `PluginRuntime` loads external implementations through their manifests.
+  Other Core modules must not import concrete add-on implementations;
+  pass narrow, explicit contracts or callbacks instead.
 - Add-ons should receive only the host capabilities and data they need. Prefer
   focused protocols and immutable data over passing `TermiaWindow`, complete
   terminal sessions, connection stores, or other broad internal objects.
@@ -61,9 +64,14 @@ Keep changes small, explicit, and aligned with the existing GTK/VTE architecture
 - Before changing code that touches a shared contract or optional behavior,
   review `docs/architecture/overview.md` and `docs/architecture/addons.md`;
   check `docs/WINDOW_MIXIN_CONTRACTS.md` before moving window/mixin behavior.
-- Preserve behavior and stored data when an add-on is disabled. Do not
-  introduce external plugins, hot reload, sandboxing, marketplaces, or a
-  general plugin manager without an explicitly reviewed issue.
+- Preserve behavior and stored data when an add-on is disabled. Removing an
+  external plugin must retain its saved preference. External activation changes
+  apply on Save; built-in Statistics/SFTP changes still require restart.
+- Keep external installation and updates manual. Plugin code runs in Termia's
+  process with its permissions; injected capabilities are not a security boundary.
+  Installing or replacing plugin code requires restart. Do not introduce hot
+  reload, sandboxing, marketplaces, automatic installation or updates, or a
+  general dependency manager without a separately reviewed decision.
 - Keep architecture documentation aligned with the implementation. Distinguish
   approved rules from observed implementation and unresolved questions; a
   documented current dependency is not automatically an approved exception.
@@ -129,7 +137,12 @@ coverage json -o htmlcov/coverage.json
 ```
 
 For a focused measurement, pass unittest module names after the runner path.
-Measure all production Python under `src/termia`, including unimported modules.
+Measure all host production Python under `src/termia`, including unimported
+modules. For external-plugin or shared-contract work, also run the plugin suite
+and combined coverage procedure in the sibling `termia-plugins/README.md`.
+Measure all Diagnostics production modules there and report host/plugin subtotals
+alongside the combined result. Missing external sources block combined validation;
+never treat host-only coverage as a completed plugin measurement.
 Do not add pytest, production exclusions or minimum percentages to improve
 results. Report global and per-module line/branch coverage, skipped tests,
 important missing paths and subprocess/native-library limitations. HTML reports

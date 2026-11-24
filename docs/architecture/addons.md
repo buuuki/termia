@@ -1,22 +1,31 @@
-# Internal add-on policy
+# Optional add-ons and trusted external plugins
 
-## Meaning of “add-on” today
+## Component types and lifecycle
 
-An add-on is an optional, trusted feature shipped as part of Termia and composed
-at startup. The user can enable or disable it; the current pilot applies that
-choice after restarting Termia. Disabling an add-on hides or omits its actions
-and stops its optional behavior without deleting its data. This is an
-application composition boundary, not a security boundary: add-on code runs in
-the same process with the permissions of Termia.
+Built-in add-ons are trusted optional features shipped with Termia. Statistics
+and SFTP are composed at startup; changing their preferences requires restart.
+External plugins are separately distributed trusted packages discovered at
+startup; their activation changes apply on Save. Cancel discards pending
+choices. Diagnostics is the external pilot. Existing users install it manually.
+See [ADR-0002](decisions/ADR-0002-trusted-external-plugins.md), which amends the
+built-in-only policy in ADR-0001.
 
-This policy does not promise a stable API to third parties. It does not call
-for dynamic discovery, package installation, hot reload, sandboxing, a
-marketplace, or a general dependency manager.
+Disabling a component stops its optional behavior without deleting its data.
+External plugin removal also retains saved enablement choices. Modules remain
+loaded until process exit; installing or updating plugin code requires restart.
+Save applies external changes sequentially and can partially succeed.
+
+This is an application composition boundary, not a security boundary: all
+optional code runs in Termia's process with its permissions. API 2 is experimental,
+not a stable third-party compatibility promise. Automatic installation or updates,
+hot reload, sandboxing, a marketplace and dependency management are out of scope.
 
 ## Composition and dependency rules
 
 - The composition root in `src/termia/app.py` is allowed to import concrete
-  Core and add-on implementations and wire them together.
+  Core and built-in add-on implementations and wire them together. It assembles
+  the generic external runtime with explicit capabilities; the runtime loads
+  concrete external implementations through their manifests.
 - Other Core modules must not import or directly invoke a concrete add-on
   implementation. Supply behavior through explicit, add-on-neutral callbacks
   or protocols.
@@ -71,23 +80,32 @@ SFTP credentials are passed to an endpoint for the active operation; disabling
 the add-on must not remove saved connection credentials. Transfer cancellation
 and owner-session cleanup remain protected behaviors.
 
-## Future contract direction
+## Tool contributions and Diagnostics
 
 The internal `ToolRegistry` in `tool_launcher.py` accepts an identifier,
 translation key, icon, action and availability predicate. `app.py` registers
-concrete built-in tools; the launcher renders available contributions and
-dispatches callbacks. Future add-ons can contribute at that composition point
-without changing the layout. This is not discovery or an external plugin API.
-Availability is checked on popup opening, theme refresh and deferred activation.
+built-in tools and external runtime contributions; the launcher renders
+available contributions and dispatches callbacks. Plugin discovery belongs to
+`PluginRuntime`, not the launcher. Availability is checked on popup opening,
+theme refresh and deferred activation.
 
-Diagnostics consumes an immutable `DiagnosticContext` supplied by `TermiaApp`.
-Its worker receives captured process identities and counts, never GTK widgets,
-stores or sessions. `diagnostics.py` reads Linux process counters;
-`diagnostics_view.py` owns a singleton window, bounded history and cancellable
+Under the experimental API 2 decision (#536), Diagnostics is distributed
+separately and installed manually. `diagnostics_contract.py` retains the Core's
+immutable counts and process identities. `app.py` passes a fresh dictionary
+snapshot, window attachment and styling callbacks through `PluginRuntime`.
+The plugin converts the snapshot to its own data classes; its worker receives
+no GTK widgets, stores or sessions. The implementation lives under
+`diagnostics/src/termia_diagnostics/` in the separate local `termia-plugins`
+source tree (remote publication remains pending): `diagnostics.py` reads Linux process counters and
+`diagnostics_view.py` owns the singleton window, bounded history and cancellable
 worker. Monitoring starts on opening and stops on closing the window.
+The duplicate implementations in `src/termia` are removed. API 2 compatibility
+checks, trust limits and lifecycle requirements are defined in ADR-0002.
 
-Do not implement a generic manager from these sketches. When an actual
-refactoring requires it, review small contracts for:
+## Further contract work
+
+Do not expand the runtime into a general package or dependency manager. When
+an actual refactoring requires it, review small contracts for:
 
 - Add-on action contributions, composed by the host rather than discovered by
   menus through window attributes.
