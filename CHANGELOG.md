@@ -2,7 +2,15 @@
 
 ## Unreleased
 
+### Fixed
+
+- Flush pending external Statistics data when a terminal session ends (#538).
+
 ### Changed
+
+- Distribute Statistics as an external plugin. Preserve profile data and the
+  previous activation choice, apply activation on Save, and include the plugin
+  in combined CI tests and coverage (#538).
 
 - Pin external Diagnostics sources in CI, run host and plugin integration suites,
   and verify combined coverage inventory with separate totals (#536).
@@ -24,6 +32,9 @@
   existing users in English, Spanish and Catalan (#536).
 
 ### Removed
+
+- Remove the bundled Statistics UI and collector and move their coverage to
+  the external plugin. Connection history retains its duration formatting (#538).
 
 - Remove the duplicate built-in Diagnostics implementation; retain its Core
   context contract and run sampler/window regression tests against the external

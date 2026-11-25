@@ -9,7 +9,8 @@
 
 Diagnostics must be distributed separately from Termia and installed manually,
 including by existing users. The built-in-only restriction in ADR-0001 does not
-cover this requirement. Statistics and SFTP remain built-in optional add-ons.
+cover this requirement. At the time of this decision, Statistics and SFTP were
+built in. Issue #538 subsequently moved Statistics to the same external model.
 
 ## Decision
 
@@ -35,7 +36,7 @@ cover this requirement. Statistics and SFTP remain built-in optional add-ons.
   are prepared in the separate local `termia-plugins` tree; repository
   initialization, remote creation and publication require separate authorization.
 - External enablement changes apply on Save; Cancel discards pending choices.
-  Built-in Statistics/SFTP changes still require restart. This distinction
+  Changes to built-in SFTP still require restart. This distinction
   supersedes ADR-0001's restart-only rule only for external plugins.
 - Persist plugin choices separately under the profile's `plugins` directory.
   Disabling or removing a plugin must preserve its saved preference. Existing

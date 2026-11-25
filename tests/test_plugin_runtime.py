@@ -64,6 +64,28 @@ class PluginRuntimeTests(unittest.TestCase):
         self.profile.mkdir(exist_ok=True)
         self.state.write_text(value)
 
+    def test_session_events_follow_saved_activation(self):
+        self.data["capabilities"] = ["session_events"]
+        self.save_manifest()
+        self.entry.write_text(CODE + """
+def record(self, event, value):
+    self.last_event = (event, value)
+Controller.on_session_event = record
+""")
+        runtime = PluginRuntime(self.root, self.profile, {"session_events": 1})
+        runtime.set_enabled("sample", True)
+        instance = runtime.plugins["sample"].instance
+        runtime.publish_session_event("connection_started", "sample-server")
+        self.assertEqual(instance.last_event, ("connection_started", "sample-server"))
+        runtime.set_enabled("sample", False)
+        runtime.publish_session_event("duration_finished", 3.0)
+        self.assertEqual(instance.last_event, ("connection_started", "sample-server"))
+
+    def test_saved_disable_overrides_previous_profile_choice(self):
+        self.assertTrue(self.runtime(legacy_defaults={"sample": True}).plugins["sample"].requested_enabled)
+        self.saved("disabled")
+        self.assertFalse(self.runtime(legacy_defaults={"sample": True}).plugins["sample"].requested_enabled)
+
     def test_new_plugin_is_disabled(self):
         runtime = self.runtime()
         self.assertFalse(runtime.options("en")[0][3])

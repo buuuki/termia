@@ -248,6 +248,9 @@ credentials or private notes. Isolated test instances use their own profile.
   legacy categories remain personal. The notes file follows the connection storage
   protection mode; importing a notes export replaces the file only after
   validation and, when existing notes are present, a backup.
-- `statistics.json`: object schema `1`.
+- `statistics.json`: object schema `1`. External Statistics uses the existing
+  file through the host profile. Removal and reinstallation retain aggregates.
+  A saved plugin activation choice overrides the legacy `statistics_enabled`
+  setting; a new profile defaults to disabled.
 - `connections-history.jsonl`: each event uses schema `1`; unversioned events remain
   readable and receive the current version when rewritten.

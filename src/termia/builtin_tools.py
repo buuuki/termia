@@ -14,12 +14,10 @@ from .models import AppSettings
 
 @dataclass(frozen=True)
 class BuiltInTools:
-    statistics: bool
     sftp: bool
 
     @classmethod
     def from_settings(cls, settings: AppSettings) -> BuiltInTools:
         return cls(
-            statistics=settings.statistics_enabled,
             sftp=settings.sftp_enabled,
         )

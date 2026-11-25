@@ -47,7 +47,7 @@ the mixins:
 
 - Persistence and feedback: `store`, `toast_label`.
 - Session state: `session_registry` and an injected `session_observer` for
-  optional lifecycle consumers. The Statistics observer owns its run counter
+  optional lifecycle consumers. The external Statistics collector owns its run counter
   and pending save timer.
 - Explicit actions: `main_menu_actions`, `terminal_menu_actions`, and
   `tab_lifecycle_actions`.
@@ -77,9 +77,8 @@ Some mixins add transient state after construction:
   `sidebar_width`.
 - `TabsMixin`: `tab_drag_session_id`.
 - `TerminalSessionsMixin`: notifies the injected `session_observer` about
-  connection starts and finished panes. `StatisticsCollector` owns
-  `run_connections` and its deferred-save source `_save_source`; the no-op
-  observer retains the disabled behavior. These are not terminal-mixin fields.
+  connection starts and finished panes. Core publishes elapsed durations and flush
+  events. The external Statistics plugin owns its run counter and save timer.
 
 ## Mixin dependency inventory
 
@@ -172,7 +171,7 @@ keybinding dialogs have comparatively small contracts.
 
 ### `StatisticsDialog`
 
-- Composed explicitly with a GTK parent, `StatisticsPresenter`, and
+- The external plugin composes the dialog with a window factory, `StatisticsPresenter`, and
   translation callback; it does not receive `TermiaWindow`.
 - Cross-mixin dependencies: none.
 - `StatisticsPresenter` owns card metrics, duration formatting, current-run

@@ -26,7 +26,7 @@ class OptionalToolsDialog:
         store: ConnectionStore,
         translate: Callable[[str], str],
         notify: Callable[[str], None],
-        *, external_options=None, external_apply=None, running_tools=None,
+        *, external_options=None, external_apply=None, running_sftp=None,
     ) -> None:
         self.parent = parent
         self.store = store
@@ -34,9 +34,7 @@ class OptionalToolsDialog:
         self.notify = notify
         self.external_options = external_options or list
         self.external_apply = external_apply
-        self.running_tools = running_tools if running_tools is not None else (
-            store.data.app.statistics_enabled, store.data.app.sftp_enabled
-        )
+        self.running_sftp = store.data.app.sftp_enabled if running_sftp is None else running_sftp
 
     def show(self) -> None:
         dialog = DialogWindow(
@@ -59,9 +57,6 @@ class OptionalToolsDialog:
         for side in ("top", "bottom", "start", "end"):
             getattr(content, f"set_margin_{side}")(16)
 
-        statistics = self.add_switch_row(
-            content, self.translate("statistics"), self.store.data.app.statistics_enabled
-        )
         sftp = self.add_switch_row(
             content, self.translate("sftp_tool"), self.store.data.app.sftp_enabled
         )
@@ -82,20 +77,8 @@ class OptionalToolsDialog:
         hint.add_css_class("dim-label")
         content.append(hint)
 
-        def selected_tools():
-            return statistics.get_active(), sftp.get_active()
-
-        def stored_tools():
-            return (self.store.data.app.statistics_enabled,
-                    self.store.data.app.sftp_enabled)
-
         def pending_names():
-            return ", ".join(
-                self.translate(name)
-                for name, selected, running in zip(
-                    ("statistics", "sftp_tool"), selected_tools(), self.running_tools
-                ) if selected != running
-            )
+            return self.translate("sftp_tool") if sftp.get_active() != self.running_sftp else ""
 
         def external_changes():
             active = {item[0]: item[3] for item in self.external_options()}
@@ -107,7 +90,7 @@ class OptionalToolsDialog:
 
         def refresh_hint(*_args):
             pending = pending_names()
-            unsaved = selected_tools() != stored_tools()
+            unsaved = sftp.get_active() != self.store.data.app.sftp_enabled
             messages = []
             changed = external_changes()
             if changed:
@@ -122,7 +105,6 @@ class OptionalToolsDialog:
             hint.set_text("\n".join(messages))
             hint.set_visible(bool(messages))
 
-        statistics.connect("notify::active", refresh_hint)
         sftp.connect("notify::active", refresh_hint)
         for _title, switch, _status in external_rows.values():
             switch.connect("notify::active", refresh_hint)
@@ -132,7 +114,7 @@ class OptionalToolsDialog:
             if response != Gtk.ResponseType.OK:
                 current.destroy()
                 return
-            builtins_changed = selected_tools() != stored_tools()
+            builtins_changed = sftp.get_active() != self.store.data.app.sftp_enabled
             changed = external_changes()
             if not builtins_changed and not changed:
                 current.destroy()
@@ -143,7 +125,7 @@ class OptionalToolsDialog:
             try:
                 if builtins_changed:
                     self.store.update_optional_tools(
-                        statistics_enabled=statistics.get_active(),
+                        statistics_enabled=self.store.data.app.statistics_enabled,
                         sftp_enabled=sftp.get_active(),
                     )
             except ReadOnlyStoreError:
