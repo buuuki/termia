@@ -44,7 +44,7 @@ class TerminalMenuActions:
     toggle_status_bar: Callable[[MenuPopover, TerminalSession, TerminalWidget], None]
     copy: Callable[[MenuPopover, TerminalWidget], None]
     paste: Callable[[MenuPopover, TerminalWidget], None]
-    send_files: Callable[[MenuPopover, TerminalSession, Server], None]
+    send_files: Callable[[MenuPopover, TerminalSession, Server], None] | None
     configure: Callable[[MenuPopover, TerminalSession], None]
     session_statistics: Callable[[MenuPopover, TerminalSession, TerminalWidget], None] | None
     split: Callable[[MenuPopover, TerminalSession, TerminalWidget, str], None]

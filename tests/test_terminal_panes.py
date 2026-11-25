@@ -720,73 +720,22 @@ class TerminalPaneStateTests(unittest.TestCase):
         self.assertIs(host.assert_session, session)
         self.assertEqual(host.opened, (None, owner))
 
-    def test_scp_from_menu_uses_session_window(self) -> None:
-        owner = object()
-        session = SimpleNamespace(id="session-1")
-        server = object()
-        popover = Mock()
+    def test_scp_controller_uses_the_originating_window_and_owner(self):
+        from termia.app import TermiaWindow
 
-        class Host(TerminalSessionsMixin):
-            def __init__(self) -> None:
-                self.toast_label = object()
-                self.add_dialog_action_button = object()
-
-            def window_for_session(self, current_session):
-                self.assert_session = current_session
-                return owner
-
-            def t(self, key):
-                return key
-
-        host = Host()
-        with patch("termia.terminal_sessions.FileTransferController") as controller:
-            host.on_send_files_to_server(popover, session, server)
-
-        popover.popdown.assert_called_once_with()
-        self.assertIs(host.assert_session, session)
-        controller.assert_called_once_with(
-            owner,
-            host.t,
-            host.toast_label,
-            host.add_dialog_action_button,
-            unittest.mock.ANY,
-            host.unregister_file_transfer,
-            session.id,
-        )
-        controller.return_value.open_file_selection.assert_called_once_with(server)
-        self.assertIn(controller.return_value, host.file_transfer_controllers)
-
-    def test_scp_without_session_uses_main_window(self) -> None:
-        server = object()
-        popover = Mock()
-
-        class Host(TerminalSessionsMixin):
-            def __init__(self) -> None:
-                self.toast_label = object()
-                self.add_dialog_action_button = object()
-
-            def window_for_session(self, _session):
-                raise AssertionError("Sidebar SCP must use the main window")
-
-            def t(self, key):
-                return key
-
-        host = Host()
-        with patch("termia.terminal_sessions.FileTransferController") as controller:
-            host.on_send_files_to_server(popover, None, server)
-
-        popover.popdown.assert_called_once_with()
-        controller.assert_called_once_with(
-            host,
-            host.t,
-            host.toast_label,
-            host.add_dialog_action_button,
-            unittest.mock.ANY,
-            host.unregister_file_transfer,
-            None,
-        )
-        controller.return_value.open_file_selection.assert_called_once_with(server)
-        self.assertIn(controller.return_value, host.file_transfer_controllers)
+        for session in (None, SimpleNamespace(id="fixture")):
+            with self.subTest(session=session):
+                host, popover, server = Mock(), Mock(), Mock()
+                host.store.encryption_locked = False
+                host.store.data.app.language = "en"
+                with patch("termia.app.FileTransferController") as factory:
+                    TermiaWindow.on_send_files_to_server(host, popover, session, server)
+                expected_parent = host if session is None else host.window_for_session.return_value
+                self.assertIs(factory.call_args.args[0], expected_parent)
+                self.assertEqual(factory.call_args.args[-1], session.id if session else None)
+                self.assertIs(factory.call_args.kwargs["ui"], host.scp_ui.return_value.show.return_value)
+                host.register_file_transfer.assert_called_once_with(factory.return_value)
+                factory.return_value.open_file_selection.assert_called_once_with(server)
 
     def test_scp_shutdown_cancels_only_matching_owner_or_all_transfers(self) -> None:
         first = SimpleNamespace(owner_session_id="first", cancel_active_transfer=Mock())

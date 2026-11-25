@@ -1303,6 +1303,16 @@ Long measurements and release-platform checks remain separate validation work.
 - SFTP activation changes take effect after restart and must never delete
   statistics data or interrupt existing SFTP transfers.
 
+### External SCP uploads
+
+- Check Send files in the saved server and SSH terminal menus with SCP
+  enabled, disabled and absent. Changing the saved choice updates menu actions.
+- Cancel during file selection, destination entry and process execution.
+  Closing an owner session must cancel its transfers. Disabling SCP must
+  cancel SCP transfers only. Verify that SFTP remains available.
+- Exercise fingerprint rejection, password cancellation and invalid paths using
+  synthetic fixtures. The external regression uses local substitute commands.
+
 ### Optional tools
 
 - In an isolated profile, verify Statistics menu actions change on Save and

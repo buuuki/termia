@@ -130,7 +130,8 @@ class TerminalMenusMixin:
 
             if actions.browse_files is not None:
                 add(menu, "sftp", "sftp_browse", lambda: server_action(actions.browse_files))
-            add(menu, "send", "send_files_to_server", lambda: server_action(actions.send_files))
+            if actions.send_files is not None:
+                add(menu, "send", "send_files_to_server", lambda: server_action(actions.send_files))
         if actions.run_snippet is not None:
             add(menu, "snippet", "run_snippet", lambda: actions.run_snippet(popover, session, terminal))
         add(menu, "configure", "configure_terminal", lambda: actions.configure(popover, session))

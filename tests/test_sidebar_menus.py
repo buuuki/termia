@@ -32,6 +32,7 @@ class ServerContextMenuTests(unittest.TestCase):
             read_only=False, encryption_locked=False,
             data=SimpleNamespace(servers=self.servers),
         )
+        self.host.terminal_menu_actions = SimpleNamespace(send_files=Mock())
         self.host.sftp_tool = SimpleNamespace(browse=Mock())
         self.host.notes_dialogs = SimpleNamespace(show_for_server_after_popover=Mock())
         self.host.t = lambda key: key
@@ -75,6 +76,15 @@ class ServerContextMenuTests(unittest.TestCase):
         menu = self.host.active_context_popover
         self.assertIsInstance(menu, Gtk.PopoverMenu)
         return menu
+
+    def test_absent_scp_keeps_sftp_in_the_server_menu(self):
+        self.host.terminal_menu_actions.send_files = None
+        menu = self.open_menu()
+        model = menu.get_menu_model()
+        labels = [model.get_item_attribute_value(i, "label", None).unpack()
+                  for i in range(model.get_n_items())]
+        self.assertNotIn("send_files_to_server", labels)
+        self.assertIn("sftp_browse", labels)
 
     def entry(self, widget, label):
         if isinstance(widget, Gtk.Label) and widget.get_label() == label:
@@ -490,6 +500,7 @@ class GroupContextMenuTests(unittest.TestCase):
             self.assertIsNone(self.host.active_context_popover)
 
     def test_switching_server_and_group_menus_preserves_each_cached_popup(self):
+        self.host.terminal_menu_actions = SimpleNamespace(send_files=Mock())
         self.host.sftp_tool = None
         group_menu = self.open_menu()
         self.host.show_row_context_menu(

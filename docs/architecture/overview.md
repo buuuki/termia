@@ -64,9 +64,9 @@ contract later.
 - Session, tab, sidebar, connection, storage, and feature modules are
   co-located under `src/termia`. Directory placement alone does not identify a
   module as Core or an add-on.
-- Statistics is external and SFTP is built in. Their current
+- Statistics and SCP are external and SFTP is built in. Their current
   implementation and known coupling are documented in [the add-on policy](addons.md).
-- Notes, snippets, SCP, connection history, updates, and preference surfaces
+- Notes, snippets, connection history, updates, and preference surfaces
   are not classified here. Their classification requires examining actual data
   ownership, lifecycle, and dependencies first.
 

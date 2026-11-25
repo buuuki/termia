@@ -149,6 +149,13 @@ identities and children observed while monitoring, not all historical processes.
 Unavailable values show a dash. No commands, environment variables or credentials
 are collected and the tool does not terminate processes.
 
+SCP uploads are installed separately. For a first installation, use the commands
+above with `scp` in place of `diagnostics` (archive name and target directory).
+Restart Termia after installation. The plugin is enabled by default unless you
+saved another choice. **Send files to server** appears in the server and SSH terminal
+menus. Disabling SCP and saving cancels its pending selections and uploads;
+the SFTP browser remains independent.
+
 Statistics is also distributed separately in [termia-plugins](https://github.com/buuuki/termia-plugins).
 To install it, use the commands above with `statistics` in place of `diagnostics`
 in both the archive name and the destination check. Restart Termia after installing

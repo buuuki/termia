@@ -140,7 +140,7 @@ For a focused measurement, pass unittest module names after the runner path.
 Measure all host production Python under `src/termia`, including unimported
 modules. For external-plugin or shared-contract work, also run the plugin suite
 and combined coverage procedure in the sibling `termia-plugins/README.md`.
-Measure all Diagnostics and Statistics production modules there and report host/plugin subtotals
+Measure all Diagnostics, Statistics and SCP production modules there and report host/plugin subtotals
 for each component alongside the combined result. Missing external sources block combined validation;
 never treat host-only coverage as a completed plugin measurement.
 Do not add pytest, production exclusions or minimum percentages to improve

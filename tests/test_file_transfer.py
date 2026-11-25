@@ -27,7 +27,7 @@ class FileTransferTests(unittest.TestCase):
     def build_controller(self):
         parent = Mock()
         toast = Mock()
-        controller = FileTransferController(parent, lambda key: key, toast, Mock(), Mock())
+        controller = FileTransferController(parent, lambda key: key, toast, Mock(), Mock(), ui=Mock())
         return controller, parent, toast
 
     @staticmethod
@@ -141,6 +141,7 @@ class FileTransferTests(unittest.TestCase):
             Mock(),
             inspect_known_host,
             fetch_host_key=fetch_host_key,
+            ui=Mock(),
         )
         controller.show_transfer_dialog = Mock()
 
@@ -251,6 +252,31 @@ class FileTransferTests(unittest.TestCase):
 
         controller.write_host_key.assert_not_called()
         self.assertIsNone(controller.pending_fingerprint_dialog)
+
+    def test_accepted_selection_passes_only_local_paths_to_the_destination(self):
+        controller, _parent, _toast = self.build_controller()
+        chooser = controller.ui.select_files.return_value
+        items = [Gio.File.new_for_path("/synthetic/item"), Gio.File.new_for_uri("https://example.invalid/item")]
+        chooser.get_files.return_value.get_n_items.return_value = len(items)
+        chooser.get_files.return_value.get_item.side_effect = items
+        server = Server("one", "One", "fixture.test", "test")
+        controller.show_destination_dialog = Mock()
+        controller.open_file_selection(server)
+        controller._on_files_selected(chooser, Gtk.ResponseType.ACCEPT, server)
+        controller.show_destination_dialog.assert_called_once_with(server, [Path("/synthetic/item")])
+        chooser.destroy.assert_called_once_with()
+        controller._on_files_selected(chooser, Gtk.ResponseType.ACCEPT, server)
+        self.assertEqual(controller.show_destination_dialog.call_count, 1)
+
+    def test_broken_plugin_destination_releases_the_operation(self):
+        controller, _parent, toast = self.build_controller()
+        controller.ui.destination.side_effect = RuntimeError("synthetic UI failure")
+        controller.on_inactive = Mock()
+        with patch("termia.file_transfer.DialogWindow") as dialog:
+            controller.show_destination_dialog(Server("one", "One", "fixture.test", "test"), [])
+        dialog.return_value.destroy.assert_called_once_with()
+        toast.set_error.assert_called_once_with("addon_open_failed")
+        controller.on_inactive.assert_called_once_with(controller)
 
     def test_destination_dialog_rejects_invalid_path_without_starting_upload(self) -> None:
         controller, _parent, _toast = self.build_controller()
@@ -417,6 +443,7 @@ class FileTransferTests(unittest.TestCase):
             Mock(),
             Mock(),
             on_inactive=inactive,
+            ui=Mock(),
         )
         dialog = Mock()
         controller.pending_destination_dialog = dialog
