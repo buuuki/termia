@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: GPL-3.0-or-later
 import argparse
+import logging
 import os
 import signal
 from dataclasses import asdict, replace
@@ -40,10 +41,13 @@ from .debug import (
 )
 from .diagnostics_contract import DiagnosticContext, ManagedProcess
 from .dialog_actions import configure_action_area
+from .file_transfer import FileTransferController
 from .i18n import normalize_language, translate_key
 from .keybindings import keybinding_matches
+from .known_hosts import inspect_known_host_async
 from .main_menu import MainMenuMixin
 from .main_menu_actions import MainMenuActions
+from .models import Server
 from .notes_dialogs import NotesDialogs
 from .notes_presenter import NotesPresenter
 from .notifications import (
@@ -74,7 +78,9 @@ from .terminal_sessions import TerminalSessionsMixin
 from .theme_styles import DARK_GLOW_CLASS, DARK_GLOW_THEME
 from .tool_launcher import Tool, ToolLauncher, ToolRegistry
 from .transfer_lifecycle import ManagedTransfer
-from .ui_state import RowObject
+from .ui_state import RowObject, TerminalSession
+
+logger = logging.getLogger(__name__)
 
 TOAST_VISIBLE_SECONDS = 5
 SHUTDOWN_CLEANUP_DEADLINE_SECONDS = 30
@@ -287,7 +293,7 @@ class TermiaWindow(
             toggle_status_bar=self.toggle_session_status_bar_from_menu,
             copy=self.copy_terminal_selection,
             paste=self.paste_terminal_clipboard,
-            send_files=self.on_send_files_to_server,
+            send_files=self.on_send_files_to_server if self.scp_ui() is not None else None,
             browse_files=self.sftp_tool.browse if self.sftp_tool is not None else None,
             configure=self.configure_terminal_from_menu,
             session_statistics=self.show_enabled_session_statistics if self.statistics_available() else None,
@@ -575,6 +581,47 @@ class TermiaWindow(
     def register_file_transfer(self, transfer: ManagedTransfer) -> None:
         self.file_transfer_controllers.add(transfer)
 
+    def scp_ui(self):
+        plugin = self.get_application().plugins.plugins.get("scp")
+        if plugin and "scp_upload_ui" in plugin.capabilities and plugin.requested_enabled and not plugin.problem:
+            return plugin.instance
+        return None
+
+    def on_send_files_to_server(
+        self,
+        popover: Gtk.Popover,
+        session: TerminalSession | None,
+        server: Server,
+    ) -> None:
+        ui = self.scp_ui()
+        if ui is None or self.store.encryption_locked:
+            return
+        popover.popdown()
+        parent = self if session is None else self.window_for_session(session)
+        try:
+            views = ui.show(normalize_language(self.store.data.app.language))
+        except Exception:
+            logger.exception("Cannot initialize SCP upload views")
+            self.toast_label.set_error(self.t("addon_open_failed"))
+            return
+        controller = FileTransferController(
+            parent,
+            self.t,
+            self.toast_label,
+            self.add_dialog_action_button,
+            inspect_known_host_async,
+            self.unregister_file_transfer,
+            session.id if session is not None else None,
+            ui=views,
+        )
+        self.register_file_transfer(controller)
+        try:
+            controller.open_file_selection(server)
+        except Exception:
+            logger.exception("Cannot open SCP file selector")
+            controller.cancel_active_transfer(close_dialog=True)
+            self.toast_label.set_error(self.t("addon_open_failed"))
+
     def statistics_available(self):
         plugin = self.get_application().plugins.plugins.get("statistics")
         return bool(plugin and plugin.requested_enabled and plugin.instance and not plugin.problem)
@@ -773,6 +820,8 @@ class TermiaWindow(
             lambda: self.retron_runtime.enabled and not self.shutdown_in_progress,
         ))
         for plugin in self.get_application().plugins.plugins.values():
+            if "scp_upload_ui" in plugin.capabilities:
+                continue
             self.tool_registry.register(Tool(
                 "external:" + plugin.id,
                 lambda plugin=plugin: plugin.name(normalize_language(self.store.data.app.language)),
@@ -1364,6 +1413,7 @@ class TermiaApp(Gtk.Application):
                 "diagnostics_context": diagnostics_context,
                 "context": diagnostics_context,  # Compatibility alias for API 2 plugins.
                 "session_events": 1,
+                "scp_upload_ui": 1,
                 "statistics_data": StatisticsData(store),
                 "attach_window": self.add_window,
                 "apply_style": self.apply_addon_style,
@@ -1391,12 +1441,18 @@ class TermiaApp(Gtk.Application):
             if isinstance(window, TermiaWindow):
                 launcher = getattr(window, "tool_launcher", None)
                 if launcher is not None:
+                    scp_available = window.scp_ui() is not None
+                    if not scp_available:
+                        for transfer in tuple(window.file_transfer_controllers):
+                            if isinstance(transfer, FileTransferController):
+                                transfer.cancel_active_transfer(close_dialog=True)
                     available = window.statistics_available()
                     window.main_menu_actions = replace(
                         window.main_menu_actions, statistics=window.show_statistics if available else None,
                     )
                     window.terminal_menu_actions = replace(
                         window.terminal_menu_actions,
+                        send_files=window.on_send_files_to_server if scp_available else None,
                         session_statistics=window.show_enabled_session_statistics if available else None,
                     )
                     window.refresh_translated_chrome()

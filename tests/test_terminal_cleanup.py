@@ -216,7 +216,7 @@ class TerminalCleanupIntegrationTests(unittest.TestCase):
     def test_scp_controller_observes_real_children_after_refresh_and_cancellation(self):
         with tempfile.TemporaryDirectory(prefix="termia-scp-cleanup-") as temporary:
             ready = Path(temporary) / "ready"
-            controller = FileTransferController(Mock(), lambda key: key, Mock(), Mock(), Mock())
+            controller = FileTransferController(Mock(), lambda key: key, Mock(), Mock(), Mock(), ui=Mock())
             state = {
                 "cancellable": Gio.Cancellable(), "phase": "copy",
                 "cancel": Mock(), "status": Mock(), "progress": Mock(),

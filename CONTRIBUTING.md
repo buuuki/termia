@@ -152,11 +152,11 @@ Open `htmlcov/index.html` for module details and missing branches. A focused
 run can use `coverage run scripts/run_sandbox_tests.py tests.test_terminal_cleanup`;
 its results are not a full-suite baseline. Erase old data before a new baseline.
 The commands above measure all host production Python under `src/termia`,
-including unimported modules. Diagnostics and Statistics sources and tests live in the
+including unimported modules. Diagnostics, Statistics and SCP sources and tests live in the
 separate sibling `termia-plugins` checkout. For plugin or shared-contract work,
 also run its suite and the combined coverage procedure in that checkout's
 `README.md`; a host-only report does not establish plugin coverage. Keep separate
-Termia, Diagnostics and Statistics subtotals and a combined result. Missing plugin sources must
+Termia, Diagnostics, Statistics and SCP subtotals and a combined result. Missing plugin sources must
 block combined validation rather than silently reduce its scope.
 Dependencies, tests and generated reports are outside that measurement scope.
 There is initially no minimum percentage. The combined CI checks out

@@ -160,6 +160,13 @@ observados durante la supervisión; no cubre todos los procesos históricos.
 Las medidas no disponibles aparecen como un guion. No recoge órdenes, variables
 de entorno ni credenciales, y no termina procesos.
 
+El envío por SCP se instala por separado. Para la primera instalación, usa los
+comandos anteriores sustituyendo `diagnostics` por `scp` en el nombre del
+archivo y el directorio de destino. Reinicia Termia. El plugin se activa por
+defecto salvo que hayas guardado otra preferencia. **Enviar ficheros al servidor** aparece
+en los menús del servidor y del terminal SSH. Desactivar SCP y guardar cancela
+sus selecciones y envíos pendientes. El explorador SFTP funciona por separado.
+
 Estadísticas también se distribuye por separado en [termia-plugins](https://github.com/buuuki/termia-plugins).
 Para instalarlo, usa los comandos anteriores sustituyendo `diagnostics` por
 `statistics` tanto en el nombre del archivo como en la comprobación del directorio

@@ -3,7 +3,7 @@
 ## Component types and lifecycle
 
 SFTP ships with Termia and reads its activation setting at startup.
-Diagnostics and Statistics are trusted external plugins installed manually.
+Diagnostics, Statistics and SCP are trusted external plugins installed manually.
 Restart Termia after installing or replacing their code. Activation changes
 apply on Save and Cancel discards pending choices.
 See [ADR-0002](decisions/ADR-0002-trusted-external-plugins.md), which amends the
@@ -58,6 +58,18 @@ An explicit plugin activation choice takes precedence over the legacy
 `AppSettings.statistics_enabled` value. New profiles default to disabled.
 The host retains the aggregates in `statistics.json` across removal and
 reinstallation.
+
+### SCP
+
+Experimental API 2 capability `scp_upload_ui` version 1 provides a contextual
+controller. Its `show(language)` prepares localized views with `select_files`,
+`destination` and `progress` methods for the selected operation.
+The controller builds native GTK controls for the selected operation. It has
+server and SSH terminal menu entry points instead of a global launcher action.
+The plugin owns its UI translations. The host supplies dialogs and action button layout. Host
+code owns the selected server, credentials, fingerprint decisions, destination
+validation, subprocess identities and cancellation. Disabling the plugin cancels
+its controllers without cancelling other transfer types.
 
 ### SFTP
 

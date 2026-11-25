@@ -1123,6 +1123,8 @@ class SidebarMixin:
             ("sftp", "sftp_browse", False),
             ("delete", "delete_server", True),
         ):
+            if name == "send-files" and self.terminal_menu_actions.send_files is None:
+                continue
             if name == "sftp" and self.sftp_tool is None:
                 continue
             model.append(self.t(label), f"server-menu.{name}")

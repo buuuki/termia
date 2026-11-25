@@ -158,6 +158,14 @@ la supervisió; no cobreix tots els processos històrics. Les mesures no disponi
 apareixen com un guió. No recull ordres, variables d’entorn ni credencials,
 i no acaba processos.
 
+L’enviament per SCP s’instal·la per separat. Per a la primera instal·lació,
+fes servir les ordres anteriors substituint `diagnostics` per `scp` al nom
+de l’arxiu i al directori de destinació. Reinicia Termia. El plugin s’activa
+per defecte tret que hagis desat una altra preferència. **Enviar fitxers al servidor**
+apareix als menús del servidor i del terminal SSH. Desactivar SCP i desar
+cancel·la les seleccions i els enviaments pendents. El navegador SFTP funciona
+per separat.
+
 Estadístiques també es distribueix per separat a [termia-plugins](https://github.com/buuuki/termia-plugins).
 Per instal·lar-lo, fes servir les ordres anteriors substituint `diagnostics` per
 `statistics` tant al nom de l’arxiu com a la comprovació del directori de

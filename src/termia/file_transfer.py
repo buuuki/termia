@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import logging
 import os
 import shlex
 import signal
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import gi
 
@@ -26,6 +27,8 @@ from .terminal_processes import (
     snapshot_terminal_process,
     terminal_process_is_active,
 )
+
+logger = logging.getLogger(__name__)
 
 DESTINATION = "/tmp/.termia"
 
@@ -76,6 +79,21 @@ def build_scp_commands(
     return ssh_command, scp_command
 
 
+ActionButton = Callable[[DialogWindow, str, Gtk.ResponseType], Gtk.Button]
+
+
+class SCPUploadViews(Protocol):
+    def select_files(self) -> Gtk.FileChooserNative: ...
+
+    def destination(
+        self, dialog: DialogWindow, add_button: ActionButton, default_destination: str,
+    ) -> tuple[Gtk.Entry, Gtk.Label]: ...
+
+    def progress(
+        self, dialog: DialogWindow, add_button: ActionButton, name: str, destination: str, file_list: str,
+    ) -> tuple[Gtk.Button, Gtk.ProgressBar, Gtk.Label]: ...
+
+
 class FileTransferController:
     def __init__(
         self,
@@ -88,7 +106,9 @@ class FileTransferController:
         owner_session_id: str | None = None,
         fetch_host_key: Callable[[str, int, Callable[[list[ScannedHostKey]], None]], None] = scan_host_key_async,
         write_host_key: Callable[[list[ScannedHostKey]], bool] = append_scanned_host_keys,
+        *, ui: SCPUploadViews,
     ) -> None:
+        self.ui = ui
         self.parent = parent
         self.t = translate
         self.toast_label = toast_label
@@ -98,7 +118,7 @@ class FileTransferController:
         self.owner_session_id = owner_session_id
         self.fetch_host_key = fetch_host_key
         self.write_host_key = write_host_key
-        self.selection_cancellable: Gio.Cancellable | None = None
+        self.file_chooser: Gtk.FileChooserNative | None = None
         self.pending_destination_dialog: DialogWindow | None = None
         self.pending_fingerprint_dialog: DialogWindow | None = None
         self.pending_password_dialog: DialogWindow | None = None
@@ -109,25 +129,19 @@ class FileTransferController:
         self.shutdown_cleanup_unverified = False
 
     def open_file_selection(self, server: Server) -> None:
-        dialog = Gtk.FileDialog(title=self.t("send_files_to_server"))
-        self.selection_cancellable = Gio.Cancellable()
-        dialog.open_multiple(
-            self.parent,
-            self.selection_cancellable,
-            lambda current_dialog, result: self._on_files_selected(current_dialog, result, server),
-        )
+        chooser = self.ui.select_files()
+        self.file_chooser = chooser
+        chooser.set_transient_for(self.parent)
+        chooser.connect("response", self._on_files_selected, server)
+        chooser.show()
 
-    def _on_files_selected(self, dialog: Gtk.FileDialog, result: Gio.AsyncResult, server: Server) -> None:
-        try:
-            model = dialog.open_multiple_finish(result)
-        except GLib.Error:
-            self.mark_inactive()
+    def _on_files_selected(self, chooser: Gtk.FileChooserNative, response: int, server: Server) -> None:
+        if chooser is not self.file_chooser:
             return
-        self.selection_cancellable = None
-        if self.cancelled:
-            self.mark_inactive()
-            return
-        if model is None:
+        self.file_chooser = None
+        model = chooser.get_files() if response == Gtk.ResponseType.ACCEPT else None
+        chooser.destroy()
+        if self.cancelled or model is None:
             self.mark_inactive()
             return
 
@@ -150,36 +164,12 @@ class FileTransferController:
             transient_for=self.parent,
             modal=True,
         )
-        dialog.set_resizable(False)
-        dialog.set_default_size(460, -1)
-        self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
-        self.add_dialog_action_button(
-            dialog,
-            self.t("send_files_to_server_destination_confirm"),
-            Gtk.ResponseType.OK,
-        )
-        dialog.set_default_response(Gtk.ResponseType.OK)
-
-        content = dialog.get_content_area()
-        content.set_margin_top(16)
-        content.set_margin_bottom(16)
-        content.set_margin_start(16)
-        content.set_margin_end(16)
-        content.set_spacing(8)
-        label = Gtk.Label(label=self.t("send_files_to_server_destination_label"))
-        label.set_xalign(0)
-        entry = Gtk.Entry()
-        entry.set_text(DESTINATION)
-        entry.set_activates_default(True)
-        error = Gtk.Label(label="")
-        error.set_xalign(0)
-        error.set_wrap(True)
-        error.add_css_class("error")
-        error.set_visible(False)
-        content.append(label)
-        content.append(entry)
-        content.append(error)
-
+        try:
+            entry, error = self.ui.destination(dialog, self.add_dialog_action_button, DESTINATION)
+        except Exception:
+            logger.exception("Cannot build SCP destination view")
+            self.on_view_failed(dialog)
+            return
         self.pending_destination_dialog = dialog
         dialog.connect(
             "response",
@@ -224,6 +214,8 @@ class FileTransferController:
         local_paths: list[Path],
         destination: str = DESTINATION,
     ) -> None:
+        if self.cancelled:
+            return
         destination = normalize_remote_destination(destination)
         ssh_path = GLib.find_program_in_path("ssh")
         scp_path = GLib.find_program_in_path("scp")
@@ -286,6 +278,8 @@ class FileTransferController:
         )
         file_list = ", ".join(path.name for path in local_paths)
         dialog_state = self.show_transfer_dialog(server, destination, file_list)
+        if dialog_state is None:
+            return
         dialog_state["phase"] = "prepare"
         dialog_state["transfer_password"] = server.password if sshpass_path else ""
         dialog_state["use_password"] = bool(sshpass_path)
@@ -534,46 +528,28 @@ class FileTransferController:
         if response != Gtk.ResponseType.OK:
             self.mark_inactive()
             return
+        if self.cancelled:
+            return
         if not self.write_host_key(scanned_keys):
             self.toast_label.set_error(self.t("send_files_to_server_fingerprint_save_failed"))
             self.mark_inactive()
             return
         self.start_upload(server, local_paths, destination)
 
-    def show_transfer_dialog(self, server: Server, destination: str, file_list: str) -> dict[str, Any]:
+    def show_transfer_dialog(self, server: Server, destination: str, file_list: str) -> dict[str, Any] | None:
         dialog = DialogWindow(
             title=self.t("send_files_to_server_title").format(name=server.name),
             transient_for=self.parent,
             modal=False,
         )
-        dialog.set_resizable(False)
-        dialog.set_default_size(460, -1)
-        cancel = self.add_dialog_action_button(dialog, self.t("cancel"), Gtk.ResponseType.CANCEL)
-
-        content = dialog.get_content_area()
-        content.set_margin_top(16)
-        content.set_margin_bottom(16)
-        content.set_margin_start(16)
-        content.set_margin_end(16)
-        content.set_spacing(12)
-        target = Gtk.Label(label=self.t("send_files_to_server_running").format(name=server.name, destination=destination))
-        target.set_xalign(0)
-        target.set_wrap(True)
-        files = Gtk.Label(label=file_list)
-        files.set_xalign(0)
-        files.set_wrap(True)
-        files.add_css_class("dim-label")
-        progress = Gtk.ProgressBar()
-        progress.pulse()
-        status = Gtk.Label(label="")
-        status.set_xalign(0)
-        status.set_wrap(True)
-        status.add_css_class("dim-label")
-        content.append(target)
-        content.append(files)
-        content.append(progress)
-        content.append(status)
-
+        try:
+            cancel, progress, status = self.ui.progress(
+                dialog, self.add_dialog_action_button, server.name, destination, file_list,
+            )
+        except Exception:
+            logger.exception("Cannot build SCP progress view")
+            self.on_view_failed(dialog)
+            return None
         state: dict[str, Any] = {
             "dialog": dialog,
             "cancel": cancel,
@@ -594,6 +570,11 @@ class FileTransferController:
         dialog.connect("response", self.on_dialog_response, state)
         dialog.present()
         return state
+
+    def on_view_failed(self, dialog: DialogWindow) -> None:
+        dialog.destroy()
+        self.toast_label.set_error(self.t("addon_open_failed"))
+        self.mark_inactive()
 
     def pulse_progress(self, state: dict[str, Any]) -> bool:
         progress = state.get("progress")
@@ -627,9 +608,9 @@ class FileTransferController:
 
     def cancel_active_transfer(self, *, close_dialog: bool = False) -> None:
         self.cancelled = True
-        if self.selection_cancellable is not None:
-            self.selection_cancellable.cancel()
-            self.selection_cancellable = None
+        if self.file_chooser is not None:
+            chooser, self.file_chooser = self.file_chooser, None
+            chooser.destroy()
         if self.pending_destination_dialog is not None:
             dialog = self.pending_destination_dialog
             self.pending_destination_dialog = None

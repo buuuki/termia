@@ -211,3 +211,13 @@ alternatives, affected components, and likely regressions and obtain explicit
 requester confirmation before editing code. Update this inventory when the
 implementation changes; apply the relevant checks in
 [Regression Checks](REGRESSION_CHECKS.md).
+
+
+### External SCP file selection
+
+The SCP plugin builds a standard GTK 4 `Gtk.FileChooserNative` for multiple
+local files. The host sets its transient parent, handles the response, and
+destroys it on cancellation. Explicit destruction also handles cancellation
+immediately after opening. Destination and progress dialogs retain Termia's
+native GTK widgets and layout. See `src/termia/file_transfer.py` and
+`scp/src/termia_scp/` in the plugins repository.

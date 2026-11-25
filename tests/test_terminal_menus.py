@@ -133,6 +133,12 @@ class NativeTerminalMenuTests(unittest.TestCase):
         gesture.emit("released", 1, 10.0, 12.0)
         self.assertTrue(self.host._terminal_context_menus[self.window].get_visible())
 
+    def test_ssh_menu_without_scp_still_offers_sftp(self):
+        self.host.terminal_menu_actions = replace(self.host.terminal_menu_actions, send_files=None)
+        labels = self.labels(self.open_menu().get_menu_model())
+        self.assertNotIn("send_files_to_server", labels)
+        self.assertIn("sftp_browse", labels)
+
     def test_local_and_ssh_menu_actions_follow_manual_disconnect(self):
         for server_id, active, ended in (
             (None, "end_local_terminal", "open_local_terminal"),

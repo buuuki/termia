@@ -30,7 +30,6 @@ from .choice_widgets import (
 from .connection_utils import find_local_terminal_profile, find_server
 from .debug import log_event
 from .dialog_window import DialogWindow
-from .file_transfer import FileTransferController
 from .keybindings import is_unmodified_function_key, keybinding_matches
 from .known_hosts import inspect_known_host_async
 from .models import LocalTerminalProfile, Server, Workspace
@@ -2303,30 +2302,6 @@ class TerminalSessionsMixin:
     ) -> None:
         popover.popdown()
         self.on_terminal_settings(None, self.window_for_session(session))
-
-    def on_send_files_to_server(
-        self,
-        popover: Gtk.Popover,
-        session: TerminalSession | None,
-        server: Server,
-    ) -> None:
-        popover.popdown()
-        parent = self if session is None else self.window_for_session(session)
-        controller = FileTransferController(
-            parent,
-            self.t,
-            self.toast_label,
-            self.add_dialog_action_button,
-            inspect_known_host_async,
-            self.unregister_file_transfer,
-            session.id if session is not None else None,
-        )
-        controllers = getattr(self, "file_transfer_controllers", None)
-        if controllers is None:
-            controllers = set()
-            self.file_transfer_controllers = controllers
-        controllers.add(controller)
-        controller.open_file_selection(server)
 
     def unregister_file_transfer(self, controller: ManagedTransfer) -> None:
         controllers = getattr(self, "file_transfer_controllers", None)

@@ -8,6 +8,10 @@
 
 ### Changed
 
+- Distribute the SCP upload UI as a contextual external plugin. Keep host key
+  decisions, credentials and transfer cleanup in Termia; disabling SCP cancels
+  its transfers while preserving SFTP (#540).
+
 - Distribute Statistics as an external plugin. Preserve profile data and the
   previous activation choice, apply activation on Save, and include the plugin
   in combined CI tests and coverage (#538).
