@@ -1293,21 +1293,21 @@ Long measurements and release-platform checks remain separate validation work.
 - Statistics collection must remain lightweight and should not continuously write to disk on every keypress.
 - Statistics must be disabled by default and must not record command or keystroke counters, even when enabled.
 - Disabling Statistics from **Add-ons** must stop new aggregate connection
-  and duration counters from being recorded or flushed after the next restart.
+  and duration counters from being recorded after Save.
 - Global and current-run connection counters must remain separate.
 - Per-session statistics must correspond to the selected terminal pane.
 - Statistics remains disabled by default. When it is off, its main and terminal
   menu actions must be absent, and no aggregate statistics writes may occur.
 - The SFTP browser remains on by default. Disabling it must hide both sidebar
   and terminal-menu actions without disabling SCP or changing saved credentials.
-- Optional-tool changes take effect only after restart and must never delete
+- SFTP activation changes take effect after restart and must never delete
   statistics data or interrupt existing SFTP transfers.
 
-### Optional built-in tools
+### Optional tools
 
-- In an isolated test profile, toggle Statistics and SFTP in Add-ons,
-  restart Termia, and verify the main, server, and terminal menus reflect each
-  choice. Re-enable both, restart, and verify their previous data remains.
+- In an isolated profile, verify Statistics menu actions change on Save and
+  retained data survives removal and reinstallation. Toggle SFTP, restart, and
+  verify the server and terminal menus reflect its saved choice.
 - With Statistics enabled, open and close local, SSH, and split panes; verify
   connection counts, duration counts, current-run counts, and shutdown flushes
   without duplicate records. Repeat with Statistics disabled and verify no

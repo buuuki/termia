@@ -4,7 +4,7 @@
 import argparse
 import os
 import signal
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from time import monotonic
 from weakref import WeakKeyDictionary
 
@@ -56,15 +56,13 @@ from .plugin_runtime import PluginRuntime
 from .preferences import PreferencesMixin
 from .retron_runtime import RetronRuntime
 from .retron_store import RetronStore
-from .session_observer import NoOpSessionObserver
+from .session_observer import MetricsSessionObserver
 from .session_registry import SessionRegistry
 from .session_snapshot import SessionSnapshotStore
 from .sidebar import SidebarMixin
 from .snippet_dialogs import SnippetDialogs
 from .snippet_presenter import SnippetPresenter
-from .statistics_collector import StatisticsCollector
-from .statistics_presenter import StatisticsPresenter
-from .statistics_view import StatisticsDialog
+from .statistics_data import StatisticsData
 from .stores import ConnectionStore
 from .styles import build_application_css
 from .tab_lifecycle_actions import TabLifecycleActions
@@ -145,14 +143,8 @@ class TermiaWindow(
         self.store = ConnectionStore(DATA_FILE)
         self.connect_system_theme_changes()
         self.builtin_tools = BuiltInTools.from_settings(self.store.data.app)
-        self.session_observer = (
-            StatisticsCollector(
-                lambda: self.store.data.statistics,
-                self.store.save_statistics,
-            )
-            if self.builtin_tools.statistics
-            else NoOpSessionObserver()
-        )
+        app.initialize_plugins(self.store)
+        self.session_observer = MetricsSessionObserver(app.plugins.publish_session_event)
         self.session_snapshot_store = SessionSnapshotStore(
             SESSION_SNAPSHOT_FILE,
             read_only=self.store.read_only,
@@ -185,7 +177,7 @@ class TermiaWindow(
                 normalize_language(self.store.data.app.language)
             ),
             external_apply=self.get_application().plugins.set_enabled,
-            running_tools=(self.builtin_tools.statistics, self.builtin_tools.sftp),
+            running_sftp=self.builtin_tools.sftp,
         )
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
@@ -226,15 +218,6 @@ class TermiaWindow(
         self.sidebar_drag_server_id: str | None = None
         self.active_context_popover: Gtk.Popover | None = None
         self.session_registry = SessionRegistry()
-        self.statistics_dialog = None
-        if self.builtin_tools.statistics:
-            statistics_presenter = StatisticsPresenter(
-                lambda: self.store.data.statistics,
-                lambda: self.store.data.servers,
-                lambda: self.session_observer.run_connections,
-                self.t,
-            )
-            self.statistics_dialog = StatisticsDialog(self, statistics_presenter, self.t)
         self.sftp_tool = None
         if self.builtin_tools.sftp:
             self.sftp_tool = SFTPTool(
@@ -289,7 +272,7 @@ class TermiaWindow(
             optional_tools=self.optional_tools_dialog.show,
             manage_snippets=self.snippet_dialogs.show_manager,
             manage_notes=self.notes_dialogs.show_manager,
-            statistics=self.statistics_dialog.show if self.statistics_dialog is not None else None,
+            statistics=self.show_statistics if self.statistics_available() else None,
             connection_history=self.connection_history_dialog.show,
             data_locations=self.on_data_locations,
             export_config=self.on_export_config,
@@ -307,7 +290,7 @@ class TermiaWindow(
             send_files=self.on_send_files_to_server,
             browse_files=self.sftp_tool.browse if self.sftp_tool is not None else None,
             configure=self.configure_terminal_from_menu,
-            session_statistics=self.show_enabled_session_statistics if self.statistics_dialog is not None else None,
+            session_statistics=self.show_enabled_session_statistics if self.statistics_available() else None,
             split=self.split_terminal_from_menu,
             split_connection=self.show_split_connection_dialog,
             rename_tab=self.show_rename_tab_dialog,
@@ -326,6 +309,7 @@ class TermiaWindow(
         self.shutdown_deadline = 0.0
         self.shutdown_force_sent = False
         self.connect("close-request", self.on_main_window_close_request)
+        self.connect("destroy", app.plugins.close)
         self.connect("destroy", lambda *_args: self.store.close())
         if hasattr(GLib, "unix_signal_add"):
             GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.on_unix_termination_signal)
@@ -591,19 +575,20 @@ class TermiaWindow(
     def register_file_transfer(self, transfer: ManagedTransfer) -> None:
         self.file_transfer_controllers.add(transfer)
 
+    def statistics_available(self):
+        plugin = self.get_application().plugins.plugins.get("statistics")
+        return bool(plugin and plugin.requested_enabled and plugin.instance and not plugin.problem)
+
+    def show_statistics(self):
+        self.get_application().plugins.show("statistics", normalize_language(self.store.data.app.language))
+
     def show_enabled_session_statistics(self, popover, session, terminal) -> None:
-        if self.statistics_dialog is None:
-            return
-        popover.popdown()
-        pane = self.pane_state(session, terminal)
-        server_connections = (
-            self.store.data.statistics.server_connections.get(pane.server_id, 0)
-            if pane.server_id is not None
-            else 0
-        )
-        self.statistics_dialog.show_session(
-            self.window_for_session(session), server_connections
-        )
+        if self.statistics_available():
+            popover.popdown()
+            self.get_application().plugins.show_session(
+                "statistics", normalize_language(self.store.data.app.language),
+                self.pane_state(session, terminal).server_id,
+            )
 
     def save_session_snapshot_before_close(self) -> None:
         if self.store.read_only or not self.store.data.app.restore_sessions_on_startup:
@@ -1368,6 +1353,8 @@ class WindowThemeScope:
 class TermiaApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
+
+    def initialize_plugins(self, store):
         def diagnostics_context():
             return asdict(self.diagnostic_context())
 
@@ -1376,11 +1363,14 @@ class TermiaApp(Gtk.Application):
             {
                 "diagnostics_context": diagnostics_context,
                 "context": diagnostics_context,  # Compatibility alias for API 2 plugins.
+                "session_events": 1,
+                "statistics_data": StatisticsData(store),
                 "attach_window": self.add_window,
                 "apply_style": self.apply_addon_style,
             },
             blocked=os.environ.get("TERMIA_DISABLE_PLUGINS") == "1",
             changed=self.refresh_plugin_actions,
+            legacy_defaults={"statistics": store.data.app.statistics_enabled},
         )
         self.connect("shutdown", self.plugins.close)
 
@@ -1401,7 +1391,15 @@ class TermiaApp(Gtk.Application):
             if isinstance(window, TermiaWindow):
                 launcher = getattr(window, "tool_launcher", None)
                 if launcher is not None:
-                    launcher.refresh()
+                    available = window.statistics_available()
+                    window.main_menu_actions = replace(
+                        window.main_menu_actions, statistics=window.show_statistics if available else None,
+                    )
+                    window.terminal_menu_actions = replace(
+                        window.terminal_menu_actions,
+                        session_statistics=window.show_enabled_session_statistics if available else None,
+                    )
+                    window.refresh_translated_chrome()
 
     def diagnostic_context(self) -> DiagnosticContext:
         sessions = terminals = ssh = local = 0

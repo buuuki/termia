@@ -6,10 +6,18 @@ from collections.abc import Callable, Sequence
 from datetime import datetime
 
 from .models import ConnectionHistoryEntry
-from .statistics_utils import format_duration
 
 HistoryEntriesProvider = Callable[[], Sequence[ConnectionHistoryEntry]]
 Translator = Callable[[str], str]
+
+
+def format_duration(seconds: float | None) -> str:
+    if seconds is None:
+        return "--:--:--"
+    total = max(0, int(seconds))
+    hours, remainder = divmod(total, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
 class ConnectionHistoryPresenter:

@@ -64,7 +64,7 @@ contract later.
 - Session, tab, sidebar, connection, storage, and feature modules are
   co-located under `src/termia`. Directory placement alone does not identify a
   module as Core or an add-on.
-- Statistics and SFTP are the first built-in optional add-ons. Their current
+- Statistics is external and SFTP is built in. Their current
   implementation and known coupling are documented in [the add-on policy](addons.md).
 - Notes, snippets, SCP, connection history, updates, and preference surfaces
   are not classified here. Their classification requires examining actual data
@@ -76,8 +76,8 @@ Approved decisions:
 
 - Refactor incrementally and preserve behavior unless a change is explicitly
   requested.
-- Keep optional code trusted. Statistics and SFTP remain built in;
-  Diagnostics is the separately distributed external-plugin pilot under API 2.
+- Keep optional code trusted. SFTP remains built in.
+  Diagnostics and Statistics use experimental external API 2.
 - Discover external plugins through the generic runtime assembled by `app.py`;
   Core modules must not import concrete external implementations.
 - Treat `app.py` as the sole composition-root exception for concrete add-on

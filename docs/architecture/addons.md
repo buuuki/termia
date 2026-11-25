@@ -2,11 +2,10 @@
 
 ## Component types and lifecycle
 
-Built-in add-ons are trusted optional features shipped with Termia. Statistics
-and SFTP are composed at startup; changing their preferences requires restart.
-External plugins are separately distributed trusted packages discovered at
-startup; their activation changes apply on Save. Cancel discards pending
-choices. Diagnostics is the external pilot. Existing users install it manually.
+SFTP ships with Termia and reads its activation setting at startup.
+Diagnostics and Statistics are trusted external plugins installed manually.
+Restart Termia after installing or replacing their code. Activation changes
+apply on Save and Cancel discards pending choices.
 See [ADR-0002](decisions/ADR-0002-trusted-external-plugins.md), which amends the
 built-in-only policy in ADR-0001.
 
@@ -38,28 +37,27 @@ hot reload, sandboxing, a marketplace and dependency management are out of scope
   and described in the PR. An existing coupling is not automatically an
   approved exception.
 
-## Current Statistics and SFTP pilot
-
-These observations describe the code after PR #305; they are not endorsements
-of every current dependency as a long-term contract.
+## Statistics and SFTP
 
 ### Statistics
 
-`SessionObserver` in `src/termia/session_observer.py` is the current seam between
-terminal lifecycle code and aggregate statistics. A no-op observer provides
-the disabled behavior, and `StatisticsCollector` owns aggregate updates and
-deferred persistence. The composition root creates the collector only when
-Statistics is enabled.
+Core's `MetricsSessionObserver` owns pane timing and duplicate suppression.
+The plugin runtime delivers connection and duration events to active subscribers.
+At shutdown the observer finishes outstanding panes before requesting a flush.
+The external Statistics controller aggregates the events and uses the
+profile-scoped `statistics_data` capability to read, update and save aggregates.
 
-The contract currently receives `TerminalPane`/`TerminalSession` objects from
-the GTK-facing session model. The collector reads their process/timing fields
-and marks `duration_recorded` on the pane. This is a useful first separation,
-but it is still coupled to mutable terminal-session state. A later contract
-review may replace these objects with immutable lifecycle events; do not make
-that implementation change as part of unrelated work.
+External API 2 manifests may request `session_events`. The factory receives
+contract version 1. Active controllers implement `on_session_event(event, value)`:
+`connection_started` carries the server identifier and `duration_finished`
+carries elapsed seconds. A `flush` event with value `None` requests an immediate
+save of pending updates at session end or shutdown. Delivery is synchronous, with no replay. A callback
+failure is logged and does not interrupt terminal cleanup or other controllers.
 
-Statistics preferences live in `AppSettings`; aggregate data is stored
-separately in `statistics.json`. Disabling Statistics must retain that data.
+An explicit plugin activation choice takes precedence over the legacy
+`AppSettings.statistics_enabled` value. New profiles default to disabled.
+The host retains the aggregates in `statistics.json` across removal and
+reinstallation.
 
 ### SFTP
 
@@ -96,7 +94,7 @@ snapshot, window attachment and styling callbacks through `PluginRuntime`.
 The plugin converts the snapshot to its own data classes; its worker receives
 no GTK widgets, stores or sessions. The implementation lives under
 `diagnostics/src/termia_diagnostics/` in the separate local `termia-plugins`
-source tree (remote publication remains pending): `diagnostics.py` reads Linux process counters and
+source tree: `diagnostics.py` reads Linux process counters and
 `diagnostics_view.py` owns the singleton window, bounded history and cancellable
 worker. Monitoring starts on opening and stops on closing the window.
 The duplicate implementations in `src/termia` are removed. API 2 compatibility

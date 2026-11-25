@@ -158,6 +158,14 @@ la supervisió; no cobreix tots els processos històrics. Les mesures no disponi
 apareixen com un guió. No recull ordres, variables d’entorn ni credencials,
 i no acaba processos.
 
+Estadístiques també es distribueix per separat a [termia-plugins](https://github.com/buuuki/termia-plugins).
+Per instal·lar-lo, fes servir les ordres anteriors substituint `diagnostics` per
+`statistics` tant al nom de l’arxiu com a la comprovació del directori de
+destinació. Reinicia Termia després d’instal·lar o actualitzar el plugin. En la
+primera instal·lació es respecta la preferència anterior del perfil. En un perfil
+nou, Estadístiques comença desactivat. Desactivar-lo o treure’l conserva la
+preferència desada i l’historial de `statistics.json`.
+
 ## Estat de la versió
 
 **[0.6.4-beta](https://github.com/buuuki/termia/releases/tag/v0.6.4-beta)** continua
@@ -253,8 +261,8 @@ Debian de la mateixa versió de l'aplicació.
 ## Ajuda i proves aïllades
 
 Obre **Ajuda** des del menú principal per consultar els fluxos d'ús i les dreceres.
-Els complements opcionals d'Estadístiques i SFTP es gestionen des de
-**Complements**; els canvis requereixen reiniciar i desactivar-los conserva les dades.
+Gestiona Estadístiques i SFTP des de **Complements**. Els canvis d’activació
+d’Estadístiques s’apliquen en prémer **Desa**. SFTP està integrat i canviar-ne l’activació requereix reiniciar.
 
 Per provar un checkout amb un perfil buit o una còpia separada d'algunes dades:
 

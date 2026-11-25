@@ -40,6 +40,8 @@ class DiagnosticsContractTests(unittest.TestCase):
 
         with patch("termia.app.PluginRuntime") as runtime_factory:
             app = TermiaApp()
+            profile = SimpleNamespace(data=SimpleNamespace(app=SimpleNamespace(statistics_enabled=False)))
+            app.initialize_plugins(profile)
         capabilities = runtime_factory.call_args.args[2]
         self.assertIs(capabilities["context"], capabilities["diagnostics_context"])
         with patch.object(app, "diagnostic_context", return_value=DiagnosticContext(sessions=2)):

@@ -37,10 +37,11 @@ class Plugin:
 
 
 class PluginRuntime:
-    def __init__(self, root, profile, capabilities, *, blocked=False, changed=lambda: None):
+    def __init__(self, root, profile, capabilities, *, blocked=False, changed=lambda: None, legacy_defaults=None):
         self.root = Path(root)
         self.profile = Path(profile)
         self.capabilities = dict(capabilities)
+        self.legacy_defaults = dict(legacy_defaults or {})
         self.blocked = blocked
         self.changed = changed
         self.plugins = {}
@@ -128,7 +129,7 @@ class PluginRuntime:
             if value not in {"", "enabled", "disabled"}:
                 raise ValueError("Invalid saved plugin preference")
             return value == "enabled"
-        return plugin.default_enabled
+        return self.legacy_defaults.get(plugin.id, plugin.default_enabled)
 
     def _save(self, plugin, enabled):
         self.profile.mkdir(parents=True, exist_ok=True)
@@ -172,12 +173,25 @@ class PluginRuntime:
         instance = plugin.loaded_module.create(**{
             key: self.capabilities[key] for key in plugin.capabilities
         })
-        if not callable(getattr(instance, "show", None)) or not callable(getattr(instance, "close", None)):
+        required = ["show", "close"]
+        if "session_events" in plugin.capabilities:
+            required.append("on_session_event")
+        if any(not callable(getattr(instance, name, None)) for name in required):
             close = getattr(instance, "close", None)
             if callable(close):
                 close()
             raise TypeError("Invalid plugin controller")
         return instance
+
+    def publish_session_event(self, event, value):
+        for plugin in self.plugins.values():
+            if (plugin.instance is None or not plugin.requested_enabled
+                    or plugin.problem or "session_events" not in plugin.capabilities):
+                continue
+            try:
+                plugin.instance.on_session_event(event, value)
+            except Exception:
+                logger.exception("Plugin session event failed: %s", plugin.id)
 
     def options(self, language):
         return [
@@ -248,6 +262,14 @@ class PluginRuntime:
                     plugin.problem = "addon_cleanup_pending"
                     logger.exception("Cannot close failed plugin %s", identifier)
                 self.changed()
+
+    def show_session(self, identifier, language, server_id):
+        plugin = self.plugins[identifier]
+        if plugin.requested_enabled and plugin.instance and not plugin.problem:
+            try:
+                plugin.instance.show_session(language, server_id)
+            except Exception:
+                logger.exception("Cannot show plugin session details: %s", identifier)
 
     def close(self, *_args):
         for plugin in self.plugins.values():

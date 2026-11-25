@@ -160,6 +160,14 @@ observados durante la supervisión; no cubre todos los procesos históricos.
 Las medidas no disponibles aparecen como un guion. No recoge órdenes, variables
 de entorno ni credenciales, y no termina procesos.
 
+Estadísticas también se distribuye por separado en [termia-plugins](https://github.com/buuuki/termia-plugins).
+Para instalarlo, usa los comandos anteriores sustituyendo `diagnostics` por
+`statistics` tanto en el nombre del archivo como en la comprobación del directorio
+de destino. Reinicia Termia después de instalar o actualizar el plugin. En la primera
+instalación se respeta la preferencia anterior del perfil. En un perfil nuevo,
+Estadísticas empieza desactivado. Desactivarlo o quitarlo conserva la preferencia
+guardada y el historial de `statistics.json`.
+
 ## Estado de la versión
 
 **[0.6.4-beta](https://github.com/buuuki/termia/releases/tag/v0.6.4-beta)** sigue
@@ -255,8 +263,8 @@ Debian de la misma versión de la aplicación.
 ## Ayuda y pruebas aisladas
 
 Abre **Ayuda** desde el menú principal para consultar los flujos de uso y tus atajos.
-Los complementos opcionales de Estadísticas y SFTP se gestionan desde
-**Complementos**; los cambios requieren reiniciar y desactivarlos conserva sus datos.
+Gestiona Estadísticas y SFTP en **Complementos**. La activación de Estadísticas
+se aplica al pulsar **Guardar**. SFTP está integrado y cambiar su activación requiere reiniciar.
 
 Para probar un checkout con un perfil vacío o una copia separada de algunos datos:
 

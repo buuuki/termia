@@ -149,6 +149,13 @@ identities and children observed while monitoring, not all historical processes.
 Unavailable values show a dash. No commands, environment variables or credentials
 are collected and the tool does not terminate processes.
 
+Statistics is also distributed separately in [termia-plugins](https://github.com/buuuki/termia-plugins).
+To install it, use the commands above with `statistics` in place of `diagnostics`
+in both the archive name and the destination check. Restart Termia after installing
+or updating the plugin. Statistics uses the previous profile setting on first
+installation and starts disabled in a new profile. Disabling or removing it
+preserves the saved choice and the history in `statistics.json`.
+
 ## Release status
 
 **[0.6.4-beta](https://github.com/buuuki/termia/releases/tag/v0.6.4-beta)** retains
@@ -240,8 +247,8 @@ then restart Termia; it does not update Debian-only rebuilds of the same app ver
 ## Help and isolated testing
 
 Open **Help** from the main menu for workflows and your configured shortcuts.
-The optional Statistics and SFTP add-ons are managed from **Add-ons**; changes
-take effect after restarting and disabling them preserves their saved data.
+Manage Statistics and SFTP in **Add-ons**. Statistics activation changes apply on
+**Save**. SFTP is built in and its activation changes require a restart.
 
 To try a checkout with an empty profile, or a separate copy of selected data:
 

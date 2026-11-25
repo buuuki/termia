@@ -67,20 +67,14 @@ class OptionalToolsUITests(unittest.TestCase):
         self.addCleanup(dialog.destroy)
 
         content = dialog.get_content_area()
-        statistics_row = content.get_first_child()
-        sftp_row = statistics_row.get_next_sibling()
-        statistics = statistics_row.get_last_child()
-        sftp = sftp_row.get_last_child()
-        self.assertIsInstance(statistics, Gtk.Switch)
+        sftp = content.get_first_child().get_last_child()
         self.assertIsInstance(sftp, Gtk.Switch)
-        self.assertFalse(statistics.get_active())
         self.assertTrue(sftp.get_active())
-        statistics.set_active(True)
         sftp.set_active(False)
         dialog.response(Gtk.ResponseType.OK)
 
         store.update_optional_tools.assert_called_once_with(
-            statistics_enabled=True, sftp_enabled=False
+            statistics_enabled=False, sftp_enabled=False
         )
         notifier.assert_called_once_with("addon_pending_restart")
 
