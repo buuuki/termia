@@ -168,6 +168,7 @@ class TerminalPaneStateTests(unittest.TestCase):
                 expected = "connect" if server_id else "open_local_terminal"
                 self.assertEqual(pane.disconnect_button.tooltip, expected)
                 self.assertEqual(pane.disconnect_button.icon, "view-refresh-symbolic")
+                self.assertTrue(pane.disconnect_button.visible)
                 self.assertTrue(pane.disconnect_button.sensitive)
                 self.assertIsNone(pane.child_process)
                 host.on_request_disconnect_pane(None, session, terminal)
@@ -1192,6 +1193,7 @@ class TerminalPaneStateTests(unittest.TestCase):
         self.assertEqual(split.disconnect_button.tooltip, "Close")
         self.assertEqual(split.disconnect_button.icon, "window-close-symbolic")
         self.assertEqual(split.disconnect_button.accessible_label, "Close")
+        self.assertFalse(split.disconnect_button.visible)
         self.assertTrue(split.disconnect_button.sensitive)
 
     def test_close_action_closes_tab_when_failed_pane_is_the_only_pane(self) -> None:

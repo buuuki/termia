@@ -176,7 +176,7 @@ class TerminalSessionsMixin:
         focus_button.add_css_class("termia-status-hide")
         focus_button.set_size_request(-1, 18)
         disconnect_button = Gtk.Button()
-        self.set_status_button_action(disconnect_button, self.t("disconnect"))
+        self.set_status_button_action(disconnect_button, self.t("disconnect"), visible=False)
         disconnect_button.add_css_class("destructive-action")
         disconnect_button.add_css_class("termia-disconnect-button")
         disconnect_button.set_size_request(-1, 18)
@@ -190,8 +190,11 @@ class TerminalSessionsMixin:
     @staticmethod
     def set_status_button_action(
         button: Gtk.Button, label: str, icon: str = "window-close-symbolic",
+        *, visible: bool | None = None,
     ) -> None:
         button.set_icon_name(icon)
+        if visible is not None:
+            button.set_visible(visible)
         button.set_tooltip_text(label)
         button.update_property([Gtk.AccessibleProperty.LABEL], [label])
 
@@ -221,6 +224,7 @@ class TerminalSessionsMixin:
         if pane.connected and not pane.disconnect_requested:
             self.set_status_button_action(
                 pane.disconnect_button, self.t("end_local_terminal" if is_local else "disconnect"),
+                visible=False,
             )
             pane.disconnect_button.add_css_class("destructive-action")
         text = GLib.markup_escape_text(f"{state} · {name}")
@@ -745,7 +749,7 @@ class TerminalSessionsMixin:
         session.connected = True
         session.active_terminal_ids.add(id(terminal))
         self.sync_root_pane_state(session)
-        self.set_status_button_action(session.disconnect_button, self.t("disconnect"))
+        self.set_status_button_action(session.disconnect_button, self.t("disconnect"), visible=False)
         session.disconnect_button.set_sensitive(True)
         self.update_pane_status(self.pane_state(session, terminal), "")
         self.store.record_history_start(session, "ssh", server)
@@ -906,7 +910,7 @@ class TerminalSessionsMixin:
 
     def show_pane_reconnect_controls(self, pane: TerminalPane) -> None:
         pane.status_bar.set_visible(True)
-        self.set_status_button_action(pane.disconnect_button, self.t("close"))
+        self.set_status_button_action(pane.disconnect_button, self.t("close"), visible=False)
         pane.disconnect_button.set_sensitive(True)
 
     def reset_pane_connection_attempt(self, pane: TerminalPane | TerminalSession) -> None:
@@ -914,7 +918,7 @@ class TerminalSessionsMixin:
             pane.timer_generation += 1
         pane.pending_reconnect = False
         pane.disconnect_requested = False
-        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"))
+        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"), visible=False)
         pane.disconnect_button.set_sensitive(True)
         pane.duration_recorded = False
         pane.history_start_recorded = False
@@ -1815,7 +1819,7 @@ class TerminalSessionsMixin:
         pane.connected = True
         pane.pending_reconnect = False
         pane.disconnect_requested = False
-        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"))
+        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"), visible=False)
         pane.disconnect_button.set_sensitive(True)
         self.update_pane_status(pane, "")
         session.connected = True
@@ -1896,7 +1900,7 @@ class TerminalSessionsMixin:
         pane.connected = True
         pane.pending_reconnect = False
         pane.disconnect_requested = False
-        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"))
+        self.set_status_button_action(pane.disconnect_button, self.t("disconnect"), visible=False)
         pane.disconnect_button.set_sensitive(True)
         self.update_pane_status(pane, "")
         session.connected = True
@@ -2225,7 +2229,7 @@ class TerminalSessionsMixin:
         if can_reopen_terminal(session, pane):
             self.set_status_button_action(
                 pane.disconnect_button, self.t(terminal_action_label_key(session, pane)),
-                "view-refresh-symbolic",
+                "view-refresh-symbolic", visible=True,
             )
             pane.disconnect_button.remove_css_class("destructive-action")
             pane.disconnect_button.set_sensitive(True)

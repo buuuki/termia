@@ -1215,9 +1215,12 @@ Long measurements and release-platform checks remain separate validation work.
   Ubuntu Mono with DejaVu Sans Mono/monospace fallbacks, without changing the
   shell font. Check capsule corners, 8px below the bar and equal status
   padding in single/split panes. The rounded focus border encloses the terminal
-  scroller only. Check dark/light custom terminal colors, Hide, Disconnect,
+  scroller only. Check dark/light custom terminal colors, Hide, contextual Disconnect,
   timer/status updates and keyboard focus, including nested and detached panes.
   Showing/hiding the bar must retain divider positions and terminal focus.
+- Live panes and failed split panes show no close icon in the bar. Verify
+  Disconnect and End local terminal in the context menu, and the reconnect
+  button when the last pane is retained after a manual disconnect.
 - In all themes, each status bar shows a colored dot, a translated session
   state and its saved connection/profile name. Verify yellow while starting,
   green once the child process starts and muted on exit/disconnect/failure.

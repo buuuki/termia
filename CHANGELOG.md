@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Hide the terminal status bar close icon to prevent accidental disconnects (#547).
+
 - Flush pending external Statistics data when a terminal session ends (#538).
 
 ### Changed
