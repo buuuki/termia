@@ -119,6 +119,47 @@ class SFTPService:
                 and not (self.worker and self.worker.is_alive())
                 and not (self.close_worker and self.close_worker.is_alive()))
 
+    @property
+    def is_cancelled(self):
+        return self.cancelled.is_set()
+
+    def shutdown_cleanup_state(self):
+        if self.stopped:
+            return "stopped"
+        workers_alive = any(
+            worker is not None and worker.is_alive()
+            for worker in (self.worker, self.close_worker)
+        )
+        if self.cleanup_failed and not workers_alive:
+            return "failed"
+        return "pending"
+
+    def connect(self, done, failed, progress):
+        self.submit(lambda backend, _: backend.connect(), done, failed, progress)
+
+    def list_directory(self, path, done, failed, progress):
+        self.submit(lambda backend, _: backend.list_directory(path), done, failed, progress)
+
+    def mkdir(self, path, done, failed, progress):
+        self.submit(lambda backend, _: backend.mkdir(path), done, failed, progress)
+
+    def rename(self, source, target, done, failed, progress):
+        self.submit(lambda backend, _: backend.rename(source, target), done, failed, progress)
+
+    def delete(self, path, done, failed, progress):
+        self.submit(lambda backend, _: backend.delete(path), done, failed, progress)
+
+    def upload(self, paths, destination, done, failed, progress):
+        def copy(backend, report):
+            for path in paths:
+                backend.upload(path, child_path(destination, path.name), report)
+
+        self.submit(copy, done, failed, progress)
+
+    def download(self, source, local, done, failed, progress):
+        self.submit(lambda backend, report: backend.download(source, local, report),
+                    done, failed, progress)
+
     def submit(self, operation, done, failed, progress=None) -> None:
         if self.closed or self.busy or self.cancelled.is_set():
             raise RuntimeError("SFTP service unavailable")

@@ -270,8 +270,11 @@ Debian de la misma versión de la aplicación.
 ## Ayuda y pruebas aisladas
 
 Abre **Ayuda** desde el menú principal para consultar los flujos de uso y tus atajos.
-Gestiona Estadísticas y SFTP en **Complementos**. La activación de Estadísticas
-se aplica al pulsar **Guardar**. SFTP está integrado y cambiar su activación requiere reiniciar.
+Gestiona Estadísticas y SFTP en **Complementos**. Los cambios de activación se
+aplican al pulsar **Guardar**. Para instalar el explorador externo, sigue los
+pasos anteriores sustituyendo `diagnostics` por `sftp` y reinicia Termia. SFTP
+respeta tu preferencia anterior hasta que guardes una elección para el plugin.
+Desactivarlo cierra sus exploradores y cancela sus transferencias.
 
 Para probar un checkout con un perfil vacío o una copia separada de algunos datos:
 

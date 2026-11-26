@@ -37,10 +37,11 @@ class DiagnosticsContractTests(unittest.TestCase):
     def test_host_keeps_legacy_context_alias_and_returns_fresh_snapshots(self):
         from termia.app import TermiaApp
         from termia.diagnostics_contract import DiagnosticContext
+        from termia.models import AppSettings
 
         with patch("termia.app.PluginRuntime") as runtime_factory:
             app = TermiaApp()
-            profile = SimpleNamespace(data=SimpleNamespace(app=SimpleNamespace(statistics_enabled=False)))
+            profile = SimpleNamespace(data=SimpleNamespace(app=AppSettings()))
             app.initialize_plugins(profile)
         capabilities = runtime_factory.call_args.args[2]
         self.assertIs(capabilities["context"], capabilities["diagnostics_context"])

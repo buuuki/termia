@@ -57,7 +57,7 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           repository: ${{ github.repository_owner }}/termia-plugins
-          ref: c0084a92ac22fcab2068588ab10bb8d2e67307c8
+          ref: c16e2ab2bd57a28c92d440bfd61f0ab3eadb3dd7
           path: _ci/termia-plugins
           persist-credentials: false
 
@@ -66,6 +66,7 @@ jobs:
           test -f "$GITHUB_WORKSPACE/_ci/termia-plugins/diagnostics/plugin.json"
           test -f "$GITHUB_WORKSPACE/_ci/termia-plugins/statistics/plugin.json"
           test -f "$GITHUB_WORKSPACE/_ci/termia-plugins/scp/plugin.json"
+          test -f "$GITHUB_WORKSPACE/_ci/termia-plugins/sftp/plugin.json"
           echo "TERMIA_SOURCE_DIR=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
           echo "TERMIA_PLUGINS_SOURCE=$GITHUB_WORKSPACE/_ci/termia-plugins" >> "$GITHUB_ENV"
           echo "COVERAGE_RCFILE=$GITHUB_WORKSPACE/_ci/termia-plugins/.coveragerc" >> "$GITHUB_ENV"
@@ -107,7 +108,7 @@ jobs:
         working-directory: _ci/termia-plugins
         run: |
           ruff check --isolated --target-version py310 --ignore-noqa --no-cache .
-          bandit --ignore-nosec -r diagnostics statistics scp package_plugin.py
+          bandit --ignore-nosec -r diagnostics statistics scp sftp package_plugin.py
 
       - name: Run host unittest with branch coverage and a private GTK display
         run: |
@@ -143,12 +144,13 @@ jobs:
           }
           roots["Statistics"] = Path(os.environ["TERMIA_PLUGINS_SOURCE"]) / "statistics/src/termia_statistics"
           roots["SCP"] = Path(os.environ["TERMIA_PLUGINS_SOURCE"]) / "scp/src/termia_scp"
+          roots["SFTP"] = Path(os.environ["TERMIA_PLUGINS_SOURCE"]) / "sftp/src/termia_sftp"
           lines = ["| Scope | Lines | Branches |", "| --- | ---: | ---: |"]
           for label, source in roots.items():
               expected = set(source.rglob("*.py"))
               if not expected or expected - files.keys():
                   raise SystemExit(f"Incomplete production coverage inventory: {label}")
-              if label in {"Statistics", "SCP"} and not any(files[p]["summary"]["covered_lines"] for p in expected):
+              if label in {"Statistics", "SCP", "SFTP"} and not any(files[p]["summary"]["covered_lines"] for p in expected):
                   raise SystemExit(f"{label} plugin execution was not captured")
               summaries = [files[path]["summary"] for path in expected]
               totals = {key: sum(item[key] for item in summaries) for key in (
@@ -184,6 +186,7 @@ jobs:
             tests/*.py
           python3 -m compileall -q \
             "$TERMIA_PLUGINS_SOURCE/diagnostics" \
+            "$TERMIA_PLUGINS_SOURCE/sftp" \
             "$TERMIA_PLUGINS_SOURCE/scp" \
             "$TERMIA_PLUGINS_SOURCE/statistics" \
             "$TERMIA_PLUGINS_SOURCE/termia_plugins_tests" \

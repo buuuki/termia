@@ -32,8 +32,9 @@ class ServerContextMenuTests(unittest.TestCase):
             read_only=False, encryption_locked=False,
             data=SimpleNamespace(servers=self.servers),
         )
-        self.host.terminal_menu_actions = SimpleNamespace(send_files=Mock())
+        self.host.terminal_menu_actions = SimpleNamespace(send_files=Mock(), browse_files=Mock())
         self.host.sftp_tool = SimpleNamespace(browse=Mock())
+        self.host.browse_sftp = self.host.sftp_tool.browse
         self.host.notes_dialogs = SimpleNamespace(show_for_server_after_popover=Mock())
         self.host.t = lambda key: key
         self.host.get_sidebar_scroll_values = lambda: (11.0, 83.0)
@@ -153,7 +154,7 @@ class ServerContextMenuTests(unittest.TestCase):
         for label in ("connect", "notes_view_server", "send_files_to_server", "sftp_browse"):
             self.assertTrue(self.entry(menu, label).is_sensitive())
         self.host.close_active_context_menu()
-        self.host.sftp_tool = None
+        self.host.terminal_menu_actions.browse_files = None
         menu = self.open_menu()
         self.assertIsNone(self.entry(menu, "sftp_browse"))
         self.host.store.encryption_locked = True
@@ -213,7 +214,7 @@ class ServerContextMenuTests(unittest.TestCase):
         menu = self.open_menu()
         tool = self.host.sftp_tool
         self.entry(menu, "sftp_browse").emit("clicked")
-        self.host.sftp_tool = None
+        self.host.terminal_menu_actions.browse_files = None
         self.drain(wait=True)
         tool.browse.assert_not_called()
 
@@ -500,8 +501,8 @@ class GroupContextMenuTests(unittest.TestCase):
             self.assertIsNone(self.host.active_context_popover)
 
     def test_switching_server_and_group_menus_preserves_each_cached_popup(self):
-        self.host.terminal_menu_actions = SimpleNamespace(send_files=Mock())
-        self.host.sftp_tool = None
+        self.host.terminal_menu_actions = SimpleNamespace(send_files=Mock(), browse_files=Mock())
+        self.host.terminal_menu_actions.browse_files = None
         group_menu = self.open_menu()
         self.host.show_row_context_menu(
             SidebarRow("server", "one", "Server"), self.button, 20, 10,

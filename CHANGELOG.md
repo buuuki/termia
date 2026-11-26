@@ -8,6 +8,19 @@
 
 ### Changed
 
+- Distribute the SFTP explorer separately and apply activation on Save. Keep
+  authentication, worker operations and transfer cleanup in Termia (#543).
+
+- Keep SFTP shutdown state and worker inspection in the host service (#543).
+
+- Route SFTP views through named operations and create the worker service in
+  the host connection adapter (#543).
+
+- Keep SFTP endpoint credentials and host-key persistence behind the
+  connection adapter (#543).
+
+- Pass an operation endpoint and owner ID to the bundled SFTP launcher (#543).
+
 - Distribute the SCP upload UI as a contextual external plugin. Keep host key
   decisions, credentials and transfer cleanup in Termia; disabling SCP cancels
   its transfers while preserving SFTP (#540).

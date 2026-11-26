@@ -36,7 +36,7 @@ built in. Issue #538 subsequently moved Statistics to the same external model.
   are prepared in the separate local `termia-plugins` tree; repository
   initialization, remote creation and publication require separate authorization.
 - External enablement changes apply on Save; Cancel discards pending choices.
-  Changes to built-in SFTP still require restart. This distinction
+  SFTP applies activation on Save after its extraction (#543). This distinction
   supersedes ADR-0001's restart-only rule only for external plugins.
 - Persist plugin choices separately under the profile's `plugins` directory.
   Disabling or removing a plugin must preserve its saved preference. Existing

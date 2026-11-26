@@ -15,8 +15,6 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Gtk
 
-from .builtin_sftp import SFTPTool
-from .builtin_tools import BuiltInTools
 from .config_actions import ConfigActionsMixin
 from .connection_dialogs import ConnectionDialogsMixin
 from .connection_history_presenter import ConnectionHistoryPresenter
@@ -63,6 +61,8 @@ from .retron_store import RetronStore
 from .session_observer import MetricsSessionObserver
 from .session_registry import SessionRegistry
 from .session_snapshot import SessionSnapshotStore
+from .sftp_launcher import SFTPTool
+from .sftp_service import Endpoint
 from .sidebar import SidebarMixin
 from .snippet_dialogs import SnippetDialogs
 from .snippet_presenter import SnippetPresenter
@@ -148,7 +148,6 @@ class TermiaWindow(
 
         self.store = ConnectionStore(DATA_FILE)
         self.connect_system_theme_changes()
-        self.builtin_tools = BuiltInTools.from_settings(self.store.data.app)
         app.initialize_plugins(self.store)
         self.session_observer = MetricsSessionObserver(app.plugins.publish_session_event)
         self.session_snapshot_store = SessionSnapshotStore(
@@ -183,7 +182,6 @@ class TermiaWindow(
                 normalize_language(self.store.data.app.language)
             ),
             external_apply=self.get_application().plugins.set_enabled,
-            running_sftp=self.builtin_tools.sftp,
         )
         self.history_presenter = ConnectionHistoryPresenter(
             lambda: self.store.history_store.entries,
@@ -224,16 +222,13 @@ class TermiaWindow(
         self.sidebar_drag_server_id: str | None = None
         self.active_context_popover: Gtk.Popover | None = None
         self.session_registry = SessionRegistry()
-        self.sftp_tool = None
-        if self.builtin_tools.sftp:
-            self.sftp_tool = SFTPTool(
-                lambda session: self if session is None else self.window_for_session(session),
-                self.session_registry.contains,
-                lambda: self.shutdown_in_progress,
-                self.register_file_transfer,
-                self.unregister_file_transfer,
-                self.t,
-            )
+        self.sftp_tool = SFTPTool(
+            self.session_registry.contains,
+            lambda: self.shutdown_in_progress,
+            self.register_file_transfer,
+            self.unregister_file_transfer,
+            self.t,
+        )
         self.snippet_presenter = SnippetPresenter(
             lambda: self.store.data.snippets,
             lambda: self.store.data.groups,
@@ -294,7 +289,7 @@ class TermiaWindow(
             copy=self.copy_terminal_selection,
             paste=self.paste_terminal_clipboard,
             send_files=self.on_send_files_to_server if self.scp_ui() is not None else None,
-            browse_files=self.sftp_tool.browse if self.sftp_tool is not None else None,
+            browse_files=self.browse_sftp if self.sftp_plugin() is not None else None,
             configure=self.configure_terminal_from_menu,
             session_statistics=self.show_enabled_session_statistics if self.statistics_available() else None,
             split=self.split_terminal_from_menu,
@@ -581,6 +576,26 @@ class TermiaWindow(
     def register_file_transfer(self, transfer: ManagedTransfer) -> None:
         self.file_transfer_controllers.add(transfer)
 
+    def sftp_plugin(self):
+        plugin = self.get_application().plugins.plugins.get("sftp")
+        if plugin and "sftp_explorer" in plugin.capabilities and plugin.requested_enabled and not plugin.problem:
+            return plugin.instance
+        return None
+
+    def browse_sftp(self, popover, session, server):
+        plugin = self.sftp_plugin()
+        if plugin is None or self.store.encryption_locked:
+            return
+        parent = self if session is None else self.window_for_session(session)
+        owner_id = session.id if session is not None else None
+        endpoint = Endpoint(server.host, server.port, server.user, server.public_key, server.password)
+        def get_view():
+            if self.sftp_plugin() is plugin and not self.store.encryption_locked:
+                return plugin.show(normalize_language(self.store.data.app.language))
+            return None
+
+        self.sftp_tool.browse(popover, parent, owner_id, endpoint, server.name, get_view)
+
     def scp_ui(self):
         plugin = self.get_application().plugins.plugins.get("scp")
         if plugin and "scp_upload_ui" in plugin.capabilities and plugin.requested_enabled and not plugin.problem:
@@ -820,7 +835,7 @@ class TermiaWindow(
             lambda: self.retron_runtime.enabled and not self.shutdown_in_progress,
         ))
         for plugin in self.get_application().plugins.plugins.values():
-            if "scp_upload_ui" in plugin.capabilities:
+            if {"scp_upload_ui", "sftp_explorer"}.intersection(plugin.capabilities):
                 continue
             self.tool_registry.register(Tool(
                 "external:" + plugin.id,
@@ -1414,13 +1429,15 @@ class TermiaApp(Gtk.Application):
                 "context": diagnostics_context,  # Compatibility alias for API 2 plugins.
                 "session_events": 1,
                 "scp_upload_ui": 1,
+                "sftp_explorer": 1,
                 "statistics_data": StatisticsData(store),
                 "attach_window": self.add_window,
                 "apply_style": self.apply_addon_style,
             },
             blocked=os.environ.get("TERMIA_DISABLE_PLUGINS") == "1",
             changed=self.refresh_plugin_actions,
-            legacy_defaults={"statistics": store.data.app.statistics_enabled},
+            legacy_defaults={"statistics": store.data.app.statistics_enabled,
+                             "sftp": store.data.app.sftp_enabled},
         )
         self.connect("shutdown", self.plugins.close)
 
@@ -1446,12 +1463,16 @@ class TermiaApp(Gtk.Application):
                         for transfer in tuple(window.file_transfer_controllers):
                             if isinstance(transfer, FileTransferController):
                                 transfer.cancel_active_transfer(close_dialog=True)
+                    sftp_available = window.sftp_plugin() is not None
+                    if not sftp_available:
+                        window.sftp_tool.cancel_all()
                     available = window.statistics_available()
                     window.main_menu_actions = replace(
                         window.main_menu_actions, statistics=window.show_statistics if available else None,
                     )
                     window.terminal_menu_actions = replace(
                         window.terminal_menu_actions,
+                        browse_files=window.browse_sftp if sftp_available else None,
                         send_files=window.on_send_files_to_server if scp_available else None,
                         session_statistics=window.show_enabled_session_statistics if available else None,
                     )

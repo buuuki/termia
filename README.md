@@ -254,8 +254,11 @@ then restart Termia; it does not update Debian-only rebuilds of the same app ver
 ## Help and isolated testing
 
 Open **Help** from the main menu for workflows and your configured shortcuts.
-Manage Statistics and SFTP in **Add-ons**. Statistics activation changes apply on
-**Save**. SFTP is built in and its activation changes require a restart.
+Manage Statistics and SFTP in **Add-ons**. Activation changes apply on **Save**.
+To install the external SFTP explorer, use the plugin archive instructions above
+with `sftp` in place of `diagnostics`, then restart Termia. The explorer follows
+your previous SFTP preference until you save a plugin choice. Disabling SFTP
+closes its explorers and cancels their transfers.
 
 To try a checkout with an empty profile, or a separate copy of selected data:
 

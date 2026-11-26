@@ -1300,8 +1300,8 @@ Long measurements and release-platform checks remain separate validation work.
   menu actions must be absent, and no aggregate statistics writes may occur.
 - The SFTP browser remains on by default. Disabling it must hide both sidebar
   and terminal-menu actions without disabling SCP or changing saved credentials.
-- SFTP activation changes take effect after restart and must never delete
-  statistics data or interrupt existing SFTP transfers.
+- SFTP activation changes take effect on Save. Disabling it closes its explorers
+  and cancels their transfers without stopping SCP.
 
 ### External SCP uploads
 
@@ -1316,7 +1316,7 @@ Long measurements and release-platform checks remain separate validation work.
 ### Optional tools
 
 - In an isolated profile, verify Statistics menu actions change on Save and
-  retained data survives removal and reinstallation. Toggle SFTP, restart, and
+  retained data survives removal and reinstallation. Toggle SFTP, save, and
   verify the server and terminal menus reflect its saved choice.
 - With Statistics enabled, open and close local, SSH, and split panes; verify
   connection counts, duration counts, current-run counts, and shutdown flushes
