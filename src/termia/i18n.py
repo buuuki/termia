@@ -63,7 +63,6 @@ ADDON_MESSAGES["addon_diagnostics_pending"] = {
 
 
 ADDON_MESSAGES.update({
-    'addon_external_title': {'en': '{name} · External', 'es': '{name} · Externo', 'ca': '{name} · Extern'},
     'addon_external_pending': {'en': '{addons}: pending changes. Save to apply; no restart required.', 'es': '{addons}: cambios pendientes. Guarda para aplicarlos; no es necesario reiniciar.', 'ca': '{addons}: canvis pendents. Desa per aplicar-los; no cal reiniciar.'},
     'addon_external_applied': {'en': '{addons}: changes applied and saved. No restart required.', 'es': '{addons}: cambios aplicados y guardados. No es necesario reiniciar.', 'ca': '{addons}: canvis aplicats i desats. No cal reiniciar.'},
     'addon_external_failed': {'en': '{name}: could not apply the change.', 'es': '{name}: no se pudo aplicar el cambio.', 'ca': '{name}: no s’ha pogut aplicar el canvi.'},

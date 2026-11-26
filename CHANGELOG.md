@@ -8,6 +8,8 @@
 
 ### Changed
 
+- Show plugin names without the External suffix in Add-ons (#545).
+
 - Distribute the SFTP explorer separately and apply activation on Save. Keep
   authentication, worker operations and transfer cleanup in Termia (#543).
 

@@ -95,7 +95,6 @@ class ExternalToolsDialogTests(unittest.TestCase):
         callback = Mock(side_effect=apply)
         notifier = Mock()
         messages = {
-            "addon_external_title": "External: {name}",
             "addon_external_pending": "Pending: {addons}",
             "addon_external_applied": "Applied: {addons}",
             "addon_external_failed": "Failed: {name}",
@@ -118,7 +117,7 @@ class ExternalToolsDialogTests(unittest.TestCase):
             child = child.get_next_sibling()
         return SimpleNamespace(
             dialog=dialog, store=store, state=state, apply=callback, notify=notifier,
-            alpha=switches["External: Alpha"], beta=switches["External: Beta"],
+            alpha=switches["Alpha"], beta=switches["Beta"],
         )
 
     def test_external_changes_apply_only_on_save(self):
