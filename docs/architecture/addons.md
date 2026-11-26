@@ -2,8 +2,8 @@
 
 ## Component types and lifecycle
 
-SFTP ships with Termia and reads its activation setting at startup.
-Diagnostics, Statistics and SCP are trusted external plugins installed manually.
+SFTP is distributed as an external explorer.
+Diagnostics, Statistics, SCP and SFTP are trusted external plugins installed manually.
 Restart Termia after installing or replacing their code. Activation changes
 apply on Save and Cancel discards pending choices.
 See [ADR-0002](decisions/ADR-0002-trusted-external-plugins.md), which amends the
@@ -73,22 +73,14 @@ its controllers without cancelling other transfer types.
 
 ### SFTP
 
-SFTP already has useful lower-level boundaries: `SFTPBackend` describes backend
-operations, `SFTPService` serializes cancellable work, and the view owns GTK
-presentation. `SFTPTool` is the current launch adapter and is created only
-when SFTP is enabled.
+The contextual API 2 capability `sftp_explorer` supplies an explorer factory.
+Core owns window and transfer registration, endpoint credentials, known-host
+persistence, worker execution and cancellation. The plugin receives an
+operation facade and presents GTK prompts and remote file operations.
+The saved external choice overrides the legacy SFTP setting. A deferred
+launch is discarded when the owning terminal closes or the plugin changes
+activation. Disabling it closes its explorers without cancelling SCP.
 
-The launch adapter currently receives a GTK popover, a complete
-`TerminalSession`, and a `Server`; the server includes saved credentials. It
-also receives callbacks for session/window lookup and transfer ownership. The
-terminal menu uses an injected action callback, while the sidebar currently
-reaches the `sftp_tool` property directly. These are known coupling points, not
-additional exceptions to the `app.py` rule. They are intentionally documented
-for later review and are not changed by the policy/documentation task.
-
-SFTP credentials are passed to an endpoint for the active operation; disabling
-the add-on must not remove saved connection credentials. Transfer cancellation
-and owner-session cleanup remain protected behaviors.
 
 ## Tool contributions and Diagnostics
 

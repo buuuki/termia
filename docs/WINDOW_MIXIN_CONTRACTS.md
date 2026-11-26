@@ -244,7 +244,7 @@ keybinding dialogs have comparatively small contracts.
   explicitly composed `TabLifecycleActions` contract.
 - Optional-tool boundary: connection start, pane finish, immediate flush, and
   shutdown are delivered to `session_observer`; the disabled implementation is
-  a no-op. SFTP launch is delegated to the bundled SFTP tool through optional
+  a no-op. SFTP launch is delegated to the host SFTP launcher through optional
   menu actions rather than implemented in this mixin.
 - Architectural note: process launching, terminal views, split panes, and file
   transfer are already delegated to focused modules, but lifecycle
@@ -339,9 +339,9 @@ commands can run in Termia terminals.
 - `sftp_backend.py` implements that protocol using Paramiko. It owns the SSH
   transport, known-host verification, bounded I/O, and explicit file operations.
   It never executes shell commands, mounts paths or receives GTK widgets.
-- `sftp_view.py` owns the independent window, prompts and selection state;
-  tests can inject a backend. New backends must implement the service contract
-  and translate authentication errors to its typed events.
+- The external SFTP plugin owns the window, prompts and selection state.
+  `sftp_connection.py` supplies named operations and lifecycle status while
+  retaining the endpoint, backend and worker service in Termia.
 - `ManagedTransfer` provides the common lifecycle contract with existing SCP.
   Session-owned explorers are closed through the existing tab/application
   transfer cleanup. Sidebar-owned explorers have no terminal session owner.

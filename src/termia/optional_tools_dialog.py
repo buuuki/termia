@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Jordi Pons
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Preferences for bundled tools, applied on the next Termia start."""
+"""Manage external tools and apply their preferences on Save."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from gi.repository import Gtk
 
 from .dialog_actions import add_dialog_action_button
 from .dialog_window import DialogWindow
-from .stores import ConnectionStore, ReadOnlyStoreError
+from .stores import ConnectionStore
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class OptionalToolsDialog:
         store: ConnectionStore,
         translate: Callable[[str], str],
         notify: Callable[[str], None],
-        *, external_options=None, external_apply=None, running_sftp=None,
+        *, external_options=None, external_apply=None,
     ) -> None:
         self.parent = parent
         self.store = store
@@ -34,7 +34,6 @@ class OptionalToolsDialog:
         self.notify = notify
         self.external_options = external_options or list
         self.external_apply = external_apply
-        self.running_sftp = store.data.app.sftp_enabled if running_sftp is None else running_sftp
 
     def show(self) -> None:
         dialog = DialogWindow(
@@ -57,10 +56,6 @@ class OptionalToolsDialog:
         for side in ("top", "bottom", "start", "end"):
             getattr(content, f"set_margin_{side}")(16)
 
-        sftp = self.add_switch_row(
-            content, self.translate("sftp_tool"), self.store.data.app.sftp_enabled
-        )
-
         external_rows = {}
         for identifier, title, problem, enabled, available in self.external_options():
             switch = self.add_switch_row(
@@ -77,9 +72,6 @@ class OptionalToolsDialog:
         hint.add_css_class("dim-label")
         content.append(hint)
 
-        def pending_names():
-            return self.translate("sftp_tool") if sftp.get_active() != self.running_sftp else ""
-
         def external_changes():
             active = {item[0]: item[3] for item in self.external_options()}
             return [
@@ -89,23 +81,15 @@ class OptionalToolsDialog:
             ]
 
         def refresh_hint(*_args):
-            pending = pending_names()
-            unsaved = sftp.get_active() != self.store.data.app.sftp_enabled
             messages = []
             changed = external_changes()
             if changed:
                 messages.append(self.translate("addon_external_pending").format(
                     addons=", ".join(item[1] for item in changed)
                 ))
-            if pending:
-                key = "addon_pending_save_restart" if unsaved else "addon_pending_restart"
-                messages.append(self.translate(key).format(addons=pending))
-            elif unsaved:
-                messages.append(self.translate("addon_save_no_restart"))
             hint.set_text("\n".join(messages))
             hint.set_visible(bool(messages))
 
-        sftp.connect("notify::active", refresh_hint)
         for _title, switch, _status in external_rows.values():
             switch.connect("notify::active", refresh_hint)
         refresh_hint()
@@ -114,29 +98,14 @@ class OptionalToolsDialog:
             if response != Gtk.ResponseType.OK:
                 current.destroy()
                 return
-            builtins_changed = sftp.get_active() != self.store.data.app.sftp_enabled
             changed = external_changes()
-            if not builtins_changed and not changed:
+            if not changed:
                 current.destroy()
                 return
             if self.store.read_only or self.store.encryption_locked:
                 self.notify(self.translate("read_only_mode_enabled"))
                 return
-            try:
-                if builtins_changed:
-                    self.store.update_optional_tools(
-                        statistics_enabled=self.store.data.app.statistics_enabled,
-                        sftp_enabled=sftp.get_active(),
-                    )
-            except ReadOnlyStoreError:
-                self.notify(self.translate("read_only_mode_enabled"))
-                return
             messages = []
-            pending = pending_names()
-            if pending:
-                messages.append(self.translate("addon_pending_restart").format(addons=pending))
-            elif builtins_changed:
-                messages.append(self.translate("addon_saved_no_restart"))
             applied = []
             for identifier, title, switch, status in changed:
                 try:

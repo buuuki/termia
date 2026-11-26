@@ -241,8 +241,8 @@ class SidebarMixin:
 
     def on_server_context_sftp(self, popover, server_id):
         server = find_server(self.store.data.servers, server_id)
-        if server is not None and self.sftp_tool is not None:
-            self.sftp_tool.browse(popover, None, server)
+        if server is not None and self.terminal_menu_actions.browse_files is not None:
+            self.browse_sftp(popover, None, server)
 
     def on_group_context_edit(self, _button: Gtk.Button, popover: Gtk.Popover, group_id: str) -> None:
         popover.popdown()
@@ -1125,7 +1125,7 @@ class SidebarMixin:
         ):
             if name == "send-files" and self.terminal_menu_actions.send_files is None:
                 continue
-            if name == "sftp" and self.sftp_tool is None:
+            if name == "sftp" and self.terminal_menu_actions.browse_files is None:
                 continue
             model.append(self.t(label), f"server-menu.{name}")
             self._server_context_actions[name].set_enabled(

@@ -49,35 +49,6 @@ class OptionalToolsUITests(unittest.TestCase):
         actions.statistics = None
         self.assertNotIn("statistics", labels())
 
-    def test_save_records_choices_but_does_not_change_startup_snapshot(self) -> None:
-        parent = Gtk.Window()
-        store = SimpleNamespace(
-            read_only=False,
-            encryption_locked=False,
-            data=SimpleNamespace(app=SimpleNamespace(statistics_enabled=False, sftp_enabled=True)),
-            update_optional_tools=Mock(),
-        )
-        notifier = Mock()
-        OptionalToolsDialog(parent, store, lambda key: key, notifier).show()
-        dialog = next(
-            window for window in Gtk.Window.list_toplevels()
-            if isinstance(window, DialogWindow) and window.get_title() == "optional_tools"
-        )
-        self.addCleanup(parent.destroy)
-        self.addCleanup(dialog.destroy)
-
-        content = dialog.get_content_area()
-        sftp = content.get_first_child().get_last_child()
-        self.assertIsInstance(sftp, Gtk.Switch)
-        self.assertTrue(sftp.get_active())
-        sftp.set_active(False)
-        dialog.response(Gtk.ResponseType.OK)
-
-        store.update_optional_tools.assert_called_once_with(
-            statistics_enabled=False, sftp_enabled=False
-        )
-        notifier.assert_called_once_with("addon_pending_restart")
-
     def test_read_only_instance_cannot_save_tool_changes(self) -> None:
         parent = Gtk.Window()
         store = SimpleNamespace(

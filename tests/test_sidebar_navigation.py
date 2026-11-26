@@ -219,7 +219,7 @@ class NativeConnectionsTreeTests(unittest.TestCase):
         host.open_terminal_tab = Mock()
         host.open_local_terminal_profile = Mock()
         host.open_workspace = Mock()
-        host.terminal_menu_actions = SimpleNamespace(send_files=None)
+        host.terminal_menu_actions = SimpleNamespace(send_files=None, browse_files=None)
         host.sftp_tool = None
         host.preserve_sidebar_scroll = Mock()
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)

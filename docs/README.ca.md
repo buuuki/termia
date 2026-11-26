@@ -270,7 +270,10 @@ Debian de la mateixa versió de l'aplicació.
 
 Obre **Ajuda** des del menú principal per consultar els fluxos d'ús i les dreceres.
 Gestiona Estadístiques i SFTP des de **Complements**. Els canvis d’activació
-d’Estadístiques s’apliquen en prémer **Desa**. SFTP està integrat i canviar-ne l’activació requereix reiniciar.
+s’apliquen en prémer **Desa**. Per instal·lar el navegador extern, segueix els
+passos anteriors substituint `diagnostics` per `sftp` i reinicia Termia. SFTP
+respecta la preferència anterior fins que desis una tria per al plugin.
+Desactivar-lo tanca els navegadors i cancel·la les transferències.
 
 Per provar un checkout amb un perfil buit o una còpia separada d'algunes dades:
 
