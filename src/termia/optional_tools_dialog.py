@@ -58,9 +58,7 @@ class OptionalToolsDialog:
 
         external_rows = {}
         for identifier, title, problem, enabled, available in self.external_options():
-            switch = self.add_switch_row(
-                content, self.translate("addon_external_title").format(name=title), enabled
-            )
+            switch = self.add_switch_row(content, title, enabled)
             switch.set_sensitive(
                 available and not self.store.read_only and not self.store.encryption_locked
             )
