@@ -2821,3 +2821,15 @@ msgstr "En ejecución"
 #: src/termia/i18n.py:local_terminal_finished
 msgid "Finished"
 msgstr "Finalizado"
+
+msgid "Swap with split pane to the left"
+msgstr "Intercambiar con el panel de la izquierda"
+
+msgid "Swap with split pane to the right"
+msgstr "Intercambiar con el panel de la derecha"
+
+msgid "Swap with split pane above"
+msgstr "Intercambiar con el panel de arriba"
+
+msgid "Swap with split pane below"
+msgstr "Intercambiar con el panel de abajo"

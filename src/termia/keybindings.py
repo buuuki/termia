@@ -20,6 +20,10 @@ DEFAULT_KEYBINDINGS: dict[str, str] = {
     "focus_split_right": "Ctrl+Shift+Right",
     "focus_split_up": "Ctrl+Shift+Up",
     "focus_split_down": "Ctrl+Shift+Down",
+    "swap_split_down": "",
+    "swap_split_up": "",
+    "swap_split_right": "",
+    "swap_split_left": "",
 }
 
 KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
@@ -40,6 +44,10 @@ KEYBINDING_ACTIONS: tuple[tuple[str, str], ...] = (
     ("focus_split_right", "keybinding_action_focus_split_right"),
     ("focus_split_up", "keybinding_action_focus_split_up"),
     ("focus_split_down", "keybinding_action_focus_split_down"),
+    ("swap_split_down", "keybinding_action_swap_split_down"),
+    ("swap_split_up", "keybinding_action_swap_split_up"),
+    ("swap_split_right", "keybinding_action_swap_split_right"),
+    ("swap_split_left", "keybinding_action_swap_split_left"),
 )
 
 _MODIFIER_ORDER = ("Ctrl", "Shift", "Alt", "Super")

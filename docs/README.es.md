@@ -35,6 +35,8 @@ publique esta versión.
   El atajo no detecta solicitudes de contraseña. La protección depende de
   Seguridad; consulta la [compatibilidad](STORAGE_MIGRATIONS.md) antes de actualizar.
 - Espacios de trabajo guardados y restauración opcional de la sesión anterior.
+- Intercambia paneles arrastrando el nombre de un panel sobre otro de la misma
+  pestaña. Puedes asignar atajos de intercambio en las preferencias de teclado.
 - Cada barra de estado muestra el nombre de la conexión y un indicador de
   estado con color; al pasar el ratón se ven los detalles del proceso o error.
   Los terminales locales muestran Iniciando, En ejecución o Finalizado y usan

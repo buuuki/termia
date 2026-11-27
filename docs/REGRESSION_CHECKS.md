@@ -1232,6 +1232,13 @@ Long measurements and release-platform checks remain separate validation work.
   containing markup characters must display literally. Full names, PID and
   errors belong in tooltips; language changes must refresh all open labels,
   including disconnected panes. Retired panes must not receive UI updates.
+- Swap two live panes in the same tab by dragging their status label and using
+  configured shortcuts. During a drag, check the tinted status bar and its
+  preview, including the state and timer. The tint should clear on drop or
+  cancellation.
+  Check nested dividers, retained focus, running
+  terminals and workspace restoration. Cancel a drag over another tab,
+  a divider or the source pane. Check that VTE text selection still works.
 - Showing or hiding a pane status bar must preserve the existing position of
   every affected split divider.
 - Standard-theme bars must touch lower/right split dividers without clipping,

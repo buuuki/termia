@@ -221,3 +221,8 @@ destroys it on cancellation. Explicit destruction also handles cancellation
 immediately after opening. Destination and progress dialogs retain Termia's
 native GTK widgets and layout. See `src/termia/file_transfer.py` and
 `scp/src/termia_scp/` in the plugins repository.
+
+### Split-pane reordering
+
+The status label uses a native GTK DragSource and the pane uses a native
+DropTarget. The existing Gtk.Paned controls still own divider resizing.

@@ -337,6 +337,7 @@ class TerminalSessionsMixin:
             server_id=server_id,
             local_profile_id=local_profile_id,
         )
+        self.configure_pane_reorder(session, session.panes[id(terminal)])
         self.update_pane_status(session.panes[id(terminal)], "")
         session.active_terminal_ids.add(id(terminal))
         log_event(
@@ -1234,6 +1235,9 @@ class TerminalSessionsMixin:
         for direction in ("left", "right", "up", "down"):
             if keybinding_matches(keybindings.get(f"focus_split_{direction}", ""), keyval, state):
                 return self.move_split_pane_focus(session, terminal, direction)
+            if keybinding_matches(keybindings.get(f"swap_split_{direction}", ""), keyval, state):
+                target = self.split_pane_neighbor(session, terminal, direction)
+                return bool(target is not None and self.swap_split_panes(session, terminal, target))
         if keybinding_matches(keybindings.get("font_increase", ""), keyval, state):
             self.change_terminal_font_size(1)
             return True
@@ -1247,12 +1251,14 @@ class TerminalSessionsMixin:
             return True
         return self.terminal_shortcut_handler(keyval, state, session, terminal)
 
-    def move_split_pane_focus(
-        self,
-        session: TerminalSession,
-        terminal: Vte.Terminal,
-        direction: str,
-    ) -> bool:
+    def move_split_pane_focus(self, session, terminal, direction) -> bool:
+        target = self.split_pane_neighbor(session, terminal, direction)
+        if target is None:
+            return False
+        target.grab_focus()
+        return True
+
+    def split_pane_neighbor(self, session, terminal, direction):
         rectangles: dict[int, tuple[float, float, float, float]] = {}
         terminals: dict[int, Vte.Terminal] = {}
         for pane in session.active_panes():
@@ -1268,11 +1274,104 @@ class TerminalSessionsMixin:
             )
             terminals[pane_id] = pane.terminal
         target_id = directional_pane_neighbor(id(terminal), direction, rectangles)
-        target = terminals.get(target_id) if target_id is not None else None
-        if target is None:
+        return terminals.get(target_id)
+
+    def pane_swap_slots(self, session, source, target):
+        if (source is target or self.shutdown_in_progress
+                or self.session_registry.get(session.id) is not session):
+            return None
+        slots = []
+        for terminal in (source, target):
+            pane = session.pane_for_terminal(terminal)
+            if pane is None or pane.retired or id(terminal) not in session.active_terminal_ids:
+                return None
+            child = pane.container
+            parent = child.get_parent()
+            if not isinstance(parent, Gtk.Paned) or not child.is_ancestor(session.page):
+                return None
+            setter = parent.set_start_child if parent.get_start_child() is child else parent.set_end_child
+            slots.append((parent, setter, child))
+        return slots
+
+    def swap_split_panes(self, session, source, target) -> bool:
+        slots = self.pane_swap_slots(session, source, target)
+        if slots is None:
             return False
-        target.grab_focus()
+        (parent_a, set_a, child_a), (parent_b, set_b, child_b) = slots
+        positions = {parent: parent.get_position() for parent in (parent_a, parent_b)}
+        self.clear_split_focus_before_replacement(parent_a)
+        set_a(None)
+        set_b(None)
+        set_a(child_b)
+        set_b(child_a)
+        for parent, position in positions.items():
+            parent.set_position(position)
+        source.grab_focus()
         return True
+
+    def configure_pane_reorder(self, session, pane):
+        terminal = pane.terminal
+        label = pane.status_label
+        source = Gtk.DragSource(actions=Gdk.DragAction.MOVE)
+        target = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.MOVE)
+
+        def prepare(_controller, _x, _y):
+            if (pane.retired or len(session.active_panes()) < 2 or self.shutdown_in_progress
+                    or self.session_registry.get(session.id) is not session):
+                return None
+            return Gdk.ContentProvider.new_for_value(session.id)
+
+        def begin(controller, drag):
+            self.split_pane_drag = (drag, session, terminal)
+            bar = pane.status_bar
+            bar.add_css_class("dragging")
+            controller.set_icon(Gtk.WidgetPaintable.new(bar), bar.get_width() // 2, bar.get_height() // 2)
+
+        def end(_controller, drag, _delete_data):
+            pane.status_bar.remove_css_class("dragging")
+            active = getattr(self, "split_pane_drag", None)
+            if active and active[0] == drag:
+                self.split_pane_drag = None
+
+        def valid_source(drop):
+            active = getattr(self, "split_pane_drag", None)
+            if (drop is None or not active or drop.get_drag() != active[0]
+                    or active[1] is not session):
+                return None
+            candidate = active[2]
+            return candidate if self.pane_swap_slots(session, candidate, terminal) else None
+
+        def hover(controller, _x, _y):
+            if valid_source(controller.get_current_drop()) is not None:
+                pane.container.add_css_class("termia-pane-drop-target")
+                return Gdk.DragAction.MOVE
+            return Gdk.DragAction(0)
+
+        def leave(_controller):
+            pane.container.remove_css_class("termia-pane-drop-target")
+
+        def drop(controller, value, _x, _y):
+            leave(controller)
+            candidate = valid_source(controller.get_current_drop())
+            if candidate is None or value != session.id:
+                return False
+
+            def exchange():
+                self.swap_split_panes(session, candidate, terminal)
+                return GLib.SOURCE_REMOVE
+
+            GLib.idle_add(exchange)
+            return True
+
+        pane.ui_signals.connect(source, "prepare", prepare)
+        pane.ui_signals.connect(source, "drag-begin", begin)
+        pane.ui_signals.connect(source, "drag-end", end)
+        pane.ui_signals.connect(target, "accept", lambda _controller, offer: valid_source(offer) is not None)
+        pane.ui_signals.connect(target, "enter", hover)
+        pane.ui_signals.connect(target, "leave", leave)
+        pane.ui_signals.connect(target, "drop", drop)
+        label.add_controller(source)
+        pane.container.add_controller(target)
 
     def move_terminal_tab_focus(self, session: TerminalSession, delta: int) -> None:
         sessions = self.visible_sessions_in_tab_order()
@@ -1763,6 +1862,7 @@ class TerminalSessionsMixin:
             local_profile_id=source.local_profile_id if source is not None else session.local_profile_id,
         )
         session.panes[id(terminal)] = pane
+        self.configure_pane_reorder(session, pane)
         self.update_pane_status(pane, "")
         pane.ui_signals.connect(focus_button, "clicked", self.on_hide_pane_status_bar, session, terminal)
         pane.ui_signals.connect(disconnect_button, "clicked", self.on_request_disconnect_pane, session, terminal)

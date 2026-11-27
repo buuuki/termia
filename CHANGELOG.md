@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Swap live split panes through configurable directional shortcuts or by
+  dragging the pane name in its status bar, using a preview of that bar (#316).
+
 ### Fixed
 
 - Hide the terminal status bar close icon to prevent accidental disconnects (#547).
