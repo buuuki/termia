@@ -1593,6 +1593,22 @@ msgstr ""
 msgid "Focus split pane below"
 msgstr ""
 
+#: src/termia/i18n.py:keybinding_action_swap_split_down
+msgid "Swap with split pane below"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_swap_split_up
+msgid "Swap with split pane above"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_swap_split_right
+msgid "Swap with split pane to the right"
+msgstr ""
+
+#: src/termia/i18n.py:keybinding_action_swap_split_left
+msgid "Swap with split pane to the left"
+msgstr ""
+
 #: src/termia/i18n.py:close_app
 msgid "Close Termia"
 msgstr ""

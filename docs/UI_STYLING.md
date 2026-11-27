@@ -511,6 +511,11 @@ layout space, and ancestors may clip outer shadows.
 
 ### Terminal status bars
 
+During a pane-name drag, GTK paints the actual status bar as the drag preview,
+using the same selection tint and opacity as a dragged tab. The eligible target
+pane retains its inset outline, which does not change pane allocation or divider
+thickness. The panes swap when dropped.
+
 In System/Light/Dark, bars use terminal foreground and opaque background,
 with a subtle 4% foreground mix for the active pane, no focus stripe, border
 or outer margins, and `4px 8px` padding. Split bars reach the divider

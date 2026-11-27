@@ -33,6 +33,8 @@ update commands below become available when this release is published.
   The shortcut does not detect password prompts. Storage follows Security
   preferences; see [storage compatibility](docs/STORAGE_MIGRATIONS.md) before upgrading.
 - Saved workspaces and optional restoration of the previous session.
+- Swap split panes by dragging the pane name to another pane in the same tab.
+  Directional swap shortcuts can be assigned in keyboard preferences.
 - Per-pane status bars show the connection name and a colored session-state
   indicator; process and error details are available in the tooltip.
   Local terminals show Starting, Running or Finished and use End terminal /

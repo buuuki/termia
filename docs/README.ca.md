@@ -35,6 +35,8 @@ publiqui aquesta versió.
   La drecera no detecta peticions de contrasenya. La protecció depèn de
   Seguretat; consulta la [compatibilitat](STORAGE_MIGRATIONS.md) abans d'actualitzar.
 - Espais de treball desats i restauració opcional de la sessió anterior.
+- Intercanvia panells arrossegant-ne el nom sobre un altre de la mateixa pestanya.
+  Pots assignar les dreceres d’intercanvi a les preferències de teclat.
 - Cada barra d'estat mostra el nom de la connexió i un indicador d'estat amb
   color; en passar-hi el ratolí es veuen els detalls del procés o error.
   Els terminals locals mostren Iniciant, En execució o Finalitzat i fan servir

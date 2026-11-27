@@ -260,7 +260,7 @@ def build_interaction_css(
              f"box-shadow: inset 0 0 0 {retron.BORDER_WIDTH:g}px alpha({accent}, {retron.STRONG_FRAME_OPACITY:.2f}), 0 0 {retron.GLOW_BLUR:g}px alpha({accent}, {retron.GLOW_OPACITY:.2f});")
         rule(f"{tab}:focus-visible,{tab}:focus-within",
              f"outline: 2px solid {accent}; outline-offset: -3px;")
-    rule(".termia-tab-label.dragging",
+    rule(".termia-tab-label.dragging,.termia-terminal-pane > .termia-pane-status.dragging",
          f"background-color: alpha({accent}, 0.25); opacity: 0.72;")
 
     # Notes uses its tree panel's exact frame treatment for every container.
