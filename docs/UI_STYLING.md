@@ -514,8 +514,8 @@ layout space, and ancestors may clip outer shadows.
 In System/Light/Dark, bars use terminal foreground and opaque background,
 with a subtle 4% foreground mix for the active pane, no focus stripe, border
 or outer margins, and `4px 8px` padding. Split bars reach the divider
-independently of the terminal text inset. Native icon buttons place
-End/Disconnect before Hide; tooltips and accessible labels name the actions.
+independently of the terminal text inset. The Hide arrow is the only action in the bar during a live session. When a
+retained terminal can reopen, its reconnect button appears before Hide.
 The reveal button sits in a native overlay at the terminal's upper-right
 corner with 4px top/end margins and terminal colors. Its preference is
 independent of bar visibility. VTE remains inside its existing scroller.
@@ -531,7 +531,7 @@ override the base split-status padding. Labels and buttons use the retro
 monospace stack `"Ubuntu Mono", "DejaVu Sans Mono", monospace`; the shell's
 configured font is unchanged. Labels retain the configured foreground at full opacity for
 contrast with custom light or dark terminal backgrounds. Native Hide and
-Disconnect buttons use transparent backgrounds, no border/shadow, minimum
+Reconnect buttons use transparent backgrounds, no border/shadow, minimum
 content height `18px`, padding `2px 6px`, radius `6px` and font size `1em`
 relative to the status bar. Hover/pressed backgrounds use terminal foreground
 at alpha `0.08`/`0.13`; disabled buttons use opacity `0.45`. The existing

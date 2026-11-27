@@ -49,7 +49,7 @@ class TerminalStatusBarTests(unittest.TestCase):
         reveal_container = first.container.get_last_child().get_last_child()
         reveal = reveal_container.get_first_child()
         self.assertEqual(hide.get_icon_name(), "pan-up-symbolic")
-        self.assertEqual(close.get_icon_name(), "window-close-symbolic")
+        self.assertFalse(close.get_visible())
         self.assertIs(first.status_bar.get_last_child(), hide)
         self.assertEqual(reveal.get_tooltip_text(), "show_session_status_bar")
         self.assertTrue(reveal.get_visible())
@@ -106,7 +106,8 @@ class TerminalStatusBarTests(unittest.TestCase):
                                if orientation == Gtk.Orientation.VERTICAL
                                else b.get_x() - a.get_x() - a.get_width())
                         self.assertEqual(gap, 8 if theme == "dark_glow" else 1)
-                        for button in (hide, close):
+                        self.assertFalse(close.get_mapped())
+                        for button in (hide,):
                             bounds = button.compute_bounds(window)[1]
                             # The top pixels must belong to the button, never the split handle.
                             for dy in (0.5, 1.5, bounds.get_height() / 2):
